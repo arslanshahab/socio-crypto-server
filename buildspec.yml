@@ -20,7 +20,7 @@ phases:
 
       - docker push 381978683274.dkr.ecr.us-west-2.amazonaws.com/raiinmaker:$TAG
 
-      - aws cloudformation deploy --template-file ./service.cft.yml --stack-name raiinmaker-$STAGE --parameter-overrides "Stage=$STAGE" --capabilities CAPABILITY_NAMED_IAM --no-fail-on-empty-changeset
+      - aws cloudformation deploy --template-file ./cloudformation/service.yml --stack-name raiinmaker-$STAGE --parameter-overrides "Stage=$STAGE" --capabilities CAPABILITY_NAMED_IAM --no-fail-on-empty-changeset
       - kops export kubecfg $CLUSTER --state s3://kubernetes-state-store-dc
 
       - if [ "$STAGE" = "production" ]; then VALUES="./helm/raiinmaker/values-prod.yaml"; else VALUES="./helm/raiinmaker/values.yaml"; fi
