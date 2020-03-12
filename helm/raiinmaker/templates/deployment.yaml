@@ -1,0 +1,131 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "raiinmaker.fullname" . }}-server
+  labels:
+    helm.sh/chart: {{ include "raiinmaker.chart" . }}
+    app.kubernetes.io/name: {{ include "raiinmaker.name" . }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: webserver
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      helm.sh/chart: {{ include "raiinmaker.chart" . }}
+      app.kubernetes.io/name: {{ include "raiinmaker.name" . }}
+      app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+      app.kubernetes.io/managed-by: {{ .Release.Service }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: webserver
+  template:
+    metadata:
+      labels:
+        helm.sh/chart: {{ include "raiinmaker.chart" . }}
+        app.kubernetes.io/name: {{ include "raiinmaker.name" . }}
+        app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: webserver
+    spec:
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ include "raiinmaker.fullname" . }}-server
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /v1/health
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /v1/health
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 10
+          env:
+            - name: PG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgresql.existingSecret }}
+                  key: postgresql-password
+          envFrom:
+            - configMapRef:
+                name: "{{ include "raiinmaker.fullname" . }}-server-env"
+          # volumeMounts:
+          #   - name: session-secret
+          #     mountPath: "/var/secrets/session-secret"
+          #     readOnly: true
+          resources:
+            {{- toYaml .Values.server.resources | nindent 12 }}
+      # volumes:
+      #   - name: session-secret
+      #     secret:
+      #       secretName: "session-secret"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "raiinmaker.fullname" . }}-redis
+  labels:
+    helm.sh/chart: {{ include "raiinmaker.chart" . }}
+    app.kubernetes.io/name: {{ include "raiinmaker.name" . }}-redis
+    app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      helm.sh/chart: {{ include "raiinmaker.chart" . }}
+      app.kubernetes.io/name: {{ include "raiinmaker.name" . }}-redis
+      app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+      app.kubernetes.io/managed-by: {{ .Release.Service }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: redis
+  strategy:
+      type: Recreate
+  template:
+    metadata:
+      name: {{ include "raiinmaker.fullname" . }}-redis
+      labels:
+        helm.sh/chart: {{ include "raiinmaker.chart" . }}
+        app.kubernetes.io/name: {{ include "raiinmaker.name" . }}-redis
+        app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: redis
+    spec:
+      containers:
+        - name: {{ include "raiinmaker.fullname" . }}-redis
+          image: "{{ .Values.redis.image.repository }}:{{ .Values.redis.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["redis-server"]
+          args: ["/usr/local/etc/redis/redis.conf"]
+          env:
+            - name: MASTER
+              value: "true"
+          ports:
+            - name: http
+              containerPort: 6379
+          resources:
+{{ toYaml .Values.redis.resources | indent 12 }}
+          volumeMounts:
+            - mountPath: /usr/local/etc/redis
+              name: config
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "raiinmaker.fullname" . }}-redis
+            items:
+              - key: redis-config
+                path: redis.conf

@@ -1,0 +1,69 @@
+# Default values for raiinmaker.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: 381978683274.dkr.ecr.us-west-2.amazonaws.com/raiinmaker
+  tag: staging-0.0.1
+  pullPolicy: Always
+
+iamRole: arn:aws:iam::381978683274:role/raiinmaker-staging
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 8080
+
+ingress:
+  enabled: true
+  host: raiinmaker-staging.api.dragonchain.com
+
+server:
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+aws:
+  secret_key:
+
+data:
+  environment:
+    NODE_ENV: "staging"
+
+postgresql:
+  existingSecret: "raiinmaker"
+  persistence:
+    storageClass: gp2
+    accessMode: ReadWriteOnce
+  replication:
+    enabled: true
+    synchronousCommit: "on"
+    numSynchronousReplicas: 1
+    slaveReplicas: 1
+
+pg-bak:
+  service: raiinmaker
+  stage: staging
+  existingSecret: "raiinmaker"
+  postgresHost: raiinmaker-postgresql-read
+
+redis:
+  image:
+    repository: redis
+    tag: 5.0.7-alpine
+  resources:
+    limits:
+      cpu: 1
+      memory: 200Mi
+    requests:
+      cpu: 15m
+      memory: 200Mi

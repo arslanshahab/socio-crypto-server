@@ -1,0 +1,25 @@
+image:
+  repository: localhost:5000/raiinmaker
+  tag: latest
+
+data:
+  environment:
+    NODE_ENV: "development"
+
+postgresql:
+  existingSecret: "raiinmaker"
+  persistence:
+    storageClass: "standard"
+    size: 100Mi
+  replication:
+    slaveReplicas: 0
+
+pg-bak:
+  enabled: false
+
+service:
+  type: NodePort
+  port: 8080
+
+ingress:
+  enabled: false

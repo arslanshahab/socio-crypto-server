@@ -1,0 +1,14 @@
+image:
+  pullPolicy: IfNotPresent
+
+iamRole: arn:aws:iam::381978683274:role/raiinmaker-production
+
+pg-bak:
+  stage: production
+
+ingress:
+  host: raiinmaker.api.dragonchain.com
+
+data:
+  environment:
+    NODE_ENV: "production"

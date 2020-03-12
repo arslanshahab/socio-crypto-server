@@ -1,0 +1,228 @@
+Description: CI/CD Pipeline for Raiinmaker API
+
+Parameters:
+  GitHubSecret:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: GitHubReadOnlyToken
+
+Resources:
+  Ecr:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: raiinmaker
+
+  StgDeployCodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: 'raiinmaker-stage'
+      ServiceRole:
+        Ref: CodeBuildRole
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_LARGE
+        Image: aws/codebuild/standard:3.0
+        EnvironmentVariables:
+          - Name: STAGE
+            Type: PLAINTEXT
+            Value: staging
+        PrivilegedMode: true
+      VpcConfig:
+        VpcId: vpc-35ee764c
+        Subnets: [subnet-066fc994a62abcff4]
+        SecurityGroupIds: [sg-8a581bf5]
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: buildspec.yml
+      TimeoutInMinutes: 10
+
+  ProdDeployCodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: 'raiinmaker-production'
+      ServiceRole:
+        Ref: CodeBuildRole
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_LARGE
+        Image: aws/codebuild/standard:3.0
+        EnvironmentVariables:
+          - Name: STAGE
+            Type: PLAINTEXT
+            Value: production
+        PrivilegedMode: true
+      VpcConfig:
+        VpcId: vpc-35ee764c
+        Subnets: [subnet-066fc994a62abcff4]
+        SecurityGroupIds: [sg-8a581bf5]
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: buildspec.yml
+      TimeoutInMinutes: 10
+
+  CodePipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: raiinmaker-cicd-pipeline
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: ['sts:AssumeRole']
+          Effect: Allow
+          Principal:
+            Service: [codebuild.amazonaws.com, codepipeline.amazonaws.com]
+        Version: '2012-10-17'
+      Policies:
+        - PolicyName: CodeBuildAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                - 'logs:*'
+                - 'ssm:GetParameters'
+                - 'sts:AssumeRole'
+                - 'secretsmanager:GetSecretValue'
+                - 'codebuild:*'
+                - 'ec2:*'
+                - 's3:*'
+                Effect: Allow
+                Resource: '*'
+              - Action:
+                - 'secretsmanager:GetSecretValue'
+                Effect: Allow
+                Resource: 'arn:aws:secretsmanager:us-west-2:381978683274:secret:*'
+
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: raiinmaker-cicd-build
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: ['sts:AssumeRole']
+          Effect: Allow
+          Principal:
+            Service: [codebuild.amazonaws.com,  codepipeline.amazonaws.com]
+        Version: '2012-10-17'
+      Policies:
+        - PolicyName: CodeBuildAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                - 'logs:*'
+                - 'ssm:GetParameters'
+                - 'ecr:*'
+                - 'cloudformation:*'
+                - 'iam:*'
+                - 'route53:*'
+                - 'ec2:*'
+                - 's3:*'
+                Effect: Allow
+                Resource: '*'
+              - Action:
+                - 'secretsmanager:GetSecretValue'
+                Effect: Allow
+                Resource: 'arn:aws:secretsmanager:us-west-2:381978683274:secret:*'
+
+  ArtifactBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: raiinmaker-codebuild-artifacts
+
+  StagingCodePipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: RaiinmakerStaging
+      ArtifactStore:
+        Location:
+          Ref: ArtifactBucket
+        Type: S3  # this is literally the only possible option. https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_ArtifactStore.html
+      RestartExecutionOnUpdate: true
+      RoleArn:
+        Fn::GetAtt: CodePipelineRole.Arn
+      Stages:
+        - Name: Github
+          Actions:
+            - Name: Source
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Provider: GitHub
+                Version: 1
+              Configuration:
+                Owner: dragonchain-inc
+                Repo: raiinmaker-poc
+                Branch: master
+                OAuthToken:
+                  Ref: GitHubSecret
+              OutputArtifacts:
+                - Name: raiinmakerServiceCode
+              RunOrder: 1
+        - Name: DeployStaging
+          Actions:
+          - Name: Deploy
+            ActionTypeId:
+              Category: Build
+              Owner: AWS
+              Provider: CodeBuild
+              Version: 1
+            Configuration:
+              ProjectName:
+                Ref: StgDeployCodeBuildProject
+            InputArtifacts:
+              - Name: raiinmakerServiceCode
+            OutputArtifacts:
+              - Name: StgDeploy
+            RoleArn:
+              Fn::GetAtt: CodePipelineRole.Arn
+            RunOrder: 1
+
+  ProductionCodePipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: RaiinmakerProduction
+      ArtifactStore:
+        Location:
+          Ref: ArtifactBucket
+        Type: S3  # this is literally the only possible option. https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_ArtifactStore.html
+      RestartExecutionOnUpdate: true
+      RoleArn:
+        Fn::GetAtt: CodePipelineRole.Arn
+      Stages:
+        - Name: Github
+          Actions:
+            - Name: Source
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Provider: GitHub
+                Version: 1
+              Configuration:
+                Owner: dragonchain-inc
+                Repo: raiinmaker-poc
+                Branch: production
+                OAuthToken:
+                  Ref: GitHubSecret
+              OutputArtifacts:
+                - Name: raiinmakerServiceCode
+              RunOrder: 1
+        - Name: DeployProd
+          Actions:
+          - Name: Test-Build-Deploy-Prod
+            ActionTypeId:
+              Category: Build
+              Owner: AWS
+              Provider: CodeBuild
+              Version: 1
+            Configuration:
+              ProjectName:
+                Ref: ProdDeployCodeBuildProject
+            InputArtifacts:
+              - Name: raiinmakerServiceCode
+            OutputArtifacts:
+              - Name: BuiltRaiinmakerServiceProdCode
+            RoleArn:
+              Fn::GetAtt: CodePipelineRole.Arn
+            RunOrder: 1

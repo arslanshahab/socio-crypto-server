@@ -1,0 +1,79 @@
+Description: Raiinmaker Service
+
+Parameters:
+  Stage:
+    Type: String
+    Default: "staging"
+
+Conditions:
+  isProd:
+    Fn::Equals:
+      - Ref: Stage
+      - "production"
+
+Resources:
+    raiinmakerRoute53:
+      Type: AWS::Route53::RecordSet
+      Properties:
+        HostedZoneId: Z2ADV4KXMZWAVJ
+        Name:
+          Fn::If:
+            - isProd
+            - raiinmaker.api.dragonchain.com
+            - Fn::Join:
+                - ''
+                - - raiinmaker-
+                  - Ref: Stage
+                  - .api.dragonchain.com
+        Type: CNAME
+        ResourceRecords:
+          - Fn::If:
+              - isProd
+              - "uw2-k8s-internal.api.dragonchain.com"
+              - "uw2-k8s-internal-stage.api.dragonchain.com"
+        TTL: "300"
+
+    raiinmakerServiceRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Statement:
+            - Effect: Allow
+              Action: sts:AssumeRole
+              Principal:
+                AWS:
+                  Fn::If:
+                    - isProd
+                    - arn:aws:iam::381978683274:role/masters.uw2-k8s-internal.api.dragonchain.com
+                    - arn:aws:iam::381978683274:role/masters.uw2-k8s-internal-stage.api.dragonchain.com
+        RoleName:
+          Fn::Join:
+            - "-"
+            - - "raiinmaker"
+              - Ref: Stage
+
+    raiinmakerServicePolicy:
+      Type: AWS::IAM::Policy
+      Properties:
+        PolicyName:
+          Fn::Join:
+            - "-"
+            - - raiinmaker-service-policy
+              - Ref: Stage
+        Roles:
+          - Ref: raiinmakerServiceRole
+        PolicyDocument:
+          Version : "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action: ["logs:GetLogEvents"]
+              Resource:
+                - arn:aws:logs:us-west-2:381978683274:log-group:/k8s/openfaas-stage:*
+                - arn:aws:logs:us-west-2:381978683274:log-group:/k8s/openfaas-prod:*
+            - Effect: Allow
+              Action: ["SNS:Publish"]
+              Resource:
+                Fn::If:
+                  - isProd
+                  - arn:aws:sns:us-west-2:381978683274:ers-production-Topic-LP3TJOCU3EWE
+                  - arn:aws:sns:us-west-2:381978683274:ers-staging-Topic-SVYROUMXZY3V

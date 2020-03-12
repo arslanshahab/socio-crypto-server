@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ include "raiinmaker.fullname" . }}-server-env"
+  labels:
+    id: {{ .Release.Name }}
+    kind: configMap
+    app.kubernetes.io/component: api
+data:
+{{ toYaml .Values.data.environment | indent 2 }}
+  {{- if and .Values.aws.secret_key .Values.aws.access_key_id }}
+  AWS_ACCESS_KEY_ID: "{{ .Values.aws.access_key_id }}"
+  AWS_SECRET_ACCESS_KEY: "{{ .Values.aws.secret_key }}"
+  AWS_DEFAULT_REGION: "{{ .Values.aws.region }}"
+  {{- end }}
+  PG_HOST: "{{ .Release.Name }}-postgresql"
+  PG_DATABASE: "postgres"
+  PG_PORT: "5432"
+  PG_USER: "postgres"
+  REDIS_PORT: "6379"
+  REDIS_HOST: "{{ include "raiinmaker.fullname" . }}-redis"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "raiinmaker.fullname" . }}-redis
+  labels:
+    app.kubernetes.io/component: redis
+data:
+  redis-config: |
+    appendonly no
+    maxmemory 150mb
+    maxmemory-policy volatile-ttl
