@@ -153,7 +153,7 @@ Resources:
                 Version: 1
               Configuration:
                 Owner: dragonchain-inc
-                Repo: raiinmaker-poc
+                Repo: raiinmaker-server
                 Branch: master
                 OAuthToken:
                   Ref: GitHubSecret
