@@ -7,9 +7,6 @@ export class Participant extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   public id: string;
 
-  @Column({ nullable: false })
-  public campaignId: string;
-
   @Column({ nullable: false, default: 0 })
   public clickCount: number;
 
@@ -17,6 +14,7 @@ export class Participant extends BaseEntity {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _type => User,
     user => user.campaigns,
+    { primary: true, eager: true }
   )
   public user: User;
 
@@ -24,6 +22,7 @@ export class Participant extends BaseEntity {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _type => Campaign,
     campaign => campaign.participants,
+    { primary: true, eager: true }
   )
   public campaign: Campaign;
 

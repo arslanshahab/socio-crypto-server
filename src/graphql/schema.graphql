@@ -1,8 +1,11 @@
 type Mutation {
   newUser(id:String!,email:String!): User
+  newCampaign(name:String!,coiinTotal:Float!,target:String!,beginDate:String,endDate:String,description:String): Campaign
+  participate(campaignId:String!,userId:String!): User
 }
 
 type Query {
+  listCampaigns: PaginatedCampaignResults
   helloWorld: String
   me: User
 }
@@ -10,4 +13,25 @@ type Query {
 type User {
   id: String
   email: String
+  campaigns: [Participant]
+}
+
+type PaginatedCampaignResults {
+  results: [Campaign]
+  total: Int
+}
+
+type Campaign {
+  id: String
+  beginDate: String
+  endDate: String
+  coiinTotal: Float
+  target: String
+}
+
+type Participant {
+  id: String
+  clickCount: Int
+  user: User
+  campaign: Campaign
 }
