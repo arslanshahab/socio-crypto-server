@@ -1,3 +1,13 @@
+type Mutation {
+  newUser(id:String!,email:String!): User
+}
+
 type Query {
   helloWorld: String
+  me: User
+}
+
+type User {
+  id: String
+  email: String
 }

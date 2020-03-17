@@ -12,4 +12,5 @@ module.exports = [{
   entities: ['dist/models/**/*.js'],
   migrations: ['dist/migrations/**/*.js'],
   cli: { migrationsDir: 'src/migrations', entitiesDir: 'src/models' },
+  uuidExtension: 'pgcrypto',
 }];
