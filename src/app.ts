@@ -14,7 +14,7 @@ export class Application {
 
   public async connectDatabase() {
     const connectionOptions = await getConnectionOptions();
-    Object.assign(connectionOptions, { entites: [__dirname, '/models/*'] });
+    Object.assign(connectionOptions, { entities: [__dirname + '/models/*'] });
     await createConnection(connectionOptions);
   }
 
