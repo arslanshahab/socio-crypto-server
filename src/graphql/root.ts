@@ -4,8 +4,11 @@ import { User } from '../models/User';
 export const root = {
   helloWorld: () => 'Hello world!',
   participate: User.participate,
+  removeParticipation: User.removeParticipation,
   newUser: User.signUp,
   newCampaign: Campaign.newCampaign,
   listCampaigns: Campaign.list,
+  updateCampaign: Campaign.updateCampaign,
+  deleteCampaign: Campaign.deleteCampaign,
   me: User.me,
 };

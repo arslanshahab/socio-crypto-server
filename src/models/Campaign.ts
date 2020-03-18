@@ -1,4 +1,5 @@
 import { BaseEntity, Entity, Column, PrimaryColumn, OneToMany } from 'typeorm';
+import { DateUtils } from 'typeorm/util/DateUtils';
 import { Participant } from './Participant';
 
 @Entity()
@@ -27,6 +28,26 @@ export class Campaign extends BaseEntity {
     participant => participant.campaign,
   )
   public participants: Participant[];
+
+  public static async deleteCampaign(args: { name: string }): Promise<Campaign> {
+    const campaign = await Campaign.findOne({ where: { id: args.name }, relations: ['participants'] });
+    if (!campaign) throw new Error('campaign not found');
+    await campaign.remove();
+    return campaign;
+  }
+
+  public static async updateCampaign(args: { name: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string }): Promise<Campaign> {
+    const { name, beginDate, endDate, coiinTotal, target, description } = args;
+    const campaign = await Campaign.findOne({ where: { id: name } });
+    if (!campaign) throw new Error('campaign not found');
+    if (beginDate) campaign.beginDate = beginDate;
+    if (endDate) campaign.endDate = endDate;
+    if (coiinTotal) campaign.coiinTotal = coiinTotal;
+    if (target) campaign.target = target;
+    if (description) campaign.description = description;
+    await campaign.save();
+    return campaign;
+  }
 
   public static async newCampaign(args: { name: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string }): Promise<Campaign> {
     const { name, beginDate, endDate, coiinTotal, target, description } = args;

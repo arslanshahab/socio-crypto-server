@@ -1,7 +1,10 @@
 type Mutation {
   newUser(id:String!,email:String!): User
   newCampaign(name:String!,coiinTotal:Float!,target:String!,beginDate:String,endDate:String,description:String): Campaign
+  updateCampaign(name:String!,coiinTotal:Float,target:String,beginDate:String,endDate:String,description:String): Campaign
+  deleteCampaign(name:String!): Campaign
   participate(campaignId:String!,userId:String!): User
+  removeParticipation(campaignId:String!,userId:String!): User
 }
 
 type Query {
@@ -27,6 +30,7 @@ type Campaign {
   endDate: String
   coiinTotal: Float
   target: String
+  description: String
 }
 
 type Participant {
