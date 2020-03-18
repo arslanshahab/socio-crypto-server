@@ -1,5 +1,4 @@
 import { BaseEntity, Entity, Column, PrimaryColumn, OneToMany } from 'typeorm';
-import { DateUtils } from 'typeorm/util/DateUtils';
 import { Participant } from './Participant';
 
 @Entity()
