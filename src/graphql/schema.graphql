@@ -5,12 +5,13 @@ type Mutation {
   deleteCampaign(name:String!): Campaign
   participate(campaignId:String!,userId:String!): User
   removeParticipation(campaignId:String!,userId:String!): User
+  trackClick(participantId:String!): Participant
 }
 
 type Query {
   listCampaigns(open:Boolean): PaginatedCampaignResults
   helloWorld: String
-  me: User
+  me(id:String!): User
 }
 
 type User {
