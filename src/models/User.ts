@@ -43,7 +43,7 @@ export class User extends BaseEntity {
     return user;
   }
 
-  public static async participate(args: { campaignId: string, userId: string }): Promise<User> {
+  public static async participate(args: { campaignId: string, userId: string }): Promise<Participant> {
     const user = await User.findOne({ where: { id: args.userId }, relations: ['campaigns', 'wallet'] });
     if (!user) throw new Error('user not found');
     const campaign = await Campaign.findOne({ where: { id: args.campaignId } });
@@ -51,8 +51,7 @@ export class User extends BaseEntity {
     if (await Participant.findOne({ where: { campaign, user } })) throw new Error('user already participating in this campaign');
     const participant = Participant.newParticipant(user, campaign);
     await participant.save();
-    user.campaigns = [...user.campaigns, participant];
-    return user;
+    return participant;
   }
 
   public static async removeParticipation(args: { campaignId: string, userId: string }): Promise<User> {
