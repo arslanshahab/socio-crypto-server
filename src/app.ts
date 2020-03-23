@@ -26,6 +26,7 @@ export class Application {
       origin: [
         'https://raiinmaker.dragonchain.com',
         'https://raiinmaker-staging.dragonchain.com',
+        'https://mock-raiimaker-landing.dragonchain.com'
       ],
       methods: ['GET','POST'],
       exposedHeaders: ['x-auth-token'],
