@@ -33,6 +33,7 @@ type PaginatedCampaignResults {
 
 type Campaign {
   id: String
+  name: String
   beginDate: String
   endDate: String
   coiinTotal: Float
