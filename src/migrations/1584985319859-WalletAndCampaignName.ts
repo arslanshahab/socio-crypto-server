@@ -18,7 +18,7 @@ export class WalletAndCampaignName1584985319859 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "campaign" ADD CONSTRAINT "PK_0ce34d26e7f2eb316a3a592cdc4" PRIMARY KEY ("id")`);
         await queryRunner.query(`ALTER TABLE "wallet" ADD CONSTRAINT "FK_35472b1fe48b6330cd349709564" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "participant" ADD CONSTRAINT "FK_1835802549e230f6cd88c6efef9" FOREIGN KEY ("campaignId") REFERENCES "campaign"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`INSERT "wallet" ("userId", "balance") SELECT "user"."id" as "userId", 0 as "balance" FROM "user"`)
+        await queryRunner.query(`INSERT INTO "wallet" ("userId", "balance") SELECT "user"."id" as "userId", 0 as "balance" FROM "user"`)
     }
 
     public async down(queryRunner: QueryRunner): Promise<any> {
