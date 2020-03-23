@@ -1,2 +1,2 @@
 export { getSchema } from './schema';
-export { root } from './root';
+export { root, publicRoot } from './root';

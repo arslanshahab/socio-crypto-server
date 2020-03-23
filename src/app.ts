@@ -4,7 +4,7 @@ import expressGraphql from 'express-graphql';
 import { Server } from 'http';
 import { createConnection, getConnectionOptions } from 'typeorm';
 import logger from './util/logger';
-import { getSchema, root } from './graphql';
+import { getSchema, root, publicRoot } from './graphql';
 
 const { NODE_ENV = 'development' } = process.env;
 
@@ -36,6 +36,11 @@ export class Application {
     this.app.use('/v1/graphql', expressGraphql({
       schema: await getSchema(),
       rootValue: root,
+      graphiql: NODE_ENV === 'development',
+    }));
+    this.app.use('/v1/public/graphql', expressGraphql({
+      schema: await getSchema(),
+      rootValue: publicRoot,
       graphiql: NODE_ENV === 'development',
     }));
     this.app.get('/v1/health', (_req: express.Request, res: express.Response) => res.send('I am awake and functioning, thanks!'));
