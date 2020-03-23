@@ -36,7 +36,7 @@ export class Application {
     this.app.use('/v1/graphql', expressGraphql({
       schema: await getSchema(),
       rootValue: root,
-      graphiql: NODE_ENV === 'development',
+      graphiql: NODE_ENV !== 'production',
     }));
     this.app.use('/v1/public/graphql', expressGraphql({
       schema: await getSchema(),
