@@ -3,7 +3,7 @@ type Mutation {
   newCampaign(name:String!,coiinTotal:Float!,target:String!,beginDate:String,endDate:String,description:String): Campaign
   updateCampaign(id:String!,name:String,coiinTotal:Float,target:String,beginDate:String,endDate:String,description:String): Campaign
   deleteCampaign(id:String!): Campaign
-  participate(campaignId:String!,userId:String!): User
+  participate(campaignId:String!,userId:String!): Participant
   removeParticipation(campaignId:String!,userId:String!): User
   trackClick(participantId:String!): Participant
 }
