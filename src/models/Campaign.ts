@@ -1,11 +1,14 @@
-import { BaseEntity, Entity, Column, PrimaryColumn, OneToMany } from 'typeorm';
+import { BaseEntity, Entity, Column, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { DateUtils } from 'typeorm/util/DateUtils';
 import { Participant } from './Participant';
 
 @Entity()
 export class Campaign extends BaseEntity {
-  @PrimaryColumn()
+  @PrimaryGeneratedColumn('uuid')
   public id: string;
+
+  @Column({ nullable: false })
+  public name: string;
 
   @Column({ type: 'timestamptz', nullable: true })
   public beginDate: Date;
@@ -42,17 +45,18 @@ export class Campaign extends BaseEntity {
       .getManyAndCount();
   }
 
-  public static async deleteCampaign(args: { name: string }): Promise<Campaign> {
-    const campaign = await Campaign.findOne({ where: { id: args.name }, relations: ['participants'] });
+  public static async deleteCampaign(args: { id: string }): Promise<Campaign> {
+    const campaign = await Campaign.findOne({ where: { id: args.id }, relations: ['participants'] });
     if (!campaign) throw new Error('campaign not found');
     await campaign.remove();
     return campaign;
   }
 
-  public static async updateCampaign(args: { name: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string }): Promise<Campaign> {
-    const { name, beginDate, endDate, coiinTotal, target, description } = args;
-    const campaign = await Campaign.findOne({ where: { id: name } });
+  public static async updateCampaign(args: { id: string, name: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string }): Promise<Campaign> {
+    const { id, name, beginDate, endDate, coiinTotal, target, description } = args;
+    const campaign = await Campaign.findOne({ where: { id } });
     if (!campaign) throw new Error('campaign not found');
+    if (name) campaign.name = name;
     if (beginDate) campaign.beginDate = new Date(beginDate);
     if (endDate) campaign.endDate = new Date(endDate);
     if (coiinTotal) campaign.coiinTotal = coiinTotal;
@@ -64,9 +68,8 @@ export class Campaign extends BaseEntity {
 
   public static async newCampaign(args: { name: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string }): Promise<Campaign> {
     const { name, beginDate, endDate, coiinTotal, target, description } = args;
-    if (await Campaign.findOne({ where: { id: name } })) throw new Error('campaign already registered');
     const campaign = new Campaign();
-    campaign.id = name;
+    campaign.name = name
     campaign.coiinTotal = coiinTotal;
     campaign.target = target;
     if (beginDate) campaign.beginDate = new Date(beginDate);

@@ -1,8 +1,8 @@
 type Mutation {
   newUser(id:String!,email:String!): User
   newCampaign(name:String!,coiinTotal:Float!,target:String!,beginDate:String,endDate:String,description:String): Campaign
-  updateCampaign(name:String!,coiinTotal:Float,target:String,beginDate:String,endDate:String,description:String): Campaign
-  deleteCampaign(name:String!): Campaign
+  updateCampaign(id:String!,name:String,coiinTotal:Float,target:String,beginDate:String,endDate:String,description:String): Campaign
+  deleteCampaign(id:String!): Campaign
   participate(campaignId:String!,userId:String!): User
   removeParticipation(campaignId:String!,userId:String!): User
   trackClick(participantId:String!): Participant
@@ -18,6 +18,12 @@ type User {
   id: String
   email: String
   campaigns: [Participant]
+  wallet: Wallet
+}
+
+type Wallet {
+  id: String
+  balance: Float
 }
 
 type PaginatedCampaignResults {
