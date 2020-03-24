@@ -43,6 +43,7 @@ export class Campaign extends BaseEntity {
     return await this.createQueryBuilder('campaign')
       .where(where)
       .leftJoinAndSelect('campaign.participants', 'participant', 'participant."campaignId" = campaign.id')
+      .leftJoinAndSelect('participant.user', 'user', 'user.id = participant."userId"')
       .getManyAndCount();
   }
 
