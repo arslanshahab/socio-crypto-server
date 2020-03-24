@@ -39,6 +39,7 @@ type Campaign {
   coiinTotal: Float
   target: String
   description: String
+  participants: [Participant]
 }
 
 type Participant {

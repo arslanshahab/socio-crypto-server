@@ -40,8 +40,9 @@ export class Campaign extends BaseEntity {
     } else if (open !== null && open === false) {
       where = `("beginDate" IS NOT NULL AND "endDate" IS NOT NULL AND "beginDate" >= '${now}' AND "endDate" <= '${now}') OR ("beginDate" IS NOT NULL AND "endDate" IS NULL AND "beginDate" >= '${now}') OR ("endDate" IS NOT NULL AND "beginDate" IS NULL AND "endDate" <= '${now}')`;
     }
-    return await this.createQueryBuilder()
+    return await this.createQueryBuilder('campaign')
       .where(where)
+      .leftJoinAndSelect('campaign."participants"', 'participant', 'participant."campaignId" = campaign.id')
       .getManyAndCount();
   }
 
