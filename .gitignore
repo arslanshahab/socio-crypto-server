@@ -51,3 +51,4 @@ aws.yaml
 helm/accounts-service/aws.yaml
 
 bak.dump
+.env

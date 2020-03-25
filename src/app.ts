@@ -5,6 +5,9 @@ import { Server } from 'http';
 import { createConnection, getConnectionOptions } from 'typeorm';
 import logger from './util/logger';
 import { getSchema, root, publicRoot } from './graphql';
+import { Secrets } from './util/secrets';
+import { Firebase } from './clients/firebase';
+import { authenticate } from './middleware/authenticated';
 
 const { NODE_ENV = 'development' } = process.env;
 
@@ -20,7 +23,8 @@ export class Application {
 
   public async initializeServer() {
     await this.connectDatabase();
-
+    await Secrets.initialize();
+    await Firebase.initialize();
     this.app = express();
     const corsSettings = {
       origin: [
@@ -34,7 +38,7 @@ export class Application {
     if (NODE_ENV === 'development') corsSettings.origin.push('http://localhost:3000');
     this.app.use(cors(corsSettings));
     this.app.set('port', process.env.PORT || 8080);
-    this.app.use('/v1/graphql', expressGraphql({
+    this.app.use('/v1/graphql', authenticate, expressGraphql({
       schema: await getSchema(),
       rootValue: root,
       graphiql: NODE_ENV !== 'production',

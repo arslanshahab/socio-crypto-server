@@ -60,16 +60,22 @@ spec:
           envFrom:
             - configMapRef:
                 name: "{{ include "raiinmaker.fullname" . }}-server-env"
-          # volumeMounts:
-          #   - name: session-secret
-          #     mountPath: "/var/secrets/session-secret"
-          #     readOnly: true
+          volumeMounts:
+            - name: firebase-credentials
+              mountPath: "/var/secrets/firebase-credentials"
+              readOnly: true
+            - name: bearer-token
+              mountPath: "/var/secrets/bearer-token"
+              readOnly: true
           resources:
             {{- toYaml .Values.server.resources | nindent 12 }}
-      # volumes:
-      #   - name: session-secret
-      #     secret:
-      #       secretName: "session-secret"
+      volumes:
+        - name: firebase-credentials
+          secret:
+            secretName: "firebase-credentials"
+        - name: bearer-token
+          secret:
+            secretName: "bearer-token"
 ---
 apiVersion: apps/v1
 kind: Deployment

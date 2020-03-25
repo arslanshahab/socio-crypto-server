@@ -25,26 +25,29 @@ export class User extends BaseEntity {
   )
   public wallet: Wallet;
 
-  public static async signUp(args: { id: string, email: string }): Promise<User> {
-    if (await User.findOne({ where: { id: args.id } })) throw new Error('user already registered');
+  public static async signUp(_args: any, context: { user: any }): Promise<User> {
+    const { id, email } = context.user;
+    if (await User.findOne({ where: { id: context.user['id'] } })) throw new Error('user already registered');
     const user = new User();
     const wallet = new Wallet();
-    user.id = args.id;
-    user.email = args.email;
+    user.id = id;
+    user.email = email;
     await user.save();
     wallet.user = user;
     await wallet.save();
     return user;
   }
 
-  public static async me(args: { id: string }): Promise<User> {
-    const user = await User.findOne({ where: { id: args.id }, relations: ['campaigns', 'wallet'] });
+  public static async me(_args: any, context: { user: any }): Promise<User> {
+    const { id } = context.user;
+    const user = await User.findOne({ where: { id }, relations: ['campaigns', 'wallet'] });
     if (!user) throw new Error('user not found');
     return user;
   }
 
-  public static async participate(args: { campaignId: string, userId: string }): Promise<Participant> {
-    const user = await User.findOne({ where: { id: args.userId }, relations: ['campaigns', 'wallet'] });
+  public static async participate(args: { campaignId: string }, context: { user: any }): Promise<Participant> {
+    const { id } = context.user;
+    const user = await User.findOne({ where: { id }, relations: ['campaigns', 'wallet'] });
     if (!user) throw new Error('user not found');
     const campaign = await Campaign.findOne({ where: { id: args.campaignId } });
     if (!campaign) throw new Error('campaign not found');
@@ -54,8 +57,9 @@ export class User extends BaseEntity {
     return participant;
   }
 
-  public static async removeParticipation(args: { campaignId: string, userId: string }): Promise<User> {
-    const user = await User.findOne({ where: { id: args.userId }, relations: ['campaigns', 'wallet'] });
+  public static async removeParticipation(args: { campaignId: string }, context: { user: any }): Promise<User> {
+    const { id } = context.user;
+    const user = await User.findOne({ where: { id }, relations: ['campaigns', 'wallet'] });
     if (!user) throw new Error('user not found');
     const campaign = await Campaign.findOne({ where: { id: args.campaignId } });
     if (!campaign) throw new Error('campaign not found');

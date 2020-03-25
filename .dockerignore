@@ -46,3 +46,4 @@ Dockerfile
 *buildspec*
 README*
 .github
+.env
