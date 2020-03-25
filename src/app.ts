@@ -8,6 +8,7 @@ import { getSchema, root, publicRoot } from './graphql';
 import { Secrets } from './util/secrets';
 import { Firebase } from './clients/firebase';
 import { authenticate } from './middleware/authenticated';
+import { requestLogger } from './middleware/logging';
 
 const { NODE_ENV = 'development' } = process.env;
 
@@ -38,7 +39,7 @@ export class Application {
     if (NODE_ENV === 'development') corsSettings.origin.push('http://localhost:3000');
     this.app.use(cors(corsSettings));
     this.app.set('port', process.env.PORT || 8080);
-    this.app.use('/v1/graphql', authenticate, expressGraphql({
+    this.app.use('/v1/graphql', requestLogger, authenticate, expressGraphql({
       schema: await getSchema(),
       rootValue: root,
       graphiql: NODE_ENV !== 'production',

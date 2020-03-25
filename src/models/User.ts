@@ -27,7 +27,7 @@ export class User extends BaseEntity {
 
   public static async signUp(_args: any, context: { user: any }): Promise<User> {
     const { id, email } = context.user;
-    if (await User.findOne({ where: { id: context.user['id'] } })) throw new Error('user already registered');
+    if (await User.findOne({ where: { id } })) throw new Error('user already registered');
     const user = new User();
     const wallet = new Wallet();
     user.id = id;
