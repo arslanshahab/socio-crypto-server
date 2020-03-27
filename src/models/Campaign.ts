@@ -50,6 +50,7 @@ export class Campaign extends BaseEntity {
   public static async deleteCampaign(args: { id: string }): Promise<Campaign> {
     const campaign = await Campaign.findOne({ where: { id: args.id }, relations: ['participants'] });
     if (!campaign) throw new Error('campaign not found');
+    await Participant.remove(campaign.participants);
     await campaign.remove();
     return campaign;
   }
