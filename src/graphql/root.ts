@@ -12,6 +12,8 @@ export const root = {
   updateCampaign: Campaign.updateCampaign,
   deleteCampaign: Campaign.deleteCampaign,
   trackClick: Participant.trackClick,
+  promoteUserPermissions: User.promotePermissions,
+  listUsers: User.list,
   me: User.me,
 };
 

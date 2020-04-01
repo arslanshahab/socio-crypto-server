@@ -1,6 +1,7 @@
 import { BaseEntity, Entity, Column, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { DateUtils } from 'typeorm/util/DateUtils';
 import { Participant } from './Participant';
+import { checkPermissions } from '../middleware/authentication';
 
 @Entity()
 export class Campaign extends BaseEntity {
@@ -25,6 +26,9 @@ export class Campaign extends BaseEntity {
   @Column({ default: "", nullable: true })
   public description: string;
 
+  @Column({ nullable: false, default: 'raiinmaker' })
+  public company: string;
+
   @OneToMany(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _type => Participant,
@@ -32,7 +36,7 @@ export class Campaign extends BaseEntity {
   )
   public participants: Participant[];
 
-  public static async findCampaignsByStatus(open?: boolean) {
+  public static async findCampaignsByStatus(open: boolean, skip: number, take: number) {
     let where = '';
     const now = DateUtils.mixedDateToDatetimeString(new Date());
     if (open !== null && open === true) {
@@ -44,20 +48,28 @@ export class Campaign extends BaseEntity {
       .where(where)
       .leftJoinAndSelect('campaign.participants', 'participant', 'participant."campaignId" = campaign.id')
       .leftJoinAndSelect('participant.user', 'user', 'user.id = participant."userId"')
+      .skip(skip)
+      .take(take)
       .getManyAndCount();
   }
 
-  public static async deleteCampaign(args: { id: string }): Promise<Campaign> {
-    const campaign = await Campaign.findOne({ where: { id: args.id }, relations: ['participants'] });
+  public static async deleteCampaign(args: { id: string }, context: { user: any }): Promise<Campaign> {
+    const { role, company } = checkPermissions({ hasRole: ['admin', 'manager'] }, context);
+    const where: {[key: string]: string} = { id: args.id };
+    if (role === 'manager') where['company'] = company;
+    const campaign = await Campaign.findOne({ where, relations: ['participants'] });
     if (!campaign) throw new Error('campaign not found');
     await Participant.remove(campaign.participants);
     await campaign.remove();
     return campaign;
   }
 
-  public static async updateCampaign(args: { id: string, name: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string }): Promise<Campaign> {
+  public static async updateCampaign(args: { id: string, name: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string }, context: { user: any }): Promise<Campaign> {
+    const { role, company } = checkPermissions({ hasRole: ['admin', 'manager'] }, context);
     const { id, name, beginDate, endDate, coiinTotal, target, description } = args;
-    const campaign = await Campaign.findOne({ where: { id } });
+    const where: {[key: string]: string} = { id };
+    if (role === 'manager') where['company'] = company;
+    const campaign = await Campaign.findOne({ where });
     if (!campaign) throw new Error('campaign not found');
     if (name) campaign.name = name;
     if (beginDate) campaign.beginDate = new Date(beginDate);
@@ -69,12 +81,15 @@ export class Campaign extends BaseEntity {
     return campaign;
   }
 
-  public static async newCampaign(args: { name: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string }): Promise<Campaign> {
+  public static async newCampaign(args: { name: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string }, context: { user: any }): Promise<Campaign> {
+    const { role, company } = checkPermissions({ hasRole: ['admin', 'manager'] }, context);
     const { name, beginDate, endDate, coiinTotal, target, description } = args;
+    if (role === 'admin' && !args.company) throw new Error('administrators need to specify a company in args');
     const campaign = new Campaign();
     campaign.name = name
     campaign.coiinTotal = coiinTotal;
     campaign.target = target;
+    campaign.company = (role === 'admin') ? args.company : company;
     if (beginDate) campaign.beginDate = new Date(beginDate);
     if (endDate) campaign.endDate = new Date(endDate);
     if (description) campaign.description = description;
@@ -82,8 +97,9 @@ export class Campaign extends BaseEntity {
     return campaign;
   }
 
-  public static async list(args: { open: boolean }): Promise<{ results: Campaign[], total: number }> {
-    const [results, total] = await Campaign.findCampaignsByStatus(args.open);
+  public static async list(args: { open: boolean, skip: number, take: number }): Promise<{ results: Campaign[], total: number }> {
+    const { skip = 0, take = 10 } = args;
+    const [results, total] = await Campaign.findCampaignsByStatus(args.open, skip, take);
     return { results, total };
   }
 }

@@ -2,6 +2,8 @@ import { BaseEntity, Entity, PrimaryColumn, Column, OneToMany, OneToOne } from '
 import { Participant } from './Participant';
 import { Campaign } from './Campaign';
 import { Wallet } from './Wallet';
+import { Firebase } from '../clients/firebase';
+import { checkPermissions } from '../middleware/authentication';
 
 @Entity()
 export class User extends BaseEntity {
@@ -67,5 +69,25 @@ export class User extends BaseEntity {
     if (!participation) throw new Error('user was not participating in campaign');
     await participation.remove();
     return user;
+  }
+
+  public static async promotePermissions(args: { userId: string, company: string, role: 'admin'|'manager' }, context: { user: any }): Promise<User> {
+    const { role, company } = checkPermissions({ hasRole: ['admin', 'manager'] }, context);
+    const user = await User.findOne({ where: { id: args.userId } });
+    if (!user) throw new Error('user not found');
+    if (role === 'manager') {
+      await Firebase.client.auth().setCustomUserClaims(user.id, { role: 'manager', company });
+    } else {
+      if (!args.role) throw new Error('administrators must specify a role to promote user to');
+      await Firebase.client.auth().setCustomUserClaims(user.id, { role: args.role, company: args.company || company });
+    }
+    return user;
+  }
+
+  public static async list(args: { skip: number, take: number }, context: { user: any }): Promise<{ results: User[], total: number }> {
+    checkPermissions({ hasRole: ['admin'] }, context);
+    const { skip = 0, take = 10 } = args;
+    const [results, total] = await User.findAndCount({ skip, take });
+    return { results, total };
   }
 }

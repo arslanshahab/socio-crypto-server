@@ -7,7 +7,7 @@ import logger from './util/logger';
 import { getSchema, root, publicRoot } from './graphql';
 import { Secrets } from './util/secrets';
 import { Firebase } from './clients/firebase';
-import { authenticate } from './middleware/authenticated';
+import { authenticate } from './middleware/authentication';
 import { requestLogger } from './middleware/logging';
 
 const { NODE_ENV = 'development' } = process.env;
