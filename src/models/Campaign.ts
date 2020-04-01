@@ -11,10 +11,10 @@ export class Campaign extends BaseEntity {
   @Column({ nullable: false })
   public name: string;
 
-  @Column({ type: 'timestamptz', nullable: true })
+  @Column({ type: 'timestamptz', nullable: false })
   public beginDate: Date;
 
-  @Column({ type: 'timestamptz', nullable: true })
+  @Column({ type: 'timestamptz', nullable: false })
   public endDate: Date;
 
   @Column({ type: 'numeric' })
@@ -36,13 +36,19 @@ export class Campaign extends BaseEntity {
   )
   public participants: Participant[];
 
+  isOpen() {
+    const now = new Date();
+    if (new Date(this.beginDate).getTime() <= now.getTime() || new Date(this.endDate).getTime() >= now.getTime()) return true;
+    return false;
+  }
+
   public static async findCampaignsByStatus(open: boolean, skip: number, take: number) {
     let where = '';
     const now = DateUtils.mixedDateToDatetimeString(new Date());
     if (open !== null && open === true) {
-      where = `("beginDate" IS NOT NULL AND "endDate" IS NOT NULL AND "beginDate" <= '${now}' AND "endDate" >= '${now}') OR ("beginDate" IS NOT NULL AND "endDate" IS NULL AND "beginDate" <= '${now}') OR ("endDate" IS NOT NULL AND "beginDate" IS NULL AND "endDate" >= '${now}')`;
+      where = `("beginDate" <= '${now}' AND "endDate" >= '${now}')`;
     } else if (open !== null && open === false) {
-      where = `("beginDate" IS NOT NULL AND "endDate" IS NOT NULL AND "beginDate" >= '${now}' AND "endDate" <= '${now}') OR ("beginDate" IS NOT NULL AND "endDate" IS NULL AND "beginDate" >= '${now}') OR ("endDate" IS NOT NULL AND "beginDate" IS NULL AND "endDate" <= '${now}')`;
+      where = `("beginDate" >= '${now}' OR "endDate" <= '${now}')`;
     }
     return await this.createQueryBuilder('campaign')
       .where(where)
@@ -90,8 +96,8 @@ export class Campaign extends BaseEntity {
     campaign.coiinTotal = coiinTotal;
     campaign.target = target;
     campaign.company = (role === 'admin') ? args.company : company;
-    if (beginDate) campaign.beginDate = new Date(beginDate);
-    if (endDate) campaign.endDate = new Date(endDate);
+    campaign.beginDate = new Date(beginDate);
+    campaign.endDate = new Date(endDate);
     if (description) campaign.description = description;
     await campaign.save();
     return campaign;

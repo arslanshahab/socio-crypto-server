@@ -53,6 +53,7 @@ export class User extends BaseEntity {
     if (!user) throw new Error('user not found');
     const campaign = await Campaign.findOne({ where: { id: args.campaignId } });
     if (!campaign) throw new Error('campaign not found');
+    if (!campaign.isOpen()) throw new Error('campaign is not open for participation');
     if (await Participant.findOne({ where: { campaign, user } })) throw new Error('user already participating in this campaign');
     const participant = Participant.newParticipant(user, campaign);
     await participant.save();

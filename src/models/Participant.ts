@@ -27,8 +27,9 @@ export class Participant extends BaseEntity {
   public campaign: Campaign;
 
   public static async trackClick(args: { participantId: string }): Promise<Participant> {
-    const participant = await Participant.findOne({ where: { id: args.participantId } });
+    const participant = await Participant.findOne({ where: { id: args.participantId }, relations: ['campaign'] });
     if (!participant) throw new Error('participant not found');
+    if (!participant.campaign.isOpen()) throw new Error('campaign is closed');
     participant.clickCount++;
     await participant.save();
     return participant;
