@@ -5,7 +5,7 @@ type Mutation {
   deleteCampaign(id:String!): Campaign
   participate(campaignId:String!): Participant
   removeParticipation(campaignId:String!): User
-  trackAction(campaignId:String!,participantId:String!,action: String!): Participant
+  trackAction(participantId:String!,action: String!): Participant
   promoteUserPermissions(userId:String!,company:String,role:String): User
 }
 

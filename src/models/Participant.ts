@@ -32,13 +32,14 @@ export class Participant extends BaseEntity {
   )
   public campaign: Campaign;
 
-  public static async trackAction(args: { campaignId: string, participantId: string, action: string }): Promise<Participant> {
+  public static async trackAction(args: {participantId: string, action: string }): Promise<Participant> {
     if (!['click', 'view', 'submission'].includes(args.action)) throw new Error('invalid metric specified');
     const participant = await Participant.findOne({ where: { id: args.participantId }, relations: ['campaign'], lock: { mode: 'pessimistic_write' } });
     if (!participant) throw new Error('participant not found');
     if (!participant.campaign.isOpen()) throw new Error('campaign is closed');
-    const campaign = await Campaign.findOne({ where: { id: participant.campaign.id }, lock: { mode: 'pessimistic_write'} });
-    if (!campaign) throw new Error('campaign not found');
+    // Pending Algorithm branch merged in
+    // const campaign = await Campaign.findOne({ where: { id: participant.campaign.id }, lock: { mode: 'pessimistic_write'} });
+    // if (!campaign) throw new Error('campaign not found');
     switch (args.action) {
       case 'click':
         participant.clickCount++;
