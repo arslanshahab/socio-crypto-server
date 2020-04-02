@@ -36,7 +36,7 @@ export class Participant extends BaseEntity {
     if (!['click', 'view', 'submission'].includes(args.action)) throw new Error('invalid metric specified');
     let payload: Participant;
     await getConnection().transaction(async manager => {
-      const participant = await Participant.findOne({ where: { id: args.participantId }, relations: ['campaign'], lock: { mode: 'pessimistic_write' }, });
+      const participant = await manager.findOne(Participant, { where: { id: args.participantId }, relations: ['campaign'], lock: { mode: 'pessimistic_write' }, });
       if (!participant) throw new Error('participant not found');
       if (!participant.campaign.isOpen()) throw new Error('campaign is closed');
       // Pending Algorithm branch merged in
