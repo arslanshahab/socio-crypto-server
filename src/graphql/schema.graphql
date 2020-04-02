@@ -52,7 +52,13 @@ type Campaign {
 
 type Participant {
   id: String
-  clickCount: Int
+  metrics: ParticipantMetrics
   user: User
   campaign: Campaign
+}
+
+type ParticipantMetrics {
+  viewCount: Int
+  clickCount: Int
+  submissionCount: Int
 }

@@ -61,6 +61,14 @@ export class Participant extends BaseEntity {
     return participant;
   }
 
+  public  metrics() {
+    return {
+      clickCount: this.clickCount,
+      viewCount: this.viewCount,
+      submissionCount: this.submissionCount,
+    }
+  }
+
   public static newParticipant(user: User, campaign: Campaign): Participant {
     const participant = new Participant();
     participant.user = user;
