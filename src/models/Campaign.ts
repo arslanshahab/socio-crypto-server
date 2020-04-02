@@ -20,7 +20,7 @@ export class Campaign extends BaseEntity {
   @Column({ type: 'numeric' })
   public coiinTotal: number;
 
-  @Column({ type: 'numeric' })
+  @Column({ type: 'numeric', nullable: false, default: 0 })
   public totalParticipationScore: number;
 
   @Column()
