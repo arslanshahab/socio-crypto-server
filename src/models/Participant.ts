@@ -63,7 +63,8 @@ export class Participant extends BaseEntity {
       payload = participant
     });
 
-    return Participant.findOne({ where: { id: args.participantId }});
+    // @ts-ignore
+    return payload;
   }
 
   public  metrics() {
