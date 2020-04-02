@@ -20,6 +20,9 @@ export class Campaign extends BaseEntity {
   @Column({ type: 'numeric' })
   public coiinTotal: number;
 
+  @Column({ type: 'numeric' })
+  public totalParticipationScore: number;
+
   @Column()
   public target: string;
 
