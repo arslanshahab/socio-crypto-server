@@ -1,4 +1,4 @@
-import { BaseEntity, Entity, Column, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { BaseEntity, Entity, Column, ManyToOne, PrimaryGeneratedColumn, getConnection } from 'typeorm';
 import { Campaign } from './Campaign';
 import { User } from './User';
 
@@ -32,33 +32,39 @@ export class Participant extends BaseEntity {
   )
   public campaign: Campaign;
 
-  public static async trackAction(args: {participantId: string, action: string }): Promise<Participant> {
+  public static async trackAction(args: {participantId: string, action: string }): Promise<Participant | undefined>  {
     if (!['click', 'view', 'submission'].includes(args.action)) throw new Error('invalid metric specified');
-    const participant = await Participant.findOne({ where: { id: args.participantId }, relations: ['campaign'], lock: { mode: 'pessimistic_write' } });
-    if (!participant) throw new Error('participant not found');
-    if (!participant.campaign.isOpen()) throw new Error('campaign is closed');
-    // Pending Algorithm branch merged in
-    // const campaign = await Campaign.findOne({ where: { id: participant.campaign.id }, lock: { mode: 'pessimistic_write'} });
-    // if (!campaign) throw new Error('campaign not found');
-    switch (args.action) {
-      case 'click':
-        participant.clickCount++;
-        break;
-      case 'view':
-        participant.viewCount++;
-        break;
-      case 'submission':
-        participant.submissionCount++;
-        break;
-      default:
-        break;
-    }
-    // Pending Algorithm branch merged in
-    // const pointValue = campaign.algorithm.pointValues[args.action];
-    // campaign.totalParticipationScore += pointValue;
-    // await campaign.save();
-    await participant.save();
-    return participant;
+    let payload: Participant;
+    await getConnection().transaction(async manager => {
+      const participant = await Participant.findOne({ where: { id: args.participantId }, relations: ['campaign'], lock: { mode: 'pessimistic_write' }, });
+      if (!participant) throw new Error('participant not found');
+      if (!participant.campaign.isOpen()) throw new Error('campaign is closed');
+      // Pending Algorithm branch merged in
+      // const campaign = await Campaign.findOne({ where: { id: participant.campaign.id }, lock: { mode: 'pessimistic_write'} });
+      // if (!campaign) throw new Error('campaign not found');
+      switch (args.action) {
+        case 'click':
+          participant.clickCount++;
+          break;
+        case 'view':
+          participant.viewCount++;
+          break;
+        case 'submission':
+          participant.submissionCount++;
+          break;
+        default:
+          break;
+      }
+      // Pending Algorithm branch merged in
+      // const pointValue = campaign.algorithm.pointValues[args.action];
+      // campaign.totalParticipationScore += pointValue;
+      // await campaign.save();
+      await manager.save(participant);
+      payload = participant
+    });
+
+    // @ts-ignore
+    return payload;
   }
 
   public  metrics() {
