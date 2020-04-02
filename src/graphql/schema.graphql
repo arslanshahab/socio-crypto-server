@@ -5,7 +5,7 @@ type Mutation {
   deleteCampaign(id:String!): Campaign
   participate(campaignId:String!): Participant
   removeParticipation(campaignId:String!): User
-  trackClick(participantId:String!): Participant
+  trackAction(participantId:String!,action: String!): Participant
   promoteUserPermissions(userId:String!,company:String,role:String): User
 }
 
@@ -52,7 +52,13 @@ type Campaign {
 
 type Participant {
   id: String
-  clickCount: Int
+  metrics: ParticipantMetrics
   user: User
   campaign: Campaign
+}
+
+type ParticipantMetrics {
+  viewCount: Int
+  clickCount: Int
+  submissionCount: Int
 }
