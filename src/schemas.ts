@@ -67,7 +67,7 @@ export class Validator {
 
     public validateAlgorithmCreateSchema = (payload: object) => {
         if(!this.validateAlgorithmCreatePayload(payload)) {
-            throw new FailureByDesign('MALFORMED_INPUT', `Incoming message is invalid ${JSON.stringify(this.validateAlgorithmCreatePayload.errors)}`);
+            throw new Error(`Incoming message is invalid ${JSON.stringify(this.validateAlgorithmCreatePayload.errors)}`);
         }
     }
 
