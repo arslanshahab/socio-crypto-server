@@ -2,8 +2,8 @@ import { BaseEntity, Entity, Column, OneToMany, PrimaryGeneratedColumn } from 't
 import { DateUtils } from 'typeorm/util/DateUtils';
 import { Participant } from './Participant';
 import { checkPermissions } from '../middleware/authentication';
-import { AlgorithmSpecs } from 'src/types';
-import { Validator } from 'src/schemas';
+import { AlgorithmSpecs } from '../types';
+import { Validator } from '../schemas';
 
 @Entity()
 export class Campaign extends BaseEntity {
