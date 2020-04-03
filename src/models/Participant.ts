@@ -1,4 +1,4 @@
-import { BaseEntity, Entity, Column, ManyToOne, PrimaryGeneratedColumn, getConnection } from 'typeorm';
+import { BaseEntity, Entity, Column, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Campaign } from './Campaign';
 import { User } from './User';
 
