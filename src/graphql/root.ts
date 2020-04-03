@@ -1,8 +1,10 @@
 import { Participant } from '../models/Participant';
 import { Campaign } from '../models/Campaign';
 import { User } from '../models/User';
+import GraphQLJSON from 'graphql-type-json';
 
 export const root = {
+  JSON: GraphQLJSON,
   helloWorld: () => 'Hello world!',
   participate: User.participate,
   removeParticipation: User.removeParticipation,
@@ -18,4 +20,4 @@ export const root = {
 
 export const publicRoot = {
   trackAction: Participant.trackAction,
-}
+};
