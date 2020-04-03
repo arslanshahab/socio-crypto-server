@@ -84,6 +84,7 @@ export class Campaign extends BaseEntity {
   public static async updateCampaign(args: { id: string, name: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, algorithm: string }, context: { user: any }): Promise<Campaign> {
     const { role, company } = checkPermissions({ hasRole: ['admin', 'manager'] }, context);
     const { id, name, beginDate, endDate, coiinTotal, target, description, algorithm } = args;
+    Campaign.validate.validateAlgorithmCreateSchema(JSON.parse(algorithm));
     const where: {[key: string]: string} = { id };
     if (role === 'manager') where['company'] = company;
     const campaign = await Campaign.findOne({ where });
@@ -102,7 +103,7 @@ export class Campaign extends BaseEntity {
   public static async newCampaign(args: { name: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string }, context: { user: any }): Promise<Campaign> {
     const { role, company } = checkPermissions({ hasRole: ['admin', 'manager'] }, context);
     const { name, beginDate, endDate, coiinTotal, target, description, algorithm } = args;
-      Campaign.validate.validateAlgorithmCreateSchema(JSON.parse(algorithm));
+    Campaign.validate.validateAlgorithmCreateSchema(JSON.parse(algorithm));
     if (role === 'admin' && !args.company) throw new Error('administrators need to specify a company in args');
     const campaign = new Campaign();
     campaign.name = name;

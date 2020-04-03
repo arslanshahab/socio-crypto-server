@@ -1,5 +1,4 @@
 import Ajv from 'ajv';
-import {FailureByDesign} from "./errors";
 
 export const algorithmCreateSchema = {
     type: 'object',
