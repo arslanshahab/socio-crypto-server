@@ -10,7 +10,7 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
   try {
     const decodedToken = await Firebase.client.auth().verifyIdToken(idToken);
     if (!decodedToken) return res.status(401).json({ code: 'UNAUTHORIZED', message: 'unauthorized' });
-    req.user = { id: decodedToken.user_id, email: decodedToken.email, role: decodedToken.role };
+    req.user = { id: decodedToken.user_id, email: decodedToken.email, role: decodedToken.role, company: decodedToken.company };
     return next();
   } catch (e) {
     const secret = `Bearer ${Secrets.bearerToken}`;

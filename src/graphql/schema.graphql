@@ -10,7 +10,7 @@ type Mutation {
 }
 
 type Query {
-  listCampaigns(open:Boolean,skip:Int,take:Int): PaginatedCampaignResults
+  listCampaigns(open:Boolean,skip:Int,take:Int,scoped:Boolean): PaginatedCampaignResults
   listUsers(skip:Int,take:Int): PaginatedUserResults
   helloWorld: String
   me: User

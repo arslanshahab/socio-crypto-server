@@ -45,7 +45,7 @@ export class Campaign extends BaseEntity {
     return false;
   }
 
-  public static async findCampaignsByStatus(open: boolean, skip: number, take: number) {
+  public static async findCampaignsByStatus(open: boolean, skip: number, take: number, company: string) {
     let where = '';
     const now = DateUtils.mixedDateToDatetimeString(new Date());
     if (open !== null && open === true) {
@@ -53,8 +53,10 @@ export class Campaign extends BaseEntity {
     } else if (open !== null && open === false) {
       where = `("beginDate" >= '${now}' OR "endDate" <= '${now}')`;
     }
-    return await this.createQueryBuilder('campaign')
-      .where(where)
+    let query = this.createQueryBuilder('campaign')
+      .where(where);
+    if (company) query = query.andWhere(`"company"=:company`, { company })
+    return await query
       .leftJoinAndSelect('campaign.participants', 'participant', 'participant."campaignId" = campaign.id')
       .leftJoinAndSelect('participant.user', 'user', 'user.id = participant."userId"')
       .skip(skip)
@@ -106,9 +108,10 @@ export class Campaign extends BaseEntity {
     return campaign;
   }
 
-  public static async list(args: { open: boolean, skip: number, take: number }): Promise<{ results: Campaign[], total: number }> {
-    const { skip = 0, take = 10 } = args;
-    const [results, total] = await Campaign.findCampaignsByStatus(args.open, skip, take);
+  public static async list(args: { open: boolean, skip: number, take: number, scoped: boolean }, context: { user: any }): Promise<{ results: Campaign[], total: number }> {
+    const { open, skip = 0, take = 10, scoped = false } = args;
+    const { company } = context.user;
+    const [results, total] = await Campaign.findCampaignsByStatus(open, skip, take, scoped && company);
     return { results, total };
   }
 }
