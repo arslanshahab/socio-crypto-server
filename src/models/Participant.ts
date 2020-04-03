@@ -32,40 +32,34 @@ export class Participant extends BaseEntity {
   )
   public campaign: Campaign;
 
-  public static async trackAction(args: {participantId: string, action: string }): Promise<Participant | undefined>  {
+  public static async trackAction(args: {participantId: string, action: string }): Promise<Participant>  {
     if (!['click', 'view', 'submission'].includes(args.action)) throw new Error('invalid metric specified');
-    let payload: Participant;
-    await getConnection().transaction(async manager => {
-      const participant = await manager.findOne(Participant, { where: { id: args.participantId }, relations: ['campaign'], lock: { mode: 'pessimistic_write' }, });
-      if (!participant) throw new Error('participant not found');
-      if (!participant.campaign.isOpen()) throw new Error('campaign is closed');
-      // Pending Algorithm branch merged in
-      // const campaign = await Campaign.findOne({ where: { id: participant.campaign.id }, lock: { mode: 'pessimistic_write'} });
-      // if (!campaign) throw new Error('campaign not found');
-      switch (args.action) {
-        case 'click':
-          participant.clickCount++;
-          break;
-        case 'view':
-          participant.viewCount++;
-          break;
-        case 'submission':
-          participant.submissionCount++;
-          break;
-        default:
-          break;
-      }
-      // Pending Algorithm branch merged in
-      // const pointValue = campaign.algorithm.pointValues[args.action];
-      // campaign.totalParticipationScore += pointValue;
-      // await campaign.save();
-      await manager.save(participant);
-      payload = participant
-    });
-
-    // @ts-ignore
-    return payload;
-  }
+    const participant = await Participant.findOne(Participant, { where: { id: args.participantId }, relations: ['campaign'] });
+    if (!participant) throw new Error('participant not found');
+    if (!participant.campaign.isOpen()) throw new Error('campaign is closed');
+    // Pending Algorithm branch merged in
+    // const campaign = await Campaign.findOne({ where: { id: participant.campaign.id }, lock: { mode: 'pessimistic_write'} });
+    // if (!campaign) throw new Error('campaign not found');
+    switch (args.action) {
+      case 'click':
+        participant.clickCount++;
+        break;
+      case 'view':
+        participant.viewCount++;
+        break;
+      case 'submission':
+        participant.submissionCount++;
+        break;
+      default:
+        break;
+    }
+    // Pending Algorithm branch merged in
+    // const pointValue = campaign.algorithm.pointValues[args.action];
+    // campaign.totalParticipationScore += pointValue;
+    // await campaign.save();
+    await participant.save();
+    return participant;
+  };
 
   public  metrics() {
     return {
