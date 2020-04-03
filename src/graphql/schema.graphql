@@ -2,7 +2,7 @@ scalar JSON
 
 type Mutation {
   newUser: User
-  newCampaign(name:String!,coiinTotal:Float!,target:String!,beginDate:String!,endDate:String!,description:String,company:String, algorithm: JSON): Campaign
+  newCampaign(name:String!,coiinTotal:Float!,target:String!,beginDate:String!,endDate:String!,description:String,company:String, algorithm: String!): Campaign
   updateCampaign(name:String!,coiinTotal:Float,target:String,beginDate:String,endDate:String,description:String): Campaign
   deleteCampaign(id:String!): Campaign
   participate(campaignId:String!): Participant
