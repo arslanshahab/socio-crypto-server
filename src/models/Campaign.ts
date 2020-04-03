@@ -2,9 +2,12 @@ import { BaseEntity, Entity, Column, OneToMany, PrimaryGeneratedColumn } from 't
 import { DateUtils } from 'typeorm/util/DateUtils';
 import { Participant } from './Participant';
 import { checkPermissions } from '../middleware/authentication';
+import { AlgorithmSpecs } from 'src/types';
+import { Validator } from 'src/schemas';
 
 @Entity()
 export class Campaign extends BaseEntity {
+  public static validate = new Validator();
   @PrimaryGeneratedColumn('uuid')
   public id: string;
 
@@ -31,6 +34,9 @@ export class Campaign extends BaseEntity {
 
   @Column({ nullable: false, default: 'raiinmaker' })
   public company: string;
+
+  @Column({type: "jsonb", nullable: false })
+  public algorithm: AlgorithmSpecs;
 
   @OneToMany(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -75,9 +81,9 @@ export class Campaign extends BaseEntity {
     return campaign;
   }
 
-  public static async updateCampaign(args: { id: string, name: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string }, context: { user: any }): Promise<Campaign> {
+  public static async updateCampaign(args: { id: string, name: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, algorithm: string }, context: { user: any }): Promise<Campaign> {
     const { role, company } = checkPermissions({ hasRole: ['admin', 'manager'] }, context);
-    const { id, name, beginDate, endDate, coiinTotal, target, description } = args;
+    const { id, name, beginDate, endDate, coiinTotal, target, description, algorithm } = args;
     const where: {[key: string]: string} = { id };
     if (role === 'manager') where['company'] = company;
     const campaign = await Campaign.findOne({ where });
@@ -88,21 +94,24 @@ export class Campaign extends BaseEntity {
     if (coiinTotal) campaign.coiinTotal = coiinTotal;
     if (target) campaign.target = target;
     if (description) campaign.description = description;
+    if (algorithm) campaign.algorithm = JSON.parse(algorithm);
     await campaign.save();
     return campaign;
   }
 
-  public static async newCampaign(args: { name: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string }, context: { user: any }): Promise<Campaign> {
+  public static async newCampaign(args: { name: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string }, context: { user: any }): Promise<Campaign> {
     const { role, company } = checkPermissions({ hasRole: ['admin', 'manager'] }, context);
-    const { name, beginDate, endDate, coiinTotal, target, description } = args;
+    const { name, beginDate, endDate, coiinTotal, target, description, algorithm } = args;
+      Campaign.validate.validateAlgorithmCreateSchema(JSON.parse(algorithm));
     if (role === 'admin' && !args.company) throw new Error('administrators need to specify a company in args');
     const campaign = new Campaign();
-    campaign.name = name
+    campaign.name = name;
     campaign.coiinTotal = coiinTotal;
     campaign.target = target;
     campaign.company = (role === 'admin') ? args.company : company;
     campaign.beginDate = new Date(beginDate);
     campaign.endDate = new Date(endDate);
+    campaign.algorithm = JSON.parse(algorithm);
     if (description) campaign.description = description;
     await campaign.save();
     return campaign;

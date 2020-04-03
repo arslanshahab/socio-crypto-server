@@ -20,6 +20,7 @@
     "migration:generate": "yarn typeorm:cli migration:generate"
   },
   "dependencies": {
+    "ajv": "^6.12.0",
     "cls-hooked": "^4.2.2",
     "cls-rtracer": "^1.4.0",
     "cors": "^2.8.5",
@@ -27,6 +28,7 @@
     "express-graphql": "^0.9.0",
     "firebase-admin": "^8.10.0",
     "graphql": "^14.6.0",
+    "graphql-type-json": "^0.3.1",
     "mocha": "^7.1.0",
     "pg": "^7.18.2",
     "typeorm": "^0.2.24",
@@ -38,6 +40,7 @@
     "@types/express": "^4.17.3",
     "@types/express-graphql": "^0.9.0",
     "@types/graphql": "^14.5.0",
+    "@types/graphql-type-json": "^0.3.2",
     "@types/mocha": "^7.0.2",
     "@types/pg": "^7.14.2",
     "@types/winston": "^2.4.4",
