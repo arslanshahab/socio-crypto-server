@@ -54,7 +54,7 @@ pg-bak:
   service: raiinmaker
   stage: staging
   existingSecret: "raiinmaker"
-  postgresHost: raiinmaker-postgresql-read
+  postgresHost: raiinmaker-api-postgresql-read
 
 redis:
   image:
