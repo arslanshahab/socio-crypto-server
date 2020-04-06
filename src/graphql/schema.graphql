@@ -46,6 +46,7 @@ type Campaign {
   beginDate: String
   endDate: String
   coiinTotal: Float
+  totalParticipationScore: int
   target: String
   description: String
   company: String
