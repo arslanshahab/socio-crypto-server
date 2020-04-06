@@ -37,7 +37,7 @@ export class Participant extends BaseEntity {
     const participant = await Participant.findOne({ where: { id: args.participantId }, relations: ['campaign'] });
     if (!participant) throw new Error('participant not found');
     if (!participant.campaign.isOpen()) throw new Error('campaign is closed');
-    const campaign = await Campaign.findOne({ where: { id: participant.campaign.id });
+    const campaign = await Campaign.findOne({ where: { id: participant.campaign.id }});
     if (!campaign) throw new Error('campaign not found');
     switch (args.action) {
       case 'click':
