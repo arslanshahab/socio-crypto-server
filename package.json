@@ -24,6 +24,7 @@
     "cls-hooked": "^4.2.2",
     "cls-rtracer": "^1.4.0",
     "cors": "^2.8.5",
+    "dragonchain-sdk": "^4.3.3",
     "express": "^4.17.1",
     "express-graphql": "^0.9.0",
     "firebase-admin": "^8.10.0",

@@ -1,4 +1,5 @@
 import { BaseEntity, Entity, Column, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Dragonchain } from '../clients/dragonchain';
 import { Campaign } from './Campaign';
 import { User } from './User';
 
@@ -56,6 +57,7 @@ export class Participant extends BaseEntity {
     campaign.totalParticipationScore = BigInt(campaign.totalParticipationScore) + BigInt(pointValue);
     await campaign.save();
     await participant.save();
+    await Dragonchain.ledgerCampaignAction(args.action, participant.id, participant.campaign.id);
     return participant;
   };
 

@@ -67,6 +67,9 @@ spec:
             - name: bearer-token
               mountPath: "/var/secrets/bearer-token"
               readOnly: true
+            - name: dragonchain-credentials
+              mountPath: "/var/secrets/dragonchain-credentials"
+              readOnly: true
           resources:
             {{- toYaml .Values.server.resources | nindent 12 }}
       volumes:
@@ -76,6 +79,9 @@ spec:
         - name: bearer-token
           secret:
             secretName: "bearer-token"
+        - name: dragonchain-credentials
+          secret:
+            secretName: dragonchain-credentials
 ---
 apiVersion: apps/v1
 kind: Deployment
