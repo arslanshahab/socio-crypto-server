@@ -32,14 +32,13 @@ export class Participant extends BaseEntity {
   )
   public campaign: Campaign;
 
-  public static async trackAction(args: {participantId: string, action: string }): Promise<Participant>  {
+  public static async trackAction(args: { participantId: string, action: 'click' | 'view' | 'submission' }): Promise<Participant>  {
     if (!['click', 'view', 'submission'].includes(args.action)) throw new Error('invalid metric specified');
     const participant = await Participant.findOne({ where: { id: args.participantId }, relations: ['campaign'] });
     if (!participant) throw new Error('participant not found');
     if (!participant.campaign.isOpen()) throw new Error('campaign is closed');
-    // Pending Algorithm branch merged in
-    // const campaign = await Campaign.findOne({ where: { id: participant.campaign.id }, lock: { mode: 'pessimistic_write'} });
-    // if (!campaign) throw new Error('campaign not found');
+    const campaign = await Campaign.findOne({ where: { id: participant.campaign.id }, lock: { mode: 'pessimistic_write'} });
+    if (!campaign) throw new Error('campaign not found');
     switch (args.action) {
       case 'click':
         participant.clickCount++;
@@ -53,10 +52,9 @@ export class Participant extends BaseEntity {
       default:
         break;
     }
-    // Pending Algorithm branch merged in
-    // const pointValue = campaign.algorithm.pointValues[args.action];
-    // campaign.totalParticipationScore += pointValue;
-    // await campaign.save();
+    const pointValue = campaign.algorithm.pointValues[args.action];
+    campaign.totalParticipationScore = BigInt(campaign.totalParticipationScore) + BigInt(pointValue);
+    await campaign.save();
     await participant.save();
     return participant;
   };
