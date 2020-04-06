@@ -124,4 +124,13 @@ export class Campaign extends BaseEntity {
     const [results, total] = await Campaign.findCampaignsByStatus(open, skip, take, scoped && company);
     return { results, total };
   }
+
+  public static async get(args: { id: string }): Promise<Campaign> {
+    const { id } = args;
+    const where: { [key: string]: string } = { id };
+    const campaign = await Campaign.findOne({ where });
+    if (!campaign) throw new Error('campaign not found');
+    return campaign;
+  }
+
 }
