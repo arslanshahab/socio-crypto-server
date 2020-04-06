@@ -13,6 +13,9 @@ export class User extends BaseEntity {
   @Column({ nullable: false })
   public email: string;
 
+  @Column({ nullable: false, unique: true })
+  public username: string;
+
   @OneToMany(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _type => Participant,
@@ -27,13 +30,19 @@ export class User extends BaseEntity {
   )
   public wallet: Wallet;
 
-  public static async signUp(_args: any, context: { user: any }): Promise<User> {
+  public static async usernameExists(args: { username: string }) {
+    const user = await User.findOne({ where: { username: args.username } });
+    return { exists: !!user };
+  }
+
+  public static async signUp(args: { username: string }, context: { user: any }): Promise<User> {
     const { id, email } = context.user;
     if (await User.findOne({ where: { id } })) throw new Error('user already registered');
     const user = new User();
     const wallet = new Wallet();
     user.id = id;
     user.email = email;
+    user.username = args.username;
     await user.save();
     wallet.user = user;
     await wallet.save();

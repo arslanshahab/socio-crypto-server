@@ -1,7 +1,7 @@
 scalar JSON
 
 type Mutation {
-  newUser: User
+  newUser(username:String!): User
   newCampaign(name:String!,coiinTotal:Float!,target:String!,beginDate:String!,endDate:String!,description:String,company:String, algorithm: String!): Campaign
   updateCampaign(name:String!,coiinTotal:Float,target:String,beginDate:String,endDate:String,description:String): Campaign
   deleteCampaign(id:String!): Campaign
@@ -12,15 +12,21 @@ type Mutation {
 }
 
 type Query {
+  usernameExists(username:String!): UserExistence
   listCampaigns(open:Boolean,skip:Int,take:Int,scoped:Boolean): PaginatedCampaignResults
   listUsers(skip:Int,take:Int): PaginatedUserResults
   helloWorld: String
   me: User
 }
 
+type UserExistence {
+  exists: Boolean
+}
+
 type User {
   id: String
   email: String
+  username: String
   campaigns: [Participant]
   wallet: Wallet
 }

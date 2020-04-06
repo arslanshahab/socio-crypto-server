@@ -20,4 +20,5 @@ export const root = {
 
 export const publicRoot = {
   trackAction: Participant.trackAction,
+  usernameExists: User.usernameExists,
 };
