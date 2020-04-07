@@ -4,10 +4,10 @@ import {Campaign} from "../models/Campaign";
 import {getConnection} from "typeorm";
 import {checkPermissions} from "../middleware/authentication";
 
-export const generateCampaignAuditReport = async (args: { id: string }, context: { user: any }) => {
+export const generateCampaignAuditReport = async (args: { campaignId: string }, context: { user: any }) => {
     const { company } = checkPermissions({hasRole: ['admin', 'manager']}, context);
-    const { id } = args;
-    const campaign = await Campaign.findCampaignById({ id, company });
+    const { campaignId } = args;
+    const campaign = await Campaign.findCampaignById({ id: campaignId, company });
     const clickValue = campaign.algorithm.pointValues.click;
     const viewValue = campaign.algorithm.pointValues.view;
     const submissionValue = campaign.algorithm.pointValues.submission;
@@ -15,7 +15,7 @@ export const generateCampaignAuditReport = async (args: { id: string }, context:
         totalClicks: 0,
         totalViews: 0,
         totalSubmissions: 0,
-        totalRewardPayout: BigInt(campaign.totalParticipationScore),
+        totalRewardPayout: Number(campaign.totalParticipationScore),
         flaggedParticipants: []
     };
     campaign.participants.forEach(participant => {
@@ -36,11 +36,11 @@ export const generateCampaignAuditReport = async (args: { id: string }, context:
     return auditReport;
 };
 
-export const payoutCampaignRewards = async (args: { id: string, rejected: string[] }, context: { user: any }) => {
+export const payoutCampaignRewards = async (args: { campaignId: string, rejected: string[] }, context: { user: any }) => {
     const { company } = checkPermissions({hasRole: ['admin', 'manager']}, context);
     return getConnection().transaction(async transactionalEntityManager => {
-        const {id, rejected } = args;
-        const campaign = await Campaign.findCampaignById({id, company });
+        const {campaignId, rejected } = args;
+        const campaign = await Campaign.findCampaignById({id: campaignId, company });
         const clickValue = campaign.algorithm.pointValues.click;
         const viewValue = campaign.algorithm.pointValues.view;
         const submissionValue = campaign.algorithm.pointValues.submission;

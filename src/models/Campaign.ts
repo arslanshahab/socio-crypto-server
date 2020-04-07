@@ -76,9 +76,8 @@ export class Campaign extends BaseEntity {
     return query
         .leftJoinAndSelect('campaign.participants', 'participant', 'participant."campaignId" = campaign.id')
         .leftJoinAndSelect('participant.user', 'user', 'user.id = participant."userId"')
-        .leftJoinAndSelect('user.wallet', 'wallet', 'wallet.id = user."walletId"')
-        .where('campaign.id = :id', { id })
-        .andWhere('company.id = :company', { company })
+        .leftJoinAndSelect('user.wallet', 'wallet', 'wallet."userId" = user.id')
+        .where('campaign.company = :company AND campaign.id = :id', { company, id })
         .getOne()
   }
 
