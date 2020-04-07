@@ -79,16 +79,16 @@ type ParticipantMetrics {
 
 type ParticipantAudit {
   participantId: String
-  viewPayout: Int,
-  clickPayout: Int,
-  submissionPayout: Int,
-  totalPayout: Int
+  viewPayout: Float,
+  clickPayout: Float,
+  submissionPayout: Float,
+  totalPayout: Float
 }
 
 type AuditReport {
-  totalViews: Int
-  totalClicks: Int
-  totalSubmissions: Int
-  totalRewardPayout: Int
+  totalViews: Float
+  totalClicks: Float
+  totalSubmissions: Float
+  totalRewardPayout: Float
   flaggedParticipants: [ParticipantAudit]
 }
