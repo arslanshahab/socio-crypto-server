@@ -4,6 +4,8 @@ type Mutation {
   newUser(username:String!): User
   newCampaign(name:String!,coiinTotal:Float!,target:String!,beginDate:String!,endDate:String!,description:String,company:String, algorithm: String!): Campaign
   updateCampaign(name:String!,coiinTotal:Float,target:String,beginDate:String,endDate:String,description:String): Campaign
+  generateCampaignAuditReport(campaignId:String!): AuditReport
+  payoutCampaignRewards(campaignId: String!, rejected: [String]!): String
   deleteCampaign(id:String!): Campaign
   participate(campaignId:String!): Participant
   removeParticipation(campaignId:String!): User
@@ -74,4 +76,20 @@ type ParticipantMetrics {
   clickCount: Int
   submissionCount: Int
   participationScore: Int
+}
+
+type ParticipantAudit {
+  participantId: String
+  viewPayout: Float,
+  clickPayout: Float,
+  submissionPayout: Float,
+  totalPayout: Float
+}
+
+type AuditReport {
+  totalViews: Int
+  totalClicks: Int
+  totalSubmissions: Int
+  totalRewardPayout: Float
+  flaggedParticipants: [ParticipantAudit]
 }

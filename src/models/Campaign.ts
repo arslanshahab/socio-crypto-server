@@ -70,6 +70,18 @@ export class Campaign extends BaseEntity {
       .getManyAndCount();
   }
 
+  public static async findCampaignParticipantsById(args: {id: string, company: string}): Promise<Campaign | undefined> {
+    const { id, company } = args;
+    let query = this.createQueryBuilder('campaign');
+    return query
+        .leftJoinAndSelect('campaign.participants', 'participant', 'participant."campaignId" = campaign.id')
+        .leftJoinAndSelect('participant.user', 'user', 'user.id = participant."userId"')
+        .leftJoinAndSelect('user.wallet', 'wallet', 'wallet.id = user."walletId"')
+        .where('campaign.id = :id', { id })
+        .andWhere('company.id = :company', { company })
+        .getOne()
+  }
+
   public static async deleteCampaign(args: { id: string }, context: { user: any }): Promise<Campaign> {
     const { role, company } = checkPermissions({ hasRole: ['admin', 'manager'] }, context);
     const where: {[key: string]: string} = { id: args.id };
@@ -123,6 +135,13 @@ export class Campaign extends BaseEntity {
     const { company } = context.user;
     const [results, total] = await Campaign.findCampaignsByStatus(open, skip, take, scoped && company);
     return { results, total };
+  }
+
+  public static async findCampaignById(args: {id: string, company: string}) {
+    const {id, company} = args;
+    const campaign = await Campaign.findCampaignParticipantsById({id, company});
+    if (!campaign) throw new Error('Campaign not found');
+    return campaign;
   }
 
   public static async get(args: { id: string }): Promise<Campaign> {

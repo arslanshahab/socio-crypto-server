@@ -80,4 +80,12 @@ export class Participant extends BaseEntity {
     participant.campaign = campaign;
     return participant;
   }
+
+  public static async get(args: { id: string }): Promise<Participant> {
+    const { id } = args;
+    const where: { [key: string]: string } = { id };
+    const participant = await this.findOne({ where });
+    if (!participant) throw new Error('participant not found');
+    return participant;
+  }
 }
