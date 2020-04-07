@@ -73,4 +73,5 @@ type ParticipantMetrics {
   viewCount: Int
   clickCount: Int
   submissionCount: Int
+  participationScore: Int
 }
