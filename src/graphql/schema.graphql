@@ -78,6 +78,7 @@ type ParticipantMetrics {
 }
 
 type ParticipantAudit {
+  participantId: String
   viewPayout: Int,
   clickPayout: Int,
   submissionPayout: Int,

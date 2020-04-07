@@ -1,6 +1,7 @@
 import {CampaignAuditReport} from "../types";
 import {Participant} from "../models/Participant";
 import {Campaign} from "../models/Campaign";
+import {getConnection} from "typeorm";
 
 export const generateCampaignAuditReport = async (id: string) => {
     const campaign = await Campaign.get({id});
@@ -21,6 +22,7 @@ export const generateCampaignAuditReport = async (id: string) => {
         const totalParticipantPayout = (participant.viewCount * viewValue) + (participant.clickCount * clickValue) + (participant.submissionCount * submissionValue);
         if (BigInt(totalParticipantPayout) > (BigInt(campaign.totalParticipationScore) * BigInt('0.15'))) {
             auditReport.flaggedParticipants.push({
+                participantId: participant.id,
                 viewPayout: participant.viewCount * viewValue,
                 clickPayout: participant.clickCount * clickValue,
                 submissionPayout: participant.submissionCount * submissionValue,
@@ -32,28 +34,31 @@ export const generateCampaignAuditReport = async (id: string) => {
 };
 
 export const payoutCampaignRewards = async (id: string, rejected: string[]) => {
-    const campaign = await Campaign.findCampaignById({id});
-    const clickValue = campaign.algorithm.pointValues.click;
-    const viewValue = campaign.algorithm.pointValues.view;
-    const submissionValue = campaign.algorithm.pointValues.submission;
-    if (rejected.length > 0) {
-        const newParticipationCount = campaign.participants.length - rejected.length;
-        let totalRejectedPayout = 0;
-        for (const id of rejected) {
-            const participant = await Participant.get({id});
-            totalRejectedPayout += (participant.submissionCount * submissionValue) + (participant.clickCount * clickValue) + (participant.viewCount * viewValue);
-        }
-        const addedPayoutToEachParticipant = totalRejectedPayout / newParticipationCount;
-        for (const participant of campaign.participants) {
-            if (!rejected.includes(participant.id)) {
-                const totalParticipantPayout = (participant.viewCount * viewValue) + (participant.clickCount * clickValue) + (participant.submissionCount * submissionValue) + addedPayoutToEachParticipant;
+    return getConnection().transaction(async transactionalEntityManager => {
+        const campaign = await Campaign.findCampaignById({id});
+        const clickValue = campaign.algorithm.pointValues.click;
+        const viewValue = campaign.algorithm.pointValues.view;
+        const submissionValue = campaign.algorithm.pointValues.submission;
+        if (rejected.length > 0) {
+            const newParticipationCount = campaign.participants.length - rejected.length;
+            let totalRejectedPayout = 0;
+            for (const id of rejected) {
+                const participant = await Participant.get({id});
+                totalRejectedPayout += (participant.submissionCount * submissionValue) + (participant.clickCount * clickValue) + (participant.viewCount * viewValue);
+            }
+            const addedPayoutToEachParticipant = totalRejectedPayout / newParticipationCount;
+            for (const participant of campaign.participants) {
+                if (!rejected.includes(participant.id)) {
+                    const totalParticipantPayout = (participant.viewCount * viewValue) + (participant.clickCount * clickValue) + (participant.submissionCount * submissionValue) + addedPayoutToEachParticipant;
+                    participant.user.wallet.balance += totalParticipantPayout;
+                }
+            }
+        } else {
+            for (const participant of campaign.participants) {
+                const totalParticipantPayout = (participant.viewCount * viewValue) + (participant.clickCount * clickValue) + (participant.submissionCount * submissionValue);
                 participant.user.wallet.balance += totalParticipantPayout;
             }
         }
-    } else {
-        for (const participant of campaign.participants) {
-            const totalParticipantPayout = (participant.viewCount * viewValue) + (participant.clickCount * clickValue) + (participant.submissionCount * submissionValue);
-            participant.user.wallet.balance += totalParticipantPayout;
-        }
-    }
+        await transactionalEntityManager.save(campaign);
+    })
 };

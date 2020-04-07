@@ -41,6 +41,7 @@ export interface CampaignAuditReport {
   totalSubmissions: number,
   totalRewardPayout: bigint
   flaggedParticipants: {
+    participantId: string,
     viewPayout: number,
     clickPayout: number,
     submissionPayout: number,
