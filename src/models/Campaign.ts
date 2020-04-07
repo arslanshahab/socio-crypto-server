@@ -47,7 +47,7 @@ export class Campaign extends BaseEntity {
 
   isOpen() {
     const now = new Date();
-    if (new Date(this.beginDate).getTime() <= now.getTime() || new Date(this.endDate).getTime() >= now.getTime()) return true;
+    if (new Date(this.beginDate).getTime() <= now.getTime() && new Date(this.endDate).getTime() >= now.getTime()) return true;
     return false;
   }
 
