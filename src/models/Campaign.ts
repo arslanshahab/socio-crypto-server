@@ -128,7 +128,7 @@ export class Campaign extends BaseEntity {
   public static async get(args: { id: string }): Promise<Campaign> {
     const { id } = args;
     const where: { [key: string]: string } = { id };
-    const campaign = await Campaign.findOne({ where });
+    const campaign = await Campaign.findOne({ where, relations: ['participants'] });
     if (!campaign) throw new Error('campaign not found');
     return campaign;
   }
