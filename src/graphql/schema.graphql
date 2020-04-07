@@ -47,7 +47,7 @@ type Campaign {
   beginDate: String
   endDate: String
   coiinTotal: Float
-  totalParticipationScore: int
+  totalParticipationScore: Int
   target: String
   description: String
   company: String
@@ -67,4 +67,5 @@ type ParticipantMetrics {
   viewCount: Int
   clickCount: Int
   submissionCount: Int
+  participationScore: Int
 }
