@@ -33,7 +33,7 @@ export const generateCampaignAuditReport = async (args: { id: string }, context:
     return auditReport;
 };
 
-export const payoutCampaignRewards = async (id: string, rejected: string[]) => {
+export const payoutCampaignRewards = async (args: { id: string, rejected: string[] }, context: { user: any }) => {
     return getConnection().transaction(async transactionalEntityManager => {
         const campaign = await Campaign.findCampaignById({id});
         const clickValue = campaign.algorithm.pointValues.click;
