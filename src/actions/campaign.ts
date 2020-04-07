@@ -5,8 +5,7 @@ import {getConnection} from "typeorm";
 import {checkPermissions} from "../middleware/authentication";
 
 export const generateCampaignAuditReport = async (args: { id: string }, context: { user: any }) => {
-    const {role, company } = checkPermissions({hasRole: ['admin', 'manager']}, context);
-    if (role !== 'manager' || role !== 'admin') throw new Error('Does not have permission to generate audit report');
+    const { company } = checkPermissions({hasRole: ['admin', 'manager']}, context);
     const { id } = args;
     const campaign = await Campaign.findCampaignById({ id, company });
     const clickValue = campaign.algorithm.pointValues.click;
@@ -38,8 +37,7 @@ export const generateCampaignAuditReport = async (args: { id: string }, context:
 };
 
 export const payoutCampaignRewards = async (args: { id: string, rejected: string[] }, context: { user: any }) => {
-    const {role, company } = checkPermissions({hasRole: ['admin', 'manager']}, context);
-    if (role !== 'manager' || role !== 'admin') throw new Error('Does not have permission to generate audit report');
+    const { company } = checkPermissions({hasRole: ['admin', 'manager']}, context);
     return getConnection().transaction(async transactionalEntityManager => {
         const {id, rejected } = args;
         const campaign = await Campaign.findCampaignById({id, company });
