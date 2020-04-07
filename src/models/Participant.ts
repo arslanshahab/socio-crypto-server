@@ -68,6 +68,7 @@ export class Participant extends BaseEntity {
       clickCount: this.clickCount,
       viewCount: this.viewCount,
       submissionCount: this.submissionCount,
+      participationScore: this.participationScore,
     }
   }
 
