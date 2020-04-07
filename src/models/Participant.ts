@@ -16,6 +16,9 @@ export class Participant extends BaseEntity {
   @Column({ nullable: false, default: 0 })
   public submissionCount: number;
 
+  @Column({ nullable: false, default: 0 })
+  public participationScore: bigint;
+
   @ManyToOne(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _type => User,
@@ -54,6 +57,7 @@ export class Participant extends BaseEntity {
     }
     const pointValue = campaign.algorithm.pointValues[args.action];
     campaign.totalParticipationScore = BigInt(campaign.totalParticipationScore) + BigInt(pointValue);
+    participant.participationScore = BigInt(participant.participationScore) + BigInt(pointValue);
     await campaign.save();
     await participant.save();
     return participant;

@@ -60,6 +60,7 @@ type Participant {
   metrics: ParticipantMetrics
   user: User
   campaign: Campaign
+  participationScore: int
 }
 
 type ParticipantMetrics {
