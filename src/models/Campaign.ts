@@ -2,7 +2,7 @@ import { BaseEntity, Entity, Column, OneToMany, PrimaryGeneratedColumn } from 't
 import { DateUtils } from 'typeorm/util/DateUtils';
 import { Participant } from './Participant';
 import { checkPermissions } from '../middleware/authentication';
-import {AlgorithmSpecs, CampaignAuditReport} from '../types';
+import { AlgorithmSpecs } from '../types';
 import { Validator } from '../schemas';
 
 @Entity()
@@ -70,14 +70,15 @@ export class Campaign extends BaseEntity {
       .getManyAndCount();
   }
 
-  public static async findCampaignParticipantsById(args: {id: string}): Promise<Campaign | undefined> {
-    const { id } = args;
+  public static async findCampaignParticipantsById(args: {id: string, company: string}): Promise<Campaign | undefined> {
+    const { id, company } = args;
     let query = this.createQueryBuilder('campaign');
     return query
         .leftJoinAndSelect('campaign.participants', 'participant', 'participant."campaignId" = campaign.id')
         .leftJoinAndSelect('participant.user', 'user', 'user.id = participant."userId"')
         .leftJoinAndSelect('user.wallet', 'wallet', 'wallet.id = user."walletId"')
-        .where('campaign.id = :id', {id})
+        .where('campaign.id = :id', { id })
+        .andWhere('company.id = :company', { company })
         .getOne()
   }
 
@@ -136,9 +137,9 @@ export class Campaign extends BaseEntity {
     return { results, total };
   }
 
-  public static async findCampaignById(args: {id: string}) {
-    const {id} = args;
-    const campaign = await Campaign.findCampaignParticipantsById({id});
+  public static async findCampaignById(args: {id: string, company: string}) {
+    const {id, company} = args;
+    const campaign = await Campaign.findCampaignParticipantsById({id, company});
     if (!campaign) throw new Error('Campaign not found');
     return campaign;
   }

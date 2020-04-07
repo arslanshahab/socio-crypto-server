@@ -2,9 +2,13 @@ import {CampaignAuditReport} from "../types";
 import {Participant} from "../models/Participant";
 import {Campaign} from "../models/Campaign";
 import {getConnection} from "typeorm";
+import {checkPermissions} from "../middleware/authentication";
 
 export const generateCampaignAuditReport = async (args: { id: string }, context: { user: any }) => {
-    const campaign = await Campaign.get({ where: { id, company: context.user.company }});
+    const {role, company } = checkPermissions({hasRole: ['admin', 'manager']}, context);
+    if (role !== 'manager' || role !== 'admin') throw new Error('Does not have permission to generate audit report');
+    const { id } = args;
+    const campaign = await Campaign.findCampaignById({ id, company });
     const clickValue = campaign.algorithm.pointValues.click;
     const viewValue = campaign.algorithm.pointValues.view;
     const submissionValue = campaign.algorithm.pointValues.submission;
@@ -34,8 +38,11 @@ export const generateCampaignAuditReport = async (args: { id: string }, context:
 };
 
 export const payoutCampaignRewards = async (args: { id: string, rejected: string[] }, context: { user: any }) => {
+    const {role, company } = checkPermissions({hasRole: ['admin', 'manager']}, context);
+    if (role !== 'manager' || role !== 'admin') throw new Error('Does not have permission to generate audit report');
     return getConnection().transaction(async transactionalEntityManager => {
-        const campaign = await Campaign.findCampaignById({id});
+        const {id, rejected } = args;
+        const campaign = await Campaign.findCampaignById({id, company });
         const clickValue = campaign.algorithm.pointValues.click;
         const viewValue = campaign.algorithm.pointValues.view;
         const submissionValue = campaign.algorithm.pointValues.submission;
