@@ -2,6 +2,7 @@ import { Participant } from '../models/Participant';
 import { Campaign } from '../models/Campaign';
 import { User } from '../models/User';
 import GraphQLJSON from 'graphql-type-json';
+import {generateCampaignAuditReport, payoutCampaignRewards} from "../actions/campaign";
 
 export const root = {
   JSON: GraphQLJSON,
@@ -17,7 +18,8 @@ export const root = {
   promoteUserPermissions: User.promotePermissions,
   listUsers: User.list,
   me: User.me,
-  generateCampaignAuditReport: Campaign.generateCampaignAuditReport
+  generateCampaignAuditReport: generateCampaignAuditReport,
+  totalRewardPayout: payoutCampaignRewards
 };
 
 export const publicRoot = {
