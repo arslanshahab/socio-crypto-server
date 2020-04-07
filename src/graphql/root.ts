@@ -19,7 +19,7 @@ export const root = {
   listUsers: User.list,
   me: User.me,
   generateCampaignAuditReport: generateCampaignAuditReport,
-  totalRewardPayout: payoutCampaignRewards
+  payoutCampaignRewards: payoutCampaignRewards
 };
 
 export const publicRoot = {
