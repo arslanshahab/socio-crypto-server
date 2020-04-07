@@ -5,7 +5,7 @@ type Mutation {
   newCampaign(name:String!,coiinTotal:Float!,target:String!,beginDate:String!,endDate:String!,description:String,company:String, algorithm: String!): Campaign
   updateCampaign(name:String!,coiinTotal:Float,target:String,beginDate:String,endDate:String,description:String): Campaign
   generateCampaignAuditReport(campaignId:String!): AuditReport
-  payoutCampaignRewards(campaignId: String!, rejected: [String]): String
+  payoutCampaignRewards(campaignId: String!, rejected: [String]!): String
   deleteCampaign(id:String!): Campaign
   participate(campaignId:String!): Participant
   removeParticipation(campaignId:String!): User
