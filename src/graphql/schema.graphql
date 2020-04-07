@@ -86,9 +86,9 @@ type ParticipantAudit {
 }
 
 type AuditReport {
-  totalViews: Float
-  totalClicks: Float
-  totalSubmissions: Float
+  totalViews: Int
+  totalClicks: Int
+  totalSubmissions: Int
   totalRewardPayout: Float
   flaggedParticipants: [ParticipantAudit]
 }
