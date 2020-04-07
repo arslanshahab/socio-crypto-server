@@ -34,3 +34,16 @@ export interface AlgorithmSpecs {
     }
   }
 }
+
+export interface CampaignAuditReport {
+  totalClicks: number,
+  totalViews: number,
+  totalSubmissions: number,
+  totalRewardPayout: bigint
+  flaggedParticipants: {
+    viewPayout: number,
+    clickPayout: number,
+    submissionPayout: number,
+    totalPayout: number
+  }[]
+}

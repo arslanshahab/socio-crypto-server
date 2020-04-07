@@ -17,6 +17,7 @@ export const root = {
   promoteUserPermissions: User.promotePermissions,
   listUsers: User.list,
   me: User.me,
+  generateCampaignAuditReport: Campaign.generateCampaignAuditReport
 };
 
 export const publicRoot = {

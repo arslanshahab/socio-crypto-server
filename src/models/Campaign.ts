@@ -2,7 +2,7 @@ import { BaseEntity, Entity, Column, OneToMany, PrimaryGeneratedColumn } from 't
 import { DateUtils } from 'typeorm/util/DateUtils';
 import { Participant } from './Participant';
 import { checkPermissions } from '../middleware/authentication';
-import { AlgorithmSpecs } from '../types';
+import {AlgorithmSpecs, CampaignAuditReport} from '../types';
 import { Validator } from '../schemas';
 
 @Entity()
@@ -49,6 +49,10 @@ export class Campaign extends BaseEntity {
     const now = new Date();
     if (new Date(this.beginDate).getTime() <= now.getTime() || new Date(this.endDate).getTime() >= now.getTime()) return true;
     return false;
+  }
+
+  public static async findCampaignParticipant(id: string) {
+
   }
 
   public static async findCampaignsByStatus(open: boolean, skip: number, take: number, company: string) {
