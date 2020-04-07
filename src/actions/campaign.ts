@@ -4,7 +4,7 @@ import {Campaign} from "../models/Campaign";
 import {getConnection} from "typeorm";
 
 export const generateCampaignAuditReport = async (args: { id: string }, context: { user: any }) => {
-    const campaign = await Campaign.get({id});
+    const campaign = await Campaign.get({ where: { id, company: context.user.company }});
     const clickValue = campaign.algorithm.pointValues.click;
     const viewValue = campaign.algorithm.pointValues.view;
     const submissionValue = campaign.algorithm.pointValues.submission;
