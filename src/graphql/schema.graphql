@@ -10,7 +10,7 @@ type Mutation {
   participate(campaignId:String!): Participant
   removeParticipation(campaignId:String!): User
   trackAction(participantId:String!,action: String!): Participant
-  promoteUserPermissions(userId:String!,company:String,role:String): User
+  promoteUserPermissions(userId:String,email:String,company:String,role:String): User
 }
 
 type Query {

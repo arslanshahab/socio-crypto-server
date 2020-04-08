@@ -81,9 +81,13 @@ export class User extends BaseEntity {
     return user;
   }
 
-  public static async promotePermissions(args: { userId: string, company: string, role: 'admin'|'manager' }, context: { user: any }): Promise<User> {
+  public static async promotePermissions(args: { userId: string, email: string, company: string, role: 'admin'|'manager' }, context: { user: any }): Promise<User> {
     const { role, company } = checkPermissions({ hasRole: ['admin', 'manager'] }, context);
-    const user = await User.findOne({ where: { id: args.userId } });
+    const where: {[key: string]: string} = {};
+    if (args.userId) where['id'] = args.userId;
+    else if (args.email) where['email'] = args.email;
+    else throw new Error('Either userId or email must be provided');
+    const user = await User.findOne({ where });
     if (!user) throw new Error('user not found');
     if (role === 'manager') {
       await Firebase.client.auth().setCustomUserClaims(user.id, { role: 'manager', company });
