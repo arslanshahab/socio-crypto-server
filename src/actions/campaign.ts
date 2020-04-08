@@ -7,9 +7,15 @@ import { User } from '../models/User';
 import { Wallet } from '../models/Wallet';
 
 export const generateCampaignAuditReport = async (args: { campaignId: string }, context: { user: any }) => {
+  console.log(`ARGS: ${JSON.stringify(args)}`);
+  console.log('before context');
+  console.log(`CONTEXT: ${JSON.stringify(context.user)}`);
+  console.log('after context');
     const { company } = checkPermissions({hasRole: ['admin', 'manager']}, context);
     const { campaignId } = args;
+    console.log(`CAMPAIGNID: ${campaignId}, company: ${company}`);
     const campaign = await Campaign.findCampaignById({ id: campaignId, company });
+    console.log(`CAMPAIGN: ${JSON.stringify(campaign)}`);
     const clickValue = campaign.algorithm.pointValues.click;
     const viewValue = campaign.algorithm.pointValues.view;
     const submissionValue = campaign.algorithm.pointValues.submission;
@@ -46,8 +52,8 @@ export const payoutCampaignRewards = async (args: { campaignId: string, rejected
         const {campaignId, rejected } = args;
         const campaign = await Campaign.findOneOrFail({ where: {id: campaignId, company} });
         const participants = await Participant.find({ where: { campaign }, relations: ['user'] });
-        const users = await User.find({ where: { id: In(participants.map(p => p.user.id)) }, relations: ['wallet'] });
-        const wallets = await Wallet.find({ where: { id: In(users.map(u => u.wallet.id)) }, relations: ['user'] });
+        const users = (participants.length > 0) ? await User.find({ where: { id: In(participants.map(p => p.user.id)) }, relations: ['wallet'] }) : [];
+        const wallets = (users.length > 0) ? await Wallet.find({ where: { id: In(users.map(u => u.wallet.id)) }, relations: ['user'] }) : [];
         const clickValue = campaign.algorithm.pointValues.click;
         const viewValue = campaign.algorithm.pointValues.view;
         const submissionValue = campaign.algorithm.pointValues.submission;
@@ -67,7 +73,7 @@ export const payoutCampaignRewards = async (args: { campaignId: string, rejected
                 }
             }
         } else {
-            for (const participant of campaign.participants) {
+            for (const participant of participants) {
                 const totalParticipantPayout = (participant.viewCount * viewValue) + (participant.clickCount * clickValue) + (participant.submissionCount * submissionValue);
                 if (!usersWalletValues[participant.user.id]) usersWalletValues[participant.user.id] = totalParticipantPayout;
                 else usersWalletValues[participant.user.id] += totalParticipantPayout;
