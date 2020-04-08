@@ -23,7 +23,7 @@ export const generateCampaignAuditReport = async (args: { campaignId: string }, 
         auditReport.totalViews += participant.viewCount;
         auditReport.totalSubmissions += participant.submissionCount;
         const totalParticipantPayout = (participant.viewCount * viewValue) + (participant.clickCount * clickValue) + (participant.submissionCount * submissionValue);
-        if (BigInt(totalParticipantPayout) > (BigInt(campaign.totalParticipationScore) * BigInt('0.15'))) {
+        if (BigInt(totalParticipantPayout) > (auditReport.totalRewardPayout * 0.15)) {
             auditReport.flaggedParticipants.push({
                 participantId: participant.id,
                 viewPayout: participant.viewCount * viewValue,
