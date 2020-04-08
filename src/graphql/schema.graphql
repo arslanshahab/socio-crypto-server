@@ -60,6 +60,7 @@ type Campaign {
   description: String
   company: String
   algorithm: JSON
+  audited: Boolean
   participants: [Participant]
 }
 

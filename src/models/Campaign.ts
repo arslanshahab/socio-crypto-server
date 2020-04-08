@@ -38,6 +38,9 @@ export class Campaign extends BaseEntity {
   @Column({type: "jsonb", nullable: false })
   public algorithm: AlgorithmSpecs;
 
+  @Column({ nullable: false, default: false })
+  public audited: boolean;
+
   @OneToMany(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _type => Participant,

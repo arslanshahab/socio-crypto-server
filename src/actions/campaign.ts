@@ -83,6 +83,7 @@ export const payoutCampaignRewards = async (args: { campaignId: string, rejected
           const currentWallet = wallets.find(w => w.user.id === userId);
           if (currentWallet) currentWallet.balance += usersWalletValues[userId];
         }
+        campaign.audited = true;
         await transactionalEntityManager.save(campaign);
         await transactionalEntityManager.save(participants);
         await transactionalEntityManager.save(wallets);
