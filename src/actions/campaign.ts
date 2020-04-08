@@ -1,8 +1,10 @@
 import {CampaignAuditReport} from "../types";
 import {Participant} from "../models/Participant";
 import {Campaign} from "../models/Campaign";
-import {getConnection} from "typeorm";
+import {getConnection, In} from "typeorm";
 import {checkPermissions} from "../middleware/authentication";
+import { User } from '../models/User';
+import { Wallet } from '../models/Wallet';
 
 export const generateCampaignAuditReport = async (args: { campaignId: string }, context: { user: any }) => {
     const { company } = checkPermissions({hasRole: ['admin', 'manager']}, context);
@@ -38,32 +40,46 @@ export const generateCampaignAuditReport = async (args: { campaignId: string }, 
 
 export const payoutCampaignRewards = async (args: { campaignId: string, rejected: string[] }, context: { user: any }) => {
     const { company } = checkPermissions({hasRole: ['admin', 'manager']}, context);
+    console.log(`Beginning payout for company: ${company}`);
+    const usersWalletValues: {[key: string]: number} = {};
     return getConnection().transaction(async transactionalEntityManager => {
         const {campaignId, rejected } = args;
-        const campaign = await Campaign.findCampaignById({id: campaignId, company });
+        const campaign = await Campaign.findOneOrFail({ where: {id: campaignId, company} });
+        const participants = await Participant.find({ where: { campaign }, relations: ['user'] });
+        const users = await User.find({ where: { id: In(participants.map(p => p.user.id)) }, relations: ['wallet'] });
+        const wallets = await Wallet.find({ where: { id: In(users.map(u => u.wallet.id)) }, relations: ['user'] });
         const clickValue = campaign.algorithm.pointValues.click;
         const viewValue = campaign.algorithm.pointValues.view;
         const submissionValue = campaign.algorithm.pointValues.submission;
         if (rejected.length > 0) {
-            const newParticipationCount = campaign.participants.length - rejected.length;
+            const newParticipationCount = participants.length - rejected.length;
             let totalRejectedPayout = 0;
             for (const id of rejected) {
                 const participant = await Participant.get({id});
                 totalRejectedPayout += (participant.submissionCount * submissionValue) + (participant.clickCount * clickValue) + (participant.viewCount * viewValue);
             }
             const addedPayoutToEachParticipant = totalRejectedPayout / newParticipationCount;
-            for (const participant of campaign.participants) {
+            for (const participant of participants) {
                 if (!rejected.includes(participant.id)) {
                     const totalParticipantPayout = (participant.viewCount * viewValue) + (participant.clickCount * clickValue) + (participant.submissionCount * submissionValue) + addedPayoutToEachParticipant;
-                    participant.user.wallet.balance += totalParticipantPayout;
+                    if (!usersWalletValues[participant.user.id]) usersWalletValues[participant.user.id] = totalParticipantPayout;
+                    else usersWalletValues[participant.user.id] += totalParticipantPayout;
                 }
             }
         } else {
             for (const participant of campaign.participants) {
                 const totalParticipantPayout = (participant.viewCount * viewValue) + (participant.clickCount * clickValue) + (participant.submissionCount * submissionValue);
-                participant.user.wallet.balance += totalParticipantPayout;
+                if (!usersWalletValues[participant.user.id]) usersWalletValues[participant.user.id] = totalParticipantPayout;
+                else usersWalletValues[participant.user.id] += totalParticipantPayout;
             }
         }
+        for (const userId in usersWalletValues) {
+          const currentWallet = wallets.find(w => w.user.id === userId);
+          if (currentWallet) currentWallet.balance += usersWalletValues[userId];
+        }
         await transactionalEntityManager.save(campaign);
-    })
+        await transactionalEntityManager.save(participants);
+        await transactionalEntityManager.save(wallets);
+        return true;
+    });
 };
