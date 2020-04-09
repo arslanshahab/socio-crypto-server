@@ -41,6 +41,9 @@ export class Campaign extends BaseEntity {
   @Column({ nullable: false, default: false })
   public audited: boolean;
 
+  @Column({ nullable: true })
+  public targetVideo: string;
+
   @OneToMany(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _type => Participant,
@@ -129,9 +132,9 @@ export class Campaign extends BaseEntity {
     return campaign;
   }
 
-  public static async updateCampaign(args: { id: string, name: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, algorithm: string }, context: { user: any }): Promise<Campaign> {
+  public static async updateCampaign(args: { id: string, name: string, beginDate: string, targetVideo: string, endDate: string, coiinTotal: number, target: string, description: string, algorithm: string }, context: { user: any }): Promise<Campaign> {
     const { role, company } = checkPermissions({ hasRole: ['admin', 'manager'] }, context);
-    const { id, name, beginDate, endDate, coiinTotal, target, description, algorithm } = args;
+    const { id, name, beginDate, endDate, coiinTotal, target, description, algorithm, targetVideo } = args;
     Campaign.validate.validateAlgorithmCreateSchema(JSON.parse(algorithm));
     const where: {[key: string]: string} = { id };
     if (role === 'manager') where['company'] = company;
@@ -144,13 +147,14 @@ export class Campaign extends BaseEntity {
     if (target) campaign.target = target;
     if (description) campaign.description = description;
     if (algorithm) campaign.algorithm = JSON.parse(algorithm);
+    if (targetVideo) campaign.targetVideo = targetVideo;
     await campaign.save();
     return campaign;
   }
 
-  public static async newCampaign(args: { name: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string }, context: { user: any }): Promise<Campaign> {
+  public static async newCampaign(args: { name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string }, context: { user: any }): Promise<Campaign> {
     const { role, company } = checkPermissions({ hasRole: ['admin', 'manager'] }, context);
-    const { name, beginDate, endDate, coiinTotal, target, description, algorithm } = args;
+    const { name, beginDate, endDate, coiinTotal, target, description, algorithm, targetVideo } = args;
     Campaign.validate.validateAlgorithmCreateSchema(JSON.parse(algorithm));
     if (role === 'admin' && !args.company) throw new Error('administrators need to specify a company in args');
     const campaign = new Campaign();
@@ -161,6 +165,7 @@ export class Campaign extends BaseEntity {
     campaign.beginDate = new Date(beginDate);
     campaign.endDate = new Date(endDate);
     campaign.algorithm = JSON.parse(algorithm);
+    campaign.targetVideo = targetVideo;
     if (description) campaign.description = description;
     await campaign.save();
     return campaign;
@@ -184,6 +189,13 @@ export class Campaign extends BaseEntity {
     const { id } = args;
     const where: { [key: string]: string } = { id };
     const campaign = await Campaign.findOne({ where, relations: ['participants'] });
+    if (!campaign) throw new Error('campaign not found');
+    return campaign;
+  }
+
+  public static async publicGet(args: { campaignId: string }): Promise<Campaign> {
+    const { campaignId } = args;
+    const campaign = await Campaign.findOne({ where: { id: campaignId } });
     if (!campaign) throw new Error('campaign not found');
     return campaign;
   }
