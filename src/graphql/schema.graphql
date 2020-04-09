@@ -11,10 +11,10 @@ type Mutation {
   removeParticipation(campaignId:String!): User
   trackAction(participantId:String!,action: String!): Participant
   promoteUserPermissions(userId:String,email:String,company:String,role:String): User
-  getCurrentCampaignTier(campaignId: String!): CurrentTier
 }
 
 type Query {
+  getCurrentCampaignTier(campaignId: String!): CurrentTier
   usernameExists(username:String!): UserExistence
   listCampaigns(open:Boolean,skip:Int,take:Int,scoped:Boolean): PaginatedCampaignResults
   getCampaign(id:String): Campaign
