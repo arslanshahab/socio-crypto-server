@@ -5,21 +5,21 @@ export interface AuthRequest extends Request {
 }
 
 export interface Tiers {
-    [index: string]: {treshold:number; totalCoiins: number;};
+    [index: string]: {threshold:number; totalCoiins: number;};
     2: {
-        treshold: number;
+        threshold: number;
         totalCoiins: number;
     },
     3: {
-        treshold: number;
+        threshold: number;
         totalCoiins: number;
     },
     4: {
-        treshold: number;
+        threshold: number;
         totalCoiins: number;
     },
     5: {
-        treshold: number;
+        threshold: number;
         totalCoiins: number;
     },
 }

@@ -15,9 +15,7 @@ export const generateCampaignAuditReport = async (args: { campaignId: string }, 
   console.log('after context');
     const { company } = checkPermissions({hasRole: ['admin', 'manager']}, context);
     const { campaignId } = args;
-    console.log(`CAMPAIGNID: ${campaignId}, company: ${company}`);
     const campaign = await Campaign.findCampaignById({ id: campaignId, company });
-    console.log(`CAMPAIGN: ${JSON.stringify(campaign)}`);
     const clickValue = campaign.algorithm.pointValues.click;
     const viewValue = campaign.algorithm.pointValues.view;
     const submissionValue = campaign.algorithm.pointValues.submission;
