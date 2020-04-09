@@ -2,7 +2,7 @@ import { BaseEntity, Entity, Column, OneToMany, PrimaryGeneratedColumn } from 't
 import { DateUtils } from 'typeorm/util/DateUtils';
 import { Participant } from './Participant';
 import { checkPermissions } from '../middleware/authentication';
-import { AlgorithmSpecs } from '../types';
+import {AlgorithmSpecs, Tiers} from '../types';
 import { Validator } from '../schemas';
 
 @Entity()
@@ -52,6 +52,40 @@ export class Campaign extends BaseEntity {
     const now = new Date();
     if (new Date(this.beginDate).getTime() <= now.getTime() && new Date(this.endDate).getTime() >= now.getTime()) return true;
     return false;
+  }
+
+  public static async calculateTier(totalParticipation: BigInt, tiers: Tiers, initialTotal: number) {
+    let currentTier = 0;
+    let currentTotal = 0;
+    for(let key in tiers) {
+      if (totalParticipation < BigInt(tiers[key].threshold)) {
+        if (Number(key) < 2) {
+          currentTier = 1;
+          currentTotal = initialTotal;
+        } else {
+          const previousTier = Number(key) - 1;
+          currentTier = previousTier;
+          currentTotal = tiers[String(previousTier)].totalCoiins;
+        }
+      }
+    }
+
+    return { currentTier, currentTotal };
+  }
+
+  public static async getCurrentCampaignTier(args: { campaignId?: string, campaign?: Campaign }): Promise<{ currentTier: number, currentTotal: number }> {
+    const { campaignId, campaign } = args;
+    let currentTier;
+    if (campaignId) {
+      const where: {[key: string]: string } = { 'id': campaignId };
+      const currentCampaign = await this.findOne({ where });
+      if (!currentCampaign) throw new Error('campaign not found');
+      currentTier = this.calculateTier(currentCampaign.totalParticipationScore, currentCampaign.algorithm.tiers, currentCampaign.algorithm.initialTotal);
+    } else if (campaign) {
+      currentTier = this.calculateTier(campaign.totalParticipationScore, campaign.algorithm.tiers, campaign.algorithm.initialTotal);
+    }
+    if (!currentTier) throw new Error('failure calculating current tier');
+    return currentTier;
   }
 
   public static async findCampaignsByStatus(open: boolean, skip: number, take: number, company: string) {
