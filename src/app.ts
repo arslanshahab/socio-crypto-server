@@ -27,7 +27,7 @@ export class Application {
     await this.connectDatabase();
     await Secrets.initialize();
     await Firebase.initialize();
-    await Dragonchain.initialize();
+    // await Dragonchain.initialize();
     this.app = express();
     const corsSettings = {
       origin: [
