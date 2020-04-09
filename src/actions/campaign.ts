@@ -9,10 +9,6 @@ import { Wallet } from '../models/Wallet';
 
 
 export const generateCampaignAuditReport = async (args: { campaignId: string }, context: { user: any }) => {
-  console.log(`ARGS: ${JSON.stringify(args)}`);
-  console.log('before context');
-  console.log(`CONTEXT: ${JSON.stringify(context.user)}`);
-  console.log('after context');
     const { company } = checkPermissions({hasRole: ['admin', 'manager']}, context);
     const { campaignId } = args;
     const campaign = await Campaign.findCampaignById({ id: campaignId, company });
