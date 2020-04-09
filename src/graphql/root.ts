@@ -19,7 +19,8 @@ export const root = {
   listUsers: User.list,
   me: User.me,
   generateCampaignAuditReport: generateCampaignAuditReport,
-  payoutCampaignRewards: payoutCampaignRewards
+  payoutCampaignRewards: payoutCampaignRewards,
+  getCurrentCampaignTier: Campaign.getCurrentCampaignTier
 };
 
 export const publicRoot = {

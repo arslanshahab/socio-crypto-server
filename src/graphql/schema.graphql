@@ -11,6 +11,8 @@ type Mutation {
   removeParticipation(campaignId:String!): User
   trackAction(participantId:String!,action: String!): Participant
   promoteUserPermissions(userId:String,email:String,company:String,role:String): User
+  promoteUserPermissions(userId:String!,company:String,role:String): User
+  getCurrentCampaignTier(campaignId: String!): CurrentTier
 }
 
 type Query {
@@ -20,6 +22,11 @@ type Query {
   listUsers(skip:Int,take:Int): PaginatedUserResults
   helloWorld: String
   me: User
+}
+
+type CurrentTier {
+  currentTier: Int
+  currentTotal: Float
 }
 
 type UserExistence {

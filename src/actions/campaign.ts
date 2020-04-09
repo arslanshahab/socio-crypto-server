@@ -6,6 +6,8 @@ import {checkPermissions} from "../middleware/authentication";
 import { User } from '../models/User';
 import { Wallet } from '../models/Wallet';
 
+
+
 export const generateCampaignAuditReport = async (args: { campaignId: string }, context: { user: any }) => {
   console.log(`ARGS: ${JSON.stringify(args)}`);
   console.log('before context');
@@ -19,18 +21,22 @@ export const generateCampaignAuditReport = async (args: { campaignId: string }, 
     const clickValue = campaign.algorithm.pointValues.click;
     const viewValue = campaign.algorithm.pointValues.view;
     const submissionValue = campaign.algorithm.pointValues.submission;
+    const { currentTotal } = await Campaign.getCurrentCampaignTier({campaign});
     const auditReport: CampaignAuditReport = {
         totalClicks: 0,
         totalViews: 0,
         totalSubmissions: 0,
-        totalRewardPayout: Number(campaign.totalParticipationScore),
+        totalParticipationScore: Number(campaign.totalParticipationScore),
+        totalRewardPayout: currentTotal,
         flaggedParticipants: []
     };
     campaign.participants.forEach(participant => {
         auditReport.totalClicks += participant.clickCount;
         auditReport.totalViews += participant.viewCount;
         auditReport.totalSubmissions += participant.submissionCount;
-        const totalParticipantPayout = (participant.viewCount * viewValue) + (participant.clickCount * clickValue) + (participant.submissionCount * submissionValue);
+        const totalParticipantPoints = (participant.viewCount * viewValue) + (participant.clickCount * clickValue) + (participant.submissionCount * submissionValue);
+        const percentageOfTotalParticipation = totalParticipantPoints / auditReport.totalRewardPayout;
+        const totalParticipantPayout = currentTotal * percentageOfTotalParticipation;
         if (BigInt(totalParticipantPayout) > (auditReport.totalRewardPayout * 0.15)) {
             auditReport.flaggedParticipants.push({
                 participantId: participant.id,
