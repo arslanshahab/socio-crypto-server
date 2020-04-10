@@ -83,7 +83,7 @@ export class Campaign extends BaseEntity {
       const where: {[key: string]: string } = { 'id': campaignId };
       const currentCampaign = await Campaign.findOne({ where });
       if (!currentCampaign) throw new Error('campaign not found');
-      currentTier = this.calculateTier(currentCampaign.totalParticipationScore, currentCampaign.algorithm.tiers, currentCampaign.algorithm.initialTotal);
+      currentTier = Campaign.calculateTier(currentCampaign.totalParticipationScore, currentCampaign.algorithm.tiers, currentCampaign.algorithm.initialTotal);
     } else if (campaign) {
       currentTier = this.calculateTier(campaign.totalParticipationScore, campaign.algorithm.tiers, campaign.algorithm.initialTotal);
     }
