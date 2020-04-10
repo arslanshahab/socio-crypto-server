@@ -2,7 +2,6 @@ import { BaseEntity, Entity, Column, ManyToOne, PrimaryGeneratedColumn } from 't
 import { Dragonchain } from '../clients/dragonchain';
 import { Campaign } from './Campaign';
 import { User } from './User';
-import { constructHostUrl } from '../util/helpers';
 
 @Entity()
 export class Participant extends BaseEntity {
@@ -44,7 +43,7 @@ export class Participant extends BaseEntity {
     if (!participant.campaign.isOpen()) throw new Error('campaign is closed');
     const campaign = await Campaign.findOne({ where: { id: participant.campaign.id }});
     if (!campaign) throw new Error('campaign not found');
-    if (campaign.target !== constructHostUrl(context)) throw new Error('Host cannot manipulate campaigns');
+    // if (campaign.target !== constructHostUrl(context)) throw new Error('Host cannot manipulate campaigns');
     switch (args.action) {
       case 'click':
         participant.clickCount++;
