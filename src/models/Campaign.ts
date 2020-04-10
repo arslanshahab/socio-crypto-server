@@ -60,15 +60,20 @@ export class Campaign extends BaseEntity {
   public static async calculateTier(totalParticipation: BigInt, tiers: Tiers, initialTotal: number) {
     let currentTier = 0;
     let currentTotal = 0;
+    console.log('total participation for campaign -->> ', totalParticipation)
     for(let key in tiers) {
+      console.log('current tier is -->> ', key, 'current threshold is -->> ', BigInt(tiers[key].threshold));
       if (totalParticipation < BigInt(tiers[key].threshold)) {
         if (Number(key) < 2) {
+          console.log('currently in tier 1 -->> ', Number(key));
           currentTier = 1;
           currentTotal = initialTotal;
         } else {
           const previousTier = Number(key) - 1;
           currentTier = previousTier;
+          console.log('currently above tier 1 -->> ', currentTier);
           currentTotal = tiers[String(previousTier)].totalCoiins;
+          console.log('current total above tier 1 -->> ', currentTotal);
         }
       }
     }
