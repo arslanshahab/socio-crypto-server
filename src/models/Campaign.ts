@@ -61,7 +61,7 @@ export class Campaign extends BaseEntity {
     let currentTier = 0;
     let currentTotal = 0;
     for(let key in tiers) {
-      if (totalParticipation < BigInt(tiers[key].threshold)) {
+      if (totalParticipation > BigInt(tiers[key].threshold)) {
         if (Number(key) < 2) {
           currentTier = 1;
           currentTotal = initialTotal;
