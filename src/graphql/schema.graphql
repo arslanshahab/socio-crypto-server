@@ -18,6 +18,7 @@ type Query {
   usernameExists(username:String!): UserExistence
   listCampaigns(open:Boolean,skip:Int,take:Int,scoped:Boolean): PaginatedCampaignResults
   getCampaign(id:String): Campaign
+  getParticipant(id:String): Participant
   campaignGet(campaignId:String!): Campaign
   listUsers(skip:Int,take:Int): PaginatedUserResults
   helloWorld: String

@@ -13,6 +13,7 @@ export const root = {
   newCampaign: Campaign.newCampaign,
   listCampaigns: Campaign.list,
   getCampaign: Campaign.get,
+  getParticipant: Participant.get,
   updateCampaign: Campaign.updateCampaign,
   deleteCampaign: Campaign.deleteCampaign,
   promoteUserPermissions: User.promotePermissions,
