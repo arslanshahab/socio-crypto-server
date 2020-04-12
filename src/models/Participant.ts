@@ -86,7 +86,7 @@ export class Participant extends BaseEntity {
   public static async get(args: { id: string }): Promise<Participant> {
     const { id } = args;
     const where: { [key: string]: string } = { id };
-    const participant = await this.findOne({ where });
+    const participant = await Participant.findOne({ where });
     if (!participant) throw new Error('participant not found');
     return participant;
   }
