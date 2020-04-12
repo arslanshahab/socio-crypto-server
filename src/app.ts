@@ -9,7 +9,7 @@ import { Secrets } from './util/secrets';
 import { Firebase } from './clients/firebase';
 import { authenticate } from './middleware/authentication';
 import { requestLogger } from './middleware/logging';
-// import { Dragonchain } from './clients/dragonchain';
+import { Dragonchain } from './clients/dragonchain';
 
 const { NODE_ENV = 'development' } = process.env;
 
@@ -27,7 +27,7 @@ export class Application {
     await this.connectDatabase();
     await Secrets.initialize();
     await Firebase.initialize();
-    // await Dragonchain.initialize();
+    await Dragonchain.initialize();
     this.app = express();
     const corsSettings = {
       origin: [
