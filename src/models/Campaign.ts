@@ -68,12 +68,14 @@ export class Campaign extends BaseEntity {
           console.log('currently in tier 1 -->> ', Number(key));
           currentTier = 1;
           currentTotal = initialTotal;
+          return { currentTier, currentTotal };
         } else {
           const previousTier = Number(key) - 1;
           currentTier = previousTier;
           console.log('currently above tier 1 -->> ', currentTier);
           currentTotal = tiers[String(previousTier)].totalCoiins;
           console.log('current total above tier 1 -->> ', currentTotal);
+          return { currentTier, currentTotal };
         }
       }
     }
@@ -90,7 +92,7 @@ export class Campaign extends BaseEntity {
       if (!currentCampaign) throw new Error('campaign not found');
       currentTier = Campaign.calculateTier(currentCampaign.totalParticipationScore, currentCampaign.algorithm.tiers, currentCampaign.algorithm.initialTotal);
     } else if (campaign) {
-      currentTier = this.calculateTier(campaign.totalParticipationScore, campaign.algorithm.tiers, campaign.algorithm.initialTotal);
+      currentTier = Campaign.calculateTier(campaign.totalParticipationScore, campaign.algorithm.tiers, campaign.algorithm.initialTotal);
     }
     if (!currentTier) throw new Error('failure calculating current tier');
     return currentTier;
