@@ -51,6 +51,7 @@ export const payoutCampaignRewards = async (args: { campaignId: string, rejected
     return getConnection().transaction(async transactionalEntityManager => {
         const {campaignId, rejected } = args;
         const campaign = await Campaign.findOneOrFail({ where: {id: campaignId, company} });
+        const { currentTotal } = await Campaign.getCurrentCampaignTier({campaign});
         const participants = await Participant.find({ where: { campaign }, relations: ['user'] });
         const users = (participants.length > 0) ? await User.find({ where: { id: In(participants.map(p => p.user.id)) }, relations: ['wallet'] }) : [];
         const wallets = (users.length > 0) ? await Wallet.find({ where: { id: In(users.map(u => u.wallet.id)) }, relations: ['user'] }) : [];
@@ -67,14 +68,18 @@ export const payoutCampaignRewards = async (args: { campaignId: string, rejected
             const addedPayoutToEachParticipant = totalRejectedPayout / newParticipationCount;
             for (const participant of participants) {
                 if (!rejected.includes(participant.id)) {
-                    const totalParticipantPayout = (participant.viewCount * viewValue) + (participant.clickCount * clickValue) + (participant.submissionCount * submissionValue) + addedPayoutToEachParticipant;
+                    const totalParticipantPoints = (participant.viewCount * viewValue) + (participant.clickCount * clickValue) + (participant.submissionCount * submissionValue) + addedPayoutToEachParticipant;
+                    const percentageOfTotalParticipation = totalParticipantPoints / currentTotal;
+                    const totalParticipantPayout = currentTotal * percentageOfTotalParticipation;
                     if (!usersWalletValues[participant.user.id]) usersWalletValues[participant.user.id] = totalParticipantPayout;
                     else usersWalletValues[participant.user.id] += totalParticipantPayout;
                 }
             }
         } else {
             for (const participant of participants) {
-                const totalParticipantPayout = (participant.viewCount * viewValue) + (participant.clickCount * clickValue) + (participant.submissionCount * submissionValue);
+                const totalParticipantPoints = (participant.viewCount * viewValue) + (participant.clickCount * clickValue) + (participant.submissionCount * submissionValue);
+                const percentageOfTotalParticipation = totalParticipantPoints / currentTotal;
+                const totalParticipantPayout = currentTotal * percentageOfTotalParticipation;
                 if (!usersWalletValues[participant.user.id]) usersWalletValues[participant.user.id] = totalParticipantPayout;
                 else usersWalletValues[participant.user.id] += totalParticipantPayout;
             }
