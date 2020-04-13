@@ -99,7 +99,9 @@ export const payoutCampaignRewards = async (args: { campaignId: string, rejected
             }
         } else {
             for (const participant of participants) {
+                console.log('participant details -->> ', participant);
                 const totalParticipantPayout = calculateParticipantPayout(Number(campaign.totalParticipationScore), currentTotal, campaign.algorithm.pointValues, participant);
+                console.log('total participation -->> ', totalParticipantPayout);
                 if (!usersWalletValues[participant.user.id]) usersWalletValues[participant.user.id] = totalParticipantPayout;
                 else usersWalletValues[participant.user.id] += totalParticipantPayout;
             }
