@@ -6,7 +6,7 @@ export class Wallet extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   public id: string
 
-  @Column({ nullable: false, default: 0 })
+  @Column({ type: 'float8', nullable: false, default: 0 })
   public balance: number;
 
   @OneToOne(
