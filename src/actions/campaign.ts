@@ -54,25 +54,45 @@ export const payoutCampaignRewards = async (args: { campaignId: string, rejected
     console.log(`Beginning payout for company: ${company}`);
     const usersWalletValues: {[key: string]: number} = {};
     return getConnection().transaction(async transactionalEntityManager => {
+        console.log('------>>> 1')
         const {campaignId, rejected } = args;
+        console.log('------>>> 2')
         const campaign = await Campaign.findOneOrFail({ where: {id: campaignId, company} });
+        console.log('------>>> 3')
         const { currentTotal } = await Campaign.getCurrentCampaignTier({campaign});
+        console.log('------>>> 4')
         const participants = await Participant.find({ where: { campaign }, relations: ['user'] });
+        console.log('------>>> 5')
         const users = (participants.length > 0) ? await User.find({ where: { id: In(participants.map(p => p.user.id)) }, relations: ['wallet'] }) : [];
+        console.log('------>>> 6')
         const wallets = (users.length > 0) ? await Wallet.find({ where: { id: In(users.map(u => u.wallet.id)) }, relations: ['user'] }) : [];
+        console.log('------>>> 7')
         if (rejected.length > 0) {
+        console.log('------>>> 8')
             const newParticipationCount = participants.length - rejected.length;
+        console.log('------>>> 9')
             let totalRejectedPayout = 0;
+        console.log('------>>> 10')
             for (const id of rejected) {
+        console.log('------>>> 11')
                 const participant = await Participant.get({id});
+        console.log('------>>> 12')
                 const totalParticipantPayout = calculateParticipantPayout(Number(campaign.totalParticipationScore), currentTotal, campaign.algorithm.pointValues, participant);
+        console.log('------>>> 13')
                 totalRejectedPayout += totalParticipantPayout;
+        console.log('------>>> 14')
             }
+        console.log('------>>> 15')
             const addedPayoutToEachParticipant = totalRejectedPayout / newParticipationCount;
+        console.log('------>>> 16')
             for (const participant of participants) {
+        console.log('------>>> 17')
                 if (!rejected.includes(participant.id)) {
+        console.log('------>>> 18')
                     const subtotal = calculateParticipantPayout(Number(campaign.totalParticipationScore), currentTotal, campaign.algorithm.pointValues, participant);
+        console.log('------>>> 19')
                     const totalParticipantPayout = subtotal + addedPayoutToEachParticipant;
+        console.log('------>>> 20')
                     if (!usersWalletValues[participant.user.id]) usersWalletValues[participant.user.id] = totalParticipantPayout;
                     else usersWalletValues[participant.user.id] += totalParticipantPayout;
                 }
