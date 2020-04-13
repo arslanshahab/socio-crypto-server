@@ -7,6 +7,11 @@ import { User } from '../models/User';
 import { Wallet } from '../models/Wallet';
 
 
+export const calculateParticipantPayout = (totalCampaignParticipationScore: number, currentCampaignTierTotal: number, actionValues: {click: number, view: number, submission: number}, participant: Participant) => {
+    const totalParticipantPoints = (participant.viewCount * actionValues.view) + (participant.clickCount * actionValues.click) + (participant.submissionCount * actionValues.submission);
+    const percentageOfTotalParticipation = totalParticipantPoints / totalCampaignParticipationScore;
+    return currentCampaignTierTotal * percentageOfTotalParticipation;
+}
 
 export const generateCampaignAuditReport = async (args: { campaignId: string }, context: { user: any }) => {
     const { company } = checkPermissions({hasRole: ['admin', 'manager']}, context);
@@ -28,9 +33,7 @@ export const generateCampaignAuditReport = async (args: { campaignId: string }, 
         auditReport.totalClicks += participant.clickCount;
         auditReport.totalViews += participant.viewCount;
         auditReport.totalSubmissions += participant.submissionCount;
-        const totalParticipantPoints = (participant.viewCount * viewValue) + (participant.clickCount * clickValue) + (participant.submissionCount * submissionValue);
-        const percentageOfTotalParticipation = totalParticipantPoints / auditReport.totalRewardPayout;
-        const totalParticipantPayout = currentTotal * percentageOfTotalParticipation;
+        const totalParticipantPayout = calculateParticipantPayout(Number(campaign.totalParticipationScore), currentTotal, campaign.algorithm.pointValues, participant);
         if (BigInt(totalParticipantPayout) > (auditReport.totalRewardPayout * 0.15)) {
             auditReport.flaggedParticipants.push({
                 participantId: participant.id,
@@ -44,6 +47,8 @@ export const generateCampaignAuditReport = async (args: { campaignId: string }, 
     return auditReport;
 };
 
+
+
 export const payoutCampaignRewards = async (args: { campaignId: string, rejected: string[] }, context: { user: any }) => {
     const { company } = checkPermissions({hasRole: ['admin', 'manager']}, context);
     console.log(`Beginning payout for company: ${company}`);
@@ -55,31 +60,26 @@ export const payoutCampaignRewards = async (args: { campaignId: string, rejected
         const participants = await Participant.find({ where: { campaign }, relations: ['user'] });
         const users = (participants.length > 0) ? await User.find({ where: { id: In(participants.map(p => p.user.id)) }, relations: ['wallet'] }) : [];
         const wallets = (users.length > 0) ? await Wallet.find({ where: { id: In(users.map(u => u.wallet.id)) }, relations: ['user'] }) : [];
-        const clickValue = campaign.algorithm.pointValues.click;
-        const viewValue = campaign.algorithm.pointValues.view;
-        const submissionValue = campaign.algorithm.pointValues.submission;
         if (rejected.length > 0) {
             const newParticipationCount = participants.length - rejected.length;
             let totalRejectedPayout = 0;
             for (const id of rejected) {
                 const participant = await Participant.get({id});
-                totalRejectedPayout += (participant.submissionCount * submissionValue) + (participant.clickCount * clickValue) + (participant.viewCount * viewValue);
+                const totalParticipantPayout = calculateParticipantPayout(Number(campaign.totalParticipationScore), currentTotal, campaign.algorithm.pointValues, participant);
+                totalRejectedPayout += totalParticipantPayout;
             }
             const addedPayoutToEachParticipant = totalRejectedPayout / newParticipationCount;
             for (const participant of participants) {
                 if (!rejected.includes(participant.id)) {
-                    const totalParticipantPoints = (participant.viewCount * viewValue) + (participant.clickCount * clickValue) + (participant.submissionCount * submissionValue) + addedPayoutToEachParticipant;
-                    const percentageOfTotalParticipation = totalParticipantPoints / currentTotal;
-                    const totalParticipantPayout = currentTotal * percentageOfTotalParticipation;
+                    const subtotal = calculateParticipantPayout(Number(campaign.totalParticipationScore), currentTotal, campaign.algorithm.pointValues, participant);
+                    const totalParticipantPayout = subtotal + addedPayoutToEachParticipant;
                     if (!usersWalletValues[participant.user.id]) usersWalletValues[participant.user.id] = totalParticipantPayout;
                     else usersWalletValues[participant.user.id] += totalParticipantPayout;
                 }
             }
         } else {
             for (const participant of participants) {
-                const totalParticipantPoints = (participant.viewCount * viewValue) + (participant.clickCount * clickValue) + (participant.submissionCount * submissionValue);
-                const percentageOfTotalParticipation = totalParticipantPoints / currentTotal;
-                const totalParticipantPayout = currentTotal * percentageOfTotalParticipation;
+                const totalParticipantPayout = calculateParticipantPayout(Number(campaign.totalParticipationScore), currentTotal, campaign.algorithm.pointValues, participant);
                 if (!usersWalletValues[participant.user.id]) usersWalletValues[participant.user.id] = totalParticipantPayout;
                 else usersWalletValues[participant.user.id] += totalParticipantPayout;
             }
