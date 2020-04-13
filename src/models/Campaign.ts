@@ -58,8 +58,8 @@ export class Campaign extends BaseEntity {
   }
 
   public static async calculateTier(totalParticipation: BigInt, tiers: Tiers, initialTotal: number) {
-    let currentTier = 0;
-    let currentTotal = 0;
+    let currentTier = 1;
+    let currentTotal = 1;
     for(let key in tiers) {
       if (totalParticipation < BigInt(tiers[key].threshold)) {
         if (Number(key) < 2) {

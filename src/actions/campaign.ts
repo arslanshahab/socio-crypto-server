@@ -66,7 +66,7 @@ export const payoutCampaignRewards = async (args: { campaignId: string, rejected
         const users = (participants.length > 0) ? await User.find({ where: { id: In(participants.map(p => p.user.id)) }, relations: ['wallet'] }) : [];
         console.log('------>>> 6')
         const wallets = (users.length > 0) ? await Wallet.find({ where: { id: In(users.map(u => u.wallet.id)) }, relations: ['user'] }) : [];
-        console.log('------>>> 7')
+        console.log('------>>> 7', currentTotal)
         if (rejected.length > 0) {
         console.log('------>>> 8')
             const newParticipationCount = participants.length - rejected.length;
