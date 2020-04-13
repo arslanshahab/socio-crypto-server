@@ -60,21 +60,16 @@ export class Campaign extends BaseEntity {
   public static async calculateTier(totalParticipation: BigInt, tiers: Tiers, initialTotal: number) {
     let currentTier = 0;
     let currentTotal = 0;
-    console.log('total participation for campaign -->> ', totalParticipation)
     for(let key in tiers) {
-      console.log('current tier is -->> ', key, 'current threshold is -->> ', BigInt(tiers[key].threshold));
       if (totalParticipation < BigInt(tiers[key].threshold)) {
         if (Number(key) < 2) {
-          console.log('currently in tier 1 -->> ', Number(key));
           currentTier = 1;
           currentTotal = initialTotal;
           return { currentTier, currentTotal };
         } else {
           const previousTier = Number(key) - 1;
           currentTier = previousTier;
-          console.log('currently above tier 1 -->> ', currentTier);
           currentTotal = tiers[String(previousTier)].totalCoiins;
-          console.log('current total above tier 1 -->> ', currentTotal);
           return { currentTier, currentTotal };
         }
       }
@@ -85,17 +80,17 @@ export class Campaign extends BaseEntity {
 
   public static async getCurrentCampaignTier(args: { campaignId?: string, campaign?: Campaign }): Promise<{ currentTier: number, currentTotal: number }> {
     const { campaignId, campaign } = args;
-    let currentTier;
+    let currentTierSummary;
     if (campaignId) {
       const where: {[key: string]: string } = { 'id': campaignId };
       const currentCampaign = await Campaign.findOne({ where });
       if (!currentCampaign) throw new Error('campaign not found');
-      currentTier = Campaign.calculateTier(currentCampaign.totalParticipationScore, currentCampaign.algorithm.tiers, currentCampaign.algorithm.initialTotal);
+      currentTierSummary = await Campaign.calculateTier(currentCampaign.totalParticipationScore, currentCampaign.algorithm.tiers, currentCampaign.algorithm.initialTotal);
     } else if (campaign) {
-      currentTier = Campaign.calculateTier(campaign.totalParticipationScore, campaign.algorithm.tiers, campaign.algorithm.initialTotal);
+      currentTierSummary = await Campaign.calculateTier(campaign.totalParticipationScore, campaign.algorithm.tiers, campaign.algorithm.initialTotal);
     }
-    if (!currentTier) throw new Error('failure calculating current tier');
-    return currentTier;
+    if (!currentTierSummary) throw new Error('failure calculating current tier');
+    return currentTierSummary;
   }
 
   public static async findCampaignsByStatus(open: boolean, skip: number, take: number, company: string) {
