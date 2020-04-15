@@ -70,6 +70,9 @@ spec:
             - name: dragonchain-credentials
               mountPath: "/var/secrets/dragonchain-credentials"
               readOnly: true
+            - name: encryption-key
+              mountPath: "/var/secrets/encryption-key"
+              readOnly: true
           resources:
             {{- toYaml .Values.server.resources | nindent 12 }}
       volumes:
@@ -82,6 +85,9 @@ spec:
         - name: dragonchain-credentials
           secret:
             secretName: dragonchain-credentials
+        - name: encryption-key
+          secret:
+            secretName: encryption-key
 ---
 apiVersion: apps/v1
 kind: Deployment

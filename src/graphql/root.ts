@@ -21,7 +21,8 @@ export const root = {
   me: User.me,
   generateCampaignAuditReport: generateCampaignAuditReport,
   payoutCampaignRewards: payoutCampaignRewards,
-  getCurrentCampaignTier: Campaign.getCurrentCampaignTier
+  getCurrentCampaignTier: Campaign.getCurrentCampaignTier,
+  registerSocialLink: User.registerSocialLink,
 };
 
 export const publicRoot = {

@@ -11,6 +11,7 @@ type Mutation {
   removeParticipation(campaignId:String!): User
   trackAction(participantId:String!,action: String!): Participant
   promoteUserPermissions(userId:String,email:String,company:String,role:String): User
+  registerSocialLink(type:String!,apiKey:String!,apiSecret:String!): Boolean;
 }
 
 type Query {
@@ -40,6 +41,11 @@ type User {
   username: String
   campaigns: [Participant]
   wallet: Wallet
+  socialLinks: [SocialLink]
+}
+
+type SocialLink {
+  type: String;
 }
 
 type Wallet {

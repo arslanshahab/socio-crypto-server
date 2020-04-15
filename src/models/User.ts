@@ -1,9 +1,11 @@
 import { BaseEntity, Entity, PrimaryColumn, Column, OneToMany, OneToOne } from 'typeorm';
+import { encrypt } from '../util/crypto';
 import { Participant } from './Participant';
 import { Campaign } from './Campaign';
 import { Wallet } from './Wallet';
 import { Firebase } from '../clients/firebase';
 import { checkPermissions } from '../middleware/authentication';
+import { SocialLink } from './SocialLink';
 
 @Entity()
 export class User extends BaseEntity {
@@ -30,6 +32,13 @@ export class User extends BaseEntity {
   )
   public wallet: Wallet;
 
+  @OneToMany(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _type => SocialLink,
+    link => link.user,
+  )
+  public socialLinks: SocialLink[];
+
   public static async usernameExists(args: { username: string }) {
     const user = await User.findOne({ where: { username: args.username } });
     return { exists: !!user };
@@ -51,9 +60,30 @@ export class User extends BaseEntity {
 
   public static async me(_args: any, context: { user: any }): Promise<User> {
     const { id } = context.user;
-    const user = await User.findOne({ where: { id }, relations: ['campaigns', 'wallet'] });
+    const user = await User.findOne({ where: { id }, relations: ['campaigns', 'wallet', 'socialLinks'] });
     if (!user) throw new Error('user not found');
     return user;
+  }
+
+  public static async registerSocialLink(args: { type: string, apiKey: string, apiSecret: string }, context: { user: any }): Promise<Boolean> {
+    const user = await User.me(undefined, context);
+    const { type, apiKey, apiSecret } = args;
+    if (!['twitter','facebook'].includes(type)) throw new Error('the type must exist as a predefined type');
+    const existingLink = user.socialLinks.find(link => link.type === type);
+    const encryptedApiKey = encrypt(apiKey);
+    const encryptedApiSecret = encrypt(apiSecret);
+    if (existingLink) {
+      existingLink.apiKey = encryptedApiKey;
+      existingLink.apiSecret = encryptedApiSecret;
+      await existingLink.save();
+    } else {
+      const link = new SocialLink();
+      link.type = type;
+      link.apiKey = encryptedApiKey;
+      link.apiSecret = encryptedApiSecret;
+      await link.save();
+    }
+    return true;
   }
 
   public static async participate(args: { campaignId: string }, context: { user: any }): Promise<Participant> {

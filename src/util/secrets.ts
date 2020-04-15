@@ -12,6 +12,7 @@ export class Secrets {
   public static dragonchainEndpoint: string;
   public static dragonchainApiKeyId: string;
   public static dragonchainApiKey: string;
+  public static encryptionKey: string;
 
   public static async initialize() {
     Secrets.firebaseProjectId = process.env.FIREBASE_PROJECT_ID || (await readFilePromise('/var/secrets/firebase-credentials/firebaseProjectId', 'utf8'));
@@ -23,5 +24,6 @@ export class Secrets {
     Secrets.dragonchainEndpoint = process.env.DRAGONCHAIN_ENDPOINT || (await readFilePromise('/var/secrets/dragonchain-credentials/dragonchainEndpoint', 'utf8'));
     Secrets.dragonchainApiKeyId = process.env.DRAGONCHAIN_API_KEY_ID || (await readFilePromise('/var/secrets/dragonchain-credentials/dragonchainApiKeyId', 'utf8'));
     Secrets.dragonchainApiKey = process.env.DRAGONCHAIN_API_KEY || (await readFilePromise('/var/secrets/dragonchain-credentials/dragonchainApiKey', 'utf8'));
+    Secrets.encryptionKey = process.env.ENCRYPTION_KEY || (await readFilePromise('/var/secrets/encryption-key/SecretString', 'utf8'));
   }
 }
