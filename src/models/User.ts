@@ -81,6 +81,7 @@ export class User extends BaseEntity {
       link.type = type;
       link.apiKey = encryptedApiKey;
       link.apiSecret = encryptedApiSecret;
+      link.user = user;
       await link.save();
     }
     return true;
