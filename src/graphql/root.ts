@@ -23,6 +23,7 @@ export const root = {
   payoutCampaignRewards: payoutCampaignRewards,
   getCurrentCampaignTier: Campaign.getCurrentCampaignTier,
   registerSocialLink: User.registerSocialLink,
+  removeSocialLink: User.removeSocialLink,
 };
 
 export const publicRoot = {

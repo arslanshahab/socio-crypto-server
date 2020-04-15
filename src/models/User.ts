@@ -87,6 +87,15 @@ export class User extends BaseEntity {
     return true;
   }
 
+  public static async removeSocialLink(args: { type: string }, context: { user: any }): Promise<Boolean> {
+    const user = await User.me(undefined, context);
+    const { type } = args;
+    if (!['facebook','twitter'].includes(type)) throw new Error('the type must exist as a predefined type');
+    const existingType = user.socialLinks.find(link => link.type === type);
+    if (existingType) await existingType.remove();
+    return true;
+  }
+
   public static async participate(args: { campaignId: string }, context: { user: any }): Promise<Participant> {
     const { id } = context.user;
     const user = await User.findOne({ where: { id }, relations: ['campaigns', 'wallet'] });
