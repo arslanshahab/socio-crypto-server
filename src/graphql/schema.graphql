@@ -45,7 +45,7 @@ type User {
 }
 
 type SocialLink {
-  type: String;
+  type: String
 }
 
 type Wallet {
