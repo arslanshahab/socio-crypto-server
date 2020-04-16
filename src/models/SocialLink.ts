@@ -1,5 +1,7 @@
 import { BaseEntity, Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
 import { User } from './User';
+import { SocialClientCredentials } from '../types';
+import { decrypt } from '../util/crypto';
 
 @Entity()
 export class SocialLink extends BaseEntity {
@@ -21,4 +23,11 @@ export class SocialLink extends BaseEntity {
     user => user.socialLinks,
   )
   public user: User;
+
+  public asClientCredentials(): SocialClientCredentials {
+    const credentials: SocialClientCredentials = {};
+    if (this.apiKey) credentials.apiKey = decrypt(this.apiKey);
+    if (this.apiSecret) credentials.apiSecret = decrypt(this.apiSecret);
+    return credentials;
+  }
 }

@@ -73,6 +73,9 @@ spec:
             - name: encryption-key
               mountPath: "/var/secrets/encryption-key"
               readOnly: true
+            - name: twitter-credentials
+              mountPath: "/var/secrets/twitter-credentials"
+              readOnly: true
           resources:
             {{- toYaml .Values.server.resources | nindent 12 }}
       volumes:
@@ -88,6 +91,9 @@ spec:
         - name: encryption-key
           secret:
             secretName: encryption-key
+        - name: twitter-credentials
+          secret:
+            secretName: twitter-credentials
 ---
 apiVersion: apps/v1
 kind: Deployment

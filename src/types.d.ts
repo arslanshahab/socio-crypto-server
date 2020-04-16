@@ -48,3 +48,8 @@ export interface CampaignAuditReport {
         totalPayout: number
     }[]
 }
+
+export interface SocialClientCredentials {
+  apiKey?: string;
+  apiSecret?: string;
+}

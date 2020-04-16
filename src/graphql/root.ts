@@ -3,7 +3,7 @@ import {generateCampaignAuditReport, payoutCampaignRewards} from "../actions/cam
 import * as participantController from "../controllers/participant";
 import * as userController from "../controllers/user";
 import * as campaignController from "../controllers/campaign";
-import * as socialLinkController from "../controllers/socialLink";
+import * as socialController from "../controllers/social";
 
 export const root = {
   JSON: GraphQLJSON,
@@ -20,11 +20,12 @@ export const root = {
   promoteUserPermissions: userController.promotePermissions,
   listUsers: userController.list,
   me: userController.me,
-  removeSocialLink: socialLinkController.removeSocialLink,
+  removeSocialLink: socialController.removeSocialLink,
   generateCampaignAuditReport: generateCampaignAuditReport,
   payoutCampaignRewards: payoutCampaignRewards,
   getCurrentCampaignTier: campaignController.getCurrentCampaignTier,
-  registerSocialLink: socialLinkController.registerSocialLink,
+  registerSocialLink: socialController.registerSocialLink,
+  postToSocial: socialController.postToSocial,
 };
 
 export const publicRoot = {

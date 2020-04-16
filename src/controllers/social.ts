@@ -1,6 +1,10 @@
 import {encrypt} from "../util/crypto";
 import {SocialLink} from "../models/SocialLink";
+import {TwitterClient} from '../clients/twitter';
 import {me} from "./user";
+import logger from '../util/logger';
+import { Participant } from '../models/Participant';
+import { Campaign } from '../models/Campaign';
 
 export const registerSocialLink = async (args: { type: string, apiKey: string, apiSecret: string }, context: { user: any }) => {
     const user = await me(undefined, context);
@@ -31,4 +35,26 @@ export const removeSocialLink = async (args: { type: string }, context: { user: 
     const existingType = user.socialLinks.find(link => link.type === type);
     if (existingType) await existingType.remove();
     return true;
+}
+
+export const postToSocial = async (args: { type: string, text: string, photo: string, participantId: string }, context: { user: any }) => {
+  const { type, text, photo, participantId } = args;
+  if (!['twitter'].includes(type)) throw new Error('the type must exist as a predefined type');
+  const user = await me(undefined, context);
+  const participant = await Participant.findOneOrFail({ where: { id: participantId, user } });
+  if (!participant.campaign.isOpen()) throw new Error('campaign is closed');
+  const socialLink = user.socialLinks.find(link => link.type === type);
+  if (!socialLink) throw new Error(`you have not linked ${type} as a social platform`);
+  let client: any;
+  switch (type) {
+    case 'twitter':
+      client = TwitterClient;
+      break;
+    default:
+      throw new Error('no client for this social link type');
+  }
+  const postId = await client.post(socialLink.asClientCredentials(), text, photo);
+  logger.info(`Posted to twitter with ID: ${postId}`);
+  // store the social link to the database here
+  return true;
 }
