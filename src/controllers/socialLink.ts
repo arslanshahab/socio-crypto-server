@@ -27,7 +27,7 @@ export const removeSocialLink = async (args: { type: string }, context: { user: 
     const user = await me(undefined, context);
     const { type } = args;
     if (!['facebook','twitter'].includes(type)) throw new Error('the type must exist as a predefined type');
-const existingType = user.socialLinks.find(link => link.type === type);
-if (existingType) await existingType.remove();
-return true;
+    const existingType = user.socialLinks.find(link => link.type === type);
+    if (existingType) await existingType.remove();
+    return true;
 }
