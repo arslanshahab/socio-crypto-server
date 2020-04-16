@@ -1,8 +1,7 @@
 import { BaseEntity, Entity, Column, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { DateUtils } from 'typeorm/util/DateUtils';
 import { Participant } from './Participant';
-import { checkPermissions } from '../middleware/authentication';
-import {AlgorithmSpecs, Tiers} from '../types';
+import {AlgorithmSpecs} from '../types';
 import { Validator } from '../schemas';
 
 @Entity()
@@ -57,42 +56,6 @@ export class Campaign extends BaseEntity {
     return false;
   }
 
-  public static async calculateTier(totalParticipation: BigInt, tiers: Tiers, initialTotal: number) {
-    let currentTier = 1;
-    let currentTotal = 1;
-    for(let key in tiers) {
-      if (totalParticipation < BigInt(tiers[key].threshold)) {
-        if (Number(key) < 2) {
-          currentTier = 1;
-          currentTotal = initialTotal;
-          return { currentTier, currentTotal };
-        } else {
-          const previousTier = Number(key) - 1;
-          currentTier = previousTier;
-          currentTotal = tiers[String(previousTier)].totalCoiins;
-          return { currentTier, currentTotal };
-        }
-      }
-    }
-
-    return { currentTier, currentTotal };
-  }
-
-  public static async getCurrentCampaignTier(args: { campaignId?: string, campaign?: Campaign }): Promise<{ currentTier: number, currentTotal: number }> {
-    const { campaignId, campaign } = args;
-    let currentTierSummary;
-    if (campaignId) {
-      const where: {[key: string]: string } = { 'id': campaignId };
-      const currentCampaign = await Campaign.findOne({ where });
-      if (!currentCampaign) throw new Error('campaign not found');
-      currentTierSummary = await Campaign.calculateTier(currentCampaign.totalParticipationScore, currentCampaign.algorithm.tiers, currentCampaign.algorithm.initialTotal);
-    } else if (campaign) {
-      currentTierSummary = await Campaign.calculateTier(campaign.totalParticipationScore, campaign.algorithm.tiers, campaign.algorithm.initialTotal);
-    }
-    if (!currentTierSummary) throw new Error('failure calculating current tier');
-    return currentTierSummary;
-  }
-
   public static async findCampaignsByStatus(open: boolean, skip: number, take: number, company: string) {
     let where = '';
     const now = DateUtils.mixedDateToDatetimeString(new Date());
@@ -112,8 +75,7 @@ export class Campaign extends BaseEntity {
       .getManyAndCount();
   }
 
-  public static async findCampaignParticipantsById(args: {id: string, company: string}): Promise<Campaign | undefined> {
-    const { id, company } = args;
+  public static async findCampaignById(id: string, company: string) {
     let query = this.createQueryBuilder('campaign');
     return query
         .leftJoinAndSelect('campaign.participants', 'participant', 'participant."campaignId" = campaign.id')
@@ -123,83 +85,17 @@ export class Campaign extends BaseEntity {
         .getOne()
   }
 
-  public static async deleteCampaign(args: { id: string }, context: { user: any }): Promise<Campaign> {
-    const { role, company } = checkPermissions({ hasRole: ['admin', 'manager'] }, context);
-    const where: {[key: string]: string} = { id: args.id };
-    if (role === 'manager') where['company'] = company;
-    const campaign = await Campaign.findOne({ where, relations: ['participants'] });
-    if (!campaign) throw new Error('campaign not found');
-    await Participant.remove(campaign.participants);
-    await campaign.remove();
-    return campaign;
-  }
-
-  public static async updateCampaign(args: { id: string, name: string, beginDate: string, targetVideo: string, endDate: string, coiinTotal: number, target: string, description: string, algorithm: string }, context: { user: any }): Promise<Campaign> {
-    const { role, company } = checkPermissions({ hasRole: ['admin', 'manager'] }, context);
-    const { id, name, beginDate, endDate, coiinTotal, target, description, algorithm, targetVideo } = args;
-    Campaign.validate.validateAlgorithmCreateSchema(JSON.parse(algorithm));
-    const where: {[key: string]: string} = { id };
-    if (role === 'manager') where['company'] = company;
-    const campaign = await Campaign.findOne({ where });
-    if (!campaign) throw new Error('campaign not found');
-    if (name) campaign.name = name;
-    if (beginDate) campaign.beginDate = new Date(beginDate);
-    if (endDate) campaign.endDate = new Date(endDate);
-    if (coiinTotal) campaign.coiinTotal = coiinTotal;
-    if (target) campaign.target = target;
-    if (description) campaign.description = description;
-    if (algorithm) campaign.algorithm = JSON.parse(algorithm);
-    if (targetVideo) campaign.targetVideo = targetVideo;
-    await campaign.save();
-    return campaign;
-  }
-
-  public static async newCampaign(args: { name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string }, context: { user: any }): Promise<Campaign> {
-    const { role, company } = checkPermissions({ hasRole: ['admin', 'manager'] }, context);
-    const { name, beginDate, endDate, coiinTotal, target, description, algorithm, targetVideo } = args;
-    Campaign.validate.validateAlgorithmCreateSchema(JSON.parse(algorithm));
-    if (role === 'admin' && !args.company) throw new Error('administrators need to specify a company in args');
+  public static newCampaign(name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string): Campaign {
     const campaign = new Campaign();
     campaign.name = name;
     campaign.coiinTotal = coiinTotal;
     campaign.target = target;
-    campaign.company = (role === 'admin') ? args.company : company;
+    campaign.company = company;
     campaign.beginDate = new Date(beginDate);
     campaign.endDate = new Date(endDate);
     campaign.algorithm = JSON.parse(algorithm);
     campaign.targetVideo = targetVideo;
     if (description) campaign.description = description;
-    await campaign.save();
     return campaign;
   }
-
-  public static async list(args: { open: boolean, skip: number, take: number, scoped: boolean }, context: { user: any }): Promise<{ results: Campaign[], total: number }> {
-    const { open, skip = 0, take = 10, scoped = false } = args;
-    const { company } = context.user;
-    const [results, total] = await Campaign.findCampaignsByStatus(open, skip, take, scoped && company);
-    return { results, total };
-  }
-
-  public static async findCampaignById(args: {id: string, company: string}) {
-    const {id, company} = args;
-    const campaign = await Campaign.findCampaignParticipantsById({id, company});
-    if (!campaign) throw new Error('Campaign not found');
-    return campaign;
-  }
-
-  public static async get(args: { id: string }): Promise<Campaign> {
-    const { id } = args;
-    const where: { [key: string]: string } = { id };
-    const campaign = await Campaign.findOne({ where, relations: ['participants'] });
-    if (!campaign) throw new Error('campaign not found');
-    return campaign;
-  }
-
-  public static async publicGet(args: { campaignId: string }): Promise<Campaign> {
-    const { campaignId } = args;
-    const campaign = await Campaign.findOne({ where: { id: campaignId } });
-    if (!campaign) throw new Error('campaign not found');
-    return campaign;
-  }
-
 }
