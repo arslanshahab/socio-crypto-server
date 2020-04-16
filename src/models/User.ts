@@ -34,5 +34,4 @@ export class User extends BaseEntity {
     link => link.user,
   )
   public socialLinks: SocialLink[];
-
 }

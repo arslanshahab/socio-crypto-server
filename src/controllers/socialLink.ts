@@ -10,15 +10,16 @@ export const registerSocialLink = async (args: { type: string, apiKey: string, a
     const encryptedApiKey = encrypt(apiKey);
     const encryptedApiSecret = encrypt(apiSecret);
     if (existingLink) {
-        existingLink.apiKey = encryptedApiKey;
-        existingLink.apiSecret = encryptedApiSecret;
-        await existingLink.save();
+      existingLink.apiKey = encryptedApiKey;
+      existingLink.apiSecret = encryptedApiSecret;
+      await existingLink.save();
     } else {
-        const link = new SocialLink();
-        link.type = type;
-        link.apiKey = encryptedApiKey;
-        link.apiSecret = encryptedApiSecret;
-        await link.save();
+      const link = new SocialLink();
+      link.type = type;
+      link.apiKey = encryptedApiKey;
+      link.apiSecret = encryptedApiSecret;
+      link.user = user;
+      await link.save();
     }
     return true;
 }
