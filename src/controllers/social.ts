@@ -4,7 +4,6 @@ import {TwitterClient} from '../clients/twitter';
 import {me} from "./user";
 import logger from '../util/logger';
 import { Participant } from '../models/Participant';
-import { Campaign } from '../models/Campaign';
 
 export const registerSocialLink = async (args: { type: string, apiKey: string, apiSecret: string }, context: { user: any }) => {
     const user = await me(undefined, context);
