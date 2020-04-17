@@ -43,6 +43,9 @@ export class Campaign extends BaseEntity {
   @Column({ nullable: true })
   public targetVideo: string;
 
+  @Column({ type: 'text', nullable: true })
+  public image: string;
+
   @OneToMany(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _type => Participant,
@@ -85,7 +88,7 @@ export class Campaign extends BaseEntity {
         .getOne()
   }
 
-  public static newCampaign(name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string): Campaign {
+  public static newCampaign(name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, image: string): Campaign {
     const campaign = new Campaign();
     campaign.name = name;
     campaign.coiinTotal = coiinTotal;
@@ -96,6 +99,7 @@ export class Campaign extends BaseEntity {
     campaign.algorithm = JSON.parse(algorithm);
     campaign.targetVideo = targetVideo;
     if (description) campaign.description = description;
+    if (image) campaign.image = image;
     return campaign;
   }
 }

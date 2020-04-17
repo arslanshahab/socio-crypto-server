@@ -5,10 +5,12 @@ import {me} from "./user";
 import logger from '../util/logger';
 import { Participant } from '../models/Participant';
 
+export const allowedSocialLinks = ['twitter'];
+
 export const registerSocialLink = async (args: { type: string, apiKey: string, apiSecret: string }, context: { user: any }) => {
     const user = await me(undefined, context);
     const { type, apiKey, apiSecret } = args;
-    if (!['twitter','facebook'].includes(type)) throw new Error('the type must exist as a predefined type');
+    if (!allowedSocialLinks.includes(type)) throw new Error('the type must exist as a predefined type');
     const existingLink = user.socialLinks.find(link => link.type === type);
     const encryptedApiKey = encrypt(apiKey);
     const encryptedApiSecret = encrypt(apiSecret);
@@ -30,7 +32,7 @@ export const registerSocialLink = async (args: { type: string, apiKey: string, a
 export const removeSocialLink = async (args: { type: string }, context: { user: any }) => {
     const user = await me(undefined, context);
     const { type } = args;
-    if (!['facebook','twitter'].includes(type)) throw new Error('the type must exist as a predefined type');
+    if (!allowedSocialLinks.includes(type)) throw new Error('the type must exist as a predefined type');
     const existingType = user.socialLinks.find(link => link.type === type);
     if (existingType) await existingType.remove();
     return true;
@@ -38,7 +40,7 @@ export const removeSocialLink = async (args: { type: string }, context: { user: 
 
 export const postToSocial = async (args: { type: string, text: string, photo: string, participantId: string }, context: { user: any }) => {
   const { type, text, photo, participantId } = args;
-  if (!['twitter'].includes(type)) throw new Error('the type must exist as a predefined type');
+  if (!allowedSocialLinks.includes(type)) throw new Error('the type must exist as a predefined type');
   const user = await me(undefined, context);
   const participant = await Participant.findOneOrFail({ where: { id: participantId, user } });
   if (!participant.campaign.isOpen()) throw new Error('campaign is closed');
