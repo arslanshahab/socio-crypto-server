@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import expressGraphql from 'express-graphql';
 import { Server } from 'http';
+import bodyParser from 'body-parser';
 import { createConnection, getConnectionOptions } from 'typeorm';
 import logger from './util/logger';
 import { getSchema, root, publicRoot } from './graphql';
@@ -40,6 +41,8 @@ export class Application {
     };
     if (NODE_ENV === 'development') corsSettings.origin.push('http://localhost:3000');
     this.app.use(cors(corsSettings));
+    this.app.use(bodyParser.json({ limit: "20mb" }));
+    this.app.use(bodyParser.urlencoded({ extended: true }));
     this.app.set('port', process.env.PORT || 8080);
     this.app.use('/v1/graphql', requestLogger, authenticate, expressGraphql({
       schema: await getSchema(),
