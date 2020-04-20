@@ -45,12 +45,12 @@ spec:
             httpGet:
               path: /v1/health
               port: {{ .Values.service.port }}
-            initialDelaySeconds: 10
+            initialDelaySeconds: 15
           readinessProbe:
             httpGet:
               path: /v1/health
               port: {{ .Values.service.port }}
-            initialDelaySeconds: 10
+            initialDelaySeconds: 15
           env:
             - name: PG_PASSWORD
               valueFrom:
