@@ -11,9 +11,9 @@ export const getCurrentCampaignTier = async (args: { campaignId?: string, campai
         const where: {[key: string]: string } = { 'id': campaignId };
         const currentCampaign = await Campaign.findOne({ where });
         if (!currentCampaign) throw new Error('campaign not found');
-        currentTierSummary = calculateTier(currentCampaign.totalParticipationScore, currentCampaign.algorithm.tiers, currentCampaign.algorithm.initialTotal);
+        currentTierSummary = calculateTier(currentCampaign.totalParticipationScore, currentCampaign.algorithm.tiers);
     } else if (campaign) {
-        currentTierSummary = calculateTier(campaign.totalParticipationScore, campaign.algorithm.tiers, campaign.algorithm.initialTotal);
+        currentTierSummary = calculateTier(campaign.totalParticipationScore, campaign.algorithm.tiers);
     }
     if (!currentTierSummary) throw new Error('failure calculating current tier');
 return currentTierSummary;
@@ -83,14 +83,14 @@ export const publicGet = async (args: { campaignId: string }) => {
     return campaign;
 }
 
-export const calculateTier = (totalParticipation: BigInt, tiers: Tiers, initialTotal: number) => {
+export const calculateTier = (totalParticipation: BigInt, tiers: Tiers) => {
     let currentTier = 1;
     let currentTotal = 1;
     for(let key in tiers) {
         if (totalParticipation < BigInt(tiers[key].threshold)) {
             if (Number(key) < 2) {
                 currentTier = 1;
-                currentTotal = initialTotal;
+                currentTotal = tiers['1'].totalCoiins;
                 return { currentTier, currentTotal };
             } else {
                 const previousTier = Number(key) - 1;
