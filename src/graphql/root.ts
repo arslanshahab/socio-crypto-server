@@ -26,6 +26,7 @@ export const root = {
   getCurrentCampaignTier: campaignController.getCurrentCampaignTier,
   registerSocialLink: socialController.registerSocialLink,
   postToSocial: socialController.postToSocial,
+  setDevice: userController.setDevice,
 };
 
 export const publicRoot = {

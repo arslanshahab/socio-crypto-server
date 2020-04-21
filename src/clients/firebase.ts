@@ -13,4 +13,13 @@ export class Firebase {
       }),
     });
   }
+
+  public static async sendCampaignCompleteNotifications(tokens: string[], campaignName: string) {
+    const message: admin.messaging.MulticastMessage = {
+      notification: { title: `Campaign ${campaignName} has been audited!`, body: 'Please check your Raiinmaker app for your rewards' },
+      tokens
+    };
+    const response = await Firebase.client.messaging().sendMulticast(message);
+    console.log(response);
+  }
 }

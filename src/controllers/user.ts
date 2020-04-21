@@ -79,3 +79,11 @@ export const list = async (args: { skip: number, take: number }, context: { user
     const [results, total] = await User.findAndCount({ skip, take });
     return { results, total };
 }
+
+export const setDevice = async (args: { deviceToken: string }, context: { user: any }) => {
+  const { deviceToken } = args;
+  const user = await me(undefined, context);
+  user.deviceToken = deviceToken;
+  await user.save();
+  return true;
+}

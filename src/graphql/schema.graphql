@@ -14,6 +14,7 @@ type Mutation {
   registerSocialLink(type:String!,apiKey:String!,apiSecret:String!): Boolean
   removeSocialLink(type:String!): Boolean
   postToSocial(type:String!,text:String!,photo:String,participantId:String!): Boolean
+  setDevice(deviceToken:String!): Boolean
 }
 
 type Query {

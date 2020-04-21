@@ -14,6 +14,9 @@ export class User extends BaseEntity {
   @Column({ nullable: false, unique: true })
   public username: string;
 
+  @Column({ nullable: true })
+  public deviceToken: string;
+
   @OneToMany(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _type => Participant,
