@@ -3,6 +3,7 @@ import { DateUtils } from 'typeorm/util/DateUtils';
 import { Participant } from './Participant';
 import {AlgorithmSpecs} from '../types';
 import { Validator } from '../schemas';
+import {BigIntEntityTransformer} from "../util/transformers";
 
 @Entity()
 export class Campaign extends BaseEntity {
@@ -22,8 +23,8 @@ export class Campaign extends BaseEntity {
   @Column({ type: 'numeric' })
   public coiinTotal: number;
 
-  @Column({ type: 'bigint', nullable: false, default: 0 })
-  public totalParticipationScore: BigInt;
+  @Column({ type: 'bigint', nullable: false, default: 0, transformer: BigIntEntityTransformer })
+  public totalParticipationScore: bigint;
 
   @Column()
   public target: string;

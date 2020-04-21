@@ -1,6 +1,7 @@
 import { BaseEntity, Entity, Column, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Campaign } from './Campaign';
 import { User } from './User';
+import {BigIntEntityTransformer} from "../util/transformers";
 
 @Entity()
 export class Participant extends BaseEntity {
@@ -16,8 +17,8 @@ export class Participant extends BaseEntity {
   @Column({ nullable: false, default: 0 })
   public submissionCount: number;
 
-  @Column({  type: 'bigint', nullable: false, default: 0 })
-  public participationScore: BigInt;
+  @Column({  type: 'bigint', nullable: false, default: 0, transformer: BigIntEntityTransformer })
+  public participationScore: bigint;
 
   @ManyToOne(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
