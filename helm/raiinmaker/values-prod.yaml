@@ -12,3 +12,4 @@ ingress:
 data:
   environment:
     NODE_ENV: "production"
+    BUCKET_NAME: "raiinmaker-production"

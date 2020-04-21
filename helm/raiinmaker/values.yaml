@@ -38,6 +38,7 @@ aws:
 data:
   environment:
     NODE_ENV: "staging"
+    BUCKET_NAME: "raiinmaker-staging"
 
 postgresql:
   existingSecret: "raiinmaker"

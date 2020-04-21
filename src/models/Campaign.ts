@@ -44,8 +44,8 @@ export class Campaign extends BaseEntity {
   @Column({ nullable: true })
   public targetVideo: string;
 
-  @Column({ type: 'text', nullable: true })
-  public image: string;
+  @Column({ nullable: false, default: false })
+  public hasPhoto: boolean;
 
   @OneToMany(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -89,7 +89,7 @@ export class Campaign extends BaseEntity {
         .getOne()
   }
 
-  public static newCampaign(name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, image: string): Campaign {
+  public static newCampaign(name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, hasPhoto: boolean): Campaign {
     const campaign = new Campaign();
     campaign.name = name;
     campaign.coiinTotal = coiinTotal;
@@ -99,8 +99,8 @@ export class Campaign extends BaseEntity {
     campaign.endDate = new Date(endDate);
     campaign.algorithm = JSON.parse(algorithm);
     campaign.targetVideo = targetVideo;
+    campaign.hasPhoto = hasPhoto;
     if (description) campaign.description = description;
-    if (image) campaign.image = image;
     return campaign;
   }
 }

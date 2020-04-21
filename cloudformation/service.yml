@@ -5,6 +5,15 @@ Parameters:
     Type: String
     Default: "staging"
 
+  hostedZoneId:
+    Type: "String"
+    Default: "Z2ADV4KXMZWAVJ"
+
+  sslCertificateArn:
+    Type: "String"
+    Description: "Arn for the SSL cert to attach, defaults to *.api.dragonchain.com cert"
+    Default: " arn:aws:acm:us-east-1:381978683274:certificate/c319f9d0-e6f2-49cc-93d6-0789cc886011"
+
 Conditions:
   isProd:
     Fn::Equals:
@@ -32,6 +41,102 @@ Resources:
               - "uw2-k8s-internal.api.dragonchain.com"
               - "uw2-k8s-internal-stage.api.dragonchain.com"
         TTL: "300"
+
+    BucketRoute53Configurations:
+      Type: AWS::Route53::RecordSet
+      Properties:
+        AliasTarget:
+          HostedZoneId: Z2FDTNDATAQYW2
+          DNSName:
+            Fn::GetAtt:
+              - BucketCloudFrontDistribution
+              - DomainName
+        HostedZoneId:
+          Ref: hostedZoneId
+        Name:
+          Fn::If:
+            - isProd
+            - "raiinmaker-media.api.dragonchain.com"
+            - Fn::Join:
+              - ""
+              - - raiinmaker-media-
+                - Ref: Stage
+                - .api.dragonchain.com
+        Type: A
+
+
+    raiinmakerMediaOriginAccessIdentity:
+      Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+      Properties:
+        CloudFrontOriginAccessIdentityConfig:
+          Comment: S3 Raiinmaker Media Origin Access Identity
+
+    BucketCloudFrontDistribution:
+      Type: AWS::CloudFront::Distribution
+      Properties:
+        DistributionConfig:
+          Aliases:
+            - Fn::If:
+              - isProd
+              - "raiinmaker-media.api.dragonchain.com"
+              - Fn::Join:
+                  - ""
+                  - - raiinmaker-media-
+                    - Ref: Stage
+                    - .api.dragonchain.com
+          Enabled: true
+          Origins:
+            - DomainName:
+                Fn::GetAtt:
+                  - raiinmakerS3Bucket
+                  - DomainName
+              Id: origin
+              S3OriginConfig:
+                OriginAccessIdentity:
+                  Fn::Join:
+                    - '/'
+                    - - origin-access-identity/cloudfront
+                      - Ref: raiinmakerMediaOriginAccessIdentity
+          DefaultCacheBehavior:
+            TargetOriginId: origin
+            DefaultTTL: 1440 # 1 day in minutes before cache clears
+            ForwardedValues:
+              QueryString: false
+            ViewerProtocolPolicy: redirect-to-https
+            Compress: true
+            SmoothStreaming: true
+          ViewerCertificate:
+            AcmCertificateArn:
+              Ref: sslCertificateArn
+            SslSupportMethod: sni-only
+
+    raiinmakerS3Bucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName:
+          Fn::Join:
+            - ''
+            - - raiinmaker-
+              - Ref: Stage
+
+    raiinmakerMediaBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket:
+          Ref: raiinmakerS3Bucket
+        PolicyDocument:
+          Statement:
+            - Effect: Allow
+              Action:
+                - "s3:GetObject"
+              Principal:
+                CanonicalUser:
+                  Fn::GetAtt: [raiinmakerMediaOriginAccessIdentity, S3CanonicalUserId]
+              Resource:
+                Fn::Join:
+                  - "/"
+                  - - Fn::GetAtt: [raiinmakerS3Bucket, Arn]
+                    - "*"
 
     raiinmakerServiceRole:
       Type: AWS::IAM::Role
@@ -77,3 +182,10 @@ Resources:
                   - isProd
                   - arn:aws:sns:us-west-2:381978683274:ers-production-Topic-LP3TJOCU3EWE
                   - arn:aws:sns:us-west-2:381978683274:ers-staging-Topic-SVYROUMXZY3V
+            - Effect: Allow
+              Action: ['s3:*']
+              Resource:
+                - Fn::Join:
+                  - ''
+                  - - arn:aws:s3:::raiinmaker-
+                    - Ref: Stage

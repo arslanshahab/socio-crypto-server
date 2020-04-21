@@ -2,6 +2,7 @@ import {Tiers} from "../types";
 import {Campaign} from "../models/Campaign";
 import {checkPermissions} from "../middleware/authentication";
 import {Participant} from "../models/Participant";
+import {S3Client} from '../clients/s3';
 
 
 export const getCurrentCampaignTier = async (args: { campaignId?: string, campaign?: Campaign }) => {
@@ -25,8 +26,9 @@ export const createNewCampaign = async (args: { name: string, targetVideo: strin
     Campaign.validate.validateAlgorithmCreateSchema(JSON.parse(algorithm));
     if (role === 'admin' && !args.company) throw new Error('administrators need to specify a company in args');
     const campaignCompany = (role ==='admin') ? args.company : company;
-    const campaign = Campaign.newCampaign(name, targetVideo, beginDate, endDate, coiinTotal, target, description, campaignCompany, algorithm, image);
-
+    const campaign = Campaign.newCampaign(name, targetVideo, beginDate, endDate, coiinTotal, target, description, campaignCompany, algorithm, !!image);
+    await campaign.save();
+    if (image) await S3Client.setCampaignImage(campaign.id, image);
     return campaign.save();
 }
 
