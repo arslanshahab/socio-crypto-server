@@ -116,6 +116,7 @@ Resources:
                 - 'ssm:GetParameters'
                 - 'ecr:*'
                 - 'cloudformation:*'
+                - 'cloudfront:*'
                 - 'iam:*'
                 - 'route53:*'
                 - 'ec2:*'
