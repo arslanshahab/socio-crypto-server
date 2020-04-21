@@ -84,6 +84,7 @@ Resources:
                 - 'ssm:GetParameters'
                 - 'sts:AssumeRole'
                 - 'secretsmanager:GetSecretValue'
+                - 'cloudfront:*'
                 - 'codebuild:*'
                 - 'ec2:*'
                 - 's3:*'
