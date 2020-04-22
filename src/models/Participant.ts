@@ -17,7 +17,10 @@ export class Participant extends BaseEntity {
   public submissionCount: number;
 
   @Column({  type: 'bigint', nullable: false, default: 0 })
-public participationScore: bigint;
+  public participationScore: bigint;
+
+  @Column({ nullable: true })
+  public link: string;
 
   @ManyToOne(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

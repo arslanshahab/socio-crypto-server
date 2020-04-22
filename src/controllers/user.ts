@@ -4,6 +4,7 @@ import {checkPermissions} from "../middleware/authentication";
 import {Firebase} from "../clients/firebase";
 import {User} from "../models/User";
 import {Wallet} from "../models/Wallet";
+import { TinyUrl } from '../clients/tinyUrl';
 
 export const participate = async (args: { campaignId: string }, context: { user: any }) => {
     const { id } = context.user;
@@ -14,6 +15,8 @@ export const participate = async (args: { campaignId: string }, context: { user:
     if (!campaign.isOpen()) throw new Error('campaign is not open for participation');
     if (await Participant.findOne({ where: { campaign, user } })) throw new Error('user already participating in this campaign');
     const participant = Participant.newParticipant(user, campaign);
+    await participant.save();
+    participant.link = await TinyUrl.shorten(`${campaign.target}/campaign/${campaign.id}?referrer=${participant.id}`);
     await participant.save();
     return participant;
 };
