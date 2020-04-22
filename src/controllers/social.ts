@@ -57,5 +57,5 @@ export const postToSocial = async (args: { type: string, text: string, photo: st
   const postId = await client.post(socialLink.asClientCredentials(), text, photo);
   logger.info(`Posted to twitter with ID: ${postId}`);
   // store the social link to the database here
-  return true;
+  return postId;
 }

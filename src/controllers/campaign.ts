@@ -12,9 +12,9 @@ export const getCurrentCampaignTier = async (args: { campaignId?: string, campai
         const where: {[key: string]: string } = { 'id': campaignId };
         const currentCampaign = await Campaign.findOne({ where });
         if (!currentCampaign) throw new Error('campaign not found');
-        currentTierSummary = calculateTier(currentCampaign.totalParticipationScore, currentCampaign.algorithm.tiers);
+        currentTierSummary = calculateTier(BigInt(currentCampaign.totalParticipationScore), currentCampaign.algorithm.tiers);
     } else if (campaign) {
-        currentTierSummary = calculateTier(campaign.totalParticipationScore, campaign.algorithm.tiers);
+        currentTierSummary = calculateTier(BigInt(campaign.totalParticipationScore), campaign.algorithm.tiers);
     }
     if (!currentTierSummary) throw new Error('failure calculating current tier');
 return currentTierSummary;
@@ -26,10 +26,13 @@ export const createNewCampaign = async (args: { name: string, targetVideo: strin
     Campaign.validate.validateAlgorithmCreateSchema(JSON.parse(algorithm));
     if (role === 'admin' && !args.company) throw new Error('administrators need to specify a company in args');
     const campaignCompany = (role ==='admin') ? args.company : company;
-    const campaign = Campaign.newCampaign(name, targetVideo, beginDate, endDate, coiinTotal, target, description, campaignCompany, algorithm, !!image);
+    const campaign = Campaign.newCampaign(name, targetVideo, beginDate, endDate, coiinTotal, target, description, campaignCompany, algorithm);
     await campaign.save();
-    if (image) await S3Client.setCampaignImage(campaign.id, image);
-    return campaign.save();
+    if (image) {
+      campaign.imagePath = await S3Client.setCampaignImage('banner', campaign.id, image);
+      await campaign.save();
+    }
+    return campaign;
 }
 
 export const updateCampaign = async (args: { id: string, name: string, beginDate: string, targetVideo: string, endDate: string, coiinTotal: number, target: string, description: string, algorithm: string }, context: { user: any }) => {

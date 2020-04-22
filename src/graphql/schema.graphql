@@ -13,7 +13,7 @@ type Mutation {
   promoteUserPermissions(userId:String,email:String,company:String,role:String): User
   registerSocialLink(type:String!,apiKey:String!,apiSecret:String!): Boolean
   removeSocialLink(type:String!): Boolean
-  postToSocial(type:String!,text:String!,photo:String,participantId:String!): Boolean
+  postToSocial(type:String!,text:String!,photo:String,participantId:String!): String
   setDevice(deviceToken:String!): Boolean
 }
 
@@ -79,7 +79,7 @@ type Campaign {
   algorithm: JSON
   audited: Boolean
   targetVideo: String
-  hasPhoto: Boolean
+  imagePath: String
   participants: [Participant]
 }
 

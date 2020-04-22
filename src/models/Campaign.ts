@@ -3,7 +3,6 @@ import { DateUtils } from 'typeorm/util/DateUtils';
 import { Participant } from './Participant';
 import {AlgorithmSpecs} from '../types';
 import { Validator } from '../schemas';
-import {BigIntEntityTransformer} from "../util/transformers";
 
 @Entity()
 export class Campaign extends BaseEntity {
@@ -23,7 +22,7 @@ export class Campaign extends BaseEntity {
   @Column({ type: 'numeric' })
   public coiinTotal: number;
 
-  @Column({ type: 'bigint', nullable: false, default: 0, transformer: BigIntEntityTransformer })
+  @Column({ type: 'bigint', nullable: false, default: 0 })
   public totalParticipationScore: bigint;
 
   @Column()
@@ -44,8 +43,8 @@ export class Campaign extends BaseEntity {
   @Column({ nullable: true })
   public targetVideo: string;
 
-  @Column({ nullable: false, default: false })
-  public hasPhoto: boolean;
+  @Column({ nullable: true })
+  public imagePath: string;
 
   @OneToMany(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -89,7 +88,7 @@ export class Campaign extends BaseEntity {
         .getOne()
   }
 
-  public static newCampaign(name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, hasPhoto: boolean): Campaign {
+  public static newCampaign(name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string): Campaign {
     const campaign = new Campaign();
     campaign.name = name;
     campaign.coiinTotal = coiinTotal;
@@ -99,7 +98,6 @@ export class Campaign extends BaseEntity {
     campaign.endDate = new Date(endDate);
     campaign.algorithm = JSON.parse(algorithm);
     campaign.targetVideo = targetVideo;
-    campaign.hasPhoto = hasPhoto;
     if (description) campaign.description = description;
     return campaign;
   }
