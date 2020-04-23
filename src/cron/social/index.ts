@@ -1,7 +1,10 @@
 import {Campaign} from "../../models/Campaign";
 import {TwitterClient} from "../../clients/twitter";
+import {SocialPost} from "../../models/SocialPost";
+import {getConnection} from "typeorm";
 
 (async () => {
+    let postsToSave: SocialPost[] = [];
     const campaigns = await Campaign.find({relations: ['posts']});
     campaigns.forEach(campaign => {
         if (campaign.isOpen()){
@@ -14,11 +17,12 @@ import {TwitterClient} from "../../clients/twitter";
                     post.likes = favorite_count;
                     post.shares = retweet_count;
                     console.log(`saving new metrics on social post: ${post}`);
-                    await post.save();
+                    postsToSave.push(post);
                 }
             })
         }
     })
+    await getConnection().createEntityManager().save(postsToSave);
 })()
 
 
