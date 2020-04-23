@@ -55,14 +55,16 @@ export const usernameExists = async (args: { username: string }) => {
     return { exists: !!user };
 }
 
-export const signUp = async (args: { username: string }, context: { user: any }) => {
+export const signUp = async (args: { username: string, deviceToken: string }, context: { user: any }) => {
+    const {username, deviceToken} = args;
     const { id, email } = context.user;
     if (await User.findOne({ where: { id } })) throw new Error('user already registered');
     const user = new User();
     const wallet = new Wallet();
     user.id = id;
     user.email = email;
-    user.username = args.username;
+    user.username = username;
+    user.deviceToken = deviceToken;
     await user.save();
     wallet.user = user;
     await wallet.save();
