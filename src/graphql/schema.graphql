@@ -1,7 +1,7 @@
 scalar JSON
 
 type Mutation {
-  newUser(username:String!): User
+  newUser(username:String!, deviceToken:String!): User
   newCampaign(name:String!,coiinTotal:Float!,target:String!,targetVideo:String!,beginDate:String!,endDate:String!,description:String,company:String, algorithm: String!,image: String): Campaign
   updateCampaign(name:String!,coiinTotal:Float,target:String,targetVideo:String,beginDate:String,endDate:String,description:String): Campaign
   generateCampaignAuditReport(campaignId:String!): AuditReport
