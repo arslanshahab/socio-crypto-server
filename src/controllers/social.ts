@@ -66,10 +66,11 @@ export const postToSocial = async (args: { type: string, text: string, photo: st
   return socialPost.id;
 }
 
-export const getTweetById = async (args: { id: string }, context: { user: any }) => {
-    const { id } = args;
+export const getTweetById = async (args: { id: string, type: string }, context: { user: any }) => {
+    const { id, type } = args;
     const user = await me(undefined, context);
     const socialLink = user.socialLinks.find(link => link.type === 'twitter');
     if (!socialLink) throw new Error(`you have not linked twitter as a social platform`);
-    return TwitterClient.getTweetById(socialLink.asClientCredentials(), id);
+    const client = getSocialClient(type);
+    return client.get(socialLink.asClientCredentials(), id);
 }
