@@ -23,6 +23,10 @@ ingress:
   enabled: true
   host: raiinmaker-staging.api.dragonchain.com
 
+cron:
+  frequency:
+    social: '0 * * * *' # At minute 0 every hour
+
 server:
   resources:
     limits:

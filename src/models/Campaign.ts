@@ -3,6 +3,7 @@ import { DateUtils } from 'typeorm/util/DateUtils';
 import { Participant } from './Participant';
 import {AlgorithmSpecs} from '../types';
 import { Validator } from '../schemas';
+import {SocialPost} from "./SocialPost";
 
 @Entity()
 export class Campaign extends BaseEntity {
@@ -52,6 +53,12 @@ export class Campaign extends BaseEntity {
     participant => participant.campaign,
   )
   public participants: Participant[];
+
+  @OneToMany(
+      _type => SocialPost,
+      post => post.campaign
+  )
+  public posts: SocialPost[];
 
   isOpen() {
     const now = new Date();

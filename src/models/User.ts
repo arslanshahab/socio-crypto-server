@@ -2,6 +2,7 @@ import { BaseEntity, Entity, PrimaryColumn, Column, OneToMany, OneToOne } from '
 import { Participant } from './Participant';
 import { Wallet } from './Wallet';
 import { SocialLink } from './SocialLink';
+import {SocialPost} from "./SocialPost";
 
 @Entity()
 export class User extends BaseEntity {
@@ -16,6 +17,12 @@ export class User extends BaseEntity {
 
   @Column({ nullable: true })
   public deviceToken: string;
+
+  @OneToMany(
+      _type => SocialPost,
+      posts => posts.user
+  )
+  posts: SocialPost[];
 
   @OneToMany(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

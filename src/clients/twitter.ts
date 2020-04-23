@@ -28,4 +28,18 @@ export class TwitterClient {
     const response = await client.post('/statuses/update', options);
     return response.id_str;
   }
+
+  public static getTweetMetricsById = async (credentials: SocialClientCredentials, id: string) => {
+    logger.debug(`retrieving tweet with id: ${id}`);
+    const client = TwitterClient.getClient(credentials);
+    const response = await client.get('/statuses/show', {id});
+    return {retweet_count: response.retweet_count, favorite_count: response.favorite_count}
+  }
+
+  public static getTweetById = async (credentials: SocialClientCredentials, id: string) => {
+    logger.debug(`retrieving tweet with id: ${id}`);
+    const client = TwitterClient.getClient(credentials);
+    const response = await client.get('/statuses/show', {id});
+    return response;
+  }
 }
