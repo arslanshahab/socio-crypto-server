@@ -4,8 +4,21 @@ import {TwitterClient} from '../clients/twitter';
 import {me} from "./user";
 import logger from '../util/logger';
 import { Participant } from '../models/Participant';
+import {SocialPost} from "../models/SocialPost";
 
 export const allowedSocialLinks = ['twitter'];
+
+export const getSocialClient = (type: string) => {
+    let client: any;
+    switch (type) {
+        case 'twitter':
+            client = TwitterClient;
+            break;
+        default:
+            throw new Error('no client for this social link type');
+    }
+    return client ;
+}
 
 export const registerSocialLink = async (args: { type: string, apiKey: string, apiSecret: string }, context: { user: any }) => {
     const user = await me(undefined, context);
@@ -46,16 +59,18 @@ export const postToSocial = async (args: { type: string, text: string, photo: st
   if (!participant.campaign.isOpen()) throw new Error('campaign is closed');
   const socialLink = user.socialLinks.find(link => link.type === type);
   if (!socialLink) throw new Error(`you have not linked ${type} as a social platform`);
-  let client: any;
-  switch (type) {
-    case 'twitter':
-      client = TwitterClient;
-      break;
-    default:
-      throw new Error('no client for this social link type');
-  }
+  const client = getSocialClient(type);
   const postId = await client.post(socialLink.asClientCredentials(), text, photo);
   logger.info(`Posted to twitter with ID: ${postId}`);
-  // store the social link to the database here
-  return postId;
+  const socialPost = await SocialPost.newSocialPost(postId, type, participant.id, user, participant.campaign).save();
+  return socialPost.id;
+}
+
+export const getTweetById = async (args: { id: string, type: string }, context: { user: any }) => {
+    const { id, type } = args;
+    const user = await me(undefined, context);
+    const socialLink = user.socialLinks.find(link => link.type === 'twitter');
+    if (!socialLink) throw new Error(`you have not linked twitter as a social platform`);
+    const client = getSocialClient(type);
+    return client.get(socialLink.asClientCredentials(), id);
 }

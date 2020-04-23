@@ -28,4 +28,10 @@ export class TwitterClient {
     const response = await client.post('/statuses/update', options);
     return response.id_str;
   }
+
+  public static get = async (credentials: SocialClientCredentials, id: string) => {
+    logger.debug(`retrieving tweet with id: ${id}`);
+    const client = TwitterClient.getClient(credentials);
+    return client.get('/statuses/show', {id});
+  }
 }

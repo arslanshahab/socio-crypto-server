@@ -1,0 +1,33 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: social-metrics
+  labels:
+    app.kubernetes.io/name: social-metrics
+    helm.sh/chart: {{ include "raiinmaker.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  schedule: "{{ .Values.cron.frequency.social }}"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+        spec:
+          containers:
+            - name: social-metrics
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              command: ["node"]
+              args: ["./dist/cron/social/index.js"]
+              envFrom:
+                - configMapRef:
+                    name: "{{ include "raiinmaker.fullname" . }}-server-env"
+              resources:
+                requests:
+                  memory: "128Mi"
+                  cpu: "100m"
+                limits:
+                  memory: "128Mi"
+                  cpu: "100m"
+          restartPolicy: OnFailure

@@ -1,16 +1,33 @@
+replicaCount: 1
+
 image:
   repository: localhost:5000/raiinmaker
-  tag: latest
+  tag: local
+  pullPolicy: 'Always'
 
 data:
   environment:
     NODE_ENV: "development"
 
+cron:
+  frequency:
+    social: '*/15 * * * *' # every 15th minute
+
+server:
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
 postgresql:
   existingSecret: "raiinmaker"
   persistence:
-    storageClass: "standard"
+    storageClass: standard
     size: 100Mi
+    accessMode: ReadWriteOnce
   replication:
     slaveReplicas: 0
 
@@ -18,8 +35,9 @@ pg-bak:
   enabled: false
 
 service:
-  type: NodePort
+  type: ClusterIP
   port: 8080
 
 ingress:
-  enabled: false
+  enabled: true
+  host: raiinmaker.local
