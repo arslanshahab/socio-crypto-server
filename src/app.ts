@@ -11,7 +11,6 @@ import { Firebase } from './clients/firebase';
 import { authenticate } from './middleware/authentication';
 import { requestLogger } from './middleware/logging';
 import { Dragonchain } from './clients/dragonchain';
-import {connectDatabase} from "./clients/databaseConnection";
 
 const { NODE_ENV = 'development' } = process.env;
 
@@ -28,7 +27,7 @@ export class Application {
 
 
   public async initializeServer() {
-    this.databaseConnection = await connectDatabase();
+    this.databaseConnection = await this.connectDatabase();
     await Secrets.initialize();
     await Firebase.initialize();
     await Dragonchain.initialize();
