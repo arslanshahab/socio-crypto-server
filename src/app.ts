@@ -3,7 +3,7 @@ import cors from 'cors';
 import expressGraphql from 'express-graphql';
 import { Server } from 'http';
 import bodyParser from 'body-parser';
-import { createConnection, getConnectionOptions } from 'typeorm';
+import {Connection} from 'typeorm';
 import logger from './util/logger';
 import { getSchema, root, publicRoot } from './graphql';
 import { Secrets } from './util/secrets';
@@ -11,21 +11,18 @@ import { Firebase } from './clients/firebase';
 import { authenticate } from './middleware/authentication';
 import { requestLogger } from './middleware/logging';
 import { Dragonchain } from './clients/dragonchain';
+import {connectDatabase} from "./clients/databaseConnection";
 
 const { NODE_ENV = 'development' } = process.env;
 
 export class Application {
   public app: express.Application;
   public runningServer: Server;
+  public databaseConnection: Connection;
 
-  public async connectDatabase() {
-    const connectionOptions = await getConnectionOptions();
-    Object.assign(connectionOptions, { entities: [__dirname + '/models/*'] });
-    await createConnection(connectionOptions);
-  }
 
   public async initializeServer() {
-    await this.connectDatabase();
+    this.databaseConnection = await connectDatabase();
     await Secrets.initialize();
     await Firebase.initialize();
     await Dragonchain.initialize();
