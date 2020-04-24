@@ -84,7 +84,5 @@ export const getParticipantSocialMetrics = async (args: { id: string }, context:
     if (!participant) throw new Error('participant not found');
     const campaign = await Campaign.findOne({where: {participant}});
     if (!campaign) throw new Error('campaign not found');
-
-
     return calculateParticipantSocialScore(participant, campaign);
 }
