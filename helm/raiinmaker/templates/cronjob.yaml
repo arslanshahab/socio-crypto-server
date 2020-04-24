@@ -31,8 +31,8 @@ spec:
                     name: "{{ include "raiinmaker.fullname" . }}-server-env"
               volumeMounts:
                 - name: firebase-credentials
-                mountPath: "/var/secrets/firebase-credentials"
-                readOnly: true
+                  mountPath: "/var/secrets/firebase-credentials"
+                  readOnly: true
                 - name: bearer-token
                   mountPath: "/var/secrets/bearer-token"
                   readOnly: true
