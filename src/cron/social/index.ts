@@ -16,15 +16,12 @@ const app = new Application();
     logger.info('Database connected');
     let postsToSave: SocialPost[] = [];
     const campaigns = await Campaign.find({relations: ['posts']});
-    console.log('Campaigns -->>> ', campaigns);
     for(const campaign of campaigns) {
         if (campaign.isOpen()) {
             const posts = await SocialPost.find({where: {campaign}, relations: ['user']})
             for(const post of posts) {
                 const user = await User.findOne({where : {posts: post}, relations: ['socialLinks']});
-                console.log('User who posted to social -->> ', user);
                 const socialLink = user ? user.socialLinks.find(link => link.type === post.type) : '';
-                console.log('Retrieved Social link -->> ', socialLink);
                 if (!socialLink) {
                     logger.error(`participant ${post.user.username} has not linked ${post.type} as a social platform`);
                 } else {
