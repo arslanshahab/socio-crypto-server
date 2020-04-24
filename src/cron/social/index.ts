@@ -2,6 +2,7 @@ import {Campaign} from "../../models/Campaign";
 import {TwitterClient} from "../../clients/twitter";
 import {SocialPost} from "../../models/SocialPost";
 import {getConnection} from "typeorm";
+import { Secrets } from '../../util/secrets';
 import { Application } from '../../app';
 import logger from "../../util/logger";
 
@@ -9,6 +10,7 @@ const app = new Application();
 
 (async () => {
     logger.info('Starting Cron.');
+    await Secrets.initialize();
     const connection = await app.connectDatabase();
     logger.info('Database connected');
     let postsToSave: SocialPost[] = [];

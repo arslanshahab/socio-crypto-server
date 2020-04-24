@@ -30,6 +30,18 @@ spec:
                 - configMapRef:
                     name: "{{ include "raiinmaker.fullname" . }}-server-env"
               volumeMounts:
+                - name: firebase-credentials
+                mountPath: "/var/secrets/firebase-credentials"
+                readOnly: true
+                - name: bearer-token
+                  mountPath: "/var/secrets/bearer-token"
+                  readOnly: true
+                - name: dragonchain-credentials
+                  mountPath: "/var/secrets/dragonchain-credentials"
+                  readOnly: true
+                - name: encryption-key
+                  mountPath: "/var/secrets/encryption-key"
+                  readOnly: true
                 - name: twitter-credentials
                   mountPath: "/var/secrets/twitter-credentials"
                   readOnly: true
@@ -41,3 +53,19 @@ spec:
                   memory: "128Mi"
                   cpu: "100m"
           restartPolicy: OnFailure
+          volumes:
+            - name: firebase-credentials
+              secret:
+                secretName: "firebase-credentials"
+            - name: bearer-token
+              secret:
+                secretName: "bearer-token"
+            - name: dragonchain-credentials
+              secret:
+                secretName: dragonchain-credentials
+            - name: encryption-key
+              secret:
+                secretName: encryption-key
+            - name: twitter-credentials
+              secret:
+                secretName: twitter-credentials
