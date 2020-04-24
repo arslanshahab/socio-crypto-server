@@ -28,6 +28,8 @@ spec:
         app.kubernetes.io/managed-by: {{ .Release.Service }}
         app.kubernetes.io/instance: {{ .Release.Name }}
         app.kubernetes.io/component: webserver
+      annotations:
+        iam.amazonaws.com/role: {{ .Values.data.IAM_ROLE }}
     spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
