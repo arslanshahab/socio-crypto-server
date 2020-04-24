@@ -1,8 +1,14 @@
-import {Tiers} from "../types";
+import {CampaignAuditReport} from "../types";
 import {Campaign} from "../models/Campaign";
 import {checkPermissions} from "../middleware/authentication";
 import {Participant} from "../models/Participant";
 import {S3Client} from '../clients/s3';
+import {getConnection, In} from "typeorm";
+import {User} from "../models/User";
+import {Wallet} from "../models/Wallet";
+import {getParticipant} from "./participant";
+import {Firebase} from "../clients/firebase";
+import {calculateParticipantPayout, calculateParticipantSocialScore, calculateTier} from "./helpers";
 
 
 export const getCurrentCampaignTier = async (args: { campaignId?: string, campaign?: Campaign }) => {
@@ -88,23 +94,99 @@ export const publicGet = async (args: { campaignId: string }) => {
     return campaign;
 }
 
-export const calculateTier = (totalParticipation: BigInt, tiers: Tiers) => {
-    let currentTier = 1;
-    let currentTotal = 1;
-    for(let key in tiers) {
-        if (totalParticipation < BigInt(tiers[key].threshold)) {
-            if (Number(key) < 2) {
-                currentTier = 1;
-                currentTotal = tiers['1'].totalCoiins;
-                return { currentTier, currentTotal };
-            } else {
-                const previousTier = Number(key) - 1;
-                currentTier = previousTier;
-                currentTotal = tiers[String(previousTier)].totalCoiins;
-                return { currentTier, currentTotal };
-            }
+export const generateCampaignAuditReport = async (args: { campaignId: string }, context: { user: any }) => {
+    const {company} = checkPermissions({hasRole: ['admin', 'manager']}, context);
+    const {campaignId} = args;
+    const campaign = await Campaign.findCampaignById(campaignId, company);
+    if (!campaign) throw new Error('Campaign not found');
+    const {currentTotal} = await getCurrentCampaignTier({campaign});
+    const auditReport: CampaignAuditReport = {
+        totalClicks: 0,
+        totalViews: 0,
+        totalSubmissions: 0,
+        totalLikes: 0,
+        totalShares: 0,
+        totalParticipationScore: Number(campaign.totalParticipationScore),
+        totalRewardPayout: currentTotal,
+        flaggedParticipants: []
+    };
+    for (const participant of campaign.participants) {
+        const {totalLikes, totalShares} = await calculateParticipantSocialScore(participant, campaign);
+        auditReport.totalShares += totalShares;
+        auditReport.totalLikes += totalLikes;
+        auditReport.totalClicks += participant.clickCount;
+        auditReport.totalViews += participant.viewCount;
+        auditReport.totalSubmissions += participant.submissionCount;
+        const totalParticipantPayout = await calculateParticipantPayout(currentTotal, campaign, participant);
+        if (totalParticipantPayout > (auditReport.totalRewardPayout * 0.15)) {
+            auditReport.flaggedParticipants.push({
+                participantId: participant.id,
+                viewPayout: participant.viewCount * campaign.algorithm.pointValues.view,
+                clickPayout: participant.clickCount * campaign.algorithm.pointValues.click,
+                submissionPayout: participant.submissionCount * campaign.algorithm.pointValues.submission,
+                likesPayout: totalLikes * campaign.algorithm.pointValues.likes,
+                sharesPayout: totalShares * campaign.algorithm.pointValues.shares,
+                totalPayout: totalParticipantPayout
+            })
         }
     }
+    return auditReport;
+};
 
-    return { currentTier, currentTotal };
-}
+export const payoutCampaignRewards = async (args: { campaignId: string, rejected: string[] }, context: { user: any }) => {
+    const {company} = checkPermissions({hasRole: ['admin', 'manager']}, context);
+    const usersWalletValues: { [key: string]: number } = {};
+    const userDeviceIds: { [key: string]: string } = {};
+    return getConnection().transaction(async transactionalEntityManager => {
+        const {campaignId, rejected} = args;
+        const campaign = await Campaign.findOneOrFail({where: {id: campaignId, company}});
+        const {currentTotal} = await getCurrentCampaignTier({campaign});
+        const participants = await Participant.find({where: {campaign}, relations: ['user']});
+        const users = (participants.length > 0) ? await User.find({
+            where: {id: In(participants.map(p => p.user.id))},
+            relations: ['wallet']
+        }) : [];
+        const wallets = (users.length > 0) ? await Wallet.find({
+            where: {id: In(users.map(u => u.wallet.id))},
+            relations: ['user']
+        }) : [];
+        if (rejected.length > 0) {
+            const newParticipationCount = participants.length - rejected.length;
+            let totalRejectedPayout = 0;
+            for (const id of rejected) {
+                const participant = await getParticipant({id});
+                const totalParticipantPayout = await calculateParticipantPayout(currentTotal, campaign, participant);
+                totalRejectedPayout += totalParticipantPayout;
+            }
+            const addedPayoutToEachParticipant = totalRejectedPayout / newParticipationCount;
+            for (const participant of participants) {
+                if (!rejected.includes(participant.id)) {
+                    const subtotal = await calculateParticipantPayout(currentTotal, campaign, participant);
+                    const totalParticipantPayout = subtotal + addedPayoutToEachParticipant;
+                    if (participant.user.deviceToken) userDeviceIds[participant.user.id] = participant.user.deviceToken;
+                    if (!usersWalletValues[participant.user.id]) usersWalletValues[participant.user.id] = totalParticipantPayout;
+                    else usersWalletValues[participant.user.id] += totalParticipantPayout;
+                }
+            }
+        } else {
+            for (const participant of participants) {
+                const totalParticipantPayout = await calculateParticipantPayout(currentTotal, campaign, participant);
+                if (participant.user.deviceToken) userDeviceIds[participant.user.id] = participant.user.deviceToken;
+                if (!usersWalletValues[participant.user.id]) usersWalletValues[participant.user.id] = totalParticipantPayout;
+                else usersWalletValues[participant.user.id] += totalParticipantPayout;
+            }
+        }
+        for (const userId in usersWalletValues) {
+            const currentWallet = wallets.find(w => w.user.id === userId);
+            if (currentWallet) currentWallet.balance += usersWalletValues[userId];
+        }
+        campaign.audited = true;
+        await transactionalEntityManager.save(campaign);
+        await transactionalEntityManager.save(participants);
+        await transactionalEntityManager.save(wallets);
+        await Firebase.sendCampaignCompleteNotifications(Object.values(userDeviceIds), campaign.name);
+        return true;
+    });
+};
+
+

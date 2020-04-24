@@ -26,11 +26,7 @@ export interface Tiers {
 export interface AlgorithmSpecs {
     version: number;
     initialTotal: number;
-    pointValues: {
-        click: number;
-        view: number;
-        submission: number;
-    };
+    pointValues: ActionValues;
     tiers: Tiers
 }
 
@@ -38,6 +34,8 @@ export interface CampaignAuditReport {
     totalClicks: number
     totalViews: number
     totalSubmissions: number
+    totalLikes: number
+    totalShares: number
     totalParticipationScore: number
     totalRewardPayout: number
     flaggedParticipants: {
@@ -45,8 +43,18 @@ export interface CampaignAuditReport {
         viewPayout: number
         clickPayout: number
         submissionPayout: number
+        likesPayout: number
+        sharesPayout: number
         totalPayout: number
     }[]
+}
+
+export interface ActionValues {
+    click: number;
+    view: number;
+    submission: number;
+    likes: number;
+    shares: number;
 }
 
 export interface SocialClientCredentials {

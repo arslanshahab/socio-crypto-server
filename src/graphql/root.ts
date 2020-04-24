@@ -1,5 +1,4 @@
 import GraphQLJSON from 'graphql-type-json';
-import {generateCampaignAuditReport, payoutCampaignRewards} from "../actions/campaign";
 import * as participantController from "../controllers/participant";
 import * as userController from "../controllers/user";
 import * as campaignController from "../controllers/campaign";
@@ -21,12 +20,13 @@ export const root = {
   listUsers: userController.list,
   me: userController.me,
   removeSocialLink: socialController.removeSocialLink,
-  generateCampaignAuditReport: generateCampaignAuditReport,
-  payoutCampaignRewards: payoutCampaignRewards,
+  generateCampaignAuditReport: campaignController.generateCampaignAuditReport,
+  payoutCampaignRewards: campaignController.payoutCampaignRewards,
   getCurrentCampaignTier: campaignController.getCurrentCampaignTier,
   registerSocialLink: socialController.registerSocialLink,
   postToSocial: socialController.postToSocial,
   setDevice: userController.setDevice,
+  getSocialMetrics: socialController.getParticipantSocialMetrics
 };
 
 export const publicRoot = {

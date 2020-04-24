@@ -5,6 +5,8 @@ import {me} from "./user";
 import logger from '../util/logger';
 import { Participant } from '../models/Participant';
 import {SocialPost} from "../models/SocialPost";
+import {calculateParticipantSocialScore} from "./helpers";
+import {Campaign} from "../models/Campaign";
 
 export const allowedSocialLinks = ['twitter'];
 
@@ -73,4 +75,16 @@ export const getTweetById = async (args: { id: string, type: string }, context: 
     if (!socialLink) throw new Error(`you have not linked twitter as a social platform`);
     const client = getSocialClient(type);
     return client.get(socialLink.asClientCredentials(), id);
+}
+
+export const getParticipantSocialMetrics = async (args: { id: string }, context: { user: any }) => {
+    const { id } = args;
+    const where: { [key: string]: string } = { id };
+    const participant = await Participant.findOne({ where });
+    if (!participant) throw new Error('participant not found');
+    const campaign = await Campaign.findOne({where: {participant}});
+    if (!campaign) throw new Error('campaign not found');
+
+
+    return calculateParticipantSocialScore(participant, campaign);
 }
