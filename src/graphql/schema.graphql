@@ -31,10 +31,10 @@ type Query {
 }
 
 type SocialMetrics {
-  totalLikes: Int
-  totalShares: Int
-  likesScore: Int
-  shareScore: Int
+  totalLikes: Float
+  totalShares: Float
+  likesScore: Float
+  shareScore: Float
 }
 
 type CurrentTier {
