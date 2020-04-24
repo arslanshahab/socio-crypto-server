@@ -15,7 +15,6 @@ type Mutation {
   removeSocialLink(type:String!): Boolean
   postToSocial(type:String!,text:String!,photo:String,participantId:String!): String
   setDevice(deviceToken:String!): Boolean
-  getSocialMetrics(participantId:String!): SocialMetrics
 }
 
 type Query {
@@ -24,6 +23,7 @@ type Query {
   listCampaigns(open:Boolean,skip:Int,take:Int,scoped:Boolean): PaginatedCampaignResults
   getCampaign(id:String): Campaign
   getParticipant(id:String): Participant
+  getSocialMetrics(participantId:String!): SocialMetrics
   campaignGet(campaignId:String!): Campaign
   listUsers(skip:Int,take:Int): PaginatedUserResults
   helloWorld: String
