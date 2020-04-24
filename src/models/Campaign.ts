@@ -35,6 +35,9 @@ export class Campaign extends BaseEntity {
   @Column({ nullable: false, default: 'raiinmaker' })
   public company: string;
 
+  @Column({ nullable: true })
+  public tagline: string;
+
   @Column({type: "jsonb", nullable: false })
   public algorithm: AlgorithmSpecs;
 
@@ -95,7 +98,7 @@ export class Campaign extends BaseEntity {
         .getOne()
   }
 
-  public static newCampaign(name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string): Campaign {
+  public static newCampaign(name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, tagline: string): Campaign {
     const campaign = new Campaign();
     campaign.name = name;
     campaign.coiinTotal = coiinTotal;
@@ -106,6 +109,7 @@ export class Campaign extends BaseEntity {
     campaign.algorithm = JSON.parse(algorithm);
     campaign.targetVideo = targetVideo;
     if (description) campaign.description = description;
+    if (tagline) campaign.tagline = tagline;
     return campaign;
   }
 }

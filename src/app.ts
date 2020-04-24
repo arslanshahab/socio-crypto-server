@@ -3,7 +3,7 @@ import cors from 'cors';
 import expressGraphql from 'express-graphql';
 import { Server } from 'http';
 import bodyParser from 'body-parser';
-import {Connection} from 'typeorm';
+import {Connection, getConnectionOptions, createConnection} from 'typeorm';
 import logger from './util/logger';
 import { getSchema, root, publicRoot } from './graphql';
 import { Secrets } from './util/secrets';
@@ -19,6 +19,12 @@ export class Application {
   public app: express.Application;
   public runningServer: Server;
   public databaseConnection: Connection;
+
+  public async connectDatabase() {
+    const connectionOptions = await getConnectionOptions();
+    Object.assign(connectionOptions, { entities: [__dirname + '/models/*'] });
+    return await createConnection(connectionOptions);
+  }
 
 
   public async initializeServer() {
