@@ -183,9 +183,11 @@ Resources:
                   - arn:aws:sns:us-west-2:381978683274:ers-production-Topic-LP3TJOCU3EWE
                   - arn:aws:sns:us-west-2:381978683274:ers-staging-Topic-SVYROUMXZY3V
             - Effect: Allow
-              Action: ['s3:*']
+              Action:
+                - s3:*
               Resource:
+                - Fn::GetAtt: [raiinmakerS3Bucket, Arn]
                 - Fn::Join:
                   - ''
-                  - - arn:aws:s3:::raiinmaker-
-                    - Ref: Stage
+                  - - Fn::GetAtt: [raiinmakerS3Bucket, Arn]
+                    - '/*'
