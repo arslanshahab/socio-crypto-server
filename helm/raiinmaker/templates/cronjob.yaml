@@ -20,9 +20,19 @@ spec:
               imagePullPolicy: {{ .Values.image.pullPolicy }}
               command: ["node"]
               args: ["./dist/cron/social/index.js"]
+              env:
+                - name: PG_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.postgresql.existingSecret }}
+                      key: postgresql-password
               envFrom:
                 - configMapRef:
                     name: "{{ include "raiinmaker.fullname" . }}-server-env"
+              volumeMounts:
+                - name: twitter-credentials
+                  mountPath: "/var/secrets/twitter-credentials"
+                  readOnly: true
               resources:
                 requests:
                   memory: "128Mi"
