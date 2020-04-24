@@ -21,7 +21,7 @@ const app = new Application();
         if (campaign.isOpen()) {
             const posts = await SocialPost.find({where: {campaign}, relations: ['user']})
             for(const post of posts) {
-                const user = await User.findOne({where : {posts: post}});
+                const user = await User.findOne({where : {posts: post}, relations: ['socialLinks']});
                 console.log('User who posted to social -->> ', user);
                 const socialLink = user ? user.socialLinks.find(link => link.type === post.type) : '';
                 console.log('Retrieved Social link -->> ', socialLink);
