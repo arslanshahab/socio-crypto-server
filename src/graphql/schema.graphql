@@ -15,6 +15,7 @@ type Mutation {
   removeSocialLink(type:String!): Boolean
   postToSocial(type:String!,text:String!,photo:String,participantId:String!): String
   setDevice(deviceToken:String!): Boolean
+  getSocialMetrics(participantId:String!): SocialMetrics
 }
 
 type Query {
@@ -27,6 +28,13 @@ type Query {
   listUsers(skip:Int,take:Int): PaginatedUserResults
   helloWorld: String
   me: User
+}
+
+type SocialMetrics {
+  totalLikes: Float
+  totalShares: Float
+  likesScore: Float
+  shareScore: Float
 }
 
 type CurrentTier {
