@@ -57,5 +57,6 @@ export const getPosts = async (args: { id: string }, context: any) => {
     console.log('Error: ')
     console.log(e)
     console.log('____')
+    return false
   }
 }
