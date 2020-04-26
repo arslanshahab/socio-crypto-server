@@ -107,12 +107,12 @@ type Participant {
 }
 
 type SocialPost {
-  id: String;
-  type: String;
-  likes: Int;
-  shares: Int;
-  comments: Int;
-  participantId: String;
+  id: String
+  type: String
+  likes: Int
+  shares: Int
+  comments: Int
+  participantId: String
 }
 
 type ParticipantMetrics {
