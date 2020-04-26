@@ -49,7 +49,6 @@ export const getPosts = async (args: { id: string }, context: any) => {
   const participant = await Participant.findOne({ where });
   if (!participant) throw new Error('participant not found');
   const posts = await SocialPost.find({ where: { participantId: participant.id } });
-
     posts.forEach(post => {
       results.push(getTweetById({ id: post.id, type: 'twitter'}, context))
     });
@@ -57,5 +56,6 @@ export const getPosts = async (args: { id: string }, context: any) => {
   } catch (e) {
     console.log('Error: ')
     console.log(e)
+    console.log('____')
   }
 }
