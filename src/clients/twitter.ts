@@ -2,6 +2,7 @@ import Twitter from 'twitter';
 import logger from '../util/logger';
 import { Secrets } from '../util/secrets';
 import { SocialClientCredentials } from '../types';
+import { getRedis } from './redis';
 
 export class TwitterClient {
   public static getClient(userCredentials: SocialClientCredentials): Twitter {
@@ -29,9 +30,16 @@ export class TwitterClient {
     return response.id_str;
   }
 
-  public static get = async (credentials: SocialClientCredentials, id: string) => {
+  public static get = async (credentials: SocialClientCredentials, id: string, cached = true) => {
     logger.debug(`retrieving tweet with id: ${id}`);
+    let cacheKey = `twitter:${id}`;
+    if (cached) {
+      const cachedResponse = await getRedis().get(cacheKey);
+      if (cachedResponse) return cachedResponse;
+    }
     const client = TwitterClient.getClient(credentials);
-    return client.get('/statuses/show', {id});
+    const twitterResponse = await client.get('/statuses/show', {id});
+    await getRedis().set(cacheKey, JSON.stringify(twitterResponse), 'EX', 900); // cache for 15 minutes
+    return twitterResponse;
   }
 }

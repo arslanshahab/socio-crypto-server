@@ -25,7 +25,7 @@ const app = new Application();
                 if (!socialLink) {
                     logger.error(`participant ${post.user.username} has not linked ${post.type} as a social platform`);
                 } else {
-                    const {retweet_count, favorite_count} = await TwitterClient.get(socialLink.asClientCredentials(), post.id);
+                    const {retweet_count, favorite_count} = await TwitterClient.get(socialLink.asClientCredentials(), post.id, false);
                     post.likes = favorite_count;
                     post.shares = retweet_count;
                     logger.info(`saving new metrics on social post: ${post}`);
