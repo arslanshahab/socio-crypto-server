@@ -30,7 +30,7 @@ export class TwitterClient {
     return response.id_str;
   }
 
-  public static get = async (credentials: SocialClientCredentials, id: string, cached = true) => {
+  public static get = async (credentials: SocialClientCredentials, id: string, cached = true): Promise<Twitter.ResponseData> => {
     logger.debug(`retrieving tweet with id: ${id}`);
     let cacheKey = `twitter:${id}`;
     if (cached) {
