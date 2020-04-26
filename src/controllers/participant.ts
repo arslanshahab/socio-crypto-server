@@ -42,14 +42,20 @@ export const getParticipant = async (args: { id: string }) => {
 };
 
 export const getPosts = async (args: { id: string }, context: any) => {
+  try {
   const { id } = args;
   const results: Promise<any>[] = [];
   const where: { [key: string]: string } = { id };
   const participant = await Participant.findOne({ where });
   if (!participant) throw new Error('participant not found');
   const posts = await SocialPost.find({ where: { participantId: participant.id } });
-  posts.forEach(post => {
-    results.push(getTweetById({ id: post.id, type: 'twitter'}, context))
-  });
-  return results;
+
+    posts.forEach(post => {
+      results.push(getTweetById({ id: post.id, type: 'twitter'}, context))
+    });
+    return results;
+  } catch (e) {
+    console.log('Error: ')
+    console.log(e)
+  }
 }
