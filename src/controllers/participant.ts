@@ -1,8 +1,8 @@
 import {Campaign} from "../models/Campaign";
 import {Dragonchain} from "../clients/dragonchain";
 import {Participant} from "../models/Participant";
-import { SocialPost } from "../models/SocialPost"
-import { getTweetById } from '../controllers/social'
+import { SocialPost } from "../models/SocialPost";
+import { getTweetById } from '../controllers/social';
 
 export const trackAction = async (args: { participantId: string, action: 'click' | 'view' | 'submission' }, context: any) => {
     if (!['click', 'view', 'submission'].includes(args.action)) throw new Error('invalid metric specified');
