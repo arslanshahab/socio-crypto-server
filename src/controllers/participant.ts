@@ -38,3 +38,10 @@ export const getParticipant = async (args: { id: string }) => {
     if (!participant) throw new Error('participant not found');
     return participant;
 };
+
+export const getPosts = async (_args: any, context: { user: any }) => {
+  const { id } = context.user;
+  const participant = await Participant.findOne({ where: { id }, relations: ['posts'] });
+  if (!participant) throw new Error('participant not found');
+  return participant;
+}

@@ -1,6 +1,7 @@
-import {BaseEntity, Entity, Column, ManyToOne, PrimaryGeneratedColumn} from 'typeorm';
+import {BaseEntity, Entity, Column, ManyToOne, OneToMany, PrimaryGeneratedColumn} from 'typeorm';
 import { Campaign } from './Campaign';
 import { User } from './User';
+import { SocialPost } from './SocialPost';
 
 @Entity()
 export class Participant extends BaseEntity {
@@ -38,7 +39,13 @@ export class Participant extends BaseEntity {
   )
   public campaign: Campaign;
 
-  public  metrics() {
+  @OneToMany(
+    _type => SocialPost,
+    posts => posts.participant
+  )
+  public posts: SocialPost[];
+
+  public metrics() {
     return {
       clickCount: this.clickCount,
       viewCount: this.viewCount,
