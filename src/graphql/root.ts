@@ -14,6 +14,7 @@ export const root = {
   listCampaigns: campaignController.listCampaigns,
   getCampaign: campaignController.get,
   getParticipant: participantController.getParticipant,
+  getParticipantPosts: participantController.getPosts,
   updateCampaign: campaignController.updateCampaign,
   deleteCampaign: campaignController.deleteCampaign,
   promoteUserPermissions: userController.promotePermissions,

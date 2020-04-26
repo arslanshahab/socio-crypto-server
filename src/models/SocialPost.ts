@@ -2,7 +2,6 @@ import {BaseEntity, Column, Entity, ManyToOne, PrimaryColumn } from "typeorm";
 import {User} from "./User";
 import {Campaign} from "./Campaign";
 
-
 @Entity()
 export class SocialPost extends BaseEntity{
     @PrimaryColumn()

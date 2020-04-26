@@ -38,7 +38,7 @@ export class Participant extends BaseEntity {
   )
   public campaign: Campaign;
 
-  public  metrics() {
+  public metrics() {
     return {
       clickCount: this.clickCount,
       viewCount: this.viewCount,
