@@ -1,8 +1,6 @@
 import {BaseEntity, Column, Entity, ManyToOne, PrimaryColumn } from "typeorm";
 import {User} from "./User";
 import {Campaign} from "./Campaign";
-import {Participant} from "./Participant";
-
 
 @Entity()
 export class SocialPost extends BaseEntity{
@@ -24,13 +22,6 @@ export class SocialPost extends BaseEntity{
     @Column({nullable: false})
     public participantId: string;
 
-    @ManyToOne(
-        _type => Participant,
-        participant => participant.posts,
-        { primary: true }
-    )
-    participant: Participant;
-  
     @ManyToOne(
         _type => User,
         user => user.posts,

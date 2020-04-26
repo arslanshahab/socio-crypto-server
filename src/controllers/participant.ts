@@ -1,6 +1,7 @@
 import {Campaign} from "../models/Campaign";
 import {Dragonchain} from "../clients/dragonchain";
 import {Participant} from "../models/Participant";
+import {SocialPost} from "../models/SocialPost";
 
 export const trackAction = async (args: { participantId: string, action: 'click' | 'view' | 'submission' }, context: any) => {
     if (!['click', 'view', 'submission'].includes(args.action)) throw new Error('invalid metric specified');
@@ -42,7 +43,7 @@ export const getParticipant = async (args: { id: string }) => {
 export const getPosts = async (args: { id: string }) => {
   const { id } = args;
   const where: { [key: string]: string } = { id };
-  const participant = await Participant.findOne({ where,  relations: ['posts'] });
+  const participant = await Participant.findOne({ where });
   if (!participant) throw new Error('participant not found');
-  return participant;
+  SocialPost.find({ where: { participantId: participant.id } });
 }
