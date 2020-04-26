@@ -45,5 +45,5 @@ export const getPosts = async (args: { id: string }) => {
   const where: { [key: string]: string } = { id };
   const participant = await Participant.findOne({ where });
   if (!participant) throw new Error('participant not found');
-  SocialPost.find({ where: { participantId: participant.id } });
+  return { results: SocialPost.find({ where: { participantId: participant.id } }) };
 }
