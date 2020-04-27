@@ -34,7 +34,7 @@ const updatePostMetrics = async (likes: number, shares: number, post: SocialPost
         if (campaign.isOpen()) {
             const posts = await SocialPost.find({where: {campaign}, relations: ['user', 'campaign']});
             for(const post of posts) {
-                const socialLink = await SocialLink.findOne({where: {user: post.user, type:post.type}})
+                const socialLink = await SocialLink.findOne({where: {user: post.user, type:post.type}, relations: ['user']})
                 if (!socialLink) {
                     logger.error(`participant ${post.user.username} has not linked ${post.type} as a social platform`);
                 } else {
