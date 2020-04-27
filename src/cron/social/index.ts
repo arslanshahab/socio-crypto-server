@@ -5,9 +5,23 @@ import {getConnection} from "typeorm";
 import { Secrets } from '../../util/secrets';
 import { Application } from '../../app';
 import logger from "../../util/logger";
-import {User} from "../../models/User";
+import {SocialLink} from "../../models/SocialLink";
+import {Participant} from "../../models/Participant";
 
 const app = new Application();
+
+const updatePostMetrics = async (likes: number, shares: number, post: SocialPost) => {
+    const participant = await Participant.findOne({where:{campaign: post.campaign, user: post.user}});
+    if (!participant) throw new Error('participant not found');
+    const likesAdjustedScore = (likes - post.likes) * post.campaign.algorithm.pointValues.likes;
+    const sharesAdjustedScore = (shares - post.shares) * post.campaign.algorithm.pointValues.shares;
+    post.campaign.totalParticipationScore += BigInt(likesAdjustedScore + sharesAdjustedScore);
+    participant.participationScore += BigInt(likesAdjustedScore + sharesAdjustedScore);
+    post.likes = likes;
+    post.shares = shares;
+    await participant.save();
+    return post;
+}
 
 (async () => {
     logger.info('Starting Cron.');
@@ -18,18 +32,16 @@ const app = new Application();
     const campaigns = await Campaign.find({relations: ['posts']});
     for(const campaign of campaigns) {
         if (campaign.isOpen()) {
-            const posts = await SocialPost.find({where: {campaign}, relations: ['user']})
+            const posts = await SocialPost.find({where: {campaign}, relations: ['user', 'campaign']});
             for(const post of posts) {
-                const user = await User.findOne({where : {posts: post}, relations: ['socialLinks']});
-                const socialLink = user ? user.socialLinks.find(link => link.type === post.type) : '';
+                const socialLink = await SocialLink.findOne({where: {user: post.user, type:post.type}})
                 if (!socialLink) {
                     logger.error(`participant ${post.user.username} has not linked ${post.type} as a social platform`);
                 } else {
                     const {retweet_count, favorite_count} = await TwitterClient.get(socialLink.asClientCredentials(), post.id, false);
-                    post.likes = favorite_count;
-                    post.shares = retweet_count;
+                    const updatedPost = await updatePostMetrics(favorite_count, retweet_count, post);
                     logger.info(`saving new metrics on social post: ${post}`);
-                    postsToSave.push(post);
+                    postsToSave.push(updatedPost);
                 }
             }
         }
