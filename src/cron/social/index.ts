@@ -40,14 +40,17 @@ const updatePostMetrics = async (likes: number, shares: number, post: SocialPost
                 } else {
                     const {retweet_count, favorite_count} = await TwitterClient.get(socialLink.asClientCredentials(), post.id, false);
                     const updatedPost = await updatePostMetrics(favorite_count, retweet_count, post);
-                    logger.info(`saving new metrics on social post for campaign: ${post.campaign.name}`);
+                    logger.info(`pushing new metrics on social post for campaign: ${post.campaign.name}`);
                     postsToSave.push(updatedPost);
                 }
             }
         }
     }
+    logger.info('saving entities');
     await getConnection().createEntityManager().save(postsToSave);
+    logger.info('closing connection');
     await connection.close();
+    process.exit(0);
 })()
 
 
