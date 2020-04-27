@@ -40,7 +40,7 @@ const updatePostMetrics = async (likes: number, shares: number, post: SocialPost
                 } else {
                     const {retweet_count, favorite_count} = await TwitterClient.get(socialLink.asClientCredentials(), post.id, false);
                     const updatedPost = await updatePostMetrics(favorite_count, retweet_count, post);
-                    logger.info(`saving new metrics on social post: ${post}`);
+                    logger.info(`saving new metrics on social post for campaign: ${JSON.stringify(post.campaign.name)}`);
                     postsToSave.push(updatedPost);
                 }
             }
