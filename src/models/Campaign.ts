@@ -4,6 +4,7 @@ import { Participant } from './Participant';
 import {AlgorithmSpecs} from '../types';
 import { Validator } from '../schemas';
 import {SocialPost} from "./SocialPost";
+import { StringifiedArrayTransformer } from '../util/transformers';
 
 @Entity()
 export class Campaign extends BaseEntity {
@@ -49,6 +50,12 @@ export class Campaign extends BaseEntity {
 
   @Column({ nullable: true })
   public imagePath: string;
+
+  @Column({ type: 'text', nullable: false, default: '[]', transformer: StringifiedArrayTransformer })
+  public suggestedPosts: string[];
+
+  @Column({ type: 'text', nullable: false, default: '[]', transformer: StringifiedArrayTransformer })
+  public suggestedTags: string[];
 
   @OneToMany(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -98,7 +105,7 @@ export class Campaign extends BaseEntity {
         .getOne()
   }
 
-  public static newCampaign(name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, tagline: string): Campaign {
+  public static newCampaign(name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, tagline: string, suggestedPosts: string[], suggestedTags: string[]): Campaign {
     const campaign = new Campaign();
     campaign.name = name;
     campaign.coiinTotal = coiinTotal;
@@ -110,6 +117,8 @@ export class Campaign extends BaseEntity {
     campaign.targetVideo = targetVideo;
     if (description) campaign.description = description;
     if (tagline) campaign.tagline = tagline;
+    if (suggestedPosts) campaign.suggestedPosts = suggestedPosts;
+    if (suggestedTags) campaign.suggestedTags = suggestedTags;
     return campaign;
   }
 }

@@ -2,8 +2,31 @@ scalar JSON
 
 type Mutation {
   newUser(username:String!, deviceToken:String!): User
-  newCampaign(name:String!,coiinTotal:Float!,target:String!,targetVideo:String!,beginDate:String!,endDate:String!,description:String,company:String, algorithm: String!,image: String,tagline: String): Campaign
-  updateCampaign(name:String!,coiinTotal:Float,target:String,targetVideo:String,beginDate:String,endDate:String,description:String): Campaign
+  newCampaign(
+    name:String!,
+    coiinTotal:Float!,
+    target:String!,
+    targetVideo:String!,
+    beginDate:String!,
+    endDate:String!,
+    description:String,
+    company:String,
+    algorithm: String!,
+    image: String,
+    tagline: String,
+    suggestedPosts:[String],
+    suggestedTags:[String]): Campaign
+  updateCampaign(
+    name:String!,
+    coiinTotal:Float,
+    target:String,
+    targetVideo:String,
+    beginDate:String,
+    endDate:String,
+    description:String,
+    image:String,
+    suggestedPosts:[String],
+    suggestedTags:[String]): Campaign
   generateCampaignAuditReport(campaignId:String!): AuditReport
   payoutCampaignRewards(campaignId: String!, rejected: [String]!): Boolean
   deleteCampaign(id:String!): Campaign
@@ -94,6 +117,8 @@ type Campaign {
   targetVideo: String
   imagePath: String
   tagline: String
+  suggestedPosts: [String]
+  suggestedTags: [String]
   participants: [Participant]
 }
 

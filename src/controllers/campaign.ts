@@ -26,13 +26,13 @@ export const getCurrentCampaignTier = async (args: { campaignId?: string, campai
 return currentTierSummary;
 }
 
-export const createNewCampaign = async (args: { name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, image: string, tagline: string }, context: { user: any }) => {
+export const createNewCampaign = async (args: { name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, image: string, tagline: string, suggestedPosts: string[], suggestedTags: string[] }, context: { user: any }) => {
     const { role, company } = checkPermissions({ hasRole: ['admin', 'manager'] }, context);
-    const { name, beginDate, endDate, coiinTotal, target, description, algorithm, targetVideo, image, tagline } = args;
+    const { name, beginDate, endDate, coiinTotal, target, description, algorithm, targetVideo, image, tagline, suggestedPosts, suggestedTags } = args;
     Campaign.validate.validateAlgorithmCreateSchema(JSON.parse(algorithm));
     if (role === 'admin' && !args.company) throw new Error('administrators need to specify a company in args');
     const campaignCompany = (role ==='admin') ? args.company : company;
-    const campaign = Campaign.newCampaign(name, targetVideo, beginDate, endDate, coiinTotal, target, description, campaignCompany, algorithm, tagline);
+    const campaign = Campaign.newCampaign(name, targetVideo, beginDate, endDate, coiinTotal, target, description, campaignCompany, algorithm, tagline, suggestedPosts, suggestedTags);
     await campaign.save();
     if (image) {
       campaign.imagePath = await S3Client.setCampaignImage('banner', campaign.id, image);
@@ -41,9 +41,9 @@ export const createNewCampaign = async (args: { name: string, targetVideo: strin
     return campaign;
 }
 
-export const updateCampaign = async (args: { id: string, name: string, beginDate: string, targetVideo: string, endDate: string, coiinTotal: number, target: string, description: string, algorithm: string }, context: { user: any }) => {
+export const updateCampaign = async (args: { id: string, name: string, beginDate: string, targetVideo: string, endDate: string, coiinTotal: number, target: string, description: string, algorithm: string, suggestedPosts: string[], suggestedTags: string[], image: string }, context: { user: any }) => {
     const { role, company } = checkPermissions({ hasRole: ['admin', 'manager'] }, context);
-    const { id, name, beginDate, endDate, coiinTotal, target, description, algorithm, targetVideo } = args;
+    const { id, name, beginDate, endDate, coiinTotal, target, description, algorithm, targetVideo, suggestedPosts, suggestedTags, image } = args;
     Campaign.validate.validateAlgorithmCreateSchema(JSON.parse(algorithm));
     const where: {[key: string]: string} = { id };
     if (role === 'manager') where['company'] = company;
@@ -57,6 +57,9 @@ export const updateCampaign = async (args: { id: string, name: string, beginDate
     if (description) campaign.description = description;
     if (algorithm) campaign.algorithm = JSON.parse(algorithm);
     if (targetVideo) campaign.targetVideo = targetVideo;
+    if (suggestedPosts) campaign.suggestedPosts = suggestedPosts;
+    if (suggestedTags) campaign.suggestedTags = suggestedTags;
+    if (image) campaign.imagePath = await S3Client.setCampaignImage('banner', campaign.id, image);
     await campaign.save();
     return campaign;
 }
