@@ -6,6 +6,7 @@ import {S3Client} from '../clients/s3';
 import {getConnection, In} from "typeorm";
 import {User} from "../models/User";
 import {Wallet} from "../models/Wallet";
+import {SocialPost} from '../models/SocialPost';
 import {getParticipant} from "./participant";
 import {Firebase} from "../clients/firebase";
 import {calculateParticipantPayout, calculateParticipantSocialScore, calculateTier} from "./helpers";
@@ -77,7 +78,9 @@ export const deleteCampaign = async (args: { id: string }, context: { user: any 
     if (role === 'manager') where['company'] = company;
     const campaign = await Campaign.findOne({ where, relations: ['participants'] });
     if (!campaign) throw new Error('campaign not found');
+    const socialPosts = await SocialPost.find({ where: { campaign } });
     await Participant.remove(campaign.participants);
+    await SocialPost.remove(socialPosts);
     await campaign.remove();
     return campaign;
 }
