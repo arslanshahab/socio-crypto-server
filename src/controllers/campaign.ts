@@ -78,7 +78,7 @@ export const deleteCampaign = async (args: { id: string }, context: { user: any 
     if (role === 'manager') where['company'] = company;
     const campaign = await Campaign.findOne({ where, relations: ['participants', 'posts'] });
     if (!campaign) throw new Error('campaign not found');
-    await SocialPost.remove(campaign.posts);
+    await SocialPost.delete({ id: In(campaign.posts.map((p: any) => p.id)) });
     await Participant.remove(campaign.participants);
     await campaign.remove();
     return campaign;
