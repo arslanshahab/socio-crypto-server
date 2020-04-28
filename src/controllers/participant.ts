@@ -36,7 +36,7 @@ export const trackAction = async (args: { participantId: string, action: 'click'
 export const getParticipant = async (args: { id: string }) => {
     const { id } = args;
     const where: { [key: string]: string } = { id };
-    const participant = await Participant.findOne({ where });
+    const participant = await Participant.findOne({ where, relations: ['user'] });
     if (!participant) throw new Error('participant not found');
     return participant;
 };

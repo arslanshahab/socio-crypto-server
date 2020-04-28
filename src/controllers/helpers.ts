@@ -23,7 +23,7 @@ export const calculateTier = (totalParticipation: BigInt, tiers: Tiers) => {
     let currentTier = 1;
     let currentTotal = 1;
     for(let key in tiers) {
-        if (totalParticipation < BigInt(tiers[key].threshold)) {
+        if (totalParticipation < BigInt(tiers[key].threshold) || !tiers[key].threshold) {
             if (Number(key) < 2) {
                 currentTier = 1;
                 currentTotal = tiers['1'].totalCoiins;
