@@ -76,7 +76,7 @@ export const deleteCampaign = async (args: { id: string }, context: { user: any 
     const { role, company } = checkPermissions({ hasRole: ['admin', 'manager'] }, context);
     const where: {[key: string]: string} = { id: args.id };
     if (role === 'manager') where['company'] = company;
-    const campaign = await Campaign.findOne({ where, relations: ['participants', 'socialPosts'] });
+    const campaign = await Campaign.findOne({ where, relations: ['participants', 'posts'] });
     if (!campaign) throw new Error('campaign not found');
     await SocialPost.remove(campaign.posts);
     await Participant.remove(campaign.participants);
