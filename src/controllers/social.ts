@@ -8,7 +8,7 @@ import {SocialPost} from "../models/SocialPost";
 import {calculateParticipantSocialScore} from "./helpers";
 import {Campaign} from "../models/Campaign";
 
-export const allowedSocialLinks = ['twitter'];
+export const allowedSocialLinks = ['twitter', 'facebook'];
 
 export const getSocialClient = (type: string) => {
     let client: any;
