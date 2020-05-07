@@ -61,3 +61,13 @@ export interface SocialClientCredentials {
   apiKey?: string;
   apiSecret?: string;
 }
+
+export interface DragonfactorLoginRequest {
+  service: string;
+  factorType: string;
+  timestamp: string;
+  factor: string;
+  signingPublicKey: string;
+  factorAssociationPublicKey: string;
+  signature: string;
+}

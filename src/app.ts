@@ -56,7 +56,9 @@ export class Application {
       rootValue: publicRoot,
       graphiql: NODE_ENV === 'development',
     }));
-    this.app.get('/v1/health', (_req: express.Request, res: express.Response) => res.send('I am awake and functioning, thanks!'));
+    this.app.get('/v1/health', (_req: express.Request, res: express.Response) => res.send('I am alive and well, thank you!'));
+    this.app.post('/v1/dragonfactor/login');
+    this.app.put('/v1/dragonfactor/login');
   }
 
   public async startServer() {

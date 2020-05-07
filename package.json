@@ -21,7 +21,7 @@
     "migration:generate": "yarn typeorm:cli migration:generate"
   },
   "dependencies": {
-    "ajv": "^6.12.0",
+    "ajv": "^6.12.2",
     "aws-sdk": "^2.632.0",
     "body-parser": "^1.19.0",
     "cls-hooked": "^4.2.2",
@@ -43,6 +43,7 @@
     "winston": "^3.2.1"
   },
   "devDependencies": {
+    "@types/ajv": "^1.0.0",
     "@types/aws-sdk": "^2.7.0",
     "@types/body-parser": "^1.19.0",
     "@types/cls-hooked": "^4.3.0",
