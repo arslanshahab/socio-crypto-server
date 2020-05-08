@@ -18,7 +18,8 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
   const factorRequest: DragonfactorLoginRequest = req.body;
   if (!validFactors.includes(factorRequest.factorType)) return res.status(403).json({ code: 'UNAUTHORIZED', message: 'unauthorized' });
   // check that the timestamp is within acceptable bounds
-  if (new Date().getUTCMilliseconds() - new Date(factorRequest.timestamp).getUTCMilliseconds() > TIME_DIFFERENCE) throw new Error('unauthorized');
+  if (new Date(factorRequest.timestamp).getUTCMilliseconds() > new Date().getUTCMilliseconds()) return res.status(403).json({ code: 'UNAUTHORIZED', message: 'unauthorized' });
+  if (new Date().getUTCMilliseconds() - new Date(factorRequest.timestamp).getUTCMilliseconds() > TIME_DIFFERENCE) return res.status(403).json({ code: 'UNAUTHORIZED', message: 'unauthorized' });
   const factor: GenericFactor = JSON.parse(factorRequest.factor);
   if (!verifyLoginRequestSignature(factorRequest)) return res.status(403).json({ code: 'UNAUTHORIZED', message: 'unauthorized' });
   if (!verifyFactor(factor)) return res.status(403).json({ code: 'UNAUTHORIZED', message: 'unauthorized' });
