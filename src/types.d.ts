@@ -68,6 +68,29 @@ export interface DragonfactorLoginRequest {
   timestamp: string;
   factor: string;
   signingPublicKey: string;
-  factorAssociationPublicKey: string;
+  factorAssocation: GenericFactorAssociation;
   signature: string;
+}
+
+export interface GenericFactorAssociation {
+  publicKey: string;
+  publicSignSignature: string;
+  signPublicSignature: string;
+}
+
+export interface GenericFactor {
+  id: string;
+  providerId: string;
+  name: string;
+  factor: string;
+  signature: string;
+  expiry?: string;
+}
+
+export interface GenericProvider {
+  id: string;
+  name: string;
+  publicKey: string;
+  keyType: string;
+  offerings: any[];
 }

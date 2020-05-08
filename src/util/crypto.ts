@@ -1,5 +1,8 @@
 import crypto from 'crypto';
+import * as secp256k1 from 'secp256k1';
 import { Secrets } from './secrets';
+import { Dragonfactor } from '../clients/dragonfactor';
+import { GenericFactor, GenericFactorAssociation, DragonfactorLoginRequest } from '../types';
 
 const IV_LENGTH = 16; // For AES, this is always 16
 
@@ -26,3 +29,91 @@ export const decrypt = (dataToDecrypt: string): string => {
 
   return decryptedData.toString();
 };
+
+const orderedFactorHashList = (factor: GenericFactor, signature = false): Buffer[] => {
+  try {
+    const hashBufList: Buffer[] = [];
+    hashBufList.push(Buffer.from(factor.id, 'utf8'));
+    hashBufList.push(Buffer.from(factor.providerId, 'utf8'));
+    hashBufList.push(Buffer.from(factor.name, 'utf8'));
+    hashBufList.push(Buffer.from(factor.factor, 'utf8'));
+    hashBufList.push(Buffer.from(factor.expiry || '', 'utf8'));
+    if (signature) {
+      hashBufList.push(Buffer.from(factor['signature'], 'utf8'));
+    }
+    return hashBufList;
+  } catch (e) {
+    throw new Error('Error while hashing factor (possible malformed factor)');
+  }
+};
+
+const orderedFactorLoginRequestHashList = (request: DragonfactorLoginRequest): Buffer[] => {
+  try {
+    const hashBufList: Buffer[] = [];
+    hashBufList.push(Buffer.from(request.service, 'utf8'));
+    hashBufList.push(Buffer.from(request.factorType, 'utf8'));
+    hashBufList.push(Buffer.from(request.factor, 'utf8'));
+    hashBufList.push(Buffer.from(request.signingPublicKey, 'utf8'));
+    hashBufList.push(Buffer.from(request.signature, 'utf8'));
+    // hash the factor association info
+    hashBufList.push(Buffer.from(request.factorAssocation.publicKey, 'base64'));
+    hashBufList.push(Buffer.from(request.factorAssocation.publicSignSignature, 'utf8'));
+    hashBufList.push(Buffer.from(request.factorAssocation.signPublicSignature, 'utf8'));
+    return hashBufList;
+  } catch (error) {
+    throw new Error('Error while hashing factor login request (possible malformed factor)');
+  }
+};
+
+const sha256Hash = (input: Buffer): Buffer => {
+  return crypto.createHash('sha256').update(input).digest();
+}
+
+const hashFactorForSigning = (factor: GenericFactor): Buffer => {
+  return sha256Hash(Buffer.concat(orderedFactorHashList(factor)));
+};
+
+const hashLoginRequestForSigning = (request: DragonfactorLoginRequest): Buffer => {
+  return sha256Hash(Buffer.concat(orderedFactorLoginRequestHashList(request)));
+}
+
+export const verifySignature = (message: Buffer, signature: Buffer, publicKey: Buffer): boolean => {
+  return secp256k1.ecdsaVerify(signature, message, publicKey);
+};
+
+export const verifyLoginRequestSignature = (request: DragonfactorLoginRequest) => {
+  try {
+    const msg: Buffer = hashLoginRequestForSigning(request);
+    return verifySignature(msg, Buffer.from(request.signature, 'base64'), Buffer.from(request.signingPublicKey, 'base64'));
+  } catch (error) {
+    console.error('Failed to login request signature');
+    console.error(error.message);
+    throw new Error('failed to verify login request signature');
+  }
+}
+
+export const verifyFactor = async (factor: GenericFactor): Promise<boolean> => {
+  try {
+    const provider = await Dragonfactor.getProvider(factor.providerId);
+    const msg: Buffer = hashFactorForSigning(factor);
+    // TODO: verify the the factor signature has to be from utf8 and not base64
+    return verifySignature(msg, Buffer.from(factor.signature, 'utf8'), Buffer.from(provider.publicKey, 'base64'));
+  } catch (error) {
+    console.error('Failed to verify factor');
+    console.error(error.message);
+    throw new Error('failed to verify factor signature');
+  }
+};
+
+export const verifyCrossSigning = (association: GenericFactorAssociation, signingPublicKey: string) => {
+  try {
+    const signPubHash = sha256Hash(Buffer.from(signingPublicKey, 'base64'));
+    const factorPubHash = sha256Hash(Buffer.from(association.publicKey, 'base64'));
+    if (!verifySignature(signPubHash, Buffer.from(association.publicSignSignature, 'base64'), Buffer.from(association.publicKey, 'base64'))) return false;
+    if (!verifySignature(factorPubHash, Buffer.from(association.signPublicSignature, 'base64'), Buffer.from(signingPublicKey, 'base64'))) return false;
+    return true;
+  } catch (error) {
+    console.error('failed to verify cross signing: ', error);
+    throw new Error('failed to verify cross signing of factor');
+  }
+}
