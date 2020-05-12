@@ -11,6 +11,7 @@ import { Firebase } from './clients/firebase';
 import { authenticate } from './middleware/authentication';
 import { requestLogger } from './middleware/logging';
 import { Dragonchain } from './clients/dragonchain';
+import * as Dragonfactor from './controllers/dragonfactor';
 
 const { NODE_ENV = 'development' } = process.env;
 
@@ -57,8 +58,7 @@ export class Application {
       graphiql: NODE_ENV === 'development',
     }));
     this.app.get('/v1/health', (_req: express.Request, res: express.Response) => res.send('I am alive and well, thank you!'));
-    this.app.post('/v1/dragonfactor/login');
-    this.app.put('/v1/dragonfactor/login');
+    this.app.post('/v1/dragonfactor/login', Dragonfactor.login);
   }
 
   public async startServer() {

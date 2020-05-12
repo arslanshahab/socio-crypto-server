@@ -68,7 +68,7 @@ export interface DragonfactorLoginRequest {
   timestamp: string;
   factor: string;
   signingPublicKey: string;
-  factorAssocation: GenericFactorAssociation;
+  factorAssociation: GenericFactorAssociation;
   signature: string;
 }
 

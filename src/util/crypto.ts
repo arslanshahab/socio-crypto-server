@@ -49,18 +49,21 @@ const orderedFactorHashList = (factor: GenericFactor, signature = false): Buffer
 
 const orderedFactorLoginRequestHashList = (request: DragonfactorLoginRequest): Buffer[] => {
   try {
+    console.log(request);
     const hashBufList: Buffer[] = [];
     hashBufList.push(Buffer.from(request.service, 'utf8'));
     hashBufList.push(Buffer.from(request.factorType, 'utf8'));
     hashBufList.push(Buffer.from(request.factor, 'utf8'));
     hashBufList.push(Buffer.from(request.signingPublicKey, 'utf8'));
-    hashBufList.push(Buffer.from(request.signature, 'utf8'));
+    hashBufList.push(Buffer.from(request.timestamp, 'utf8'));
     // hash the factor association info
-    hashBufList.push(Buffer.from(request.factorAssocation.publicKey, 'base64'));
-    hashBufList.push(Buffer.from(request.factorAssocation.publicSignSignature, 'utf8'));
-    hashBufList.push(Buffer.from(request.factorAssocation.signPublicSignature, 'utf8'));
+    hashBufList.push(Buffer.from(request.factorAssociation.publicKey, 'utf8'));
+    hashBufList.push(Buffer.from(request.factorAssociation.publicSignSignature, 'utf8'));
+    hashBufList.push(Buffer.from(request.factorAssociation.signPublicSignature, 'utf8'));
     return hashBufList;
   } catch (error) {
+    console.error(error);
+    console.error(error.message);
     throw new Error('Error while hashing factor login request (possible malformed factor)');
   }
 };
@@ -74,6 +77,8 @@ const hashFactorForSigning = (factor: GenericFactor): Buffer => {
 };
 
 const hashLoginRequestForSigning = (request: DragonfactorLoginRequest): Buffer => {
+  console.log(`BIFFER: ${orderedFactorLoginRequestHashList(request)}`);
+  console.log(`BUFFER: ${Buffer.concat(orderedFactorLoginRequestHashList(request))}`);
   return sha256Hash(Buffer.concat(orderedFactorLoginRequestHashList(request)));
 }
 
@@ -96,8 +101,7 @@ export const verifyFactor = async (factor: GenericFactor): Promise<boolean> => {
   try {
     const provider = await Dragonfactor.getProvider(factor.providerId);
     const msg: Buffer = hashFactorForSigning(factor);
-    // TODO: verify the the factor signature has to be from utf8 and not base64
-    return verifySignature(msg, Buffer.from(factor.signature, 'utf8'), Buffer.from(provider.publicKey, 'base64'));
+    return verifySignature(msg, Buffer.from(factor.signature, 'base64'), Buffer.from(provider.publicKey, 'base64'));
   } catch (error) {
     console.error('Failed to verify factor');
     console.error(error.message);
