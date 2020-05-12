@@ -2,6 +2,15 @@
 # yarn lockfile v1
 
 
+"@dragonchain-dev/express-dragonfactor@^0.0.2":
+  version "0.0.2"
+  resolved "https://registry.yarnpkg.com/@dragonchain-dev/express-dragonfactor/-/express-dragonfactor-0.0.2.tgz#d1bee415490251acce4cda11b37a45054901c33d"
+  integrity sha512-Pi6Map7B+RnilOuoRWChv5mkxkTHQ0MCu/A5ankecpveVDbnxuyUwT80fpMPNBs6sZIMGgXzEGE7xFKLdelJxA==
+  dependencies:
+    ajv "^6.12.2"
+    node-fetch "^2.6.0"
+    secp256k1 "^4.0.1"
+
 "@firebase/app-types@0.5.3":
   version "0.5.3"
   resolved "https://registry.yarnpkg.com/@firebase/app-types/-/app-types-0.5.3.tgz#b1e4b2229c9af7a1dd2ecc88bc80dba8f56a3ec1"
