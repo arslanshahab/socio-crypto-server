@@ -1,8 +1,10 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
+import { AuthRequest } from '../types';
 import { asyncHandler } from '../util/helpers';
 
-export const login = asyncHandler(async (req: Request, res: Response) => {
-  console.log((req as any).user);
+export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { id, email, phoneNumber } = req.user;
+  
   return res.status(200).json({ success: true, token: 'banana' });
 });
 
