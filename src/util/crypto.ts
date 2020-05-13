@@ -1,8 +1,5 @@
 import crypto from 'crypto';
-import * as secp256k1 from 'secp256k1';
 import { Secrets } from './secrets';
-import { Dragonfactor } from '../clients/dragonfactor';
-import { GenericFactor, GenericFactorAssociation, DragonfactorLoginRequest } from '../types';
 
 const IV_LENGTH = 16; // For AES, this is always 16
 
