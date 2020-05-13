@@ -2,10 +2,8 @@
 # yarn lockfile v1
 
 
-"@dragonchain-dev/express-dragonfactor@^0.0.2":
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/@dragonchain-dev/express-dragonfactor/-/express-dragonfactor-0.0.2.tgz#d1bee415490251acce4cda11b37a45054901c33d"
-  integrity sha512-Pi6Map7B+RnilOuoRWChv5mkxkTHQ0MCu/A5ankecpveVDbnxuyUwT80fpMPNBs6sZIMGgXzEGE7xFKLdelJxA==
+"@dragonchain-dev/dragonfactor-auth@/Users/alexbenedetto/Documents/git/dragonfactor-auth":
+  version "0.0.1"
   dependencies:
     ajv "^6.12.2"
     node-fetch "^2.6.0"
