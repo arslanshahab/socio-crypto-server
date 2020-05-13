@@ -11,8 +11,8 @@ import { Firebase } from './clients/firebase';
 import { authenticate } from './middleware/authentication';
 import { requestLogger } from './middleware/logging';
 import { Dragonchain } from './clients/dragonchain';
-import * as Dragonfactor from './controllers/dragonfactor';
-import * as ExpressDragonfactor from '@dragonchain-dev/dragonfactor-auth';
+import * as DragonfactorController from './controllers/dragonfactor';
+import * as Dragonfactor from '@dragonchain-dev/dragonfactor-auth';
 
 const { NODE_ENV = 'development' } = process.env;
 
@@ -59,7 +59,7 @@ export class Application {
       graphiql: NODE_ENV === 'development',
     }));
     this.app.get('/v1/health', (_req: express.Request, res: express.Response) => res.send('I am alive and well, thank you!'));
-    this.app.use('/v1/dragonfactor/login', ExpressDragonfactor.expressMiddleware({ service: 'raiinmaker', acceptedFactors: ['email'] }), Dragonfactor.login);
+    this.app.use('/v1/dragonfactor/login', Dragonfactor.expressMiddleware({ service: 'raiinmaker', acceptedFactors: ['email'] }), DragonfactorController.login);
   }
 
   public async startServer() {

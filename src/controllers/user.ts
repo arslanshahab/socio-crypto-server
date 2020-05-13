@@ -73,7 +73,7 @@ export const signUp = async (args: { username: string, deviceToken: string }, co
 
 export const me = async (_args: any, context: { user: any }) => {
     const { id } = context.user;
-    const user = await User.findOne({ where: { id }, relations: ['campaigns', 'wallet', 'socialLinks'] });
+    const user = await User.findOne({ where: { id }, relations: ['campaigns', 'wallet', 'socialLinks','factorLinks'] });
     if (!user) throw new Error('user not found');
     return user;
 }

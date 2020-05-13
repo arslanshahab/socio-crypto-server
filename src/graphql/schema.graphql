@@ -38,6 +38,7 @@ type Mutation {
   removeSocialLink(type:String!): Boolean
   postToSocial(type:String!,text:String!,photo:String,participantId:String!): String
   setDevice(deviceToken:String!): Boolean
+  registerFactorLink(factor: JSON): User
 }
 
 type Query {
@@ -77,6 +78,12 @@ type User {
   campaigns: [Participant]
   wallet: Wallet
   socialLinks: [SocialLink]
+}
+
+type FactorLink {
+  factorId: String
+  identityId: String
+  providerId: String
 }
 
 type SocialLink {

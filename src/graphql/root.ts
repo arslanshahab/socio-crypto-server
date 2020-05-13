@@ -3,6 +3,7 @@ import * as participantController from "../controllers/participant";
 import * as userController from "../controllers/user";
 import * as campaignController from "../controllers/campaign";
 import * as socialController from "../controllers/social";
+import * as factorController from '../controllers/factor';
 
 export const root = {
   JSON: GraphQLJSON,
@@ -27,7 +28,9 @@ export const root = {
   registerSocialLink: socialController.registerSocialLink,
   postToSocial: socialController.postToSocial,
   setDevice: userController.setDevice,
-  getSocialMetrics: socialController.getParticipantSocialMetrics
+  getSocialMetrics: socialController.getParticipantSocialMetrics,
+  registerFactorLink: factorController.registerFactorLink,
+  removeFactorLink: factorController.removeFactorLink
 };
 
 export const publicRoot = {
