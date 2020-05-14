@@ -10,14 +10,20 @@ export class User extends BaseEntity {
   @PrimaryColumn()
   public id: string;
 
-  @Column({ nullable: false })
+  @Column({ nullable: true })
   public email: string;
 
-  @Column({ nullable: false, unique: true })
+  @Column({ nullable: true, unique: true })
   public username: string;
 
   @Column({ nullable: true })
   public deviceToken: string;
+
+  @Column({ nullable: false })
+  public primaryFactorId: string;
+
+  @Column({ nullable: false })
+  public primaryFactorType: string;
 
   @OneToMany(
       _type => SocialPost,
