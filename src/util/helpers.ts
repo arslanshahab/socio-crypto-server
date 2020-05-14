@@ -10,9 +10,8 @@ export const asyncHandler = (fn: any) => (req: Request, res: Response, next: Nex
 };
 
 export const extractFactor = (factor: string): string => {
-  let result;
   try {
-    result = JSON.parse(factor);
+    const result = JSON.parse(factor);
     const keys = Object.keys(result);
     if (keys.length > 1 || keys.length === 0) throw new Error('factor must be an object with a single key');
     return result[keys[0]];
