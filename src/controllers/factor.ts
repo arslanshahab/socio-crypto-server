@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import jwt from 'jsonwebtoken';
 import * as Dragonfactor from '@dragonchain-dev/dragonfactor-auth';
-import { asyncHandler } from '../util/helpers';
+import { asyncHandler, extractFactor } from '../util/helpers';
 import { AuthRequest } from '../types';
 import {FactorLink} from '../models/FactorLink';
 import {me} from "./user";
@@ -36,9 +36,6 @@ export const removeFactorLink = async (args: { factorId: string }, context: { us
 
 export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { id, providerId, identityId, type, factor } = req.user;
-  console.log(`FACTOR: ${factor}`);
-  // const jwtPayload: {[key: string]: any} = {};
-  // const { username } = req.body;
   const user = await User.findOne({ where: { id: identityId }, relations: ['factorLinks'] });
   if (!user) {
     const newUser = new User();
@@ -46,6 +43,7 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
     newUser.id = identityId;
     newUser.primaryFactorId = id;
     newUser.primaryFactorType = type;
+    if (factor && type === 'email') newUser.email = extractFactor(factor);
     await newUser.save();
     wallet.user = newUser;
     await wallet.save();

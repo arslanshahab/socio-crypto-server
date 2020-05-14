@@ -8,3 +8,16 @@ export const getBase64FileExtension = (image: string) => {
 export const asyncHandler = (fn: any) => (req: Request, res: Response, next: NextFunction) => {
   return Promise.resolve(fn(req, res, next)).catch(next);
 };
+
+export const extractFactor = (factor: string): string => {
+  let result;
+  try {
+    result = JSON.parse(factor);
+    const keys = Object.keys(result);
+    if (keys.length > 1 || keys.length === 0) throw new Error('factor must be an object with a single key');
+    return result[keys[0]];
+  } catch (_) {
+    // if it is failing to parse, factor is most likely just the string value
+    return factor;
+  }
+}

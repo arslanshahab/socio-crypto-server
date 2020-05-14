@@ -12,9 +12,6 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
   try {
     const decodedToken = jwt.verify(bearerToken, Secrets.encryptionKey, { audience: serverBaseUrl }) as any;
     if (!decodedToken) return res.status(401).json({ code: 'UNAUTHORIZED', message: 'unauthorized' });
-    console.log(decodedToken);
-    // const decodedToken = await Firebase.client.auth().verifyIdToken(idToken);
-    // email: decodedToken.email, role: decodedToken.role, company: decodedToken.company
     req.user = { id: decodedToken.id };
     return next();
   } catch (e) {
