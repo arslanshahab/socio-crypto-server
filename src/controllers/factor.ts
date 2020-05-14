@@ -35,7 +35,8 @@ export const removeFactorLink = async (args: { factorId: string }, context: { us
 
 
 export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const { id, providerId, identityId, type } = req.user;
+  const { id, providerId, identityId, type, factor } = req.user;
+  console.log(`FACTOR: ${factor}`);
   // const jwtPayload: {[key: string]: any} = {};
   // const { username } = req.body;
   const user = await User.findOne({ where: { id: identityId }, relations: ['factorLinks'] });
