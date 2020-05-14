@@ -8,6 +8,7 @@ import {me} from "./user";
 import { Secrets } from '../util/secrets';
 import { User } from '../models/User';
 import { serverBaseUrl } from '../config';
+import { Wallet } from '../models/Wallet';
 
 export const registerFactorLink = async (args: { factor: Dragonfactor.FactorLoginRequest }, context: { user: any }) => {
   const { id, providerId, identityId, type } = await Dragonfactor.validateFactor({ factorRequest: args.factor, acceptedFactors: ['email'], service: 'raiinmaker' });
@@ -40,10 +41,13 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
   const user = await User.findOne({ where: { id: identityId }, relations: ['factorLinks'] });
   if (!user) {
     const newUser = new User();
+    const wallet = new Wallet();
     newUser.id = identityId;
     newUser.primaryFactorId = id;
     newUser.primaryFactorType = type;
     await newUser.save();
+    wallet.user = newUser;
+    await wallet.save();
   } else {
     if (!user.factorLinks.find((link: FactorLink) => link.factorId === id) && id !== user.primaryFactorId) {
       const factorLink = new FactorLink();
@@ -56,6 +60,6 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
       user.factorLinks = [...user.factorLinks, factorLink];
     }
   }
-  const token = jwt.sign({ id }, Secrets.encryptionKey, { expiresIn: 60 * 30, audience: serverBaseUrl });
-  return res.status(200).json({ success: true, token });
+  const token = jwt.sign({ id: identityId, factorId: id, type }, Secrets.encryptionKey, { expiresIn: 60 * 30, audience: serverBaseUrl });
+  return res.status(200).json({ success: true, token, id: identityId, factorId: id, factorType: type });
 });
