@@ -19,4 +19,4 @@ export const extractFactor = (factor: string): string => {
     // if it is failing to parse, factor is most likely just the string value
     return factor;
   }
-}
+};

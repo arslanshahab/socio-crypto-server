@@ -57,6 +57,9 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
       factorLink.user = user;
       await factorLink.save();
       user.factorLinks = [...user.factorLinks, factorLink];
+    } else {
+      if (factor && type === 'email') user.email = extractFactor(factor);
+      else if (!factor && type === 'email') user.email = '';
     }
   }
   const token = jwt.sign({ id: identityId, factorId: id, type }, Secrets.encryptionKey, { expiresIn: 60 * 30, audience: serverBaseUrl });
