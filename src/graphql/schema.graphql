@@ -46,7 +46,7 @@ type Query {
   listCampaigns(open:Boolean,skip:Int,take:Int,scoped:Boolean): PaginatedCampaignResults
   getCampaign(id:String): Campaign
   getParticipant(id:String): Participant
-  getParticipantPosts(id:String): [String]
+  getParticipantPosts(id:String): [JSON]
   getSocialMetrics(id:String!): SocialMetrics
   campaignGet(campaignId:String!): Campaign
   listUsers(skip:Int,take:Int): PaginatedUserResults

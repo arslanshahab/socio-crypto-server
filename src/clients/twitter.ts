@@ -35,7 +35,7 @@ export class TwitterClient {
     let cacheKey = `twitter:${id}`;
     if (cached) {
       const cachedResponse = await getRedis().get(cacheKey);
-      if (cachedResponse) return cachedResponse;
+      if (cachedResponse) return JSON.parse(cachedResponse);
     }
     const client = TwitterClient.getClient(credentials);
     const twitterResponse = await client.get('/statuses/show', {id});
