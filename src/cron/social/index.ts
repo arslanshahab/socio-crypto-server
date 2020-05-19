@@ -38,11 +38,15 @@ const updatePostMetrics = async (likes: number, shares: number, post: SocialPost
                 if (!socialLink) {
                     logger.error(`participant ${post.user.username} has not linked ${post.type} as a social platform`);
                 } else {
-                    const response = await TwitterClient.get(socialLink.asClientCredentials(), post.id, false);
-                    const responseJSON = JSON.parse(response);
-                    const updatedPost = await updatePostMetrics(responseJSON['favorite_count'], responseJSON['retweet_count'], post);
-                    logger.info(`pushing new metrics on social post for campaign: ${post.campaign.name}`);
-                    postsToSave.push(updatedPost);
+                    try {
+                        const response = await TwitterClient.get(socialLink.asClientCredentials(), post.id, false);
+                        const responseJSON = JSON.parse(response);
+                        const updatedPost = await updatePostMetrics(responseJSON['favorite_count'], responseJSON['retweet_count'], post);
+                        logger.info(`pushing new metrics on social post for campaign: ${post.campaign.name}`);
+                        postsToSave.push(updatedPost);
+                    } catch (e) {
+                        console.log(e);
+                    }
                 }
             }
         }
