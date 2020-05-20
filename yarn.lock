@@ -2,12 +2,11 @@
 # yarn lockfile v1
 
 
-"@dragonchain-dev/dragonfactor-auth@^0.0.1":
+"@dragonchain-dev/dragonfactor-auth@/Users/alexbenedetto/Documents/git/dragonfactor-auth":
   version "0.0.1"
-  resolved "https://registry.yarnpkg.com/@dragonchain-dev/dragonfactor-auth/-/dragonfactor-auth-0.0.1.tgz#c69278dfc293fb0faf2350ff4e0df9b7f098aafd"
-  integrity sha512-u+pyK4a8zeST4BNmxhjPqDEh6G5Y3YHE/kzr15Zy5MQfbmNCc6kv36TG2JKuxlqwl+EB6ukkelzh2vl2vWWmVA==
   dependencies:
     ajv "^6.12.2"
+    bs58 "^4.0.1"
     node-fetch "^2.6.0"
     secp256k1 "^4.0.1"
 
@@ -615,6 +614,13 @@ balanced-match@^1.0.0:
   resolved "https://registry.yarnpkg.com/balanced-match/-/balanced-match-1.0.0.tgz#89b4d199ab2bee49de164ea02b89ce462d71b767"
   integrity sha1-ibTRmasr7kneFk6gK4nORi1xt2c=
 
+base-x@^3.0.2:
+  version "3.0.8"
+  resolved "https://registry.yarnpkg.com/base-x/-/base-x-3.0.8.tgz#1e1106c2537f0162e8b52474a557ebb09000018d"
+  integrity sha512-Rl/1AWP4J/zRrk54hhlxH4drNxPJXYUaKffODVI53/dAsV4t9fBxyxYKAVPU1XBHxYwOWP9h9H0hM2MVw4YfJA==
+  dependencies:
+    safe-buffer "^5.0.1"
+
 base64-js@^1.0.2, base64-js@^1.3.0:
   version "1.3.1"
   resolved "https://registry.yarnpkg.com/base64-js/-/base64-js-1.3.1.tgz#58ece8cb75dd07e71ed08c736abc5fac4dbf8df1"
@@ -682,6 +688,13 @@ browser-stdout@1.3.1:
   version "1.3.1"
   resolved "https://registry.yarnpkg.com/browser-stdout/-/browser-stdout-1.3.1.tgz#baa559ee14ced73452229bad7326467c61fabd60"
   integrity sha512-qhAVI1+Av2X7qelOfAIYwXONood6XlZE/fXaBSmW/T5SzLAmCgzi+eiWE7fUvbHaeNBQH13UftjpXxsfLkMpgw==
+
+bs58@^4.0.1:
+  version "4.0.1"
+  resolved "https://registry.yarnpkg.com/bs58/-/bs58-4.0.1.tgz#be161e76c354f6f788ae4071f63f34e8c4f0a42a"
+  integrity sha1-vhYedsNU9veIrkBx9j806MTwpCo=
+  dependencies:
+    base-x "^3.0.2"
 
 buffer-equal-constant-time@1.0.1:
   version "1.0.1"
