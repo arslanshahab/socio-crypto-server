@@ -7,6 +7,9 @@ export class Participant extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   public id: string;
 
+  @Column({ nullable: false, unique: true })
+  public username: string;
+
   @Column({ nullable: false, default: 0 })
   public clickCount: number;
 
@@ -47,10 +50,11 @@ export class Participant extends BaseEntity {
     }
   }
 
-  public static newParticipant(user: User, campaign: Campaign): Participant {
+  public static newParticipant(user: User, campaign: Campaign, username: string): Participant {
     const participant = new Participant();
     participant.user = user;
     participant.campaign = campaign;
+    participant.username = username;
     return participant;
   }
 }

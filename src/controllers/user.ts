@@ -6,7 +6,7 @@ import {User} from "../models/User";
 import {Wallet} from "../models/Wallet";
 import { TinyUrl } from '../clients/tinyUrl';
 
-export const participate = async (args: { campaignId: string }, context: { user: any }) => {
+export const participate = async (args: { campaignId: string, username: string }, context: { user: any }) => {
     const { id } = context.user;
     const user = await User.findOne({ where: { id }, relations: ['campaigns', 'wallet'] });
     if (!user) throw new Error('user not found');
@@ -14,7 +14,7 @@ export const participate = async (args: { campaignId: string }, context: { user:
     if (!campaign) throw new Error('campaign not found');
     if (!campaign.isOpen()) throw new Error('campaign is not open for participation');
     if (await Participant.findOne({ where: { campaign, user } })) throw new Error('user already participating in this campaign');
-    const participant = Participant.newParticipant(user, campaign);
+    const participant = Participant.newParticipant(user, campaign, args.username);
     await participant.save();
     participant.link = await TinyUrl.shorten(`${campaign.target}/campaign/${campaign.id}?referrer=${participant.id}`);
     await participant.save();
@@ -50,9 +50,11 @@ export const removeParticipation = async (args: { campaignId: string }, context:
     return user;
 }
 
-export const usernameExists = async (args: { username: string }) => {
-    const user = await User.findOne({ where: { username: args.username } });
-    return { exists: !!user };
+export const usernameExists = async (args: { username: string, campaignId: string }) => {
+    const campaign = await Campaign.findOne({ where: { id: args.campaignId } });
+    if (!campaign) throw new Error('campaign not found');
+    const participant = await Participant.findOne({ where: { username: args.username, campaign } });
+    return { exists: !!participant };
 }
 
 export const signUp = async (args: { username: string, deviceToken: string }, context: { user: any }) => {

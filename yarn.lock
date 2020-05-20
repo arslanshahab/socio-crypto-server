@@ -2,8 +2,8 @@
 # yarn lockfile v1
 
 
-"@dragonchain-dev/dragonfactor-auth@/Users/alexbenedetto/Documents/git/dragonfactor-auth":
-  version "0.0.1"
+"@dragonchain-dev/dragonfactor-auth@file:../dragonfactor-auth":
+  version "0.0.2"
   dependencies:
     ajv "^6.12.2"
     bs58 "^4.0.1"

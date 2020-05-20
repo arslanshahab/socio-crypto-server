@@ -30,7 +30,7 @@ type Mutation {
   generateCampaignAuditReport(campaignId:String!): AuditReport
   payoutCampaignRewards(campaignId: String!, rejected: [String]!): Boolean
   deleteCampaign(id:String!): Campaign
-  participate(campaignId:String!): Participant
+  participate(campaignId:String!,username:String!): Participant
   removeParticipation(campaignId:String!): User
   trackAction(participantId:String!,action: String!): Participant
   promoteUserPermissions(userId:String,email:String,company:String,role:String): User
@@ -43,7 +43,7 @@ type Mutation {
 
 type Query {
   getCurrentCampaignTier(campaignId: String!): CurrentTier
-  usernameExists(username:String!): UserExistence
+  usernameExists(username:String!,campaignId:String!): UserExistence
   listCampaigns(open:Boolean,skip:Int,take:Int,scoped:Boolean): PaginatedCampaignResults
   getCampaign(id:String): Campaign
   getParticipant(id:String): Participant
@@ -74,7 +74,6 @@ type UserExistence {
 type User {
   id: String
   email: String
-  # username: String
   campaigns: [Participant]
   wallet: Wallet
   socialLinks: [SocialLink]
@@ -131,6 +130,7 @@ type Campaign {
 
 type Participant {
   id: String
+  username: String
   metrics: ParticipantMetrics
   user: User
   campaign: Campaign
