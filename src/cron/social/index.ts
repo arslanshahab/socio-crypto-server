@@ -36,7 +36,7 @@ const updatePostMetrics = async (likes: number, shares: number, post: SocialPost
             for(const post of posts) {
                 const socialLink = await SocialLink.findOne({where: {user: post.user, type:post.type}, relations: ['user']})
                 if (!socialLink) {
-                    logger.error(`participant ${post.user.username} has not linked ${post.type} as a social platform`);
+                    logger.error(`participant ${post.user.id} has not linked ${post.type} as a social platform`);
                 } else {
                     const {retweet_count, favorite_count} = await TwitterClient.get(socialLink.asClientCredentials(), post.id, false);
                     const updatedPost = await updatePostMetrics(favorite_count, retweet_count, post);

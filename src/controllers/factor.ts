@@ -40,15 +40,20 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
   if (!user) {
     const newUser = new User();
     const wallet = new Wallet();
+    const factorLink = new FactorLink();
     newUser.id = identityId;
-    newUser.primaryFactorId = id;
-    newUser.primaryFactorType = type;
     if (factor && type === 'email') newUser.email = extractFactor(factor);
     await newUser.save();
     wallet.user = newUser;
     await wallet.save();
+    factorLink.type = type;
+    factorLink.factorId = id;
+    factorLink.identityId = identityId;
+    factorLink.providerId = providerId;
+    factorLink.user = newUser;
+    await factorLink.save();
   } else {
-    if (!user.factorLinks.find((link: FactorLink) => link.factorId === id) && id !== user.primaryFactorId) {
+    if (!user.factorLinks.find((link: FactorLink) => link.factorId === id)) {
       const factorLink = new FactorLink();
       factorLink.type = type;
       factorLink.factorId = id;
@@ -56,7 +61,6 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
       factorLink.providerId = providerId;
       factorLink.user = user;
       await factorLink.save();
-      user.factorLinks = [...user.factorLinks, factorLink];
     } else {
       if (factor && type === 'email') user.email = extractFactor(factor);
       else if (!factor && type === 'email') user.email = '';

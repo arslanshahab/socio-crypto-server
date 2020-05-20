@@ -13,17 +13,8 @@ export class User extends BaseEntity {
   @Column({ nullable: true })
   public email: string;
 
-  @Column({ nullable: true, unique: true })
-  public username: string;
-
   @Column({ nullable: true })
   public deviceToken: string;
-
-  @Column({ nullable: false })
-  public primaryFactorId: string;
-
-  @Column({ nullable: false })
-  public primaryFactorType: string;
 
   @OneToMany(
       _type => SocialPost,
