@@ -20,3 +20,5 @@ export const extractFactor = (factor: string): string => {
     return factor;
   }
 };
+
+export const generateRandomNumber = () => (Math.random() * 1000000000 - 1) + 1;

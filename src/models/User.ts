@@ -13,6 +13,9 @@ export class User extends BaseEntity {
   @Column({ nullable: true })
   public email: string;
 
+  @Column({ nullable: false, unique: true })
+  public username: string;
+
   @Column({ nullable: true })
   public deviceToken: string;
 

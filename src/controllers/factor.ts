@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import jwt from 'jsonwebtoken';
 import * as Dragonfactor from '@dragonchain-dev/dragonfactor-auth';
-import { asyncHandler, extractFactor } from '../util/helpers';
+import { asyncHandler, extractFactor, generateRandomNumber } from '../util/helpers';
 import { AuthRequest } from '../types';
 import {FactorLink} from '../models/FactorLink';
 import {me} from "./user";
@@ -46,6 +46,7 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
     const wallet = new Wallet();
     const factorLink = new FactorLink();
     newUser.id = identityId;
+    newUser.username = `raiinmaker-${generateRandomNumber()}`;
     await newUser.save();
     wallet.user = newUser;
     await wallet.save();
@@ -78,7 +79,6 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
       }
     }
   }
-  console.log(`email address: ${emailAddress!}`);
   const jwtPayload: {[key: string]: string} = { id: identityId };
   if (emailAddress! && ['raiinmaker.com', 'dragonchain.com'].includes(emailAddress!)) {
     jwtPayload.role = 'admin';

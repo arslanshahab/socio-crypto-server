@@ -30,7 +30,7 @@ type Mutation {
   generateCampaignAuditReport(campaignId:String!): AuditReport
   payoutCampaignRewards(campaignId: String!, rejected: [String]!): Boolean
   deleteCampaign(id:String!): Campaign
-  participate(campaignId:String!,username:String!): Participant
+  participate(campaignId:String!): Participant
   removeParticipation(campaignId:String!): User
   trackAction(participantId:String!,action: String!): Participant
   promoteUserPermissions(userId:String,email:String,company:String,role:String): User
@@ -74,6 +74,7 @@ type UserExistence {
 type User {
   id: String
   email: String
+  username: String
   campaigns: [Participant]
   wallet: Wallet
   socialLinks: [SocialLink]
@@ -130,7 +131,6 @@ type Campaign {
 
 type Participant {
   id: String
-  username: String
   metrics: ParticipantMetrics
   user: User
   campaign: Campaign
