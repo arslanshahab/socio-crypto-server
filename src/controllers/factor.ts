@@ -40,6 +40,7 @@ export const removeFactorLink = async (args: { factorId: string }, context: { us
 export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { identityId, factors } = req.user;
   const user = await User.findOne({ where: { id: identityId }, relations: ['factorLinks'] });
+  let emailAddress: string;
   if (!user) {
     const newUser = new User();
     const wallet = new Wallet();
@@ -57,11 +58,13 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
       factorLink.user = newUser;
       await factorLink.save();
       if (factor && type === 'email') {
-        newUser.email = extractFactor(factor);
+        emailAddress = extractFactor(factor);
+        newUser.email = emailAddress.split('@')[1];
         await newUser.save();
       }
     }
   } else {
+    emailAddress = user.email.split('@')[1];
     for (let i = 0; i < factors.length; i++) {
       const { type, id, providerId } = factors[i];
       if (!user.factorLinks.find((link: FactorLink) => link.factorId === id)) {
@@ -75,6 +78,12 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
       }
     }
   }
-  const token = jwt.sign({ id: identityId }, Secrets.encryptionKey, { expiresIn: 60 * 30, audience: serverBaseUrl });
-  return res.status(200).json({ success: true, token, id: identityId });
+  console.log(`email address: ${emailAddress!}`);
+  const jwtPayload: {[key: string]: string} = { id: identityId };
+  if (emailAddress! && ['raiinmaker.com', 'dragonchain.com'].includes(emailAddress!)) {
+    jwtPayload.role = 'admin';
+    jwtPayload.company = 'raiinmaker';
+  }
+  const token = jwt.sign(jwtPayload, Secrets.encryptionKey, { expiresIn: 60 * 30, audience: serverBaseUrl });
+  return res.status(200).json({ success: true, token, id: identityId, role: jwtPayload.role, company: jwtPayload.company });
 });

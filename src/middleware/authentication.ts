@@ -12,7 +12,7 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
   try {
     const decodedToken = jwt.verify(bearerToken, Secrets.encryptionKey, { audience: serverBaseUrl }) as any;
     if (!decodedToken) return res.status(401).json({ code: 'UNAUTHORIZED', message: 'unauthorized' });
-    req.user = { id: decodedToken.id };
+    req.user = { id: decodedToken.id, role: decodedToken.role, company: decodedToken.company };
     return next();
   } catch (e) {
     const secret = `Bearer ${Secrets.bearerToken}`;
