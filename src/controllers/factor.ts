@@ -36,6 +36,11 @@ export const removeFactorLink = async (args: { factorId: string }, context: { us
   return user;
 }
 
+export const isLastFactor = async (context: {user: any}) => {
+  const user = await me(undefined, context);
+  return user.factorLinks.length === 1;
+}
+
 
 export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { identityId, factors } = req.user;

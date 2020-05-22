@@ -19,6 +19,9 @@ export class User extends BaseEntity {
   @Column({ nullable: true })
   public deviceToken: string;
 
+  @Column({default: true})
+  public active: boolean;
+
   @OneToMany(
       _type => SocialPost,
       posts => posts.user

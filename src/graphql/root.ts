@@ -32,6 +32,7 @@ export const root = {
   registerFactorLink: factorController.registerFactorLink,
   removeFactorLink: factorController.removeFactorLink,
   updateUsername: userController.updateUsername,
+  isLastFactor: factorController.isLastFactor
 };
 
 export const publicRoot = {

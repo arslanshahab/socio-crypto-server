@@ -53,6 +53,7 @@ type Query {
   campaignGet(campaignId:String!): Campaign
   listUsers(skip:Int,take:Int): PaginatedUserResults
   helloWorld: String
+  isLastFactor: Boolean
   me: User
 }
 
