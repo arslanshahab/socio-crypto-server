@@ -78,6 +78,7 @@ type User {
   campaigns: [Participant]
   wallet: Wallet
   socialLinks: [SocialLink]
+  factorLinks: [FactorLink]
 }
 
 type FactorLink {
