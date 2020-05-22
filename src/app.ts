@@ -34,6 +34,7 @@ export class Application {
     this.app = express();
     const corsSettings = {
       origin: [
+        'http://localhost:9000',
         'https://raiinmaker.dragonchain.com',
         'https://raiinmaker-staging.dragonchain.com',
         'https://mock-raiinmaker-landing.dragonchain.com'
@@ -42,6 +43,7 @@ export class Application {
       exposedHeaders: ['x-auth-token'],
     };
     if (NODE_ENV === 'development') corsSettings.origin.push('http://localhost:3000');
+    if (NODE_ENV === 'staging') corsSettings.origin.push('http://localhost:9000');
     this.app.use(cors(corsSettings));
     this.app.use(bodyParser.json({ limit: "20mb" }));
     this.app.use(bodyParser.urlencoded({ extended: true }));
