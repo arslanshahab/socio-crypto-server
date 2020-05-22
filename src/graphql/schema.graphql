@@ -87,6 +87,7 @@ type FactorLink {
   factorId: String
   identityId: String
   providerId: String
+  type: String
 }
 
 type SocialLink {
