@@ -30,7 +30,8 @@ export const root = {
   setDevice: userController.setDevice,
   getSocialMetrics: socialController.getParticipantSocialMetrics,
   registerFactorLink: factorController.registerFactorLink,
-  removeFactorLink: factorController.removeFactorLink
+  removeFactorLink: factorController.removeFactorLink,
+  updateUsername: userController.updateUsername,
 };
 
 export const publicRoot = {

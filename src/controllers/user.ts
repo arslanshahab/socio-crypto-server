@@ -50,10 +50,8 @@ export const removeParticipation = async (args: { campaignId: string }, context:
     return user;
 }
 
-export const usernameExists = async (args: { username: string, campaignId: string }) => {
-    const campaign = await Campaign.findOne({ where: { id: args.campaignId } });
-    if (!campaign) throw new Error('campaign not found');
-    const participant = await Participant.findOne({ where: { username: args.username, campaign } });
+export const usernameExists = async (args: { username: string }) => {
+    const participant = await User.findOne({ where: { username: args.username } });
     return { exists: !!participant };
 }
 
@@ -92,4 +90,12 @@ export const setDevice = async (args: { deviceToken: string }, context: { user: 
   user.deviceToken = deviceToken;
   await user.save();
   return true;
+}
+
+export const updateUsername = async (args: { username: string }, context: { user: any }) => {
+  const user = await me(undefined, context);
+  if (await User.findOne({ where: { username: args.username } })) throw new Error('username is already registered');
+  user.username = args.username;
+  await user.save();
+  return user;
 }

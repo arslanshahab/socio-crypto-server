@@ -39,11 +39,12 @@ type Mutation {
   postToSocial(type:String!,text:String!,photo:String,participantId:String!): String
   setDevice(deviceToken:String!): Boolean
   registerFactorLink(factor: JSON): User
+  updateUsername(username:String!): User
 }
 
 type Query {
   getCurrentCampaignTier(campaignId: String!): CurrentTier
-  usernameExists(username:String!,campaignId:String!): UserExistence
+  usernameExists(username:String!): UserExistence
   listCampaigns(open:Boolean,skip:Int,take:Int,scoped:Boolean): PaginatedCampaignResults
   getCampaign(id:String): Campaign
   getParticipant(id:String): Participant

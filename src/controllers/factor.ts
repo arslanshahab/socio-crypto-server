@@ -60,12 +60,13 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
       await factorLink.save();
       if (factor && type === 'email') {
         emailAddress = extractFactor(factor);
-        newUser.email = emailAddress.split('@')[1];
+        newUser.email = emailAddress;
+        emailAddress = emailAddress.split('@')[1];
         await newUser.save();
       }
     }
   } else {
-    emailAddress = user.email.split('@')[1];
+    if (user.email) emailAddress = user.email.split('@')[1];
     for (let i = 0; i < factors.length; i++) {
       const { type, id, providerId } = factors[i];
       if (!user.factorLinks.find((link: FactorLink) => link.factorId === id)) {
