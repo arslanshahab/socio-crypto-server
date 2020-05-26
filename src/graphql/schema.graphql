@@ -38,6 +38,8 @@ type Mutation {
   removeSocialLink(type:String!): Boolean
   postToSocial(type:String!,text:String!,photo:String,participantId:String!): String
   setDevice(deviceToken:String!): Boolean
+  registerFactorLink(factor: JSON): User
+  updateUsername(username:String!): User
 }
 
 type Query {
@@ -51,6 +53,7 @@ type Query {
   campaignGet(campaignId:String!): Campaign
   listUsers(skip:Int,take:Int): PaginatedUserResults
   helloWorld: String
+  isLastFactor: Boolean
   me: User
 }
 
@@ -77,6 +80,14 @@ type User {
   campaigns: [Participant]
   wallet: Wallet
   socialLinks: [SocialLink]
+  factorLinks: [FactorLink]
+}
+
+type FactorLink {
+  factorId: String
+  identityId: String
+  providerId: String
+  type: String
 }
 
 type SocialLink {

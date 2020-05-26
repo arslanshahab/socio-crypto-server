@@ -51,19 +51,18 @@ export const removeParticipation = async (args: { campaignId: string }, context:
 }
 
 export const usernameExists = async (args: { username: string }) => {
-    const user = await User.findOne({ where: { username: args.username } });
-    return { exists: !!user };
+    const participant = await User.findOne({ where: { username: args.username } });
+    return { exists: !!participant };
 }
 
 export const signUp = async (args: { username: string, deviceToken: string }, context: { user: any }) => {
-    const {username, deviceToken} = args;
+    const {deviceToken} = args;
     const { id, email } = context.user;
     if (await User.findOne({ where: { id } })) throw new Error('user already registered');
     const user = new User();
     const wallet = new Wallet();
     user.id = id;
     user.email = email;
-    user.username = username;
     user.deviceToken = deviceToken;
     await user.save();
     wallet.user = user;
@@ -73,7 +72,7 @@ export const signUp = async (args: { username: string, deviceToken: string }, co
 
 export const me = async (_args: any, context: { user: any }) => {
     const { id } = context.user;
-    const user = await User.findOne({ where: { id }, relations: ['campaigns', 'wallet', 'socialLinks'] });
+    const user = await User.findOne({ where: { id }, relations: ['campaigns', 'wallet', 'socialLinks','factorLinks'] });
     if (!user) throw new Error('user not found');
     return user;
 }
@@ -91,4 +90,12 @@ export const setDevice = async (args: { deviceToken: string }, context: { user: 
   user.deviceToken = deviceToken;
   await user.save();
   return true;
+}
+
+export const updateUsername = async (args: { username: string }, context: { user: any }) => {
+  const user = await me(undefined, context);
+  if (await User.findOne({ where: { username: args.username } })) throw new Error('username is already registered');
+  user.username = args.username;
+  await user.save();
+  return user;
 }

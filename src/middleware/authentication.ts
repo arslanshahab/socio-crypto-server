@@ -1,20 +1,22 @@
 import { Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { Secrets } from '../util/secrets';
-import { Firebase } from '../clients/firebase';
+// import { Firebase } from '../clients/firebase';
 import { AuthRequest } from '../types';
+import { serverBaseUrl } from '../config';
 
 export const authenticate = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  const idToken = req.headers.authorization;
-  if (!idToken) return res.status(401).json({ code: 'UNAUTHORIZED', message: 'unauthorized' });
+  const bearerToken = req.headers.authorization;
+  if (!bearerToken) return res.status(401).json({ code: 'UNAUTHORIZED', message: 'unauthorized' });
   try {
-    const decodedToken = await Firebase.client.auth().verifyIdToken(idToken);
+    const decodedToken = jwt.verify(bearerToken, Secrets.encryptionKey, { audience: serverBaseUrl }) as any;
     if (!decodedToken) return res.status(401).json({ code: 'UNAUTHORIZED', message: 'unauthorized' });
-    req.user = { id: decodedToken.user_id, email: decodedToken.email, role: decodedToken.role, company: decodedToken.company };
+    req.user = { id: decodedToken.id, role: decodedToken.role, company: decodedToken.company };
     return next();
   } catch (e) {
     const secret = `Bearer ${Secrets.bearerToken}`;
-    const authorizationBuffer = idToken.length !== secret.length ? Buffer.alloc(secret.length, 0) : Buffer.from(idToken, 'utf-8');
+    const authorizationBuffer = bearerToken.length !== secret.length ? Buffer.alloc(secret.length, 0) : Buffer.from(bearerToken, 'utf-8');
     if (crypto.timingSafeEqual(authorizationBuffer, Buffer.from(secret, 'utf-8'))) {
       req.user = { role: 'admin' };
       return next();

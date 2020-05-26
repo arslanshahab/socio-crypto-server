@@ -21,7 +21,8 @@
     "migration:generate": "yarn typeorm:cli migration:generate"
   },
   "dependencies": {
-    "ajv": "^6.12.0",
+    "@dragonchain-dev/dragonfactor-auth": "^0.0.3",
+    "ajv": "^6.12.2",
     "aws-sdk": "^2.632.0",
     "body-parser": "^1.19.0",
     "cls-hooked": "^4.2.2",
@@ -33,6 +34,7 @@
     "firebase-admin": "^8.10.0",
     "graphql": "^14.6.0",
     "graphql-type-json": "^0.3.1",
+    "jsonwebtoken": "^8.5.1",
     "mocha": "^7.1.0",
     "node-fetch": "^2.6.0",
     "pg": "^7.18.2",
@@ -43,6 +45,7 @@
     "winston": "^3.2.1"
   },
   "devDependencies": {
+    "@types/ajv": "^1.0.0",
     "@types/aws-sdk": "^2.7.0",
     "@types/body-parser": "^1.19.0",
     "@types/cls-hooked": "^4.3.0",
@@ -51,8 +54,9 @@
     "@types/express-graphql": "^0.9.0",
     "@types/graphql": "^14.5.0",
     "@types/graphql-type-json": "^0.3.2",
+    "@types/jsonwebtoken": "^8.5.0",
     "@types/mocha": "^7.0.2",
-    "@types/node-fetch": "^2.5.6",
+    "@types/node-fetch": "^2.5.7",
     "@types/pg": "^7.14.2",
     "@types/redis": "^2.8.18",
     "@types/twitter": "^1.7.0",

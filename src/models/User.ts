@@ -3,13 +3,14 @@ import { Participant } from './Participant';
 import { Wallet } from './Wallet';
 import { SocialLink } from './SocialLink';
 import {SocialPost} from "./SocialPost";
+import { FactorLink } from './FactorLink';
 
 @Entity()
 export class User extends BaseEntity {
   @PrimaryColumn()
   public id: string;
 
-  @Column({ nullable: false })
+  @Column({ nullable: true })
   public email: string;
 
   @Column({ nullable: false, unique: true })
@@ -17,6 +18,9 @@ export class User extends BaseEntity {
 
   @Column({ nullable: true })
   public deviceToken: string;
+
+  @Column({default: true})
+  public active: boolean;
 
   @OneToMany(
       _type => SocialPost,
@@ -44,4 +48,11 @@ export class User extends BaseEntity {
     link => link.user,
   )
   public socialLinks: SocialLink[];
+
+  @OneToMany(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _type => FactorLink,
+    link => link.user,
+  )
+  public factorLinks: FactorLink[];
 }
