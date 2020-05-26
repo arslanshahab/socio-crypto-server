@@ -73,7 +73,7 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
   } else {
     if (user.email) emailAddress = user.email.split('@')[1];
     for (let i = 0; i < factors.length; i++) {
-      const { type, id, providerId } = factors[i];
+      const { type, id, providerId, factor } = factors[i];
       if (!user.factorLinks.find((link: FactorLink) => link.factorId === id)) {
         const factorLink = new FactorLink();
         factorLink.type = type;
@@ -82,6 +82,11 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
         factorLink.providerId = providerId;
         factorLink.user = user;
         await factorLink.save();
+        if (type === 'email' && factor) {
+          emailAddress = extractFactor(factor).split('@')[1];
+          user.email = extractFactor(factor);
+          await user.save();
+        }
       }
     }
   }
