@@ -7,7 +7,7 @@ phases:
     commands:
       - curl -Lo kops https://github.com/kubernetes/kops/releases/download/1.15.0/kops-linux-amd64 && chmod +x kops && mv kops /usr/bin/kops
       - curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 && chmod +x ./get_helm.sh && ./get_helm.sh --version v3.1.0
-      - NPM_TOKEN=$(aws secretsmanager get-secret-value --secret-id=npm/dragonchain-dev/read-only | jq -r '.SecretString | fromjson | .NPM_TOKEN')
+      - - printf "//registry.npmjs.org/:_authToken=$(aws secretsmanager get-secret-value --secret-id=npm/dragonchain-dev/read-only | jq -r '.SecretString | fromjson | .NPM_TOKEN')" > .npmrc
       - $(aws ecr get-login --no-include-email --region us-west-2)
   build:
     commands:
