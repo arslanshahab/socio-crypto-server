@@ -2,6 +2,9 @@ FROM node:12-alpine AS base
 WORKDIR /app
 
 FROM base AS builder
+ARG npm_token
+ENV NPM_TOKEN=$npm_token
+RUN echo $NPM_TOKEN
 COPY package.json .
 COPY yarn.lock .
 RUN yarn --frozen-lockfile --non-interactive
