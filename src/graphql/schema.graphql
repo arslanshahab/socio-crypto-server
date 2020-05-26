@@ -40,6 +40,7 @@ type Mutation {
   setDevice(deviceToken:String!): Boolean
   registerFactorLink(factor: JSON): User
   updateUsername(username:String!): User
+  removeFactorLink(factorId:String!): User
 }
 
 type Query {

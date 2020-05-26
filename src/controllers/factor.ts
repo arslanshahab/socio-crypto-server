@@ -36,7 +36,7 @@ export const removeFactorLink = async (args: { factorId: string }, context: { us
   return user;
 }
 
-export const isLastFactor = async (context: {user: any}) => {
+export const isLastFactor = async (_args: any, context: {user: any}) => {
   const user = await me(undefined, context);
   return user.factorLinks.length === 1;
 }
