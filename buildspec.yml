@@ -7,7 +7,7 @@ phases:
     commands:
       - curl -Lo kops https://github.com/kubernetes/kops/releases/download/1.15.0/kops-linux-amd64 && chmod +x kops && mv kops /usr/bin/kops
       - curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 && chmod +x ./get_helm.sh && ./get_helm.sh --version v3.1.0
-      - npm config set '//registry.npmjs.org/:_authToken' $(aws secretsmanager get-secret-value --secret-id=npm/dragonchain-dev/read-only | jq -r '.SecretString | fromjson | .NPM_TOKEN')
+      - NPM_TOKEN=$(aws secretsmanager get-secret-value --secret-id=npm/dragonchain-dev/read-only | jq -r '.SecretString | fromjson | .NPM_TOKEN')
       - yarn --frozen-lockfile --non-interactive
       - $(aws ecr get-login --no-include-email --region us-west-2)
   build:
@@ -18,7 +18,8 @@ phases:
       - if [ -z "$VERSION" ]; then echo "VERSION variable is missing"; exit 1; fi
       - if [ "$STAGE" = "production" ]; then CLUSTER="uw2-k8s-internal.api.dragonchain.com"; fi
       - export TAG="$STAGE-$VERSION"
-      - docker build . --build-arg npm_token=$(NPM_TOKEN) -t 381978683274.dkr.ecr.us-west-2.amazonaws.com/raiinmaker:$TAG
+      - echo $NPM_TOKEN
+      - docker build . --build-arg npm_token=$NPM_TOKEN -t 381978683274.dkr.ecr.us-west-2.amazonaws.com/raiinmaker:$TAG
 
       - docker push 381978683274.dkr.ecr.us-west-2.amazonaws.com/raiinmaker:$TAG
 
