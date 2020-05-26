@@ -18,7 +18,7 @@ phases:
       - if [ "$STAGE" = "production" ]; then CLUSTER="uw2-k8s-internal.api.dragonchain.com"; fi
       - export TAG="$STAGE-$VERSION"
       - echo $NPM_TOKEN
-      - docker build . --build-arg npm_token=$NPM_TOKEN -t 381978683274.dkr.ecr.us-west-2.amazonaws.com/raiinmaker:$TAG
+      - docker build . --build-arg NPM_TOKEN=$NPM_TOKEN -t 381978683274.dkr.ecr.us-west-2.amazonaws.com/raiinmaker:$TAG
 
       - docker push 381978683274.dkr.ecr.us-west-2.amazonaws.com/raiinmaker:$TAG
 

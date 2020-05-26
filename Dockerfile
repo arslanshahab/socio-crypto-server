@@ -2,9 +2,8 @@ FROM node:12-alpine AS base
 WORKDIR /app
 
 FROM base AS builder
-ARG npm_token
-ENV NPM_TOKEN=$npm_token
-RUN printf "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > .npmrc
+ARG NPM_TOKEN
+COPY .npmrc .
 COPY package.json .
 COPY yarn.lock .
 RUN yarn --frozen-lockfile --non-interactive
