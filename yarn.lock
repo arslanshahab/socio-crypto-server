@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@dragonchain-dev/dragonfactor-auth@^0.0.3":
-  version "0.0.3"
-  resolved "https://registry.yarnpkg.com/@dragonchain-dev/dragonfactor-auth/-/dragonfactor-auth-0.0.3.tgz#b72653f1bca1ad7337a6943e6ff65ff71fae44fb"
-  integrity sha512-5EhUFnBkEv8sefu7R4LxIOCLPUVhN/Nyqv1JxNNPYTm0hEl3K0PuJPT6KgxjiaDvXljsW7NY3wJxcmXn3xha0g==
+"@dragonchain-dev/dragonfactor-auth@^0.0.4":
+  version "0.0.4"
+  resolved "https://registry.yarnpkg.com/@dragonchain-dev/dragonfactor-auth/-/dragonfactor-auth-0.0.4.tgz#b36c3d112c5129ca6c6dfb0469c7d287c19f20e8"
+  integrity sha512-p/yqf88daB1+oHPXRmPC3LVybfmZirfURiqe51VHjvQurELtBvVRSqgmFxeK7xEZuUQ7WIUwt5laLz+4uEQKEA==
   dependencies:
     ajv "^6.12.2"
     bs58 "^4.0.1"
