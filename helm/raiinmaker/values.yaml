@@ -44,6 +44,8 @@ data:
   environment:
     NODE_ENV: "staging"
     BUCKET_NAME: "raiinmaker-staging"
+    RATE_LIMIT_MAX: "3"
+    RATE_LIMIT_WINDOW: "1m"
 
 postgresql:
   existingSecret: "raiinmaker"

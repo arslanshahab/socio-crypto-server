@@ -1,10 +1,24 @@
+import { RedisStore, getGraphQLRateLimiter } from 'graphql-rate-limit';
 import {Campaign} from "../models/Campaign";
 import {Dragonchain} from "../clients/dragonchain";
 import {Participant} from "../models/Participant";
 import {SocialPost} from "../models/SocialPost";
 import {getTweetById} from '../controllers/social';
+import { getRedis } from '../clients/redis';
 
-export const trackAction = async (args: { participantId: string, action: 'click' | 'view' | 'submission' }, context: any) => {
+const { RATE_LIMIT_MAX = '3', RATE_LIMIT_WINDOW = '1m' } = process.env;
+
+const rateLimiter = getGraphQLRateLimiter({
+  formatError: () => 'Too many requests',
+  identifyContext: (ctx) => {
+    return ctx.connection.remoteAddress || ctx.socket.remoteAddress;
+  },
+  store: new RedisStore(getRedis().client),
+});
+
+export const trackAction = async (args: { participantId: string, action: 'click' | 'view' | 'submission' }, context: any, info: any) => {
+    const errorMessage = await rateLimiter({ parent: {}, args, context, info }, { max: Number(RATE_LIMIT_MAX), window: RATE_LIMIT_WINDOW });
+    if (errorMessage) throw new Error(errorMessage);
     if (!['click', 'view', 'submission'].includes(args.action)) throw new Error('invalid metric specified');
     const participant = await Participant.findOne({ where: { id: args.participantId }, relations: ['campaign'] });
     if (!participant) throw new Error('participant not found');

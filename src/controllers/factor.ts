@@ -48,7 +48,6 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
   console.log(user);
   let emailAddress: string;
   if (!user) {
-    console.log('creating new user');
     const newUser = new User();
     const wallet = new Wallet();
     const factorLink = new FactorLink();
@@ -57,7 +56,6 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
     await newUser.save();
     wallet.user = newUser;
     await wallet.save();
-    console.log(factors);
     for (let i = 0; i < factors.length; i++) {
       const { type, id, providerId, factor } = factors[i];
       factorLink.type = type;
@@ -78,7 +76,6 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
     for (let i = 0; i < factors.length; i++) {
       const { type, id, providerId, factor } = factors[i];
       if (!user.factorLinks.find((link: FactorLink) => link.factorId === id)) {
-        console.log('creating new factor link for existing user');
         const factorLink = new FactorLink();
         factorLink.type = type;
         factorLink.factorId = id;
