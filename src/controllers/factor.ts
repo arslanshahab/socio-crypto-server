@@ -45,7 +45,6 @@ export const isLastFactor = async (_args: any, context: {user: any}) => {
 export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { identityId, factors } = req.user;
   const user = await User.findOne({ where: { id: identityId }, relations: ['factorLinks'] });
-  console.log(user);
   let emailAddress: string;
   if (!user) {
     const newUser = new User();
