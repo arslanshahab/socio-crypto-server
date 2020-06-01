@@ -9,6 +9,7 @@ import {Wallet} from "../models/Wallet";
 import {SocialPost} from '../models/SocialPost';
 import {getParticipant} from "./participant";
 import {Firebase} from "../clients/firebase";
+import {Dragonchain} from '../clients/dragonchain';
 import {calculateParticipantPayout, calculateParticipantSocialScore, calculateTier} from "./helpers";
 
 
@@ -24,7 +25,7 @@ export const getCurrentCampaignTier = async (args: { campaignId?: string, campai
         currentTierSummary = calculateTier(BigInt(campaign.totalParticipationScore), campaign.algorithm.tiers);
     }
     if (!currentTierSummary) throw new Error('failure calculating current tier');
-return currentTierSummary;
+    return currentTierSummary;
 }
 
 export const createNewCampaign = async (args: { name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, image: string, tagline: string, suggestedPosts: string[], suggestedTags: string[] }, context: { user: any }) => {
@@ -191,6 +192,7 @@ export const payoutCampaignRewards = async (args: { campaignId: string, rejected
         await transactionalEntityManager.save(participants);
         await transactionalEntityManager.save(wallets);
         await Firebase.sendCampaignCompleteNotifications(Object.values(userDeviceIds), campaign.name);
+        await Dragonchain.ledgerCampaignAudit(usersWalletValues, rejected, campaign.id);
         return true;
     });
 };

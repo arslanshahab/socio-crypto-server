@@ -1,8 +1,9 @@
 import { createClient, DragonchainClient } from 'dragonchain-sdk';
 import { Secrets } from '../util/secrets';
 
-const transactionTypes = ['campaign','trackAction'];
+const transactionTypes = ['campaign','trackAction','campaignAudit'];
 const getActionKey = (action: string, participantId: string) => `${participantId.replace(/-/g, ':')}-${action}`;
+const getCampaignAuditKey = (campaignId: string) => campaignId.replace(/-/g, ':');
 
 export class Dragonchain {
   public static client: DragonchainClient;
@@ -28,6 +29,13 @@ export class Dragonchain {
     const tag = getActionKey(action, participantId);
     const res = await this.client.createTransaction({ transactionType: 'trackAction', tag, payload: { action, participantId, campaignId } });
     if (!res.ok) throw new Error('Failed to ledger action to the Dragonchain');
+    return res.response.transaction_id;
+  }
+
+  public static async ledgerCampaignAudit(payouts: {[key: string]: number}, rejectedUsers: string[], campaignId: string) {
+    const tag = getCampaignAuditKey(campaignId);
+    const res = await this.client.createTransaction({ transactionType: 'campaignAudit', tag, payload: { payouts, rejectedUsers } });
+    if (!res.ok) throw new Error('Failed to ledger campaign audit to the Dragonchain');
     return res.response.transaction_id;
   }
 }
