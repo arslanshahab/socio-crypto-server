@@ -69,3 +69,75 @@ spec:
             - name: twitter-credentials
               secret:
                 secretName: twitter-credentials
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: daily-participation-metrics
+  labels:
+    app.kubernetes.io/name: daily-participation-metrics
+    helm.sh/chart: {{ include "raiinmaker.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  schedule: "{{ .Values.cron.frequency.daily }}"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+        spec:
+          containers:
+            - name: daily-participation-metrics
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              command: ["node"]
+              args: ["./dist/cron/scoreAggregate/index.js"]
+              env:
+                - name: PG_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.postgresql.existingSecret }}
+                      key: postgresql-password
+              envFrom:
+                - configMapRef:
+                    name: "{{ include "raiinmaker.fullname" . }}-server-env"
+              volumeMounts:
+                - name: firebase-credentials
+                  mountPath: "/var/secrets/firebase-credentials"
+                  readOnly: true
+                - name: bearer-token
+                  mountPath: "/var/secrets/bearer-token"
+                  readOnly: true
+                - name: dragonchain-credentials
+                  mountPath: "/var/secrets/dragonchain-credentials"
+                  readOnly: true
+                - name: encryption-key
+                  mountPath: "/var/secrets/encryption-key"
+                  readOnly: true
+                - name: twitter-credentials
+                  mountPath: "/var/secrets/twitter-credentials"
+                  readOnly: true
+              resources:
+                requests:
+                  memory: "128Mi"
+                  cpu: "100m"
+                limits:
+                  memory: "128Mi"
+                  cpu: "100m"
+          restartPolicy: OnFailure
+          volumes:
+            - name: firebase-credentials
+              secret:
+                secretName: "firebase-credentials"
+            - name: bearer-token
+              secret:
+                secretName: "bearer-token"
+            - name: dragonchain-credentials
+              secret:
+                secretName: dragonchain-credentials
+            - name: encryption-key
+              secret:
+                secretName: encryption-key
+            - name: twitter-credentials
+              secret:
+                secretName: twitter-credentials

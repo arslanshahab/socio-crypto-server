@@ -4,6 +4,7 @@ import { Wallet } from './Wallet';
 import { SocialLink } from './SocialLink';
 import {SocialPost} from "./SocialPost";
 import { FactorLink } from './FactorLink';
+import { TwentyFourHourMetric } from './TwentyFourHourMetric';
 
 @Entity()
 export class User extends BaseEntity {
@@ -55,4 +56,20 @@ export class User extends BaseEntity {
     link => link.user,
   )
   public factorLinks: FactorLink[];
+
+  @OneToMany(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _type => TwentyFourHourMetric,
+    metrics => metrics.user
+  )
+  public twentyFourHourMetrics: TwentyFourHourMetric[];
+
+  public static async getUserTotalParticipationScore(userId: String): Promise<BigInt> {
+    const { sum } = await this.createQueryBuilder('user')
+      .leftJoin('user.campaigns', 'campaign')
+      .where('user.id = :userId AND campaign."userId" = user.id', { userId })
+      .select('SUM(CAST(campaign."participationScore" as double precision))')
+      .getRawOne();
+    return (sum && BigInt(sum)) || BigInt(0);
+  }
 }
