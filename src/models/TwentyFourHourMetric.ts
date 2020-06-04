@@ -1,9 +1,9 @@
-import { BaseEntity, Entity, PrimaryColumn, Column, CreateDateColumn, ManyToOne } from 'typeorm';
+import { BaseEntity, Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne } from 'typeorm';
 import { User } from './User';
 
 @Entity()
 export class TwentyFourHourMetric extends BaseEntity {
-  @PrimaryColumn('uuid')
+  @PrimaryGeneratedColumn('uuid')
   public id: string;
 
   @Column({  type: 'bigint', nullable: false, default: 0 })
