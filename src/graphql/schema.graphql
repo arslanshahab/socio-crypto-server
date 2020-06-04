@@ -58,6 +58,12 @@ type Query {
   me: User
 }
 
+type TwentyFourHourMetric {
+  id: String
+  score: Float
+  createdAt: String
+}
+
 type SocialMetrics {
   totalLikes: Float
   totalShares: Float
@@ -82,6 +88,7 @@ type User {
   wallet: Wallet
   socialLinks: [SocialLink]
   factorLinks: [FactorLink]
+  twentyFourHourMetrics: [TwentyFourHourMetric]
 }
 
 type FactorLink {
@@ -120,7 +127,7 @@ type Campaign {
   beginDate: String
   endDate: String
   coiinTotal: Float
-  totalParticipationScore: Int
+  totalParticipationScore: Float
   target: String
   description: String
   company: String
