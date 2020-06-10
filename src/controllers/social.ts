@@ -26,7 +26,7 @@ export const registerSocialLink = async (args: { type: string, apiKey: string, a
     const user = await me(undefined, context);
     const { type, apiKey, apiSecret } = args;
     if (!allowedSocialLinks.includes(type)) throw new Error('the type must exist as a predefined type');
-    const existingLink = user.socialLinks.find(link => link.type === type);
+    const existingLink = user.socialLinks.find((link: SocialLink) => link.type === type);
     const encryptedApiKey = encrypt(apiKey);
     const encryptedApiSecret = encrypt(apiSecret);
     if (existingLink) {
