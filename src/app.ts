@@ -68,6 +68,8 @@ export class Application {
 
   public async startServer() {
     this.runningServer = this.app.listen(this.app.get('port'), '0.0.0.0', () => {
+      this.runningServer.timeout = 1000000;
+      this.runningServer.keepAliveTimeout = 90000;
       logger.info(`App is running at http://localhost:${this.app.get('port')} in ${this.app.get('env')} mode`);
       logger.info('Press CTRL-C to stop\n');
     });
