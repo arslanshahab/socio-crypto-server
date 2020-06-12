@@ -28,6 +28,8 @@ cron:
     social: '0 * * * *' # At minute 0 every hour
     daily: '0 0 * * *' # At minute 0 every day
 
+# up server replica count
+replicaCount: 2
 server:
   resources:
     limits:

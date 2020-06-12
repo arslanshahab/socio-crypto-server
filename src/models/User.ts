@@ -73,27 +73,4 @@ export class User extends BaseEntity {
       .getRawOne();
     return (sum && BigInt(sum)) || BigInt(0);
   }
-
-  public static async getUserWithOptions(id: string, openCampaigns?: boolean): Promise<User|undefined> {
-    let where = '';
-    const now = DateUtils.mixedDateToDatetimeString(new Date());
-    if (openCampaigns !== null && openCampaigns === true) {
-      where = `(campaign."beginDate" <= '${now}' AND campaign."endDate" >= '${now}')`;
-    } else if (openCampaigns !== null && openCampaigns === false) {
-      where = `(campaign."beginDate" >= '${now}' OR campaign."endDate" <= '${now}')`;
-    }
-    let query = this.createQueryBuilder('user')
-      .leftJoinAndSelect('user.campaigns', 'participant', 'participant."userId" = user.id')
-      .leftJoinAndSelect('participant.campaign', 'campaign', 'participant."campaignId" = campaign.id')
-      .leftJoinAndSelect('campaign.participants', 'part', 'part."campaignId" = campaign.id')
-      .leftJoinAndSelect('part.user', 'u')
-      .leftJoinAndSelect('user.wallet', 'wallet', 'wallet."userId" = user.id')
-      .leftJoinAndSelect('user.socialLinks', 'social', 'social."userId" = user.id')
-      .leftJoinAndSelect('user.factorLinks', 'factor', 'factor."userId" = user.id')
-      .leftJoinAndSelect('user.posts', 'post', 'post."userId" = user.id')
-      .leftJoinAndSelect('user.twentyFourHourMetrics', 'metric', 'metric."userId" = user.id')
-      .where('user.id = :id', { id });
-    if (where !== '') query = query.andWhere(where);
-    return query.getOne();
-  }
 }

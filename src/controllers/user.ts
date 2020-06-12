@@ -72,8 +72,13 @@ export const signUp = async (args: { username: string, deviceToken: string }, co
 
 export const me = async (args: { openCampaigns?: boolean } = {}, context: { user: any }) => {
     const { id } = context.user;
-    const user = await User.getUserWithOptions(id, args.openCampaigns);
+    const user = await User.findOne({ where: { id }, relations: ['campaigns', 'wallet', 'socialLinks','factorLinks','twentyFourHourMetrics'] });
     if (!user) throw new Error('user not found');
+    if (args.openCampaigns !== null && args.openCampaigns === true) {
+      user.campaigns = user.campaigns.filter(p => p.campaign.isOpen());
+    } else if (args.openCampaigns !== null && args.openCampaigns === false) {
+      user.campaigns = user.campaigns.filter(p => !p.campaign.isOpen());
+    }
     return user;
 }
 
