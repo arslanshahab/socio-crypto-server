@@ -17,5 +17,5 @@ export const errorHandler = (err: any, _req: Request, res: Response, next: NextF
     reportErrorIfNecessary(err, 500);
     return res.status(500).send(err.message);
   }
-  next();
+  return next();
 };
