@@ -4,7 +4,6 @@ import * as Dragonfactor from '@dragonchain-dev/dragonfactor-auth';
 import { asyncHandler, extractFactor, generateRandomNumber } from '../util/helpers';
 import { AuthRequest } from '../types';
 import {FactorLink} from '../models/FactorLink';
-import {me} from "./user";
 import { Secrets } from '../util/secrets';
 import { User } from '../models/User';
 import { serverBaseUrl } from '../config';
@@ -12,7 +11,8 @@ import { Wallet } from '../models/Wallet';
 
 export const registerFactorLink = async (args: { factor: Dragonfactor.FactorLoginRequest }, context: { user: any }) => {
   const { identityId, factors } = await Dragonfactor.validateFactor({ factorRequest: args.factor, acceptedFactors: ['email'], service: 'raiinmaker' });
-  const user = await me(undefined, context);
+  const { id } = context.user;
+  const user = await User.findOneOrFail({ where: { id }, relations: ['factorLinks'] });
   for (let i = 0; i < factors.length; i++) {
     const { providerId, id, type } = factors[i];
     if (await FactorLink.findOne({ where: { factorId: id, providerId } })) throw new Error('factor link is already registered');
@@ -29,7 +29,8 @@ export const registerFactorLink = async (args: { factor: Dragonfactor.FactorLogi
 }
 
 export const removeFactorLink = async (args: { factorId: string }, context: { user: any }) => {
-  const user = await me(undefined, context);
+  const { id } = context.user;
+  const user = await User.findOneOrFail({ where: { id }, relations: ['factorLinks'] });
   const factorLink = user.factorLinks.find((link: FactorLink) => link.factorId === args.factorId);
   if (!factorLink) throw new Error('requested factor not found');
   await factorLink.remove();
@@ -37,7 +38,8 @@ export const removeFactorLink = async (args: { factorId: string }, context: { us
 }
 
 export const isLastFactor = async (_args: any, context: {user: any}) => {
-  const user = await me(undefined, context);
+  const { id } = context.user;
+  const user = await User.findOneOrFail({ where: { id }, relations: ['factorLinks'] });
   return user.factorLinks.length === 1;
 }
 

@@ -86,14 +86,16 @@ export const list = async (args: { skip: number, take: number }, context: { user
 
 export const setDevice = async (args: { deviceToken: string }, context: { user: any }) => {
   const { deviceToken } = args;
-  const user = await me(undefined, context);
+  const { id } = context.user;
+  const user = await User.findOneOrFail({ where: { id } });
   user.deviceToken = deviceToken;
   await user.save();
   return true;
 }
 
 export const updateUsername = async (args: { username: string }, context: { user: any }) => {
-  const user = await me(undefined, context);
+  const { id } = context.user;
+  const user = await User.findOneOrFail({ where: { id } });
   if (await User.findOne({ where: { username: args.username } })) throw new Error('username is already registered');
   user.username = args.username;
   await user.save();
