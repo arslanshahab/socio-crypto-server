@@ -10,6 +10,7 @@ import { Secrets } from './util/secrets';
 import { Firebase } from './clients/firebase';
 import { authenticate } from './middleware/authentication';
 import { requestLogger } from './middleware/logging';
+import { errorHandler } from './middleware/errorHandler';
 import { Dragonchain } from './clients/dragonchain';
 import * as FactorController from './controllers/factor';
 import * as Dragonfactor from '@dragonchain-dev/dragonfactor-auth';
@@ -62,6 +63,7 @@ export class Application {
     }));
     this.app.get('/v1/health', (_req: express.Request, res: express.Response) => res.send('I am alive and well, thank you!'));
     this.app.use('/v1/dragonfactor/login', Dragonfactor.expressMiddleware({ service: 'raiinmaker', acceptedFactors: ['email'], timeVariance: 5000 }), FactorController.login);
+    this.app.use(errorHandler);
   }
 
   public async startServer() {
