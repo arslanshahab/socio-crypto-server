@@ -1,5 +1,4 @@
 import { BaseEntity, Entity, PrimaryColumn, Column, OneToMany, OneToOne } from 'typeorm';
-import { DateUtils } from 'typeorm/util/DateUtils';
 import { Participant } from './Participant';
 import { Wallet } from './Wallet';
 import { SocialLink } from './SocialLink';
