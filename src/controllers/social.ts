@@ -1,7 +1,6 @@
 import {encrypt} from "../util/crypto";
 import {SocialLink} from "../models/SocialLink";
 import {TwitterClient} from '../clients/twitter';
-import {me} from "./user";
 import logger from '../util/logger';
 import { Participant } from '../models/Participant';
 import {SocialPost} from "../models/SocialPost";
