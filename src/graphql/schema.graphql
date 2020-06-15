@@ -52,6 +52,7 @@ type Query {
   getParticipantPosts(id:String): [String]
   getSocialMetrics(id:String!): SocialMetrics
   campaignGet(campaignId:String!): Campaign
+  getParticipantByCampaignId(campaignId:String!): Participant
   listUsers(skip:Int,take:Int): PaginatedUserResults
   helloWorld: String
   isLastFactor: Boolean
@@ -89,6 +90,11 @@ type User {
   socialLinks: [SocialLink]
   factorLinks: [FactorLink]
   twentyFourHourMetrics: [TwentyFourHourMetric]
+}
+
+type PublicUser {
+  id: String
+  username: String
 }
 
 type FactorLink {
@@ -144,7 +150,7 @@ type Campaign {
 type Participant {
   id: String
   metrics: ParticipantMetrics
-  user: User
+  user: PublicUser
   campaign: Campaign
   link: String
   participationScore: Int

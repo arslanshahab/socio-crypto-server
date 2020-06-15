@@ -1,5 +1,6 @@
 import { RedisStore, getGraphQLRateLimiter } from 'graphql-rate-limit';
 import {Campaign} from "../models/Campaign";
+import {User} from "../models/User";
 import {Dragonchain} from "../clients/dragonchain";
 import {Participant} from "../models/Participant";
 import {SocialPost} from "../models/SocialPost";
@@ -15,6 +16,14 @@ const rateLimiter = getGraphQLRateLimiter({
   },
   store: new RedisStore(getRedis().client),
 });
+
+export const getParticipantByCampaignId = async (args: { campaignId: string }, context: { user: any }) => {
+  const { id } = context.user;
+  const user = await User.findOneOrFail({ where: { id } });
+  const campaign = await Campaign.findOneOrFail({ where: { id: args.campaignId } });
+  const particpant = await Participant.findOneOrFail({ where: { user, campaign }, relations: ['user', 'campaign'] });
+  return particpant;
+};
 
 export const trackAction = async (args: { participantId: string, action: 'click' | 'view' | 'submission' }, context: any, info: any) => {
     const errorMessage = await rateLimiter({ parent: {}, args, context, info }, { max: Number(RATE_LIMIT_MAX), window: RATE_LIMIT_WINDOW });
