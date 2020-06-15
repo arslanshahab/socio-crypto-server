@@ -1,4 +1,4 @@
-import {BaseEntity, Entity, Column, ManyToOne, PrimaryGeneratedColumn} from 'typeorm';
+import {BaseEntity, Entity, Column, ManyToOne, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn} from 'typeorm';
 import { Campaign } from './Campaign';
 import { User } from './User';
 
@@ -37,6 +37,12 @@ export class Participant extends BaseEntity {
     { primary: true, eager: true }
   )
   public campaign: Campaign;
+
+  @CreateDateColumn()
+  public createdAt: Date;
+
+  @UpdateDateColumn()
+  public updatedAt: Date;
 
   public metrics() {
     return {

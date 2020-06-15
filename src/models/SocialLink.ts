@@ -1,4 +1,4 @@
-import { BaseEntity, Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import { BaseEntity, Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { User } from './User';
 import { SocialClientCredentials } from '../types';
 import { decrypt } from '../util/crypto';
@@ -23,6 +23,12 @@ export class SocialLink extends BaseEntity {
     user => user.socialLinks,
   )
   public user: User;
+
+  @CreateDateColumn()
+  public createdAt: Date;
+
+  @UpdateDateColumn()
+  public updatedAt: Date;
 
   public asClientCredentials(): SocialClientCredentials {
     const credentials: SocialClientCredentials = {};

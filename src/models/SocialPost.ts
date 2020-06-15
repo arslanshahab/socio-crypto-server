@@ -1,4 +1,4 @@
-import {BaseEntity, Column, Entity, ManyToOne, PrimaryColumn } from "typeorm";
+import {BaseEntity, Column, Entity, ManyToOne, PrimaryColumn, CreateDateColumn, UpdateDateColumn } from "typeorm";
 import {User} from "./User";
 import {Campaign} from "./Campaign";
 
@@ -35,6 +35,12 @@ export class SocialPost extends BaseEntity{
         { primary: true }
     )
     campaign: Campaign;
+
+    @CreateDateColumn()
+    public createdAt: Date;
+  
+    @UpdateDateColumn()
+    public updatedAt: Date;
 
     public static newSocialPost(id: string, type: string, participantId: string, user: User, campaign: Campaign) {
         const post = new SocialPost();

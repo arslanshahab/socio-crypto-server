@@ -1,4 +1,4 @@
-import { BaseEntity, Entity, PrimaryColumn, Column, OneToMany, OneToOne } from 'typeorm';
+import { BaseEntity, Entity, PrimaryColumn, Column, OneToMany, OneToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { Participant } from './Participant';
 import { Wallet } from './Wallet';
 import { SocialLink } from './SocialLink';
@@ -28,6 +28,12 @@ export class User extends BaseEntity {
       posts => posts.user
   )
   posts: SocialPost[];
+
+  @CreateDateColumn()
+  public createdAt: Date;
+
+  @UpdateDateColumn()
+  public updatedAt: Date;
 
   @OneToMany(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

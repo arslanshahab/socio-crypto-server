@@ -1,4 +1,4 @@
-import { BaseEntity, Entity, PrimaryColumn, Column, ManyToOne } from 'typeorm';
+import { BaseEntity, Entity, PrimaryColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { User } from './User';
 
 @Entity()
@@ -21,4 +21,10 @@ export class FactorLink extends BaseEntity {
     user => user.factorLinks
   )
   public user: User;
+
+  @CreateDateColumn()
+  public createdAt: Date;
+
+  @UpdateDateColumn()
+  public updatedAt: Date;
 }
