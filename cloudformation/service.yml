@@ -119,6 +119,20 @@ Resources:
             - - raiinmaker-
               - Ref: Stage
 
+    raiinmakerKycBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketEncryption:
+          ServerSideEncryptionConfiguration:
+            - ServerSideEncryptionByDefault:
+                KMSMasterKeyID: f23c1873-6c49-4f82-b260-3d2b0cbb4bad
+                SSEAlgorithm: aws:kms
+        BucketName:
+          Fn::Join:
+            - ''
+            - - raiinmaker-kyc-
+              - Ref: Stage
+
     raiinmakerMediaBucketPolicy:
       Type: AWS::S3::BucketPolicy
       Properties:
@@ -190,4 +204,9 @@ Resources:
                 - Fn::Join:
                   - ''
                   - - Fn::GetAtt: [raiinmakerS3Bucket, Arn]
+                    - '/*'
+                - Fn::GetAtt: [raiinmakerKycBucket, Arn]
+                - Fn::Join:
+                  - ''
+                  - - Fn::GetAtt: [raiinmakerKycBucket, Arn]
                     - '/*'
