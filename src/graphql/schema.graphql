@@ -41,6 +41,8 @@ type Mutation {
   registerFactorLink(factor: JSON): User
   updateUsername(username:String!): User
   removeFactorLink(factorId:String!): User
+  registerKyc(userKyc:JSON!): KycUser
+  updateKyc(user: JSON!): KycUser
 }
 
 type Query {
@@ -57,6 +59,7 @@ type Query {
   helloWorld: String
   isLastFactor: Boolean
   me(openCampaigns: Boolean): User
+  getKyc: KycUser
 }
 
 type TwentyFourHourMetric {
@@ -95,6 +98,14 @@ type User {
 type PublicUser {
   id: String
   username: String
+}
+
+type KycUser {
+  name: String
+  address: JSON
+  phoneNumber: String
+  email: String
+  photo: String
 }
 
 type FactorLink {
