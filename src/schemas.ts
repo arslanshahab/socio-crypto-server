@@ -55,18 +55,36 @@ export const algorithmCreateSchema = {
     }
 };
 
+export const kycUser = {
+    type: 'object',
+    properties: {
+        name: { type: 'string' },
+        email: { type: 'string' },
+        address: { type: 'object' },
+        phoneNumber: { type: 'string' },
+        photo: { type: 'string' }
+    }
+}
+
 export class Validator {
     private ajv: Ajv.Ajv;
     private validateAlgorithmCreatePayload: Ajv.ValidateFunction;
+    private validateKycUser: Ajv.ValidateFunction;
 
     public constructor() {
         this.ajv = new Ajv({schemaId: 'auto'});
         this.validateAlgorithmCreatePayload = this.ajv.compile(algorithmCreateSchema);
+        this.validateKycUser = this.ajv.compile(kycUser);
     }
 
     public validateAlgorithmCreateSchema = (payload: object) => {
         if(!this.validateAlgorithmCreatePayload(payload)) {
             throw new Error(`Incoming message is invalid ${JSON.stringify(this.validateAlgorithmCreatePayload.errors)}`);
+        }
+    }
+    public validateKycRegistration = (payload: object) => {
+        if(!this.validateKycUser(payload)) {
+            throw new Error(`Invalid kyc registration ${JSON.stringify(this.validateKycUser.errors)}`);
         }
     }
 

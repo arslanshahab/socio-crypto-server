@@ -4,6 +4,7 @@ import * as userController from "../controllers/user";
 import * as campaignController from "../controllers/campaign";
 import * as socialController from "../controllers/social";
 import * as factorController from '../controllers/factor';
+import * as kycController from '../controllers/kyc';
 
 export const root = {
   JSON: GraphQLJSON,
@@ -34,6 +35,9 @@ export const root = {
   updateUsername: userController.updateUsername,
   isLastFactor: factorController.isLastFactor,
   getParticipantByCampaignId: participantController.getParticipantByCampaignId,
+  registerKyc: kycController.registerKyc,
+  getKyc: kycController.getKyc,
+  updateKyc: kycController.updateKyc
 };
 
 export const publicRoot = {
