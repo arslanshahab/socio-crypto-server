@@ -11,6 +11,7 @@ import {getParticipant} from "./participant";
 import {Firebase} from "../clients/firebase";
 import {Dragonchain} from '../clients/dragonchain';
 import {calculateParticipantPayout, calculateParticipantSocialScore, calculateTier} from "./helpers";
+import { Transfer } from '../models/Transfer';
 
 
 export const getCurrentCampaignTier = async (args: { campaignId?: string, campaign?: Campaign }) => {
@@ -144,6 +145,7 @@ export const payoutCampaignRewards = async (args: { campaignId: string, rejected
     const {company} = checkPermissions({hasRole: ['admin', 'manager']}, context);
     const usersWalletValues: { [key: string]: number } = {};
     const userDeviceIds: { [key: string]: string } = {};
+    const transfers: Transfer[] = [];
     return getConnection().transaction(async transactionalEntityManager => {
         const {campaignId, rejected} = args;
         const campaign = await Campaign.findOneOrFail({where: {id: campaignId, company}});
@@ -185,12 +187,17 @@ export const payoutCampaignRewards = async (args: { campaignId: string, rejected
         }
         for (const userId in usersWalletValues) {
             const currentWallet = wallets.find(w => w.user.id === userId);
-            if (currentWallet) currentWallet.balance += usersWalletValues[userId];
+            if (currentWallet) {
+              currentWallet.balance += usersWalletValues[userId];
+              const transfer = Transfer.newFromCampaignPayout(currentWallet, campaign.id, usersWalletValues[userId]);
+              transfers.push(transfer);
+            }
         }
         campaign.audited = true;
         await transactionalEntityManager.save(campaign);
         await transactionalEntityManager.save(participants);
         await transactionalEntityManager.save(wallets);
+        await transactionalEntityManager.save(transfers);
         await Firebase.sendCampaignCompleteNotifications(Object.values(userDeviceIds), campaign.name);
         await Dragonchain.ledgerCampaignAudit(usersWalletValues, rejected, campaign.id);
         return true;

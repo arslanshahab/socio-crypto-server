@@ -4,6 +4,7 @@ import * as userController from "../controllers/user";
 import * as campaignController from "../controllers/campaign";
 import * as socialController from "../controllers/social";
 import * as factorController from '../controllers/factor';
+import * as withdrawController from '../controllers/withdraw';
 import * as kycController from '../controllers/kyc';
 
 export const root = {
@@ -37,7 +38,10 @@ export const root = {
   getParticipantByCampaignId: participantController.getParticipantByCampaignId,
   registerKyc: kycController.registerKyc,
   getKyc: kycController.getKyc,
-  updateKyc: kycController.updateKyc
+  updateKyc: kycController.updateKyc,
+  initiateWithdraw: withdrawController.start,
+  updateWithdrawStatus: withdrawController.update,
+  getPendingWithdrawals: withdrawController.getPending
 };
 
 export const publicRoot = {

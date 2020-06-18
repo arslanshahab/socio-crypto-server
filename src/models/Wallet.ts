@@ -1,4 +1,5 @@
-import { PrimaryGeneratedColumn, Entity, BaseEntity, Column, OneToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { PrimaryGeneratedColumn, Entity, BaseEntity, Column, OneToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { Transfer } from './Transfer';
 import { User } from './User';
 
 @Entity()
@@ -22,4 +23,12 @@ export class Wallet extends BaseEntity {
 
   @UpdateDateColumn()
   public updatedAt: Date;
+
+  @OneToMany(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _type => Transfer,
+    transfer => transfer.wallet,
+    { eager: true }
+  )
+  public transfers: Transfer[];
 }

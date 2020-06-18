@@ -43,6 +43,8 @@ type Mutation {
   removeFactorLink(factorId:String!): User
   registerKyc(userKyc:JSON!): KycUser
   updateKyc(user: JSON!): KycUser
+  initiateWithdraw(withdrawAmount:Float!): Transfer
+  updateWithdrawStatus(withdrawalId:String!,status:String!): Transfer
 }
 
 type Query {
@@ -60,6 +62,18 @@ type Query {
   isLastFactor: Boolean
   me(openCampaigns: Boolean): User
   getKyc: KycUser
+  getPendingWithdrawals: [Transfer]
+}
+
+type Transfer {
+  id: String
+  amount: Float
+  action: String
+  withdrawStatus: String
+  campaignId: String
+  createdAt: String
+  updatedAt: String
+  wallet: Wallet
 }
 
 type TwentyFourHourMetric {
@@ -122,6 +136,7 @@ type SocialLink {
 type Wallet {
   id: String
   balance: Float
+  transfers: [Transfer]
 }
 
 type PaginatedUserResults {
