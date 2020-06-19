@@ -87,6 +87,7 @@ export class User extends BaseEntity {
       .leftJoinAndSelect('part.user', 'u')
       .leftJoinAndSelect('user.wallet', 'wallet', 'wallet."userId" = user.id')
       .leftJoinAndSelect('wallet.transfers', 'transfer', 'transfer."walletId" = wallet.id')
+      .leftJoinAndSelect('transfer.campaign', 'c', 'c.id = transfer."campaignId"')
       .leftJoinAndSelect('user.socialLinks', 'social', 'social."userId" = user.id')
       .leftJoinAndSelect('user.factorLinks', 'factor', 'factor."userId" = user.id')
       .leftJoinAndSelect('user.posts', 'post', 'post."userId" = user.id')

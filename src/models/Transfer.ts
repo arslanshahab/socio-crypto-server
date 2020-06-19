@@ -1,5 +1,6 @@
 import { PrimaryGeneratedColumn, Entity, BaseEntity, Column, CreateDateColumn, UpdateDateColumn, ManyToOne } from 'typeorm';
 import { Wallet } from './Wallet';
+import { Campaign } from './Campaign';
 
 @Entity()
 export class Transfer extends BaseEntity {
@@ -15,9 +16,6 @@ export class Transfer extends BaseEntity {
   @Column({ nullable: true })
   public withdrawStatus: 'pending'|'approved'|'rejected';
 
-  @Column({ nullable: true })
-  public campaignId: string; 
-
   @CreateDateColumn()
   public createdAt: Date;
 
@@ -30,6 +28,13 @@ export class Transfer extends BaseEntity {
     wallet => wallet.transfers
   )
   public wallet: Wallet;
+
+  @ManyToOne(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _type => Campaign,
+    campaign => campaign.payouts
+  )
+  public campaign: Campaign;
 
   public static async getTotalPendingByWallet(wallet: Wallet): Promise<number> {
     const { sum } = await this.createQueryBuilder('transfer')
@@ -48,10 +53,10 @@ export class Transfer extends BaseEntity {
       .getMany();
   }
 
-  public static newFromCampaignPayout(wallet: Wallet, campaignId: string, amount: number): Transfer {
+  public static newFromCampaignPayout(wallet: Wallet, campaign: Campaign, amount: number): Transfer {
     const transfer = new Transfer();
     transfer.action = 'transfer';
-    transfer.campaignId = campaignId;
+    transfer.campaign = campaign;
     transfer.amount = amount;
     transfer.wallet = wallet;
     return transfer;

@@ -4,6 +4,7 @@ import { Participant } from './Participant';
 import {AlgorithmSpecs} from '../types';
 import { Validator } from '../schemas';
 import {SocialPost} from "./SocialPost";
+import {Transfer} from './Transfer';
 import { StringifiedArrayTransformer } from '../util/transformers';
 
 @Entity()
@@ -69,6 +70,12 @@ export class Campaign extends BaseEntity {
       post => post.campaign
   )
   public posts: SocialPost[];
+
+  @OneToMany(
+    _type => Transfer,
+    transfer => transfer.campaign
+  )
+  public payouts: Transfer[];
 
   @CreateDateColumn()
   public createdAt: Date;

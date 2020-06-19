@@ -189,7 +189,7 @@ export const payoutCampaignRewards = async (args: { campaignId: string, rejected
             const currentWallet = wallets.find(w => w.user.id === userId);
             if (currentWallet) {
               currentWallet.balance += usersWalletValues[userId];
-              const transfer = Transfer.newFromCampaignPayout(currentWallet, campaign.id, usersWalletValues[userId]);
+              const transfer = Transfer.newFromCampaignPayout(currentWallet, campaign, usersWalletValues[userId]);
               transfers.push(transfer);
             }
         }
