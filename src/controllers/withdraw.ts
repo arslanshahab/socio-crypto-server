@@ -41,5 +41,5 @@ export const update = async (args: { withdrawalId: string, status: 'approve'|'re
 
 export const getPending = async (_args: any, context: { user: any }) => {
   checkPermissions({ hasRole: ['admin'] }, context);
-  return await Transfer.find({ where: { action: 'withdraw', withdrawStatus: 'pending' } });;
+  return await Transfer.getPendingWithdrawals();
 }

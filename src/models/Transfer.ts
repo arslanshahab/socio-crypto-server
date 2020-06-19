@@ -39,6 +39,15 @@ export class Transfer extends BaseEntity {
     return sum || 0;
   }
 
+  public static async getPendingWithdrawals(): Promise<Transfer[]> {
+    return this.createQueryBuilder('transfer')
+      .leftJoinAndSelect('transfer.wallet', 'wallet', 'wallet.id = transfer."walletId"')
+      .leftJoinAndSelect('wallet.user', 'user', 'user.id = wallet."userId"')
+      .where(`transfer.action = 'withdraw' AND transfer."withdrawStatus" = 'pending'`)
+      .orderBy('transfer."createdAt"', 'ASC')
+      .getMany();
+  }
+
   public static newFromCampaignPayout(wallet: Wallet, campaignId: string, amount: number): Transfer {
     const transfer = new Transfer();
     transfer.action = 'transfer';
