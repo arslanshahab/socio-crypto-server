@@ -19,7 +19,7 @@ const rateLimiter = getGraphQLRateLimiter({
 
 export const getParticipantByCampaignId = async (args: { campaignId: string }, context: { user: any }) => {
   const { id } = context.user;
-  const user = await User.findOneOrFail({ where: { id } });
+  const user = await User.findOneOrFail({ where: { identityId: id } });
   const campaign = await Campaign.findOneOrFail({ where: { id: args.campaignId } });
   const particpant = await Participant.findOneOrFail({ where: { user, campaign }, relations: ['user', 'campaign'] });
   return particpant;

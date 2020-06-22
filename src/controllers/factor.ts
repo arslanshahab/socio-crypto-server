@@ -12,7 +12,7 @@ import { Wallet } from '../models/Wallet';
 export const registerFactorLink = async (args: { factor: Dragonfactor.FactorLoginRequest }, context: { user: any }) => {
   const { identityId, factors } = await Dragonfactor.validateFactor({ factorRequest: args.factor, acceptedFactors: ['email'], service: 'raiinmaker' });
   const { id } = context.user;
-  const user = await User.findOneOrFail({ where: { id }, relations: ['factorLinks'] });
+  const user = await User.findOneOrFail({ where: { identityId: id }, relations: ['factorLinks'] });
   for (let i = 0; i < factors.length; i++) {
     const { providerId, id, type } = factors[i];
     if (await FactorLink.findOne({ where: { factorId: id, providerId } })) throw new Error('factor link is already registered');
@@ -30,7 +30,7 @@ export const registerFactorLink = async (args: { factor: Dragonfactor.FactorLogi
 
 export const removeFactorLink = async (args: { factorId: string }, context: { user: any }) => {
   const { id } = context.user;
-  const user = await User.findOneOrFail({ where: { id }, relations: ['factorLinks'] });
+  const user = await User.findOneOrFail({ where: { identityId: id }, relations: ['factorLinks'] });
   const factorLink = user.factorLinks.find((link: FactorLink) => link.factorId === args.factorId);
   if (!factorLink) throw new Error('requested factor not found');
   await factorLink.remove();
@@ -39,20 +39,20 @@ export const removeFactorLink = async (args: { factorId: string }, context: { us
 
 export const isLastFactor = async (_args: any, context: {user: any}) => {
   const { id } = context.user;
-  const user = await User.findOneOrFail({ where: { id }, relations: ['factorLinks'] });
+  const user = await User.findOneOrFail({ where: { identityId: id }, relations: ['factorLinks'] });
   return user.factorLinks.length === 1;
 }
 
 
 export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { identityId, factors } = req.user;
-  const user = await User.findOne({ where: { id: identityId }, relations: ['factorLinks'] });
+  const user = await User.findOne({ where: { identityId }, relations: ['factorLinks'] });
   let emailAddress: string;
   if (!user) {
     const newUser = new User();
     const wallet = new Wallet();
     const factorLink = new FactorLink();
-    newUser.id = identityId;
+    newUser.identityId = identityId;
     newUser.username = `raiinmaker-${generateRandomNumber()}`;
     await newUser.save();
     wallet.user = newUser;

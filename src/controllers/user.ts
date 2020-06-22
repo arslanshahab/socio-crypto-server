@@ -8,7 +8,7 @@ import { TinyUrl } from '../clients/tinyUrl';
 
 export const participate = async (args: { campaignId: string }, context: { user: any }) => {
     const { id } = context.user;
-    const user = await User.findOne({ where: { id }, relations: ['campaigns', 'wallet'] });
+    const user = await User.findOne({ where: { identityId: id }, relations: ['campaigns', 'wallet'] });
     if (!user) throw new Error('user not found');
     const campaign = await Campaign.findOne({ where: { id: args.campaignId } });
     if (!campaign) throw new Error('campaign not found');
@@ -40,7 +40,7 @@ export const promotePermissions = async (args: { userId: string, email: string, 
 
 export const removeParticipation = async (args: { campaignId: string }, context: { user: any }) => {
     const { id } = context.user;
-    const user = await User.findOne({ where: { id }, relations: ['campaigns', 'wallet'] });
+    const user = await User.findOne({ where: { identityId: id }, relations: ['campaigns', 'wallet'] });
     if (!user) throw new Error('user not found');
     const campaign = await Campaign.findOne({ where: { id: args.campaignId } });
     if (!campaign) throw new Error('campaign not found');
@@ -58,7 +58,7 @@ export const usernameExists = async (args: { username: string }) => {
 export const signUp = async (args: { username: string, deviceToken: string }, context: { user: any }) => {
     const {deviceToken} = args;
     const { id, email } = context.user;
-    if (await User.findOne({ where: { id } })) throw new Error('user already registered');
+    if (await User.findOne({ where: { identityId: id } })) throw new Error('user already registered');
     const user = new User();
     const wallet = new Wallet();
     user.id = id;
@@ -92,7 +92,7 @@ export const list = async (args: { skip: number, take: number }, context: { user
 export const setDevice = async (args: { deviceToken: string }, context: { user: any }) => {
   const { deviceToken } = args;
   const { id } = context.user;
-  const user = await User.findOneOrFail({ where: { id } });
+  const user = await User.findOneOrFail({ where: { identityId: id } });
   user.deviceToken = deviceToken;
   await user.save();
   return true;
@@ -100,7 +100,7 @@ export const setDevice = async (args: { deviceToken: string }, context: { user: 
 
 export const updateUsername = async (args: { username: string }, context: { user: any }) => {
   const { id } = context.user;
-  const user = await User.findOneOrFail({ where: { id } });
+  const user = await User.findOneOrFail({ where: { identityId: id } });
   if (await User.findOne({ where: { username: args.username } })) throw new Error('username is already registered');
   user.username = args.username;
   await user.save();

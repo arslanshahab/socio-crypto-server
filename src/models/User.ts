@@ -1,4 +1,4 @@
-import { BaseEntity, Entity, PrimaryColumn, Column, OneToMany, OneToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { BaseEntity, Entity, PrimaryGeneratedColumn, Column, OneToMany, OneToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { Participant } from './Participant';
 import { Wallet } from './Wallet';
 import { SocialLink } from './SocialLink';
@@ -8,8 +8,11 @@ import { TwentyFourHourMetric } from './TwentyFourHourMetric';
 
 @Entity()
 export class User extends BaseEntity {
-  @PrimaryColumn()
+  @PrimaryGeneratedColumn('uuid')
   public id: string;
+
+  @Column({ nullable: false })
+  public identityId: string;
 
   @Column({ nullable: true })
   public email: string;
@@ -92,7 +95,7 @@ export class User extends BaseEntity {
       .leftJoinAndSelect('user.factorLinks', 'factor', 'factor."userId" = user.id')
       .leftJoinAndSelect('user.posts', 'post', 'post."userId" = user.id')
       .leftJoinAndSelect('user.twentyFourHourMetrics', 'metric', 'metric."userId" = user.id')
-      .where('user.id = :id', { id })
+      .where('user.identityId = :id', { id })
       .getOne();
   }
 }
