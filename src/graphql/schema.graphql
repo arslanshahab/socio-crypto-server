@@ -115,11 +115,15 @@ type PublicUser {
 }
 
 type KycUser {
-  name: String
+  firstName: String
+  lastName: String
+  businessName: String
   address: JSON
   phoneNumber: String
   email: String
-  photo: String
+  paypalEmail: String
+  idProof: String
+  addressProof: String
 }
 
 type FactorLink {

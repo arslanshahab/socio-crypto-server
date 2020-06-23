@@ -58,11 +58,15 @@ export const algorithmCreateSchema = {
 export const kycUser = {
     type: 'object',
     properties: {
-        name: { type: 'string' },
+        firstName: { type: 'string' },
+        lastName: { type: 'string' },
+        businessName: { type: 'string' },
         email: { type: 'string' },
         address: { type: 'object' },
         phoneNumber: { type: 'string' },
-        photo: { type: 'string' }
+        paypalEmail: { type: 'string' },
+        idProof: { type: 'string' },
+        addressProof: { type: 'string' }
     }
 }
 
