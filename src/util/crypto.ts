@@ -26,3 +26,5 @@ export const decrypt = (dataToDecrypt: string): string => {
 
   return decryptedData.toString();
 };
+
+export const sha256Hash = (data: string): string => crypto.createHash('sha256').update(data).digest('base64');

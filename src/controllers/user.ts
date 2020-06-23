@@ -5,6 +5,7 @@ import {Firebase} from "../clients/firebase";
 import {User} from "../models/User";
 import {Wallet} from "../models/Wallet";
 import { TinyUrl } from '../clients/tinyUrl';
+import {sha256Hash} from '../util/crypto';
 
 export const participate = async (args: { campaignId: string }, context: { user: any }) => {
     const { id } = context.user;
@@ -79,7 +80,7 @@ export const me = async (args: { openCampaigns?: boolean } = {}, context: { user
     } else if (args.openCampaigns !== null && args.openCampaigns === false) {
       user.campaigns = user.campaigns.filter(p => !p.campaign.isOpen());
     }
-    return user;
+    return user.asV1();
 }
 
 export const list = async (args: { skip: number, take: number }, context: { user: any }) => {
@@ -103,6 +104,14 @@ export const updateUsername = async (args: { username: string }, context: { user
   const user = await User.findOneOrFail({ where: { identityId: id } });
   if (await User.findOne({ where: { username: args.username } })) throw new Error('username is already registered');
   user.username = args.username;
+  await user.save();
+  return user;
+}
+
+export const setRecoveryCode = async (args: { code: number }, context: { user: any }) => {
+  const { id } = context.user;
+  const user = await User.findOneOrFail({ where: { identityId: id } });
+  user.recoveryCode = sha256Hash(args.code.toString());
   await user.save();
   return user;
 }

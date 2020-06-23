@@ -1,9 +1,11 @@
 import { createClient, DragonchainClient } from 'dragonchain-sdk';
 import { Secrets } from '../util/secrets';
 
-const transactionTypes = ['campaign','trackAction','campaignAudit'];
+const transactionTypes = ['campaign','trackAction','campaignAudit','accountRecovery'];
 const getActionKey = (action: string, participantId: string) => `${participantId.replace(/-/g, ':')}-${action}`;
 const getCampaignAuditKey = (campaignId: string) => campaignId.replace(/-/g, ':');
+
+const getAccountRecoveryAttemptKey = (accountId: string|undefined, username: string) => `${accountId ? accountId.replace(/-/g, ':') + ':' : ''}${username.replace(/-/g, ':')}`;
 
 export class Dragonchain {
   public static client: DragonchainClient;
@@ -36,6 +38,14 @@ export class Dragonchain {
     const tag = getCampaignAuditKey(campaignId);
     const res = await this.client.createTransaction({ transactionType: 'campaignAudit', tag, payload: { payouts, rejectedUsers } });
     if (!res.ok) throw new Error('Failed to ledger campaign audit to the Dragonchain');
+    return res.response.transaction_id;
+  }
+
+  public static async ledgerAccountRecoveryAttempt(accountId: string|undefined, identityId: string, username: string, recoveryCode: number, successful: boolean) {
+    const tag = getAccountRecoveryAttemptKey(accountId, username);
+    const res = await this.client.createTransaction({ transactionType: 'accountRecovery', tag, payload: { identityId, accountId, username, recoveryCode, successful } });
+    console.log(res.response);
+    if (!res.ok) throw new Error('Failed to ledger account recovery to the Dragonchain');
     return res.response.transaction_id;
   }
 }

@@ -41,7 +41,8 @@ export const root = {
   updateKyc: kycController.updateKyc,
   initiateWithdraw: withdrawController.start,
   updateWithdrawStatus: withdrawController.update,
-  getPendingWithdrawals: withdrawController.getPending
+  getPendingWithdrawals: withdrawController.getPending,
+  setRecoveryCode: userController.setRecoveryCode,
 };
 
 export const publicRoot = {

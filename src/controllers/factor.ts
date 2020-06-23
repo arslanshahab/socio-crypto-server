@@ -8,6 +8,8 @@ import { Secrets } from '../util/secrets';
 import { User } from '../models/User';
 import { serverBaseUrl } from '../config';
 import { Wallet } from '../models/Wallet';
+import { Dragonchain } from '../clients/dragonchain';
+import { sha256Hash } from '../util/crypto';
 
 export const registerFactorLink = async (args: { factor: Dragonfactor.FactorLoginRequest }, context: { user: any }) => {
   const { identityId, factors } = await Dragonfactor.validateFactor({ factorRequest: args.factor, acceptedFactors: ['email'], service: 'raiinmaker' });
@@ -101,4 +103,19 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
   }
   const token = jwt.sign(jwtPayload, Secrets.encryptionKey, { expiresIn: 60 * 30, audience: serverBaseUrl });
   return res.status(200).json({ success: true, token, id: identityId, role: jwtPayload.role, company: jwtPayload.company });
+});
+
+export const recover = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { identityId, code, message } = req.user;
+  if (isNaN(Number(code))) throw new Error('recovery code must be a integer');
+  if (await User.findOne({ where: { identityId } })) throw new Error('An account with that identity already exists');
+  const user = await User.findOne({ where: { username: message, recoveryCode: sha256Hash(code.toString()) } });
+  if (!user) {
+    await Dragonchain.ledgerAccountRecoveryAttempt(undefined, identityId, message, code, false);
+    throw new Error('requested account not found');
+  }
+  await Dragonchain.ledgerAccountRecoveryAttempt(user.id, identityId, message, code, true);
+  user.identityId = identityId;
+  await user.save();
+  return res.status(200).json({ success: true });
 });

@@ -63,6 +63,7 @@ export class Application {
     }));
     this.app.get('/v1/health', (_req: express.Request, res: express.Response) => res.send('I am alive and well, thank you!'));
     this.app.use('/v1/dragonfactor/login', Dragonfactor.expressMiddleware({ service: 'raiinmaker', acceptedFactors: ['email'], timeVariance: 5000 }), FactorController.login);
+    this.app.use('/v1/dragonfactor/recover', Dragonfactor.accountRecoveryMiddleware({ service: 'raiinmaker', timeVariance: 5000 }), FactorController.recover);
     this.app.use(errorHandler);
   }
 

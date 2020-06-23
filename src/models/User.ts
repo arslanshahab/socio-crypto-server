@@ -23,6 +23,9 @@ export class User extends BaseEntity {
   @Column({ nullable: true })
   public deviceToken: string;
 
+  @Column({ nullable: true })
+  public recoveryCode: string;
+
   @Column({default: true})
   public active: boolean;
 
@@ -72,6 +75,13 @@ export class User extends BaseEntity {
     metrics => metrics.user
   )
   public twentyFourHourMetrics: TwentyFourHourMetric[];
+
+  public asV1() {
+    return {
+      ...this,
+      hasRecoveryCodeSet: this.recoveryCode !== null && this.recoveryCode !== ""
+    };
+  }
 
   public static async getUserTotalParticipationScore(userId: String): Promise<BigInt> {
     const { sum } = await this.createQueryBuilder('user')
