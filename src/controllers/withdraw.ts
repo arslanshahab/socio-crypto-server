@@ -6,7 +6,7 @@ import { Wallet } from '../models/Wallet';
 export const start = async (args: { withdrawAmount: number }, context: { user: any }) => {
   if (args.withdrawAmount <= 0) throw new Error('withdraw amount must be a positive number');
   const { id } = context.user;
-  const user = await User.findOneOrFail({ where: { id } });
+  const user = await User.findOneOrFail({ where: { identityId: id } });
   const wallet = await Wallet.findOneOrFail({ where: { user }, relations: ['transfers'] });
   const pendingBalance = await Transfer.getTotalPendingByWallet(wallet);
   if (((wallet.balance - pendingBalance) - args.withdrawAmount) < 0) throw new Error('wallet does not have required balance for this withdraw');
