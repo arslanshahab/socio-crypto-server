@@ -64,6 +64,7 @@ type Query {
   me(openCampaigns: Boolean): User
   getKyc: KycUser
   getPendingWithdrawals: [Transfer]
+  accountExists(id:String!): UserExistence
 }
 
 type Transfer {

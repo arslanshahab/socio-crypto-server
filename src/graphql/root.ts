@@ -49,4 +49,5 @@ export const publicRoot = {
   trackAction: participantController.trackAction,
   usernameExists: userController.usernameExists,
   campaignGet: campaignController.publicGet,
+  accountExists: userController.accountExists,
 };

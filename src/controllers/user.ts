@@ -56,6 +56,11 @@ export const usernameExists = async (args: { username: string }) => {
     return { exists: !!participant };
 }
 
+export const accountExists = async (args: { id: string }) => {
+    const user = await User.findOne({ identityId: args.id });
+    return { exists: !!user };
+}
+
 export const signUp = async (args: { username: string, deviceToken: string }, context: { user: any }) => {
     const {deviceToken} = args;
     const { id, email } = context.user;
