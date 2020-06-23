@@ -36,7 +36,7 @@ export class S3Client {
       Key: `kyc/${userId}`
     }
     try {
-      await this.client.waitFor('objectExists', doesExistParams).promise();
+      await this.client.headObject(doesExistParams).promise();
       throw new Error('data already here');
     } catch(e){
       if (e.code && e.code === 'NotFound') {
