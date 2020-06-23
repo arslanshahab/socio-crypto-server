@@ -25,8 +25,14 @@ export class S3Client {
   }
 
   public static async postUserInfo(userId: string, body: any) {
-    const userObject = await this.getUserObject(userId);
-    if (userObject) throw Error('user already exists');
+    const doesExistParams = {
+      Bucket: BUCKET_NAME,
+      Key: `kyc/${userId}`
+    }
+    await this.client.waitFor('objectExists', doesExistParams, (err, data) => {
+      if (err) return;
+      if (data) throw Error('user already exists');
+    });
     const params: AWS.S3.PutObjectRequest = { Bucket: BUCKET_NAME, Key: `kyc/${userId}`, Body: JSON.stringify(body)}
     await this.client.putObject(params).promise();
   }
