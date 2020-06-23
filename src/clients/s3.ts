@@ -1,7 +1,7 @@
 import AWS from 'aws-sdk';
 import {getBase64FileExtension} from '../util/helpers';
 
-const { BUCKET_NAME = "raiinmaker-staging" } = process.env;
+const { BUCKET_NAME = "raiinmaker-staging", KYC_BUCKET_NAME = "raiinmaker-kyc-staging" } = process.env;
 
 export class S3Client {
   public static client = new AWS.S3({region: 'us-west-2'});
@@ -23,7 +23,7 @@ export class S3Client {
 
   public static async getUserObject(userId: string) {
     try {
-      const params: AWS.S3.GetObjectRequest = {Bucket: BUCKET_NAME, Key: `kyc/${userId}`}
+      const params: AWS.S3.GetObjectRequest = {Bucket: KYC_BUCKET_NAME, Key: `kyc/${userId}`}
       return JSON.parse((await S3Client.client.getObject(params).promise()).Body!.toString());
     } catch (e) {
       throw new Error('kyc not found');
@@ -32,7 +32,7 @@ export class S3Client {
 
   public static async postUserInfo(userId: string, body: any) {
     const doesExistParams = {
-      Bucket: BUCKET_NAME,
+      Bucket: KYC_BUCKET_NAME,
       Key: `kyc/${userId}`
     }
     try {
@@ -40,7 +40,7 @@ export class S3Client {
       throw new Error('data already here');
     } catch(e){
       if (e.code && e.code === 'NotFound') {
-        const params: AWS.S3.PutObjectRequest = {Bucket: BUCKET_NAME, Key: `kyc/${userId}`, Body: JSON.stringify(body)}
+        const params: AWS.S3.PutObjectRequest = {Bucket: KYC_BUCKET_NAME, Key: `kyc/${userId}`, Body: JSON.stringify(body)}
         return await this.client.putObject(params).promise();
       }
       throw e;
@@ -52,7 +52,7 @@ export class S3Client {
     for (const key in kycUser) {
       userObject[key] = kycUser[key];
     }
-    const params: AWS.S3.PutObjectRequest = { Bucket: BUCKET_NAME, Key: `kyc/${userId}`, Body: JSON.stringify(userObject)}
+    const params: AWS.S3.PutObjectRequest = { Bucket: KYC_BUCKET_NAME, Key: `kyc/${userId}`, Body: JSON.stringify(userObject)}
     await this.client.putObject(params).promise();
     return userObject
   }

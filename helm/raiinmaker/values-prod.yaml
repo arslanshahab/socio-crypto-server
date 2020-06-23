@@ -14,5 +14,6 @@ data:
   environment:
     NODE_ENV: "production"
     BUCKET_NAME: "raiinmaker-production"
+    KYC_BUCKET_NAME: "raiinmaker-kyc-production"
     RATE_LIMIT_MAX: "3"
     RATE_LIMIT_WINDOW: "1m"
