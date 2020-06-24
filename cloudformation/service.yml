@@ -120,7 +120,7 @@ Resources:
               - Ref: Stage
 
     raiinmakerKycKmsKey:
-      Type: AWS::KMS::key
+      Type: AWS::KMS::Key
       Properties:
         Description: Used for managing kyc
         Enabled: true
