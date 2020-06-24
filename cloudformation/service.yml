@@ -125,6 +125,15 @@ Resources:
         Description: Used for managing kyc
         Enabled: true
         PendingWindowInDays: 7
+        KeyPolicy:
+          Version: '2012-10-17'
+          Statement:
+            - Sid: Allow raiinmaker service role permission to use key
+              Effect: Allow
+              Action: ["kms:*"]
+              Principal:
+                AWS:
+                  - Fn::GetAtt: [raiinmakerServicePolicy, Arn]
         Tags:
           - Key: Name
             Value:
