@@ -88,6 +88,7 @@ Resources:
                 - 'codebuild:*'
                 - 'ec2:*'
                 - 's3:*'
+                - 'kms:*'
                 Effect: Allow
                 Resource: '*'
               - Action:
@@ -121,6 +122,7 @@ Resources:
                 - 'route53:*'
                 - 'ec2:*'
                 - 's3:*'
+                - 'kms:*'
                 Effect: Allow
                 Resource: '*'
               - Action:

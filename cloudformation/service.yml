@@ -132,8 +132,8 @@ Resources:
               Effect: Allow
               Action: ["kms:*"]
               Principal:
-                AWS:
-                  - Fn::GetAtt: [raiinmakerServiceRole, Arn]
+                AWS: '*'
+              Resource: '*'
         Tags:
           - Key: Name
             Value:
