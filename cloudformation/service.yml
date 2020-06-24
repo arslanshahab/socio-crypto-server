@@ -119,13 +119,28 @@ Resources:
             - - raiinmaker-
               - Ref: Stage
 
+    raiinmakerKycKmsKey:
+      Type: AWS::KMS::key
+      Properties:
+        Description: Used for managing kyc
+        Enabled: true
+        PendingWindowInDays: 7
+        Tags:
+          - Key: Name
+            Value:
+              Fn::Join:
+                - ''
+                - - raiinmaker-kyc-
+                  - Ref: Stage
+
     raiinmakerKycBucket:
       Type: AWS::S3::Bucket
       Properties:
         BucketEncryption:
           ServerSideEncryptionConfiguration:
             - ServerSideEncryptionByDefault:
-                KMSMasterKeyID: f23c1873-6c49-4f82-b260-3d2b0cbb4bad
+                KMSMasterKeyID:
+                  Ref: raiinmakerKycKmsKey
                 SSEAlgorithm: aws:kms
         BucketName:
           Fn::Join:
@@ -184,6 +199,10 @@ Resources:
         PolicyDocument:
           Version : "2012-10-17"
           Statement:
+            - Effect: Allow
+              Action: ["kms:*"]
+              Resource:
+                - Fn::GetAtt: [raiinmakerKycKmsKey, Arn]
             - Effect: Allow
               Action: ["logs:GetLogEvents"]
               Resource:
