@@ -133,7 +133,7 @@ Resources:
               Action: ["kms:*"]
               Principal:
                 AWS:
-                  - Fn::GetAtt: [raiinmakerServicePolicy, Arn]
+                  - Fn::GetAtt: [raiinmakerServiceRole, Arn]
         Tags:
           - Key: Name
             Value:
