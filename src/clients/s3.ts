@@ -24,7 +24,11 @@ export class S3Client {
   public static async getUserObject(userId: string) {
     try {
       const params: AWS.S3.GetObjectRequest = {Bucket: KYC_BUCKET_NAME, Key: `kyc/${userId}`}
-      return JSON.parse((await S3Client.client.getObject(params).promise()).Body!.toString());
+      const start = new Date().getTime();
+      const object = JSON.parse((await S3Client.client.getObject(params).promise()).Body!.toString());
+      const end = new Date().getTime();
+      console.log('S3-get execution time is: ', end - start, 'milliseconds');
+      return object;
     } catch (e) {
       throw new Error('kyc not found');
     }
