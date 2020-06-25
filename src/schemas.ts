@@ -67,7 +67,10 @@ export const kycUser = {
         paypalEmail: { type: 'string' },
         idProof: { type: 'string' },
         addressProof: { type: 'string' },
-        image: { type: 'string '}
+        exceptions: { type: 'string' },
+        typeOfStructure: { type: 'string' },
+        accountNumbers: { type: 'string' },
+        ssn: { type: 'string' },
     }
 }
 
