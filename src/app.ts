@@ -9,7 +9,6 @@ import { getSchema, root, publicRoot } from './graphql';
 import { Secrets } from './util/secrets';
 import { Firebase } from './clients/firebase';
 import { authenticate } from './middleware/authentication';
-import { requestLogger } from './middleware/logging';
 import { errorHandler } from './middleware/errorHandler';
 import { Dragonchain } from './clients/dragonchain';
 import * as FactorController from './controllers/factor';
@@ -51,15 +50,30 @@ export class Application {
     this.app.use(bodyParser.json({ limit: "20mb" }));
     this.app.use(bodyParser.urlencoded({ extended: true }));
     this.app.set('port', process.env.PORT || 8080);
-    this.app.use('/v1/graphql', requestLogger, authenticate, expressGraphql({
+    const extensions: any = (params: any) => {
+      console.log({ timestamp: new Date().toISOString(), operation: params.operationName });
+      return { operation: params.operationName }
+    };
+    this.app.use('/v1/graphql', authenticate, expressGraphql({
       schema: await getSchema(),
       rootValue: root,
       graphiql: NODE_ENV !== 'production',
+      extensions: extensions,
+      customFormatErrorFn: (error) => {
+        console.log(error.message);
+        return {
+          message: error.message,
+          locations: error.locations,
+          stack: error.stack ? error.stack.split('\n') : [],
+          path: error.path,
+        }
+      }
     }));
     this.app.use('/v1/public/graphql', expressGraphql({
       schema: await getSchema(),
       rootValue: publicRoot,
       graphiql: NODE_ENV === 'development',
+      extensions: extensions,
     }));
     this.app.get('/v1/health', (_req: express.Request, res: express.Response) => res.send('I am alive and well, thank you!'));
     this.app.use('/v1/dragonfactor/login', Dragonfactor.expressMiddleware({ service: 'raiinmaker', acceptedFactors: ['email'], timeVariance: 5000 }), FactorController.login);

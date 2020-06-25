@@ -2,7 +2,6 @@ import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { Secrets } from '../util/secrets';
-// import { Firebase } from '../clients/firebase';
 import { AuthRequest } from '../types';
 import { serverBaseUrl } from '../config';
 
