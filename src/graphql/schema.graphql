@@ -127,7 +127,7 @@ type KycUser {
   paypalEmail: String
   idProof: String
   addressProof: String
-  photo: String
+  image: String
 }
 
 type FactorLink {

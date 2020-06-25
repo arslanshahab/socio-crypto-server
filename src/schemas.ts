@@ -66,7 +66,8 @@ export const kycUser = {
         phoneNumber: { type: 'string' },
         paypalEmail: { type: 'string' },
         idProof: { type: 'string' },
-        addressProof: { type: 'string' }
+        addressProof: { type: 'string' },
+        image: { type: 'string '}
     }
 }
 
