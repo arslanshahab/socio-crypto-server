@@ -29,6 +29,9 @@ export class User extends BaseEntity {
   @Column({default: true})
   public active: boolean;
 
+  @Column({ nullable: true })
+  public kycStatus: string;
+
   @OneToMany(
       _type => SocialPost,
       posts => posts.user

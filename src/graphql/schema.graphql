@@ -44,8 +44,9 @@ type Mutation {
   registerKyc(userKyc:JSON!): KycUser
   updateKyc(user: JSON!): KycUser
   initiateWithdraw(withdrawAmount:Float!): Transfer
-  updateWithdrawStatus(withdrawalId:String!,status:String!): Transfer
+  updateWithdrawStatus(transferIds:[String]!,status:String!): [Transfer]
   setRecoveryCode(code:Int!): User
+  updateKycStatus(userId:String!,status:String!): User
 }
 
 type Query {
@@ -63,8 +64,16 @@ type Query {
   isLastFactor: Boolean
   me(openCampaigns: Boolean): User
   getKyc: KycUser
-  getPendingWithdrawals: [Transfer]
+  getWithdrawals(status:String): [AdminWithdrawal]
   accountExists(id:String!): UserExistence
+}
+
+type AdminWithdrawal {
+  user: User
+  totalPendingWithdrawal: Float
+  totalAnnualWithdrawn: Float
+  transfers: [Transfer]
+  kyc: KycUser
 }
 
 type Transfer {
@@ -107,6 +116,7 @@ type User {
   campaigns: [Participant]
   wallet: Wallet
   hasRecoveryCodeSet: Boolean
+  kycStatus: String
   socialLinks: [SocialLink]
   factorLinks: [FactorLink]
   twentyFourHourMetrics: [TwentyFourHourMetric]

@@ -238,3 +238,7 @@ Resources:
                   - ''
                   - - Fn::GetAtt: [raiinmakerKycBucket, Arn]
                     - '/*'
+            - Effect: Allow
+              Action:
+                - 'ses:*'
+              Resource: '*'

@@ -1,4 +1,5 @@
 import { PrimaryGeneratedColumn, Entity, BaseEntity, Column, CreateDateColumn, UpdateDateColumn, ManyToOne } from 'typeorm';
+import { DateUtils } from 'typeorm/util/DateUtils';
 import { Wallet } from './Wallet';
 import { Campaign } from './Campaign';
 
@@ -36,6 +37,15 @@ export class Transfer extends BaseEntity {
   )
   public campaign: Campaign;
 
+  public static async getTotalAnnualWithdrawalByWallet(wallet: Wallet): Promise<number> {
+    const startOfYear = DateUtils.mixedDateToUtcDatetimeString(new Date(Date.UTC(new Date().getFullYear(), 0, 1)));
+    const { sum } = await this.createQueryBuilder('transfer')
+      .where(`transfer.action = 'withdraw' AND transfer."withdrawStatus" = 'approved' AND transfer."walletId" = :id AND transfer."updatedAt" >= '${startOfYear}' `, { id: wallet.id })
+      .select('SUM(transfer.amount)')
+      .getRawOne();
+    return sum || 0;
+  }
+
   public static async getTotalPendingByWallet(wallet: Wallet): Promise<number> {
     const { sum } = await this.createQueryBuilder('transfer')
       .where(`transfer.action = 'withdraw' AND transfer."withdrawStatus" = 'pending' AND transfer."walletId" = :id`, { id: wallet.id })
@@ -44,11 +54,11 @@ export class Transfer extends BaseEntity {
     return sum || 0;
   }
 
-  public static async getPendingWithdrawals(): Promise<Transfer[]> {
+  public static async getWithdrawalsByStatus(status: string = 'pending'): Promise<Transfer[]> {
     return this.createQueryBuilder('transfer')
       .leftJoinAndSelect('transfer.wallet', 'wallet', 'wallet.id = transfer."walletId"')
       .leftJoinAndSelect('wallet.user', 'user', 'user.id = wallet."userId"')
-      .where(`transfer.action = 'withdraw' AND transfer."withdrawStatus" = 'pending'`)
+      .where(`transfer.action = 'withdraw' AND transfer."withdrawStatus" = :status`, { status })
       .orderBy('transfer."createdAt"', 'ASC')
       .getMany();
   }
