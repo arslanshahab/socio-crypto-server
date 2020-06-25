@@ -41,7 +41,7 @@ export const update = async (args: { transferIds: string[], status: 'approve'|'r
           if (!userGroups[user.id]) {
             let kycData;
             try { kycData = await S3Client.getUserObject(user.id) } catch (_) { kycData = null; }
-            if (kycData) userGroups[user.id] = {totalRedeemedAmount: transfer.amount, user, paypalEmail: kycData['email'], transfers: [transfer] }; // TODO: change back to ['paypalEmail']
+            if (kycData) userGroups[user.id] = {totalRedeemedAmount: transfer.amount, user, paypalEmail: kycData['paypalEmail'], transfers: [transfer] }; 
           } else {
             userGroups[user.id].totalRedeemedAmount += transfer.amount;
             userGroups[user.id].transfers.push(transfer);
