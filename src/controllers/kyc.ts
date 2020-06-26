@@ -24,6 +24,7 @@ export const getKyc = async (_args: any, context: { user:  any }) => {
 export const updateKyc = async (args: {user: {[key: string]: string}}, context: { user: any }) => {
     const { id } = context.user;
     const user = await User.findOneOrFail({ where: { identityId: id } });
+    user.kycStatus = 'pending';
     return S3Client.updateUserInfo(user.id, args.user);
 }
 

@@ -5,7 +5,7 @@ const { NODE_ENV = "development" } = process.env;
 
 AWS.config.update({ region: 'us-west-2' });
 
-const { REWARD_REDEMPTION_EMAIL_RECIPIENT = "j@dragonchain.com" } = process.env;
+const { REWARD_REDEMPTION_EMAIL_RECIPIENT = "alex@dragonchain.com" } = process.env;
 
 export class SesClient {
   public static client = new AWS.SES();

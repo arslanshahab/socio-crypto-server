@@ -17,3 +17,4 @@ data:
     KYC_BUCKET_NAME: "raiinmaker-kyc-production"
     RATE_LIMIT_MAX: "3"
     RATE_LIMIT_WINDOW: "1m"
+    REWARD_REDEMPTION_EMAIL_RECIPIENT: jonel@raiinmaker.com

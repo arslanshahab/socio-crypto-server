@@ -50,6 +50,7 @@ data:
     KYC_BUCKET_NAME: "raiinmaker-kyc-staging"
     RATE_LIMIT_MAX: "3"
     RATE_LIMIT_WINDOW: "1m"
+    REWARD_REDEMPTION_EMAIL_RECIPIENT: alex@dragonchain.com
 
 postgresql:
   existingSecret: "raiinmaker"
