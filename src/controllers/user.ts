@@ -17,7 +17,8 @@ export const participate = async (args: { campaignId: string }, context: { user:
     if (await Participant.findOne({ where: { campaign, user } })) throw new Error('user already participating in this campaign');
     const participant = Participant.newParticipant(user, campaign);
     await participant.save();
-    participant.link = await TinyUrl.shorten(`${campaign.target}?referrer=${participant.id}`);
+    const url = `${campaign.target}${campaign.target.endsWith('/') ? '' : '/'}?referrer=${participant.id}`;
+    participant.link = await TinyUrl.shorten(url);
     await participant.save();
     return participant;
 };
