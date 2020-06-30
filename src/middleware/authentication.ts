@@ -9,6 +9,13 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
   const bearerToken = req.headers.authorization;
   if (!bearerToken) return res.status(401).json({ code: 'UNAUTHORIZED', message: 'unauthorized' });
   try {
+    if (process.env.NODE_ENV === 'test' && bearerToken === 'Bearer raiinmaker') {
+      const company = req.get('company') || 'raiinmaker';
+      const id = req.get('user-id') || 'banana';
+      const role = req.get('role') || 'admin';
+      req.user = { id, company, role };
+      return next();
+    }
     const decodedToken = jwt.verify(bearerToken, Secrets.encryptionKey, { audience: serverBaseUrl }) as any;
     if (!decodedToken) return res.status(401).json({ code: 'UNAUTHORIZED', message: 'unauthorized' });
     req.user = { id: decodedToken.id, role: decodedToken.role, company: decodedToken.company };
