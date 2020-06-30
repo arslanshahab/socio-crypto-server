@@ -66,15 +66,19 @@ export const getParticipant = async (args: { id: string }) => {
 
 export const getPosts = async (args: { id: string }, context: any) => {
   try {
-  const { id } = args;
-  const results: Promise<any>[] = [];
-  const where: { [key: string]: string } = { id };
-  const participant = await Participant.findOne({ where });
-  if (!participant) throw new Error('participant not found');
-  const posts = await SocialPost.find({ where: { participantId: participant.id } });
-    posts.forEach(post => {
-      results.push(getTweetById({ id: post.id, type: 'twitter'}, context))
-    });
+    const { id } = args;
+    const results: Promise<any>[] = [];
+    const where: { [key: string]: string } = { id };
+    const participant = await Participant.findOne({ where });
+    if (!participant) throw new Error('participant not found');
+    const posts = await SocialPost.find({ where: { participantId: participant.id } });
+    for (let i = 0; i < posts.length; i++) {
+      const post = posts[i];
+      try {
+        const tweet = await getTweetById({ id: post.id, type: 'twitter'}, context);
+        results.push(tweet);
+      } catch (_) {};
+    }
     return results;
   } catch (e) {
     console.log('Error: ')
