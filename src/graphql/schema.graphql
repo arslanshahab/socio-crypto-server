@@ -141,6 +141,8 @@ type KycUser {
   typeOfStructure: String
   accountNumbers: String
   ssn: String
+  hasIdProof: Boolean
+  hasAddressProof: Boolean
 }
 
 type FactorLink {

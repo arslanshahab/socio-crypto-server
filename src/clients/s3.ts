@@ -34,6 +34,36 @@ export class S3Client {
     }
   }
 
+  public static async uploadKycImage(userId: string, type: string, image: string) {
+    const params: AWS.S3.PutObjectRequest = { Bucket: KYC_BUCKET_NAME, Key: `images/${userId}/${type}`, Body: image };
+    try {
+      await this.client.putObject(params).promise();
+    } catch (e) {
+      console.error(`Error posting image: ${type} for user: ${userId}`);
+      throw e;
+    }
+  }
+
+  public static async getKycImage(userId: string, type: string) {
+    const params: AWS.S3.GetObjectRequest = { Bucket: KYC_BUCKET_NAME, Key: `images/${userId}/${type}` };
+    try {
+      const responseString = (await this.client.getObject(params).promise()).Body?.toString();
+      return responseString;
+    } catch (e) {
+      if (e.code && e.code === 'NotFound') return null;
+      throw e;
+    }
+  }
+
+  public static async deleteKycImage(userId: string, type: string) {
+    const params: AWS.S3.DeleteObjectRequest = { Bucket: KYC_BUCKET_NAME, Key: `images/${userId}/${type}` };
+    try {
+      return await this.client.deleteObject(params).promise();
+    } catch (_) {
+      return null;
+    }
+  }
+
   public static async postUserInfo(userId: string, body: any) {
     const doesExistParams = {
       Bucket: KYC_BUCKET_NAME,

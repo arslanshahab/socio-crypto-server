@@ -76,7 +76,11 @@ export const getWithdrawals = async (args: { status: string }, context: { user: 
     if (!uniqueUsers[userId]) {
       const totalWithdrawnThisYear = await Transfer.getTotalAnnualWithdrawalByWallet(transfer.wallet);
       let kycData: any;
-      try { kycData = await S3Client.getUserObject(userId); } catch (e) { kycData = null; }
+      try {
+        kycData = await S3Client.getUserObject(userId);
+        if (kycData['hasIdProof']) kycData['idProof'] = await S3Client.getKycImage(userId, 'idProof');
+        if (kycData['hasAddressProof']) kycData['addressProof'] = await S3Client.getKycImage(userId, 'addressProof');
+      } catch (e) { kycData = null; }
       uniqueUsers[userId] = {
         kyc: kycData,
         user: transfer.wallet.user,

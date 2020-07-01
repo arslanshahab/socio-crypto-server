@@ -119,6 +119,8 @@ export const recover = asyncHandler(async (req: AuthRequest, res: Response) => {
     throw new Error('requested account not found');
   }
   await S3Client.deleteUserInfoIfExists(user.id);
+  await S3Client.deleteKycImage(user.id, 'idProof');
+  await S3Client.deleteKycImage(user.id, 'addressProof');
   await Dragonchain.ledgerAccountRecoveryAttempt(user.id, identityId, message, code, true);
   user.identityId = identityId;
   await user.save();
