@@ -60,4 +60,15 @@ export class S3Client {
     await this.client.putObject(params).promise();
     return userObject
   }
+
+  public static async deleteUserInfoIfExists(userId: string) {
+    const params: AWS.S3.DeleteObjectRequest = { Bucket: KYC_BUCKET_NAME, Key: `kyc/${userId}` };
+    try {
+      const response = await this.client.deleteObject(params).promise();
+      console.log(`Deleted KYC data for ${userId}`, response);
+    } catch (e) {
+      if (!e.code || e.code !== 'NotFound') throw new Error('An unexpected error occurred while attempting to delete kyc data');
+      console.log(`No KYC data was found to be delete for ${userId}`);
+    }
+  }
 }

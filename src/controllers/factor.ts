@@ -10,6 +10,8 @@ import { serverBaseUrl } from '../config';
 import { Wallet } from '../models/Wallet';
 import { Dragonchain } from '../clients/dragonchain';
 import { sha256Hash } from '../util/crypto';
+import { limit } from '../util/rateLimiter';
+import { S3Client } from '../clients/s3';
 
 export const registerFactorLink = async (args: { factor: Dragonfactor.FactorLoginRequest }, context: { user: any }) => {
   const { identityId, factors } = await Dragonfactor.validateFactor({ factorRequest: args.factor, acceptedFactors: ['email'], service: 'raiinmaker' });
@@ -107,6 +109,8 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
 
 export const recover = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { identityId, code, message } = req.user;
+  const shouldRateLimit = await limit(message, 4);
+  if (shouldRateLimit) return res.status(429).json({ code: 'REQUEST_LIMIT', message: 'too many requests' });
   if (isNaN(Number(code))) throw new Error('recovery code must be a integer');
   if (await User.findOne({ where: { identityId } })) throw new Error('An account with that identity already exists');
   const user = await User.findOne({ where: { username: message, recoveryCode: sha256Hash(code.toString()) } });
@@ -114,6 +118,7 @@ export const recover = asyncHandler(async (req: AuthRequest, res: Response) => {
     await Dragonchain.ledgerAccountRecoveryAttempt(undefined, identityId, message, code, false);
     throw new Error('requested account not found');
   }
+  await S3Client.deleteUserInfoIfExists(user.id);
   await Dragonchain.ledgerAccountRecoveryAttempt(user.id, identityId, message, code, true);
   user.identityId = identityId;
   await user.save();
