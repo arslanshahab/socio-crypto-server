@@ -2,7 +2,6 @@ import fetch from 'node-fetch';
 
 export class TinyUrl {
   public static async shorten(url: string) {
-    console.log(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(url)}`);
     const res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(url)}`);
     if (!res.ok) throw new Error(`An error occurred while generating the tiny url: ${res.statusText}`);
     return res.text();

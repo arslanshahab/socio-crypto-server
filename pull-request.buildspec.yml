@@ -1,0 +1,12 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 10
+    commands:
+      - yarn --frozen-lockfile --non-interactive
+  build:
+    commands:
+      - yarn lint
+      - yarn test

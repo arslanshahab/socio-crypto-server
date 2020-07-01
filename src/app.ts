@@ -7,7 +7,6 @@ import {Connection, getConnectionOptions, createConnection} from 'typeorm';
 import logger from './util/logger';
 import { getSchema, root, publicRoot } from './graphql';
 import { Secrets } from './util/secrets';
-import { Firebase } from './clients/firebase';
 import { authenticate } from './middleware/authentication';
 import { errorHandler } from './middleware/errorHandler';
 import { Dragonchain } from './clients/dragonchain';
@@ -31,7 +30,6 @@ export class Application {
   public async initializeServer() {
     this.databaseConnection = await this.connectDatabase();
     await Secrets.initialize();
-    await Firebase.initialize();
     await Dragonchain.initialize();
     this.app = express();
     const corsSettings = {

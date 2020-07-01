@@ -1,8 +1,7 @@
 {
   "compilerOptions": {
     "target": "es2019",
-    "outDir": "./dist/",
-    "rootDir": "./src/",
+    "outDir": "dist",
     "moduleResolution": "node",
     "module": "commonjs",
     "declaration": false,
@@ -30,9 +29,7 @@
     ],
     "baseUrl": "."
   },
-  "include": [
-    "**/*.ts"
-  ],
+  "include": ["src/**/*", "src/*"],
   "exclude": [
     "node_modules/**"
   ],
