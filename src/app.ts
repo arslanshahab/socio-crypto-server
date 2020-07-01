@@ -39,7 +39,8 @@ export class Application {
         'http://localhost:9000',
         'https://raiinmaker.dragonchain.com',
         'https://raiinmaker-staging.dragonchain.com',
-        'https://mock-raiinmaker-landing.dragonchain.com'
+        'https://mock-raiinmaker-landing.dragonchain.com',
+        'https://raiinmaker.com'
       ],
       methods: ['GET','POST'],
       exposedHeaders: ['x-auth-token'],
