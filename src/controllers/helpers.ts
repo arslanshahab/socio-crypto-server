@@ -41,6 +41,7 @@ export const calculateTier = (totalParticipation: BigInt, tiers: Tiers) => {
 }
 
 export const calculateParticipantPayout = async (currentCampaignTierTotal: number, campaign: Campaign, participant: Participant) => {
+    if (Number(campaign.totalParticipationScore) === 0) return 0;
     const {totalLikes, totalShares} = await calculateParticipantSocialScore(participant, campaign);
     const viewValue = campaign.algorithm.pointValues.view;
     const clickValue = campaign.algorithm.pointValues.click;
