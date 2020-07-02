@@ -5,10 +5,20 @@ import { checkPermissions } from '../middleware/authentication';
 
 const validator = new Validator();
 
-export const registerKyc = async (args: {userKyc: object}, context: {user: any}) => {
+export const registerKyc = async (args: {userKyc: any}, context: {user: any}) => {
     validator.validateKycRegistration(args.userKyc);
     const { id } = context.user;
     const user = await User.findOneOrFail({ where: { identityId: id } });
+    if (args.userKyc['idProof']) {
+      await S3Client.uploadKycImage(user.id, 'idProof', args.userKyc['idProof']);
+      delete args.userKyc['idProof'];
+      args.userKyc['hasIdProof'] = true;
+    }
+    if (args.userKyc['addressProof']) {
+      await S3Client.uploadKycImage(user.id, 'addressProof', args.userKyc['addressProof']);
+      delete args.userKyc['addressProof'];
+      args.userKyc['hasAddressProof'] = true;
+    }
     await S3Client.postUserInfo(user.id, args.userKyc);
     user.kycStatus = 'pending';
     await user.save();
@@ -16,15 +26,31 @@ export const registerKyc = async (args: {userKyc: object}, context: {user: any})
 }
 
 export const getKyc = async (_args: any, context: { user:  any }) => {
-    const { id } = context.user;
+    const { id, role } = context.user;
     const user = await User.findOneOrFail({ where: { identityId: id } });
-    return await S3Client.getUserObject(user.id);
+    const response = await S3Client.getUserObject(user.id);
+    console.log(JSON.stringify(response));
+    if (role !== 'admin') return response;
+    if (response.hasAddressProof) response['addressProof'] = await S3Client.getKycImage(user.id, 'addressProof');
+    if (response.hasIdProof) response['idProof'] = await S3Client.getKycImage(user.id, 'idProof');
+    return response;
 }
 
-export const updateKyc = async (args: {user: {[key: string]: string}}, context: { user: any }) => {
+export const updateKyc = async (args: {user: {[key: string]: any}}, context: { user: any }) => {
     const { id } = context.user;
     const user = await User.findOneOrFail({ where: { identityId: id } });
+    if (args.user['idProof']) {
+      await S3Client.uploadKycImage(user.id, 'idProof', args.user['idProof']);
+      delete args.user['idProof'];
+      args.user['hasIdProof'] = true;
+    }
+    if (args.user['addressProof']) {
+      await S3Client.uploadKycImage(user.id, 'addressProof', args.user['addressProof']);
+      delete args.user['addressProof'];
+      args.user['hasAddressProof'] = true;
+    }
     user.kycStatus = 'pending';
+    await user.save();
     return S3Client.updateUserInfo(user.id, args.user);
 }
 

@@ -47,7 +47,6 @@ export const createNewCampaign = async (args: { name: string, targetVideo: strin
 export const updateCampaign = async (args: { id: string, name: string, beginDate: string, targetVideo: string, endDate: string, coiinTotal: number, target: string, description: string, algorithm: string, suggestedPosts: string[], suggestedTags: string[], image: string }, context: { user: any }) => {
     const { role, company } = checkPermissions({ hasRole: ['admin', 'manager'] }, context);
     const { id, name, beginDate, endDate, coiinTotal, target, description, algorithm, targetVideo, suggestedPosts, suggestedTags, image } = args;
-    Campaign.validate.validateAlgorithmCreateSchema(JSON.parse(algorithm));
     const where: {[key: string]: string} = { id };
     if (role === 'manager') where['company'] = company;
     const campaign = await Campaign.findOne({ where });
@@ -58,7 +57,10 @@ export const updateCampaign = async (args: { id: string, name: string, beginDate
     if (coiinTotal) campaign.coiinTotal = coiinTotal;
     if (target) campaign.target = target;
     if (description) campaign.description = description;
-    if (algorithm) campaign.algorithm = JSON.parse(algorithm);
+    if (algorithm) {
+        Campaign.validate.validateAlgorithmCreateSchema(JSON.parse(algorithm));
+        campaign.algorithm = JSON.parse(algorithm);
+    }
     if (targetVideo) campaign.targetVideo = targetVideo;
     if (suggestedPosts) campaign.suggestedPosts = suggestedPosts;
     if (suggestedTags) campaign.suggestedTags = suggestedTags;

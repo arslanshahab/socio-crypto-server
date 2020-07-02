@@ -44,7 +44,6 @@ export class Dragonchain {
   public static async ledgerAccountRecoveryAttempt(accountId: string|undefined, identityId: string, username: string, recoveryCode: number, successful: boolean) {
     const tag = getAccountRecoveryAttemptKey(accountId, username);
     const res = await this.client.createTransaction({ transactionType: 'accountRecovery', tag, payload: { identityId, accountId, username, recoveryCode, successful } });
-    console.log(res.response);
     if (!res.ok) throw new Error('Failed to ledger account recovery to the Dragonchain');
     return res.response.transaction_id;
   }
