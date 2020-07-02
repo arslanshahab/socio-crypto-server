@@ -11,6 +11,32 @@ Resources:
     Properties:
       RepositoryName: raiinmaker
 
+  PullRequestCodebuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: 'raiinmaker-server-pull-request'
+      ServiceRole:
+        Ref: CodeBuildRole
+      Artifacts:
+        Type: no_artifacts
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_LARGE
+        Image: aws/codebuild/standard:2.0
+        PrivilegedMode: true
+      Source:
+        Type: GITHUB
+        InsecureSsl: false
+        Auth:
+          Type: OAUTH
+          Resource:
+            Ref: GitHubSecret
+        Location: https://github.com/dragonchain-inc/raiinmaker-server.git
+        BuildSpec: pull-request.buildspec.yml
+      Triggers:
+        Webhook: true
+      TimeoutInMinutes: 60
+
   StgDeployCodeBuildProject:
     Type: AWS::CodeBuild::Project
     Properties:

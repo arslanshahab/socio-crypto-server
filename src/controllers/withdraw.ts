@@ -2,7 +2,6 @@ import {checkPermissions} from "../middleware/authentication";
 import {Transfer} from '../models/Transfer';
 import {User} from '../models/User';
 import { Wallet } from '../models/Wallet';
-import { In } from 'typeorm';
 import { S3Client } from '../clients/s3';
 import { SesClient } from '../clients/ses';
 
@@ -24,12 +23,11 @@ export const start = async (args: { withdrawAmount: number }, context: { user: a
 export const update = async (args: { transferIds: string[], status: 'approve'|'reject' }, context: { user: any }) => {
   checkPermissions({ hasRole: ['admin'] }, context);
   if (args.transferIds.length === 0) throw new Error('empty array of transfer IDs provided');
-  const transfers = await Transfer.find({ where: { id: In(args.transferIds), action: 'withdraw', withdrawStatus: 'pending' }, relations: ['wallet', 'wallet.user'] });
-  const transfersToSave: Transfer[] = [];
-  const walletsToSave: Wallet[] = [];
+  const transfers: Transfer[] = [];
   const userGroups: {[key: string]: any} = {};
-  for (let i = 0; i < transfers.length; i++) {
-    const transfer = transfers[i];
+  for (let i = 0; i < args.transferIds.length; i++) {
+    const transfer = await Transfer.findOne({ where: { id: args.transferIds[i], action: 'withdraw', withdrawStatus: 'pending' }, relations: ['wallet', 'wallet.user'] });
+    if (!transfer) throw new Error(`transfer not found: ${args.transferIds[i]}`);
     if (args.status === 'approve' && (transfer.wallet.balance - transfer.amount) < 0) {
       transfer.withdrawStatus = 'rejected';
     } else {
@@ -41,7 +39,7 @@ export const update = async (args: { transferIds: string[], status: 'approve'|'r
           if (!userGroups[user.id]) {
             let kycData;
             try { kycData = await S3Client.getUserObject(user.id) } catch (_) { kycData = null; }
-            if (kycData) userGroups[user.id] = {totalRedeemedAmount: transfer.amount, user, paypalEmail: kycData['paypalEmail'], transfers: [transfer] }; 
+            if (kycData) userGroups[user.id] = {totalRedeemedAmount: transfer.amount, user, paypalEmail: kycData['paypalEmail'], transfers: [transfer] };
           } else {
             userGroups[user.id].totalRedeemedAmount += transfer.amount;
             userGroups[user.id].transfers.push(transfer);
@@ -54,11 +52,10 @@ export const update = async (args: { transferIds: string[], status: 'approve'|'r
           throw new Error('status provided is not valid');
       }
     }
-    transfersToSave.push(transfer);
-    walletsToSave.push(transfer.wallet);
+    await Wallet.save(transfer.wallet);
+    transfers.push(transfer);
   }
-  await Transfer.save(transfersToSave);
-  await Wallet.save(walletsToSave);
+  await Transfer.save(transfers);
   for (const userId in userGroups) {
     const group = userGroups[userId];
     await SesClient.sendRedemptionConfirmationEmail(userId, group['paypalEmail'], (group['totalRedeemedAmount'] * 0.1).toFixed(2), group['transfers']);

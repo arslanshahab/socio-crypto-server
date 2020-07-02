@@ -17,7 +17,8 @@ type Mutation {
     suggestedPosts:[String],
     suggestedTags:[String]): Campaign
   updateCampaign(
-    name:String!,
+    id:String!
+    name:String,
     coiinTotal:Float,
     target:String,
     targetVideo:String,
