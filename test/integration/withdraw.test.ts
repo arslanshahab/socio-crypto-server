@@ -155,7 +155,6 @@ describe('Withdraw Integration Test', function () {
                 .send(query)
                 .set('Accepts', 'application/json')
                 .set('authorization', 'Bearer raiinmaker');
-            console.log(res.body)
             const response = res.body.data.getWithdrawals;
             expect(response.length).to.equal(2);
         });

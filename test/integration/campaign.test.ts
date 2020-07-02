@@ -169,11 +169,11 @@ describe('Campaign Integration Test', () => {
          expect(wallet2.balance - 50).to.equal(25);
          expect(wallet3.balance - 50).to.equal(12.5);
       });
-      it.only('#payoutCampaignRewards with 0 total participation', async () => {
+      it('#payoutCampaignRewards with 0 total participation', async () => {
          const campaign = await createCampaign(runningApp, {totalParticipationScore: 0});
          let participant1 = await createParticipant(runningApp, {
             campaign,
-            ParticipationScore: 0,
+            participationScore: 0,
             clickCount: 0,
             viewCount: 0,
             submissionCount: 0,
@@ -184,7 +184,7 @@ describe('Campaign Integration Test', () => {
             }});
          let participant2 = await createParticipant(runningApp, {
             campaign,
-            ParticipationScore: 0,
+            participationScore: 0,
             clickCount: 0,
             viewCount: 0,
             submissionCount: 0,
@@ -195,7 +195,7 @@ describe('Campaign Integration Test', () => {
          }});
          let participant3 = await createParticipant(runningApp, {
             campaign,
-            ParticipationScore: 0,
+            participationScore: 0,
             clickCount: 0,
             viewCount: 0,
             submissionCount: 0,
@@ -227,6 +227,53 @@ describe('Campaign Integration Test', () => {
          expect(wallet1.balance).to.equal(50);
          expect(wallet2.balance).to.equal(50);
          expect(wallet3.balance).to.equal(50);
+      });
+      it('#payoutCampaignRewards with rejected participants', async () => {
+         const campaign = await createCampaign(runningApp);
+         let participant1 = await createParticipant(runningApp, {
+            campaign,
+            userOptions: {
+               walletOptions: {
+                  balance: 50
+               }
+            }});
+         let participant2 = await createParticipant(runningApp, {
+            campaign,
+            userOptions: {
+               walletOptions: {
+                  balance: 50
+               }
+         }});
+         let participant3 = await createParticipant(runningApp, {
+            campaign,
+            userOptions: {
+               walletOptions: {
+                  balance: 50
+               }
+            }});
+         const mutation = gql.mutation({
+            operation: 'payoutCampaignRewards',
+            variables: {
+               campaignId: { value: campaign.id, required: true },
+               rejected: { value: [participant1.id], type:'[String]', required: true }
+            },
+         })
+         const res = await request(runningApp.app)
+             .post('/v1/graphql')
+             .send(mutation)
+             .set('Accepts', 'application/json')
+             .set('authorization', 'Bearer raiinmaker');
+         participant1 = await Participant.findOneOrFail({id: participant1.id}) ;
+         participant2 = await Participant.findOneOrFail({id: participant2.id})
+         participant3 = await Participant.findOneOrFail({id: participant3.id})
+         const response = res.body.data.payoutCampaignRewards;
+         expect(response).to.be.true;
+         const wallet1 = await Wallet.findOneOrFail({where: {user: participant1.user.id}, relations: ['user']});
+         const wallet2 = await Wallet.findOneOrFail({where: {user: participant2.user.id}, relations: ['user']});
+         const wallet3 = await Wallet.findOneOrFail({where: {user: participant3.user.id}, relations: ['user']});
+         expect(wallet1.balance - 50).to.equal(0);
+         expect(wallet2.balance - 50).to.equal(20);
+         expect(wallet3.balance - 50).to.equal(20);
       });
       it('#deleteCampaign', async () => {
          const campaign = await createCampaign(runningApp);
