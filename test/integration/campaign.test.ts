@@ -110,7 +110,7 @@ describe('Campaign Integration Test', () => {
             variables: {
                campaignId: {value: campaign.id, required: true},
             },
-            fields: ['totalViews', 'totalClicks', 'totalSubmissions', 'totalRewardPayout']
+            fields: ['totalViews', 'totalClicks', 'totalSubmissions', 'totalRewardPayout', {flaggedParticipants: ['participantId', 'totalPayout']}]
          })
          const res = await request(runningApp.app)
              .post('/v1/graphql')
@@ -121,7 +121,8 @@ describe('Campaign Integration Test', () => {
          expect(response.totalViews).to.equal(15);
          expect(response.totalClicks).to.equal(15);
          expect(response.totalSubmissions).to.equal(15);
-         expect(response.totalRewardPayout).to.equal(40)
+         expect(response.totalRewardPayout).to.equal(40);
+         expect(response.flaggedParticipants.length).to.equal(3);
       });
       it('#payoutCampaignRewards', async () => {
          const campaign = await createCampaign(runningApp, {totalParticipationScore: 60});
