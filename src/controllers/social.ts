@@ -84,9 +84,7 @@ export const getTweetById = async (args: { id: string, type: string }, context: 
 export const getParticipantSocialMetrics = async (args: { id: string }, context: { user: any }) => {
     const { id } = args;
     const where: { [key: string]: string } = { id };
-    const participant = await Participant.findOne({ where });
+    const participant = await Participant.findOne({ where, relations: ['campaign'] });
     if (!participant) throw new Error('participant not found');
-    const campaign = await Campaign.findOne({where: {participant}});
-    if (!campaign) throw new Error('campaign not found');
-    return calculateParticipantSocialScore(participant, campaign);
+    return calculateParticipantSocialScore(participant, participant.campaign);
 }
