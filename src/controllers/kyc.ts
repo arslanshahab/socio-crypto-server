@@ -29,7 +29,6 @@ export const getKyc = async (_args: any, context: { user:  any }) => {
     const { id, role } = context.user;
     const user = await User.findOneOrFail({ where: { identityId: id } });
     const response = await S3Client.getUserObject(user.id);
-    console.log(JSON.stringify(response));
     if (role !== 'admin') return response;
     if (response.hasAddressProof) response['addressProof'] = await S3Client.getKycImage(user.id, 'addressProof');
     if (response.hasIdProof) response['idProof'] = await S3Client.getKycImage(user.id, 'idProof');
