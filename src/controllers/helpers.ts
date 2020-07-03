@@ -22,7 +22,12 @@ export const calculateParticipantSocialScore = async (participant: Participant, 
 export const calculateTier = (totalParticipation: BigInt, tiers: Tiers) => {
     let currentTier = 1;
     let currentTotal = 1;
-    const numOfTiers = Object.keys(tiers).length
+    const numOfTiers = Object.keys(tiers).reduce((accum: number, value: any) => {
+        if ((tiers[value].threshold as any) !== "" && (tiers[value].totalCoiins as any) !== "") {
+            accum++;
+        }
+        return accum;
+    }, 0);
     if (totalParticipation > BigInt(tiers[numOfTiers].threshold)) {
         currentTier = numOfTiers;
         currentTotal = tiers[numOfTiers].totalCoiins;
