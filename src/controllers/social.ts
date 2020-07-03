@@ -5,7 +5,6 @@ import logger from '../util/logger';
 import { Participant } from '../models/Participant';
 import {SocialPost} from "../models/SocialPost";
 import {calculateParticipantSocialScore} from "./helpers";
-import {Campaign} from "../models/Campaign";
 import {User} from '../models/User';
 
 export const allowedSocialLinks = ['twitter', 'facebook'];
