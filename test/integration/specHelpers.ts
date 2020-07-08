@@ -5,13 +5,14 @@ import {User} from "../../src/models/User";
 import {Wallet} from "../../src/models/Wallet";
 import { v4 as uuidv4 } from 'uuid';
 import {Transfer} from "../../src/models/Transfer";
+import { BN } from 'src/util/helpers';
 
 export const createCampaign = async (runningApp: Application, options?: { [key: string]: any } | any, ) => {
   const campaign = new Campaign();
   campaign.name = getValue(['name'], options,  'bananaCampaign')
   campaign.algorithm = getAlgorithm(getValue(['algorithm'], options));
   campaign.coiinTotal = getValue(['coiinTotal'], options,  1000);
-  campaign.totalParticipationScore = BigInt(getValue(['totalParticipationScore'], options, 45));
+  campaign.totalParticipationScore = new BN(getValue(['totalParticipationScore'], options, 45));
   campaign.company = getValue(['company'], options,   'raiinmaker');
   campaign.target = getValue(['target'], options,   "https://mock-raiinmaker-landing.dragonchain.com");
   campaign.targetVideo = getValue(['targetVideo'], options,   "https://youtube.com");

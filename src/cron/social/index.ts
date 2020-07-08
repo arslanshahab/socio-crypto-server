@@ -7,18 +7,19 @@ import { Application } from '../../app';
 import logger from "../../util/logger";
 import {SocialLink} from "../../models/SocialLink";
 import {Participant} from "../../models/Participant";
+import { BigNumber } from 'bignumber.js';
 
 const app = new Application();
 
-const updatePostMetrics = async (likes: number, shares: number, post: SocialPost) => {
+const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: SocialPost) => {
     const participant = await Participant.findOne({where:{campaign: post.campaign, user: post.user}, relations: ['campaign']});
     if (!participant) throw new Error('participant not found');
     const campaign = await Campaign.findOne({ where: { id: participant.campaign.id } });
     if (!campaign) throw new Error('campaign not found');
-    const likesAdjustedScore = (likes - post.likes) * post.campaign.algorithm.pointValues.likes;
-    const sharesAdjustedScore = (shares - post.shares) * post.campaign.algorithm.pointValues.shares;
-    campaign.totalParticipationScore = BigInt(campaign.totalParticipationScore) + BigInt(likesAdjustedScore + sharesAdjustedScore);
-    participant.participationScore = BigInt(participant.participationScore) + BigInt(likesAdjustedScore + sharesAdjustedScore);
+    const likesAdjustedScore = (likes.minus(post.likes)).times(post.campaign.algorithm.pointValues.likes);
+    const sharesAdjustedScore = (shares.minus(post.shares)).times(post.campaign.algorithm.pointValues.shares);
+    campaign.totalParticipationScore = campaign.totalParticipationScore.plus(likesAdjustedScore.plus(sharesAdjustedScore));
+    participant.participationScore = participant.participationScore.plus(likesAdjustedScore.plus(sharesAdjustedScore));
     post.likes = likes;
     post.shares = shares;
     await participant.save();
