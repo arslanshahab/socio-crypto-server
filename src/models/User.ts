@@ -5,6 +5,8 @@ import { SocialLink } from './SocialLink';
 import {SocialPost} from "./SocialPost";
 import { FactorLink } from './FactorLink';
 import { TwentyFourHourMetric } from './TwentyFourHourMetric';
+import BigNumber from 'bignumber.js';
+import { BN } from '../util/helpers';
 
 @Entity()
 export class User extends BaseEntity {
@@ -80,19 +82,23 @@ export class User extends BaseEntity {
   public twentyFourHourMetrics: TwentyFourHourMetric[];
 
   public asV1() {
-    return {
-      ...this,
-      hasRecoveryCodeSet: this.recoveryCode !== null && this.recoveryCode !== ""
-    };
+    const returnedUser: User = {...this, hasRecoveryCodeSet: this.recoveryCode !== null && this.recoveryCode !== ""};
+    if (this.wallet) {
+      returnedUser.wallet = this.wallet.asV1();
+      if (this.wallet.transfers && this.wallet.transfers.length > 0) {
+        returnedUser.wallet.transfers = returnedUser.wallet.transfers.map((transfer) => transfer.asV1());
+      }
+    }
+    return returnedUser;
   }
 
-  public static async getUserTotalParticipationScore(userId: String): Promise<BigInt> {
+  public static async getUserTotalParticipationScore(userId: String): Promise<BigNumber> {
     const { sum } = await this.createQueryBuilder('user')
       .leftJoin('user.campaigns', 'campaign')
       .where('user.id = :userId AND campaign."userId" = user.id', { userId })
       .select('SUM(CAST(campaign."participationScore" as double precision))')
       .getRawOne();
-    return (sum && BigInt(sum)) || BigInt(0);
+    return new BN(sum || 0);
   }
 
   public static async getUser(id: string): Promise<User|undefined> {

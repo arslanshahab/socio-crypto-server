@@ -23,7 +23,7 @@ export const getParticipantByCampaignId = async (args: { campaignId: string }, c
   const user = await User.findOneOrFail({ where: { identityId: id } });
   const campaign = await Campaign.findOneOrFail({ where: { id: args.campaignId } });
   const particpant = await Participant.findOneOrFail({ where: { user, campaign }, relations: ['user', 'campaign'] });
-  return particpant;
+  return particpant.asV1();
 };
 
 export const trackAction = async (args: { participantId: string, action: 'click' | 'view' | 'submission' }, context: any, info: any) => {
@@ -54,7 +54,7 @@ export const trackAction = async (args: { participantId: string, action: 'click'
     await campaign.save();
     await participant.save();
     await Dragonchain.ledgerCampaignAction(args.action, participant.id, participant.campaign.id);
-    return participant;
+    return participant.asV1();
 };
 
 export const getParticipant = async (args: { id: string }) => {
@@ -62,7 +62,7 @@ export const getParticipant = async (args: { id: string }) => {
     const where: { [key: string]: string } = { id };
     const participant = await Participant.findOne({ where, relations: ['user'] });
     if (!participant) throw new Error('participant not found');
-    return participant;
+    return participant.asV1();
 };
 
 export const getPosts = async (args: { id: string }, context: any) => {

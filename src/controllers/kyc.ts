@@ -59,5 +59,5 @@ export const updateKycStatus = async (args: { userId: string, status: string }, 
   const user = await User.findOneOrFail({ where: { id: args.userId } });
   user.kycStatus = (args.status == 'approve') ? 'approved' : 'rejected';
   await user.save();
-  return user;
+  return user.asV1();
 }

@@ -18,7 +18,7 @@ export const start = async (args: { withdrawAmount: number }, context: { user: a
   if (((wallet.balance.minus(pendingBalance)).minus(args.withdrawAmount)).lt(0)) throw new Error('wallet does not have required balance for this withdraw');
   const transfer = Transfer.newFromWithdraw(wallet, args.withdrawAmount);
   await transfer.save();
-  return transfer;
+  return transfer.asV1();
 }
 
 export const update = async (args: { transferIds: string[], status: 'approve'|'reject' }, context: { user: any }) => {
@@ -60,7 +60,7 @@ export const update = async (args: { transferIds: string[], status: 'approve'|'r
     const group = userGroups[userId];
     await SesClient.sendRedemptionConfirmationEmail(userId, group['paypalEmail'], (group['totalRedeemedAmount'] * 0.1).toFixed(2), group['transfers']);
   }
-  return transfers;
+  return transfers.map(transfer => transfer.asV1());
 }
 
 export const getWithdrawals = async (args: { status: string }, context: { user: any }) => {
@@ -83,11 +83,11 @@ export const getWithdrawals = async (args: { status: string }, context: { user: 
         user: transfer.wallet.user,
         totalPendingWithdrawal: transfer.amount,
         totalAnnualWithdrawn: totalWithdrawnThisYear,
-        transfers: [transfer]
+        transfers: [transfer.asV1()]
       }
     } else {
       uniqueUsers[userId].totalPendingWithdrawal += transfer.amount;
-      uniqueUsers[userId].transfers.push(transfer);
+      uniqueUsers[userId].transfers.push(transfer.asV1());
     }
   }
   return Object.values(uniqueUsers);

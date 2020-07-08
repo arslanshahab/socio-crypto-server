@@ -20,7 +20,7 @@ export const participate = async (args: { campaignId: string }, context: { user:
     const url = `${campaign.target}${campaign.target.endsWith('/') ? '' : '/'}?referrer=${participant.id}`;
     participant.link = await TinyUrl.shorten(url);
     await participant.save();
-    return participant;
+    return participant.asV1();
 };
 
 export const promotePermissions = async (args: { userId: string, email: string, company: string, role: 'admin'|'manager' }, context: { user: any }) => {
@@ -37,7 +37,7 @@ export const promotePermissions = async (args: { userId: string, email: string, 
         if (!args.role) throw new Error('administrators must specify a role to promote user to');
         await Firebase.client.auth().setCustomUserClaims(user.id, { role: args.role, company: args.company || company });
     }
-    return user;
+    return user.asV1();
 }
 
 export const removeParticipation = async (args: { campaignId: string }, context: { user: any }) => {
@@ -49,7 +49,7 @@ export const removeParticipation = async (args: { campaignId: string }, context:
     const participation = await Participant.findOne({ where: { user, campaign } });
     if (!participation) throw new Error('user was not participating in campaign');
     await participation.remove();
-    return user;
+    return user.asV1();
 }
 
 export const usernameExists = async (args: { username: string }) => {
@@ -74,7 +74,7 @@ export const signUp = async (args: { username: string, deviceToken: string }, co
     await user.save();
     wallet.user = user;
     await wallet.save();
-    return user;
+    return user.asV1();
 }
 
 export const me = async (args: { openCampaigns?: boolean } = {}, context: { user: any }) => {
@@ -93,7 +93,7 @@ export const list = async (args: { skip: number, take: number }, context: { user
     checkPermissions({ hasRole: ['admin'] }, context);
     const { skip = 0, take = 10 } = args;
     const [results, total] = await User.findAndCount({ skip, take });
-    return { results, total };
+    return { results: results.map(user => user.asV1()), total };
 }
 
 export const setDevice = async (args: { deviceToken: string }, context: { user: any }) => {
@@ -111,7 +111,7 @@ export const updateUsername = async (args: { username: string }, context: { user
   if (await User.findOne({ where: { username: args.username } })) throw new Error('username is already registered');
   user.username = args.username;
   await user.save();
-  return user;
+  return user.asV1();
 }
 
 export const setRecoveryCode = async (args: { code: number }, context: { user: any }) => {
@@ -119,5 +119,5 @@ export const setRecoveryCode = async (args: { code: number }, context: { user: a
   const user = await User.findOneOrFail({ where: { identityId: id } });
   user.recoveryCode = sha256Hash(args.code.toString());
   await user.save();
-  return user;
+  return user.asV1();
 }

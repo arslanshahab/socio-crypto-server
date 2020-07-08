@@ -19,7 +19,7 @@ const app = new Application();
   for (const user of users) {
     const totalParticipationScore = await User.getUserTotalParticipationScore(user.id);
     const metric = new TwentyFourHourMetric();
-    metric.score = BigInt(totalParticipationScore);
+    metric.score = totalParticipationScore;
     metric.user = user;
     metricsToSave.push(metric);
   }

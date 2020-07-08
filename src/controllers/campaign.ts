@@ -42,7 +42,7 @@ export const createNewCampaign = async (args: { name: string, targetVideo: strin
       campaign.imagePath = await S3Client.setCampaignImage('banner', campaign.id, image);
       await campaign.save();
     }
-    return campaign;
+    return campaign.asV1();
 }
 
 export const updateCampaign = async (args: { id: string, name: string, beginDate: string, targetVideo: string, endDate: string, coiinTotal: number, target: string, description: string, algorithm: string, suggestedPosts: string[], suggestedTags: string[], image: string }, context: { user: any }) => {
@@ -67,14 +67,14 @@ export const updateCampaign = async (args: { id: string, name: string, beginDate
     if (suggestedTags) campaign.suggestedTags = suggestedTags;
     if (image) campaign.imagePath = await S3Client.setCampaignImage('banner', campaign.id, image);
     await campaign.save();
-    return campaign;
+    return campaign.asV1();
 }
 
 export const listCampaigns = async (args: { open: boolean, skip: number, take: number, scoped: boolean }, context: { user: any }) => {
     const { open, skip = 0, take = 10, scoped = false } = args;
     const { company } = context.user;
     const [results, total] = await Campaign.findCampaignsByStatus(open, skip, take, scoped && company);
-    return { results, total };
+    return { results: results.map(result => result.asV1()), total };
 }
 
 export const deleteCampaign = async (args: { id: string }, context: { user: any }) => {
@@ -86,23 +86,23 @@ export const deleteCampaign = async (args: { id: string }, context: { user: any 
     if (campaign.posts.length > 0) await SocialPost.delete({ id: In(campaign.posts.map((p: any) => p.id)) });
     await Participant.remove(campaign.participants);
     await campaign.remove();
-    return campaign;
+    return campaign.asV1();
 }
 
 export const get = async (args: { id: string }) => {
     const { id } = args;
     const where: { [key: string]: string } = { id };
     const campaign = await Campaign.findOne({ where, relations: ['participants'] });
-    campaign?.participants.sort((a,b) => {return Number(b.participationScore) - Number(a.participationScore)});
     if (!campaign) throw new Error('campaign not found');
-    return campaign;
+    campaign.participants.sort((a,b) => {return Number(b.participationScore) - Number(a.participationScore)});
+    return campaign.asV1();
 }
 
 export const publicGet = async (args: { campaignId: string }) => {
     const { campaignId } = args;
     const campaign = await Campaign.findOne({ where: { id: campaignId } });
     if (!campaign) throw new Error('campaign not found');
-    return campaign;
+    return campaign.asV1();
 }
 
 export const generateCampaignAuditReport = async (args: { campaignId: string }, context: { user: any }) => {
