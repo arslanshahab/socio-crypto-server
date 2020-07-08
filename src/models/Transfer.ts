@@ -38,6 +38,10 @@ export class Transfer extends BaseEntity {
   )
   public campaign: Campaign;
 
+  public asV1() {
+    return {...this, amount: parseFloat(this.amount.toString())};
+  }
+
   public static async getTotalAnnualWithdrawalByWallet(wallet: Wallet): Promise<number> {
     const startOfYear = DateUtils.mixedDateToUtcDatetimeString(new Date(Date.UTC(new Date().getFullYear(), 0, 1)));
     const { sum } = await this.createQueryBuilder('transfer')

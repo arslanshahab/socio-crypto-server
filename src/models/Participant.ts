@@ -50,8 +50,12 @@ export class Participant extends BaseEntity {
       clickCount: this.clickCount,
       viewCount: this.viewCount,
       submissionCount: this.submissionCount,
-      participationScore: this.participationScore,
+      participationScore: parseFloat(this.participationScore.toString()),
     }
+  }
+
+  public asV1() {
+    return {...this, participationScore: parseFloat(this.participationScore.toString())}
   }
 
   public static newParticipant(user: User, campaign: Campaign): Participant {
