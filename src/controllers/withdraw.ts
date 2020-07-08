@@ -15,9 +15,9 @@ export const start = async (args: { withdrawAmount: number }, context: { user: a
   const pendingBalance = await Transfer.getTotalPendingByWallet(wallet);
   const totalWithdrawThisYear = await Transfer.getTotalAnnualWithdrawalByWallet(wallet);
   // TODO: check if they have W9 on file
-  if (((totalWithdrawThisYear + args.withdrawAmount) * 0.1) >= 600 || ((pendingBalance + args.withdrawAmount) * 0.1) >= 600) throw new Error('reached max withdrawals per year');
+  if (((totalWithdrawThisYear.plus(args.withdrawAmount)).multipliedBy(0.1)).gte(600) || ((pendingBalance.plus(args.withdrawAmount)).multipliedBy(0.1)).gte(600)) throw new Error('reached max withdrawals per year');
   if (((wallet.balance.minus(pendingBalance)).minus(args.withdrawAmount)).lt(0)) throw new Error('wallet does not have required balance for this withdraw');
-  const transfer = Transfer.newFromWithdraw(wallet, args.withdrawAmount);
+  const transfer = Transfer.newFromWithdraw(wallet, new BN(args.withdrawAmount));
   await transfer.save();
   return transfer.asV1();
 }
