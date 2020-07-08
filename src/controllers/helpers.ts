@@ -87,10 +87,3 @@ export const performTransfer = async (walletId: string, amount: string, action: 
     await transactionalEntitymanager.save(wallet);
   });
 };
-
-export const parseAuditReport = (reportEntity: CampaignAuditReport) => {
-    const report: {[key:string]: any} = reportEntity;
-    for (const key in report) {
-        report[key] = parseFloat(report[key].toString());
-    }
-}
