@@ -20,4 +20,8 @@ export class TwentyFourHourMetric extends BaseEntity {
     user => user.twentyFourHourMetrics
   )
   public user: User;
+
+  public asV1() {
+    return {...this, score: parseFloat(this.score.toString())};
+  }
 }
