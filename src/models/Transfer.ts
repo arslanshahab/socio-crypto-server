@@ -68,7 +68,7 @@ export class Transfer extends BaseEntity {
       .getMany();
   }
 
-  public static newFromCampaignPayout(wallet: Wallet, campaign: Campaign, amount: number): Transfer {
+  public static newFromCampaignPayout(wallet: Wallet, campaign: Campaign, amount: BigNumber): Transfer {
     const transfer = new Transfer();
     transfer.action = 'transfer';
     transfer.campaign = campaign;
@@ -77,7 +77,7 @@ export class Transfer extends BaseEntity {
     return transfer;
   }
 
-  public static newFromWithdraw(wallet: Wallet, amount: number): Transfer {
+  public static newFromWithdraw(wallet: Wallet, amount: BigNumber): Transfer {
     const transfer = new Transfer();
     transfer.amount = amount;
     transfer.action = 'withdraw';

@@ -1,5 +1,6 @@
 import { createClient, DragonchainClient } from 'dragonchain-sdk';
 import { Secrets } from '../util/secrets';
+import { BigNumber } from 'bignumber.js';
 
 const transactionTypes = ['campaign','trackAction','campaignAudit','accountRecovery'];
 const getActionKey = (action: string, participantId: string) => `${participantId.replace(/-/g, ':')}-${action}`;
@@ -34,7 +35,7 @@ export class Dragonchain {
     return res.response.transaction_id;
   }
 
-  public static async ledgerCampaignAudit(payouts: {[key: string]: number}, rejectedUsers: string[], campaignId: string) {
+  public static async ledgerCampaignAudit(payouts: {[key: string]: BigNumber}, rejectedUsers: string[], campaignId: string) {
     const tag = getCampaignAuditKey(campaignId);
     const res = await this.client.createTransaction({ transactionType: 'campaignAudit', tag, payload: { payouts, rejectedUsers } });
     if (!res.ok) throw new Error('Failed to ledger campaign audit to the Dragonchain');

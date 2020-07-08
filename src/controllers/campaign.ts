@@ -13,6 +13,7 @@ import {Dragonchain} from '../clients/dragonchain';
 import {calculateParticipantPayout, calculateParticipantSocialScore, calculateTier} from "./helpers";
 import { Transfer } from '../models/Transfer';
 import { BN } from 'src/util/helpers';
+import { BigNumber } from 'bignumber.js';
 
 
 export const getCurrentCampaignTier = async (args: { campaignId?: string, campaign?: Campaign }) => {
@@ -55,7 +56,7 @@ export const updateCampaign = async (args: { id: string, name: string, beginDate
     if (name) campaign.name = name;
     if (beginDate) campaign.beginDate = new Date(beginDate);
     if (endDate) campaign.endDate = new Date(endDate);
-    if (coiinTotal) campaign.coiinTotal = coiinTotal;
+    if (coiinTotal) campaign.coiinTotal = new BN(coiinTotal);
     if (target) campaign.target = target;
     if (description) campaign.description = description;
     if (algorithm) {
@@ -123,20 +124,20 @@ export const generateCampaignAuditReport = async (args: { campaignId: string }, 
     };
     for (const participant of campaign.participants) {
         const {totalLikes, totalShares} = await calculateParticipantSocialScore(participant, campaign);
-        auditReport.totalShares += totalShares;
-        auditReport.totalLikes += totalLikes;
-        auditReport.totalClicks += participant.clickCount;
-        auditReport.totalViews += participant.viewCount;
-        auditReport.totalSubmissions += participant.submissionCount;
+        auditReport.totalShares = auditReport.totalShares.plus(totalShares);
+        auditReport.totalLikes = auditReport.totalLikes.plus(totalLikes);
+        auditReport.totalClicks = auditReport.totalClicks.plus(participant.clickCount);
+        auditReport.totalViews =  auditReport.totalViews.plus(participant.viewCount);
+        auditReport.totalSubmissions = auditReport.totalSubmissions.plus(participant.submissionCount);
         const totalParticipantPayout = await calculateParticipantPayout(currentTotal, campaign, participant);
-        if (totalParticipantPayout > (auditReport.totalRewardPayout * 0.15)) {
+        if (totalParticipantPayout.gt(auditReport.totalRewardPayout.times(new BN(0.15)))) {
             auditReport.flaggedParticipants.push({
                 participantId: participant.id,
-                viewPayout: participant.viewCount * campaign.algorithm.pointValues.view,
-                clickPayout: participant.clickCount * campaign.algorithm.pointValues.click,
-                submissionPayout: participant.submissionCount * campaign.algorithm.pointValues.submission,
-                likesPayout: totalLikes * campaign.algorithm.pointValues.likes,
-                sharesPayout: totalShares * campaign.algorithm.pointValues.shares,
+                viewPayout: participant.viewCount.times(campaign.algorithm.pointValues.view),
+                clickPayout: participant.clickCount.times(campaign.algorithm.pointValues.click),
+                submissionPayout: participant.submissionCount.times(campaign.algorithm.pointValues.submission),
+                likesPayout: totalLikes.times(campaign.algorithm.pointValues.likes),
+                sharesPayout: totalShares.times(campaign.algorithm.pointValues.shares),
                 totalPayout: totalParticipantPayout
             })
         }
@@ -146,7 +147,7 @@ export const generateCampaignAuditReport = async (args: { campaignId: string }, 
 
 export const payoutCampaignRewards = async (args: { campaignId: string, rejected: string[] }, context: { user: any }) => {
     const {company} = checkPermissions({hasRole: ['admin', 'manager']}, context);
-    const usersWalletValues: { [key: string]: number } = {};
+    const usersWalletValues: { [key: string]: BigNumber } = {};
     const userDeviceIds: { [key: string]: string } = {};
     const transfers: Transfer[] = [];
     return getConnection().transaction(async transactionalEntityManager => {
@@ -164,20 +165,20 @@ export const payoutCampaignRewards = async (args: { campaignId: string, rejected
         }) : [];
         if (rejected.length > 0) {
             const newParticipationCount = participants.length - rejected.length;
-            let totalRejectedPayout = 0;
+            let totalRejectedPayout = new BN(0);
             for (const id of rejected) {
                 const participant = await getParticipant({id});
                 const totalParticipantPayout = await calculateParticipantPayout(currentTotal, campaign, participant);
-                totalRejectedPayout += totalParticipantPayout;
+                totalRejectedPayout = totalRejectedPayout.plus(totalParticipantPayout);
             }
-            const addedPayoutToEachParticipant = totalRejectedPayout / newParticipationCount;
+            const addedPayoutToEachParticipant = totalRejectedPayout.div(new BN(newParticipationCount));
             for (const participant of participants) {
                 if (!rejected.includes(participant.id)) {
                     const subtotal = await calculateParticipantPayout(currentTotal, campaign, participant);
-                    const totalParticipantPayout = subtotal + addedPayoutToEachParticipant;
+                    const totalParticipantPayout = subtotal.plus(addedPayoutToEachParticipant);
                     if (participant.user.deviceToken) userDeviceIds[participant.user.id] = participant.user.deviceToken;
                     if (!usersWalletValues[participant.user.id]) usersWalletValues[participant.user.id] = totalParticipantPayout;
-                    else usersWalletValues[participant.user.id] += totalParticipantPayout;
+                    else usersWalletValues[participant.user.id] = usersWalletValues[participant.user.id].plus(totalParticipantPayout);
                 }
             }
         } else {
@@ -185,13 +186,13 @@ export const payoutCampaignRewards = async (args: { campaignId: string, rejected
                 const totalParticipantPayout = await calculateParticipantPayout(currentTotal, campaign, participant);
                 if (participant.user.deviceToken) userDeviceIds[participant.user.id] = participant.user.deviceToken;
                 if (!usersWalletValues[participant.user.id]) usersWalletValues[participant.user.id] = totalParticipantPayout;
-                else usersWalletValues[participant.user.id] += totalParticipantPayout;
+                else usersWalletValues[participant.user.id] = usersWalletValues[participant.user.id].plus(totalParticipantPayout);
             }
         }
         for (const userId in usersWalletValues) {
             const currentWallet = wallets.find(w => w.user.id === userId);
             if (currentWallet) {
-              currentWallet.balance += usersWalletValues[userId];
+              currentWallet.balance = currentWallet.balance.plus(usersWalletValues[userId]);
               const transfer = Transfer.newFromCampaignPayout(currentWallet, campaign, usersWalletValues[userId]);
               transfers.push(transfer);
             }
