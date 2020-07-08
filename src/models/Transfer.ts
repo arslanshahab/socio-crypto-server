@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import { PrimaryGeneratedColumn, Entity, BaseEntity, Column, CreateDateColumn, UpdateDateColumn, ManyToOne } from 'typeorm';
 import { DateUtils } from 'typeorm/util/DateUtils';
 import { Wallet } from './Wallet';
@@ -9,7 +10,7 @@ export class Transfer extends BaseEntity {
   public id: string;
 
   @Column({ type: 'float8', nullable: false })
-  public amount: number;
+  public amount: BigNumber;
 
   @Column({ nullable: false })
   public action: 'transfer'|'withdraw';

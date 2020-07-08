@@ -1,7 +1,8 @@
+import BigNumber from 'bignumber.js';
 import {ValueTransformer} from "typeorm";
 
-export const BigIntEntityTransformer: ValueTransformer = {
-    from: (value: any) => BigInt(value),
+export const BigNumberEntityTransformer: ValueTransformer = {
+    from: (value: any) => new BigNumber(value),
     to: (value: any) => value.toString()
 };
 
