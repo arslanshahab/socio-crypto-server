@@ -82,9 +82,13 @@ export const deleteCampaign = async (args: { id: string }, context: { user: any 
     const { role, company } = checkPermissions({ hasRole: ['admin', 'manager'] }, context);
     const where: {[key: string]: string} = { id: args.id };
     if (role === 'manager') where['company'] = company;
+    console.log('deleting campaign');
     const campaign = await Campaign.findOne({ where, relations: ['participants', 'posts'] });
+    console.log('campaign deleted');
     if (!campaign) throw new Error('campaign not found');
+    console.log('deleting social posts')
     if (campaign.posts.length > 0) await SocialPost.delete({ id: In(campaign.posts.map((p: any) => p.id)) });
+    console.log('social posts deleted')
     await Participant.remove(campaign.participants);
     await campaign.remove();
     return campaign.asV1();
@@ -141,6 +145,18 @@ export const generateCampaignAuditReport = async (args: { campaignId: string }, 
                 totalPayout: totalParticipantPayout
             })
         }
+    }
+    const report: {[key:string]: any} = auditReport;
+    for (const key in report) {
+        if (key === 'flaggedParticipants') {
+            for (const flagged of report[key]) {
+                for (const value in flagged) {
+                    flagged[value] = parseFloat(flagged[value].toString());
+                }
+            }
+            continue;
+        }
+        report[key] = parseFloat(report[key].toString());
     }
     return auditReport;
 };

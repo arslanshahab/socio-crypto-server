@@ -113,7 +113,7 @@ const getValue = (indexes: string[], options: { [key: string]: any }, defaultVal
     } else if (keysLength === 2) {
       value = options[indexes[0]][indexes[1]]
     } else if (keysLength === 3) {
-      value = options[indexes[0]][indexes[2]][indexes[3]]
+      value = options[indexes[0]][indexes[1]][indexes[2]]
     }
     if (value === undefined) return defaultValue;
     return value;

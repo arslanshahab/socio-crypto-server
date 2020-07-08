@@ -51,6 +51,7 @@ export interface CampaignAuditReport {
 }
 
 export interface ActionValues {
+    [key: string]: BigNumber;
     click: BigNumber;
     view: BigNumber;
     submission: BigNumber;

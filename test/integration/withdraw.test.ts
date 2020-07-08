@@ -14,7 +14,7 @@ import {createCampaign, createParticipant, createTransfer, createUser, createWal
 import {Transfer} from "../../src/models/Transfer";
 import { S3Client } from "../../src/clients/s3";
 
-describe.only('Withdraw Integration Test', function () {
+describe('Withdraw Integration Test', function () {
     let runningApp: Application;
     const fullAppTestBed = createSandbox();
 

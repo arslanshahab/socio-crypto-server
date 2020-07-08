@@ -5,7 +5,7 @@ import {AlgorithmSpecs} from '../types';
 import { Validator } from '../schemas';
 import {SocialPost} from "./SocialPost";
 import {Transfer} from './Transfer';
-import { StringifiedArrayTransformer, BigNumberEntityTransformer } from '../util/transformers';
+import {StringifiedArrayTransformer, BigNumberEntityTransformer, AlgorithmTransformer} from '../util/transformers';
 import { BigNumber } from 'bignumber.js';
 import { BN } from '../util/helpers';
 
@@ -42,7 +42,7 @@ export class Campaign extends BaseEntity {
   @Column({ nullable: true })
   public tagline: string;
 
-  @Column({type: "jsonb", nullable: false })
+  @Column({type: "jsonb", nullable: false, transformer: AlgorithmTransformer })
   public algorithm: AlgorithmSpecs;
 
   @Column({ nullable: false, default: false })
@@ -90,9 +90,26 @@ export class Campaign extends BaseEntity {
     if (new Date(this.beginDate).getTime() <= now.getTime() && new Date(this.endDate).getTime() >= now.getTime()) return true;
     return false;
   }
+  public static parseAlgorithm (algorithmEntity: AlgorithmSpecs) {
+    const algorithm: {[key: string]: any} = algorithmEntity;
+    algorithm['initialTotal'] = parseFloat(algorithm['initialTotal'].toString());
+    for(const key in algorithm['pointValues']) {
+      algorithm['pointValues'][key] = parseFloat(algorithm['pointValues'][key].toString());
+    }
+    for(const tier in algorithm['tiers']) {
+      algorithm['tiers'][tier]['threshold'] = parseFloat(algorithm['tiers'][tier]['threshold'].toString());
+      algorithm['tiers'][tier]['totalCoiins'] = parseFloat(algorithm['tiers'][tier]['totalCoiins'].toString());
+    }
+    return algorithm;
+  }
 
   public asV1() {
-    const returnedCampaign: Campaign = {...this, totalParticipationScore: parseFloat(this.totalParticipationScore.toString())};
+    const returnedCampaign: Campaign = {
+      ...this,
+      totalParticipationScore: parseFloat(this.totalParticipationScore.toString()),
+      coiinTotal: parseFloat(this.coiinTotal.toString()),
+      algorithm: Campaign.parseAlgorithm(this.algorithm)
+    };
     if (this.participants && this.participants.length > 0) returnedCampaign.participants = this.participants.map((participant) => participant.asV1());
     if (this.payouts && this.payouts.length > 0) returnedCampaign.payouts = this.payouts.map((payout) => payout.asV1());
     if (this.posts && this.posts.length > 0) returnedCampaign.posts = this.posts.map((post) => post.asV1());
@@ -137,6 +154,7 @@ export class Campaign extends BaseEntity {
     campaign.beginDate = new Date(beginDate);
     campaign.endDate = new Date(endDate);
     campaign.algorithm = JSON.parse(algorithm);
+    campaign.totalParticipationScore = new BN(0);
     campaign.targetVideo = targetVideo;
     if (description) campaign.description = description;
     if (tagline) campaign.tagline = tagline;
@@ -144,4 +162,5 @@ export class Campaign extends BaseEntity {
     if (suggestedTags) campaign.suggestedTags = suggestedTags;
     return campaign;
   }
+
 }

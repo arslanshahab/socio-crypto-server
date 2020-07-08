@@ -112,7 +112,7 @@ describe.only('Campaign Integration Test', () => {
          const participant1 = await createParticipant(runningApp);
          const participant2 = await createParticipant(runningApp);
          const participant3 = await createParticipant(runningApp);
-         const campaign = await createCampaign(runningApp, {participants: [participant1, participant2, participant3], totalParticipationScore: BigInt(45)});
+         const campaign = await createCampaign(runningApp, {participants: [participant1, participant2, participant3], totalParticipationScore: 45});
          const mutation = gql.mutation({
             operation: 'generateCampaignAuditReport',
             variables: {
@@ -174,9 +174,9 @@ describe.only('Campaign Integration Test', () => {
          const wallet1 = await Wallet.findOneOrFail({where: {user: participant1.user.id}, relations: ['user']});
          const wallet2 = await Wallet.findOneOrFail({where: {user: participant2.user.id}, relations: ['user']});
          const wallet3 = await Wallet.findOneOrFail({where: {user: participant3.user.id}, relations: ['user']});
-         expect(wallet1.balance.minus(50)).to.equal(12.5);
-         expect(wallet2.balance.minus(50)).to.equal(25);
-         expect(wallet3.balance.minus(50)).to.equal(12.5);
+         expect(parseFloat(wallet1.balance.minus(new BN(50)).toString())).to.equal(12.5);
+         expect(parseFloat(wallet2.balance.minus(new BN(50)).toString())).to.equal(25);
+         expect(parseFloat(wallet3.balance.minus(new BN(50)).toString())).to.equal(12.5);
       });
       it('#payoutCampaignRewards with 0 total participation', async () => {
          const campaign = await createCampaign(runningApp, {totalParticipationScore: 0});
@@ -233,9 +233,9 @@ describe.only('Campaign Integration Test', () => {
          const wallet1 = await Wallet.findOneOrFail({where: {user: participant1.user.id}, relations: ['user']});
          const wallet2 = await Wallet.findOneOrFail({where: {user: participant2.user.id}, relations: ['user']});
          const wallet3 = await Wallet.findOneOrFail({where: {user: participant3.user.id}, relations: ['user']});
-         expect(wallet1.balance).to.equal(50);
-         expect(wallet2.balance).to.equal(50);
-         expect(wallet3.balance).to.equal(50);
+         expect(parseFloat(wallet1.balance.toString())).to.equal(50);
+         expect(parseFloat(wallet2.balance.toString())).to.equal(50);
+         expect(parseFloat(wallet3.balance.toString())).to.equal(50);
       });
       it('#payoutCampaignRewards with rejected participants', async () => {
          const campaign = await createCampaign(runningApp);
@@ -280,11 +280,11 @@ describe.only('Campaign Integration Test', () => {
          const wallet1 = await Wallet.findOneOrFail({where: {user: participant1.user.id}, relations: ['user']});
          const wallet2 = await Wallet.findOneOrFail({where: {user: participant2.user.id}, relations: ['user']});
          const wallet3 = await Wallet.findOneOrFail({where: {user: participant3.user.id}, relations: ['user']});
-         expect(wallet1.balance.minus(50)).to.equal(0);
-         expect(wallet2.balance.minus(50)).to.equal(20);
-         expect(wallet3.balance.minus(50)).to.equal(20);
+         expect(parseFloat(wallet1.balance.minus(50).toString())).to.equal(0);
+         expect(parseFloat(wallet2.balance.minus(50).toString())).to.equal(20);
+         expect(parseFloat(wallet3.balance.minus(50).toString())).to.equal(20);
       });
-      it('#deleteCampaign', async () => {
+      it.only('#deleteCampaign', async () => {
          const campaign = await createCampaign(runningApp);
          const mutation = gql.mutation({
             operation: 'deleteCampaign',
@@ -299,6 +299,7 @@ describe.only('Campaign Integration Test', () => {
              .set('Accepts', 'application/json')
              .set('authorization', 'Bearer raiinmaker');
          const response = res.body.data.deleteCampaign;
+         console.log(res.body.errors[0]);
          expect(response.name).to.equal('bananaCampaign')
          expect(await Campaign.findOne({where: {name: response.name}})).to.be.undefined;
       })

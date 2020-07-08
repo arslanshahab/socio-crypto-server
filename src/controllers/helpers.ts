@@ -1,5 +1,5 @@
 import {SocialPost} from "../models/SocialPost";
-import {Tiers} from "../types";
+import {CampaignAuditReport, Tiers} from "../types";
 import {Participant} from "../models/Participant";
 import {Campaign} from "../models/Campaign";
 import { getConnection } from 'typeorm';
@@ -58,11 +58,11 @@ export const calculateTier = (totalParticipation: BigNumber, tiers: Tiers) => {
 export const calculateParticipantPayout = async (currentCampaignTierTotal: BigNumber, campaign: Campaign, participant: Participant) => {
     if (campaign.totalParticipationScore.eq(new BN(0))) return new BN(0);
     const {totalLikes, totalShares} = await calculateParticipantSocialScore(participant, campaign);
-    const viewScore = campaign.algorithm.pointValues.view.multipliedBy(participant.viewCount);
-    const clickScore = campaign.algorithm.pointValues.click.multipliedBy(participant.clickCount);
-    const submissionScore = campaign.algorithm.pointValues.submission.multipliedBy(participant.submissionCount);
-    const likesScore = campaign.algorithm.pointValues.likes.multipliedBy(totalLikes);
-    const sharesScore = campaign.algorithm.pointValues.shares.multipliedBy(totalShares);
+    const viewScore = campaign.algorithm.pointValues.view.times(participant.viewCount);
+    const clickScore = campaign.algorithm.pointValues.click.times(participant.clickCount);
+    const submissionScore = campaign.algorithm.pointValues.submission.times(participant.submissionCount);
+    const likesScore = campaign.algorithm.pointValues.likes.times(totalLikes);
+    const sharesScore = campaign.algorithm.pointValues.shares.times(totalShares);
     const totalParticipantPoints = viewScore.plus(clickScore).plus(submissionScore).plus(likesScore).plus(sharesScore);
     const percentageOfTotalParticipation = totalParticipantPoints.div(campaign.totalParticipationScore);
     return currentCampaignTierTotal.multipliedBy(percentageOfTotalParticipation);
@@ -87,3 +87,10 @@ export const performTransfer = async (walletId: string, amount: string, action: 
     await transactionalEntitymanager.save(wallet);
   });
 };
+
+export const parseAuditReport = (reportEntity: CampaignAuditReport) => {
+    const report: {[key:string]: any} = reportEntity;
+    for (const key in report) {
+        report[key] = parseFloat(report[key].toString());
+    }
+}
