@@ -8,6 +8,7 @@ import logger from "../../util/logger";
 import {SocialLink} from "../../models/SocialLink";
 import {Participant} from "../../models/Participant";
 import { BigNumber } from 'bignumber.js';
+import { BN } from 'src/util/helpers';
 
 const app = new Application();
 
@@ -45,7 +46,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                     try {
                         const response = await TwitterClient.get(socialLink.asClientCredentials(), post.id, false);
                         const responseJSON = JSON.parse(response);
-                        const updatedPost = await updatePostMetrics(responseJSON['favorite_count'], responseJSON['retweet_count'], post);
+                        const updatedPost = await updatePostMetrics(new BN(responseJSON['favorite_count']), new BN(responseJSON['retweet_count']), post);
                         logger.info(`pushing new metrics on social post for campaign: ${post.campaign.name}`);
                         postsToSave.push(updatedPost);
                     } catch (e) {
