@@ -13,7 +13,7 @@ import * as gql from 'gql-query-builder';
 import {Firebase} from "../../src/clients/firebase";
 import * as admin from "firebase-admin";
 import {calculateTier} from "../../src/controllers/helpers";
-import { BN } from 'src/util/helpers';
+import { BN } from '../../src/util/helpers';
 
 describe('Campaign Integration Test', () => {
    let runningApp: Application;

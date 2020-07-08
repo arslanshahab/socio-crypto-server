@@ -8,7 +8,7 @@ import logger from "../../util/logger";
 import {SocialLink} from "../../models/SocialLink";
 import {Participant} from "../../models/Participant";
 import { BigNumber } from 'bignumber.js';
-import { BN } from 'src/util/helpers';
+import { BN } from '../../util/helpers';
 
 const app = new Application();
 
