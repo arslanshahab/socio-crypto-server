@@ -13,6 +13,7 @@ import * as gql from 'gql-query-builder';
 import {Firebase} from "../../src/clients/firebase";
 import * as admin from "firebase-admin";
 import {calculateTier} from "../../src/controllers/helpers";
+import { BN } from 'src/util/helpers';
 
 describe('Campaign Integration Test', () => {
    let runningApp: Application;
@@ -85,7 +86,7 @@ describe('Campaign Integration Test', () => {
       })
       it('#calculateTier calculates correct max tier', async () => {
          const algorithm = JSON.parse('{"tiers": {"1": {"threshold": 0, "totalCoiins": 1000}, "2": {"threshold": 10, "totalCoiins": 2000}, "3": {"threshold": "", "totalCoiins": ""}, "4": {"threshold": "", "totalCoiins": ""}, "5": {"threshold": "", "totalCoiins": ""}, "6": {"threshold": "", "totalCoiins": ""}, "7": {"threshold": "", "totalCoiins": ""}, "8": {"threshold": "", "totalCoiins": ""}, "9": {"threshold": "", "totalCoiins": ""}, "10": {"threshold": "", "totalCoiins": ""}}, "pointValues": {"view": "1", "click": "1", "likes": "1", "shares": "1", "submission": "1"}}');
-         const { currentTier, currentTotal } = await calculateTier(BigInt(30), algorithm.tiers);
+         const { currentTier, currentTotal } = await calculateTier(new BN(30), algorithm.tiers);
          expect(currentTier).to.equal(2);
          expect(currentTotal).to.equal(2000);
       });

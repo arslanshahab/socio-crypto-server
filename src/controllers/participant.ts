@@ -6,7 +6,7 @@ import {Participant} from "../models/Participant";
 import {SocialPost} from "../models/SocialPost";
 import {getTweetById} from '../controllers/social';
 import { getRedis } from '../clients/redis';
-import { BN } from 'src/util/helpers';
+import { BN } from '../util/helpers';
 
 const { RATE_LIMIT_MAX = '3', RATE_LIMIT_WINDOW = '1m' } = process.env;
 
