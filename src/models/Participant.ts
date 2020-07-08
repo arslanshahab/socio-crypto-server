@@ -2,23 +2,23 @@ import {BaseEntity, Entity, Column, ManyToOne, PrimaryGeneratedColumn, CreateDat
 import { Campaign } from './Campaign';
 import { User } from './User';
 import { BigNumber } from 'bignumber.js';
-import { StringifiedArrayTransformer } from '../util/transformers';
+import { BigNumberEntityTransformer } from '../util/transformers';
 
 @Entity()
 export class Participant extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   public id: string;
 
-  @Column({ type: 'varchar', nullable: false, default: 0, transformer: StringifiedArrayTransformer })
+  @Column({ type: 'varchar', nullable: false, default: 0, transformer: BigNumberEntityTransformer })
   public clickCount: BigNumber;
 
-  @Column({ type: 'varchar', nullable: false, default: 0, transformer: StringifiedArrayTransformer })
+  @Column({ type: 'varchar', nullable: false, default: 0, transformer: BigNumberEntityTransformer })
   public viewCount: BigNumber;
 
-  @Column({ type: 'varchar', nullable: false, default: 0, transformer: StringifiedArrayTransformer })
+  @Column({ type: 'varchar', nullable: false, default: 0, transformer: BigNumberEntityTransformer })
   public submissionCount: BigNumber;
 
-  @Column({  type: 'varchar', nullable: false, default: 0, transformer: StringifiedArrayTransformer })
+  @Column({  type: 'varchar', nullable: false, default: 0, transformer: BigNumberEntityTransformer })
   public participationScore: BigNumber;
 
   @Column({ nullable: true })

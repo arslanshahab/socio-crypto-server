@@ -4,13 +4,14 @@ import { DateUtils } from 'typeorm/util/DateUtils';
 import { Wallet } from './Wallet';
 import { Campaign } from './Campaign';
 import { BN } from '../util/helpers';
+import {BigNumberEntityTransformer} from "../util/transformers";
 
 @Entity()
 export class Transfer extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   public id: string;
 
-  @Column({ type: 'float8', nullable: false })
+  @Column({ type: 'varchar', nullable: false, transformer: BigNumberEntityTransformer })
   public amount: BigNumber;
 
   @Column({ nullable: false })

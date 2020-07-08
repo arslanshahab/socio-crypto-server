@@ -9,7 +9,7 @@ export class Wallet extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   public id: string
 
-  @Column({ type: 'float8', nullable: false, default: 0, transformer: BigNumberEntityTransformer })
+  @Column({ type: 'varchar', nullable: false, default: 0, transformer: BigNumberEntityTransformer })
   public balance: BigNumber;
 
   @OneToOne(
