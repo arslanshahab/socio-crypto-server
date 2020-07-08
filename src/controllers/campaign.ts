@@ -12,7 +12,7 @@ import {Firebase} from "../clients/firebase";
 import {Dragonchain} from '../clients/dragonchain';
 import {calculateParticipantPayout, calculateParticipantSocialScore, calculateTier} from "./helpers";
 import { Transfer } from '../models/Transfer';
-import { BN } from 'src/util/helpers';
+import { BN } from '../util/helpers';
 import { BigNumber } from 'bignumber.js';
 
 

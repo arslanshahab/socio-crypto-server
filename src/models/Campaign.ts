@@ -7,7 +7,7 @@ import {SocialPost} from "./SocialPost";
 import {Transfer} from './Transfer';
 import { StringifiedArrayTransformer, BigNumberEntityTransformer } from '../util/transformers';
 import { BigNumber } from 'bignumber.js';
-import { BN } from 'src/util/helpers';
+import { BN } from '../util/helpers';
 
 @Entity()
 export class Campaign extends BaseEntity {
