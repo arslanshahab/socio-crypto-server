@@ -127,7 +127,7 @@ export class Campaign extends BaseEntity {
         .getOne()
   }
 
-  public static newCampaign(name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: string, target: string, description: string, company: string, algorithm: string, tagline: string, suggestedPosts: string[], suggestedTags: string[]): Campaign {
+  public static newCampaign(name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, tagline: string, suggestedPosts: string[], suggestedTags: string[]): Campaign {
     const campaign = new Campaign();
     campaign.name = name;
     campaign.coiinTotal = new BN(coiinTotal);
