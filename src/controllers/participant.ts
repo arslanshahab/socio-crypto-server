@@ -6,6 +6,7 @@ import {Participant} from "../models/Participant";
 import {SocialPost} from "../models/SocialPost";
 import {getTweetById} from '../controllers/social';
 import { getRedis } from '../clients/redis';
+import { BN } from 'src/util/helpers';
 
 const { RATE_LIMIT_MAX = '3', RATE_LIMIT_WINDOW = '1m' } = process.env;
 
@@ -36,20 +37,20 @@ export const trackAction = async (args: { participantId: string, action: 'click'
     if (!campaign) throw new Error('campaign not found');
     switch (args.action) {
         case 'click':
-            participant.clickCount++;
+            participant.clickCount.plus(new BN(1));
             break;
         case 'view':
-            participant.viewCount++;
+            participant.viewCount.plus(new BN(1));
             break;
         case 'submission':
-            participant.submissionCount++;
+            participant.submissionCount.plus(new BN(1));
             break;
         default:
             break;
     }
     const pointValue = campaign.algorithm.pointValues[args.action];
-    campaign.totalParticipationScore = BigInt(campaign.totalParticipationScore) + BigInt(pointValue);
-    participant.participationScore = BigInt(participant.participationScore) + BigInt(pointValue);
+    campaign.totalParticipationScore = campaign.totalParticipationScore.plus(pointValue);
+    participant.participationScore = participant.participationScore.plus(pointValue);
     await campaign.save();
     await participant.save();
     await Dragonchain.ledgerCampaignAction(args.action, participant.id, participant.campaign.id);

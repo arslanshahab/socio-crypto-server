@@ -2,6 +2,7 @@ import {BaseEntity, Column, Entity, ManyToOne, PrimaryColumn, CreateDateColumn, 
 import {User} from "./User";
 import {Campaign} from "./Campaign";
 import { BigNumber } from 'bignumber.js';
+import {BigNumberEntityTransformer} from "../util/transformers";
 
 
 @Entity()
@@ -12,13 +13,13 @@ export class SocialPost extends BaseEntity{
     @Column({nullable: false, default: 'twitter'})
     public type: string;
 
-    @Column({type: '', nullable: false, default: 0})
+    @Column({type: 'varchar', nullable: false, default: 0, transformer: BigNumberEntityTransformer})
     public likes: BigNumber;
 
-    @Column({nullable: false, default: 0})
+    @Column({type: 'varchar', nullable: false, default: 0, transformer: BigNumberEntityTransformer})
     public shares: BigNumber;
 
-    @Column({nullable: false, default: 0})
+    @Column({type: 'varchar', nullable: false, default: 0, transformer: BigNumberEntityTransformer})
     public comments: BigNumber;
 
     @Column({nullable: false})

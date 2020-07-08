@@ -22,9 +22,9 @@ export const getCurrentCampaignTier = async (args: { campaignId?: string, campai
         const where: {[key: string]: string } = { 'id': campaignId };
         const currentCampaign = await Campaign.findOne({ where });
         if (!currentCampaign) throw new Error('campaign not found');
-        currentTierSummary = calculateTier(BigInt(currentCampaign.totalParticipationScore), currentCampaign.algorithm.tiers);
+        currentTierSummary = calculateTier(currentCampaign.totalParticipationScore, currentCampaign.algorithm.tiers);
     } else if (campaign) {
-        currentTierSummary = calculateTier(BigInt(campaign.totalParticipationScore), campaign.algorithm.tiers);
+        currentTierSummary = calculateTier(campaign.totalParticipationScore, campaign.algorithm.tiers);
     }
     if (!currentTierSummary) throw new Error('failure calculating current tier');
     return currentTierSummary;

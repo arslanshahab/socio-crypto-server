@@ -173,9 +173,9 @@ describe('Campaign Integration Test', () => {
          const wallet1 = await Wallet.findOneOrFail({where: {user: participant1.user.id}, relations: ['user']});
          const wallet2 = await Wallet.findOneOrFail({where: {user: participant2.user.id}, relations: ['user']});
          const wallet3 = await Wallet.findOneOrFail({where: {user: participant3.user.id}, relations: ['user']});
-         expect(wallet1.balance - 50).to.equal(12.5);
-         expect(wallet2.balance - 50).to.equal(25);
-         expect(wallet3.balance - 50).to.equal(12.5);
+         expect(wallet1.balance.minus(50)).to.equal(12.5);
+         expect(wallet2.balance.minus(50)).to.equal(25);
+         expect(wallet3.balance.minus(50)).to.equal(12.5);
       });
       it('#payoutCampaignRewards with 0 total participation', async () => {
          const campaign = await createCampaign(runningApp, {totalParticipationScore: 0});
@@ -279,9 +279,9 @@ describe('Campaign Integration Test', () => {
          const wallet1 = await Wallet.findOneOrFail({where: {user: participant1.user.id}, relations: ['user']});
          const wallet2 = await Wallet.findOneOrFail({where: {user: participant2.user.id}, relations: ['user']});
          const wallet3 = await Wallet.findOneOrFail({where: {user: participant3.user.id}, relations: ['user']});
-         expect(wallet1.balance - 50).to.equal(0);
-         expect(wallet2.balance - 50).to.equal(20);
-         expect(wallet3.balance - 50).to.equal(20);
+         expect(wallet1.balance.minus(50)).to.equal(0);
+         expect(wallet2.balance.minus(50)).to.equal(20);
+         expect(wallet3.balance.minus(50)).to.equal(20);
       });
       it('#deleteCampaign', async () => {
          const campaign = await createCampaign(runningApp);
