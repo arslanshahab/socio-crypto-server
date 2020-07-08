@@ -6,6 +6,7 @@ import { Validator } from '../schemas';
 import {SocialPost} from "./SocialPost";
 import {Transfer} from './Transfer';
 import { StringifiedArrayTransformer } from '../util/transformers';
+import { BigNumber } from 'bignumber.js';
 
 @Entity()
 export class Campaign extends BaseEntity {
@@ -22,11 +23,11 @@ export class Campaign extends BaseEntity {
   @Column({ type: 'timestamptz', nullable: false })
   public endDate: Date;
 
-  @Column({ type: 'numeric' })
-  public coiinTotal: number;
+  @Column({ type: 'varchar' })
+  public coiinTotal: BigNumber;
 
-  @Column({ type: 'bigint', nullable: false, default: 0 })
-  public totalParticipationScore: bigint;
+  @Column({ type: 'varchar', nullable: false, default: 0 })
+  public totalParticipationScore: BigNumber;
 
   @Column()
   public target: string;

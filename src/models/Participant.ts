@@ -1,23 +1,24 @@
 import {BaseEntity, Entity, Column, ManyToOne, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn} from 'typeorm';
 import { Campaign } from './Campaign';
 import { User } from './User';
+import { BigNumber } from 'bignumber.js';
 
 @Entity()
 export class Participant extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   public id: string;
 
-  @Column({ nullable: false, default: 0 })
-  public clickCount: number;
+  @Column({ type: 'varchar', nullable: false, default: 0 })
+  public clickCount: BigNumber;
 
-  @Column({ nullable: false, default: 0 })
-  public viewCount: number;
+  @Column({ type: 'varchar', nullable: false, default: 0 })
+  public viewCount: BigNumber;
 
-  @Column({ nullable: false, default: 0 })
-  public submissionCount: number;
+  @Column({ type: 'varchar', nullable: false, default: 0 })
+  public submissionCount: BigNumber;
 
-  @Column({  type: 'bigint', nullable: false, default: 0 })
-  public participationScore: bigint;
+  @Column({  type: 'varchar', nullable: false, default: 0 })
+  public participationScore: BigNumber;
 
   @Column({ nullable: true })
   public link: string;
