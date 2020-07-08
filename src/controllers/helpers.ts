@@ -2,6 +2,9 @@ import {SocialPost} from "../models/SocialPost";
 import {Tiers} from "../types";
 import {Participant} from "../models/Participant";
 import {Campaign} from "../models/Campaign";
+import { getConnection } from 'typeorm';
+import { Wallet } from '../models/Wallet';
+import { BN } from '../util/helpers';
 
 export const calculateParticipantSocialScore = async (participant: Participant, campaign: Campaign) => {
     const socialPosts = await SocialPost.find({where: {participantId: participant.id}});
@@ -63,3 +66,23 @@ export const calculateParticipantPayout = async (currentCampaignTierTotal: numbe
     const percentageOfTotalParticipation = totalParticipantPoints / Number(campaign.totalParticipationScore);
     return currentCampaignTierTotal * percentageOfTotalParticipation;
 }
+
+export const performTransfer = async (walletId: string, amount: string, action: 'credit' | 'debit') => {
+  if (BigInt(amount) <= BigInt(0)) throw new Error("Amount must be a positive number");
+  return getConnection().transaction(async transactionalEntitymanager => {
+    const wallet = await transactionalEntitymanager.findOne(Wallet, { where: { id: walletId } });
+    if (!wallet) throw new Error('wallet not found');
+    switch (action) {
+      case 'credit':
+        wallet.balance = wallet.balance.plus(amount);
+        break;
+      case 'debit':
+        wallet.balance = wallet.balance.minus(amount);
+        if (wallet.balance.lt(0)) throw new Error("wallet does not have the necessary funds to complete this action");
+        break;
+      default:
+        throw new Error(`transfer method ${action} not provided`);
+    }
+    await transactionalEntitymanager.save(wallet);
+  });
+};

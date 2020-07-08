@@ -4,6 +4,7 @@ import {User} from '../models/User';
 import { Wallet } from '../models/Wallet';
 import { S3Client } from '../clients/s3';
 import { SesClient } from '../clients/ses';
+import { performTransfer } from './helpers';
 
 export const start = async (args: { withdrawAmount: number }, context: { user: any }) => {
   if (args.withdrawAmount <= 0) throw new Error('withdraw amount must be a positive number');
@@ -14,7 +15,7 @@ export const start = async (args: { withdrawAmount: number }, context: { user: a
   const totalWithdrawThisYear = await Transfer.getTotalAnnualWithdrawalByWallet(wallet);
   // TODO: check if they have W9 on file
   if (((totalWithdrawThisYear + args.withdrawAmount) * 0.1) >= 600 || ((pendingBalance + args.withdrawAmount) * 0.1) >= 600) throw new Error('reached max withdrawals per year');
-  if (((wallet.balance - pendingBalance) - args.withdrawAmount) < 0) throw new Error('wallet does not have required balance for this withdraw');
+  if (((wallet.balance.minus(pendingBalance)).minus(args.withdrawAmount)).lt(0)) throw new Error('wallet does not have required balance for this withdraw');
   const transfer = Transfer.newFromWithdraw(wallet, args.withdrawAmount);
   await transfer.save();
   return transfer;
@@ -28,18 +29,18 @@ export const update = async (args: { transferIds: string[], status: 'approve'|'r
   for (let i = 0; i < args.transferIds.length; i++) {
     const transfer = await Transfer.findOne({ where: { id: args.transferIds[i], action: 'withdraw', withdrawStatus: 'pending' }, relations: ['wallet', 'wallet.user'] });
     if (!transfer) throw new Error(`transfer not found: ${args.transferIds[i]}`);
-    if (args.status === 'approve' && (transfer.wallet.balance - transfer.amount) < 0) {
+    if (args.status === 'approve' && (transfer.wallet.balance.minus(transfer.amount)).lt(0)) {
       transfer.withdrawStatus = 'rejected';
     } else {
       switch (args.status) {
         case 'approve':
           const user = transfer.wallet.user;
           transfer.withdrawStatus = 'approved';
-          transfer.wallet.balance -= transfer.amount;
+          await performTransfer(transfer.wallet.id, transfer.amount.toString(), 'debit');
           if (!userGroups[user.id]) {
             let kycData;
             try { kycData = await S3Client.getUserObject(user.id) } catch (_) { kycData = null; }
-            if (kycData) userGroups[user.id] = {totalRedeemedAmount: transfer.amount, user, paypalEmail: kycData['paypalEmail'], transfers: [transfer] };
+            if (kycData) userGroups[user.id] = {totalRedeemedAmount: transfer.amount.toString(), user, paypalEmail: kycData['paypalEmail'], transfers: [transfer] };
           } else {
             userGroups[user.id].totalRedeemedAmount += transfer.amount;
             userGroups[user.id].transfers.push(transfer);
@@ -52,7 +53,6 @@ export const update = async (args: { transferIds: string[], status: 'approve'|'r
           throw new Error('status provided is not valid');
       }
     }
-    await Wallet.save(transfer.wallet);
     transfers.push(transfer);
   }
   await Transfer.save(transfers);

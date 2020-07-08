@@ -1,5 +1,5 @@
 import {ValueTransformer} from "typeorm";
-import { BN } from './helpers';
+import {BN} from './helpers';
 
 export const BigNumberEntityTransformer: ValueTransformer = {
     from: (value: any) => new BN(value),

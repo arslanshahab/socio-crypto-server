@@ -1,8 +1,8 @@
 import { PrimaryGeneratedColumn, Entity, BaseEntity, Column, OneToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import BigNumber from 'bignumber.js';
 import { BigNumberEntityTransformer } from '../util/transformers';
 import { Transfer } from './Transfer';
 import { User } from './User';
-import BigNumber from 'bignumber.js';
 
 @Entity()
 export class Wallet extends BaseEntity {
