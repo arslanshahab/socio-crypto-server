@@ -1,5 +1,5 @@
 import {SocialPost} from "../models/SocialPost";
-import {CampaignAuditReport, Tiers} from "../types";
+import {Tiers} from "../types";
 import {Participant} from "../models/Participant";
 import {Campaign} from "../models/Campaign";
 import { getConnection } from 'typeorm';
