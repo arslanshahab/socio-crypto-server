@@ -48,7 +48,7 @@ export class Transfer extends BaseEntity {
     const startOfYear = DateUtils.mixedDateToUtcDatetimeString(new Date(Date.UTC(new Date().getFullYear(), 0, 1)));
     const { sum } = await this.createQueryBuilder('transfer')
       .where(`transfer.action = 'withdraw' AND transfer."withdrawStatus" = 'approved' AND transfer."walletId" = :id AND transfer."updatedAt" >= '${startOfYear}' `, { id: wallet.id })
-      .select('SUM(transfer.amount)')
+      .select('SUM(CAST(transfer.amount AS DECIMAL))')
       .getRawOne();
     return new BN(sum || 0);
   }
@@ -56,7 +56,7 @@ export class Transfer extends BaseEntity {
   public static async getTotalPendingByWallet(wallet: Wallet): Promise<BigNumber> {
     const { sum } = await this.createQueryBuilder('transfer')
       .where(`transfer.action = 'withdraw' AND transfer."withdrawStatus" = 'pending' AND transfer."walletId" = :id`, { id: wallet.id })
-      .select('SUM(transfer.amount)')
+      .select('SUM(CAST(transfer.amount AS DECIMAL))')
       .getRawOne();
     return new BN(sum || 0);
   }

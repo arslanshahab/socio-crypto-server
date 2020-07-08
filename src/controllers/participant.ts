@@ -37,16 +37,16 @@ export const trackAction = async (args: { participantId: string, action: 'click'
     if (!campaign) throw new Error('campaign not found');
     switch (args.action) {
         case 'click':
-            participant.clickCount.plus(new BN(1));
+            participant.clickCount = participant.clickCount.plus(new BN(1));
             break;
         case 'view':
-            participant.viewCount.plus(new BN(1));
+            participant.viewCount = participant.viewCount.plus(new BN(1));
             break;
         case 'submission':
-            participant.submissionCount.plus(new BN(1));
+            participant.submissionCount = participant.submissionCount.plus(new BN(1));
             break;
         default:
-            break;
+            throw new Error("Action not supported");
     }
     const pointValue = campaign.algorithm.pointValues[args.action];
     campaign.totalParticipationScore = campaign.totalParticipationScore.plus(pointValue);
