@@ -14,7 +14,7 @@ import {createCampaign, createParticipant, createTransfer, createUser, createWal
 import {Transfer} from "../../src/models/Transfer";
 import { S3Client } from "../../src/clients/s3";
 
-describe.only('Withdraw Integration Test', function () {
+describe('Withdraw Integration Test', function () {
     let runningApp: Application;
     const fullAppTestBed = createSandbox();
 
@@ -77,6 +77,7 @@ describe.only('Withdraw Integration Test', function () {
                .send(mutation)
                .set('Accepts', 'application/json')
                .set('authorization', 'Bearer raiinmaker');
+           console.log(res.body);
            const response = res.body.data.initiateWithdraw;
            expect(response.amount).to.equal(99.01);
            const newTransfer = await Transfer.findOneOrFail(response.id);
@@ -127,7 +128,7 @@ describe.only('Withdraw Integration Test', function () {
            const response = res.body.data.updateWithdrawStatus;
            expect(response.length).to.equal(2);
            const walletResult = await Wallet.findOneOrFail(wallet.id);
-           expect(walletResult.balance).to.equal(100);
+           expect(walletResult.asV1().balance).to.equal(100);
        });
     });
     describe('Queries', () => {
