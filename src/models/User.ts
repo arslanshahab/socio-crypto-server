@@ -83,6 +83,9 @@ export class User extends BaseEntity {
 
   public asV1() {
     const returnedUser: User = {...this, hasRecoveryCodeSet: this.recoveryCode !== null && this.recoveryCode !== ""};
+    if (this.twentyFourHourMetrics && this.twentyFourHourMetrics.length > 0) {
+      returnedUser.twentyFourHourMetrics = this.twentyFourHourMetrics.map(metric => metric.asV1());
+    }
     if (this.wallet) {
       returnedUser.wallet = this.wallet.asV1();
       if (this.wallet.transfers && this.wallet.transfers.length > 0) {
