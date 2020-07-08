@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { BigNumber } from 'bignumber.js';
 
 export const getBase64FileExtension = (image: string) => {
   if (image === '') throw new Error('invalid image uploaded');
@@ -22,3 +23,14 @@ export const extractFactor = (factor: string): string => {
 };
 
 export const generateRandomNumber = () => Math.floor(Math.random() * 9000000);
+
+export const BN = BigNumber.clone({
+  EXPONENTIAL_AT: [-1e9, 1e9]
+})
+
+// Prevent use in primitive operations.
+// See https://mikemcl.github.io/bignumber.js/#type-coercion
+BN.prototype.valueOf = function() {
+  throw Error('Conversion to primitive type is prohibited')
+}
+
