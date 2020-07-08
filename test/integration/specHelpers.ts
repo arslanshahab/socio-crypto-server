@@ -5,7 +5,7 @@ import {User} from "../../src/models/User";
 import {Wallet} from "../../src/models/Wallet";
 import { v4 as uuidv4 } from 'uuid';
 import {Transfer} from "../../src/models/Transfer";
-import { BN } from 'src/util/helpers';
+import { BN } from '../../src/util/helpers';
 
 export const createCampaign = async (runningApp: Application, options?: { [key: string]: any } | any, ) => {
   const campaign = new Campaign();
