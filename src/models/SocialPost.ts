@@ -45,6 +45,15 @@ export class SocialPost extends BaseEntity{
     @UpdateDateColumn()
     public updatedAt: Date;
 
+    public asV1() {
+      return {
+        ...this,
+        likes: parseFloat(this.likes.toString()),
+        shares: parseFloat(this.shares.toString()),
+        comments: parseFloat(this.comments.toString())
+      }
+    }
+
     public static newSocialPost(id: string, type: string, participantId: string, user: User, campaign: Campaign) {
         const post = new SocialPost();
         post.id = id;

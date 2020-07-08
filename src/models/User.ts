@@ -83,6 +83,9 @@ export class User extends BaseEntity {
 
   public asV1() {
     const returnedUser: User = {...this, hasRecoveryCodeSet: this.recoveryCode !== null && this.recoveryCode !== ""};
+    if (this.posts && this.posts.length > 0) {
+      returnedUser.posts = this.posts.map(post => post.asV1());
+    }
     if (this.twentyFourHourMetrics && this.twentyFourHourMetrics.length > 0) {
       returnedUser.twentyFourHourMetrics = this.twentyFourHourMetrics.map(metric => metric.asV1());
     }

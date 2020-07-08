@@ -95,6 +95,7 @@ export class Campaign extends BaseEntity {
     const returnedCampaign: Campaign = {...this, totalParticipationScore: parseFloat(this.totalParticipationScore.toString())};
     if (this.participants && this.participants.length > 0) returnedCampaign.participants = this.participants.map((participant) => participant.asV1());
     if (this.payouts && this.payouts.length > 0) returnedCampaign.payouts = this.payouts.map((payout) => payout.asV1());
+    if (this.posts && this.posts.length > 0) returnedCampaign.posts = this.posts.map((post) => post.asV1());
     return returnedCampaign;
   }
 
