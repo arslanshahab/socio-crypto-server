@@ -3,8 +3,14 @@ import {BN} from './helpers';
 import {AlgorithmSpecs} from "../types";
 
 export const BigNumberEntityTransformer: ValueTransformer = {
-    from: (value: any) => new BN(value),
-    to: (value: any) => value.toString()
+    from: (value: any) => {
+      if (!value) return;
+      return new BN(value);
+    },
+    to: (value: any) => {
+      if (!value) return;
+      return value.toString();
+    }
 };
 
 export const StringifiedArrayTransformer: ValueTransformer = {
