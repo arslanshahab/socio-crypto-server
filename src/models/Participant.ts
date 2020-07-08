@@ -2,7 +2,7 @@ import {BaseEntity, Entity, Column, ManyToOne, PrimaryGeneratedColumn, CreateDat
 import { Campaign } from './Campaign';
 import { User } from './User';
 import { BigNumber } from 'bignumber.js';
-import { StringifiedArrayTransformer } from 'src/util/transformers';
+import { StringifiedArrayTransformer } from '../util/transformers';
 
 @Entity()
 export class Participant extends BaseEntity {
