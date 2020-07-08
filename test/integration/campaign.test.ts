@@ -15,7 +15,7 @@ import * as admin from "firebase-admin";
 import {calculateTier} from "../../src/controllers/helpers";
 import { BN } from '../../src/util/helpers';
 
-describe.only('Campaign Integration Test', () => {
+describe('Campaign Integration Test', () => {
    let runningApp: Application;
    const fullAppTestBed = createSandbox();
 
@@ -284,7 +284,7 @@ describe.only('Campaign Integration Test', () => {
          expect(parseFloat(wallet2.balance.minus(50).toString())).to.equal(20);
          expect(parseFloat(wallet3.balance.minus(50).toString())).to.equal(20);
       });
-      it.only('#deleteCampaign', async () => {
+      it('#deleteCampaign', async () => {
          const campaign = await createCampaign(runningApp);
          const mutation = gql.mutation({
             operation: 'deleteCampaign',
@@ -299,7 +299,6 @@ describe.only('Campaign Integration Test', () => {
              .set('Accepts', 'application/json')
              .set('authorization', 'Bearer raiinmaker');
          const response = res.body.data.deleteCampaign;
-         console.log(res.body.errors[0]);
          expect(response.name).to.equal('bananaCampaign')
          expect(await Campaign.findOne({where: {name: response.name}})).to.be.undefined;
       })
@@ -319,6 +318,7 @@ describe.only('Campaign Integration Test', () => {
              .send(query)
              .set('Accepts', 'application/json')
              .set('authorization', 'Bearer raiinmaker');
+         console.log(res.body)
          const response = res.body.data.getCurrentCampaignTier;
          expect(response.currentTier).to.equal(4);
          expect(response.currentTotal).to.equal(40);

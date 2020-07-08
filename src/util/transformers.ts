@@ -13,16 +13,20 @@ export const StringifiedArrayTransformer: ValueTransformer = {
 }
 
 const transformAlgorithm = (algorithm: AlgorithmSpecs) => {
-    console.log(algorithm);
-    algorithm['initialTotal'] = new BN(algorithm['initialTotal']);
-    for(const key in algorithm['pointValues']) {
-        algorithm['pointValues'][key] = new BN(algorithm['pointValues'][key]);
+    if (!algorithm) return;
+    try {
+        algorithm['initialTotal'] = new BN(algorithm['initialTotal']);
+        for(const key in algorithm['pointValues']) {
+            algorithm['pointValues'][key] = new BN(algorithm['pointValues'][key]);
+        }
+        for(const tier in algorithm.tiers) {
+            algorithm['tiers'][tier]['threshold'] = new BN(algorithm['tiers'][tier]['threshold']);
+            algorithm['tiers'][tier]['totalCoiins'] = new BN(algorithm['tiers'][tier]['totalCoiins']);
+        }
+        return algorithm;
+    } catch (e) {
+        throw Error(`[TRANSFORMER] algorithm key not found ${e}`);
     }
-    for(const tier in algorithm.tiers) {
-        algorithm['tiers'][tier]['threshold'] = new BN(algorithm['tiers'][tier]['threshold']);
-        algorithm['tiers'][tier]['totalCoiins'] = new BN(algorithm['tiers'][tier]['totalCoiins']);
-    }
-    return algorithm;
 }
 
 export const AlgorithmTransformer: ValueTransformer = {

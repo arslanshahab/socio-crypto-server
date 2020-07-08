@@ -3,6 +3,7 @@ import { Campaign } from './Campaign';
 import { User } from './User';
 import { BigNumber } from 'bignumber.js';
 import { BigNumberEntityTransformer } from '../util/transformers';
+import { BN } from '../util/helpers';
 
 @Entity()
 export class Participant extends BaseEntity {
@@ -61,6 +62,10 @@ export class Participant extends BaseEntity {
 
   public static newParticipant(user: User, campaign: Campaign): Participant {
     const participant = new Participant();
+    participant.clickCount = new BN(0)
+    participant.viewCount = new BN(0)
+    participant.submissionCount = new BN(0)
+    participant.participationScore = new BN(0)
     participant.user = user;
     participant.campaign = campaign;
     return participant;
