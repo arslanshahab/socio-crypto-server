@@ -12,6 +12,7 @@ import {Firebase} from "../clients/firebase";
 import {Dragonchain} from '../clients/dragonchain';
 import {calculateParticipantPayout, calculateParticipantSocialScore, calculateTier} from "./helpers";
 import { Transfer } from '../models/Transfer';
+import { BN } from 'src/util/helpers';
 
 
 export const getCurrentCampaignTier = async (args: { campaignId?: string, campaign?: Campaign }) => {
@@ -111,12 +112,12 @@ export const generateCampaignAuditReport = async (args: { campaignId: string }, 
     if (!campaign) throw new Error('Campaign not found');
     const {currentTotal} = await getCurrentCampaignTier({campaign});
     const auditReport: CampaignAuditReport = {
-        totalClicks: 0,
-        totalViews: 0,
-        totalSubmissions: 0,
-        totalLikes: 0,
-        totalShares: 0,
-        totalParticipationScore: Number(campaign.totalParticipationScore),
+        totalClicks: new BN(0),
+        totalViews: new BN(0),
+        totalSubmissions: new BN(0),
+        totalLikes: new BN(0),
+        totalShares: new BN(0),
+        totalParticipationScore: campaign.totalParticipationScore,
         totalRewardPayout: currentTotal,
         flaggedParticipants: []
     };

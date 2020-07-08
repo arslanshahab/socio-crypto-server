@@ -1,6 +1,8 @@
 import {BaseEntity, Column, Entity, ManyToOne, PrimaryColumn, CreateDateColumn, UpdateDateColumn } from "typeorm";
 import {User} from "./User";
 import {Campaign} from "./Campaign";
+import { BigNumber } from 'bignumber.js';
+
 
 @Entity()
 export class SocialPost extends BaseEntity{
@@ -10,14 +12,14 @@ export class SocialPost extends BaseEntity{
     @Column({nullable: false, default: 'twitter'})
     public type: string;
 
-    @Column({nullable: false, default: 0})
-    public likes: number;
+    @Column({type: '', nullable: false, default: 0})
+    public likes: BigNumber;
 
     @Column({nullable: false, default: 0})
-    public shares: number;
+    public shares: BigNumber;
 
     @Column({nullable: false, default: 0})
-    public comments: number;
+    public comments: BigNumber;
 
     @Column({nullable: false})
     public participantId: string;
@@ -38,7 +40,7 @@ export class SocialPost extends BaseEntity{
 
     @CreateDateColumn()
     public createdAt: Date;
-  
+
     @UpdateDateColumn()
     public updatedAt: Date;
 

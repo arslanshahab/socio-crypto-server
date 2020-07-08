@@ -2,6 +2,7 @@ import {SocialPost} from "../models/SocialPost";
 import {Tiers} from "../types";
 import {Participant} from "../models/Participant";
 import {Campaign} from "../models/Campaign";
+import { BN } from 'src/util/helpers';
 
 export const calculateParticipantSocialScore = async (participant: Participant, campaign: Campaign) => {
     const socialPosts = await SocialPost.find({where: {participantId: participant.id}});
@@ -21,7 +22,7 @@ export const calculateParticipantSocialScore = async (participant: Participant, 
 
 export const calculateTier = (totalParticipation: BigInt, tiers: Tiers) => {
     let currentTier = 1;
-    let currentTotal = 1;
+    let currentTotal = new BN(1);
     const numOfTiers = Object.keys(tiers).reduce((accum: number, value: any) => {
         if ((tiers[value].threshold as any) !== "" && (tiers[value].totalCoiins as any) !== "") {
             accum++;
