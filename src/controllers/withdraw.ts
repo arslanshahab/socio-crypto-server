@@ -5,6 +5,7 @@ import { Wallet } from '../models/Wallet';
 import { S3Client } from '../clients/s3';
 import { SesClient } from '../clients/ses';
 import { performTransfer } from './helpers';
+import { BN } from '../util/helpers';
 
 export const start = async (args: { withdrawAmount: number }, context: { user: any }) => {
   if (args.withdrawAmount <= 0) throw new Error('withdraw amount must be a positive number');
@@ -72,6 +73,7 @@ export const getWithdrawals = async (args: { status: string }, context: { user: 
     const userId = transfer.wallet.user.id;
     if (!uniqueUsers[userId]) {
       const totalWithdrawnThisYear = await Transfer.getTotalAnnualWithdrawalByWallet(transfer.wallet);
+      const totalPendingWithdrawal = await Transfer.getTotalPendingByWallet(transfer.wallet);
       let kycData: any;
       try {
         kycData = await S3Client.getUserObject(userId);
@@ -81,12 +83,11 @@ export const getWithdrawals = async (args: { status: string }, context: { user: 
       uniqueUsers[userId] = {
         kyc: kycData,
         user: transfer.wallet.user,
-        totalPendingWithdrawal: transfer.amount,
-        totalAnnualWithdrawn: totalWithdrawnThisYear,
+        totalPendingWithdrawal: totalPendingWithdrawal.toString(),
+        totalAnnualWithdrawn: totalWithdrawnThisYear.toString(),
         transfers: [transfer.asV1()]
       }
     } else {
-      uniqueUsers[userId].totalPendingWithdrawal += transfer.amount;
       uniqueUsers[userId].transfers.push(transfer.asV1());
     }
   }

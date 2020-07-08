@@ -3,6 +3,7 @@ import { PrimaryGeneratedColumn, Entity, BaseEntity, Column, CreateDateColumn, U
 import { DateUtils } from 'typeorm/util/DateUtils';
 import { Wallet } from './Wallet';
 import { Campaign } from './Campaign';
+import { BN } from '../util/helpers';
 
 @Entity()
 export class Transfer extends BaseEntity {
@@ -42,21 +43,21 @@ export class Transfer extends BaseEntity {
     return {...this, amount: parseFloat(this.amount.toString())};
   }
 
-  public static async getTotalAnnualWithdrawalByWallet(wallet: Wallet): Promise<number> {
+  public static async getTotalAnnualWithdrawalByWallet(wallet: Wallet): Promise<BigNumber> {
     const startOfYear = DateUtils.mixedDateToUtcDatetimeString(new Date(Date.UTC(new Date().getFullYear(), 0, 1)));
     const { sum } = await this.createQueryBuilder('transfer')
       .where(`transfer.action = 'withdraw' AND transfer."withdrawStatus" = 'approved' AND transfer."walletId" = :id AND transfer."updatedAt" >= '${startOfYear}' `, { id: wallet.id })
       .select('SUM(transfer.amount)')
       .getRawOne();
-    return sum || 0;
+    return new BN(sum || 0);
   }
 
-  public static async getTotalPendingByWallet(wallet: Wallet): Promise<number> {
+  public static async getTotalPendingByWallet(wallet: Wallet): Promise<BigNumber> {
     const { sum } = await this.createQueryBuilder('transfer')
       .where(`transfer.action = 'withdraw' AND transfer."withdrawStatus" = 'pending' AND transfer."walletId" = :id`, { id: wallet.id })
       .select('SUM(transfer.amount)')
       .getRawOne();
-    return sum || 0;
+    return new BN(sum || 0);
   }
 
   public static async getWithdrawalsByStatus(status: string = 'pending'): Promise<Transfer[]> {
