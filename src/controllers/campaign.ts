@@ -156,7 +156,6 @@ export const generateCampaignAuditReport = async (args: { campaignId: string }, 
         }
         report[key] = parseFloat(report[key].toString());
     }
-    console.log('[AUDIT REPORT]', auditReport);
     return auditReport;
 };
 
