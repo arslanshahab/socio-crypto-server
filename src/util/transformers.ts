@@ -1,6 +1,5 @@
 import {ValueTransformer} from "typeorm";
 import {BN} from './helpers';
-import {AlgorithmSpecs} from "../types";
 
 export const BigNumberEntityTransformer: ValueTransformer = {
     from: (value: any) => new BN(value),
@@ -12,7 +11,7 @@ export const StringifiedArrayTransformer: ValueTransformer = {
   to: (value: any) => JSON.stringify(value),
 }
 
-const transformAlgorithm = (algorithm: AlgorithmSpecs) => {
+const transformAlgorithm = (algorithm: any) => {
     if (!algorithm) return;
     try {
         algorithm['initialTotal'] = new BN(algorithm['initialTotal']);
@@ -20,8 +19,10 @@ const transformAlgorithm = (algorithm: AlgorithmSpecs) => {
             algorithm['pointValues'][key] = new BN(algorithm['pointValues'][key]);
         }
         for(const tier in algorithm.tiers) {
-            algorithm['tiers'][tier]['threshold'] = new BN(algorithm['tiers'][tier]['threshold']);
-            algorithm['tiers'][tier]['totalCoiins'] = new BN(algorithm['tiers'][tier]['totalCoiins']);
+            if (algorithm['tiers'][tier]['threshold'] !== '' && algorithm['tiers'][tier]['totalCoiins'] !== '') {
+                algorithm['tiers'][tier]['threshold'] = new BN(algorithm['tiers'][tier]['threshold']);
+                algorithm['tiers'][tier]['totalCoiins'] = new BN(algorithm['tiers'][tier]['totalCoiins']);
+            }
         }
         return algorithm;
     } catch (e) {
