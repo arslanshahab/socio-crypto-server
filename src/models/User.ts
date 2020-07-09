@@ -95,6 +95,9 @@ export class User extends BaseEntity {
         returnedUser.wallet.transfers = returnedUser.wallet.transfers.map((transfer) => transfer.asV1());
       }
     }
+    if (this.campaigns && this.campaigns.length > 0) {
+      returnedUser.campaigns = this.campaigns.map(participant => participant.asV1());
+    }
     return returnedUser;
   }
 

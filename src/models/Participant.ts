@@ -49,15 +49,24 @@ export class Participant extends BaseEntity {
 
   public metrics() {
     return {
-      clickCount: this.clickCount,
-      viewCount: this.viewCount,
-      submissionCount: this.submissionCount,
+      clickCount: parseFloat(this.clickCount.toString()),
+      viewCount: parseFloat(this.viewCount.toString()),
+      submissionCount: parseFloat(this.submissionCount.toString()),
       participationScore: parseFloat(this.participationScore.toString()),
     }
   }
 
   public asV1() {
-    return {...this, participationScore: parseFloat(this.participationScore.toString())}
+    const returnedValue: Participant = {
+      ...this,
+      clickCount: parseFloat(this.clickCount.toString()),
+      viewCount: parseFloat(this.viewCount.toString()),
+      submissionCount: parseFloat(this.submissionCount.toString()),
+      participationScore: parseFloat(this.participationScore.toString())
+    };
+    if (this.campaign) returnedValue.campaign = this.campaign.asV1();
+    if (this.user) returnedValue.user = this.user.asV1();
+    return returnedValue; 
   }
 
   public static newParticipant(user: User, campaign: Campaign): Participant {
