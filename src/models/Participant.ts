@@ -59,6 +59,7 @@ export class Participant extends BaseEntity {
   public asV1() {
     const returnedValue: Participant = {
       ...this,
+      metrics: this.metrics(),
       clickCount: parseFloat(this.clickCount.toString()),
       viewCount: parseFloat(this.viewCount.toString()),
       submissionCount: parseFloat(this.submissionCount.toString()),
