@@ -10,6 +10,7 @@ import { Secrets } from './util/secrets';
 import { authenticate } from './middleware/authentication';
 import { errorHandler } from './middleware/errorHandler';
 import { Dragonchain } from './clients/dragonchain';
+import { Firebase } from './clients/firebase';
 import * as FactorController from './controllers/factor';
 import * as Dragonfactor from '@dragonchain-dev/dragonfactor-auth';
 
@@ -30,6 +31,7 @@ export class Application {
   public async initializeServer() {
     this.databaseConnection = await this.connectDatabase();
     await Secrets.initialize();
+    await Firebase.initialize();
     await Dragonchain.initialize();
     this.app = express();
     const corsSettings = {
