@@ -5,7 +5,6 @@ export class Firebase {
   public static client: admin.app.App;
 
   public static initialize() {
-    console.log('SECRETS', Secrets.firebaseProjectId, Secrets.firebaseClientEmail, Secrets.firebasePrivateKey)
     Firebase.client = admin.initializeApp({
       credential: admin.credential.cert({
         projectId: Secrets.firebaseProjectId,
