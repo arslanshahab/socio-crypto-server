@@ -96,7 +96,7 @@ export const get = async (args: { id: string }) => {
     const where: { [key: string]: string } = { id };
     const campaign = await Campaign.findOne({ where, relations: ['participants'] });
     if (!campaign) throw new Error('campaign not found');
-    campaign.participants.sort((a,b) => {return Number(b.participationScore) - Number(a.participationScore)});
+    campaign.participants.sort((a,b) => {return parseFloat((b.participationScore.minus(a.participationScore).toString()))});
     return campaign.asV1();
 }
 
