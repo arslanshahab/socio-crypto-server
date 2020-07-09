@@ -85,5 +85,11 @@ export const getParticipantSocialMetrics = async (args: { id: string }, context:
     const where: { [key: string]: string } = { id };
     const participant = await Participant.findOne({ where, relations: ['campaign'] });
     if (!participant) throw new Error('participant not found');
-    return calculateParticipantSocialScore(participant, participant.campaign);
+    const metrics = await calculateParticipantSocialScore(participant, participant.campaign);
+    return {
+      totalLikes: parseFloat(metrics.totalLikes.toString()),
+      totalShares: parseFloat(metrics.totalShares.toString()),
+      likesScore: parseFloat(metrics.likesScore.toString()),
+      shareScore: parseFloat(metrics.shareScore.toString())
+    }
 }
