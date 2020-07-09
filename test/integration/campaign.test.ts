@@ -13,6 +13,7 @@ import * as gql from 'gql-query-builder';
 import {Firebase} from "../../src/clients/firebase";
 import * as admin from "firebase-admin";
 import {calculateTier} from "../../src/controllers/helpers";
+import { BN } from '../../src/util/helpers';
 
 describe('Campaign Integration Test', () => {
    let runningApp: Application;
@@ -85,7 +86,7 @@ describe('Campaign Integration Test', () => {
       })
       it('#calculateTier calculates correct max tier', async () => {
          const algorithm = JSON.parse('{"tiers": {"1": {"threshold": 0, "totalCoiins": 1000}, "2": {"threshold": 10, "totalCoiins": 2000}, "3": {"threshold": "", "totalCoiins": ""}, "4": {"threshold": "", "totalCoiins": ""}, "5": {"threshold": "", "totalCoiins": ""}, "6": {"threshold": "", "totalCoiins": ""}, "7": {"threshold": "", "totalCoiins": ""}, "8": {"threshold": "", "totalCoiins": ""}, "9": {"threshold": "", "totalCoiins": ""}, "10": {"threshold": "", "totalCoiins": ""}}, "pointValues": {"view": "1", "click": "1", "likes": "1", "shares": "1", "submission": "1"}}');
-         const { currentTier, currentTotal } = await calculateTier(BigInt(30), algorithm.tiers);
+         const { currentTier, currentTotal } = await calculateTier(new BN(30), algorithm.tiers);
          expect(currentTier).to.equal(2);
          expect(currentTotal).to.equal(2000);
       });
@@ -111,7 +112,7 @@ describe('Campaign Integration Test', () => {
          const participant1 = await createParticipant(runningApp);
          const participant2 = await createParticipant(runningApp);
          const participant3 = await createParticipant(runningApp);
-         const campaign = await createCampaign(runningApp, {participants: [participant1, participant2, participant3], totalParticipationScore: BigInt(45)});
+         const campaign = await createCampaign(runningApp, {participants: [participant1, participant2, participant3], totalParticipationScore: 45});
          const mutation = gql.mutation({
             operation: 'generateCampaignAuditReport',
             variables: {
@@ -173,9 +174,9 @@ describe('Campaign Integration Test', () => {
          const wallet1 = await Wallet.findOneOrFail({where: {user: participant1.user.id}, relations: ['user']});
          const wallet2 = await Wallet.findOneOrFail({where: {user: participant2.user.id}, relations: ['user']});
          const wallet3 = await Wallet.findOneOrFail({where: {user: participant3.user.id}, relations: ['user']});
-         expect(wallet1.balance - 50).to.equal(12.5);
-         expect(wallet2.balance - 50).to.equal(25);
-         expect(wallet3.balance - 50).to.equal(12.5);
+         expect(parseFloat(wallet1.balance.minus(new BN(50)).toString())).to.equal(12.5);
+         expect(parseFloat(wallet2.balance.minus(new BN(50)).toString())).to.equal(25);
+         expect(parseFloat(wallet3.balance.minus(new BN(50)).toString())).to.equal(12.5);
       });
       it('#payoutCampaignRewards with 0 total participation', async () => {
          const campaign = await createCampaign(runningApp, {totalParticipationScore: 0});
@@ -232,9 +233,9 @@ describe('Campaign Integration Test', () => {
          const wallet1 = await Wallet.findOneOrFail({where: {user: participant1.user.id}, relations: ['user']});
          const wallet2 = await Wallet.findOneOrFail({where: {user: participant2.user.id}, relations: ['user']});
          const wallet3 = await Wallet.findOneOrFail({where: {user: participant3.user.id}, relations: ['user']});
-         expect(wallet1.balance).to.equal(50);
-         expect(wallet2.balance).to.equal(50);
-         expect(wallet3.balance).to.equal(50);
+         expect(parseFloat(wallet1.balance.toString())).to.equal(50);
+         expect(parseFloat(wallet2.balance.toString())).to.equal(50);
+         expect(parseFloat(wallet3.balance.toString())).to.equal(50);
       });
       it('#payoutCampaignRewards with rejected participants', async () => {
          const campaign = await createCampaign(runningApp);
@@ -279,9 +280,9 @@ describe('Campaign Integration Test', () => {
          const wallet1 = await Wallet.findOneOrFail({where: {user: participant1.user.id}, relations: ['user']});
          const wallet2 = await Wallet.findOneOrFail({where: {user: participant2.user.id}, relations: ['user']});
          const wallet3 = await Wallet.findOneOrFail({where: {user: participant3.user.id}, relations: ['user']});
-         expect(wallet1.balance - 50).to.equal(0);
-         expect(wallet2.balance - 50).to.equal(20);
-         expect(wallet3.balance - 50).to.equal(20);
+         expect(parseFloat(wallet1.balance.minus(50).toString())).to.equal(0);
+         expect(parseFloat(wallet2.balance.minus(50).toString())).to.equal(20);
+         expect(parseFloat(wallet3.balance.minus(50).toString())).to.equal(20);
       });
       it('#deleteCampaign', async () => {
          const campaign = await createCampaign(runningApp);
@@ -317,6 +318,7 @@ describe('Campaign Integration Test', () => {
              .send(query)
              .set('Accepts', 'application/json')
              .set('authorization', 'Bearer raiinmaker');
+         console.log(res.body)
          const response = res.body.data.getCurrentCampaignTier;
          expect(response.currentTier).to.equal(4);
          expect(response.currentTotal).to.equal(40);

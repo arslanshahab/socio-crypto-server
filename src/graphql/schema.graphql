@@ -203,7 +203,7 @@ type Participant {
   user: PublicUser
   campaign: Campaign
   link: String
-  participationScore: Int
+  participationScore: Float
 }
 
 type SocialPost {
@@ -219,7 +219,7 @@ type ParticipantMetrics {
   viewCount: Int
   clickCount: Int
   submissionCount: Int
-  participationScore: Int
+  participationScore: Float
 }
 
 type ParticipantAudit {

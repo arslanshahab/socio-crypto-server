@@ -12,6 +12,8 @@ import {Firebase} from "../clients/firebase";
 import {Dragonchain} from '../clients/dragonchain';
 import {calculateParticipantPayout, calculateParticipantSocialScore, calculateTier} from "./helpers";
 import { Transfer } from '../models/Transfer';
+import { BN } from '../util/helpers';
+import { BigNumber } from 'bignumber.js';
 
 
 export const getCurrentCampaignTier = async (args: { campaignId?: string, campaign?: Campaign }) => {
@@ -21,12 +23,13 @@ export const getCurrentCampaignTier = async (args: { campaignId?: string, campai
         const where: {[key: string]: string } = { 'id': campaignId };
         const currentCampaign = await Campaign.findOne({ where });
         if (!currentCampaign) throw new Error('campaign not found');
-        currentTierSummary = calculateTier(BigInt(currentCampaign.totalParticipationScore), currentCampaign.algorithm.tiers);
+        currentTierSummary = calculateTier(currentCampaign.totalParticipationScore, currentCampaign.algorithm.tiers);
     } else if (campaign) {
-        currentTierSummary = calculateTier(BigInt(campaign.totalParticipationScore), campaign.algorithm.tiers);
+        currentTierSummary = calculateTier(campaign.totalParticipationScore, campaign.algorithm.tiers);
     }
     if (!currentTierSummary) throw new Error('failure calculating current tier');
-    return currentTierSummary;
+    // TODO: remember if we allow non-round numbers for currentTotal, change the parseInt to parseFloat
+    return { currentTier: currentTierSummary.currentTier, currentTotal: parseInt(currentTierSummary.currentTotal.toString()) };
 }
 
 export const createNewCampaign = async (args: { name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, image: string, tagline: string, suggestedPosts: string[], suggestedTags: string[] }, context: { user: any }) => {
@@ -41,7 +44,7 @@ export const createNewCampaign = async (args: { name: string, targetVideo: strin
       campaign.imagePath = await S3Client.setCampaignImage('banner', campaign.id, image);
       await campaign.save();
     }
-    return campaign;
+    return campaign.asV1();
 }
 
 export const updateCampaign = async (args: { id: string, name: string, beginDate: string, targetVideo: string, endDate: string, coiinTotal: number, target: string, description: string, algorithm: string, suggestedPosts: string[], suggestedTags: string[], image: string }, context: { user: any }) => {
@@ -54,7 +57,7 @@ export const updateCampaign = async (args: { id: string, name: string, beginDate
     if (name) campaign.name = name;
     if (beginDate) campaign.beginDate = new Date(beginDate);
     if (endDate) campaign.endDate = new Date(endDate);
-    if (coiinTotal) campaign.coiinTotal = coiinTotal;
+    if (coiinTotal) campaign.coiinTotal = new BN(coiinTotal);
     if (target) campaign.target = target;
     if (description) campaign.description = description;
     if (algorithm) {
@@ -66,14 +69,14 @@ export const updateCampaign = async (args: { id: string, name: string, beginDate
     if (suggestedTags) campaign.suggestedTags = suggestedTags;
     if (image) campaign.imagePath = await S3Client.setCampaignImage('banner', campaign.id, image);
     await campaign.save();
-    return campaign;
+    return campaign.asV1();
 }
 
 export const listCampaigns = async (args: { open: boolean, skip: number, take: number, scoped: boolean }, context: { user: any }) => {
     const { open, skip = 0, take = 10, scoped = false } = args;
     const { company } = context.user;
     const [results, total] = await Campaign.findCampaignsByStatus(open, skip, take, scoped && company);
-    return { results, total };
+    return { results: results.map(result => result.asV1()), total };
 }
 
 export const deleteCampaign = async (args: { id: string }, context: { user: any }) => {
@@ -85,23 +88,23 @@ export const deleteCampaign = async (args: { id: string }, context: { user: any 
     if (campaign.posts.length > 0) await SocialPost.delete({ id: In(campaign.posts.map((p: any) => p.id)) });
     await Participant.remove(campaign.participants);
     await campaign.remove();
-    return campaign;
+    return campaign.asV1();
 }
 
 export const get = async (args: { id: string }) => {
     const { id } = args;
     const where: { [key: string]: string } = { id };
     const campaign = await Campaign.findOne({ where, relations: ['participants'] });
-    campaign?.participants.sort((a,b) => {return Number(b.participationScore) - Number(a.participationScore)});
     if (!campaign) throw new Error('campaign not found');
-    return campaign;
+    campaign.participants.sort((a,b) => {return parseFloat((b.participationScore.minus(a.participationScore).toString()))});
+    return campaign.asV1();
 }
 
 export const publicGet = async (args: { campaignId: string }) => {
     const { campaignId } = args;
     const campaign = await Campaign.findOne({ where: { id: campaignId } });
     if (!campaign) throw new Error('campaign not found');
-    return campaign;
+    return campaign.asV1();
 }
 
 export const generateCampaignAuditReport = async (args: { campaignId: string }, context: { user: any }) => {
@@ -110,48 +113,62 @@ export const generateCampaignAuditReport = async (args: { campaignId: string }, 
     const campaign = await Campaign.findCampaignById(campaignId, company);
     if (!campaign) throw new Error('Campaign not found');
     const {currentTotal} = await getCurrentCampaignTier({campaign});
+    const bigNumTotal = new BN(currentTotal);
     const auditReport: CampaignAuditReport = {
-        totalClicks: 0,
-        totalViews: 0,
-        totalSubmissions: 0,
-        totalLikes: 0,
-        totalShares: 0,
-        totalParticipationScore: Number(campaign.totalParticipationScore),
-        totalRewardPayout: currentTotal,
+        totalClicks: new BN(0),
+        totalViews: new BN(0),
+        totalSubmissions: new BN(0),
+        totalLikes: new BN(0),
+        totalShares: new BN(0),
+        totalParticipationScore: campaign.totalParticipationScore,
+        totalRewardPayout: bigNumTotal,
         flaggedParticipants: []
     };
     for (const participant of campaign.participants) {
         const {totalLikes, totalShares} = await calculateParticipantSocialScore(participant, campaign);
-        auditReport.totalShares += totalShares;
-        auditReport.totalLikes += totalLikes;
-        auditReport.totalClicks += participant.clickCount;
-        auditReport.totalViews += participant.viewCount;
-        auditReport.totalSubmissions += participant.submissionCount;
-        const totalParticipantPayout = await calculateParticipantPayout(currentTotal, campaign, participant);
-        if (totalParticipantPayout > (auditReport.totalRewardPayout * 0.15)) {
+        auditReport.totalShares = auditReport.totalShares.plus(totalShares);
+        auditReport.totalLikes = auditReport.totalLikes.plus(totalLikes);
+        auditReport.totalClicks = auditReport.totalClicks.plus(participant.clickCount);
+        auditReport.totalViews =  auditReport.totalViews.plus(participant.viewCount);
+        auditReport.totalSubmissions = auditReport.totalSubmissions.plus(participant.submissionCount);
+        const totalParticipantPayout = await calculateParticipantPayout(bigNumTotal, campaign, participant);
+        if (totalParticipantPayout.gt(auditReport.totalRewardPayout.times(new BN(0.15)))) {
             auditReport.flaggedParticipants.push({
                 participantId: participant.id,
-                viewPayout: participant.viewCount * campaign.algorithm.pointValues.view,
-                clickPayout: participant.clickCount * campaign.algorithm.pointValues.click,
-                submissionPayout: participant.submissionCount * campaign.algorithm.pointValues.submission,
-                likesPayout: totalLikes * campaign.algorithm.pointValues.likes,
-                sharesPayout: totalShares * campaign.algorithm.pointValues.shares,
+                viewPayout: participant.viewCount.times(campaign.algorithm.pointValues.view),
+                clickPayout: participant.clickCount.times(campaign.algorithm.pointValues.click),
+                submissionPayout: participant.submissionCount.times(campaign.algorithm.pointValues.submission),
+                likesPayout: totalLikes.times(campaign.algorithm.pointValues.likes),
+                sharesPayout: totalShares.times(campaign.algorithm.pointValues.shares),
                 totalPayout: totalParticipantPayout
             })
         }
+    }
+    const report: {[key:string]: any} = auditReport;
+    for (const key in report) {
+        if (key === 'flaggedParticipants') {
+            for (const flagged of report[key]) {
+                for (const value in flagged) {
+                    if(value !== 'participantId') flagged[value] = parseFloat(flagged[value].toString());
+                }
+            }
+            continue;
+        }
+        report[key] = parseFloat(report[key].toString());
     }
     return auditReport;
 };
 
 export const payoutCampaignRewards = async (args: { campaignId: string, rejected: string[] }, context: { user: any }) => {
     const {company} = checkPermissions({hasRole: ['admin', 'manager']}, context);
-    const usersWalletValues: { [key: string]: number } = {};
+    const usersWalletValues: { [key: string]: BigNumber } = {};
     const userDeviceIds: { [key: string]: string } = {};
     const transfers: Transfer[] = [];
     return getConnection().transaction(async transactionalEntityManager => {
         const {campaignId, rejected} = args;
         const campaign = await Campaign.findOneOrFail({where: {id: campaignId, company}});
         const {currentTotal} = await getCurrentCampaignTier({campaign});
+        const bigNumTotal = new BN(currentTotal);
         const participants = await Participant.find({where: {campaign}, relations: ['user']});
         const users = (participants.length > 0) ? await User.find({
             where: {id: In(participants.map(p => p.user.id))},
@@ -163,34 +180,34 @@ export const payoutCampaignRewards = async (args: { campaignId: string, rejected
         }) : [];
         if (rejected.length > 0) {
             const newParticipationCount = participants.length - rejected.length;
-            let totalRejectedPayout = 0;
+            let totalRejectedPayout = new BN(0);
             for (const id of rejected) {
                 const participant = await getParticipant({id});
-                const totalParticipantPayout = await calculateParticipantPayout(currentTotal, campaign, participant);
-                totalRejectedPayout += totalParticipantPayout;
+                const totalParticipantPayout = await calculateParticipantPayout(bigNumTotal, campaign, participant);
+                totalRejectedPayout = totalRejectedPayout.plus(totalParticipantPayout);
             }
-            const addedPayoutToEachParticipant = totalRejectedPayout / newParticipationCount;
+            const addedPayoutToEachParticipant = totalRejectedPayout.div(new BN(newParticipationCount));
             for (const participant of participants) {
                 if (!rejected.includes(participant.id)) {
-                    const subtotal = await calculateParticipantPayout(currentTotal, campaign, participant);
-                    const totalParticipantPayout = subtotal + addedPayoutToEachParticipant;
+                    const subtotal = await calculateParticipantPayout(bigNumTotal, campaign, participant);
+                    const totalParticipantPayout = subtotal.plus(addedPayoutToEachParticipant);
                     if (participant.user.deviceToken) userDeviceIds[participant.user.id] = participant.user.deviceToken;
                     if (!usersWalletValues[participant.user.id]) usersWalletValues[participant.user.id] = totalParticipantPayout;
-                    else usersWalletValues[participant.user.id] += totalParticipantPayout;
+                    else usersWalletValues[participant.user.id] = usersWalletValues[participant.user.id].plus(totalParticipantPayout);
                 }
             }
         } else {
             for (const participant of participants) {
-                const totalParticipantPayout = await calculateParticipantPayout(currentTotal, campaign, participant);
+                const totalParticipantPayout = await calculateParticipantPayout(bigNumTotal, campaign, participant);
                 if (participant.user.deviceToken) userDeviceIds[participant.user.id] = participant.user.deviceToken;
                 if (!usersWalletValues[participant.user.id]) usersWalletValues[participant.user.id] = totalParticipantPayout;
-                else usersWalletValues[participant.user.id] += totalParticipantPayout;
+                else usersWalletValues[participant.user.id] = usersWalletValues[participant.user.id].plus(totalParticipantPayout);
             }
         }
         for (const userId in usersWalletValues) {
             const currentWallet = wallets.find(w => w.user.id === userId);
             if (currentWallet) {
-              currentWallet.balance += usersWalletValues[userId];
+              currentWallet.balance = currentWallet.balance.plus(usersWalletValues[userId]);
               const transfer = Transfer.newFromCampaignPayout(currentWallet, campaign, usersWalletValues[userId]);
               transfers.push(transfer);
             }

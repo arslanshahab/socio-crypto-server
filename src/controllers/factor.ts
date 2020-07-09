@@ -29,7 +29,7 @@ export const registerFactorLink = async (args: { factor: Dragonfactor.FactorLogi
     await factorLink.save();
     user.factorLinks = [...user.factorLinks, factorLink];
   }
-  return user;
+  return user.asV1();
 }
 
 export const removeFactorLink = async (args: { factorId: string }, context: { user: any }) => {
@@ -38,7 +38,7 @@ export const removeFactorLink = async (args: { factorId: string }, context: { us
   const factorLink = user.factorLinks.find((link: FactorLink) => link.factorId === args.factorId);
   if (!factorLink) throw new Error('requested factor not found');
   await factorLink.remove();
-  return user;
+  return user.asV1();
 }
 
 export const isLastFactor = async (_args: any, context: {user: any}) => {

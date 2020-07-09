@@ -1,60 +1,62 @@
 import {Request} from 'express';
+import { BigNumber } from 'bignumber.js';
 
 export interface AuthRequest extends Request {
     user: any;
 }
 
 export interface Tiers {
-    [index: string]: {threshold:number; totalCoiins: number;};
+    [index: string]: {threshold:BigNumber; totalCoiins: BigNumber;};
     2: {
-        threshold: number;
-        totalCoiins: number;
+        threshold: BigNumber;
+        totalCoiins: BigNumber;
     },
     3: {
-        threshold: number;
-        totalCoiins: number;
+        threshold: BigNumber;
+        totalCoiins: BigNumber;
     },
     4: {
-        threshold: number;
-        totalCoiins: number;
+        threshold: BigNumber;
+        totalCoiins: BigNumber;
     },
     5: {
-        threshold: number;
-        totalCoiins: number;
+        threshold: BigNumber;
+        totalCoiins: BigNumber;
     },
 }
 export interface AlgorithmSpecs {
     version: number;
-    initialTotal: number;
+    initialTotal: BigNumber;
     pointValues: ActionValues;
     tiers: Tiers
 }
 
 export interface CampaignAuditReport {
-    totalClicks: number
-    totalViews: number
-    totalSubmissions: number
-    totalLikes: number
-    totalShares: number
-    totalParticipationScore: number
-    totalRewardPayout: number
+    totalClicks: BigNumber
+    totalViews: BigNumber
+    totalSubmissions: BigNumber
+    totalLikes: BigNumber
+    totalShares: BigNumber
+    totalParticipationScore: BigNumber
+    totalRewardPayout: BigNumber
     flaggedParticipants: {
         participantId: string
-        viewPayout: number
-        clickPayout: number
-        submissionPayout: number
-        likesPayout: number
-        sharesPayout: number
-        totalPayout: number
+        viewPayout: BigNumber
+        clickPayout: BigNumber
+        submissionPayout: BigNumber
+        likesPayout: BigNumber
+        sharesPayout: BigNumber
+        totalPayout: BigNumber
     }[]
 }
 
 export interface ActionValues {
-    click: number;
-    view: number;
-    submission: number;
-    likes: number;
-    shares: number;
+    [key: string]: BigNumber;
+    click: BigNumber;
+    view: BigNumber;
+    submission: BigNumber;
+    likes: BigNumber;
+    shares: BigNumber;
 }
 
 export interface SocialClientCredentials {
