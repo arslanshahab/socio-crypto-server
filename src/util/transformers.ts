@@ -25,7 +25,7 @@ const transformAlgorithm = (algorithm: any) => {
             algorithm['pointValues'][key] = new BN(algorithm['pointValues'][key]);
         }
         for(const tier in algorithm.tiers) {
-            if (algorithm['tiers'][tier]['threshold'] === '' && algorithm['tiers'][tier]['totalCoiins'] === '') {
+            if (!algorithm['tiers'][tier]['threshold'] && !algorithm['tiers'][tier]['totalCoiins']) {
                 algorithm['tiers'][tier]['threshold'] = '';
                 algorithm['tiers'][tier]['totalCoiins'] = '';
                 continue;

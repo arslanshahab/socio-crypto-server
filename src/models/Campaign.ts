@@ -97,8 +97,12 @@ export class Campaign extends BaseEntity {
       algorithm['pointValues'][key] = parseFloat(algorithm['pointValues'][key].toString());
     }
     for(const tier in algorithm['tiers']) {
-      algorithm['tiers'][tier]['threshold'] = parseFloat(algorithm['tiers'][tier]['threshold'].toString());
-      algorithm['tiers'][tier]['totalCoiins'] = parseFloat(algorithm['tiers'][tier]['totalCoiins'].toString());
+      const threshold = algorithm['tiers'][tier]['threshold'];
+      const totalCoiins = algorithm['tiers'][tier]['totalCoiins'];
+      if (threshold !== '' && totalCoiins !== '') {
+        algorithm['tiers'][tier]['threshold'] = parseFloat(algorithm['tiers'][tier]['threshold'].toString());
+        algorithm['tiers'][tier]['totalCoiins'] = parseFloat(algorithm['tiers'][tier]['totalCoiins'].toString());
+      }
     }
     return algorithm;
   }
