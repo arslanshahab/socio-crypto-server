@@ -99,6 +99,7 @@ export class Campaign extends BaseEntity {
     for(const tier in algorithm['tiers']) {
       algorithm['tiers'][tier]['threshold'] = parseFloat(algorithm['tiers'][tier]['threshold'].toString());
       algorithm['tiers'][tier]['totalCoiins'] = parseFloat(algorithm['tiers'][tier]['totalCoiins'].toString());
+      console.log('---TIER RESPONSE TO CLIENT---', algorithm['tiers'][tier]['threshold'], algorithm['tiers'][tier]['totalCoiins']);
     }
     return algorithm;
   }
