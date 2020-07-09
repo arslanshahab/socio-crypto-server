@@ -92,16 +92,16 @@ export class Campaign extends BaseEntity {
   }
   public static parseAlgorithm (algorithmEntity: AlgorithmSpecs) {
     const algorithm: {[key: string]: any} = algorithmEntity;
-    algorithm['initialTotal'] = parseFloat(algorithm['initialTotal'].toString());
+    algorithm['initialTotal'] = algorithm['initialTotal'].toString();
     for(const key in algorithm['pointValues']) {
-      algorithm['pointValues'][key] = parseFloat(algorithm['pointValues'][key].toString());
+      algorithm['pointValues'][key] = algorithm['pointValues'][key].toString();
     }
     for(const tier in algorithm['tiers']) {
       const threshold = algorithm['tiers'][tier]['threshold'];
       const totalCoiins = algorithm['tiers'][tier]['totalCoiins'];
       if (threshold !== '' && totalCoiins !== '') {
-        algorithm['tiers'][tier]['threshold'] = parseFloat(algorithm['tiers'][tier]['threshold'].toString());
-        algorithm['tiers'][tier]['totalCoiins'] = parseFloat(algorithm['tiers'][tier]['totalCoiins'].toString());
+        algorithm['tiers'][tier]['threshold'] = algorithm['tiers'][tier]['threshold'].toString();
+        algorithm['tiers'][tier]['totalCoiins'] = algorithm['tiers'][tier]['totalCoiins'].toString();
       }
     }
     return algorithm;
