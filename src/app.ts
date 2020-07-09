@@ -12,6 +12,7 @@ import { errorHandler } from './middleware/errorHandler';
 import { Dragonchain } from './clients/dragonchain';
 import * as FactorController from './controllers/factor';
 import * as Dragonfactor from '@dragonchain-dev/dragonfactor-auth';
+import {Firebase} from "./clients/firebase";
 
 const { NODE_ENV = 'development' } = process.env;
 
@@ -31,6 +32,7 @@ export class Application {
     this.databaseConnection = await this.connectDatabase();
     await Secrets.initialize();
     await Dragonchain.initialize();
+    await Firebase.initialize();
     this.app = express();
     const corsSettings = {
       origin: [

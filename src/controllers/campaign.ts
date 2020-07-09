@@ -150,13 +150,14 @@ export const generateCampaignAuditReport = async (args: { campaignId: string }, 
         if (key === 'flaggedParticipants') {
             for (const flagged of report[key]) {
                 for (const value in flagged) {
-                    flagged[value] = parseFloat(flagged[value].toString());
+                    if(value !== 'participantId') flagged[value] = parseFloat(flagged[value].toString());
                 }
             }
             continue;
         }
         report[key] = parseFloat(report[key].toString());
     }
+    console.log('[AUDIT REPORT]', auditReport);
     return auditReport;
 };
 
