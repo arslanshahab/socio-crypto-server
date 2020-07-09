@@ -104,7 +104,6 @@ export const publicGet = async (args: { campaignId: string }) => {
     const { campaignId } = args;
     const campaign = await Campaign.findOne({ where: { id: campaignId } });
     if (!campaign) throw new Error('campaign not found');
-    console.log(campaign.asV1());
     return campaign.asV1();
 }
 
