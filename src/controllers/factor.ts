@@ -54,13 +54,17 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
   let emailAddress: string;
   if (!user) {
     const newUser = new User();
+    console.log('have new user');
     const wallet = new Wallet();
+    console.log('new wallet');
     const factorLink = new FactorLink();
+    console.log('new factorLink');
     newUser.identityId = identityId;
     newUser.username = `raiinmaker-${generateRandomNumber()}`;
     await newUser.save();
     wallet.user = newUser;
     await wallet.save();
+    console.log('attacked user to wallet');
     for (let i = 0; i < factors.length; i++) {
       const { type, id, providerId, factor } = factors[i];
       factorLink.type = type;
