@@ -115,24 +115,41 @@ export class User extends BaseEntity {
     let query = this.createQueryBuilder('user');
     if (graphqlQuery) {
       const fieldNodes = graphqlQuery.selectionSet?.selections.filter(node => node.kind === 'Field') || [];
-      const loadCampaigns = fieldNodes.find((node: FieldNode) => node.name.value === 'campaigns') as FieldNode;
+      const loadParticipants = fieldNodes.find((node: FieldNode) => node.name.value === 'campaigns') as FieldNode;
       const loadSocialLinks = fieldNodes.find((node: FieldNode) => node.name.value === 'socialLinks') as FieldNode;
       const loadPosts = fieldNodes.find((node: FieldNode) => node.name.value === 'posts') as FieldNode;
       const loadTwentyFourHourMetrics = fieldNodes.find((node: FieldNode) => node.name.value === 'twentyFourHourMetrics') as FieldNode;
       const loadWallet = fieldNodes.find((node: FieldNode) => node.name.value === 'wallet') as FieldNode;
       const loadFactorLinks = fieldNodes.find((node: FieldNode) => node.name.value === 'factorLinks') as FieldNode;
-      if (loadCampaigns) {
+      if (loadParticipants) {
         query = query.leftJoinAndSelect('user.campaigns', 'participant', 'participant."userId" = user.id');
-        const subFields = loadCampaigns.selectionSet?.selections.filter(node => node.kind === 'Field') || [];
-        if (subFields.find((node: FieldNode) => node.name.value === 'campaign')) {
+        const subFields = loadParticipants.selectionSet?.selections.filter(node => node.kind === 'Field') || [];
+        const loadParticipantCampaign = subFields.find((node: FieldNode) => node.name.value === 'campaign') as FieldNode;
+        if (loadParticipantCampaign) {
           query = query.leftJoinAndSelect('participant.campaign', 'campaign', 'participant."campaignId" = campaign.id');
+          const subFields = loadParticipantCampaign.selectionSet?.selections.filter(node => node.kind === 'Field') || [];
+          const loadParticipantsOfCampaign = subFields.find((node: FieldNode) => node.name.value === 'participants') as FieldNode;
+          if (loadParticipantsOfCampaign) {
+            query = query.leftJoinAndSelect('campaign.participants', 'part', 'part."campaignId" = campaign.id');
+            const subFields = loadParticipantsOfCampaign.selectionSet?.selections.filter(node => node.kind === 'Field') || [];
+            const loadUserOfParticipant = subFields.find((node: FieldNode) => node.name.value === 'user');
+            if (loadUserOfParticipant) {
+              query = query.leftJoinAndSelect('part.user', 'u');
+            }
+          }
         }
       }
       if (loadWallet) {
         query = query.leftJoinAndSelect('user.wallet', 'wallet', 'wallet."userId" = user.id');
         const subFields = loadWallet.selectionSet?.selections.filter(node => node.kind === 'Field') || [];
-        if (subFields.find((node: FieldNode) => node.name.value === 'transfers')) {
+        const loadTransfers = subFields.find((node: FieldNode) => node.name.value === 'transfers') as FieldNode;
+        if (loadTransfers) {
           query = query.leftJoinAndSelect('wallet.transfers', 'transfer', 'transfer."walletId" = wallet.id');
+          const transferFields = loadTransfers.selectionSet?.selections.filter(node => node.kind === 'Field') || [];
+          const loadCampaign = transferFields.find((node: FieldNode) => node.name.value === 'campaign') as FieldNode;
+          if (loadCampaign) {
+            query = query.leftJoinAndSelect('transfer.campaign', 'c', 'c.id = transfer."campaignId"');
+          } 
         }
       }
       if (loadSocialLinks) query = query.leftJoinAndSelect('user.socialLinks', 'social', 'social."userId" = user.id')
