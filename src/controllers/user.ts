@@ -6,6 +6,7 @@ import {User} from "../models/User";
 import {Wallet} from "../models/Wallet";
 import { TinyUrl } from '../clients/tinyUrl';
 import {sha256Hash} from '../util/crypto';
+import { GraphQLResolveInfo } from 'graphql';
 
 export const participate = async (args: { campaignId: string }, context: { user: any }) => {
     const { id } = context.user;
@@ -77,9 +78,10 @@ export const signUp = async (args: { username: string, deviceToken: string }, co
     return user.asV1();
 }
 
-export const me = async (args: { openCampaigns?: boolean } = {}, context: { user: any }) => {
+export const me = async (args: { openCampaigns?: boolean } = {}, context: { user: any }, info: GraphQLResolveInfo) => {
     const { id } = context.user;
-    const user = await User.getUser(id);
+    const query = info.fieldNodes.find(field => field.name.value === info.fieldName);
+    const user = await User.getUser(id, query);
     if (!user) throw new Error('user not found');
     if (args.openCampaigns !== null && args.openCampaigns === true) {
       user.campaigns = user.campaigns.filter(p => p.campaign.isOpen());
