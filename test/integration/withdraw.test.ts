@@ -77,7 +77,6 @@ describe('Withdraw Integration Test', function () {
                .send(mutation)
                .set('Accepts', 'application/json')
                .set('authorization', 'Bearer raiinmaker');
-           console.log(res.body);
            const response = res.body.data.initiateWithdraw;
            expect(response.amount).to.equal(99.01);
            const newTransfer = await Transfer.findOneOrFail(response.id);

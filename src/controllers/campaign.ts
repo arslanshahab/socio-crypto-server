@@ -28,8 +28,7 @@ export const getCurrentCampaignTier = async (args: { campaignId?: string, campai
         currentTierSummary = calculateTier(campaign.totalParticipationScore, campaign.algorithm.tiers);
     }
     if (!currentTierSummary) throw new Error('failure calculating current tier');
-    // TODO: remember if we allow non-round numbers for currentTotal, change the parseInt to parseFloat
-    return { currentTier: currentTierSummary.currentTier, currentTotal: parseInt(currentTierSummary.currentTotal.toString()) };
+    return { currentTier: currentTierSummary.currentTier, currentTotal: parseFloat(currentTierSummary.currentTotal.toString()) };
 }
 
 export const createNewCampaign = async (args: { name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, image: string, tagline: string, suggestedPosts: string[], suggestedTags: string[] }, context: { user: any }) => {

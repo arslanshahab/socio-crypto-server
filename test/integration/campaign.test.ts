@@ -178,6 +178,90 @@ describe('Campaign Integration Test', () => {
          expect(parseFloat(wallet2.balance.minus(new BN(50)).toString())).to.equal(25);
          expect(parseFloat(wallet3.balance.minus(new BN(50)).toString())).to.equal(12.5);
       });
+      it('#payoutCampaignRewards with float values', async () => {
+         const algorithm = {
+            tiers: {
+               1: {
+                  threshold: 10.5,
+                  totalCoiins: 10.5
+               },
+               2: {
+                  threshold: 20.5,
+                  totalCoiins: 20.5
+               },
+               3: {
+                  threshold: 30.5,
+                  totalCoiins: 30.5
+               },
+               4: {
+                  threshold: 40.5,
+                  totalCoiins: 40.5
+               },
+               5: {
+                  threshold: 50.5,
+                  totalCoiins: 50.5
+               },
+            }
+         }
+         const campaign = await createCampaign(runningApp, {totalParticipationScore: 94.5, algorithm});
+
+         let participant1 = await createParticipant(runningApp, {
+            campaign,
+            ParticipationScore: 31.5,
+            clickCount: 10.5,
+            viewCount: 10.5,
+            submissionCount: 10.5,
+            userOptions: {
+               walletOptions: {
+                  balance: 50.5
+               }
+            }});
+         let participant2 = await createParticipant(runningApp, {
+            campaign,
+            ParticipationScore: 31.5,
+            clickCount: 10.5,
+            viewCount: 10.5,
+            submissionCount: 10.5,
+            userOptions: {
+               walletOptions: {
+                  balance: 50.5
+               }
+            }});
+         let participant3 = await createParticipant(runningApp, {
+            campaign,
+            ParticipationScore: 31.5,
+            clickCount: 10.5,
+            viewCount: 10.5,
+            submissionCount: 10.5,
+            userOptions: {
+               walletOptions: {
+                  balance: 50.5
+               }
+            }});
+          const mutation = gql.mutation({
+            operation: 'payoutCampaignRewards',
+            variables: {
+               campaignId: { value: campaign.id, required: true },
+               rejected: { value: [], type:'[String]', required: true }
+            },
+         })
+         const res = await request(runningApp.app)
+             .post('/v1/graphql')
+             .send(mutation)
+             .set('Accepts', 'application/json')
+             .set('authorization', 'Bearer raiinmaker');
+         participant1 = await Participant.findOneOrFail({id: participant1.id}) ;
+         participant2 = await Participant.findOneOrFail({id: participant2.id})
+         participant3 = await Participant.findOneOrFail({id: participant3.id})
+         const response = res.body.data.payoutCampaignRewards;
+         expect(response).to.be.true;
+         const wallet1 = await Wallet.findOneOrFail({where: {user: participant1.user.id}, relations: ['user']});
+         const wallet2 = await Wallet.findOneOrFail({where: {user: participant2.user.id}, relations: ['user']});
+         const wallet3 = await Wallet.findOneOrFail({where: {user: participant3.user.id}, relations: ['user']});
+         expect(parseFloat(wallet1.balance.minus(new BN(50.5)).toString())).to.equal(16.833333333333332);
+         expect(parseFloat(wallet2.balance.minus(new BN(50.5)).toString())).to.equal(16.833333333333332);
+         expect(parseFloat(wallet3.balance.minus(new BN(50.5)).toString())).to.equal(16.833333333333332);
+      });
       it('#payoutCampaignRewards with 0 total participation', async () => {
          const campaign = await createCampaign(runningApp, {totalParticipationScore: 0});
          let participant1 = await createParticipant(runningApp, {
@@ -318,7 +402,6 @@ describe('Campaign Integration Test', () => {
              .send(query)
              .set('Accepts', 'application/json')
              .set('authorization', 'Bearer raiinmaker');
-         console.log(res.body)
          const response = res.body.data.getCurrentCampaignTier;
          expect(response.currentTier).to.equal(4);
          expect(response.currentTotal).to.equal(40);
