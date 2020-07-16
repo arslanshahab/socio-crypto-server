@@ -62,7 +62,6 @@ export class Application {
       graphiql: NODE_ENV !== 'production',
       extensions: extensions,
       customFormatErrorFn: (error) => {
-        console.log(error.message);
         return {
           message: error.message,
           locations: error.locations,
