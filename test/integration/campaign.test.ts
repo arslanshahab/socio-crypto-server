@@ -318,7 +318,6 @@ describe('Campaign Integration Test', () => {
              .send(query)
              .set('Accepts', 'application/json')
              .set('authorization', 'Bearer raiinmaker');
-         console.log(res.body)
          const response = res.body.data.getCurrentCampaignTier;
          expect(response.currentTier).to.equal(4);
          expect(response.currentTotal).to.equal(40);
