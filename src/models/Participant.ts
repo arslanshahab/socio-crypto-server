@@ -1,23 +1,26 @@
 import {BaseEntity, Entity, Column, ManyToOne, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn} from 'typeorm';
 import { Campaign } from './Campaign';
 import { User } from './User';
+import { BigNumber } from 'bignumber.js';
+import { BigNumberEntityTransformer } from '../util/transformers';
+import { BN } from '../util/helpers';
 
 @Entity()
 export class Participant extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   public id: string;
 
-  @Column({ nullable: false, default: 0 })
-  public clickCount: number;
+  @Column({ type: 'varchar', nullable: false, default: 0, transformer: BigNumberEntityTransformer })
+  public clickCount: BigNumber;
 
-  @Column({ nullable: false, default: 0 })
-  public viewCount: number;
+  @Column({ type: 'varchar', nullable: false, default: 0, transformer: BigNumberEntityTransformer })
+  public viewCount: BigNumber;
 
-  @Column({ nullable: false, default: 0 })
-  public submissionCount: number;
+  @Column({ type: 'varchar', nullable: false, default: 0, transformer: BigNumberEntityTransformer })
+  public submissionCount: BigNumber;
 
-  @Column({  type: 'bigint', nullable: false, default: 0 })
-  public participationScore: bigint;
+  @Column({  type: 'varchar', nullable: false, default: 0, transformer: BigNumberEntityTransformer })
+  public participationScore: BigNumber;
 
   @Column({ nullable: true })
   public link: string;
@@ -46,15 +49,33 @@ export class Participant extends BaseEntity {
 
   public metrics() {
     return {
-      clickCount: this.clickCount,
-      viewCount: this.viewCount,
-      submissionCount: this.submissionCount,
-      participationScore: this.participationScore,
+      clickCount: parseFloat(this.clickCount.toString()),
+      viewCount: parseFloat(this.viewCount.toString()),
+      submissionCount: parseFloat(this.submissionCount.toString()),
+      participationScore: parseFloat(this.participationScore.toString()),
     }
+  }
+
+  public asV1() {
+    const returnedValue: Participant = {
+      ...this,
+      metrics: this.metrics(),
+      clickCount: parseFloat(this.clickCount.toString()),
+      viewCount: parseFloat(this.viewCount.toString()),
+      submissionCount: parseFloat(this.submissionCount.toString()),
+      participationScore: parseFloat(this.participationScore.toString())
+    };
+    if (this.campaign) returnedValue.campaign = this.campaign.asV1();
+    if (this.user) returnedValue.user = this.user.asV1();
+    return returnedValue; 
   }
 
   public static newParticipant(user: User, campaign: Campaign): Participant {
     const participant = new Participant();
+    participant.clickCount = new BN(0)
+    participant.viewCount = new BN(0)
+    participant.submissionCount = new BN(0)
+    participant.participationScore = new BN(0)
     participant.user = user;
     participant.campaign = campaign;
     return participant;

@@ -73,12 +73,12 @@ describe('Participant Integration Test', () => {
             expect(response.id).to.equal(participant.id);
             const participantResult = await Participant.findOneOrFail({where: {id: participant.id}});
             const campaignResult = await Campaign.findOneOrFail(participant.campaign.id);
-            const adjustedTotalParticipationScore = Number(campaignResult.totalParticipationScore) - Number(participant.campaign.totalParticipationScore);
-            const adjustedClickCount = Number(participantResult.clickCount) - Number(participant.clickCount);
-            const adjustedParticipationScore = Number(participantResult.participationScore) - Number(participant.participationScore);
-            expect(adjustedParticipationScore).to.equal(campaignResult.algorithm.pointValues.click);
-            expect(adjustedTotalParticipationScore).to.equal(Number(campaignResult.algorithm.pointValues.click));
-            expect(adjustedClickCount).to.equal(1);
+            const adjustedTotalParticipationScore = campaignResult.totalParticipationScore.minus(participant.campaign.totalParticipationScore);
+            const adjustedClickCount = participantResult.clickCount.minus(participant.clickCount);
+            const adjustedParticipationScore = participantResult.participationScore.minus(participant.participationScore);
+            expect(adjustedParticipationScore.toString()).to.equal(campaignResult.algorithm.pointValues.click.toString());
+            expect(adjustedTotalParticipationScore.toString()).to.equal(campaignResult.algorithm.pointValues.click.toString());
+            expect(adjustedClickCount.toString()).to.equal('1');
         });
         it('#trackAction view', async () => {
            const participant = await createParticipant(runningApp);
@@ -98,12 +98,12 @@ describe('Participant Integration Test', () => {
             expect(response.id).to.equal(participant.id);
             const participantResult = await Participant.findOneOrFail({where: {id: participant.id}});
             const campaignResult = await Campaign.findOneOrFail(participant.campaign.id);
-            const adjustedTotalParticipationScore = Number(campaignResult.totalParticipationScore) - Number(participant.campaign.totalParticipationScore);
-            const adjustedViewCount = Number(participantResult.viewCount) - Number(participant.viewCount);
-            const adjustedParticipationScore = Number(participantResult.participationScore) - Number(participant.participationScore);
-            expect(adjustedParticipationScore).to.equal(campaignResult.algorithm.pointValues.view);
-            expect(adjustedTotalParticipationScore).to.equal(Number(campaignResult.algorithm.pointValues.view));
-            expect(adjustedViewCount).to.equal(1);
+            const adjustedTotalParticipationScore = campaignResult.totalParticipationScore.minus(participant.campaign.totalParticipationScore);
+            const adjustedViewCount = participantResult.viewCount.minus(participant.viewCount);
+            const adjustedParticipationScore = participantResult.participationScore.minus(participant.participationScore);
+            expect(adjustedParticipationScore.toString()).to.equal(campaignResult.algorithm.pointValues.view.toString());
+            expect(adjustedTotalParticipationScore.toString()).to.equal(campaignResult.algorithm.pointValues.view.toString());
+            expect(adjustedViewCount.toString()).to.equal('1');
         });
         it('#trackAction submission', async () => {
            const participant = await createParticipant(runningApp);
@@ -123,12 +123,12 @@ describe('Participant Integration Test', () => {
             expect(response.id).to.equal(participant.id);
             const participantResult = await Participant.findOneOrFail({where: {id: participant.id}});
             const campaignResult = await Campaign.findOneOrFail(participant.campaign.id);
-            const adjustedTotalParticipationScore = Number(campaignResult.totalParticipationScore) - Number(participant.campaign.totalParticipationScore);
-            const adjustedsubmissionCount = Number(participantResult.submissionCount) - Number(participant.submissionCount);
-            const adjustedParticipationScore = Number(participantResult.participationScore) - Number(participant.participationScore);
-            expect(adjustedParticipationScore).to.equal(campaignResult.algorithm.pointValues.submission);
-            expect(adjustedTotalParticipationScore).to.equal(Number(campaignResult.algorithm.pointValues.submission));
-            expect(adjustedsubmissionCount).to.equal(1);
+            const adjustedTotalParticipationScore = campaignResult.totalParticipationScore.minus(participant.campaign.totalParticipationScore);
+            const adjustedsubmissionCount = participantResult.submissionCount.minus(participant.submissionCount);
+            const adjustedParticipationScore = participantResult.participationScore.minus(participant.participationScore);
+            expect(adjustedParticipationScore.toString()).to.equal(campaignResult.algorithm.pointValues.submission.toString());
+            expect(adjustedTotalParticipationScore.toString()).to.equal(campaignResult.algorithm.pointValues.submission.toString());
+            expect(adjustedsubmissionCount.toString()).to.equal('1');
         });
         it('#trackAction throws invalid metric', async () => {
            const participant = await createParticipant(runningApp);

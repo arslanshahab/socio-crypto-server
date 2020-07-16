@@ -5,7 +5,9 @@ import {AlgorithmSpecs} from '../types';
 import { Validator } from '../schemas';
 import {SocialPost} from "./SocialPost";
 import {Transfer} from './Transfer';
-import { StringifiedArrayTransformer } from '../util/transformers';
+import {StringifiedArrayTransformer, BigNumberEntityTransformer, AlgorithmTransformer} from '../util/transformers';
+import { BigNumber } from 'bignumber.js';
+import { BN } from '../util/helpers';
 
 @Entity()
 export class Campaign extends BaseEntity {
@@ -22,11 +24,11 @@ export class Campaign extends BaseEntity {
   @Column({ type: 'timestamptz', nullable: false })
   public endDate: Date;
 
-  @Column({ type: 'numeric' })
-  public coiinTotal: number;
+  @Column({ type: 'varchar', transformer: BigNumberEntityTransformer })
+  public coiinTotal: BigNumber;
 
-  @Column({ type: 'bigint', nullable: false, default: 0 })
-  public totalParticipationScore: bigint;
+  @Column({ type: 'varchar', nullable: false, default: 0, transformer: BigNumberEntityTransformer })
+  public totalParticipationScore: BigNumber;
 
   @Column()
   public target: string;
@@ -40,7 +42,7 @@ export class Campaign extends BaseEntity {
   @Column({ nullable: true })
   public tagline: string;
 
-  @Column({type: "jsonb", nullable: false })
+  @Column({type: "jsonb", nullable: false, transformer: AlgorithmTransformer })
   public algorithm: AlgorithmSpecs;
 
   @Column({ nullable: false, default: false })
@@ -88,6 +90,35 @@ export class Campaign extends BaseEntity {
     if (new Date(this.beginDate).getTime() <= now.getTime() && new Date(this.endDate).getTime() >= now.getTime()) return true;
     return false;
   }
+  public static parseAlgorithm (algorithmEntity: AlgorithmSpecs) {
+    const algorithm: {[key: string]: any} = algorithmEntity;
+    algorithm['initialTotal'] = algorithm['initialTotal'].toString();
+    for(const key in algorithm['pointValues']) {
+      algorithm['pointValues'][key] = algorithm['pointValues'][key].toString();
+    }
+    for(const tier in algorithm['tiers']) {
+      const threshold = algorithm['tiers'][tier]['threshold'];
+      const totalCoiins = algorithm['tiers'][tier]['totalCoiins'];
+      if (threshold !== '' && totalCoiins !== '') {
+        algorithm['tiers'][tier]['threshold'] = algorithm['tiers'][tier]['threshold'].toString();
+        algorithm['tiers'][tier]['totalCoiins'] = algorithm['tiers'][tier]['totalCoiins'].toString();
+      }
+    }
+    return algorithm;
+  }
+
+  public asV1() {
+    const returnedCampaign: Campaign = {
+      ...this,
+      totalParticipationScore: parseFloat(this.totalParticipationScore.toString()),
+      coiinTotal: parseFloat(this.coiinTotal.toString()),
+      algorithm: Campaign.parseAlgorithm(this.algorithm)
+    };
+    if (this.participants && this.participants.length > 0) returnedCampaign.participants = this.participants.map((participant) => participant.asV1());
+    if (this.payouts && this.payouts.length > 0) returnedCampaign.payouts = this.payouts.map((payout) => payout.asV1());
+    if (this.posts && this.posts.length > 0) returnedCampaign.posts = this.posts.map((post) => post.asV1());
+    return returnedCampaign;
+  }
 
   public static async findCampaignsByStatus(open: boolean, skip: number, take: number, company: string) {
     let where = '';
@@ -121,12 +152,13 @@ export class Campaign extends BaseEntity {
   public static newCampaign(name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, tagline: string, suggestedPosts: string[], suggestedTags: string[]): Campaign {
     const campaign = new Campaign();
     campaign.name = name;
-    campaign.coiinTotal = coiinTotal;
+    campaign.coiinTotal = new BN(coiinTotal);
     campaign.target = target;
     campaign.company = company;
     campaign.beginDate = new Date(beginDate);
     campaign.endDate = new Date(endDate);
     campaign.algorithm = JSON.parse(algorithm);
+    campaign.totalParticipationScore = new BN(0);
     campaign.targetVideo = targetVideo;
     if (description) campaign.description = description;
     if (tagline) campaign.tagline = tagline;
@@ -134,4 +166,5 @@ export class Campaign extends BaseEntity {
     if (suggestedTags) campaign.suggestedTags = suggestedTags;
     return campaign;
   }
+
 }

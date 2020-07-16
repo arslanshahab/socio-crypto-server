@@ -6,6 +6,7 @@ import {Participant} from "../models/Participant";
 import {SocialPost} from "../models/SocialPost";
 import {getTweetById} from '../controllers/social';
 import { getRedis } from '../clients/redis';
+import { BN } from '../util/helpers';
 
 const { RATE_LIMIT_MAX = '3', RATE_LIMIT_WINDOW = '1m' } = process.env;
 
@@ -22,7 +23,7 @@ export const getParticipantByCampaignId = async (args: { campaignId: string }, c
   const user = await User.findOneOrFail({ where: { identityId: id } });
   const campaign = await Campaign.findOneOrFail({ where: { id: args.campaignId } });
   const particpant = await Participant.findOneOrFail({ where: { user, campaign }, relations: ['user', 'campaign'] });
-  return particpant;
+  return particpant.asV1();
 };
 
 export const trackAction = async (args: { participantId: string, action: 'click' | 'view' | 'submission' }, context: any, info: any) => {
@@ -36,24 +37,24 @@ export const trackAction = async (args: { participantId: string, action: 'click'
     if (!campaign) throw new Error('campaign not found');
     switch (args.action) {
         case 'click':
-            participant.clickCount++;
+            participant.clickCount = participant.clickCount.plus(new BN(1));
             break;
         case 'view':
-            participant.viewCount++;
+            participant.viewCount = participant.viewCount.plus(new BN(1));
             break;
         case 'submission':
-            participant.submissionCount++;
+            participant.submissionCount = participant.submissionCount.plus(new BN(1));
             break;
         default:
-            break;
+            throw new Error("Action not supported");
     }
     const pointValue = campaign.algorithm.pointValues[args.action];
-    campaign.totalParticipationScore = BigInt(campaign.totalParticipationScore) + BigInt(pointValue);
-    participant.participationScore = BigInt(participant.participationScore) + BigInt(pointValue);
+    campaign.totalParticipationScore = campaign.totalParticipationScore.plus(pointValue);
+    participant.participationScore = participant.participationScore.plus(pointValue);
     await campaign.save();
     await participant.save();
     await Dragonchain.ledgerCampaignAction(args.action, participant.id, participant.campaign.id);
-    return participant;
+    return participant.asV1();
 };
 
 export const getParticipant = async (args: { id: string }) => {
@@ -61,7 +62,7 @@ export const getParticipant = async (args: { id: string }) => {
     const where: { [key: string]: string } = { id };
     const participant = await Participant.findOne({ where, relations: ['user'] });
     if (!participant) throw new Error('participant not found');
-    return participant;
+    return participant.asV1();
 };
 
 export const getPosts = async (args: { id: string }, context: any) => {

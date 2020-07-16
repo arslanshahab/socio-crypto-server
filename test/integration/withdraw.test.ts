@@ -127,7 +127,7 @@ describe('Withdraw Integration Test', function () {
            const response = res.body.data.updateWithdrawStatus;
            expect(response.length).to.equal(2);
            const walletResult = await Wallet.findOneOrFail(wallet.id);
-           expect(walletResult.balance).to.equal(100);
+           expect(walletResult.asV1().balance).to.equal(100);
        });
     });
     describe('Queries', () => {

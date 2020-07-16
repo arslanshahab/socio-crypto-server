@@ -1,6 +1,6 @@
 {
   "name": "raiinmaker-server",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "main": "index.js",
   "repository": "git@github.com:dragonchain-inc/raiinmaker-server.git",
   "author": "Alex Benedetto <alex061994@gmail.com>",
@@ -27,6 +27,7 @@
     "@dragonchain-dev/dragonfactor-auth": "^0.0.10",
     "ajv": "^6.12.2",
     "aws-sdk": "^2.632.0",
+    "bignumber.js": "^9.0.0",
     "body-parser": "^1.19.0",
     "cls-hooked": "^4.2.2",
     "cls-rtracer": "^1.4.0",
@@ -50,6 +51,7 @@
   "devDependencies": {
     "@types/ajv": "^1.0.0",
     "@types/aws-sdk": "^2.7.0",
+    "@types/bignumber.js": "^5.0.0",
     "@types/body-parser": "^1.19.0",
     "@types/chai": "^4.2.11",
     "@types/cls-hooked": "^4.3.0",

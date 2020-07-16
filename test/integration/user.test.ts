@@ -240,7 +240,6 @@ describe('User Integration Test', () => {
           .send(mutation)
           .set('Accepts', 'application/json')
           .set('authorization', 'Bearer raiinmaker');
-
         const response = res.body.data.participate;
         expect(response.user.id).to.equal(user.id);
         expect(response.campaign.id).to.equal(campaign.id);

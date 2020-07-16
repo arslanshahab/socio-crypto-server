@@ -5,6 +5,9 @@ import { SocialLink } from './SocialLink';
 import {SocialPost} from "./SocialPost";
 import { FactorLink } from './FactorLink';
 import { TwentyFourHourMetric } from './TwentyFourHourMetric';
+import BigNumber from 'bignumber.js';
+import { BN } from '../util/helpers';
+import { FieldNode } from 'graphql';
 
 @Entity()
 export class User extends BaseEntity {
@@ -80,36 +83,82 @@ export class User extends BaseEntity {
   public twentyFourHourMetrics: TwentyFourHourMetric[];
 
   public asV1() {
-    return {
-      ...this,
-      hasRecoveryCodeSet: this.recoveryCode !== null && this.recoveryCode !== ""
-    };
+    const returnedUser: User = {...this, hasRecoveryCodeSet: this.recoveryCode !== null && this.recoveryCode !== ""};
+    if (this.posts && this.posts.length > 0) {
+      returnedUser.posts = this.posts.map(post => post.asV1());
+    }
+    if (this.twentyFourHourMetrics && this.twentyFourHourMetrics.length > 0) {
+      returnedUser.twentyFourHourMetrics = this.twentyFourHourMetrics.map(metric => metric.asV1());
+    }
+    if (this.wallet) {
+      returnedUser.wallet = this.wallet.asV1();
+      if (this.wallet.transfers && this.wallet.transfers.length > 0) {
+        returnedUser.wallet.transfers = returnedUser.wallet.transfers.map((transfer) => transfer.asV1());
+      }
+    }
+    if (this.campaigns && this.campaigns.length > 0) {
+      returnedUser.campaigns = this.campaigns.map(participant => participant.asV1());
+    }
+    return returnedUser;
   }
 
-  public static async getUserTotalParticipationScore(userId: String): Promise<BigInt> {
+  public static async getUserTotalParticipationScore(userId: String): Promise<BigNumber> {
     const { sum } = await this.createQueryBuilder('user')
       .leftJoin('user.campaigns', 'campaign')
       .where('user.id = :userId AND campaign."userId" = user.id', { userId })
       .select('SUM(CAST(campaign."participationScore" as double precision))')
       .getRawOne();
-    return (sum && BigInt(sum)) || BigInt(0);
+    return new BN(sum || 0);
   }
 
-  public static async getUser(id: string): Promise<User|undefined> {
-    return this.createQueryBuilder('user')
-      .leftJoinAndSelect('user.campaigns', 'participant', 'participant."userId" = user.id')
-      .leftJoinAndSelect('participant.campaign', 'campaign', 'participant."campaignId" = campaign.id')
-      .leftJoinAndSelect('campaign.participants', 'part', 'part."campaignId" = campaign.id')
-      .leftJoinAndSelect('part.user', 'u')
-      .leftJoinAndSelect('user.wallet', 'wallet', 'wallet."userId" = user.id')
-      .leftJoinAndSelect('wallet.transfers', 'transfer', 'transfer."walletId" = wallet.id')
-      .leftJoinAndSelect('transfer.campaign', 'c', 'c.id = transfer."campaignId"')
-      .leftJoinAndSelect('user.socialLinks', 'social', 'social."userId" = user.id')
-      .leftJoinAndSelect('user.factorLinks', 'factor', 'factor."userId" = user.id')
-      .leftJoinAndSelect('user.posts', 'post', 'post."userId" = user.id')
-      .leftJoinAndSelect('user.twentyFourHourMetrics', 'metric', 'metric."userId" = user.id')
-      .where('user.identityId = :id', { id })
-      .getOne();
+  public static async getUser(id: string, graphqlQuery: FieldNode|undefined): Promise<User|undefined> {
+    let query = this.createQueryBuilder('user');
+    if (graphqlQuery) {
+      const fieldNodes = graphqlQuery.selectionSet?.selections.filter(node => node.kind === 'Field') || [];
+      const loadParticipants = fieldNodes.find((node: FieldNode) => node.name.value === 'campaigns') as FieldNode;
+      const loadSocialLinks = fieldNodes.find((node: FieldNode) => node.name.value === 'socialLinks') as FieldNode;
+      const loadPosts = fieldNodes.find((node: FieldNode) => node.name.value === 'posts') as FieldNode;
+      const loadTwentyFourHourMetrics = fieldNodes.find((node: FieldNode) => node.name.value === 'twentyFourHourMetrics') as FieldNode;
+      const loadWallet = fieldNodes.find((node: FieldNode) => node.name.value === 'wallet') as FieldNode;
+      const loadFactorLinks = fieldNodes.find((node: FieldNode) => node.name.value === 'factorLinks') as FieldNode;
+      if (loadParticipants) {
+        query = query.leftJoinAndSelect('user.campaigns', 'participant', 'participant."userId" = user.id');
+        const subFields = loadParticipants.selectionSet?.selections.filter(node => node.kind === 'Field') || [];
+        const loadParticipantCampaign = subFields.find((node: FieldNode) => node.name.value === 'campaign') as FieldNode;
+        if (loadParticipantCampaign) {
+          query = query.leftJoinAndSelect('participant.campaign', 'campaign', 'participant."campaignId" = campaign.id');
+          const subFields = loadParticipantCampaign.selectionSet?.selections.filter(node => node.kind === 'Field') || [];
+          const loadParticipantsOfCampaign = subFields.find((node: FieldNode) => node.name.value === 'participants') as FieldNode;
+          if (loadParticipantsOfCampaign) {
+            query = query.leftJoinAndSelect('campaign.participants', 'part', 'part."campaignId" = campaign.id');
+            const subFields = loadParticipantsOfCampaign.selectionSet?.selections.filter(node => node.kind === 'Field') || [];
+            const loadUserOfParticipant = subFields.find((node: FieldNode) => node.name.value === 'user');
+            if (loadUserOfParticipant) {
+              query = query.leftJoinAndSelect('part.user', 'u');
+            }
+          }
+        }
+      }
+      if (loadWallet) {
+        query = query.leftJoinAndSelect('user.wallet', 'wallet', 'wallet."userId" = user.id');
+        const subFields = loadWallet.selectionSet?.selections.filter(node => node.kind === 'Field') || [];
+        const loadTransfers = subFields.find((node: FieldNode) => node.name.value === 'transfers') as FieldNode;
+        if (loadTransfers) {
+          query = query.leftJoinAndSelect('wallet.transfers', 'transfer', 'transfer."walletId" = wallet.id');
+          const transferFields = loadTransfers.selectionSet?.selections.filter(node => node.kind === 'Field') || [];
+          const loadCampaign = transferFields.find((node: FieldNode) => node.name.value === 'campaign') as FieldNode;
+          if (loadCampaign) {
+            query = query.leftJoinAndSelect('transfer.campaign', 'c', 'c.id = transfer."campaignId"');
+          } 
+        }
+      }
+      if (loadSocialLinks) query = query.leftJoinAndSelect('user.socialLinks', 'social', 'social."userId" = user.id')
+      if (loadPosts) query = query.leftJoinAndSelect('user.posts', 'post', 'post."userId" = user.id');
+      if (loadTwentyFourHourMetrics) query = query.leftJoinAndSelect('user.twentyFourHourMetrics', 'metric', 'metric."userId" = user.id')
+      if (loadFactorLinks) query = query.leftJoinAndSelect('user.factorLinks', 'factor', 'factor."userId" = user.id');
+    }
+    query = query.where('user.identityId = :id', { id });
+    return query.getOne();
   }
 }
 
