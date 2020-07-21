@@ -92,7 +92,6 @@ export class Campaign extends BaseEntity {
   }
   public static parseAlgorithm (algorithmEntity: AlgorithmSpecs) {
     const algorithm: {[key: string]: any} = algorithmEntity;
-    algorithm['initialTotal'] = algorithm['initialTotal'].toString();
     for(const key in algorithm['pointValues']) {
       algorithm['pointValues'][key] = algorithm['pointValues'][key].toString();
     }
