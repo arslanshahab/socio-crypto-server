@@ -148,6 +148,24 @@ export class Campaign extends BaseEntity {
         .getOne()
   }
 
+  public static async getCampaignMetrics(id: string) {
+    const query = await this.createQueryBuilder('campaign')
+      .leftJoinAndSelect('campaign.participants', 'participant', 'participant."campaignId" = campaign.id')
+      .leftJoinAndSelect('campaign.posts', 'post', 'post."campaignId" = campaign.id')
+      .where('campaign.id = :id', { id })
+      .select('SUM(CAST(participant."clickCount" AS int)) as "clickCount", SUM(CAST(participant."submissionCount" AS int)) as "submissionCount",SUM(CAST(participant."viewCount" AS int)) as "viewCount", SUM(CAST(post.likes AS int)) as "likes", SUM(CAST(post.shares AS int)) as "shares", SUM(CAST(post.comments AS int)) as "comments", COUNT(post.id) as posts')
+      .getRawOne();
+    return {
+      clickCount: query.clickCount || 0,
+      viewCount: query.viewCount || 0,
+      submissionCount: query.submissionCount || 0,
+      likeCount: query.likes || 0,
+      commentCount: query.comments || 0,
+      shareCount: query.shares || 0,
+      postCount: query.posts || 0
+    };
+  }
+
   public static newCampaign(name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, tagline: string, suggestedPosts: string[], suggestedTags: string[]): Campaign {
     const campaign = new Campaign();
     campaign.name = name;

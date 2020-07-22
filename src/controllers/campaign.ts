@@ -106,6 +106,14 @@ export const publicGet = async (args: { campaignId: string }) => {
     return campaign.asV1();
 }
 
+export const adminGetCampaignMetrics = async (args: { campaignId: string }, context: { user: any }) => {
+  checkPermissions({ hasRole: ['admin'] }, context);
+  const { campaignId } = args;
+  const campaign = await Campaign.findOne({ where: { id: campaignId } });
+  if (!campaign) throw new Error('campaign not found');
+  return await Campaign.getCampaignMetrics(campaignId);
+}
+
 export const generateCampaignAuditReport = async (args: { campaignId: string }, context: { user: any }) => {
     const {company} = checkPermissions({hasRole: ['admin', 'manager']}, context);
     const {campaignId} = args;

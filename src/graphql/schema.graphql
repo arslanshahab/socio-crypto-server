@@ -67,6 +67,17 @@ type Query {
   getKyc: KycUser
   getWithdrawals(status:String): [AdminWithdrawal]
   accountExists(id:String!): UserExistence
+  getCampaignMetrics(campaignId:String!): AdminCampaignMetrics
+}
+
+type AdminCampaignMetrics {
+  clickCount: Int
+  viewCount: Int
+  submissionCount: Int
+  postCount: Int
+  likeCount: Int
+  commentCount: Int
+  shareCount: Int
 }
 
 type AdminWithdrawal {
