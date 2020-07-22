@@ -13,6 +13,8 @@ import { sha256Hash } from '../util/crypto';
 import { limit } from '../util/rateLimiter';
 import { S3Client } from '../clients/s3';
 
+const { NODE_ENV } = process.env;
+
 export const registerFactorLink = async (args: { factor: Dragonfactor.FactorLoginRequest }, context: { user: any }) => {
   const { identityId, factors } = await Dragonfactor.validateFactor({ factorRequest: args.factor, acceptedFactors: ['email'], service: 'raiinmaker' });
   const { id } = context.user;
@@ -99,7 +101,7 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
     }
   }
   const jwtPayload: {[key: string]: string} = { id: identityId };
-  if (emailAddress! && ['raiinmaker.com', 'dragonchain.com'].includes(emailAddress!)) {
+  if (emailAddress! && ['raiinmaker.com', 'dragonchain.com'].includes(emailAddress!) || NODE_ENV === 'development') {
     jwtPayload.role = 'admin';
     jwtPayload.company = 'raiinmaker';
   }

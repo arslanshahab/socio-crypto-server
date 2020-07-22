@@ -44,6 +44,7 @@ export const root = {
   getWithdrawals: withdrawController.getWithdrawals,
   setRecoveryCode: userController.setRecoveryCode,
   updateKycStatus: kycController.updateKycStatus,
+  getCampaignMetrics: campaignController.adminGetCampaignMetrics,
 };
 
 export const publicRoot = {
