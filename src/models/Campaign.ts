@@ -149,20 +149,26 @@ export class Campaign extends BaseEntity {
   }
 
   public static async getCampaignMetrics(id: string) {
-    const query = await this.createQueryBuilder('campaign')
+    const { clickCount, submissionCount, viewCount, participants } = await this.createQueryBuilder('campaign')
       .leftJoinAndSelect('campaign.participants', 'participant', 'participant."campaignId" = campaign.id')
+      .where('campaign.id = :id', { id })
+      .select('SUM(CAST(participant."clickCount" AS int)) as "clickCount", SUM(CAST(participant."submissionCount" AS int)) as "submissionCount", SUM(CAST(participant."viewCount" AS int)) as "viewCount", COUNT(participant.id) as participants')
+      .getRawOne();
+    const { likes, shares, comments, posts } = await this.createQueryBuilder('campaign')
       .leftJoinAndSelect('campaign.posts', 'post', 'post."campaignId" = campaign.id')
       .where('campaign.id = :id', { id })
-      .select('SUM(CAST(participant."clickCount" AS int)) as "clickCount", SUM(CAST(participant."submissionCount" AS int)) as "submissionCount",SUM(CAST(participant."viewCount" AS int)) as "viewCount", SUM(CAST(post.likes AS int)) as "likes", SUM(CAST(post.shares AS int)) as "shares", SUM(CAST(post.comments AS int)) as "comments", COUNT(post.id) as posts')
+      .select('SUM(CAST(post.likes AS int)) as "likes", SUM(CAST(post.shares AS int)) as "shares", SUM(CAST(post.comments AS int)) as "comments", COUNT(post.id) as posts')
       .getRawOne();
+
     return {
-      clickCount: query.clickCount || 0,
-      viewCount: query.viewCount || 0,
-      submissionCount: query.submissionCount || 0,
-      likeCount: query.likes || 0,
-      commentCount: query.comments || 0,
-      shareCount: query.shares || 0,
-      postCount: query.posts || 0
+      clickCount: clickCount || 0,
+      viewCount: viewCount || 0,
+      submissionCount: submissionCount || 0,
+      participantCount: participants || 0,
+      likeCount: likes || 0,
+      commentCount: comments || 0,
+      shareCount: shares || 0,
+      postCount: posts || 0
     };
   }
 
