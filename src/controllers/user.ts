@@ -7,7 +7,6 @@ import { TinyUrl } from '../clients/tinyUrl';
 import {sha256Hash} from '../util/crypto';
 import { GraphQLResolveInfo } from 'graphql';
 import { Profile } from '../models/Profile';
-import { Wallet } from '../models/Wallet';
 
 export const participate = async (args: { campaignId: string }, context: { user: any }) => {
     const { id } = context.user;
