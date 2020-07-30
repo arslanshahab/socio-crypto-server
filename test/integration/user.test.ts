@@ -12,6 +12,7 @@ import * as admin from 'firebase-admin';
 import { v4 as uuidv4 } from 'uuid';
 import {createCampaign, createParticipant, createUser, createWallet} from './specHelpers';
 import * as gql from 'gql-query-builder';
+import { Profile } from '../../src/models/Profile';
 
 describe('User Integration Test', () => {
   let runningApp: Application;
@@ -67,7 +68,7 @@ describe('User Integration Test', () => {
 
       beforeEach(async () => {
         const wallet = await createWallet(runningApp);
-        await createUser(runningApp, {wallet, username: 'coolestBanana'});
+        await createUser(runningApp, {wallet, profileOptions: {username: 'coolestBanana'}});
       });
 
       it('should return true if the username exists', async () => {
@@ -107,19 +108,6 @@ describe('User Integration Test', () => {
   });
 
   describe('Private User Queries', () => {
-    describe('Signup User', () => {
-      const testbed = createSandbox();
-
-      beforeEach(async () => {
-        const wallet = await createWallet(runningApp);
-        await createUser(runningApp, {wallet, username: 'coolestBanana', email: 'b'});
-      });
-
-      afterEach(() => {
-        testbed.restore();
-      });
-    });
-
     describe('Get me', () => {
       const testbed = createSandbox();
       let user: User;
@@ -135,6 +123,7 @@ describe('User Integration Test', () => {
       });
 
       it('should return my user', async () => {
+        console.log(user);
         const query = gql.query({
           operation: 'me',
           fields: ['id', 'username', 'email']
@@ -146,8 +135,8 @@ describe('User Integration Test', () => {
           .set('Accepts', 'application/json');
         const response = res.body.data.me;
         expect(response.id).to.equal(user.id);
-        expect(response.username).to.equal(user.username);
-        expect(response.email).to.equal(user.email);
+        expect(response.username).to.equal(user.profile.username);
+        expect(response.email).to.equal(user.profile.email);
       });
 
       it('should return user not found when user is not found', async () => {
@@ -164,6 +153,182 @@ describe('User Integration Test', () => {
 
           expect(res.body.errors.length).to.equal(1);
           expect(res.body.errors[0].message).to.equal('user not found');
+      });
+    });
+
+    describe('UPDATE Profile', () => {
+      const testbed = createSandbox();
+      let wallet: Wallet;
+      let user: User;
+
+      beforeEach(async () => {
+        wallet = await createWallet(runningApp);
+        user = await createUser(runningApp, {wallet});
+      });
+
+      afterEach(() => {
+        testbed.restore();
+      });
+
+      it('should update profile interest', async () => {
+        const mutation = gql.mutation({
+          operation: 'updateProfileInterests',
+          variables: {
+            interests: {value: ['bitcoin'], list: true, required: false},
+          },
+          fields: ['id']
+        });
+        const res = await request(runningApp.app)
+          .post('/v1/graphql')
+          .send(mutation)
+          .set('Accepts', 'application/json')
+          .set('authorization', 'Bearer raiinmaker');
+        const response = res.body.data.updateProfileInterests;
+        expect(response.id).to.equal(user.id);
+        const profile = await Profile.findOneOrFail({ where: {user} });
+        expect(profile.interests[0]).to.equal('bitcoin');
+      });
+      it('should update profile platforms', async () => {
+        const mutation = gql.mutation({
+          operation: 'updateProfileInterests',
+          variables: {
+            platforms: {value: ['twitter'], list: true, required: false},
+          },
+          fields: ['id']
+        });
+        const res = await request(runningApp.app)
+          .post('/v1/graphql')
+          .send(mutation)
+          .set('Accepts', 'application/json')
+          .set('authorization', 'Bearer raiinmaker');
+        const response = res.body.data.updateProfileInterests;
+        expect(response.id).to.equal(user.id);
+        const profile = await Profile.findOneOrFail({ where: {user} });
+        expect(profile.platforms[0]).to.equal('twitter');
+      });
+      it('should update profile follower interests', async () => {
+        const mutation = gql.mutation({
+          operation: 'updateProfileInterests',
+          variables: {
+            followerInterests: {value: ['bitcoin'], list: true, required: false},
+          },
+          fields: ['id']
+        });
+        const res = await request(runningApp.app)
+          .post('/v1/graphql')
+          .send(mutation)
+          .set('Accepts', 'application/json')
+          .set('authorization', 'Bearer raiinmaker');
+        const response = res.body.data.updateProfileInterests;
+        expect(response.id).to.equal(user.id);
+        const profile = await Profile.findOneOrFail({ where: {user} });
+        expect(profile.followerInterests[0]).to.equal('bitcoin');
+      });
+      it('should update profile follower age ranges', async () => {
+        const mutation = gql.mutation({
+          operation: 'updateProfileInterests',
+          variables: {
+            followerAgeRanges: {value: ['13-99'], list: true, required: false},
+          },
+          fields: ['id']
+        });
+        const res = await request(runningApp.app)
+          .post('/v1/graphql')
+          .send(mutation)
+          .set('Accepts', 'application/json')
+          .set('authorization', 'Bearer raiinmaker');
+        const response = res.body.data.updateProfileInterests;
+        expect(response.id).to.equal(user.id);
+        const profile = await Profile.findOneOrFail({ where: {user} });
+        expect(profile.followerAgeRanges[0]).to.equal('13-99');
+      });
+    });
+
+    describe('REMOVE Profile interests', () => {
+      const testbed = createSandbox();
+      let wallet: Wallet;
+      let user: User;
+
+      beforeEach(async () => {
+        wallet = await createWallet(runningApp);
+        user = await createUser(runningApp, {wallet, profileOptions: {platforms: ['twitter'], interests: ['bitcoin'], followerInterests: ['banana'], followerAgeRanges: ['13-99']}});
+      });
+
+      afterEach(() => {
+        testbed.restore();
+      });
+
+      it('should remove profile interest', async () => {
+        const mutation = gql.mutation({
+          operation: 'removeProfileInterests',
+          variables: {
+            interest: {value: 'bitcoin', required: false},
+          },
+          fields: ['id']
+        });
+        const res = await request(runningApp.app)
+          .post('/v1/graphql')
+          .send(mutation)
+          .set('Accepts', 'application/json')
+          .set('authorization', 'Bearer raiinmaker');
+        const response = res.body.data.removeProfileInterests;
+        expect(response.id).to.equal(user.id);
+        const profile = await Profile.findOneOrFail({ where: {user} });
+        expect(profile.interests[0]).to.be.undefined;
+      });
+      it('should remove profile platforms', async () => {
+        const mutation = gql.mutation({
+          operation: 'removeProfileInterests',
+          variables: {
+            platform: {value: 'twitter', required: false},
+          },
+          fields: ['id']
+        });
+        const res = await request(runningApp.app)
+          .post('/v1/graphql')
+          .send(mutation)
+          .set('Accepts', 'application/json')
+          .set('authorization', 'Bearer raiinmaker');
+        const response = res.body.data.removeProfileInterests;
+        expect(response.id).to.equal(user.id);
+        const profile = await Profile.findOneOrFail({ where: {user} });
+        expect(profile.platforms[0]).to.be.undefined;
+      });
+      it('should remove profile follower interests', async () => {
+        const mutation = gql.mutation({
+          operation: 'removeProfileInterests',
+          variables: {
+            followerInterest: {value: 'banana', required: false},
+          },
+          fields: ['id']
+        });
+        const res = await request(runningApp.app)
+          .post('/v1/graphql')
+          .send(mutation)
+          .set('Accepts', 'application/json')
+          .set('authorization', 'Bearer raiinmaker');
+        const response = res.body.data.removeProfileInterests;
+        expect(response.id).to.equal(user.id);
+        const profile = await Profile.findOneOrFail({ where: {user} });
+        expect(profile.followerInterests[0]).to.be.undefined;
+      });
+      it('should remove profile follower age ranges', async () => {
+        const mutation = gql.mutation({
+          operation: 'removeProfileInterests',
+          variables: {
+            followerAgeRange: {value: '13-99', required: false},
+          },
+          fields: ['id']
+        });
+        const res = await request(runningApp.app)
+          .post('/v1/graphql')
+          .send(mutation)
+          .set('Accepts', 'application/json')
+          .set('authorization', 'Bearer raiinmaker');
+        const response = res.body.data.removeProfileInterests;
+        expect(response.id).to.equal(user.id);
+        const profile = await Profile.findOneOrFail({ where: {user} });
+        expect(profile.followerAgeRanges[0]).to.be.undefined;
       });
     });
 

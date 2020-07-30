@@ -8,6 +8,8 @@ import { TwentyFourHourMetric } from './TwentyFourHourMetric';
 import BigNumber from 'bignumber.js';
 import { BN } from '../util/helpers';
 import { FieldNode } from 'graphql';
+import { Profile } from './Profile';
+import { Transfer } from './Transfer';
 
 @Entity()
 export class User extends BaseEntity {
@@ -16,18 +18,6 @@ export class User extends BaseEntity {
 
   @Column({ nullable: false })
   public identityId: string;
-
-  @Column({ nullable: true })
-  public email: string;
-
-  @Column({ nullable: false, unique: true })
-  public username: string;
-
-  @Column({ nullable: true })
-  public deviceToken: string;
-
-  @Column({ nullable: true })
-  public recoveryCode: string;
 
   @Column({default: true})
   public active: boolean;
@@ -82,8 +72,20 @@ export class User extends BaseEntity {
   )
   public twentyFourHourMetrics: TwentyFourHourMetric[];
 
+  @OneToOne(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _type => Profile,
+    profile => profile.user,
+    { eager: true }
+  )
+  public profile: Profile;
+
   public asV1() {
-    const returnedUser: User = {...this, hasRecoveryCodeSet: this.recoveryCode !== null && this.recoveryCode !== ""};
+    let returnedUser: any = {...this};
+    if (this.profile) {
+      delete this.profile.id;
+      returnedUser = {...returnedUser, ...this.profile, hasRecoveryCodeSet: this.profile.recoveryCode !== null && this.profile.recoveryCode !== ""};
+    }
     if (this.posts && this.posts.length > 0) {
       returnedUser.posts = this.posts.map(post => post.asV1());
     }
@@ -93,7 +95,7 @@ export class User extends BaseEntity {
     if (this.wallet) {
       returnedUser.wallet = this.wallet.asV1();
       if (this.wallet.transfers && this.wallet.transfers.length > 0) {
-        returnedUser.wallet.transfers = returnedUser.wallet.transfers.map((transfer) => transfer.asV1());
+        returnedUser.wallet.transfers = returnedUser.wallet.transfers.map((transfer: Transfer) => transfer.asV1());
       }
     }
     if (this.campaigns && this.campaigns.length > 0) {
@@ -157,6 +159,7 @@ export class User extends BaseEntity {
       if (loadTwentyFourHourMetrics) query = query.leftJoinAndSelect('user.twentyFourHourMetrics', 'metric', 'metric."userId" = user.id')
       if (loadFactorLinks) query = query.leftJoinAndSelect('user.factorLinks', 'factor', 'factor."userId" = user.id');
     }
+    query = query.leftJoinAndSelect('user.profile', 'profile', 'profile."userId" = user.id');
     query = query.where('user.identityId = :id', { id });
     return query.getOne();
   }

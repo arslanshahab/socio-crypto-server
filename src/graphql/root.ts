@@ -12,7 +12,6 @@ export const root = {
   helloWorld: () => 'Hello world!',
   participate: userController.participate,
   removeParticipation: userController.removeParticipation,
-  newUser: userController.signUp,
   newCampaign: campaignController.createNewCampaign,
   listCampaigns: campaignController.listCampaigns,
   getCampaign: campaignController.get,
@@ -45,6 +44,8 @@ export const root = {
   setRecoveryCode: userController.setRecoveryCode,
   updateKycStatus: kycController.updateKycStatus,
   getCampaignMetrics: campaignController.adminGetCampaignMetrics,
+  updateProfileInterests: userController.updateProfileInterests,
+  removeProfileInterests: userController.removeProfileInterests,
 };
 
 export const publicRoot = {

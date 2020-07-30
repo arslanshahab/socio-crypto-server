@@ -1,7 +1,6 @@
 scalar JSON
 
 type Mutation {
-  newUser(username:String!, deviceToken:String!): User
   newCampaign(
     name:String!,
     coiinTotal:Float!,
@@ -48,6 +47,18 @@ type Mutation {
   updateWithdrawStatus(transferIds:[String]!,status:String!): [Transfer]
   setRecoveryCode(code:Int!): User
   updateKycStatus(userId:String!,status:String!): User
+  updateProfileInterests(
+    city:String
+    state:String
+    ageRange:String
+    interests:[String]
+    values:[String]
+  ): User
+  removeProfileInterests(
+    interest:String
+    value:String
+    ageRange:String
+  ): User
 }
 
 type Query {
@@ -132,11 +143,17 @@ type User {
   socialLinks: [SocialLink]
   factorLinks: [FactorLink]
   twentyFourHourMetrics: [TwentyFourHourMetric]
+  ageRange:String
+  city:String
+  state:String
+  interests:[String]
+  values:[String]
 }
 
 type PublicUser {
   id: String
   username: String
+  ageRange:String
 }
 
 type KycUser {
