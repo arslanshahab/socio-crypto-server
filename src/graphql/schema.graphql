@@ -59,6 +59,9 @@ type Mutation {
     interest:String
     value:String
     ageRange:String
+    city:String
+    state:String
+    country:String
   ): User
 }
 
