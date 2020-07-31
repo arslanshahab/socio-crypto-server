@@ -133,6 +133,7 @@ export class Campaign extends BaseEntity {
     return await query
       .leftJoinAndSelect('campaign.participants', 'participant', 'participant."campaignId" = campaign.id')
       .leftJoinAndSelect('participant.user', 'user', 'user.id = participant."userId"')
+      .leftJoinAndSelect('user.profile', 'profile."userId" = user.id')
       .skip(skip)
       .take(take)
       .getManyAndCount();
