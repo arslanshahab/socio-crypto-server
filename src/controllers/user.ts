@@ -109,15 +109,16 @@ export const setRecoveryCode = async (args: { code: number }, context: { user: a
   return user.asV1();
 }
 
-export const updateProfileInterests = async (args: { ageRange: string, city: string, state: string, interests: string[], values: string[] }, context: { user: any }) => {
+export const updateProfileInterests = async (args: { ageRange: string, city: string, state: string, country: string, interests: string[], values: string[] }, context: { user: any }) => {
   const { id } = context.user;
-  const { ageRange, city, state, interests, values } = args;
+  const { ageRange, city, state, interests, values, country } = args;
   const user = await User.findOne({ where: { identityId: id } });
   if (!user) throw new Error('user not found');
   const profile = user.profile;
   if (ageRange) profile.ageRange = ageRange;
   if (city) profile.city = city;
   if (state) profile.state = state;
+  if (country) profile.country = country;
   if (interests) profile.interests = interests;
   if (values) profile.values = values;
   await profile.save();

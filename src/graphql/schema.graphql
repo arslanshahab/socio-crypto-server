@@ -49,6 +49,7 @@ type Mutation {
   updateKycStatus(userId:String!,status:String!): User
   updateProfileInterests(
     city:String
+    country:String
     state:String
     ageRange:String
     interests:[String]
@@ -145,6 +146,7 @@ type User {
   twentyFourHourMetrics: [TwentyFourHourMetric]
   ageRange:String
   city:String
+  country:String
   state:String
   interests:[String]
   values:[String]
