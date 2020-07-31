@@ -12,6 +12,7 @@ import { Dragonchain } from '../clients/dragonchain';
 import { sha256Hash } from '../util/crypto';
 import { limit } from '../util/rateLimiter';
 import { S3Client } from '../clients/s3';
+import { Profile } from '../models/Profile';
 
 const { NODE_ENV } = process.env;
 
@@ -58,11 +59,15 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
     const newUser = new User();
     const wallet = new Wallet();
     const factorLink = new FactorLink();
+    const profile = new Profile();
     newUser.identityId = identityId;
-    newUser.username = `raiinmaker-${generateRandomNumber()}`;
+    profile.username = `raiinmaker-${generateRandomNumber()}`;
     await newUser.save();
     wallet.user = newUser;
     await wallet.save();
+    profile.user = newUser;
+    await profile.save();
+    newUser.profile = profile;
     for (let i = 0; i < factors.length; i++) {
       const { type, id, providerId, factor } = factors[i];
       factorLink.type = type;
@@ -73,13 +78,14 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
       await factorLink.save();
       if (factor && type === 'email') {
         emailAddress = extractFactor(factor);
-        newUser.email = emailAddress;
+        profile.email = emailAddress;
         emailAddress = emailAddress.split('@')[1];
         await newUser.save();
+        await profile.save();
       }
     }
   } else {
-    if (user.email) emailAddress = user.email.split('@')[1];
+    if (user.profile.email) emailAddress = user.profile.email.split('@')[1];
     for (let i = 0; i < factors.length; i++) {
       const { type, id, providerId, factor } = factors[i];
       if (!user.factorLinks.find((link: FactorLink) => link.factorId === id)) {
@@ -94,7 +100,8 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
         await user.save();
         if (type === 'email' && factor) {
           emailAddress = extractFactor(factor).split('@')[1];
-          user.email = extractFactor(factor);
+          user.profile.email = extractFactor(factor);
+          await user.profile.save();
           await user.save();
         }
       }
@@ -115,11 +122,12 @@ export const recover = asyncHandler(async (req: AuthRequest, res: Response) => {
   if (shouldRateLimit) return res.status(429).json({ code: 'REQUEST_LIMIT', message: 'too many requests' });
   if (isNaN(Number(code))) throw new Error('recovery code must be a integer');
   if (await User.findOne({ where: { identityId } })) throw new Error('An account with that identity already exists');
-  const user = await User.findOne({ where: { username: message, recoveryCode: sha256Hash(code.toString()) } });
-  if (!user) {
+  const profile = await Profile.findOne({ where: { username: message, recoveryCode: sha256Hash(code.toString()) }});
+  if (!profile) {
     await Dragonchain.ledgerAccountRecoveryAttempt(undefined, identityId, message, code, false);
     throw new Error('requested account not found');
   }
+  const user = await User.findOneOrFail({ where: { profile } });
   await S3Client.deleteUserInfoIfExists(user.id);
   await S3Client.deleteKycImage(user.id, 'idProof');
   await S3Client.deleteKycImage(user.id, 'addressProof');

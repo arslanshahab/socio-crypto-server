@@ -92,13 +92,25 @@ export class S3Client {
   }
 
   public static async deleteUserInfoIfExists(userId: string) {
-    const params: AWS.S3.DeleteObjectRequest = { Bucket: KYC_BUCKET_NAME, Key: `kyc/${userId}` };
     try {
+      const params: AWS.S3.DeleteObjectRequest = { Bucket: KYC_BUCKET_NAME, Key: `kyc/${userId}` };
       const response = await this.client.deleteObject(params).promise();
       console.log(`Deleted KYC data for ${userId}`, response);
     } catch (e) {
       if (!e.code || e.code !== 'NotFound') throw new Error('An unexpected error occurred while attempting to delete kyc data');
       console.log(`No KYC data was found to be delete for ${userId}`);
     }
+  }
+
+  public static async uploadFactor(userId: string, factorType: string, factor: any) {
+    const params: AWS.S3.PutObjectRequest = { Bucket: KYC_BUCKET_NAME, Key: `factor/${userId}/${factorType}`, Body: JSON.stringify(factor) };
+    await this.client.putObject(params).promise();
+    return factor;
+  }
+
+  public static async downloadFactor(userId: string, factorType: string) {
+    const params: AWS.S3.GetObjectRequest = { Bucket: KYC_BUCKET_NAME, Key: `factor/${userId}/${factorType}` };
+    const factorString = (await this.client.getObject(params).promise()).Body?.toString();
+    return factorString && JSON.parse(factorString);
   }
 }

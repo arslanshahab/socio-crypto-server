@@ -6,6 +6,7 @@ import {Wallet} from "../../src/models/Wallet";
 import { v4 as uuidv4 } from 'uuid';
 import {Transfer} from "../../src/models/Transfer";
 import { BN } from '../../src/util/helpers';
+import { Profile } from '../../src/models/Profile';
 
 export const createCampaign = async (runningApp: Application, options?: { [key: string]: any } | any, ) => {
   const campaign = new Campaign();
@@ -38,10 +39,7 @@ export const createParticipant = async (runningApp: Application, options?: { [ke
 export const createUser = async (runningApp: Application, options?: { [key: string]: any } | any) => {
   const user = new User();
   user.identityId = getValue(['identityId'], options) || 'banana';
-  user.email = getValue(['email'], options) || 'email';
-  user.username = getValue(['username'], options) || uuidv4();
-  user.deviceToken = getValue(['deviceToken'], options) || 'deviceToken';
-  user.recoveryCode = getValue(['recoveryCode'], options) || 'recoveryToken';
+  user.profile = getValue(['profile'], options) || await createProfile(runningApp, getValue(['profileOptions'], options));
   user.active = getValue(['active'], options) || true;
   user.posts = getValue(['posts'], options) || [];
   user.campaigns = getValue(['campaigns'], options) || [];
@@ -49,7 +47,8 @@ export const createUser = async (runningApp: Application, options?: { [key: stri
   user.socialLinks = getValue(['socialLinks'], options) || [];
   user.factorLinks = getValue(['factorLinks'], options) || [];
   user.twentyFourHourMetrics = getValue(['twentyFourHourMetrics'], options) || []
-  return await runningApp.databaseConnection.createEntityManager().save(user);
+  await runningApp.databaseConnection.createEntityManager().save(user);
+  return user;
 }
 
 export const createWallet = async (runningApp: Application, options?: { [key: string]: any } | any) => {
@@ -57,6 +56,18 @@ export const createWallet = async (runningApp: Application, options?: { [key: st
   wallet.balance = new BN(getValue(['balance'], options, 10000));
   wallet.transfers = getValue(['transfers'], options, []);
   return await runningApp.databaseConnection.createEntityManager().save(wallet);
+}
+
+export const createProfile = async (runningApp: Application, options?: { [key: string]: any } | any) => {
+  const profile = new Profile();
+  profile.email = getValue(['email'], options, 'email');
+  profile.username = getValue(['username'], options, uuidv4());
+  profile.recoveryCode = getValue(['recoveryToken'], options, 'recoveryToken');
+  profile.deviceToken = getValue(['deviceToken'], options, 'deviceToken');
+  profile.interests = getValue(['interests'], options, []);
+  profile.followerAgeRanges = getValue(['followerAgeRanges'], options, []);
+  profile.followerInterests = getValue(['followerInterests'], options, []);
+  return await runningApp.databaseConnection.createEntityManager().save(profile);
 }
 
 export const createTransfer = async (runningApp: Application, options?: { [key: string]: any } | any) => {

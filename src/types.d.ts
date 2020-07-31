@@ -63,3 +63,11 @@ export interface SocialClientCredentials {
   apiKey?: string;
   apiSecret?: string;
 }
+
+export interface FactorAtRest {
+  providerId: string;
+  id: string;
+  name: string;
+  factor: any;
+  
+}

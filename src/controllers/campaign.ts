@@ -198,7 +198,7 @@ export const payoutCampaignRewards = async (args: { campaignId: string, rejected
                 if (!rejected.includes(participant.id)) {
                     const subtotal = await calculateParticipantPayout(bigNumTotal, campaign, participant);
                     const totalParticipantPayout = subtotal.plus(addedPayoutToEachParticipant);
-                    if (participant.user.deviceToken) userDeviceIds[participant.user.id] = participant.user.deviceToken;
+                    if (participant.user.profile.deviceToken) userDeviceIds[participant.user.id] = participant.user.profile.deviceToken;
                     if (!usersWalletValues[participant.user.id]) usersWalletValues[participant.user.id] = totalParticipantPayout;
                     else usersWalletValues[participant.user.id] = usersWalletValues[participant.user.id].plus(totalParticipantPayout);
                 }
@@ -206,7 +206,7 @@ export const payoutCampaignRewards = async (args: { campaignId: string, rejected
         } else {
             for (const participant of participants) {
                 const totalParticipantPayout = await calculateParticipantPayout(bigNumTotal, campaign, participant);
-                if (participant.user.deviceToken) userDeviceIds[participant.user.id] = participant.user.deviceToken;
+                if (participant.user.profile.deviceToken) userDeviceIds[participant.user.id] = participant.user.profile.deviceToken;
                 if (!usersWalletValues[participant.user.id]) usersWalletValues[participant.user.id] = totalParticipantPayout;
                 else usersWalletValues[participant.user.id] = usersWalletValues[participant.user.id].plus(totalParticipantPayout);
             }

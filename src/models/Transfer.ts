@@ -65,6 +65,7 @@ export class Transfer extends BaseEntity {
     return this.createQueryBuilder('transfer')
       .leftJoinAndSelect('transfer.wallet', 'wallet', 'wallet.id = transfer."walletId"')
       .leftJoinAndSelect('wallet.user', 'user', 'user.id = wallet."userId"')
+      .leftJoinAndSelect('user.profile', 'profile', 'profile."userId" = user.id')
       .where(`transfer.action = 'withdraw' AND transfer."withdrawStatus" = :status`, { status })
       .orderBy('transfer."createdAt"', 'ASC')
       .getMany();

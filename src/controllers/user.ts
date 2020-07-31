@@ -3,10 +3,10 @@ import {Participant} from "../models/Participant";
 import {checkPermissions} from "../middleware/authentication";
 import {Firebase} from "../clients/firebase";
 import {User} from "../models/User";
-import {Wallet} from "../models/Wallet";
 import { TinyUrl } from '../clients/tinyUrl';
 import {sha256Hash} from '../util/crypto';
 import { GraphQLResolveInfo } from 'graphql';
+import { Profile } from '../models/Profile';
 
 export const participate = async (args: { campaignId: string }, context: { user: any }) => {
     const { id } = context.user;
@@ -54,28 +54,13 @@ export const removeParticipation = async (args: { campaignId: string }, context:
 }
 
 export const usernameExists = async (args: { username: string }) => {
-    const participant = await User.findOne({ where: { username: args.username } });
-    return { exists: !!participant };
+    const profile = await Profile.findOne({ where: { username: args.username } });
+    return { exists: !!profile };
 }
 
 export const accountExists = async (args: { id: string }) => {
     const user = await User.findOne({ identityId: args.id });
     return { exists: !!user };
-}
-
-export const signUp = async (args: { username: string, deviceToken: string }, context: { user: any }) => {
-    const {deviceToken} = args;
-    const { id, email } = context.user;
-    if (await User.findOne({ where: { identityId: id } })) throw new Error('user already registered');
-    const user = new User();
-    const wallet = new Wallet();
-    user.id = id;
-    user.email = email;
-    user.deviceToken = deviceToken;
-    await user.save();
-    wallet.user = user;
-    await wallet.save();
-    return user.asV1();
 }
 
 export const me = async (args: { openCampaigns?: boolean } = {}, context: { user: any }, info: GraphQLResolveInfo) => {
@@ -102,24 +87,62 @@ export const setDevice = async (args: { deviceToken: string }, context: { user: 
   const { deviceToken } = args;
   const { id } = context.user;
   const user = await User.findOneOrFail({ where: { identityId: id } });
-  user.deviceToken = deviceToken;
-  await user.save();
+  user.profile.deviceToken = deviceToken;
+  await user.profile.save();
   return true;
 }
 
 export const updateUsername = async (args: { username: string }, context: { user: any }) => {
   const { id } = context.user;
   const user = await User.findOneOrFail({ where: { identityId: id } });
-  if (await User.findOne({ where: { username: args.username } })) throw new Error('username is already registered');
-  user.username = args.username;
-  await user.save();
+  if (await Profile.findOne({ where: { username: args.username } })) throw new Error('username is already registered');
+  user.profile.username = args.username;
+  await user.profile.save();
   return user.asV1();
 }
 
 export const setRecoveryCode = async (args: { code: number }, context: { user: any }) => {
   const { id } = context.user;
   const user = await User.findOneOrFail({ where: { identityId: id } });
-  user.recoveryCode = sha256Hash(args.code.toString());
-  await user.save();
+  user.profile.recoveryCode = sha256Hash(args.code.toString());
+  await user.profile.save();
+  return user.asV1();
+}
+
+export const updateProfileInterests = async (args: { ageRange: string, city: string, state: string, country: string, interests: string[], values: string[] }, context: { user: any }) => {
+  const { id } = context.user;
+  const { ageRange, city, state, interests, values, country } = args;
+  const user = await User.findOne({ where: { identityId: id } });
+  if (!user) throw new Error('user not found');
+  const profile = user.profile;
+  if (ageRange) profile.ageRange = ageRange;
+  if (city) profile.city = city;
+  if (state) profile.state = state;
+  if (country) profile.country = country;
+  if (interests) profile.interests = interests;
+  if (values) profile.values = values;
+  await profile.save();
+  return user.asV1();
+}
+
+export const removeProfileInterests = async (args: { interest: string, value: string, ageRange: string, city: string, state: string, country: string }, context: { user: any }) => {
+  const { id } = context.user;
+  const { interest, value, ageRange, city, state, country } = args;
+  const user = await User.findOne({ where: { identityId: id } });
+  if (!user) throw new Error('user not found');
+  const profile = user.profile;
+  if (ageRange) delete profile.ageRange;
+  if (city) delete profile.city;
+  if (state) delete profile.state;
+  if (country) delete profile.country;
+  if (interest) {
+    const index = profile.interests.indexOf(interest);
+    if (index > -1) profile.interests.splice(index, 1);
+  }
+  if (value) {
+    const index = profile.values.indexOf(value);
+    if (index > -1) profile.values.splice(index, 1);
+  }
+  await profile.save()
   return user.asV1();
 }
