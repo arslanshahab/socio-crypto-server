@@ -125,13 +125,16 @@ export const updateProfileInterests = async (args: { ageRange: string, city: str
   return user.asV1();
 }
 
-export const removeProfileInterests = async (args: { interest: string, value: string, ageRange: string }, context: { user: any }) => {
+export const removeProfileInterests = async (args: { interest: string, value: string, ageRange: string, city: string, state: string, country: string }, context: { user: any }) => {
   const { id } = context.user;
-  const { interest, value, ageRange } = args;
+  const { interest, value, ageRange, city, state, country } = args;
   const user = await User.findOne({ where: { identityId: id } });
   if (!user) throw new Error('user not found');
   const profile = user.profile;
   if (ageRange) delete profile.ageRange;
+  if (city) delete profile.city;
+  if (state) delete profile.state;
+  if (country) delete profile.country;
   if (interest) {
     const index = profile.interests.indexOf(interest);
     if (index > -1) profile.interests.splice(index, 1);
