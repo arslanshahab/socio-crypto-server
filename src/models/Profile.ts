@@ -28,6 +28,9 @@ export class Profile extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   public state: string;
 
+  @Column({ type: 'text', nullable: true })
+  public country: string;
+
   @Column({ type: 'text', nullable: false, default: '[]', transformer: StringifiedArrayTransformer })
   public interests: string[];
 
