@@ -122,12 +122,12 @@ export const recover = asyncHandler(async (req: AuthRequest, res: Response) => {
   if (shouldRateLimit) return res.status(429).json({ code: 'REQUEST_LIMIT', message: 'too many requests' });
   if (isNaN(Number(code))) throw new Error('recovery code must be a integer');
   if (await User.findOne({ where: { identityId } })) throw new Error('An account with that identity already exists');
-  const profile = await Profile.findOne({ where: { username: message, recoveryCode: sha256Hash(code.toString()) }});
+  const profile = await Profile.findOne({ where: { username: message, recoveryCode: sha256Hash(code.toString()) }, relations: ['user']});
   if (!profile) {
     await Dragonchain.ledgerAccountRecoveryAttempt(undefined, identityId, message, code, false);
     throw new Error('requested account not found');
   }
-  const user = await User.findOneOrFail({ where: { profile } });
+  const user = profile.user;
   await S3Client.deleteUserInfoIfExists(user.id);
   await S3Client.deleteKycImage(user.id, 'idProof');
   await S3Client.deleteKycImage(user.id, 'addressProof');
