@@ -7,6 +7,7 @@ import { TinyUrl } from '../clients/tinyUrl';
 import {sha256Hash} from '../util/crypto';
 import { GraphQLResolveInfo } from 'graphql';
 import { Profile } from '../models/Profile';
+import { DailyParticipantMetric } from '../models/DailyParticipantMetric';
 
 export const participate = async (args: { campaignId: string }, context: { user: any }) => {
     const { id } = context.user;
@@ -145,4 +146,12 @@ export const removeProfileInterests = async (args: { interest: string, value: st
   }
   await profile.save()
   return user.asV1();
+}
+
+export const getUserMetrics = async (args: { today: boolean }, context: { user: any }) => {
+  const { id } = context.user;
+  const { today = false } = args;
+  const user = await User.findOne({ where: { identityId: id } });
+  if (!user) throw new Error('user not found');
+  return (await DailyParticipantMetric.getSortedByUser(user, today)).map(metric => metric.asV1());
 }

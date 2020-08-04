@@ -46,6 +46,8 @@ export const root = {
   getCampaignMetrics: campaignController.adminGetCampaignMetrics,
   updateProfileInterests: userController.updateProfileInterests,
   removeProfileInterests: userController.removeProfileInterests,
+  getParticipantMetrics: participantController.getParticipantMetrics,
+  getUserMetrics: userController.getUserMetrics,
 };
 
 export const publicRoot = {

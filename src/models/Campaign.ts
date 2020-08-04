@@ -8,6 +8,7 @@ import {Transfer} from './Transfer';
 import {StringifiedArrayTransformer, BigNumberEntityTransformer, AlgorithmTransformer} from '../util/transformers';
 import { BigNumber } from 'bignumber.js';
 import { BN } from '../util/helpers';
+import { DailyParticipantMetric } from './DailyParticipantMetric';
 
 @Entity()
 export class Campaign extends BaseEntity {
@@ -78,6 +79,12 @@ export class Campaign extends BaseEntity {
     transfer => transfer.campaign
   )
   public payouts: Transfer[];
+
+  @OneToMany(
+    _type => DailyParticipantMetric,
+    metric => metric.campaign
+  )
+  public dailyMetrics: DailyParticipantMetric[];
 
   @CreateDateColumn()
   public createdAt: Date;

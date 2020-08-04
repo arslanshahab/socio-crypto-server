@@ -65,8 +65,6 @@ export const createProfile = async (runningApp: Application, options?: { [key: s
   profile.recoveryCode = getValue(['recoveryToken'], options, 'recoveryToken');
   profile.deviceToken = getValue(['deviceToken'], options, 'deviceToken');
   profile.interests = getValue(['interests'], options, []);
-  profile.followerAgeRanges = getValue(['followerAgeRanges'], options, []);
-  profile.followerInterests = getValue(['followerInterests'], options, []);
   return await runningApp.databaseConnection.createEntityManager().save(profile);
 }
 
