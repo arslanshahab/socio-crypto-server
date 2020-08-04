@@ -68,6 +68,7 @@ export class DailyParticipantMetric extends BaseEntity {
       shareCount: this.shareCount.toNumber(),
       commentCount: this.commentCount.toNumber(),
       participationScore: parseFloat(this.participationScore.toString()),
+      totalParticipationScore: parseFloat(this.totalParticipationScore.toString()),
     }
   }
 

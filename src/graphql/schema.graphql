@@ -96,6 +96,7 @@ type ParticipantMetric {
   shareCount: Int
   commentCount: Int
   participationScore: Float
+  totalParticipationScore: Float
   participantId: String
   createdAt: String
   updatedAt: String
