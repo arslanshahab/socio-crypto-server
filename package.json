@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@dragonchain-dev/dragonfactor-auth": "^0.0.10",
+    "@paypal/payouts-sdk": "^1.0.0",
     "ajv": "^6.12.2",
     "aws-sdk": "^2.632.0",
     "bignumber.js": "^9.0.0",
@@ -42,6 +43,7 @@
     "jsonwebtoken": "^8.5.1",
     "mocha": "^7.1.0",
     "node-fetch": "^2.6.0",
+    "paypal-rest-sdk": "^1.8.1",
     "pg": "^7.18.2",
     "redis": "^3.0.2",
     "twitter": "^1.7.1",
