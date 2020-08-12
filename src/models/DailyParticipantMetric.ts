@@ -118,6 +118,19 @@ export class DailyParticipantMetric extends BaseEntity {
     return record;
   }
 
+  public static async insertPlaceholderRow(date: Date, lastParticipationScore: BigNumber, campaign: Campaign, user: User, participant: Participant): Promise<DailyParticipantMetric> {
+    const metric = new DailyParticipantMetric();
+    metric.createdAt = new Date(date);
+    metric.updatedAt = new Date(date);
+    metric.campaign = campaign;
+    metric.user = user;
+    metric.participantId = participant.id;
+    metric.participationScore = new BN(0);
+    metric.totalParticipationScore = new BN(lastParticipationScore);
+    await metric.save();
+    return metric;
+  }
+
   public static async getSortedByParticipantId(participantId: string): Promise<DailyParticipantMetric[]> {
     return this.createQueryBuilder('metrics')
       .where('metrics."participantId" = :id', {id: participantId})
@@ -126,7 +139,7 @@ export class DailyParticipantMetric extends BaseEntity {
   }
 
   public static async getSortedByUser(user: User, today: boolean): Promise<DailyParticipantMetric[]> {
-    let where: {[key: string]:  any} = { user }; 
+    let where: {[key: string]:  any} = { user };
     if (today) {
       const currentDate = new Date();
       const month = (currentDate.getUTCMonth() + 1) < 10 ? `0${currentDate.getUTCMonth() + 1}` : currentDate.getUTCMonth() + 1;
@@ -134,6 +147,6 @@ export class DailyParticipantMetric extends BaseEntity {
       const yyymmdd = `${currentDate.getUTCFullYear()}-${month}-${day}`;
       where['createdAt'] = MoreThan(`${yyymmdd} 00:00:00`);
     }
-    return await DailyParticipantMetric.find({ where, order: { createdAt: 'ASC' } });
+    return await DailyParticipantMetric.find({ where, relations: ['campaign'], order: { createdAt: 'ASC' } });
   }
 }

@@ -8,6 +8,7 @@ import {getTweetById} from '../controllers/social';
 import { getRedis } from '../clients/redis';
 import { BN } from '../util/helpers';
 import { DailyParticipantMetric } from '../models/DailyParticipantMetric';
+import { getDatesBetweenDates } from './helpers';
 
 const { RATE_LIMIT_MAX = '3', RATE_LIMIT_WINDOW = '1m' } = process.env;
 
@@ -94,9 +95,15 @@ export const getPosts = async (args: { id: string }, context: any) => {
 export const getParticipantMetrics = async (args: { participantId: string }, context: { user: any }) => {
   const { id } = context.user;
   const { participantId } = args;
+  const additionalRows = [];
   const user = await User.findOne({ where: { identityId: id } });
   if (!user) throw new Error('user not found');
-  const participant = await Participant.findOne({ where: { id: participantId, user } });
+  const participant = await Participant.findOne({ where: { id: participantId, user }, relations: ['campaign'] });
   if (!participant) throw new Error('participant not found');
-  return (await DailyParticipantMetric.getSortedByParticipantId(participantId)).map(metric => metric.asV1());
+  const metrics = await DailyParticipantMetric.getSortedByParticipantId(participantId);
+  if (metrics.length > 0 && new Date(metrics[metrics.length - 1].createdAt).getUTCDate() !== new Date().getUTCDate()) {
+    const datesInBetween = getDatesBetweenDates(new Date(metrics[metrics.length-1].createdAt), new Date());
+    for (let i = 0; i < datesInBetween.length; i++) { additionalRows.push(await DailyParticipantMetric.insertPlaceholderRow(datesInBetween[i], metrics[metrics.length-1].totalParticipationScore, participant.campaign, user, participant)); }
+  }
+  return metrics.concat(additionalRows).map(metric => metric.asV1());
 }

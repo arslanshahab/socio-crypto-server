@@ -87,3 +87,19 @@ export const performTransfer = async (walletId: string, amount: string, action: 
     await transactionalEntitymanager.save(wallet);
   });
 };
+
+const addDays = (date: Date, days: number): Date => {
+  const d = new Date(date);
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d;
+}
+
+export const getDatesBetweenDates = (date1: Date, date2: Date) => {
+  const dateArray = [];
+  let currentDate = new Date(date1);
+  while (currentDate <= new Date(date2)) {
+    dateArray.push(new Date(currentDate));
+    currentDate = addDays(currentDate, 1);
+  }
+  return dateArray;
+}
