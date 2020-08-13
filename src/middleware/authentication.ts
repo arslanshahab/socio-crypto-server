@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { Secrets } from '../util/secrets';
@@ -37,8 +37,4 @@ export const checkPermissions = (opts: { hasRole: string[] }, context: { user: a
   if (!role || !opts.hasRole.includes(role)) throw new Error('forbidden');
   if (role === 'manager' && !company) throw new Error('forbidden, company not specified');
   return { role, company };
-}
-
-export const validateWebhook = (req: Request, res: Response) => {
-
 }
