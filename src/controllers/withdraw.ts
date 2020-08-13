@@ -22,7 +22,7 @@ export const start = async (args: { withdrawAmount: number }, context: { user: a
   if (((totalWithdrawThisYear.plus(args.withdrawAmount)).multipliedBy(0.1)).gte(600) || ((pendingBalance.plus(args.withdrawAmount)).multipliedBy(0.1)).gte(600)) throw new Error('reached max withdrawals per year');
   if (((wallet.balance.minus(pendingBalance)).minus(args.withdrawAmount)).lt(0)) throw new Error('wallet does not have required balance for this withdraw');
   const transfer = Transfer.newFromWithdraw(wallet, new BN(args.withdrawAmount));
-  transfer.save();
+  await transfer.save();
   return transfer.asV1();
 }
 
