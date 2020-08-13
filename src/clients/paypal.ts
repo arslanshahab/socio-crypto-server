@@ -54,7 +54,6 @@ export class Paypal {
                     'Authorization': `Basic ${Buffer.from(`${Secrets.paypalClientId}:${Secrets.paypalClientSecret}`).toString('base64')}`
                 }
             });
-            console.log('TOKEN RESPONSE', response);
             return S3Client.refreshPaypalAccessToken(response['access_token']);
         } catch (e) {
             throw new Error(`failure refreshing paypal token ${e}`);
