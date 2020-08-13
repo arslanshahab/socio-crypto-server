@@ -8,12 +8,10 @@ import {wait} from "../controllers/helpers";
 import {Secrets} from "../util/secrets";
 const paypal = require('paypal-rest-sdk');
 
-const clientId = 'AbWAuCaI8CmZyfER52cY3SuSAAMc7LmMqhWgbM1Fy4N1A09pKlDWJZW_X7odJeWGWTvReoSciWvis0t_';
-const clientSecret = 'EL0IpTlVyqn79Lg2S9EDMOQD8pWnegFOcKYiY_8jK9gQ_xDIALq4ZYk0GVt8BTEYfPUoX8tWCbxan6P7';
 paypal.configure({
     'mode': 'sandbox', //sandbox or live
-    'client_id': clientId,
-    'client_secret': clientSecret
+    'client_id': Secrets.paypalClientId,
+    'client_secret': Secrets.paypalClientSecret
 });
 
 
