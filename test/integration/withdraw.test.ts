@@ -124,37 +124,11 @@ describe('Withdraw Integration Test', function () {
                .send(mutation)
                .set('Accepts', 'application/json')
                .set('authorization', 'Bearer raiinmaker');
-           console.log(res.body.errors[0].stack);
            const response = res.body.data.updateWithdrawStatus;
            expect(response.length).to.equal(2);
            const walletResult = await Wallet.findOneOrFail(wallet.id);
            expect(walletResult.asV1().balance).to.equal(100);
        });
-       it('Payouts are successful', async () => {
-           const payouts = [];
-           for(let i = 0; i < 10; i++) {
-               payouts.push({value: '12.00', receiver: 'raiinmaker@dragonchain.com'})
-           }
-           mutation = gql.mutation({
-               operation: 'makePayouts',
-               variables: {
-                   payouts: {value: payouts, required: true, type: '[JSON]'},
-               },
-               fields: ['payout_batch_id', 'batch_status']
-           })
-           const res = await request(runningApp.app)
-               .post('/v1/graphql')
-               .send(mutation)
-               .set('Accepts', 'application/json')
-               .set('authorization', 'Bearer raiinmaker');
-           console.log(res.body);
-           // const response = res.body.data.makePayouts;
-           // console.log('GQL RESPONSE BODY -->> ', response);
-           // expect(response.batch_status).to.equal('PENDING');
-       });
-       // it.only('refreshToken', async () => {
-       //     await Paypal.refreshToken();
-       // });
     });
     describe('Queries', () => {
         let query;

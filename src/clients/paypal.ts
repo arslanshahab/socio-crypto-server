@@ -5,6 +5,7 @@ import { promisify } from 'util';
 import {S3Client} from "./s3";
 import logger from "../util/logger";
 import {wait} from "../controllers/helpers";
+import {Secrets} from "../util/secrets";
 const paypal = require('paypal-rest-sdk');
 
 const clientId = 'AbWAuCaI8CmZyfER52cY3SuSAAMc7LmMqhWgbM1Fy4N1A09pKlDWJZW_X7odJeWGWTvReoSciWvis0t_';
@@ -17,7 +18,6 @@ paypal.configure({
 
 
 const { NODE_ENV = 'development' } = process.env;
-// const sandboxAccessToken = 'Bearer A21AAFnBvibhgA4ORXP_8RfdwJtlVP9pSF5ZmVvoXXZL3ERvJp3dG4qD_S1Yp087E0vdnIjolchfo1_g3BosbC0Pmr5cSkWww';
 
 export class Paypal {
     public static baseUrl = NODE_ENV === 'production' ? 'https://api.paypal.com' : 'https://api.sandbox.paypal.com';
@@ -53,7 +53,7 @@ export class Paypal {
                 body: 'grant_type=client_credentials',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
-                    'Authorization': `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`
+                    'Authorization': `Basic ${Buffer.from(`${Secrets.paypalClientId}:${Secrets.paypalClientSecret}`).toString('base64')}`
                 }
             });
             console.log('TOKEN RESPONSE', response);
@@ -67,7 +67,7 @@ export class Paypal {
         return S3Client.getPaypalAccessToken();
     }
 
-    public static async verify(headers: object, eventBody: object, webhookId: string = this.webhookId) {
+    public static async verify(headers: object, eventBody: object, webhookId: string = Secrets.paypalWebhookId) {
         return await this.verifyWebhook(headers, eventBody, webhookId) as {verification_status: string; httpStatusCode: number};
     }
 
@@ -85,7 +85,6 @@ export class Paypal {
                 logger.error(responseLogMessage);
                 throw new Error(`Request to paypal failed. ${textResponse} `);
             }
-            // logger.debug(responseLogMessage);
             return JSON.parse(textResponse);
         } catch (e) {
             logger.error('ERROR:', e.message, JSON.stringify(e));

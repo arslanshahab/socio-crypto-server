@@ -22,7 +22,7 @@ export const start = async (args: { withdrawAmount: number }, context: { user: a
   if (((totalWithdrawThisYear.plus(args.withdrawAmount)).multipliedBy(0.1)).gte(600) || ((pendingBalance.plus(args.withdrawAmount)).multipliedBy(0.1)).gte(600)) throw new Error('reached max withdrawals per year');
   if (((wallet.balance.minus(pendingBalance)).minus(args.withdrawAmount)).lt(0)) throw new Error('wallet does not have required balance for this withdraw');
   const transfer = Transfer.newFromWithdraw(wallet, new BN(args.withdrawAmount));
-  await transfer.save();
+  transfer.save();
   return transfer.asV1();
 }
 
@@ -54,7 +54,8 @@ export const update = async (args: { transferIds: string[], status: 'approve'|'r
               transfer.payoutId = payoutId;
             }
           } else {
-            userGroups[user.id].totalRedeemedAmount += transfer.amount;
+            const totalRedeemedAmount = new BN(userGroups[user.id].totalRedeemedAmount);
+            userGroups[user.id].totalRedeemedAmount = totalRedeemedAmount.plus(transfer.amount);
             userGroups[user.id].transfers.push(transfer);
           }
           break;
@@ -67,12 +68,11 @@ export const update = async (args: { transferIds: string[], status: 'approve'|'r
     }
     transfers.push(transfer);
   }
-
   await Transfer.save(transfers);
-  await makePayouts({payouts});
+  await makePayouts(payouts);
   for (const userId in userGroups) {
     const group = userGroups[userId];
-    await SesClient.sendRedemptionConfirmationEmail(userId, group['paypalEmail'], (group['totalRedeemedAmount'] * 0.1).toFixed(2), group['transfers']);
+    await SesClient.sendRedemptionConfirmationEmail(userId, group['paypalEmail'], (parseFloat(group['totalRedeemedAmount'].times(0.1).toString())).toFixed(2), group['transfers']);
   }
   return transfers.map(transfer => transfer.asV1());
 }
@@ -153,8 +153,7 @@ export const paypalWebhook = asyncHandler(async (req: Request, res: Response) =>
   res.status(200).json({success: true});
 });
 
-export const makePayouts = async (args: { payouts: {value: string, receiver: string, payoutId: string}[] }) => {
-  const { payouts } = args;
+export const makePayouts = async (payouts: {value: string, receiver: string, payoutId: string}[]) => {
   const payload: PaypalPayout[] = []
   payouts.map(payout => {
     const item: PaypalPayout = {
@@ -170,6 +169,5 @@ export const makePayouts = async (args: { payouts: {value: string, receiver: str
     payload.push(item);
   });
   const response = await Paypal.submitPayouts(payload);
-  console.log('PAYOUTS RESPONSE -->', response);
   return response.batch_header;
 }

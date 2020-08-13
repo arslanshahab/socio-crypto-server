@@ -63,7 +63,6 @@ type Mutation {
     state:String
     country:String
   ): User
-  makePayouts(payouts:[JSON]!): PaypalResponse
 }
 
 type Query {
@@ -287,19 +286,4 @@ type AuditReport {
   totalSubmissions: Int
   totalRewardPayout: Float
   flaggedParticipants: [ParticipantAudit]
-}
-
-type BatchHeader {
-  sender_batch_header: SenderBatchHeader
-}
-
-type SenderBatchHeader {
-  sender_batch_id: String,
-  email_subject: String,
-  email_message: String
-}
-
-type PaypalResponse {
-  payout_batch_id: String,
-  batch_status: String,
 }
