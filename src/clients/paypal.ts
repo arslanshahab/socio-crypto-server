@@ -9,7 +9,7 @@ import {Secrets} from "../util/secrets";
 const paypal = require('paypal-rest-sdk');
 
 paypal.configure({
-    'mode': 'sandbox', //sandbox or live
+    'mode': process.env.NODE_ENV !== 'production' ? 'sandbox' : 'live', //sandbox or live
     'client_id': Secrets.paypalClientId,
     'client_secret': Secrets.paypalClientSecret
 });
