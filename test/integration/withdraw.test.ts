@@ -104,7 +104,7 @@ describe('Withdraw Integration Test', function () {
            expect(res.body.errors.length).to.equal(1);
            expect(res.body.errors[0].message).to.equal('wallet does not have required balance for this withdraw');
        });
-       it.only('#updateWithdrawStatus', async () => {
+       it('#updateWithdrawStatus', async () => {
            const wallet = await createWallet(runningApp, {balance: 200.00});
            const user = await createUser(runningApp, {wallet});
            const participant = await createParticipant(runningApp, {user});

@@ -49,7 +49,6 @@ export const update = async (args: { transferIds: string[], status: 'approve'|'r
             if (kycData) {
               userGroups[user.id] = {totalRedeemedAmount: transfer.amount.toString(), user, paypalEmail: kycData['paypalEmail'], transfers: [transfer] };
               const payoutId = uuidv4();
-              console.log('IT HIT ME', transfer.amount.toString());
               payouts.push({value: transfer.amount.toString(), receiver: kycData['paypalEmail'], payoutId});
               transfer.payoutId = payoutId;
             }
