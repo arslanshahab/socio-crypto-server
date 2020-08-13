@@ -103,3 +103,9 @@ export const getDatesBetweenDates = (date1: Date, date2: Date) => {
   }
   return dateArray;
 }
+
+export async function wait(delayInMs: number, func: any) {
+    setTimeout(async () => {
+        await func();
+    }, delayInMs)
+}

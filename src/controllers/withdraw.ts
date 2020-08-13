@@ -5,7 +5,11 @@ import { Wallet } from '../models/Wallet';
 import { S3Client } from '../clients/s3';
 import { SesClient } from '../clients/ses';
 import { performTransfer } from './helpers';
-import { BN } from '../util/helpers';
+import {asyncHandler, BN} from '../util/helpers';
+import {Paypal} from "../clients/paypal";
+import { Response, Request } from 'express';
+import {PaypalPayout} from "../types";
+import { v4 as uuidv4 } from 'uuid';
 
 export const start = async (args: { withdrawAmount: number }, context: { user: any }) => {
   if (args.withdrawAmount <= 0) throw new Error('withdraw amount must be a positive number');
@@ -27,6 +31,7 @@ export const update = async (args: { transferIds: string[], status: 'approve'|'r
   if (args.transferIds.length === 0) throw new Error('empty array of transfer IDs provided');
   const transfers: Transfer[] = [];
   const userGroups: {[key: string]: any} = {};
+  const payouts: {value: string, receiver: string, payoutId: string}[] = [];
   for (let i = 0; i < args.transferIds.length; i++) {
     const transfer = await Transfer.findOne({ where: { id: args.transferIds[i], action: 'withdraw', withdrawStatus: 'pending' }, relations: ['wallet', 'wallet.user'] });
     if (!transfer) throw new Error(`transfer not found: ${args.transferIds[i]}`);
@@ -41,9 +46,15 @@ export const update = async (args: { transferIds: string[], status: 'approve'|'r
           if (!userGroups[user.id]) {
             let kycData;
             try { kycData = await S3Client.getUserObject(user.id) } catch (_) { kycData = null; }
-            if (kycData) userGroups[user.id] = {totalRedeemedAmount: transfer.amount.toString(), user, paypalEmail: kycData['paypalEmail'], transfers: [transfer] };
+            if (kycData) {
+              userGroups[user.id] = {totalRedeemedAmount: transfer.amount.toString(), user, paypalEmail: kycData['paypalEmail'], transfers: [transfer] };
+              const payoutId = uuidv4();
+              payouts.push({value: transfer.amount.toString(), receiver: kycData['paypalEmail'], payoutId});
+              transfer.payoutId = payoutId;
+            }
           } else {
-            userGroups[user.id].totalRedeemedAmount += transfer.amount;
+            const totalRedeemedAmount = new BN(userGroups[user.id].totalRedeemedAmount);
+            userGroups[user.id].totalRedeemedAmount = totalRedeemedAmount.plus(transfer.amount);
             userGroups[user.id].transfers.push(transfer);
           }
           break;
@@ -57,9 +68,10 @@ export const update = async (args: { transferIds: string[], status: 'approve'|'r
     transfers.push(transfer);
   }
   await Transfer.save(transfers);
+  await makePayouts(payouts);
   for (const userId in userGroups) {
     const group = userGroups[userId];
-    await SesClient.sendRedemptionConfirmationEmail(userId, group['paypalEmail'], (group['totalRedeemedAmount'] * 0.1).toFixed(2), group['transfers']);
+    await SesClient.sendRedemptionConfirmationEmail(userId, group['paypalEmail'], (parseFloat(group['totalRedeemedAmount'].times(0.1).toString())).toFixed(2), group['transfers']);
   }
   return transfers.map(transfer => transfer.asV1());
 }
@@ -92,4 +104,69 @@ export const getWithdrawals = async (args: { status: string }, context: { user: 
     }
   }
   return Object.values(uniqueUsers);
+}
+
+export const paypalWebhook = asyncHandler(async (req: Request, res: Response) => {
+  const {verification_status} = await Paypal.verify(req.headers, req.body);
+  if (verification_status === 'SUCCESS'){
+    const body = req.body;
+    const payoutId = body['resource']['payout_item']['sender_item_id'];
+    const transfer = await Transfer.findOne({where: {payoutId}});
+    if (!transfer) throw new Error('transfer not found');
+    switch (body['event_type']) {
+      case 'PAYMENT.PAYOUTS-ITEM.BLOCKED':
+        transfer.payoutStatus = 'BLOCKED';
+        break;
+      case 'PAYMENT.PAYOUTS-ITEM.CANCELED':
+        transfer.payoutStatus = 'CANCELED';
+        break;
+      case 'PAYMENT.PAYOUTS-ITEM.DENIED':
+        transfer.payoutStatus = 'DENIED';
+        break;
+      case 'PAYMENT.PAYOUTS-ITEM.FAILED':
+        transfer.payoutStatus = 'FAILED';
+        break;
+      case 'PAYMENT.PAYOUTS-ITEM.HELD':
+        transfer.payoutStatus = 'HELD';
+        break;
+      case 'PAYMENT.PAYOUTS-ITEM.REFUNDED':
+        transfer.payoutStatus = 'REFUNDED';
+        break;
+      case 'PAYMENT.PAYOUTS-ITEM.RETURNED':
+        transfer.payoutStatus = 'RETURNED';
+        break;
+      case 'PAYMENT.PAYOUTS-ITEM.SUCCEEDED':
+        transfer.payoutStatus = 'SUCCEEDED';
+        break;
+      case 'PAYMENT.PAYOUTS-ITEM.UNCLAIMED':
+        transfer.payoutStatus = 'UNCLAIMED';
+        break;
+      default:
+        throw Error(`unknown event ${body['event_type']}`);
+    }
+    await transfer.save();
+  } else {
+    throw Error('invalid webhook request');
+  }
+
+  res.status(200).json({success: true});
+});
+
+export const makePayouts = async (payouts: {value: string, receiver: string, payoutId: string}[]) => {
+  const payload: PaypalPayout[] = []
+  payouts.map(payout => {
+    const item: PaypalPayout = {
+      recipient_type: "EMAIL",
+      amount: {
+        value: payout.value,
+        currency: "USD"
+      },
+      note: "Thanks for making it Raiin!",
+      sender_item_id: payout.payoutId,
+      receiver: payout.receiver
+    }
+    payload.push(item);
+  });
+  const response = await Paypal.submitPayouts(payload);
+  return response.batch_header;
 }
