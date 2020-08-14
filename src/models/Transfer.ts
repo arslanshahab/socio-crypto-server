@@ -15,6 +15,9 @@ export class Transfer extends BaseEntity {
   @Column({ type: 'varchar', nullable: false, transformer: BigNumberEntityTransformer })
   public amount: BigNumber;
 
+  @Column({ type: 'varchar', nullable: true, transformer: BigNumberEntityTransformer })
+  public usdAmount: BigNumber;
+
   @Column({ nullable: false })
   public action: 'transfer'|'withdraw';
 
