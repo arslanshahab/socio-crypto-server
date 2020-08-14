@@ -108,11 +108,9 @@ export const getWithdrawals = async (args: { status: string }, context: { user: 
 }
 
 export const paypalWebhook = asyncHandler(async (req: Request, res: Response) => {
-  console.log('PAYPAL HIT ME!!!', req.body);
   const {verification_status} = await Paypal.verify(req.headers, req.body);
   if (verification_status === 'SUCCESS'){
     const body = req.body;
-    console.log(body);
     const payoutId = body['resource']['payout_item']['sender_item_id'];
     const transfer = await Transfer.findOne({where: {payoutId}});
     if (!transfer) throw new Error('transfer not found');
