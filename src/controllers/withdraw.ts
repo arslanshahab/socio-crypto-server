@@ -49,8 +49,10 @@ export const update = async (args: { transferIds: string[], status: 'approve'|'r
             if (kycData) {
               userGroups[user.id] = {totalRedeemedAmount: transfer.amount.toString(), user, paypalEmail: kycData['paypalEmail'], transfers: [transfer] };
               const payoutId = uuidv4();
-              payouts.push({value: transfer.amount.toString(), receiver: kycData['paypalEmail'], payoutId});
+              const dollarAmount = transfer.amount.times(new BN('0.1'));
+              payouts.push({value: parseFloat(dollarAmount.toString()).toString(), receiver: kycData['paypalEmail'], payoutId});
               transfer.payoutId = payoutId;
+              transfer.usdAmount = dollarAmount;
             }
           } else {
             const totalRedeemedAmount = new BN(userGroups[user.id].totalRedeemedAmount);
