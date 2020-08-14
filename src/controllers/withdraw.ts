@@ -49,7 +49,8 @@ export const update = async (args: { transferIds: string[], status: 'approve'|'r
             if (kycData) {
               userGroups[user.id] = {totalRedeemedAmount: transfer.amount.toString(), user, paypalEmail: kycData['paypalEmail'], transfers: [transfer] };
               const payoutId = uuidv4();
-              payouts.push({value: transfer.amount.toString(), receiver: kycData['paypalEmail'], payoutId});
+              const dollarAmount = transfer.amount.times(new BN('0.1'));
+              payouts.push({value: parseFloat(dollarAmount.toString()).toString(), receiver: kycData['paypalEmail'], payoutId});
               transfer.payoutId = payoutId;
             }
           } else {
@@ -107,9 +108,11 @@ export const getWithdrawals = async (args: { status: string }, context: { user: 
 }
 
 export const paypalWebhook = asyncHandler(async (req: Request, res: Response) => {
+  console.log('PAYPAL HIT ME!!!', req.body);
   const {verification_status} = await Paypal.verify(req.headers, req.body);
   if (verification_status === 'SUCCESS'){
     const body = req.body;
+    console.log(body);
     const payoutId = body['resource']['payout_item']['sender_item_id'];
     const transfer = await Transfer.findOne({where: {payoutId}});
     if (!transfer) throw new Error('transfer not found');

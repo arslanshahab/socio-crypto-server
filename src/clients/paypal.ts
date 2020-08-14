@@ -19,7 +19,6 @@ const { NODE_ENV = 'development' } = process.env;
 
 export class Paypal {
     public static baseUrl = NODE_ENV === 'production' ? 'https://api.paypal.com' : 'https://api.sandbox.paypal.com';
-    public static webhookId = '4DP6580501488881N';
     private static verifyWebhook = promisify(paypal.notification.webhookEvent.verify);
 
     public static async submitPayouts(body: PaypalPayout[]) {
@@ -39,7 +38,7 @@ export class Paypal {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${await Paypal.getToken()}`,
             }
-        })
+        });
     }
 
     public static async refreshToken() {
@@ -65,7 +64,7 @@ export class Paypal {
     }
 
     public static async verify(headers: object, eventBody: object, webhookId: string = Secrets.paypalWebhookId) {
-        return await this.verifyWebhook(headers, eventBody, webhookId) as {verification_status: string; httpStatusCode: number};
+        return this.verifyWebhook(headers, eventBody, webhookId) as {verification_status: string; httpStatusCode: number};
     }
 
     public static async makeRequest (path: string, options: object, retry= 1) {
@@ -85,7 +84,7 @@ export class Paypal {
             return JSON.parse(textResponse);
         } catch (e) {
             logger.error('ERROR:', e.message, JSON.stringify(e));
-            if (e.code) throw e; // re-throw our expected errors
+            if (e.code) throw e;
             if (retry < retryLimit) {
                 await wait(Math.pow(retry, 2) * backoffDurationInMs, Paypal.makeRequest(path, options, retry + 1));
             } else {
