@@ -8,18 +8,13 @@ import {wait} from "../controllers/helpers";
 import {Secrets} from "../util/secrets";
 const paypal = require('paypal-rest-sdk');
 
-paypal.configure({
-    'mode': process.env.NODE_ENV !== 'production' ? 'sandbox' : 'live', //sandbox or live
-    'client_id': Secrets.paypalClientId,
-    'client_secret': Secrets.paypalClientSecret
-});
 
 
 const { NODE_ENV = 'development' } = process.env;
 
 export class Paypal {
     public static baseUrl = NODE_ENV === 'production' ? 'https://api.paypal.com' : 'https://api.sandbox.paypal.com';
-    private static verifyWebhook = promisify(paypal.notification.webhookEvent.verify);
+    private static verifyWebhook = promisify(paypal.notification.webhookEvent.verify).bind(paypal);
 
     public static async submitPayouts(body: PaypalPayout[]) {
         const path = '/v1/payments/payouts'
@@ -38,6 +33,14 @@ export class Paypal {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${await Paypal.getToken()}`,
             }
+        });
+    }
+
+    public static async initialize() {
+        paypal.configure({
+            'mode': process.env.NODE_ENV !== 'production' ? 'sandbox' : 'live', //sandbox or live
+            'client_id': Secrets.paypalClientId,
+            'client_secret': Secrets.paypalClientSecret
         });
     }
 

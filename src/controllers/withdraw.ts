@@ -110,6 +110,7 @@ export const getWithdrawals = async (args: { status: string }, context: { user: 
 
 export const paypalWebhook = asyncHandler(async (req: Request, res: Response) => {
   const {verification_status} = await Paypal.verify(req.headers, req.body);
+  console.log('VERIFICATION STATUS', verification_status);
   if (verification_status === 'SUCCESS'){
     const body = req.body;
     const payoutId = body['resource']['payout_item']['sender_item_id'];
@@ -170,5 +171,6 @@ export const makePayouts = async (payouts: {value: string, receiver: string, pay
     payload.push(item);
   });
   const response = await Paypal.submitPayouts(payload);
+  console.log('PAYOUTS RESPONSE ', response);
   return response.batch_header;
 }
