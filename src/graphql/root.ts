@@ -48,6 +48,7 @@ export const root = {
   removeProfileInterests: userController.removeProfileInterests,
   getParticipantMetrics: participantController.getParticipantMetrics,
   getUserMetrics: userController.getUserMetrics,
+  getPreviousDayMetrics: userController.getPreviousDayMetrics,
 };
 
 export const publicRoot = {

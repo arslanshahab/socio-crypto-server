@@ -1,11 +1,12 @@
 import {SocialPost} from "../models/SocialPost";
-import {Tiers} from "../types";
+import {Tiers, AggregateDailyMetrics} from "../types";
 import {Participant} from "../models/Participant";
 import {Campaign} from "../models/Campaign";
 import { getConnection } from 'typeorm';
 import { Wallet } from '../models/Wallet';
 import { BN } from '../util/helpers';
 import { BigNumber } from 'bignumber.js';
+import { DailyParticipantMetric } from '../models/DailyParticipantMetric';
 
 export const calculateParticipantSocialScore = async (participant: Participant, campaign: Campaign) => {
     const socialPosts = await SocialPost.find({where: {participantId: participant.id}});
@@ -68,6 +69,18 @@ export const calculateParticipantPayout = async (currentCampaignTierTotal: BigNu
     return currentCampaignTierTotal.multipliedBy(percentageOfTotalParticipation);
 }
 
+export const calculateParticipantPayoutFromDailyParticipation = (currentCampaignTierTotal: BigNumber, campaign: Campaign, metrics: AggregateDailyMetrics) => {
+  if (campaign.totalParticipationScore.eq(new BN(0))) return new BN(0);
+  const viewScore = campaign.algorithm.pointValues.view.times(metrics.viewCount);
+  const clickScore = campaign.algorithm.pointValues.click.times(metrics.clickCount);
+  const submissionScore = campaign.algorithm.pointValues.submission.times(metrics.submissionCount);
+  const likesScore = campaign.algorithm.pointValues.likes.times(metrics.likeCount);
+  const sharesScore = campaign.algorithm.pointValues.shares.times(metrics.shareCount);
+  const totalParticipantPoints = viewScore.plus(clickScore).plus(submissionScore).plus(likesScore).plus(sharesScore);
+  const percentageOfTotalParticipation = totalParticipantPoints.div(campaign.totalParticipationScore);
+  return currentCampaignTierTotal.multipliedBy(percentageOfTotalParticipation);
+}
+
 export const performTransfer = async (walletId: string, amount: string, action: 'credit' | 'debit') => {
   if (BigInt(amount) <= BigInt(0)) throw new Error("Amount must be a positive number");
   return getConnection().transaction(async transactionalEntitymanager => {
@@ -104,8 +117,46 @@ export const getDatesBetweenDates = (date1: Date, date2: Date) => {
   return dateArray;
 }
 
-export async function wait(delayInMs: number, func: any) {
+export const wait = async (delayInMs: number, func: any) => {
     setTimeout(async () => {
         await func();
     }, delayInMs)
+}
+
+export const groupDailyMetricsByUser = async (userId: string, metrics: DailyParticipantMetric[]) => {
+  const modifiedMetrics = metrics.reduce((accum: {[key: string]: any}, current: DailyParticipantMetric) => {
+    if (!accum[current.campaign.id]) accum[current.campaign.id] = {
+      totalParticipation: current.totalParticipationScore.toString(),
+      campaign: current.campaign,
+      metrics: [current],
+      participationScore: current.totalParticipationScore.toString(),
+    };
+    else {
+      accum[current.campaign.id].totalParticipation = new BN(accum[current.campaign.id].totalParticipation).plus(current.totalParticipationScore).toString();
+      accum[current.campaign.id].metrics.push(current);
+    }
+    return accum;
+  }, {});
+  for (let i = 0; i < Object.keys(modifiedMetrics).length; i++) {
+    const campaignId = Object.keys(modifiedMetrics)[i];
+    const tierInformation = calculateTier(new BN(modifiedMetrics[campaignId].totalParticipation), modifiedMetrics[campaignId].campaign.algorithm.tiers);
+    const myParticipation = modifiedMetrics[campaignId].metrics.find((metric: DailyParticipantMetric) => metric.user.id === userId);
+    modifiedMetrics[campaignId]['rank'] = getRank(userId, modifiedMetrics[campaignId].metrics);
+    modifiedMetrics[campaignId]['tier'] = tierInformation['currentTier'];
+    modifiedMetrics[campaignId]['prospectivePayout'] = (myParticipation) ? await calculateParticipantPayoutFromDailyParticipation(new BN(tierInformation.currentTier), modifiedMetrics[campaignId].campaign, await DailyParticipantMetric.getAggregatedMetrics(myParticipation.participantId)).toString() : '0';
+  }
+  return modifiedMetrics;
+}
+
+export const getRank = (userId: string, metrics: DailyParticipantMetric[]) => {
+  let rank = -1;
+  const sortedMetrics = metrics.sort((a: DailyParticipantMetric, b: DailyParticipantMetric) => parseFloat(new BN(b.totalParticipationScore).minus(a.totalParticipationScore).toString()));
+  for (let i = 0; i < sortedMetrics.length; i++) {
+    const metric = sortedMetrics[i];
+    if (metric.user.id === userId) {
+      rank = i+1;
+      break;
+    }
+  }
+  return rank;
 }
