@@ -70,6 +70,8 @@ export const postToSocial = async (args: { type: string, text: string, photo: st
   return socialPost.id;
 }
 
+// export const getTotalFollowes = async (args)
+
 export const getTweetById = async (args: { id: string, type: string }, context: { user: any }) => {
     const { id, type } = args;
     const { id: identityId } = context.user;
