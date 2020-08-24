@@ -21,11 +21,18 @@ export class TwitterClient {
     return response.media_id_string;
   }
 
-  public static post = async (credentials: SocialClientCredentials, text: string, photo?: string): Promise<string> => {
+  public static postVideo = async (client: Twitter, video: string): Promise<string> => {
+    logger.info('posting video to twitter');
+    const options = { media_category: 'tweet_video', media_data: video };
+    const response = await client.post('/media/upload', options);
+    return response.media_id_string;
+  }
+
+  public static post = async (credentials: SocialClientCredentials, text: string, data?: string, mediaType?: 'photo'|'video'): Promise<string> => {
     logger.debug(`posting tweet to twitter with text: ${text}`);
     const options: {[key: string]: string} = { status: text };
     const client = TwitterClient.getClient(credentials);
-    if (photo) options['media_ids'] = await TwitterClient.postImage(client, photo);
+    if (data) options['media_ids'] = mediaType === 'photo' ? await TwitterClient.postImage(client, data) : await TwitterClient.postVideo(client, data);
     const response = await client.post('/statuses/update', options);
     return response.id_str;
   }
