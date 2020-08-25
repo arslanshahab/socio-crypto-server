@@ -48,11 +48,17 @@ spec:
               path: /v1/health
               port: {{ .Values.service.port }}
             initialDelaySeconds: 15
+            failureThreshold: 3
+            periodSeconds: 60
+            timeoutSeconds: 30
           readinessProbe:
             httpGet:
               path: /v1/health
               port: {{ .Values.service.port }}
             initialDelaySeconds: 15
+            failureThreshold: 3
+            periodSeconds: 60
+            timeoutSeconds: 30
           env:
             - name: PG_PASSWORD
               valueFrom:

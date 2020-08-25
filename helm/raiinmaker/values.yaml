@@ -34,10 +34,10 @@ server:
   resources:
     limits:
       cpu: 500m
-      memory: 500Mi
+      memory: 3Gi
     requests:
       cpu: 500m
-      memory: 500Mi
+      memory: 3Gi
 
 aws:
   secret_key:

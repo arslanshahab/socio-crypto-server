@@ -123,6 +123,8 @@ export const wait = async (delayInMs: number, func: any) => {
     }, delayInMs)
 }
 
+export const sleep = async (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 export const groupDailyMetricsByUser = async (userId: string, metrics: DailyParticipantMetric[]) => {
   const modifiedMetrics = metrics.reduce((accum: {[key: string]: any}, current: DailyParticipantMetric) => {
     if (!accum[current.campaign.id]) accum[current.campaign.id] = {
@@ -159,4 +161,24 @@ export const getRank = (userId: string, metrics: DailyParticipantMetric[]) => {
     }
   }
   return rank;
+}
+
+export const extractVideoData = (video: string): any[] => {
+  const mimeType = video.split(':')[1].split(';')[0];
+  const image = video.split(',')[1];
+  const bytes = Buffer.from(image, 'base64');
+  return [mimeType, image, bytes.length];
+}
+
+export const chunkVideo = (video: string, chunkSize: number = 5000000): string[] => {
+  const chunks = [];
+  let currentChunk = "";
+  for (let i = 0; i < video.length; i++) {
+    currentChunk += video[i];
+    if (currentChunk.length === chunkSize || i === video.length - 1) {
+      chunks.push(currentChunk);
+      currentChunk = "";
+    } 
+  }
+  return chunks;
 }
