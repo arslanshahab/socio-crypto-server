@@ -5,6 +5,8 @@ import { User } from './User';
 import { Campaign } from './Campaign';
 import { BN } from '../util/helpers';
 import { Participant } from './Participant';
+import { DateUtils } from 'typeorm/util/DateUtils';
+import { AggregateDailyMetrics } from '../types';
 
 @Entity()
 export class DailyParticipantMetric extends BaseEntity {
@@ -148,5 +150,64 @@ export class DailyParticipantMetric extends BaseEntity {
       where['createdAt'] = MoreThan(`${yyymmdd} 00:00:00`);
     }
     return await DailyParticipantMetric.find({ where, relations: ['campaign'], order: { createdAt: 'ASC' } });
+  }
+
+  public static async getAggregatedMetrics(participantId: string): Promise<AggregateDailyMetrics> {
+    const todayDate = new Date();
+    todayDate.setUTCHours(0);
+    todayDate.setUTCMinutes(0);
+    todayDate.setUTCSeconds(0);
+    todayDate.setUTCMilliseconds(0);
+    const today = DateUtils.mixedDateToDatetimeString(todayDate);
+    const yesterdayDate = new Date();
+    yesterdayDate.setUTCDate(new Date().getUTCDate() - 1);
+    yesterdayDate.setUTCHours(0);
+    yesterdayDate.setUTCMinutes(0);
+    yesterdayDate.setUTCSeconds(0);
+    yesterdayDate.setUTCMilliseconds(0);
+    const yesterday = DateUtils.mixedDateToDatetimeString(yesterdayDate);
+    const {
+      clickCount,
+      submissionCount,
+      viewCount,
+      likeCount,
+      shareCount,
+      commentCount,
+    } = await this.createQueryBuilder('metric')
+      .select('SUM(CAST(metric."clickCount" AS int)) as "clickCount", SUM(CAST(metric."submissionCount" AS int)) as "submissionCount", SUM(CAST(metric."viewCount" AS int)) as "viewCount", SUM(CAST(metric."likeCount" as int)) as "likeCount", SUM(CAST(metric."shareCount" as int)) as "shareCount"')
+      .where(`metric."participantId" = :participant AND metric."createdAt" >= '${yesterday}' AND metric."createdAt" < '${today}'`, {participant: participantId})
+      .getRawOne();
+    return {
+      clickCount: clickCount || 0,
+      submissionCount: submissionCount || 0,
+      viewCount: viewCount || 0,
+      likeCount: likeCount || 0,
+      shareCount: shareCount || 0,
+      commentCount: commentCount || 0,
+    }
+  }
+
+  public static async getPreviousDayMetricsForAllCampaigns(user: User): Promise<DailyParticipantMetric[]> {
+    const yesterdayDate = new Date();
+    yesterdayDate.setUTCDate(new Date().getUTCDate() - 1);
+    yesterdayDate.setUTCHours(0);
+    yesterdayDate.setUTCMinutes(0);
+    yesterdayDate.setUTCSeconds(0);
+    yesterdayDate.setUTCMilliseconds(0);
+    const yesterday = DateUtils.mixedDateToDatetimeString(yesterdayDate);
+    const todayDate = new Date();
+    todayDate.setUTCHours(0);
+    todayDate.setUTCMinutes(0);
+    todayDate.setUTCSeconds(0);
+    todayDate.setUTCMilliseconds(0);
+    const today = DateUtils.mixedDateToDatetimeString(todayDate);
+    return this.createQueryBuilder('metric')
+      .leftJoinAndSelect('metric.user', 'metricuser', 'metricuser.id = metric."userId"')
+      .leftJoinAndSelect('metric.campaign', 'campaign', 'campaign.id = metric."campaignId"')
+      .leftJoin('campaign.participants', 'participant', 'participant."campaignId" = campaign.id')
+      .leftJoinAndSelect('participant.user', 'user', 'participant."userId" = user.id AND participant."userId" = :userId', {userId: user.id})
+      .where(`campaign."endDate" >= '${yesterday}' AND metric."createdAt" < '${today}' AND metric."createdAt" >= '${yesterday}'`)
+      .orderBy('metric."createdAt"', 'DESC')
+      .getMany();
   }
 }

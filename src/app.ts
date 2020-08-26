@@ -54,7 +54,7 @@ export class Application {
     if (NODE_ENV === 'development') corsSettings.origin.push('http://localhost:3000');
     if (NODE_ENV === 'staging') corsSettings.origin.push('http://localhost:9000');
     this.app.use(cors(corsSettings));
-    this.app.use(bodyParser.json({ limit: "20mb" }));
+    this.app.use(bodyParser.json({ limit: "30mb" }));
     this.app.use(bodyParser.urlencoded({ extended: true }));
     this.app.set('port', process.env.PORT || 8080);
     const extensions: any = (params: any) => {
