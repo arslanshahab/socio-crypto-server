@@ -159,6 +159,13 @@ export class DailyParticipantMetric extends BaseEntity {
     todayDate.setUTCSeconds(0);
     todayDate.setUTCMilliseconds(0);
     const today = DateUtils.mixedDateToDatetimeString(todayDate);
+    const yesterdayDate = new Date();
+    yesterdayDate.setUTCDate(new Date().getUTCDate() - 1);
+    yesterdayDate.setUTCHours(0);
+    yesterdayDate.setUTCMinutes(0);
+    yesterdayDate.setUTCSeconds(0);
+    yesterdayDate.setUTCMilliseconds(0);
+    const yesterday = DateUtils.mixedDateToDatetimeString(yesterdayDate);
     const {
       clickCount,
       submissionCount,
@@ -168,7 +175,7 @@ export class DailyParticipantMetric extends BaseEntity {
       commentCount,
     } = await this.createQueryBuilder('metric')
       .select('SUM(CAST(metric."clickCount" AS int)) as "clickCount", SUM(CAST(metric."submissionCount" AS int)) as "submissionCount", SUM(CAST(metric."viewCount" AS int)) as "viewCount", SUM(CAST(metric."likeCount" as int)) as "likeCount", SUM(CAST(metric."shareCount" as int)) as "shareCount"')
-      .where(`metric."participantId" = :participant AND metric."createdAt" <= '${today}'`, {participant: participantId})
+      .where(`metric."participantId" = :participant AND metric."createdAt" >= '${yesterday}' AND metric."createdAt" < '${today}'`, {participant: participantId})
       .getRawOne();
     return {
       clickCount: clickCount || 0,
@@ -180,7 +187,7 @@ export class DailyParticipantMetric extends BaseEntity {
     }
   }
 
-  public static async getPreviousDayMetrics(user: User): Promise<DailyParticipantMetric[]> {
+  public static async getPreviousDayMetricsForAllCampaigns(user: User): Promise<DailyParticipantMetric[]> {
     const yesterdayDate = new Date();
     yesterdayDate.setUTCDate(new Date().getUTCDate() - 1);
     yesterdayDate.setUTCHours(0);

@@ -167,7 +167,7 @@ export const getPreviousDayMetrics = async (_args: any, context: { user: any }) 
       const participant = user.campaigns[i];
       await Campaign.updateAllDailyParticipationMetrics(participant.campaign.id);
     }
-    const allDailyMetrics = await DailyParticipantMetric.getPreviousDayMetrics(user);
+    const allDailyMetrics = await DailyParticipantMetric.getPreviousDayMetricsForAllCampaigns(user);
     metrics = await groupDailyMetricsByUser(user.id, allDailyMetrics);
   }
   return metrics;
