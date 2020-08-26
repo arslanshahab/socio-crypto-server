@@ -21,7 +21,7 @@ export class SocialLink extends BaseEntity {
   public socialId: string;
 
   @Column({ nullable: true })
-  public followerCount: string
+  public followerCount: number
 
   @ManyToOne(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
