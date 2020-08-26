@@ -21,7 +21,7 @@ export const getSocialClient = (type: string) => {
     return client ;
 }
 
-export const registerSocialLink = async (args: { type: string, apiKey: string, apiSecret: string, socialId: string }, context: { user: any }) => {
+export const registerSocialLink = async (args: { type: string, apiKey: string, apiSecret: string }, context: { user: any }) => {
   const { id } = context.user;
   const user = await User.findOneOrFail({ where: { identityId: id }, relations: ['socialLinks'] });
     const { type, apiKey, apiSecret } = args;
