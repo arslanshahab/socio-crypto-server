@@ -87,7 +87,7 @@ export const getTotalFollowers = async (args: any, context: {user: any}) => {
             case 'twitter':
                 const client = getSocialClient(link.type);
                 followerTotals['twitter'] = await client.getTotalFollowers(link.asClientCredentials(), link.id);
-                if (Number(link.followerCount) !== followerTotals['twitter']) {
+                if (link.followerCount !== followerTotals['twitter']) {
                     link.followerCount = followerTotals['twitter'];
                     await link.save();
                 }
