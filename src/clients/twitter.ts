@@ -40,7 +40,7 @@ export class TwitterClient {
     const client = TwitterClient.getClient(credentials);
     const response = await client.get('/users/show', {id});
     const followerCount = response['followers_count'];
-    await getRedis().set(cacheKey, JSON.stringify(followerCount), 'EX', 900); //
+    await getRedis().set(cacheKey, JSON.stringify(followerCount), 'EX', 900);
     return followerCount;
   }
 
