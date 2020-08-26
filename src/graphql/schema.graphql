@@ -34,7 +34,7 @@ type Mutation {
   removeParticipation(campaignId:String!): User
   trackAction(participantId:String!,action: String!): Participant
   promoteUserPermissions(userId:String,email:String,company:String,role:String): User
-  registerSocialLink(type:String!,apiKey:String!,apiSecret:String): Boolean
+  registerSocialLink(type:String!,apiKey:String!,apiSecret:String!,socialId:String!): Boolean
   removeSocialLink(type:String!): Boolean
   postToSocial(type:String!,text:String!,photo:String,participantId:String!): String
   setDevice(deviceToken:String!): Boolean
@@ -85,6 +85,7 @@ type Query {
   getWithdrawals(status:String): [AdminWithdrawal]
   accountExists(id:String!): UserExistence
   getCampaignMetrics(campaignId:String!): AdminCampaignMetrics
+  getFollowerCount: FollowerCounts
 }
 
 type ParticipantMetric {
@@ -278,6 +279,10 @@ type ParticipantAudit {
   clickPayout: Float,
   submissionPayout: Float,
   totalPayout: Float
+}
+
+type FollowerCounts {
+  twitter: Int
 }
 
 type AuditReport {

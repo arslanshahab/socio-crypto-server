@@ -17,6 +17,12 @@ export class SocialLink extends BaseEntity {
   @Column({ nullable: true })
   public apiSecret: string;
 
+  @Column({ nullable: true })
+  public socialId: string;
+
+  @Column({ nullable: true })
+  public followerCount: string
+
   @ManyToOne(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _type => User,
@@ -34,6 +40,14 @@ export class SocialLink extends BaseEntity {
     const credentials: SocialClientCredentials = {};
     if (this.apiKey) credentials.apiKey = decrypt(this.apiKey);
     if (this.apiSecret) credentials.apiSecret = decrypt(this.apiSecret);
+
     return credentials;
+  }
+
+  public static async getAllSocialLinksForUser(id: string) {
+    return this.createQueryBuilder('link')
+        .leftJoin('link.user', 'user')
+        .where('user.identityId = :id', {id})
+        .getMany()
   }
 }
