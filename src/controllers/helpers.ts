@@ -131,7 +131,7 @@ export const groupDailyMetricsByUser = async (userId: string, metrics: DailyPart
       totalParticipation: current.totalParticipationScore.toString(),
       campaign: current.campaign,
       metrics: [current],
-      participationScore: current.totalParticipationScore.toString(),
+      participationScore: current.participationScore.toString(),
     };
     else {
       accum[current.campaign.id].totalParticipation = new BN(accum[current.campaign.id].totalParticipation).plus(current.totalParticipationScore).toString();
@@ -181,4 +181,11 @@ export const chunkVideo = (video: string, chunkSize: number = 5000000): string[]
     } 
   }
   return chunks;
+}
+
+export const formatUTCDateForComparision = (date: Date): string => {
+  const currentDate = new Date(date);
+  const month = (currentDate.getUTCMonth() + 1) < 10 ? `0${currentDate.getUTCMonth() + 1}` : currentDate.getUTCMonth() + 1;
+  const day = currentDate.getUTCDate() < 10 ? `0${currentDate.getUTCDate()}` : currentDate.getUTCDate();
+  return `${currentDate.getUTCFullYear()}-${month}-${day}`;
 }

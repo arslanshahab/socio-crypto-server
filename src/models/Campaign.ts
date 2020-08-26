@@ -9,7 +9,7 @@ import {StringifiedArrayTransformer, BigNumberEntityTransformer, AlgorithmTransf
 import { BigNumber } from 'bignumber.js';
 import { BN } from '../util/helpers';
 import { DailyParticipantMetric } from './DailyParticipantMetric';
-import { getDatesBetweenDates } from '../controllers/helpers';
+import { getDatesBetweenDates, formatUTCDateForComparision } from '../controllers/helpers';
 
 @Entity()
 export class Campaign extends BaseEntity {
@@ -187,7 +187,7 @@ export class Campaign extends BaseEntity {
     for (let i = 0; i < campaign.participants.length; i++) {
       const participant = campaign.participants[i];
       const metrics = await DailyParticipantMetric.getSortedByParticipantId(participant.id);
-      if (metrics.length > 0 && new Date(metrics[metrics.length - 1].createdAt).getUTCDate() !== new Date().getUTCDate()) {
+      if (metrics.length > 0 && formatUTCDateForComparision(metrics[metrics.length - 1].createdAt) !== formatUTCDateForComparision(new Date())) {
         const datesInBetween = getDatesBetweenDates(new Date(metrics[metrics.length-1].createdAt), new Date());
         for (let j = 0; j < datesInBetween.length; j++) { await DailyParticipantMetric.insertPlaceholderRow(datesInBetween[j], metrics[metrics.length-1].totalParticipationScore, participant.campaign, participant.user, participant); }
       }

@@ -8,7 +8,7 @@ import {getTweetById} from '../controllers/social';
 import { getRedis } from '../clients/redis';
 import { BN } from '../util/helpers';
 import { DailyParticipantMetric } from '../models/DailyParticipantMetric';
-import { getDatesBetweenDates } from './helpers';
+import { getDatesBetweenDates, formatUTCDateForComparision } from './helpers';
 
 const { RATE_LIMIT_MAX = '3', RATE_LIMIT_WINDOW = '1m' } = process.env;
 
@@ -101,7 +101,7 @@ export const getParticipantMetrics = async (args: { participantId: string }, con
   const participant = await Participant.findOne({ where: { id: participantId, user }, relations: ['campaign'] });
   if (!participant) throw new Error('participant not found');
   const metrics = await DailyParticipantMetric.getSortedByParticipantId(participantId);
-  if (metrics.length > 0 && new Date(metrics[metrics.length - 1].createdAt).getUTCDate() !== new Date().getUTCDate()) {
+  if (metrics.length > 0 && formatUTCDateForComparision(metrics[metrics.length - 1].createdAt) !== formatUTCDateForComparision(new Date())) {
     const datesInBetween = getDatesBetweenDates(new Date(metrics[metrics.length-1].createdAt), new Date());
     for (let i = 0; i < datesInBetween.length; i++) { additionalRows.push(await DailyParticipantMetric.insertPlaceholderRow(datesInBetween[i], metrics[metrics.length-1].totalParticipationScore, participant.campaign, user, participant)); }
   }
