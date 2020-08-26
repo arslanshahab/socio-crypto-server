@@ -77,6 +77,28 @@ export const postToSocial = async (args: { type: string, text: string, photo: st
   return socialPost.id;
 }
 
+export const getTotalFollowers = async (args: any, context: {user: any}) => {
+    const { id } = context.user;
+    const followerTotals: {[key: string]: number} = {}
+    const user = await User.findOneOrFail({where: {identityId: id}});
+    const socialLinks = await SocialLink.find({where: {user}});
+    for (const link of socialLinks) {
+        switch (link.type) {
+            case 'twitter':
+                const client = getSocialClient(link.type);
+                followerTotals['twitter'] = await client.getTotalFollowers(link.asClientCredentials(), link.id);
+                if (link.followerCount !== followerTotals['twitter']) {
+                    link.followerCount = followerTotals['twitter'];
+                    await link.save();
+                }
+                break;
+            default:
+                break;
+        }
+    }
+    return followerTotals;
+};
+
 export const getTweetById = async (args: { id: string, type: string }, context: { user: any }) => {
     const { id, type } = args;
     const { id: identityId } = context.user;

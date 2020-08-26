@@ -67,6 +67,20 @@ export class TwitterClient {
     return response.id_str;
   }
 
+  public static getTotalFollowers = async (credentials: SocialClientCredentials, id: string, cached = true) => {
+    logger.info(`getting follower count`)
+    let cacheKey = `twitterFollowerCount:${id}`;
+    if (cached) {
+      const cachedResponse = await getRedis().get(cacheKey);
+      if (cachedResponse) return cachedResponse;
+    }
+    const client = TwitterClient.getClient(credentials);
+    const response = await client.get('/account/verify_credentials', { 'include_entities': false });
+    const followerCount = response['followers_count'];
+    await getRedis().set(cacheKey, JSON.stringify(followerCount), 'EX', 900);
+    return followerCount;
+  }
+
   public static get = async (credentials: SocialClientCredentials, id: string, cached = true): Promise<string> => {
     logger.debug(`retrieving tweet with id: ${id}`);
     let cacheKey = `twitter:${id}`;
