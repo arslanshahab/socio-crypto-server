@@ -187,7 +187,7 @@ export class DailyParticipantMetric extends BaseEntity {
     }
   }
 
-  public static async getPreviousDayMetricsForAllCampaigns(user: User): Promise<DailyParticipantMetric[]> {
+  public static async getPreviousDayMetricsForAllCampaigns(campaignIds: string[]): Promise<DailyParticipantMetric[]> {
     const yesterdayDate = new Date();
     yesterdayDate.setUTCDate(new Date().getUTCDate() - 1);
     yesterdayDate.setUTCHours(0);
@@ -202,11 +202,9 @@ export class DailyParticipantMetric extends BaseEntity {
     todayDate.setUTCMilliseconds(0);
     const today = DateUtils.mixedDateToDatetimeString(todayDate);
     return this.createQueryBuilder('metric')
-      .leftJoinAndSelect('metric.user', 'metricuser', 'metricuser.id = metric."userId"')
+      .leftJoinAndSelect('metric.user', 'user', 'user.id = metric."userId"')
       .leftJoinAndSelect('metric.campaign', 'campaign', 'campaign.id = metric."campaignId"')
-      .leftJoin('campaign.participants', 'participant', 'participant."campaignId" = campaign.id')
-      .leftJoinAndSelect('participant.user', 'user', 'participant."userId" = user.id AND participant."userId" = :userId', {userId: user.id})
-      .where(`campaign."endDate" >= '${yesterday}' AND metric."createdAt" < '${today}' AND metric."createdAt" >= '${yesterday}'`)
+      .where(`campaign.id IN (:...ids) AND campaign."endDate" >= '${yesterday}' AND metric."createdAt" < '${today}' AND metric."createdAt" >= '${yesterday}'`, {ids: campaignIds})
       .orderBy('metric."createdAt"', 'DESC')
       .getMany();
   }

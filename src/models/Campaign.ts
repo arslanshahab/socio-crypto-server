@@ -9,7 +9,8 @@ import {StringifiedArrayTransformer, BigNumberEntityTransformer, AlgorithmTransf
 import { BigNumber } from 'bignumber.js';
 import { BN } from '../util/helpers';
 import { DailyParticipantMetric } from './DailyParticipantMetric';
-import { getDatesBetweenDates, formatUTCDateForComparision } from '../controllers/helpers';
+import { getDatesBetweenDates, formatUTCDateForComparision, getYesterdaysDate } from '../controllers/helpers';
+import { User } from './User';
 
 @Entity()
 export class Campaign extends BaseEntity {
@@ -127,6 +128,11 @@ export class Campaign extends BaseEntity {
     return returnedCampaign;
   }
 
+  public static async getAllParticipatingCampaignIdsByUser(user: User): Promise<string[]> {
+    const u = await User.findOneOrFail({where: {id: user.id}, relations: ['campaigns', 'campaigns.campaign']});
+    return (u.campaigns.length > 0) ? u.campaigns.map((participant: Participant) => participant.campaign.id) : [];
+  }
+
   public static async findCampaignsByStatus(open: boolean, skip: number, take: number, company: string) {
     let where = '';
     const now = DateUtils.mixedDateToDatetimeString(new Date());
@@ -190,6 +196,9 @@ export class Campaign extends BaseEntity {
       if (metrics.length > 0 && formatUTCDateForComparision(metrics[metrics.length - 1].createdAt) !== formatUTCDateForComparision(new Date())) {
         const datesInBetween = getDatesBetweenDates(new Date(metrics[metrics.length-1].createdAt), new Date());
         for (let j = 0; j < datesInBetween.length; j++) { await DailyParticipantMetric.insertPlaceholderRow(datesInBetween[j], metrics[metrics.length-1].totalParticipationScore, participant.campaign, participant.user, participant); }
+      } else {
+        const datesInBetween = getDatesBetweenDates(getYesterdaysDate(new Date()), new Date());
+        for (let j = 0; j < datesInBetween.length; j++) { await DailyParticipantMetric.insertPlaceholderRow(datesInBetween[j], new BN(0), participant.campaign, participant.user, participant); }
       }
     }
     return true;

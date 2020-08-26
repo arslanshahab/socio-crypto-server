@@ -189,3 +189,13 @@ export const formatUTCDateForComparision = (date: Date): string => {
   const day = currentDate.getUTCDate() < 10 ? `0${currentDate.getUTCDate()}` : currentDate.getUTCDate();
   return `${currentDate.getUTCFullYear()}-${month}-${day}`;
 }
+
+export const getYesterdaysDate = (date: Date) => {
+  const yesterdayDate = new Date(date);
+  yesterdayDate.setUTCDate(new Date().getUTCDate() - 1);
+  yesterdayDate.setUTCHours(0);
+  yesterdayDate.setUTCMinutes(0);
+  yesterdayDate.setUTCSeconds(0);
+  yesterdayDate.setUTCMilliseconds(0);
+  return yesterdayDate;
+}
