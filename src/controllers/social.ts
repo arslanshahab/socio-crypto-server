@@ -24,7 +24,7 @@ export const getSocialClient = (type: string) => {
 export const registerSocialLink = async (args: { type: string, apiKey: string, apiSecret: string, socialId: string }, context: { user: any }) => {
   const { id } = context.user;
   const user = await User.findOneOrFail({ where: { identityId: id }, relations: ['socialLinks'] });
-    const { type, apiKey, apiSecret, socialId } = args;
+    const { type, apiKey, apiSecret } = args;
     if (!allowedSocialLinks.includes(type)) throw new Error('the type must exist as a predefined type');
     const existingLink = user.socialLinks.find((link: SocialLink) => link.type === type);
     const encryptedApiKey = encrypt(apiKey);
@@ -32,14 +32,12 @@ export const registerSocialLink = async (args: { type: string, apiKey: string, a
     if (existingLink) {
       existingLink.apiKey = encryptedApiKey;
       existingLink.apiSecret = encryptedApiSecret;
-      existingLink.socialId = socialId;
       await existingLink.save();
     } else {
       const link = new SocialLink();
       link.type = type;
       link.apiKey = encryptedApiKey;
       link.apiSecret = encryptedApiSecret;
-      link.socialId = socialId;
       link.user = user;
       await link.save();
     }
@@ -81,7 +79,7 @@ export const getTotalFollowers = async (args: any, context: {user: any}) => {
         switch (link.type) {
             case 'twitter':
                 const client = getSocialClient(link.type);
-                followerTotals['twitter'] = await client.getTotalFollowers(link.asClientCredentials(), link.socialId);
+                followerTotals['twitter'] = await client.getTotalFollowers(link.asClientCredentials(), link.id);
                 if (Number(link.followerCount) !== followerTotals['twitter']) {
                     link.followerCount = followerTotals['twitter'];
                     await link.save();

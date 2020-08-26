@@ -18,9 +18,6 @@ export class SocialLink extends BaseEntity {
   public apiSecret: string;
 
   @Column({ nullable: true })
-  public socialId: string;
-
-  @Column({ nullable: true })
   public followerCount: number
 
   @ManyToOne(

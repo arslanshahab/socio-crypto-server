@@ -31,14 +31,14 @@ export class TwitterClient {
   }
 
   public static getTotalFollowers = async (credentials: SocialClientCredentials, id: string, cached = true) => {
-    logger.info(`getting follower count for ${id}`)
+    logger.info(`getting follower count`)
     let cacheKey = `twitterFollowerCount:${id}`;
     if (cached) {
       const cachedResponse = await getRedis().get(cacheKey);
       if (cachedResponse) return cachedResponse;
     }
     const client = TwitterClient.getClient(credentials);
-    const response = await client.get('/users/show', {id});
+    const response = await client.get('/account/verify_credentials', { 'include_entities': false });
     const followerCount = response['followers_count'];
     await getRedis().set(cacheKey, JSON.stringify(followerCount), 'EX', 900);
     return followerCount;
