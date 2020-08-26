@@ -43,11 +43,4 @@ export class SocialLink extends BaseEntity {
 
     return credentials;
   }
-
-  public static async getAllSocialLinksForUser(id: string) {
-    return this.createQueryBuilder('link')
-        .leftJoin('link.user', 'user')
-        .where('user.identityId = :id', {id})
-        .getMany()
-  }
 }
