@@ -49,7 +49,7 @@ export class TwitterClient {
     if (finalizeResponse.processing_info && finalizeResponse.processing_info.state === 'pending') {
       let statusResponse = await TwitterClient.checkUploadStatus(client, mediaId);
       while (statusResponse !== 'failed' && statusResponse !== 'succeeded') {
-        await sleep(Number(finalizeResponse.processing_info.check_after_secs));
+        await sleep(Number(finalizeResponse.processing_info.check_after_secs) * 1000);
         statusResponse = await TwitterClient.checkUploadStatus(client, mediaId);
       }
     }
