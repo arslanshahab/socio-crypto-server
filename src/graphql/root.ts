@@ -49,6 +49,7 @@ export const root = {
   getParticipantMetrics: participantController.getParticipantMetrics,
   getUserMetrics: userController.getUserMetrics,
   getFollowerCount: socialController.getTotalFollowers,
+  getPreviousDayMetrics: userController.getPreviousDayMetrics,
 };
 
 export const publicRoot = {

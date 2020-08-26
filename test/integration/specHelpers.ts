@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import {Transfer} from "../../src/models/Transfer";
 import { BN } from '../../src/util/helpers';
 import { Profile } from '../../src/models/Profile';
+import { DailyParticipantMetric } from '../../src/models/DailyParticipantMetric';
 
 export const createCampaign = async (runningApp: Application, options?: { [key: string]: any } | any, ) => {
   const campaign = new Campaign();
@@ -34,6 +35,23 @@ export const createParticipant = async (runningApp: Application, options?: { [ke
   participant.user = getValue(['user'], options) || await createUser(runningApp, getValue(['userOptions'], options));
   participant.campaign = getValue(['campaign'], options) || await createCampaign(runningApp, getValue(['campaignOptions'], options));
   return await runningApp.databaseConnection.createEntityManager().save(participant);
+}
+
+export const createDailyMetrics = async (runningApp: Application, options: { [key: string]: any } | any) => {
+  const metric = new DailyParticipantMetric();
+  metric.campaign = getValue(['campaign'], options) || await createCampaign(runningApp, getValue(['campaignOptions'], options));
+  metric.user = getValue(['user'], options) || await createUser(runningApp, getValue(['userOptions'], options));
+  metric.clickCount = getValue(['clickCount'], options) || new BN(0);
+  metric.viewCount = getValue(['viewCount'], options) || new BN(0);
+  metric.submissionCount = getValue(['submissionCount'], options) || new BN(0);
+  metric.likeCount = getValue(['likeCount'], options) || new BN(0);
+  metric.shareCount = getValue(['shareCount'], options) || new BN(0);
+  metric.commentCount = getValue(['commentCount'], options) || new BN(0);
+  metric.participationScore = getValue(['participationScore'], options) || new BN(0);
+  metric.totalParticipationScore = getValue(['totalParticipationScore'], options) || new BN(0);
+  metric.participantId = getValue(['participantId'], options) || (await createParticipant(runningApp)).id;
+  metric.createdAt = getValue(['createdAt'], options);
+  return await runningApp.databaseConnection.createEntityManager().save(metric);
 }
 
 export const createUser = async (runningApp: Application, options?: { [key: string]: any } | any) => {

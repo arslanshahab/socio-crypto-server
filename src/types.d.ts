@@ -5,6 +5,15 @@ export interface AuthRequest extends Request {
     user: any;
 }
 
+export interface AggregateDailyMetrics {
+  clickCount: number;
+  submissionCount: number;
+  viewCount: number;
+  likeCount: number;
+  shareCount: number;
+  commentCount: number;
+}
+
 export interface Tiers {
     [index: string]: {threshold:BigNumber; totalCoiins: BigNumber;};
     2: {

@@ -9,6 +9,7 @@ import {StringifiedArrayTransformer, BigNumberEntityTransformer, AlgorithmTransf
 import { BigNumber } from 'bignumber.js';
 import { BN } from '../util/helpers';
 import { DailyParticipantMetric } from './DailyParticipantMetric';
+import { getDatesBetweenDates, formatUTCDateForComparision } from '../controllers/helpers';
 
 @Entity()
 export class Campaign extends BaseEntity {
@@ -178,6 +179,20 @@ export class Campaign extends BaseEntity {
       shareCount: shares || 0,
       postCount: posts || 0
     };
+  }
+
+  public static async updateAllDailyParticipationMetrics(campaignId: string) {
+    const campaign = await Campaign.findOne({where: {id: campaignId}, relations: ['participants', 'participants.user']});
+    if (!campaign) throw new Error('campaign not found');
+    for (let i = 0; i < campaign.participants.length; i++) {
+      const participant = campaign.participants[i];
+      const metrics = await DailyParticipantMetric.getSortedByParticipantId(participant.id);
+      if (metrics.length > 0 && formatUTCDateForComparision(metrics[metrics.length - 1].createdAt) !== formatUTCDateForComparision(new Date())) {
+        const datesInBetween = getDatesBetweenDates(new Date(metrics[metrics.length-1].createdAt), new Date());
+        for (let j = 0; j < datesInBetween.length; j++) { await DailyParticipantMetric.insertPlaceholderRow(datesInBetween[j], metrics[metrics.length-1].totalParticipationScore, participant.campaign, participant.user, participant); }
+      }
+    }
+    return true;
   }
 
   public static newCampaign(name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, tagline: string, suggestedPosts: string[], suggestedTags: string[]): Campaign {
