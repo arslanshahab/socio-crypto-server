@@ -153,19 +153,19 @@ export class DailyParticipantMetric extends BaseEntity {
   }
 
   public static async getAggregatedMetrics(participantId: string): Promise<AggregateDailyMetrics> {
-    const todayDate = new Date();
-    todayDate.setUTCHours(0);
-    todayDate.setUTCMinutes(0);
-    todayDate.setUTCSeconds(0);
-    todayDate.setUTCMilliseconds(0);
-    const today = DateUtils.mixedDateToDatetimeString(todayDate);
     const yesterdayDate = new Date();
-    yesterdayDate.setUTCDate(new Date().getUTCDate() - 1);
-    yesterdayDate.setUTCHours(0);
-    yesterdayDate.setUTCMinutes(0);
-    yesterdayDate.setUTCSeconds(0);
-    yesterdayDate.setUTCMilliseconds(0);
+    yesterdayDate.setDate(new Date().getDate() - 1);
+    yesterdayDate.setHours(0);
+    yesterdayDate.setMinutes(0);
+    yesterdayDate.setSeconds(0);
+    yesterdayDate.setMilliseconds(0);
     const yesterday = DateUtils.mixedDateToDatetimeString(yesterdayDate);
+    const todayDate = new Date();
+    todayDate.setHours(0);
+    todayDate.setMinutes(0);
+    todayDate.setSeconds(0);
+    todayDate.setMilliseconds(0);
+    const today = DateUtils.mixedDateToDatetimeString(todayDate);
     const {
       clickCount,
       submissionCount,
@@ -189,17 +189,17 @@ export class DailyParticipantMetric extends BaseEntity {
 
   public static async getPreviousDayMetricsForAllCampaigns(campaignIds: string[]): Promise<DailyParticipantMetric[]> {
     const yesterdayDate = new Date();
-    yesterdayDate.setUTCDate(new Date().getUTCDate() - 1);
-    yesterdayDate.setUTCHours(0);
-    yesterdayDate.setUTCMinutes(0);
-    yesterdayDate.setUTCSeconds(0);
-    yesterdayDate.setUTCMilliseconds(0);
+    yesterdayDate.setDate(new Date().getDate() - 1);
+    yesterdayDate.setHours(0);
+    yesterdayDate.setMinutes(0);
+    yesterdayDate.setSeconds(0);
+    yesterdayDate.setMilliseconds(0);
     const yesterday = DateUtils.mixedDateToDatetimeString(yesterdayDate);
     const todayDate = new Date();
-    todayDate.setUTCHours(0);
-    todayDate.setUTCMinutes(0);
-    todayDate.setUTCSeconds(0);
-    todayDate.setUTCMilliseconds(0);
+    todayDate.setHours(0);
+    todayDate.setMinutes(0);
+    todayDate.setSeconds(0);
+    todayDate.setMilliseconds(0);
     const today = DateUtils.mixedDateToDatetimeString(todayDate);
     return this.createQueryBuilder('metric')
       .leftJoinAndSelect('metric.user', 'user', 'user.id = metric."userId"')

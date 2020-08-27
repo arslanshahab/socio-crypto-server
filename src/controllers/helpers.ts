@@ -114,6 +114,7 @@ export const getDatesBetweenDates = (date1: Date, date2: Date) => {
     dateArray.push(new Date(currentDate));
     currentDate = addDays(currentDate, 1);
   }
+  if (dateArray.length > 0) dateArray.splice(0, 1);
   return dateArray;
 }
 
@@ -126,17 +127,21 @@ export const wait = async (delayInMs: number, func: any) => {
 export const sleep = async (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const groupDailyMetricsByUser = async (userId: string, metrics: DailyParticipantMetric[]) => {
+  const alreadyHandledParticipants: {[key: string]: any} = {};
   const modifiedMetrics = metrics.reduce((accum: {[key: string]: any}, current: DailyParticipantMetric) => {
-    if (!accum[current.campaign.id]) accum[current.campaign.id] = {
-      totalParticipation: current.totalParticipationScore.toString(),
-      campaign: current.campaign,
-      metrics: [current],
-      participationScore: current.participationScore.toString(),
-    };
-    else {
-      accum[current.campaign.id].totalParticipation = new BN(accum[current.campaign.id].totalParticipation).plus(current.totalParticipationScore).toString();
-      accum[current.campaign.id].metrics.push(current);
+    if (!alreadyHandledParticipants[current.participantId]) {
+      if (!accum[current.campaign.id]) accum[current.campaign.id] = {
+        totalParticipation: current.totalParticipationScore.toString(),
+        campaign: current.campaign,
+        metrics: [current],
+        participationScore: current.participationScore.toString(),
+      };
+      else {
+        accum[current.campaign.id].totalParticipation = new BN(accum[current.campaign.id].totalParticipation).plus(current.totalParticipationScore).toString();
+        accum[current.campaign.id].metrics.push(current);
+      }
     }
+    alreadyHandledParticipants[current.participantId] = 1;
     return accum;
   }, {});
   for (let i = 0; i < Object.keys(modifiedMetrics).length; i++) {
