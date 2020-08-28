@@ -134,14 +134,15 @@ export const groupDailyMetricsByUser = async (userId: string, metrics: DailyPart
         totalParticipation: current.totalParticipationScore.toString(),
         campaign: current.campaign,
         metrics: [current],
-        participationScore: current.participationScore.toString(),
+        participationScore: current.user.id === userId && current.participationScore.toString(),
       };
       else {
         accum[current.campaign.id].totalParticipation = new BN(accum[current.campaign.id].totalParticipation).plus(current.totalParticipationScore).toString();
         accum[current.campaign.id].metrics.push(current);
+        if (current.user.id === userId) accum[current.campaign.id].participationScore = current.participationScore.toString();
       }
+      alreadyHandledParticipants[current.participantId] = 1;
     }
-    alreadyHandledParticipants[current.participantId] = 1;
     return accum;
   }, {});
   for (let i = 0; i < Object.keys(modifiedMetrics).length; i++) {
