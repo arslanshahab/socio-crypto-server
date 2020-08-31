@@ -4,7 +4,6 @@ import { readFile } from 'fs';
 const readFilePromise = promisify(readFile);
 
 
-const {NODE_ENV} = process.env;
 
 export class Secrets {
   public static firebaseProjectId: string;
