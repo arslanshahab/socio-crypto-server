@@ -84,6 +84,9 @@ spec:
             - name: twitter-credentials
               mountPath: "/var/secrets/twitter-credentials"
               readOnly: true
+            - name: paypal-credentials
+              mountPath: "/var/secrets/paypal-credentials"
+              readOnly: true
           resources:
             {{- toYaml .Values.server.resources | nindent 12 }}
       volumes:
@@ -102,6 +105,9 @@ spec:
         - name: twitter-credentials
           secret:
             secretName: twitter-credentials
+        - name: paypal-credentials
+          secret:
+            secretName: paypal-credentials
 ---
 apiVersion: apps/v1
 kind: Deployment
