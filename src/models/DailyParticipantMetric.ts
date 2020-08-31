@@ -120,7 +120,7 @@ export class DailyParticipantMetric extends BaseEntity {
     return record;
   }
 
-  public static async insertPlaceholderRow(date: Date, lastParticipationScore: BigNumber, campaign: Campaign, user: User, participant: Participant): Promise<DailyParticipantMetric> {
+  public static async insertPlaceholderRow(date: Date|string, lastParticipationScore: BigNumber, campaign: Campaign, user: User, participant: Participant): Promise<DailyParticipantMetric> {
     const metric = new DailyParticipantMetric();
     metric.createdAt = new Date(date);
     metric.updatedAt = new Date(date);

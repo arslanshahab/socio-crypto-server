@@ -111,7 +111,7 @@ export const getDatesBetweenDates = (date1: Date, date2: Date) => {
   const dateArray = [];
   let currentDate = new Date(date1);
   while (currentDate <= new Date(date2)) {
-    dateArray.push(new Date(currentDate));
+    dateArray.push(new Date(currentDate).toUTCString());
     currentDate = addDays(currentDate, 1);
   }
   if (dateArray.length > 0) dateArray.splice(0, 1);
