@@ -4,7 +4,6 @@ import { readFile } from 'fs';
 const readFilePromise = promisify(readFile);
 
 
-const {NODE_ENV} = process.env;
 
 export class Secrets {
   public static firebaseProjectId: string;
@@ -37,9 +36,9 @@ export class Secrets {
     Secrets.twitterConsumerSecretKey = process.env.TWITTER_CONSUMER_SECRET_KEY || (await readFilePromise('/var/secrets/twitter-credentials/consumerSecretKey', 'utf8'));
 
     // Defaults to sandbox creds
-    Secrets.paypalClientId = NODE_ENV !== 'production' ? 'AbWAuCaI8CmZyfER52cY3SuSAAMc7LmMqhWgbM1Fy4N1A09pKlDWJZW_X7odJeWGWTvReoSciWvis0t_' : (await readFilePromise('/var/secrets/paypal-credentials/clientId', 'utf8'));
-    Secrets.paypalClientSecret = NODE_ENV !== 'production' ? 'EL0IpTlVyqn79Lg2S9EDMOQD8pWnegFOcKYiY_8jK9gQ_xDIALq4ZYk0GVt8BTEYfPUoX8tWCbxan6P7' : (await readFilePromise('/var/secrets/paypal-credentials/clientSecret', 'utf8'));
-    Secrets.paypalWebhookId = NODE_ENV !== 'production' ? '4DP6580501488881N' : (await readFilePromise('/var/secrets/paypal-credentials/webhookId', 'utf8'));
+    Secrets.paypalClientId = process.env.PAYPAL_CLIENT_ID || (await readFilePromise('/var/secrets/paypal-credentials/clientId', 'utf8'));
+    Secrets.paypalClientSecret = process.env.PAYPAL_CLIENT_SECRET || (await readFilePromise('/var/secrets/paypal-credentials/clientSecret', 'utf8'));
+    Secrets.paypalWebhookId = process.env.PAYPAL_WEBHOOK_ID || (await readFilePromise('/var/secrets/paypal-credentials/webhookId', 'utf8'));
 
   }
 }
