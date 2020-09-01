@@ -48,11 +48,17 @@ spec:
               path: /v1/health
               port: {{ .Values.service.port }}
             initialDelaySeconds: 15
+            failureThreshold: 3
+            periodSeconds: 60
+            timeoutSeconds: 30
           readinessProbe:
             httpGet:
               path: /v1/health
               port: {{ .Values.service.port }}
             initialDelaySeconds: 15
+            failureThreshold: 3
+            periodSeconds: 60
+            timeoutSeconds: 30
           env:
             - name: PG_PASSWORD
               valueFrom:
@@ -78,6 +84,9 @@ spec:
             - name: twitter-credentials
               mountPath: "/var/secrets/twitter-credentials"
               readOnly: true
+            - name: paypal-credentials
+              mountPath: "/var/secrets/paypal-credentials"
+              readOnly: true
           resources:
             {{- toYaml .Values.server.resources | nindent 12 }}
       volumes:
@@ -96,6 +105,9 @@ spec:
         - name: twitter-credentials
           secret:
             secretName: twitter-credentials
+        - name: paypal-credentials
+          secret:
+            secretName: paypal-credentials
 ---
 apiVersion: apps/v1
 kind: Deployment

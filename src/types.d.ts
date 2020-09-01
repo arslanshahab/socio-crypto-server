@@ -5,6 +5,15 @@ export interface AuthRequest extends Request {
     user: any;
 }
 
+export interface AggregateDailyMetrics {
+  clickCount: number;
+  submissionCount: number;
+  viewCount: number;
+  likeCount: number;
+  shareCount: number;
+  commentCount: number;
+}
+
 export interface Tiers {
     [index: string]: {threshold:BigNumber; totalCoiins: BigNumber;};
     2: {
@@ -64,10 +73,15 @@ export interface SocialClientCredentials {
   apiSecret?: string;
 }
 
-export interface FactorAtRest {
-  providerId: string;
-  id: string;
-  name: string;
-  factor: any;
-  
+export interface PaypalPayout {
+    recipient_type: 'EMAIL',
+    amount: {
+        value: string;
+        currency: 'USD'
+    },
+    note: "Thanks for making it Raiin!",
+    sender_item_id: string;
+    "receiver": string,
 }
+
+export type PayoutStatus = 'BLOCKED' | 'CANCELED' | 'DENIED' | 'FAILED' | 'HELD' | 'REFUNDED' | 'RETURNED' | 'SUCCEEDED' | 'UNCLAIMED'

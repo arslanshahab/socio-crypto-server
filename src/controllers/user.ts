@@ -7,6 +7,8 @@ import { TinyUrl } from '../clients/tinyUrl';
 import {sha256Hash} from '../util/crypto';
 import { GraphQLResolveInfo } from 'graphql';
 import { Profile } from '../models/Profile';
+import { DailyParticipantMetric } from '../models/DailyParticipantMetric';
+import { groupDailyMetricsByUser } from './helpers';
 
 export const participate = async (args: { campaignId: string }, context: { user: any }) => {
     const { id } = context.user;
@@ -145,4 +147,29 @@ export const removeProfileInterests = async (args: { interest: string, value: st
   }
   await profile.save()
   return user.asV1();
+}
+
+export const getUserMetrics = async (args: { today: boolean }, context: { user: any }) => {
+  const { id } = context.user;
+  const { today = false } = args;
+  const user = await User.findOne({ where: { identityId: id } });
+  if (!user) throw new Error('user not found');
+  return (await DailyParticipantMetric.getSortedByUser(user, today)).map(metric => metric.asV1());
+}
+
+export const getPreviousDayMetrics = async (_args: any, context: { user: any }) => {
+  const { id } = context.user;
+  let metrics: {[key: string]: any} = {};
+  const user = await User.findOne({ where: { identityId: id }, relations: ['campaigns', 'campaigns.campaign'] });
+  if (!user) throw new Error('user not found');
+  if (user.campaigns.length > 0) {
+    for (let i = 0; i < user.campaigns.length; i++) {
+      const participant = user.campaigns[i];
+      await Campaign.updateAllDailyParticipationMetrics(participant.campaign.id);
+    }
+    const allParticipatingCampaigns = await Campaign.getAllParticipatingCampaignIdsByUser(user);
+    const allDailyMetrics = allParticipatingCampaigns.length > 0 ? await DailyParticipantMetric.getPreviousDayMetricsForAllCampaigns(allParticipatingCampaigns) : [];
+    metrics = await groupDailyMetricsByUser(user.id, allDailyMetrics);
+  }
+  return metrics;
 }

@@ -108,6 +108,26 @@ export class S3Client {
     return factor;
   }
 
+  public static async refreshPaypalAccessToken(token: string) {
+    const params: AWS.S3.PutObjectRequest = { Bucket: KYC_BUCKET_NAME, Key: 'paypal/accessToken', Body: token};
+    try {
+      await this.client.putObject(params).promise();
+      return token;
+    } catch (e) {
+      throw e;
+    }
+  }
+
+  public static async getPaypalAccessToken() {
+    const params: AWS.S3.GetObjectRequest = {Bucket: KYC_BUCKET_NAME, Key: 'paypal/accessToken'}
+    try {
+      return (await this.client.getObject(params).promise()).Body?.toString();
+    } catch (e) {
+      if (e.code && e.code === 'NotFound') return null;
+      throw e;
+    }
+  }
+
   public static async downloadFactor(userId: string, factorType: string) {
     const params: AWS.S3.GetObjectRequest = { Bucket: KYC_BUCKET_NAME, Key: `factor/${userId}/${factorType}` };
     const factorString = (await this.client.getObject(params).promise()).Body?.toString();

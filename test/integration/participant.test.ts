@@ -11,6 +11,7 @@ import {User} from "../../src/models/User";
 import * as gql from 'gql-query-builder';
 import {createParticipant} from "./specHelpers";
 import request from "supertest";
+import { DailyParticipantMetric } from "../../src/models/DailyParticipantMetric";
 
 describe('Participant Integration Test', () => {
     let runningApp: Application;
@@ -56,15 +57,15 @@ describe('Participant Integration Test', () => {
     describe('Mutations', () => {
         let mutation;
         it('#trackAction click', async () => {
-           const participant = await createParticipant(runningApp);
-           mutation = gql.mutation({
-               operation: 'trackAction',
-               variables: {
-                   participantId: {value: participant.id, required: true},
-                   action: {value: 'click', required: true}
-               },
-               fields: ['id']
-           });
+            const participant = await createParticipant(runningApp);
+            mutation = gql.mutation({
+                operation: 'trackAction',
+                variables: {
+                    participantId: {value: participant.id, required: true},
+                    action: {value: 'click', required: true}
+                },
+                fields: ['id']
+            });
             const res = await request(runningApp.app)
                 .post('/v1/public/graphql')
                 .send(mutation)
@@ -81,15 +82,15 @@ describe('Participant Integration Test', () => {
             expect(adjustedClickCount.toString()).to.equal('1');
         });
         it('#trackAction view', async () => {
-           const participant = await createParticipant(runningApp);
-           mutation = gql.mutation({
-               operation: 'trackAction',
-               variables: {
-                   participantId: {value: participant.id, required: true},
-                   action: {value: 'view', required: true}
-               },
-               fields: ['id']
-           });
+            const participant = await createParticipant(runningApp);
+            mutation = gql.mutation({
+                operation: 'trackAction',
+                variables: {
+                    participantId: {value: participant.id, required: true},
+                    action: {value: 'view', required: true}
+                },
+                fields: ['id']
+            });
             const res = await request(runningApp.app)
                 .post('/v1/public/graphql')
                 .send(mutation)
@@ -106,15 +107,15 @@ describe('Participant Integration Test', () => {
             expect(adjustedViewCount.toString()).to.equal('1');
         });
         it('#trackAction submission', async () => {
-           const participant = await createParticipant(runningApp);
-           mutation = gql.mutation({
-               operation: 'trackAction',
-               variables: {
-                   participantId: {value: participant.id, required: true},
-                   action: {value: 'submission', required: true}
-               },
-               fields: ['id']
-           });
+            const participant = await createParticipant(runningApp);
+            mutation = gql.mutation({
+                operation: 'trackAction',
+                variables: {
+                    participantId: {value: participant.id, required: true},
+                    action: {value: 'submission', required: true}
+                },
+                fields: ['id']
+            });
             const res = await request(runningApp.app)
                 .post('/v1/public/graphql')
                 .send(mutation)
@@ -131,15 +132,15 @@ describe('Participant Integration Test', () => {
             expect(adjustedsubmissionCount.toString()).to.equal('1');
         });
         it('#trackAction throws invalid metric', async () => {
-           const participant = await createParticipant(runningApp);
-           mutation = gql.mutation({
-               operation: 'trackAction',
-               variables: {
-                   participantId: {value: participant.id, required: true},
-                   action: {value: 'bacon', required: true}
-               },
-               fields: ['id']
-           });
+            const participant = await createParticipant(runningApp);
+            mutation = gql.mutation({
+                operation: 'trackAction',
+                variables: {
+                    participantId: {value: participant.id, required: true},
+                    action: {value: 'bacon', required: true}
+                },
+                fields: ['id']
+            });
             const res = await request(runningApp.app)
                 .post('/v1/public/graphql')
                 .send(mutation)
@@ -147,5 +148,27 @@ describe('Participant Integration Test', () => {
             expect(res.body.errors.length).to.equal(1);
             expect(res.body.errors[0].message).to.equal('invalid metric specified');
         });
+        it('#trackAction registers click with daily metrics table', async () => {
+          const participant = await createParticipant(runningApp);
+          mutation = gql.mutation({
+              operation: 'trackAction',
+              variables: {
+                  participantId: {value: participant.id, required: true},
+                  action: {value: 'click', required: true}
+              },
+              fields: ['id']
+          });
+          await request(runningApp.app)
+              .post('/v1/public/graphql')
+              .send(mutation)
+              .set('Accepts', 'application/json')
+          await request(runningApp.app)
+              .post('/v1/public/graphql')
+              .send(mutation)
+              .set('Accepts', 'application/json')
+          const metrics = await DailyParticipantMetric.findOneOrFail({ where: { participantId: participant.id } });
+          expect(metrics.clickCount.toString()).to.equal('2');
+          expect(metrics.participationScore.toString()).to.equal('2');
+      });
     });
 });

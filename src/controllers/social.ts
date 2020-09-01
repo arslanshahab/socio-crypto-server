@@ -54,8 +54,8 @@ export const removeSocialLink = async (args: { type: string }, context: { user: 
     return true;
 }
 
-export const postToSocial = async (args: { type: string, text: string, photo: string, participantId: string }, context: { user: any }) => {
-  const { type, text, photo, participantId } = args;
+export const postToSocial = async (args: { type: string, text: string, photo: string, video: string, participantId: string }, context: { user: any }) => {
+  const { type, text, photo, video, participantId } = args;
   if (!allowedSocialLinks.includes(type)) throw new Error('the type must exist as a predefined type');
   const { id } = context.user;
   const user = await User.findOneOrFail({ where: { identityId: id }, relations: ['socialLinks'] });
@@ -64,11 +64,40 @@ export const postToSocial = async (args: { type: string, text: string, photo: st
   const socialLink = user.socialLinks.find(link => link.type === type);
   if (!socialLink) throw new Error(`you have not linked ${type} as a social platform`);
   const client = getSocialClient(type);
-  const postId = await client.post(socialLink.asClientCredentials(), text, photo);
+  let postId: string;
+  if (video) {
+    postId = await client.post(socialLink.asClientCredentials(), text, video, 'video');
+  } else if (photo) {
+    postId = await client.post(socialLink.asClientCredentials(), text, photo, 'photo');
+  } else {
+    postId = await client.post(socialLink.asClientCredentials(), text);
+  }
   logger.info(`Posted to twitter with ID: ${postId}`);
   const socialPost = await SocialPost.newSocialPost(postId, type, participant.id, user, participant.campaign).save();
   return socialPost.id;
 }
+
+export const getTotalFollowers = async (args: any, context: {user: any}) => {
+    const { id } = context.user;
+    const followerTotals: {[key: string]: number} = {}
+    const user = await User.findOneOrFail({where: {identityId: id}});
+    const socialLinks = await SocialLink.find({where: {user}});
+    for (const link of socialLinks) {
+        switch (link.type) {
+            case 'twitter':
+                const client = getSocialClient(link.type);
+                followerTotals['twitter'] = await client.getTotalFollowers(link.asClientCredentials(), link.id);
+                if (link.followerCount !== followerTotals['twitter']) {
+                    link.followerCount = followerTotals['twitter'];
+                    await link.save();
+                }
+                break;
+            default:
+                break;
+        }
+    }
+    return followerTotals;
+};
 
 export const getTweetById = async (args: { id: string, type: string }, context: { user: any }) => {
     const { id, type } = args;

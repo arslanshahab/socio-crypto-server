@@ -5,6 +5,7 @@ import { Wallet } from './Wallet';
 import { Campaign } from './Campaign';
 import { BN } from '../util/helpers';
 import {BigNumberEntityTransformer} from "../util/transformers";
+import {PayoutStatus} from "../types";
 
 @Entity()
 export class Transfer extends BaseEntity {
@@ -14,11 +15,20 @@ export class Transfer extends BaseEntity {
   @Column({ type: 'varchar', nullable: false, transformer: BigNumberEntityTransformer })
   public amount: BigNumber;
 
+  @Column({ type: 'varchar', nullable: true, transformer: BigNumberEntityTransformer })
+  public usdAmount: BigNumber;
+
   @Column({ nullable: false })
   public action: 'transfer'|'withdraw';
 
   @Column({ nullable: true })
   public withdrawStatus: 'pending'|'approved'|'rejected';
+
+  @Column({nullable: true})
+  public payoutStatus: PayoutStatus;
+
+  @Column({nullable: true})
+  public payoutId: string;
 
   @CreateDateColumn()
   public createdAt: Date;

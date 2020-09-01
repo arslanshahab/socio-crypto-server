@@ -8,6 +8,9 @@ import {Transfer} from './Transfer';
 import {StringifiedArrayTransformer, BigNumberEntityTransformer, AlgorithmTransformer} from '../util/transformers';
 import { BigNumber } from 'bignumber.js';
 import { BN } from '../util/helpers';
+import { DailyParticipantMetric } from './DailyParticipantMetric';
+import { getDatesBetweenDates, formatUTCDateForComparision, getYesterdaysDate } from '../controllers/helpers';
+import { User } from './User';
 
 @Entity()
 export class Campaign extends BaseEntity {
@@ -79,6 +82,12 @@ export class Campaign extends BaseEntity {
   )
   public payouts: Transfer[];
 
+  @OneToMany(
+    _type => DailyParticipantMetric,
+    metric => metric.campaign
+  )
+  public dailyMetrics: DailyParticipantMetric[];
+
   @CreateDateColumn()
   public createdAt: Date;
 
@@ -117,6 +126,11 @@ export class Campaign extends BaseEntity {
     if (this.payouts && this.payouts.length > 0) returnedCampaign.payouts = this.payouts.map((payout) => payout.asV1());
     if (this.posts && this.posts.length > 0) returnedCampaign.posts = this.posts.map((post) => post.asV1());
     return returnedCampaign;
+  }
+
+  public static async getAllParticipatingCampaignIdsByUser(user: User): Promise<string[]> {
+    const u = await User.findOneOrFail({where: {id: user.id}, relations: ['campaigns', 'campaigns.campaign']});
+    return (u.campaigns.length > 0) ? u.campaigns.map((participant: Participant) => participant.campaign.id) : [];
   }
 
   public static async findCampaignsByStatus(open: boolean, skip: number, take: number, company: string) {
@@ -171,6 +185,29 @@ export class Campaign extends BaseEntity {
       shareCount: shares || 0,
       postCount: posts || 0
     };
+  }
+
+  public static async updateAllDailyParticipationMetrics(campaignId: string) {
+    const campaign = await Campaign.findOne({where: {id: campaignId}, relations: ['participants', 'participants.user']});
+    if (!campaign) throw new Error('campaign not found');
+    const alreadyHandledParticipants: {[key: string]: any} = {};
+    for (let i = 0; i < campaign.participants.length; i++) {
+      const participant = campaign.participants[i];
+      if (!alreadyHandledParticipants[participant.id]) {
+        const metrics = await DailyParticipantMetric.getSortedByParticipantId(participant.id);
+        if (metrics.length > 0) {
+          if (formatUTCDateForComparision(metrics[metrics.length - 1].createdAt) !== formatUTCDateForComparision(new Date())) {
+            const datesInBetween = getDatesBetweenDates(metrics[metrics.length-1].createdAt, new Date());
+            for (let j = 0; j < datesInBetween.length; j++) { await DailyParticipantMetric.insertPlaceholderRow(datesInBetween[j], metrics[metrics.length-1].totalParticipationScore, participant.campaign, participant.user, participant); }
+          }
+        } else {
+          const datesInBetween = getDatesBetweenDates(getYesterdaysDate(new Date()), new Date());
+          for (let j = 0; j < datesInBetween.length; j++) { await DailyParticipantMetric.insertPlaceholderRow(datesInBetween[j], new BN(0), participant.campaign, participant.user, participant); }
+        }
+        alreadyHandledParticipants[participant.id] = 1;
+      }
+    }
+    return true;
   }
 
   public static newCampaign(name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, tagline: string, suggestedPosts: string[], suggestedTags: string[]): Campaign {

@@ -10,6 +10,7 @@ import { BN } from '../util/helpers';
 import { FieldNode } from 'graphql';
 import { Profile } from './Profile';
 import { Transfer } from './Transfer';
+import { DailyParticipantMetric } from './DailyParticipantMetric';
 
 @Entity()
 export class User extends BaseEntity {
@@ -79,6 +80,13 @@ export class User extends BaseEntity {
     { eager: true }
   )
   public profile: Profile;
+
+  @OneToMany(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _type => DailyParticipantMetric,
+    metric => metric.user
+  )
+  public dailyMetrics: DailyParticipantMetric[];
 
   public asV1() {
     let returnedUser: any = {...this};

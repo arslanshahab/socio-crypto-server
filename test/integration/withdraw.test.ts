@@ -33,7 +33,7 @@ describe('Withdraw Integration Test', function () {
         setEnv();
         fullAppTestBed.stub(Firebase, 'initialize');
         fullAppTestBed.stub(Firebase, 'sendCampaignCompleteNotifications');
-        fullAppTestBed.stub(S3Client, 'getUserObject');
+        fullAppTestBed.stub(S3Client, 'getUserObject').resolves({paypalEmail: 'david@dragonchain.com'});
         Firebase.client = {
             auth: () => {},
         } as admin.app.App;
