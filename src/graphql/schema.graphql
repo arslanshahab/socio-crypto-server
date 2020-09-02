@@ -91,6 +91,7 @@ type Query {
 
 type ParticipantMetric {
   id: String
+  campaignId: String
   clickCount: Int
   viewCount: Int
   submissionCount: Int
