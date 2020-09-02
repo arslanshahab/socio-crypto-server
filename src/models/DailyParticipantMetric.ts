@@ -63,6 +63,7 @@ export class DailyParticipantMetric extends BaseEntity {
   public asV1() {
     return {
       ...this,
+      campaignId: this.campaign.id,
       clickCount: this.clickCount.toNumber(),
       viewCount: this.viewCount.toNumber(),
       submissionCount: this.submissionCount.toNumber(),
