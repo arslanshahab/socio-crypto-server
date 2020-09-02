@@ -61,9 +61,8 @@ export class DailyParticipantMetric extends BaseEntity {
   public campaign: Campaign;
 
   public asV1() {
-    return {
+    const response: {[key: string]: any} = {
       ...this,
-      campaignId: this.campaign.id,
       clickCount: this.clickCount.toNumber(),
       viewCount: this.viewCount.toNumber(),
       submissionCount: this.submissionCount.toNumber(),
@@ -73,6 +72,8 @@ export class DailyParticipantMetric extends BaseEntity {
       participationScore: parseFloat(this.participationScore.toString()),
       totalParticipationScore: parseFloat(this.totalParticipationScore.toString()),
     }
+    if (this.campaign) response.campaignId = this.campaign.id;
+    return response
   }
 
   public static async upsert(
