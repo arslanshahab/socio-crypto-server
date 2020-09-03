@@ -99,22 +99,22 @@ export class DailyParticipantMetric extends BaseEntity {
     record.totalParticipationScore = participant.participationScore;
     switch (action) {
       case 'click':
-        record.clickCount = (record.clickCount) ? record.clickCount.plus(new BN(record.clickCount)) : new BN(actionCount);
+        record.clickCount = (record.clickCount) ? record.clickCount.plus(new BN(actionCount)) : new BN(actionCount);
         break;
       case 'view':
-        record.viewCount = (record.viewCount) ? record.viewCount.plus(new BN(record.viewCount)) : new BN(actionCount);
+        record.viewCount = (record.viewCount) ? record.viewCount.plus(new BN(actionCount)) : new BN(actionCount);
         break;
       case 'submission':
-        record.submissionCount = (record.submissionCount) ? record.submissionCount.plus(new BN(record.submissionCount)) : new BN(actionCount);
+        record.submissionCount = (record.submissionCount) ? record.submissionCount.plus(new BN(actionCount)) : new BN(actionCount);
         break;
       case 'like':
-        record.likeCount = (record.likeCount) ? record.likeCount.plus(new BN(record.likeCount)) : new BN(actionCount);
+        record.likeCount = (record.likeCount) ? record.likeCount.plus(new BN(actionCount)) : new BN(actionCount);
         break;
       case 'share':
-        record.shareCount = (record.shareCount) ? record.shareCount.plus(new BN(record.shareCount)) : new BN(actionCount);
+        record.shareCount = (record.shareCount) ? record.shareCount.plus(new BN(actionCount)) : new BN(actionCount);
         break;
       case 'comment':
-        record.commentCount = (record.commentCount) ? record.commentCount.plus(new BN(record.commentCount)) : new BN(actionCount);
+        record.commentCount = (record.commentCount) ? record.commentCount.plus(new BN(actionCount)) : new BN(actionCount);
         break;
     }
     record.participationScore = (record.participationScore) ? record.participationScore.plus(additiveParticipationScore) : new BN(additiveParticipationScore);
