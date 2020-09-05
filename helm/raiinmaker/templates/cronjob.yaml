@@ -45,6 +45,9 @@ spec:
                 - name: twitter-credentials
                   mountPath: "/var/secrets/twitter-credentials"
                   readOnly: true
+                - name: paypal-credentials
+                  mountPath: "/var/secrets/paypal-credentials"
+                  readOnly: true
               resources:
                 requests:
                   memory: "128Mi"
@@ -69,6 +72,9 @@ spec:
             - name: twitter-credentials
               secret:
                 secretName: twitter-credentials
+            - name: paypal-credentials
+              secret:
+                secretName: paypal-credentials
 ---
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -117,6 +123,9 @@ spec:
                 - name: twitter-credentials
                   mountPath: "/var/secrets/twitter-credentials"
                   readOnly: true
+                - name: paypal-credentials
+                  mountPath: "/var/secrets/paypal-credentials"
+                  readOnly: true
               resources:
                 requests:
                   memory: "128Mi"
@@ -141,3 +150,6 @@ spec:
             - name: twitter-credentials
               secret:
                 secretName: twitter-credentials
+            - name: paypal-credentials
+              secret:
+                secretName: paypal-credentials
