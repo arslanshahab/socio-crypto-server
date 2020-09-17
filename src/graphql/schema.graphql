@@ -285,6 +285,7 @@ type ParticipantAudit {
 
 type FollowerCounts {
   twitter: Int
+  facebook: Int
 }
 
 type AuditReport {

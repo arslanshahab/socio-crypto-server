@@ -1,4 +1,4 @@
-import {encrypt} from "../util/crypto";
+import {decrypt, encrypt} from "../util/crypto";
 import {SocialLink} from "../models/SocialLink";
 import {TwitterClient} from '../clients/twitter';
 import logger from '../util/logger';
@@ -6,14 +6,19 @@ import { Participant } from '../models/Participant';
 import {SocialPost} from "../models/SocialPost";
 import {calculateParticipantSocialScore} from "./helpers";
 import {User} from '../models/User';
+import { FacebookClient } from '../clients/facebook';
 
 export const allowedSocialLinks = ['twitter', 'facebook'];
 
-export const getSocialClient = (type: string) => {
+export const getSocialClient = (type: string, accessToken?: string) => {
     let client: any;
     switch (type) {
         case 'twitter':
             client = TwitterClient;
+            break;
+      case 'facebook':
+        if (!accessToken) throw new Error('access token required');
+            client = FacebookClient.getClient(accessToken);
             break;
         default:
             throw new Error('no client for this social link type');
@@ -77,26 +82,35 @@ export const postToSocial = async (args: { type: string, text: string, photo: st
   return socialPost.id;
 }
 
-export const getTotalFollowers = async (args: any, context: {user: any}) => {
-    const { id } = context.user;
-    const followerTotals: {[key: string]: number} = {}
-    const user = await User.findOneOrFail({where: {identityId: id}});
-    const socialLinks = await SocialLink.find({where: {user}});
-    for (const link of socialLinks) {
-        switch (link.type) {
-            case 'twitter':
-                const client = getSocialClient(link.type);
-                followerTotals['twitter'] = await client.getTotalFollowers(link.asClientCredentials(), link.id);
-                if (link.followerCount !== followerTotals['twitter']) {
-                    link.followerCount = followerTotals['twitter'];
-                    await link.save();
-                }
-                break;
-            default:
-                break;
+export const getTotalFollowers = async (args: any, context: { user: any }) => {
+  let client;
+  const { id } = context.user;
+  const followerTotals: { [key: string]: number } = {}
+  const user = await User.findOneOrFail({ where: { identityId: id } });
+  const socialLinks = await SocialLink.find({ where: { user } });
+  for (const link of socialLinks) {
+    switch (link.type) {
+      case 'twitter':
+        client = getSocialClient(link.type);
+        followerTotals['twitter'] = await client.getTotalFollowers(link.asClientCredentials(), link.id);
+        if (link.followerCount !== followerTotals['twitter']) {
+          link.followerCount = followerTotals['twitter'];
+          await link.save();
         }
+        break;
+      case 'facebook':
+        const data = await FacebookClient.getPageData(decrypt(link.apiKey));
+        followerTotals['facebook'] = data['friends'];
+        if (link.followerCount !== followerTotals['facebook']) {
+          link.followerCount = followerTotals['facebook'];
+          await link.save();
+        }
+        break;
+      default:
+        break;
     }
-    return followerTotals;
+  }
+  return followerTotals;
 };
 
 export const getTweetById = async (args: { id: string, type: string }, context: { user: any }) => {

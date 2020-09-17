@@ -85,3 +85,18 @@ export interface PaypalPayout {
 }
 
 export type PayoutStatus = 'BLOCKED' | 'CANCELED' | 'DENIED' | 'FAILED' | 'HELD' | 'REFUNDED' | 'RETURNED' | 'SUCCEEDED' | 'UNCLAIMED'
+
+export interface GraphApiInputParameters {
+  fields?: string[] | string;
+  metric?: string[] | string;
+  period?: string;
+  since?: number;
+  until?: number;
+  grant_type?: string;
+  client_secret?: string;
+  access_token?: string;
+}
+
+export interface FacebookAuth {
+  accessToken: string;
+}
