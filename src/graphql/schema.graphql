@@ -63,6 +63,7 @@ type Mutation {
     state:String
     country:String
   ): User
+  generateFactorsFromKyc(factors:[JSON]): [JSON]
 }
 
 type Query {
@@ -87,6 +88,11 @@ type Query {
   getCampaignMetrics(campaignId:String!): AdminCampaignMetrics
   getFollowerCount: FollowerCounts
   getPreviousDayMetrics: JSON
+}
+
+type FactorGeneration {
+  FactorName: String!
+  FactorId: String!
 }
 
 type ParticipantMetric {

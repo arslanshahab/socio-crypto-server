@@ -29,6 +29,7 @@
     "aws-sdk": "^2.632.0",
     "bignumber.js": "^9.0.0",
     "body-parser": "^1.19.0",
+    "bs58": "^4.0.1",
     "cls-hooked": "^4.2.2",
     "cls-rtracer": "^1.4.0",
     "cors": "^2.8.5",
@@ -39,14 +40,17 @@
     "graphql": "^14.6.0",
     "graphql-rate-limit": "^2.0.1",
     "graphql-type-json": "^0.3.1",
+    "js-sha3": "^0.8.0",
     "jsonwebtoken": "^8.5.1",
     "mocha": "^7.1.0",
     "node-fetch": "^2.6.0",
     "paypal-rest-sdk": "^1.8.1",
     "pg": "^7.18.2",
     "redis": "^3.0.2",
+    "secp256k1": "^4.0.2",
     "twitter": "^1.7.1",
     "typeorm": "^0.2.24",
+    "uuid": "^3.3.3",
     "winston": "^3.2.1"
   },
   "devDependencies": {
@@ -54,6 +58,7 @@
     "@types/aws-sdk": "^2.7.0",
     "@types/bignumber.js": "^5.0.0",
     "@types/body-parser": "^1.19.0",
+    "@types/bs58": "^4.0.1",
     "@types/chai": "^4.2.11",
     "@types/cls-hooked": "^4.3.0",
     "@types/cors": "^2.8.6",
@@ -66,10 +71,11 @@
     "@types/node-fetch": "^2.5.7",
     "@types/pg": "^7.14.2",
     "@types/redis": "^2.8.18",
+    "@types/secp256k1": "^4.0.1",
     "@types/sinon": "^9.0.0",
     "@types/supertest": "^2.0.8",
     "@types/twitter": "^1.7.0",
-    "@types/uuid": "^7.0.2",
+    "@types/uuid": "^3.4.6",
     "@types/winston": "^2.4.4",
     "chai": "^4.2.0",
     "gql-query-builder": "^3.4.0",
@@ -77,7 +83,6 @@
     "sinon": "^9.0.2",
     "supertest": "^4.0.2",
     "ts-node": "^8.8.2",
-    "typescript": "^3.8.3",
-    "uuid": "^7.0.3"
+    "typescript": "^3.8.3"
   }
 }

@@ -1,6 +1,36 @@
 import {Request} from 'express';
 import { BigNumber } from 'bignumber.js';
 
+export interface FactorGeneration {
+  FactorName: string;
+  FactorId: string;
+}
+
+export interface KycUser {
+  firstName: string;
+  lastName: string;
+  businessName: string;
+  address: {
+    country: string;
+    address1: string;
+    address2?: string;
+    city: string;
+    state: string;
+    zip: string;
+  };
+  phoneNumber: string;
+  email: string;
+  paypalEmail: string;
+  idProof: string|undefined;
+  addressProof: string|undefined;
+  exceptions: string;
+  typeOfStructure: string;
+  accountNumbers: string;
+  ssn: string;
+  hasIdProof: boolean;
+  hasAddressProof: boolean;
+}
+
 export interface AuthRequest extends Request {
     user: any;
 }

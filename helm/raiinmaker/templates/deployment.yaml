@@ -87,6 +87,9 @@ spec:
             - name: paypal-credentials
               mountPath: "/var/secrets/paypal-credentials"
               readOnly: true
+            - name: factor-credentials
+              mountPath: "/var/secrets/factor-credentials"
+              readOnly: true
           resources:
             {{- toYaml .Values.server.resources | nindent 12 }}
       volumes:
@@ -108,6 +111,9 @@ spec:
         - name: paypal-credentials
           secret:
             secretName: paypal-credentials
+        - name: factor-credentials
+          secret:
+            secretName: factor-credentials
 ---
 apiVersion: apps/v1
 kind: Deployment

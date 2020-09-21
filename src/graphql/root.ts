@@ -50,6 +50,7 @@ export const root = {
   getUserMetrics: userController.getUserMetrics,
   getFollowerCount: socialController.getTotalFollowers,
   getPreviousDayMetrics: userController.getPreviousDayMetrics,
+  generateFactorsFromKyc: factorController.generateFactors,
 };
 
 export const publicRoot = {

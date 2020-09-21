@@ -9,6 +9,8 @@ export class RedisClient {
   public set: any;
   public incr: any;
   public expire: any;
+  public smembers: any;
+  public sadd: any;
 
   constructor(host = 'localhost', port = 6379, injected: any = {}) {
     this.client = injected.redisClient || redis.createClient({ host, port });
@@ -16,6 +18,8 @@ export class RedisClient {
     this.set = promisify(this.client.set).bind(this.client);
     this.incr = promisify(this.client.incr).bind(this.client);
     this.expire = promisify(this.client.expire).bind(this.client);
+    this.smembers = promisify(this.client.smembers).bind(this.client);
+    this.sadd = promisify(this.client.sadd).bind(this.client);
   }
 }
 

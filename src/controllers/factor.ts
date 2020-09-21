@@ -1,8 +1,8 @@
 import { Response } from 'express';
 import jwt from 'jsonwebtoken';
 import * as Dragonfactor from '@dragonchain-dev/dragonfactor-auth';
-import { asyncHandler, extractFactor, generateRandomNumber } from '../util/helpers';
-import { AuthRequest } from '../types';
+import { asyncHandler, extractFactor, generateRandomNumber, createFactorsFromKycData } from '../util/helpers';
+import { AuthRequest, FactorGeneration } from '../types';
 import {FactorLink} from '../models/FactorLink';
 import { Secrets } from '../util/secrets';
 import { User } from '../models/User';
@@ -133,6 +133,18 @@ export const recover = asyncHandler(async (req: AuthRequest, res: Response) => {
   await S3Client.deleteKycImage(user.id, 'addressProof');
   await Dragonchain.ledgerAccountRecoveryAttempt(user.id, identityId, message, code, true);
   user.identityId = identityId;
+  user.kycStatus = '';
   await user.save();
   return res.status(200).json({ success: true });
 });
+
+export const generateFactors = async (args: { factors: FactorGeneration[] }, context: { user: any }) => {
+  const { id } = context.user;
+  const { factors } = args;
+  if (!factors) throw new Error('must provide factor association IDs');
+  const user = await User.findOne({where: { identityId: id }});
+  if (!user) throw new Error('user not found');
+  if (user.kycStatus !== 'approved') throw new Error('you can only generate factors with an approved KYC');
+  const kycData = await S3Client.getUserObject(user.id);
+  return createFactorsFromKycData(kycData, factors);
+}

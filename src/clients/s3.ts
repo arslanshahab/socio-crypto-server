@@ -1,5 +1,6 @@
 import AWS from 'aws-sdk';
 import {getBase64FileExtension} from '../util/helpers';
+import { KycUser } from '../types';
 
 const { BUCKET_NAME = "raiinmaker-staging", KYC_BUCKET_NAME = "raiinmaker-kyc-staging" } = process.env;
 
@@ -21,7 +22,7 @@ export class S3Client {
     return filename;
   }
 
-  public static async getUserObject(userId: string) {
+  public static async getUserObject(userId: string): Promise<KycUser> {
     try {
       const params: AWS.S3.GetObjectRequest = {Bucket: KYC_BUCKET_NAME, Key: `kyc/${userId}`}
       const start = new Date().getTime();
@@ -44,13 +45,13 @@ export class S3Client {
     }
   }
 
-  public static async getKycImage(userId: string, type: string) {
+  public static async getKycImage(userId: string, type: string): Promise<string|undefined> {
     const params: AWS.S3.GetObjectRequest = { Bucket: KYC_BUCKET_NAME, Key: `images/${userId}/${type}` };
     try {
       const responseString = (await this.client.getObject(params).promise()).Body?.toString();
       return responseString;
     } catch (e) {
-      if (e.code && e.code === 'NotFound') return null;
+      if (e.code && e.code === 'NotFound') return;
       throw e;
     }
   }
@@ -81,10 +82,10 @@ export class S3Client {
     }
   }
 
-  public static async updateUserInfo(userId: string, kycUser: {[key: string]: string}) {
-    const userObject: {[key: string] : any} = await this.getUserObject(userId);
+  public static async updateUserInfo(userId: string, kycUser: KycUser) {
+    const userObject: any = await this.getUserObject(userId);
     for (const key in kycUser) {
-      userObject[key] = kycUser[key];
+      userObject[key] = (kycUser as any)[key];
     }
     const params: AWS.S3.PutObjectRequest = { Bucket: KYC_BUCKET_NAME, Key: `kyc/${userId}`, Body: JSON.stringify(userObject)}
     await this.client.putObject(params).promise();
@@ -100,12 +101,6 @@ export class S3Client {
       if (!e.code || e.code !== 'NotFound') throw new Error('An unexpected error occurred while attempting to delete kyc data');
       console.log(`No KYC data was found to be delete for ${userId}`);
     }
-  }
-
-  public static async uploadFactor(userId: string, factorType: string, factor: any) {
-    const params: AWS.S3.PutObjectRequest = { Bucket: KYC_BUCKET_NAME, Key: `factor/${userId}/${factorType}`, Body: JSON.stringify(factor) };
-    await this.client.putObject(params).promise();
-    return factor;
   }
 
   public static async refreshPaypalAccessToken(token: string) {
@@ -126,11 +121,5 @@ export class S3Client {
       if (e.code && e.code === 'NotFound') return null;
       throw e;
     }
-  }
-
-  public static async downloadFactor(userId: string, factorType: string) {
-    const params: AWS.S3.GetObjectRequest = { Bucket: KYC_BUCKET_NAME, Key: `factor/${userId}/${factorType}` };
-    const factorString = (await this.client.getObject(params).promise()).Body?.toString();
-    return factorString && JSON.parse(factorString);
   }
 }
