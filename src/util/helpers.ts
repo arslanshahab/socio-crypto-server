@@ -37,12 +37,12 @@ BN.prototype.valueOf = function() {
 }
 
 export const createFactorsFromKycData = (kycData: KycUser, factorCreateRequests: FactorGeneration[] = []) => {
-  const factors: Factor[] = [];
+  const factors: {[key: string]: Factor} = {};
   for (let i = 0; i < factorCreateRequests.length; i++) {
     const factorRequest = factorCreateRequests[i];
     let factorData, factor, factorName;
-    switch (factorRequest.FactorName) {
-      case 'name':
+    switch (factorRequest.name) {
+      case 'fullName':
         factorData = `${kycData.firstName} ${kycData.lastName}`;
         factorName = 'MyFii-Verified-Name';
         break;
@@ -78,9 +78,9 @@ export const createFactorsFromKycData = (kycData: KycUser, factorCreateRequests:
         break;
     }
     if (factorData && factorName) {
-      factor = new Factor({id: factorRequest.FactorId, name: factorName, factor: factorData});
+      factor = new Factor({id: factorRequest.id, name: factorName, factor: factorData});
       factor.sign();
-      factors.push(factor);
+      factors[factorRequest.name] = factor;
     }
   }
   return factors;

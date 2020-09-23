@@ -2,8 +2,8 @@ import {Request} from 'express';
 import { BigNumber } from 'bignumber.js';
 
 export interface FactorGeneration {
-  FactorName: string;
-  FactorId: string;
+  name: string;
+  id: string;
 }
 
 export interface KycUser {

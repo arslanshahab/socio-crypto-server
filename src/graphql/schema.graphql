@@ -63,7 +63,7 @@ type Mutation {
     state:String
     country:String
   ): User
-  generateFactorsFromKyc(factors:[JSON]): [JSON]
+  generateFactorsFromKyc(factors:[JSON]): JSON
 }
 
 type Query {
@@ -169,6 +169,7 @@ type User {
   campaigns: [Participant]
   wallet: Wallet
   hasRecoveryCodeSet: Boolean
+  identityId: String
   kycStatus: String
   socialLinks: [SocialLink]
   factorLinks: [FactorLink]
