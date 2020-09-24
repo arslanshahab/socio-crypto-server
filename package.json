@@ -24,7 +24,7 @@
     "migration:generate": "yarn typeorm:cli migration:generate"
   },
   "dependencies": {
-    "@dragonchain-dev/dragonfactor-auth": "^0.0.10",
+    "@dragonchain-dev/dragonfactor-auth": "^0.0.11",
     "ajv": "^6.12.2",
     "aws-sdk": "^2.632.0",
     "bignumber.js": "^9.0.0",

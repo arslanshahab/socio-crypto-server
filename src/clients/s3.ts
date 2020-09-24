@@ -1,5 +1,5 @@
 import AWS from 'aws-sdk';
-import {getBase64FileExtension} from '../util/helpers';
+import {getBase64FileExtension, deleteFactorFromKycData} from '../util/helpers';
 import { KycUser } from '../types';
 
 const { BUCKET_NAME = "raiinmaker-staging", KYC_BUCKET_NAME = "raiinmaker-kyc-staging" } = process.env;
@@ -33,6 +33,17 @@ export class S3Client {
     } catch (e) {
       throw new Error('kyc not found');
     }
+  }
+
+  public static async deleteKycElement(userId: string, elementKey: string) {
+    try {
+      let userObject = await S3Client.getUserObject(userId);
+      userObject = deleteFactorFromKycData(userObject, elementKey);
+      await S3Client.putObject(userId, userObject);
+    } catch (error) {
+      console.log('kyc not found, but not throwing');
+    }
+    return;
   }
 
   public static async uploadKycImage(userId: string, type: string, image: string) {
@@ -90,6 +101,11 @@ export class S3Client {
     const params: AWS.S3.PutObjectRequest = { Bucket: KYC_BUCKET_NAME, Key: `kyc/${userId}`, Body: JSON.stringify(userObject)}
     await this.client.putObject(params).promise();
     return userObject
+  }
+
+  public static async putObject(userId: string, userObject: any) {
+    const params: AWS.S3.PutObjectRequest = { Bucket: KYC_BUCKET_NAME, Key: `kyc/${userId}`, Body: JSON.stringify(userObject)}
+    await this.client.putObject(params).promise();
   }
 
   public static async deleteUserInfoIfExists(userId: string) {

@@ -193,10 +193,10 @@
     enabled "2.0.x"
     kuler "^2.0.0"
 
-"@dragonchain-dev/dragonfactor-auth@^0.0.10":
-  version "0.0.10"
-  resolved "https://registry.yarnpkg.com/@dragonchain-dev/dragonfactor-auth/-/dragonfactor-auth-0.0.10.tgz#66aa3d92549012aa6c01f8eb4c2b5641622ba570"
-  integrity sha512-vJvqVsJJAnMrTfMGSNqqGRCR7dmluowso2u1y95zaOjlJk7UbQCqETg5iH88EvBp4hIwr5l2Bt/iZ9sWUgfoYw==
+"@dragonchain-dev/dragonfactor-auth@^0.0.11":
+  version "0.0.11"
+  resolved "https://registry.yarnpkg.com/@dragonchain-dev/dragonfactor-auth/-/dragonfactor-auth-0.0.11.tgz#085a79146538d802dab3f42025be8afd16316d55"
+  integrity sha512-ydmv5UmjxqofEsdU/3otWV0EKgKkJWV2iwjbOzYZK2ficsyddVyRT0b5C/pNmJHSIT2YECysRlzk4ICW+G1nRA==
   dependencies:
     ajv "^6.12.2"
     bs58 "^4.0.1"

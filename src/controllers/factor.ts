@@ -17,11 +17,11 @@ import { Profile } from '../models/Profile';
 const { NODE_ENV } = process.env;
 
 export const registerFactorLink = async (args: { factor: Dragonfactor.FactorLoginRequest }, context: { user: any }) => {
-  const { identityId, factors } = await Dragonfactor.validateFactor({ factorRequest: args.factor, acceptedFactors: ['email'], service: 'raiinmaker' });
+  const { identityId, factors } = await Dragonfactor.validateFactor({ factorRequest: args.factor, acceptedFactors: ['email', 'myfii-kyc'], service: 'raiinmaker' });
   const { id } = context.user;
   const user = await User.findOneOrFail({ where: { identityId: id }, relations: ['factorLinks'] });
   for (let i = 0; i < factors.length; i++) {
-    const { providerId, id, type } = factors[i];
+    const { providerId, id, type, name } = factors[i];
     if (await FactorLink.findOne({ where: { factorId: id, providerId } })) throw new Error('factor link is already registered');
     const factorLink = new FactorLink();
     factorLink.factorId = id;
@@ -29,6 +29,7 @@ export const registerFactorLink = async (args: { factor: Dragonfactor.FactorLogi
     factorLink.identityId = identityId;
     factorLink.user = user;
     factorLink.type = type;
+    if (name) factorLink.name = name;
     await factorLink.save();
     user.factorLinks = [...user.factorLinks, factorLink];
   }
@@ -41,6 +42,11 @@ export const removeFactorLink = async (args: { factorId: string }, context: { us
   const factorLink = user.factorLinks.find((link: FactorLink) => link.factorId === args.factorId);
   if (!factorLink) throw new Error('requested factor not found');
   await factorLink.remove();
+  if (factorLink.type === 'myfii-kyc') {
+    await S3Client.deleteKycElement(user.id, factorLink.name);
+    user.kycStatus = '';
+    await user.save();
+  }
   return user.asV1();
 }
 

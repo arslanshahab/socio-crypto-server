@@ -36,6 +36,44 @@ BN.prototype.valueOf = function() {
   throw Error('Conversion to primitive type is prohibited')
 }
 
+export const deleteFactorFromKycData = (kycData: KycUser, factorName: string) => {
+  switch (factorName) {
+    case 'MyFii-Verified-FirstName':
+      delete (kycData as any).firstName;
+      break;
+    case 'MyFii-Verified-LastName':
+      delete (kycData as any).lastName;
+      break;
+    case 'MyFii-Verified-Name':
+      delete (kycData as any).firstName;
+      delete (kycData as any).lastName;
+      break;
+    case 'MyFii-Verified-Address':
+      if (kycData.address) {
+        delete (kycData as any).address.address1;
+        delete (kycData as any).address.address2;
+        delete (kycData as any).address.city;
+        delete (kycData as any).address.state;
+        delete (kycData as any).address.country;
+        delete (kycData as any).address.zip;
+      }
+      break;
+    case 'MyFii-Verified-City':
+      if (kycData.address) delete (kycData as any).address.city;
+      break;
+    case 'MyFii-Verified-State':
+      if (kycData.address) delete (kycData as any).address.state;
+      break;
+    case 'MyFii-Verified-Country':
+      if (kycData.address) delete (kycData as any).address.country;
+      break;
+    case 'MyFii-Verified-Phone':
+      delete (kycData as any).phoneNumber;
+      break;
+  }
+  return kycData;
+}
+
 export const createFactorsFromKycData = (kycData: KycUser, factorCreateRequests: FactorGeneration[] = []) => {
   const factors: {[key: string]: Factor} = {};
   for (let i = 0; i < factorCreateRequests.length; i++) {
