@@ -90,6 +90,9 @@ spec:
             - name: factor-credentials
               mountPath: "/var/secrets/factor-credentials"
               readOnly: true
+            - name: eth-hot-wallet-privkey
+              mountPath: "/var/secrets/eth-hot-wallet-privkey"
+              readOnly: true
           resources:
             {{- toYaml .Values.server.resources | nindent 12 }}
       volumes:
@@ -114,6 +117,9 @@ spec:
         - name: factor-credentials
           secret:
             secretName: factor-credentials
+        - name: eth-hot-wallet-privkey
+          secret:
+            secretName: eth-hot-wallet-privkey
 ---
 apiVersion: apps/v1
 kind: Deployment

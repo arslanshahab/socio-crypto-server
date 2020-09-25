@@ -23,6 +23,7 @@ export class Secrets {
   public static ethHotWalletPrivKey: string;
 
   public static async initialize() {
+    console.log(process.env);
     Secrets.firebaseProjectId = process.env.FIREBASE_PROJECT_ID || (await readFilePromise('/var/secrets/firebase-credentials/firebaseProjectId', 'utf8'));
     Secrets.firebasePrivateKey = (process.env.FIREBASE_PRIVATE_KEY || (await readFilePromise('/var/secrets/firebase-credentials/firebasePrivateKey', 'utf8'))).replace(/\\n/g,'\n');
     Secrets.firebaseClientEmail = process.env.FIREBASE_CLIENT_EMAIL || (await readFilePromise('/var/secrets/firebase-credentials/firebaseClientEmail', 'utf8'));
@@ -41,5 +42,6 @@ export class Secrets {
     Secrets.paypalClientSecret = process.env.PAYPAL_CLIENT_SECRET || (await readFilePromise('/var/secrets/paypal-credentials/clientSecret', 'utf8'));
     Secrets.paypalWebhookId = process.env.PAYPAL_WEBHOOK_ID || (await readFilePromise('/var/secrets/paypal-credentials/webhookId', 'utf8'));
     Secrets.ethHotWalletPrivKey = process.env.ETH_HOT_WALLET_PRIVKEY || (await readFilePromise('/var/secrets/eth-hot-wallet-privkey/SecretString', 'utf8'));
+      //
   }
 }
