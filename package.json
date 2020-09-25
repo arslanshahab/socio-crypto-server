@@ -77,7 +77,7 @@
     "@types/supertest": "^2.0.8",
     "@types/twitter": "^1.7.0",
     "@types/uuid": "^7.0.2",
-    "@types/web3": "^1.0.20",
+    "@types/web3": "1.0.20",
     "@types/winston": "^2.4.4",
     "chai": "^4.2.0",
     "gql-query-builder": "^3.4.0",
