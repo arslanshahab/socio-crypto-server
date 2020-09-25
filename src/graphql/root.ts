@@ -6,6 +6,7 @@ import * as socialController from "../controllers/social";
 import * as factorController from '../controllers/factor';
 import * as withdrawController from '../controllers/withdraw';
 import * as kycController from '../controllers/kyc';
+import * as ethWithdraw from '../controllers/ethWithdraw';
 
 export const root = {
   JSON: GraphQLJSON,
@@ -54,6 +55,7 @@ export const root = {
 };
 
 export const publicRoot = {
+  transferCoiin: ethWithdraw.performEthTransfer,
   trackAction: participantController.trackAction,
   usernameExists: userController.usernameExists,
   campaignGet: campaignController.publicGet,

@@ -30,6 +30,12 @@ export class Transfer extends BaseEntity {
   @Column({nullable: true})
   public payoutId: string;
 
+  @Column({nullable: true})
+  public ethAddress: string;
+
+  @Column({nullable: true})
+  public transactionHash: string;
+
   @CreateDateColumn()
   public createdAt: Date;
 
@@ -90,12 +96,13 @@ export class Transfer extends BaseEntity {
     return transfer;
   }
 
-  public static newFromWithdraw(wallet: Wallet, amount: BigNumber): Transfer {
+  public static newFromWithdraw(wallet: Wallet, amount: BigNumber, ethAddress?: string): Transfer {
     const transfer = new Transfer();
     transfer.amount = amount;
     transfer.action = 'withdraw';
     transfer.wallet = wallet;
     transfer.withdrawStatus = 'pending';
+    if (ethAddress) transfer.ethAddress = ethAddress;
     return transfer;
   }
 }
