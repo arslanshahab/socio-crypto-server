@@ -184,7 +184,7 @@ export const chunkVideo = (video: string, chunkSize: number = 5000000): string[]
     if (currentChunk.length === chunkSize || i === video.length - 1) {
       chunks.push(currentChunk);
       currentChunk = "";
-    } 
+    }
   }
   return chunks;
 }

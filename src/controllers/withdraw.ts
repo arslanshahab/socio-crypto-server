@@ -10,8 +10,9 @@ import {Paypal} from "../clients/paypal";
 import { Response, Request } from 'express';
 import {PaypalPayout} from "../types";
 import { v4 as uuidv4 } from 'uuid';
+import {performCoiinTransfer} from "./ethWithdraw";
 
-export const start = async (args: { withdrawAmount: number }, context: { user: any }) => {
+export const start = async (args: { withdrawAmount: number, ethAddress?: string }, context: { user: any }) => {
   if (args.withdrawAmount <= 0) throw new Error('withdraw amount must be a positive number');
   const { id } = context.user;
   const user = await User.findOneOrFail({ where: { identityId: id } });
@@ -21,7 +22,7 @@ export const start = async (args: { withdrawAmount: number }, context: { user: a
   // TODO: check if they have W9 on file
   if (((totalWithdrawThisYear.plus(args.withdrawAmount)).multipliedBy(0.1)).gte(600) || ((pendingBalance.plus(args.withdrawAmount)).multipliedBy(0.1)).gte(600)) throw new Error('reached max withdrawals per year');
   if (((wallet.balance.minus(pendingBalance)).minus(args.withdrawAmount)).lt(0)) throw new Error('wallet does not have required balance for this withdraw');
-  const transfer = Transfer.newFromWithdraw(wallet, new BN(args.withdrawAmount));
+  const transfer = Transfer.newFromWithdraw(wallet, new BN(args.withdrawAmount), args.ethAddress);
   await transfer.save();
   return transfer.asV1();
 }
@@ -48,11 +49,17 @@ export const update = async (args: { transferIds: string[], status: 'approve'|'r
             try { kycData = await S3Client.getUserObject(user.id) } catch (_) { kycData = null; }
             if (kycData) {
               userGroups[user.id] = {totalRedeemedAmount: transfer.amount.toString(), user, paypalEmail: kycData['paypalEmail'], transfers: [transfer] };
-              const payoutId = uuidv4();
-              const dollarAmount = transfer.amount.times(new BN('0.1'));
-              payouts.push({value: dollarAmount.toString(), receiver: kycData['paypalEmail'], payoutId});
-              transfer.payoutId = payoutId;
-              transfer.usdAmount = dollarAmount;
+              if (transfer.ethAddress) {
+                const transactionHash = await performCoiinTransfer(transfer.ethAddress, transfer.amount);
+                if (!transactionHash) throw new Error('ethereum transfer failure');
+                transfer.transactionHash = transactionHash;
+              } else {
+                const payoutId = uuidv4();
+                const dollarAmount = transfer.amount.times(new BN('0.1'));
+                payouts.push({value: dollarAmount.toString(), receiver: kycData['paypalEmail'], payoutId});
+                transfer.payoutId = payoutId;
+                transfer.usdAmount = dollarAmount;
+              }
             }
           } else {
             const totalRedeemedAmount = new BN(userGroups[user.id].totalRedeemedAmount);
