@@ -83,6 +83,7 @@ type Query {
   isLastFactor: Boolean
   me(openCampaigns: Boolean): User
   getKyc: KycUser
+  getWalletWithPendingBalance: Wallet
   getWithdrawals(status:String): [AdminWithdrawal]
   accountExists(id:String!): UserExistence
   getCampaignMetrics(campaignId:String!): AdminCampaignMetrics
@@ -220,6 +221,7 @@ type SocialLink {
 type Wallet {
   id: String
   balance: Float
+  pendingBalance: String
   transfers: [Transfer]
 }
 

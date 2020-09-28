@@ -179,3 +179,11 @@ export const makePayouts = async (payouts: {value: string, receiver: string, pay
   const response = await Paypal.submitPayouts(payload);
   return response.batch_header;
 }
+
+export const getWalletWithPendingBalance = async (_args: any, context: { user: any }) => {
+  const { id } = context.user;
+  const user = await User.findOneOrFail({ where: { identityId: id } });
+  const wallet = await Wallet.findOneOrFail({ where: { user }, relations: ['transfers'] });
+  const pendingBalance = await Transfer.getTotalPendingByWallet(wallet);
+  return wallet.asV1(pendingBalance.toString())
+}
