@@ -42,6 +42,7 @@ export const root = {
   initiateWithdraw: withdrawController.start,
   updateWithdrawStatus: withdrawController.update,
   getWithdrawals: withdrawController.getWithdrawals,
+  getWalletWithPendingBalance: withdrawController.getWalletWithPendingBalance,
   setRecoveryCode: userController.setRecoveryCode,
   updateKycStatus: kycController.updateKycStatus,
   getCampaignMetrics: campaignController.adminGetCampaignMetrics,

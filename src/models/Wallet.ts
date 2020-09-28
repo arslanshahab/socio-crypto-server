@@ -34,7 +34,11 @@ export class Wallet extends BaseEntity {
   )
   public transfers: Transfer[];
 
-  public asV1() {
-    return {...this, balance: parseFloat(this.balance.toString())}
+  public asV1(pendingBalance?: string){
+    return {
+      ...this,
+      balance: parseFloat(this.balance.toString()),
+      pendingBalance: pendingBalance,
+    }
   }
 }
