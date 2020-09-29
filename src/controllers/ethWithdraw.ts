@@ -38,7 +38,7 @@ export const getWeiPerCoiin = async () => {
 
 export const getEstimatedGasPrice = async (args: any, context: any) => {
   const gasPrice = new BN(await getGasPriceAsCoiin())
-  return gasPrice.div((10**18));
+  return gasPrice.div((10**18)).toString();
 }
 
 export const getGasPriceAsCoiin = async (gasPrice?: string) => {
