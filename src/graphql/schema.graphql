@@ -89,6 +89,7 @@ type Query {
   getCampaignMetrics(campaignId:String!): AdminCampaignMetrics
   getFollowerCount: FollowerCounts
   getPreviousDayMetrics: JSON
+  getEstimatedGasPrice: String
 }
 
 type FactorGeneration {
