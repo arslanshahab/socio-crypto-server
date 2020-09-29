@@ -36,8 +36,9 @@ export const getWeiPerCoiin = async () => {
   return web3.utils.toWei(ethPerCoiin.toString());
 }
 
-export const getEstimatedGasPrice = (args: any, context: any) => {
-  return getGasPriceAsCoiin();
+export const getEstimatedGasPrice = async (args: any, context: any) => {
+  const gasPrice = new BN(await getGasPriceAsCoiin())
+  return gasPrice.div((10**18));
 }
 
 export const getGasPriceAsCoiin = async (gasPrice?: string) => {
