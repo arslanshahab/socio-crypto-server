@@ -13,6 +13,8 @@ import request from "supertest";
 import {createCampaign, createParticipant, createTransfer, createUser, createWallet} from "./specHelpers";
 import {Transfer} from "../../src/models/Transfer";
 import { S3Client } from "../../src/clients/s3";
+import { KycUser } from "../../src/types";
+import { SesClient } from "../../src/clients/ses";
 
 describe('Withdraw Integration Test', function () {
     let runningApp: Application;
@@ -33,7 +35,8 @@ describe('Withdraw Integration Test', function () {
         setEnv();
         fullAppTestBed.stub(Firebase, 'initialize');
         fullAppTestBed.stub(Firebase, 'sendCampaignCompleteNotifications');
-        fullAppTestBed.stub(S3Client, 'getUserObject').resolves({paypalEmail: 'david@dragonchain.com'});
+        fullAppTestBed.stub(SesClient, 'sendRedemptionConfirmationEmail');
+        fullAppTestBed.stub(S3Client, 'getUserObject').resolves({paypalEmail: 'david@dragonchain.com'} as KycUser);
         Firebase.client = {
             auth: () => {},
         } as admin.app.App;
