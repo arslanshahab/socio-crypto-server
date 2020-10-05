@@ -8,24 +8,16 @@ import BigNumber from 'bignumber.js';
 
 const { NODE_ENV } = process.env;
 
-/**
- * TODO:
- * revert to staging parity node URL when done testing/demo:
- * http://internal-Parity-Ropsten-Internal-1699752391.us-west-2.elb.amazonaws.com:8545
- * http://internal-Parity-Mainnet-Internal-1844666982.us-west-2.elb.amazonaws.com:8545
- * https://mainnet.infura.io/v3/05a7c63aafc34860a34f6f2c15b4b1af
-  */
-
-const HOT_WALLET = NODE_ENV === 'production' ? '' : '0xE21095c0be9c57f2ebb4FeE72c418B5CF447e8ae';
+const HOT_WALLET = NODE_ENV === 'production' ? '0x955250Fd0F7f4F6eE3570535f9B7AD3B8141F148' : '0xE21095c0be9c57f2ebb4FeE72c418B5CF447e8ae';
 let provider;
 if (NODE_ENV === 'production') {
   provider = new Web3.providers.HttpProvider('http://internal-Parity-Mainnet-Internal-1844666982.us-west-2.elb.amazonaws.com:8545');
 } else {
-  provider = new Web3.providers.HttpProvider('https://ropsten.infura.io/v3/b701655826f045a5be49c4346d01e57b');
+  provider = new Web3.providers.HttpProvider('http://internal-Parity-Ropsten-Internal-1699752391.us-west-2.elb.amazonaws.com:8545');
 }
 const web3 = new Web3(provider);
 // In Production, use DRGN. Otherwise, use the TT (test token) on Ropsten.
-const dragonAddress = NODE_ENV === 'production' ? '' : '0x0bbd0b3bca94b037b73ff3e02db3154aa558113f';
+const dragonAddress = NODE_ENV === 'production' ? '0x87ff4a65200337b88ae5c43650e2b7d5a8f17d10' : '0x0bbd0b3bca94b037b73ff3e02db3154aa558113f';
 const contract = new web3.eth.Contract(abi as AbiItem[], dragonAddress);
 const gasLimitString = '200000';
 

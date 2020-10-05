@@ -48,7 +48,9 @@ export const update = async (args: { transferIds: string[], status: 'approve'|'r
             let kycData;
             try { kycData = await S3Client.getUserObject(user.id) } catch (_) { kycData = null; }
             if (kycData) {
-              userGroups[user.id] = {totalRedeemedAmount: transfer.amount.toString(), user, paypalEmail: kycData['paypalEmail'], transfers: [transfer] };
+              const paymentMethod = transfer.ethAddress ? {ethAddress: transfer.ethAddress} : {paypalEmail: kycData['paypalEmail']};
+              userGroups[user.id] = {totalRedeemedAmount: transfer.amount.toString(), user, transfers: [transfer] };
+              userGroups[user.id] = {...userGroups[user.id], ...paymentMethod};
               if (transfer.ethAddress) {
                 const transactionHash = await performCoiinTransfer(transfer.ethAddress, transfer.amount);
                 if (!transactionHash) throw new Error('ethereum transfer failure');
@@ -80,7 +82,9 @@ export const update = async (args: { transferIds: string[], status: 'approve'|'r
   await makePayouts(payouts);
   for (const userId in userGroups) {
     const group = userGroups[userId];
-    await SesClient.sendRedemptionConfirmationEmail(userId, group['paypalEmail'], (parseFloat(group['totalRedeemedAmount'].times(0.1).toString())).toFixed(2), group['transfers']);
+    if (group.paypalEmail) {
+      await SesClient.sendRedemptionConfirmationEmail(userId, group['paypalEmail'], (parseFloat(group['totalRedeemedAmount'].times(0.1).toString())).toFixed(2), group['transfers']);
+    }
   }
   return transfers.map(transfer => transfer.asV1());
 }
