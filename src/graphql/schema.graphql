@@ -136,6 +136,7 @@ type Transfer {
   amount: Float
   action: String
   withdrawStatus: String
+  ethAddress: String
   campaign: Campaign
   createdAt: String
   updatedAt: String
