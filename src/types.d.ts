@@ -1,6 +1,36 @@
 import {Request} from 'express';
 import { BigNumber } from 'bignumber.js';
 
+export interface FactorGeneration {
+  name: string;
+  id: string;
+}
+
+export interface KycUser {
+  firstName: string;
+  lastName: string;
+  businessName: string;
+  address: {
+    country: string;
+    address1: string;
+    address2?: string;
+    city: string;
+    state: string;
+    zip: string;
+  };
+  phoneNumber: string;
+  email: string;
+  paypalEmail: string;
+  idProof: string|undefined;
+  addressProof: string|undefined;
+  exceptions: string;
+  typeOfStructure: string;
+  accountNumbers: string;
+  ssn: string;
+  hasIdProof: boolean;
+  hasAddressProof: boolean;
+}
+
 export interface AuthRequest extends Request {
     user: any;
 }
@@ -85,3 +115,18 @@ export interface PaypalPayout {
 }
 
 export type PayoutStatus = 'BLOCKED' | 'CANCELED' | 'DENIED' | 'FAILED' | 'HELD' | 'REFUNDED' | 'RETURNED' | 'SUCCEEDED' | 'UNCLAIMED'
+
+export interface GraphApiInputParameters {
+  fields?: string[] | string;
+  metric?: string[] | string;
+  period?: string;
+  since?: number;
+  until?: number;
+  grant_type?: string;
+  client_secret?: string;
+  access_token?: string;
+}
+
+export interface FacebookAuth {
+  accessToken: string;
+}

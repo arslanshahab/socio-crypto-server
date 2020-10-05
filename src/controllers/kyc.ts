@@ -2,6 +2,7 @@ import {S3Client} from "../clients/s3";
 import {User} from "../models/User";
 import {Validator} from '../schemas';
 import { checkPermissions } from '../middleware/authentication';
+import { KycUser } from '../types';
 
 const validator = new Validator();
 
@@ -30,23 +31,23 @@ export const getKyc = async (_args: any, context: { user:  any }) => {
     const user = await User.findOneOrFail({ where: { identityId: id } });
     const response = await S3Client.getUserObject(user.id);
     if (role !== 'admin') return response;
-    if (response.hasAddressProof) response['addressProof'] = await S3Client.getKycImage(user.id, 'addressProof');
-    if (response.hasIdProof) response['idProof'] = await S3Client.getKycImage(user.id, 'idProof');
+    if (response.hasAddressProof) response.addressProof = await S3Client.getKycImage(user.id, 'addressProof');
+    if (response.hasIdProof) response.idProof = await S3Client.getKycImage(user.id, 'idProof');
     return response;
 }
 
-export const updateKyc = async (args: {user: {[key: string]: any}}, context: { user: any }) => {
+export const updateKyc = async (args: {user: KycUser}, context: { user: any }) => {
     const { id } = context.user;
     const user = await User.findOneOrFail({ where: { identityId: id } });
-    if (args.user['idProof']) {
-      await S3Client.uploadKycImage(user.id, 'idProof', args.user['idProof']);
-      delete args.user['idProof'];
-      args.user['hasIdProof'] = true;
+    if (args.user.idProof) {
+      await S3Client.uploadKycImage(user.id, 'idProof', args.user.idProof);
+      delete args.user.idProof;
+      args.user.hasIdProof = true;
     }
-    if (args.user['addressProof']) {
-      await S3Client.uploadKycImage(user.id, 'addressProof', args.user['addressProof']);
-      delete args.user['addressProof'];
-      args.user['hasAddressProof'] = true;
+    if (args.user.addressProof) {
+      await S3Client.uploadKycImage(user.id, 'addressProof', args.user.addressProof);
+      delete args.user.addressProof;
+      args.user.hasAddressProof = true;
     }
     user.kycStatus = 'pending';
     await user.save();

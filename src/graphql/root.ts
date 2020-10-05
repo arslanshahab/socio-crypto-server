@@ -6,6 +6,7 @@ import * as socialController from "../controllers/social";
 import * as factorController from '../controllers/factor';
 import * as withdrawController from '../controllers/withdraw';
 import * as kycController from '../controllers/kyc';
+import * as ethWithdrawController from '../controllers/ethWithdraw';
 
 export const root = {
   JSON: GraphQLJSON,
@@ -41,6 +42,7 @@ export const root = {
   initiateWithdraw: withdrawController.start,
   updateWithdrawStatus: withdrawController.update,
   getWithdrawals: withdrawController.getWithdrawals,
+  getWalletWithPendingBalance: withdrawController.getWalletWithPendingBalance,
   setRecoveryCode: userController.setRecoveryCode,
   updateKycStatus: kycController.updateKycStatus,
   getCampaignMetrics: campaignController.adminGetCampaignMetrics,
@@ -50,6 +52,8 @@ export const root = {
   getUserMetrics: userController.getUserMetrics,
   getFollowerCount: socialController.getTotalFollowers,
   getPreviousDayMetrics: userController.getPreviousDayMetrics,
+  generateFactorsFromKyc: factorController.generateFactors,
+  getEstimatedGasPrice: ethWithdrawController.getEstimatedGasPrice
 };
 
 export const publicRoot = {

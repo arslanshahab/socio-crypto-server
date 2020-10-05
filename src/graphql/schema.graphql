@@ -43,7 +43,7 @@ type Mutation {
   removeFactorLink(factorId:String!): User
   registerKyc(userKyc:JSON!): KycUser
   updateKyc(user: JSON!): KycUser
-  initiateWithdraw(withdrawAmount:Float!): Transfer
+  initiateWithdraw(withdrawAmount:Float!, ethAddress:String): Transfer
   updateWithdrawStatus(transferIds:[String]!,status:String!): [Transfer]
   setRecoveryCode(code:Int!): User
   updateKycStatus(userId:String!,status:String!): User
@@ -63,6 +63,7 @@ type Mutation {
     state:String
     country:String
   ): User
+  generateFactorsFromKyc(factors:[JSON]): JSON
 }
 
 type Query {
@@ -82,11 +83,18 @@ type Query {
   isLastFactor: Boolean
   me(openCampaigns: Boolean): User
   getKyc: KycUser
+  getWalletWithPendingBalance: Wallet
   getWithdrawals(status:String): [AdminWithdrawal]
   accountExists(id:String!): UserExistence
   getCampaignMetrics(campaignId:String!): AdminCampaignMetrics
   getFollowerCount: FollowerCounts
   getPreviousDayMetrics: JSON
+  getEstimatedGasPrice: String
+}
+
+type FactorGeneration {
+  FactorName: String!
+  FactorId: String!
 }
 
 type ParticipantMetric {
@@ -128,6 +136,7 @@ type Transfer {
   amount: Float
   action: String
   withdrawStatus: String
+  ethAddress: String
   campaign: Campaign
   createdAt: String
   updatedAt: String
@@ -163,6 +172,7 @@ type User {
   campaigns: [Participant]
   wallet: Wallet
   hasRecoveryCodeSet: Boolean
+  identityId: String
   kycStatus: String
   socialLinks: [SocialLink]
   factorLinks: [FactorLink]
@@ -213,6 +223,7 @@ type SocialLink {
 type Wallet {
   id: String
   balance: Float
+  pendingBalance: String
   transfers: [Transfer]
 }
 
@@ -285,6 +296,7 @@ type ParticipantAudit {
 
 type FollowerCounts {
   twitter: Int
+  facebook: Int
 }
 
 type AuditReport {

@@ -9,6 +9,9 @@ export class FactorLink extends BaseEntity {
   @Column({ nullable: false })
   public type: string;
 
+  @Column({nullable: true})
+  public name: string;
+
   @Column({ nullable: false })
   public providerId: string;
 

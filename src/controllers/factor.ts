@@ -1,8 +1,8 @@
 import { Response } from 'express';
 import jwt from 'jsonwebtoken';
 import * as Dragonfactor from '@dragonchain-dev/dragonfactor-auth';
-import { asyncHandler, extractFactor, generateRandomNumber } from '../util/helpers';
-import { AuthRequest } from '../types';
+import { asyncHandler, extractFactor, generateRandomNumber, createFactorsFromKycData } from '../util/helpers';
+import { AuthRequest, FactorGeneration } from '../types';
 import {FactorLink} from '../models/FactorLink';
 import { Secrets } from '../util/secrets';
 import { User } from '../models/User';
@@ -17,11 +17,11 @@ import { Profile } from '../models/Profile';
 const { NODE_ENV } = process.env;
 
 export const registerFactorLink = async (args: { factor: Dragonfactor.FactorLoginRequest }, context: { user: any }) => {
-  const { identityId, factors } = await Dragonfactor.validateFactor({ factorRequest: args.factor, acceptedFactors: ['email'], service: 'raiinmaker' });
+  const { identityId, factors } = await Dragonfactor.validateFactor({ factorRequest: args.factor, acceptedFactors: ['email', 'myfii-kyc'], service: 'raiinmaker' });
   const { id } = context.user;
   const user = await User.findOneOrFail({ where: { identityId: id }, relations: ['factorLinks'] });
   for (let i = 0; i < factors.length; i++) {
-    const { providerId, id, type } = factors[i];
+    const { providerId, id, type, name } = factors[i];
     if (await FactorLink.findOne({ where: { factorId: id, providerId } })) throw new Error('factor link is already registered');
     const factorLink = new FactorLink();
     factorLink.factorId = id;
@@ -29,6 +29,7 @@ export const registerFactorLink = async (args: { factor: Dragonfactor.FactorLogi
     factorLink.identityId = identityId;
     factorLink.user = user;
     factorLink.type = type;
+    if (name) factorLink.name = name;
     await factorLink.save();
     user.factorLinks = [...user.factorLinks, factorLink];
   }
@@ -41,6 +42,11 @@ export const removeFactorLink = async (args: { factorId: string }, context: { us
   const factorLink = user.factorLinks.find((link: FactorLink) => link.factorId === args.factorId);
   if (!factorLink) throw new Error('requested factor not found');
   await factorLink.remove();
+  if (factorLink.type === 'myfii-kyc') {
+    await S3Client.deleteKycElement(user.id, factorLink.name);
+    user.kycStatus = '';
+    await user.save();
+  }
   return user.asV1();
 }
 
@@ -133,6 +139,18 @@ export const recover = asyncHandler(async (req: AuthRequest, res: Response) => {
   await S3Client.deleteKycImage(user.id, 'addressProof');
   await Dragonchain.ledgerAccountRecoveryAttempt(user.id, identityId, message, code, true);
   user.identityId = identityId;
+  user.kycStatus = '';
   await user.save();
   return res.status(200).json({ success: true });
 });
+
+export const generateFactors = async (args: { factors: FactorGeneration[] }, context: { user: any }) => {
+  const { id } = context.user;
+  const { factors } = args;
+  if (!factors) throw new Error('must provide factor association IDs');
+  const user = await User.findOne({where: { identityId: id }});
+  if (!user) throw new Error('user not found');
+  if (user.kycStatus !== 'approved') throw new Error('you can only generate factors with an approved KYC');
+  const kycData = await S3Client.getUserObject(user.id);
+  return createFactorsFromKycData(kycData, factors);
+}
