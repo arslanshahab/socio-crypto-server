@@ -16,7 +16,7 @@ if (NODE_ENV === 'production') {
   provider = new Web3.providers.HttpProvider('http://internal-Parity-Ropsten-Internal-1699752391.us-west-2.elb.amazonaws.com:8545');
 }
 const web3 = new Web3(provider);
-// In Production, use DRGN. Otherwise, use the TT (test token) on Ropsten.
+// In Production, use Coiin. Otherwise, use the TT (test token) on Ropsten.
 const dragonAddress = NODE_ENV === 'production' ? '0x87ff4a65200337b88ae5c43650e2b7d5a8f17d10' : '0x0bbd0b3bca94b037b73ff3e02db3154aa558113f';
 const contract = new web3.eth.Contract(abi as AbiItem[], dragonAddress);
 const gasLimitString = '200000';
