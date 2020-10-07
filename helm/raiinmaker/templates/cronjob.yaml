@@ -48,6 +48,12 @@ spec:
                 - name: paypal-credentials
                   mountPath: "/var/secrets/paypal-credentials"
                   readOnly: true
+                - name: factor-credentials
+                  mountPath: "/var/secrets/factor-credentials"
+                  readOnly: true
+                - name: eth-hot-wallet-privkey
+                  mountPath: "/var/secrets/eth-hot-wallet-privkey"
+                  readOnly: true
               resources:
                 requests:
                   memory: "128Mi"
@@ -75,6 +81,12 @@ spec:
             - name: paypal-credentials
               secret:
                 secretName: paypal-credentials
+            - name: factor-credentials
+              secret:
+                secretName: factor-credentials
+            - name: eth-hot-wallet-privkey
+              secret:
+                secretName: eth-hot-wallet-privkey
 ---
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -126,6 +138,12 @@ spec:
                 - name: paypal-credentials
                   mountPath: "/var/secrets/paypal-credentials"
                   readOnly: true
+                - name: factor-credentials
+                  mountPath: "/var/secrets/factor-credentials"
+                  readOnly: true
+                - name: eth-hot-wallet-privkey
+                  mountPath: "/var/secrets/eth-hot-wallet-privkey"
+                  readOnly: true
               resources:
                 requests:
                   memory: "128Mi"
@@ -153,3 +171,9 @@ spec:
             - name: paypal-credentials
               secret:
                 secretName: paypal-credentials
+            - name: factor-credentials
+              secret:
+                secretName: factor-credentials
+            - name: eth-hot-wallet-privkey
+              secret:
+                secretName: eth-hot-wallet-privkey
