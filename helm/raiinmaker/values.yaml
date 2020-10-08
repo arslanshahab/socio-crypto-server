@@ -27,6 +27,7 @@ cron:
   frequency:
     social: '0 * * * *' # At minute 0 every hour
     daily: '0 0 * * *' # At minute 0 every day
+    coiinWatcher: '*/5 * * * *'
 
 # up server replica count
 replicaCount: 2

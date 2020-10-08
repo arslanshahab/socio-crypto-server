@@ -11,6 +11,7 @@ import { FieldNode } from 'graphql';
 import { Profile } from './Profile';
 import { Transfer } from './Transfer';
 import { DailyParticipantMetric } from './DailyParticipantMetric';
+import { ExternalWallet } from './ExternalWallet';
 
 @Entity()
 export class User extends BaseEntity {
@@ -87,6 +88,12 @@ export class User extends BaseEntity {
     metric => metric.user
   )
   public dailyMetrics: DailyParticipantMetric[];
+
+  @OneToMany(
+    _type => ExternalWallet,
+    externalWallet => externalWallet.user
+  )
+  public externalWallets: ExternalWallet[];
 
   public asV1() {
     let returnedUser: any = {...this};

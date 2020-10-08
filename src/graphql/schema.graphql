@@ -64,6 +64,8 @@ type Mutation {
     country:String
   ): User
   generateFactorsFromKyc(factors:[JSON]): JSON
+  attachEthereumAddress(ethereumAddress:String!): ExternalWallet
+  claimEthereumAddress(ethereumAddress:String!,signature:String!): ExternalWallet
 }
 
 type Query {
@@ -90,6 +92,15 @@ type Query {
   getFollowerCount: FollowerCounts
   getPreviousDayMetrics: JSON
   getEstimatedGasPrice: String
+  getExternalAddress(ethereumAddress:String!): ExternalWallet
+  listExternalAddresses: [ExternalWallet]
+}
+
+type ExternalWallet {
+  ethereumAddress: String
+  message: String
+  claimed: Boolean
+  balance: Float
 }
 
 type FactorGeneration {

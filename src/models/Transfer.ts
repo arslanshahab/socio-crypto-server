@@ -19,7 +19,7 @@ export class Transfer extends BaseEntity {
   public usdAmount: BigNumber;
 
   @Column({ nullable: false })
-  public action: 'transfer'|'withdraw';
+  public action: 'transfer'|'withdraw'|'deposit';
 
   @Column({ nullable: true })
   public withdrawStatus: 'pending'|'approved'|'rejected';
@@ -103,6 +103,16 @@ export class Transfer extends BaseEntity {
     transfer.wallet = wallet;
     transfer.withdrawStatus = 'pending';
     if (ethAddress) transfer.ethAddress = ethAddress;
+    return transfer;
+  }
+
+  public static newFromDeposit(wallet: Wallet, amount: BigNumber, ethAddress: string, transactionHash: string) {
+    const transfer = new Transfer();
+    transfer.amount = amount;
+    transfer.action = 'deposit';
+    transfer.ethAddress = ethAddress;
+    transfer.transactionHash = transactionHash;
+    transfer.wallet = wallet;
     return transfer;
   }
 }

@@ -138,4 +138,34 @@ export class S3Client {
       throw e;
     }
   }
+
+  public static async getLastCheckedBillingBlock() {
+    const params: AWS.S3.GetObjectRequest = {Bucket: BUCKET_NAME, Key: 'billingWatcher/lastCheckedBlock'};
+    try {
+      return (await this.client.getObject(params).promise()).Body?.toString();
+    } catch (e) {
+      if (e.code && e.code === 'NoSuchKey') return null;
+      throw e;
+    }
+  }
+
+  public static async setLastCheckedBillingBlock(blockNumber: number) {
+    const params: AWS.S3.PutObjectRequest = {Bucket: BUCKET_NAME, Key: 'billingWatcher/lastCheckedBlock', Body: blockNumber.toString()};
+    return await this.client.putObject(params).promise();
+  }
+
+  public static async getMissedBillingTransfers() {
+    const params: AWS.S3.GetObjectRequest = {Bucket: BUCKET_NAME, Key: 'billingWatcher/missedTransfers'};
+    try {
+      return JSON.parse((await this.client.getObject(params).promise()).Body!.toString());
+    } catch (e) {
+      if (e.code && e.code === 'NoSuchKey') return [];
+      throw e;
+    }
+  }
+
+  public static async uploadMissedTransfers(transfers: any[]) {
+    const params: AWS.S3.PutObjectRequest = {Bucket: BUCKET_NAME, Key: 'billingWatcher/missedTransfers', Body: JSON.stringify(transfers)};
+    return await this.client.putObject(params).promise();
+  }
 }
