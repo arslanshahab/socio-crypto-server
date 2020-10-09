@@ -193,6 +193,8 @@ spec:
     spec:
       template:
         metadata:
+          annotations:
+            iam.amazonaws.com/role: {{ .Values.data.IAM_ROLE }}
         spec:
           containers:
             - name: coiin-watcher
