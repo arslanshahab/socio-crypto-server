@@ -9,7 +9,6 @@ import { User } from '../../src/models/User';
 import { Wallet } from '../../src/models/Wallet';
 import { Firebase } from '../../src/clients/firebase';
 import * as admin from 'firebase-admin';
-// import { v4 as uuidv4 } from 'uuid';
 import {createExternalWallet, createUser} from './specHelpers';
 import * as gql from 'gql-query-builder';
 import { Paypal } from '../../src/clients/paypal';
