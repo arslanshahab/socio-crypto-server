@@ -14,30 +14,38 @@ import {Firebase} from "../../src/clients/firebase";
 import * as admin from "firebase-admin";
 import {calculateTier} from "../../src/controllers/helpers";
 import { BN } from '../../src/util/helpers';
+import { Paypal } from '../../src/clients/paypal';
 
 describe('Campaign Integration Test', () => {
    let runningApp: Application;
    const fullAppTestBed = createSandbox();
 
    const setEnv = () => {
-      process.env.BEARER_TOKEN = "banana";
-      process.env.DRAGONCHAIN_ID = "bogusId";
-      process.env.DRAGONCHAIN_ENDPOINT = "https://bogusDragonchainEndpoint.com";
-      process.env.DRAGONCHAIN_API_KEY_ID = "bogusApiKeyId";
-      process.env.DRAGONCHAIN_API_KEY = "bogusApiKey";
-      process.env.ENCRYPTION_KEY = "bogusEncryptionKey";
-      process.env.TWITTER_CONSUMER_KEY = "fakeTwitter";
-      process.env.TWITTER_CONSUMER_SECRET_KEY = "fakeTwitter";
-   };
+    process.env.BEARER_TOKEN = "banana";
+    process.env.DRAGONCHAIN_ID = "bogusId";
+    process.env.DRAGONCHAIN_ENDPOINT = "https://bogusDragonchainEndpoint.com";
+    process.env.DRAGONCHAIN_API_KEY_ID = "bogusApiKeyId";
+    process.env.DRAGONCHAIN_API_KEY = "bogusApiKey";
+    process.env.ENCRYPTION_KEY = "bogusEncryptionKey";
+    process.env.TWITTER_CONSUMER_KEY = "fakeTwitter";
+    process.env.TWITTER_CONSUMER_SECRET_KEY = "fakeTwitter";
+    process.env.PAYPAL_CLIENT_ID = "dummyKey";
+    process.env.PAYPAL_CLIENT_SECRET = "dummyKey";
+    process.env.FACTOR_PROVIDER_PRIVATE_KEY = "privKey";
+    process.env.FACTOR_PROVIDER_PUBLIC_KEY = "pubKey";
+    process.env.ETH_HOT_WALLET_PRIVKEY = "ethPrivKey";
+  };
 
    before(async () => {
       setEnv();
+      fullAppTestBed.stub(Dragonchain, 'initialize');
       fullAppTestBed.stub(Firebase, 'initialize');
+      fullAppTestBed.stub(Paypal, 'initialize');
+      fullAppTestBed.stub(Paypal, 'refreshToken');
       fullAppTestBed.stub(Firebase, 'sendCampaignCompleteNotifications');
       Firebase.client = {
          auth: () => {},
       } as admin.app.App;
-      fullAppTestBed.stub(Dragonchain, 'initialize');
       fullAppTestBed.stub(Dragonchain, 'ledgerCampaignAudit');
       fullAppTestBed.stub(RedisClient, 'getRedis');
       runningApp = new Application();

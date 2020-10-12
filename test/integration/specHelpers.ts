@@ -8,6 +8,7 @@ import {Transfer} from "../../src/models/Transfer";
 import { BN } from '../../src/util/helpers';
 import { Profile } from '../../src/models/Profile';
 import { DailyParticipantMetric } from '../../src/models/DailyParticipantMetric';
+import { ExternalWallet } from '../../src/models/ExternalWallet';
 
 export const createCampaign = async (runningApp: Application, options?: { [key: string]: any } | any, ) => {
   const campaign = new Campaign();
@@ -95,6 +96,15 @@ export const createTransfer = async (runningApp: Application, options?: { [key: 
   transfer.campaign = getValue(['campaign'], options) || await createCampaign(runningApp);
   transfer.ethAddress = getValue(['ethAddress'], options);
   return await runningApp.databaseConnection.createEntityManager().save(transfer);
+};
+
+export const createExternalWallet = async (runningApp: Application, options?: { [key: string]: any } | any) => {
+  const externalWallet = new ExternalWallet();
+  externalWallet.user = getValue(['user'], options) || await createUser(runningApp, getValue(['userOptions'], options));
+  externalWallet.ethereumAddress = getValue(['ethereumAddress'], options) || '0x0000000000000000000000000000000000000000';
+  externalWallet.claimMessage = getValue(['claimMessage'], options) || 'I am signing this nonce: 123456';
+  externalWallet.claimed = getValue(['claimed'], options) || false;
+  return await runningApp.databaseConnection.createEntityManager().save(externalWallet);
 };
 
 export const getAlgorithm = (options?: { [key: string]: any } | any) => {

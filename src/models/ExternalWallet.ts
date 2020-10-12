@@ -51,10 +51,9 @@ export class ExternalWallet extends BaseEntity {
   }
 
   public static async getByUserAndAddress(user: User, address: string) {
-    const normalizedAddress = address.toLowerCase();
     return await this.createQueryBuilder('external')
       .leftJoin('external.user', 'user', 'external."userId" = user.id')
-      .where('user.id = :user AND external."ethereumAddress" = :address', { user: user.id, address: normalizedAddress })
+      .where('user.id = :user AND external."ethereumAddress" = :address', { user: user.id, address })
       .getOne();
   }
 

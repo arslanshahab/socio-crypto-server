@@ -32,9 +32,10 @@ export const claim = async (args: { ethereumAddress: string, signature: string }
 
 export const get = async (args: { ethereumAddress: string }, context: { user: any }) => {
   const { id } = context.user;
+  const address = args.ethereumAddress.toLowerCase();
   const user = await User.findOne({ where: { identityId: id } });
   if (!user) throw new Error('user not found');
-  const externalWallet = await ExternalWallet.getByUserAndAddress(user, args.ethereumAddress);
+  const externalWallet = await ExternalWallet.getByUserAndAddress(user, address);
   if (!externalWallet) throw new Error('external wallet not found');
   return externalWallet.asV1();
 }
