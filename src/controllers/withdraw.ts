@@ -10,7 +10,7 @@ import {Paypal} from "../clients/paypal";
 import { Response, Request } from 'express';
 import {PaypalPayout} from "../types";
 import { v4 as uuidv4 } from 'uuid';
-import {performCoiinTransfer} from "./ethWithdraw";
+import * as EthWithdraw from "./ethWithdraw";
 
 export const start = async (args: { withdrawAmount: number, ethAddress?: string }, context: { user: any }) => {
   if (args.withdrawAmount <= 0) throw new Error('withdraw amount must be a positive number');
@@ -52,7 +52,7 @@ export const update = async (args: { transferIds: string[], status: 'approve'|'r
               userGroups[user.id] = {totalRedeemedAmount: transfer.amount.toString(), user, transfers: [transfer] };
               userGroups[user.id] = {...userGroups[user.id], ...paymentMethod};
               if (transfer.ethAddress) {
-                const transactionHash = await performCoiinTransfer(transfer.ethAddress, transfer.amount);
+                const transactionHash = await EthWithdraw.performCoiinTransfer(transfer.ethAddress, transfer.amount);
                 if (!transactionHash) throw new Error('ethereum transfer failure');
                 transfer.transactionHash = transactionHash;
               } else {
