@@ -1,3 +1,5 @@
+import { randomBytes } from 'crypto';
+import * as secp256k1 from 'secp256k1';
 import { Campaign } from '../../src/models/Campaign';
 import { Application } from '../../src/app';
 import {Participant} from "../../src/models/Participant";
@@ -9,6 +11,7 @@ import { BN } from '../../src/util/helpers';
 import { Profile } from '../../src/models/Profile';
 import { DailyParticipantMetric } from '../../src/models/DailyParticipantMetric';
 import { ExternalWallet } from '../../src/models/ExternalWallet';
+import { getDeterministicId, sha256Hash } from '../../src/util/crypto';
 
 export const createCampaign = async (runningApp: Application, options?: { [key: string]: any } | any, ) => {
   const campaign = new Campaign();
@@ -174,4 +177,80 @@ export const getEndDate = (endDate?: string) => {
     date.setUTCDate(date.getUTCDate() + 1);
     return date;
   })());
+}
+
+export interface IdentityKeyPair {
+  publicKey: string;
+  privateKey: string;
+  sign?: Function;
+}
+
+const newKeypair = (): IdentityKeyPair => {
+  let privKey: Buffer;
+  do { privKey = randomBytes(32); }
+  while (!secp256k1.privateKeyVerify(privKey));
+  return {
+    publicKey: Buffer.from(secp256k1.publicKeyCreate(privKey)).toString('base64'),
+    privateKey: privKey.toString('base64')
+  }
+}
+
+const orderedListForIdentityLogin = (keypair: IdentityKeyPair, signature: string, timestamp: Date) => {
+  const hashBufList: Buffer[] = [];
+  hashBufList.push(Buffer.from('raiinmaker', 'utf8'));
+  hashBufList.push(Buffer.from(new Date(timestamp).toISOString(), 'utf8'));
+  hashBufList.push(Buffer.from(keypair.publicKey, 'utf8'));
+  hashBufList.push(Buffer.from('secp256k1', 'utf8'));
+  hashBufList.push(Buffer.from(getDeterministicId(keypair.publicKey), 'utf8'));
+  hashBufList.push(Buffer.from(signature, 'utf8'));
+  return hashBufList;
+}
+
+const orderedListForAccountRecovery = (keypair: IdentityKeyPair, recoveryCode: string, recoveryMessage: string, timestamp: Date) => {
+  const hashBufList: Buffer[] = [];
+  hashBufList.push(Buffer.from('raiinmaker', 'utf8'));
+  hashBufList.push(Buffer.from(new Date(timestamp).toISOString(), 'utf8'));
+  hashBufList.push(Buffer.from(recoveryCode, 'utf8'));
+  hashBufList.push(Buffer.from(recoveryMessage, 'utf8'));
+  return hashBufList;
+}
+
+export const getAccountRecoveryRequest = (keypair: IdentityKeyPair, recoveryCode: string, recoveryMessage: string) => {
+  const timestamp = new Date();
+  const structure: any = {
+    service: 'raiinmaker',
+    publicKey: keypair.publicKey,
+    timestamp: timestamp.toISOString(),
+    recoveryCode,
+    recoveryMessage
+  };
+  if (keypair.sign)
+    structure.signature = keypair.sign(sha256Hash(Buffer.concat(orderedListForAccountRecovery(keypair, recoveryCode, recoveryMessage, timestamp))));
+  return structure;
+}
+
+export const getIdentityLoginRequest = (keypair: IdentityKeyPair) => {
+  const timestamp = new Date().toISOString();
+  const structure: any = {
+    service: 'raiinmaker',
+    timestamp,
+    identity: {
+      publicKey: keypair.publicKey,
+      keyType: 'secp256k1',
+      signature: {
+        signingKeyId: getDeterministicId(keypair.publicKey),
+      }
+    }
+  };
+  if (keypair.sign) {
+    structure.identity.signature.signature = keypair.sign(sha256Hash(Buffer.from(keypair.publicKey, 'utf8')));
+    structure.signature = keypair.sign(sha256Hash(Buffer.concat(orderedListForIdentityLogin(keypair, structure.identity.signature.signature, new Date(timestamp)))));
+  }
+  return structure;
+}
+
+export const createIdentity = (): IdentityKeyPair => {
+  const keypair = newKeypair();
+  keypair.sign = (hashedMessage: any) => Buffer.from(secp256k1.ecdsaSign(Buffer.from(hashedMessage, 'base64'), Buffer.from(keypair.privateKey, 'base64')).signature).toString('base64');
+  return keypair;
 }
