@@ -130,7 +130,6 @@ describe('User Integration Test', () => {
       });
 
       it('should return my user', async () => {
-        console.log(user);
         const query = gql.query({
           operation: 'me',
           fields: ['id', 'username', 'email']
