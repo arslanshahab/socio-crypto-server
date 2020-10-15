@@ -119,6 +119,15 @@ export class User extends BaseEntity {
     return returnedUser;
   }
 
+  public static async getAllDeviceTokens(): Promise<string[]> {
+    const values = await this.createQueryBuilder('user')
+      .leftJoinAndSelect('user.profile', 'profile', 'profile."userId" = user.id')
+      .select('profile."deviceToken"')
+      .distinctOn(['profile."deviceToken"'])
+      .getRawMany();
+    return values.map(value => value.deviceToken);
+  }
+
   public static async getUserTotalParticipationScore(userId: String): Promise<BigNumber> {
     const { sum } = await this.createQueryBuilder('user')
       .leftJoin('user.campaigns', 'campaign')

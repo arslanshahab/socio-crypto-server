@@ -1,4 +1,5 @@
 import * as admin from 'firebase-admin';
+import { Campaign } from '../models/Campaign';
 import { Secrets } from '../util/secrets';
 
 export class Firebase {
@@ -27,6 +28,17 @@ export class Firebase {
 
   public static setClaims(userId: string, claims: any) {
     return Firebase.client.auth().setCustomUserClaims(userId, claims);
+  }
+
+  public static async sendCampaignCreatedNotifications(tokens: string[], campaign: Campaign) {
+    const message: admin.messaging.MulticastMessage = {
+      notification: {
+        title: 'New Campaign Alert!',
+        body: `The campaign ${campaign.name} was just created and will be live: ${new Date(campaign.beginDate).toISOString()}`,
+      },
+      tokens
+    };
+    await Firebase.client.messaging().sendMulticast(message);
   }
 
   public static async sendKycApprovalNotification(token: string) {
