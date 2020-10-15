@@ -28,4 +28,26 @@ export class Firebase {
   public static setClaims(userId: string, claims: any) {
     return Firebase.client.auth().setCustomUserClaims(userId, claims);
   }
+
+  public static async sendKycApprovalNotification(token: string) {
+    const message: admin.messaging.MulticastMessage = {
+      notification: {
+        title: 'Your KYC has been approved!',
+        body: 'You can now make withdrawals thru your Raiinmaker app'
+      },
+      tokens: [token]
+    };
+    await Firebase.client.messaging().sendMulticast(message);
+  }
+
+  public static async sendKycRejectionNotification(token: string) {
+    const message: admin.messaging.MulticastMessage = {
+      notification: {
+        title: 'Your KYC has been rejected!',
+        body: 'You may re-apply your kyc information'
+      },
+      tokens: [token]
+    };
+    await Firebase.client.messaging().sendMulticast(message);
+  }
 }
