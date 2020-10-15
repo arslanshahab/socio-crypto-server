@@ -30,24 +30,46 @@ export class Firebase {
   }
 
   public static async sendKycApprovalNotification(token: string) {
-    const message: admin.messaging.MulticastMessage = {
+    const message: admin.messaging.Message = {
       notification: {
         title: 'Your KYC has been approved!',
         body: 'You can now make withdrawals thru your Raiinmaker app'
       },
-      tokens: [token]
+      token
     };
-    await Firebase.client.messaging().sendMulticast(message);
+    await Firebase.client.messaging().send(message);
   }
 
   public static async sendKycRejectionNotification(token: string) {
-    const message: admin.messaging.MulticastMessage = {
+    const message: admin.messaging.Message = {
       notification: {
         title: 'Your KYC has been rejected!',
         body: 'You may re-apply your kyc information'
       },
-      tokens: [token]
+      token
     };
-    await Firebase.client.messaging().sendMulticast(message);
+    await Firebase.client.messaging().send(message);
+  }
+
+  public static async sendWithdrawalApprovalNotification(token: string, amount: BigInt) {
+    const message: admin.messaging.Message = {
+      notification: {
+        title: 'Your COIIN withdrawal has been Approved!',
+        body: `Your request for ${amount.toString()} COIIN withdrawal is being processed`
+      },
+      token
+    };
+    await Firebase.client.messaging().send(message);
+  }
+
+  public static async sendWithdrawalRejectionNotification(token: string, amount: BigInt) {
+    const message: admin.messaging.Message = {
+      notification: {
+        title: 'Your COIIN withdrawal has been Rejected!',
+        body: `Your request for ${amount.toString()} COIIN using has been rejected. Please attempt with a different amount`
+      },
+      token
+    };
+    await Firebase.client.messaging().send(message);
   }
 }

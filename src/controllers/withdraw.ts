@@ -11,6 +11,7 @@ import { Response, Request } from 'express';
 import {PaypalPayout} from "../types";
 import { v4 as uuidv4 } from 'uuid';
 import * as EthWithdraw from "./ethWithdraw";
+import { Firebase } from '../clients/firebase';
 
 export const start = async (args: { withdrawAmount: number, ethAddress?: string }, context: { user: any }) => {
   if (args.withdrawAmount <= 0) throw new Error('withdraw amount must be a positive number');
@@ -33,11 +34,15 @@ export const update = async (args: { transferIds: string[], status: 'approve'|'r
   const transfers: Transfer[] = [];
   const userGroups: {[key: string]: any} = {};
   const payouts: {value: string, receiver: string, payoutId: string}[] = [];
+  const rejected: {[key: string]: any} = {};
   for (let i = 0; i < args.transferIds.length; i++) {
-    const transfer = await Transfer.findOne({ where: { id: args.transferIds[i], action: 'withdraw', withdrawStatus: 'pending' }, relations: ['wallet', 'wallet.user'] });
+    const transfer = await Transfer.findOne({ where: { id: args.transferIds[i], action: 'withdraw', withdrawStatus: 'pending' }, relations: ['wallet', 'wallet.user', 'wallet.user.profile'] });
     if (!transfer) throw new Error(`transfer not found: ${args.transferIds[i]}`);
     if (args.status === 'approve' && (transfer.wallet.balance.minus(transfer.amount)).lt(0)) {
+      const user = transfer.wallet.user;
       transfer.withdrawStatus = 'rejected';
+      if (!rejected[user.id]) rejected[user.id] = {deviceToken: user.profile.deviceToken, total: new BN(transfer.amount)};
+      else rejected[user.id].total.plus(transfer.amount);
     } else {
       switch (args.status) {
         case 'approve':
@@ -49,7 +54,7 @@ export const update = async (args: { transferIds: string[], status: 'approve'|'r
             try { kycData = await S3Client.getUserObject(user.id) } catch (_) { kycData = null; }
             if (kycData) {
               const paymentMethod = transfer.ethAddress ? {ethAddress: transfer.ethAddress} : {paypalEmail: kycData['paypalEmail']};
-              userGroups[user.id] = {totalRedeemedAmount: transfer.amount.toString(), user, transfers: [transfer] };
+              userGroups[user.id] = {totalRedeemedAmount: transfer.amount.toString(), user, transfers: [transfer], deviceToken: user.profile.deviceToken };
               userGroups[user.id] = {...userGroups[user.id], ...paymentMethod};
               if (transfer.ethAddress) {
                 const transactionHash = await EthWithdraw.performCoiinTransfer(transfer.ethAddress, transfer.amount);
@@ -71,6 +76,8 @@ export const update = async (args: { transferIds: string[], status: 'approve'|'r
           break;
         case 'reject':
           transfer.withdrawStatus = 'rejected';
+          if (!rejected[transfer.wallet.user.id]) rejected[transfer.wallet.user.id] = {deviceToken: transfer.wallet.user.profile.deviceToken, total: new BN(transfer.amount)};
+          else rejected[transfer.wallet.user.id].total.plus(transfer.amount);
           break;
         default:
           throw new Error('status provided is not valid');
@@ -78,14 +85,16 @@ export const update = async (args: { transferIds: string[], status: 'approve'|'r
     }
     transfers.push(transfer);
   }
-  await Transfer.save(transfers);
   await makePayouts(payouts);
   for (const userId in userGroups) {
     const group = userGroups[userId];
     if (group.paypalEmail) {
-      await SesClient.sendRedemptionConfirmationEmail(userId, group['paypalEmail'], (parseFloat(group['totalRedeemedAmount'].times(0.1).toString())).toFixed(2), group['transfers']);
+      await SesClient.sendRedemptionConfirmationEmail(userId, group['paypalEmail'], (parseFloat(new BN(group['totalRedeemedAmount']).times(0.1).toString())).toFixed(2), group['transfers']);
     }
+    await Firebase.sendWithdrawalApprovalNotification(group.deviceToken, group.totalRedeemedAmount);
   }
+  for (const userId in rejected) await Firebase.sendWithdrawalRejectionNotification(rejected[userId].deviceToken, rejected[userId].total);
+  await Transfer.save(transfers);
   return transfers.map(transfer => transfer.asV1());
 }
 
