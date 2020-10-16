@@ -66,6 +66,12 @@ type Mutation {
   generateFactorsFromKyc(factors:[JSON]): JSON
   attachEthereumAddress(ethereumAddress:String!): ExternalWallet
   claimEthereumAddress(ethereumAddress:String!,signature:String!): ExternalWallet
+  updateNotificationSettings(
+    kyc:Boolean,
+    withdraw:Boolean,
+    campaignCreate:Boolean,
+    campaignUpdate:Boolean
+  ): User
 }
 
 type Query {
@@ -99,7 +105,7 @@ type Query {
 type NotificationSettings {
   kyc: Boolean
   withdraw: Boolean
-  newCampaign: Boolean
+  campaignCreate: Boolean
   campaignUpdates: Boolean
 }
 

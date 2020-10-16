@@ -175,3 +175,16 @@ export const getPreviousDayMetrics = async (_args: any, context: { user: any }) 
   }
   return metrics;
 }
+
+export const updateNotificationSettings = async (args: { kyc: boolean, withdraw: boolean, campaignCreate: boolean, campaignUpdates: boolean }, context: { user: any }) => {
+  const { id } = context.user;
+  const { kyc, withdraw, campaignCreate, campaignUpdates } = args;
+  const user = await User.findOne({ where: { identityId: id }, relations: ['notificationSettings'] });
+  if (!user) throw new Error('user not found');
+  const notificationSettings = user.notificationSettings;
+  if (kyc !== null && kyc !== undefined) notificationSettings.kyc = kyc;
+  if (withdraw !== null && withdraw !== undefined) notificationSettings.withdraw = withdraw;
+  if (campaignCreate !== null && campaignCreate !== undefined) notificationSettings.campaignCreate = campaignCreate;
+  if (campaignUpdates !== null && campaignUpdates !== undefined) notificationSettings.campaignUpdates = campaignUpdates;
+  return user.asV1();
+}
