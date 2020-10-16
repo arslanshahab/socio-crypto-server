@@ -34,7 +34,11 @@ export class Firebase {
     const message: admin.messaging.MulticastMessage = {
       notification: {
         title: 'New Campaign Alert!',
-        body: `The campaign ${campaign.name} was just created and will be live: ${new Date(campaign.beginDate).toISOString()}`,
+        body: `The campaign ${campaign.name} was created and is now live!`,
+      },
+      data: {
+        redirection: JSON.stringify({ to: 'campaign', extraData: { campaignId: campaign.id, campaignName: campaign.name } }),
+        notifyOn: new Date(campaign.beginDate).getTime().toString()
       },
       tokens
     };
@@ -69,6 +73,7 @@ export class Firebase {
         title: 'Your COIIN withdrawal has been Approved!',
         body: `Your request for ${amount.toString()} COIIN withdrawal is being processed`
       },
+      data: { redirection: JSON.stringify({ to: 'rewards' }) },
       token
     };
     await Firebase.client.messaging().send(message);
@@ -80,6 +85,7 @@ export class Firebase {
         title: 'Your COIIN withdrawal has been Rejected!',
         body: `Your request for ${amount.toString()} COIIN using has been rejected. Please attempt with a different amount`
       },
+      data: { redirection: JSON.stringify({ to: 'rewards' }) },
       token
     };
     await Firebase.client.messaging().send(message);
