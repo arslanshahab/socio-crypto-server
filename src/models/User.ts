@@ -12,6 +12,7 @@ import { Profile } from './Profile';
 import { Transfer } from './Transfer';
 import { DailyParticipantMetric } from './DailyParticipantMetric';
 import { ExternalWallet } from './ExternalWallet';
+import { NotificationSettings } from './NotificationSettings';
 
 @Entity()
 export class User extends BaseEntity {
@@ -81,6 +82,14 @@ export class User extends BaseEntity {
     { eager: true }
   )
   public profile: Profile;
+
+  @OneToOne(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _type => NotificationSettings,
+    notifications => notifications.user,
+    { eager: true }
+  )
+  public notificationSettings: NotificationSettings;
 
   @OneToMany(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
