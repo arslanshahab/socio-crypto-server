@@ -1,4 +1,4 @@
-import { BaseEntity, Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToOne } from 'typeorm';
+import { BaseEntity, Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToOne, JoinColumn } from 'typeorm';
 import { User } from './User';
 
 @Entity()
@@ -28,5 +28,6 @@ export class NotificationSettings extends BaseEntity {
     _type => User,
     user => user.notificationSettings
   )
+  @JoinColumn()
   public user: User;
 }

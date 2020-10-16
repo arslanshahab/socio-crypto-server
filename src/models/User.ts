@@ -87,7 +87,6 @@ export class User extends BaseEntity {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _type => NotificationSettings,
     notifications => notifications.user,
-    { eager: true }
   )
   public notificationSettings: NotificationSettings;
 
@@ -192,7 +191,7 @@ export class User extends BaseEntity {
       if (loadPosts) query = query.leftJoinAndSelect('user.posts', 'post', 'post."userId" = user.id');
       if (loadTwentyFourHourMetrics) query = query.leftJoinAndSelect('user.twentyFourHourMetrics', 'metric', 'metric."userId" = user.id')
       if (loadFactorLinks) query = query.leftJoinAndSelect('user.factorLinks', 'factor', 'factor."userId" = user.id');
-      if (loadNotificationSettings) query = query.leftJoinAndSelect('user."notificationSettings"', 'settings', 'settings."userId" = user.id');
+      if (loadNotificationSettings) query = query.leftJoinAndSelect('user.notificationSettings', 'settings', 'settings."userId" = user.id');
     }
     query = query.leftJoinAndSelect('user.profile', 'profile', 'profile."userId" = user.id');
     query = query.where('user.identityId = :id', { id });
