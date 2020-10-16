@@ -28,7 +28,7 @@ package-lock.json
 
 # dotenv environment variables file for local dev
 .env
-
+easygraphql-load-tester-queries.json
 # Optional REPL history
 .node_repl_history
 
