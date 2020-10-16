@@ -156,6 +156,7 @@ export class User extends BaseEntity {
       const loadTwentyFourHourMetrics = fieldNodes.find((node: FieldNode) => node.name.value === 'twentyFourHourMetrics') as FieldNode;
       const loadWallet = fieldNodes.find((node: FieldNode) => node.name.value === 'wallet') as FieldNode;
       const loadFactorLinks = fieldNodes.find((node: FieldNode) => node.name.value === 'factorLinks') as FieldNode;
+      const loadNotificationSettings = fieldNodes.find((node: FieldNode) => node.name.value === 'notificationSettings') as FieldNode;
       if (loadParticipants) {
         query = query.leftJoinAndSelect('user.campaigns', 'participant', 'participant."userId" = user.id');
         const subFields = loadParticipants.selectionSet?.selections.filter(node => node.kind === 'Field') || [];
@@ -191,6 +192,7 @@ export class User extends BaseEntity {
       if (loadPosts) query = query.leftJoinAndSelect('user.posts', 'post', 'post."userId" = user.id');
       if (loadTwentyFourHourMetrics) query = query.leftJoinAndSelect('user.twentyFourHourMetrics', 'metric', 'metric."userId" = user.id')
       if (loadFactorLinks) query = query.leftJoinAndSelect('user.factorLinks', 'factor', 'factor."userId" = user.id');
+      if (loadNotificationSettings) query = query.leftJoinAndSelect('user."notificationSettings"', 'settings', 'settings."userId" = user.id');
     }
     query = query.leftJoinAndSelect('user.profile', 'profile', 'profile."userId" = user.id');
     query = query.where('user.identityId = :id', { id });

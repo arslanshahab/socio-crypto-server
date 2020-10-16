@@ -96,6 +96,13 @@ type Query {
   listExternalAddresses: [ExternalWallet]
 }
 
+type NotificationSettings {
+  kyc: Boolean
+  withdraw: Boolean
+  newCampaign: Boolean
+  campaignUpdates: Boolean
+}
+
 type ExternalWallet {
   ethereumAddress: String
   message: String
@@ -194,6 +201,7 @@ type User {
   state:String
   interests:[String]
   values:[String]
+  notificationSettings: NotificationSettings
 }
 
 type PublicUser {
