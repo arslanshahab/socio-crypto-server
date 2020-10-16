@@ -70,7 +70,7 @@ type Mutation {
     kyc:Boolean,
     withdraw:Boolean,
     campaignCreate:Boolean,
-    campaignUpdate:Boolean
+    campaignUpdates:Boolean
   ): User
 }
 

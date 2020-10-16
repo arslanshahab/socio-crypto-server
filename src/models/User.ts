@@ -127,12 +127,15 @@ export class User extends BaseEntity {
     return returnedUser;
   }
 
-  public static async getAllDeviceTokens(): Promise<string[]> {
-    const values = await this.createQueryBuilder('user')
+  public static async getAllDeviceTokens(action?: 'campaignCreate'|'campaignUpdates'): Promise<string[]> {
+    let query = this.createQueryBuilder('user')
       .leftJoinAndSelect('user.profile', 'profile', 'profile."userId" = user.id')
+      .leftJoinAndSelect('user.notificationSettings', 'settings', 'settings."userId" = user.id')
       .select('profile."deviceToken"')
-      .distinctOn(['profile."deviceToken"'])
-      .getRawMany();
+      .distinctOn(['profile."deviceToken"']);
+    if (action === 'campaignCreate') query = query.andWhere('settings."campaignCreate" = true');
+    if (action === 'campaignUpdates') query = query.andWhere('settings."campaignUpdates" = true');
+    const values = await query.getRawMany();
     return values.map(value => value.deviceToken);
   }
 
