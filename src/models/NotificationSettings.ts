@@ -13,7 +13,7 @@ export class NotificationSettings extends BaseEntity {
   public withdraw: boolean;
 
   @Column({ type: 'boolean', default: true })
-  public newCampaign: boolean;
+  public campaignCreate: boolean;
 
   @Column({ type: 'boolean', default: true })
   public campaignUpdates: boolean;
