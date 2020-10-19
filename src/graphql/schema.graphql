@@ -267,6 +267,7 @@ type Campaign {
   targetVideo: String
   imagePath: String
   tagline: String
+  requirements: [String]
   suggestedPosts: [String]
   suggestedTags: [String]
   participants: [Participant]
