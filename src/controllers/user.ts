@@ -179,6 +179,10 @@ export const getPreviousDayMetrics = async (_args: any, context: { user: any }) 
 export const updateNotificationSettings = async (args: { kyc: boolean, withdraw: boolean, campaignCreate: boolean, campaignUpdates: boolean }, context: { user: any }) => {
   const { id } = context.user;
   const { kyc, withdraw, campaignCreate, campaignUpdates } = args;
+  if ((kyc === undefined || kyc === null) 
+    && (withdraw === undefined || withdraw === null)
+    && (campaignCreate === undefined || campaignCreate === null)
+    && (campaignUpdates === undefined || campaignUpdates === null)) throw new Error('You must provide one of the required settings');
   const user = await User.findOne({ where: { identityId: id }, relations: ['notificationSettings'] });
   if (!user) throw new Error('user not found');
   const notificationSettings = user.notificationSettings;
@@ -186,5 +190,6 @@ export const updateNotificationSettings = async (args: { kyc: boolean, withdraw:
   if (withdraw !== null && withdraw !== undefined) notificationSettings.withdraw = withdraw;
   if (campaignCreate !== null && campaignCreate !== undefined) notificationSettings.campaignCreate = campaignCreate;
   if (campaignUpdates !== null && campaignUpdates !== undefined) notificationSettings.campaignUpdates = campaignUpdates;
+  await notificationSettings.save();
   return user.asV1();
 }
