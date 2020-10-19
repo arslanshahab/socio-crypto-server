@@ -59,6 +59,7 @@ export const root = {
   listExternalAddresses: externalWallet.list,
   attachEthereumAddress: externalWallet.attach,
   claimEthereumAddress: externalWallet.claim,
+  updateNotificationSettings: userController.updateNotificationSettings,
 };
 
 export const publicRoot = {

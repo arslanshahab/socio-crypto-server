@@ -13,6 +13,7 @@ import { sha256Hash } from '../util/crypto';
 import { limit } from '../util/rateLimiter';
 import { S3Client } from '../clients/s3';
 import { Profile } from '../models/Profile';
+import { NotificationSettings } from '../models/NotificationSettings';
 
 const { NODE_ENV } = process.env;
 
@@ -66,6 +67,7 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
     const wallet = new Wallet();
     const factorLink = new FactorLink();
     const profile = new Profile();
+    const notificationSettings = new NotificationSettings();
     newUser.identityId = identityId;
     profile.username = `raiinmaker-${generateRandomNumber()}`;
     await newUser.save();
@@ -73,7 +75,10 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
     await wallet.save();
     profile.user = newUser;
     await profile.save();
+    notificationSettings.user = newUser;
+    await notificationSettings.save();
     newUser.profile = profile;
+    newUser.notificationSettings = notificationSettings;
     for (let i = 0; i < factors.length; i++) {
       const { type, id, providerId, factor } = factors[i];
       factorLink.type = type;

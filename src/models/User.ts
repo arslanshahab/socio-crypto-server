@@ -12,6 +12,7 @@ import { Profile } from './Profile';
 import { Transfer } from './Transfer';
 import { DailyParticipantMetric } from './DailyParticipantMetric';
 import { ExternalWallet } from './ExternalWallet';
+import { NotificationSettings } from './NotificationSettings';
 
 @Entity()
 export class User extends BaseEntity {
@@ -82,6 +83,13 @@ export class User extends BaseEntity {
   )
   public profile: Profile;
 
+  @OneToOne(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _type => NotificationSettings,
+    notifications => notifications.user,
+  )
+  public notificationSettings: NotificationSettings;
+
   @OneToMany(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _type => DailyParticipantMetric,
@@ -119,12 +127,15 @@ export class User extends BaseEntity {
     return returnedUser;
   }
 
-  public static async getAllDeviceTokens(): Promise<string[]> {
-    const values = await this.createQueryBuilder('user')
+  public static async getAllDeviceTokens(action?: 'campaignCreate'|'campaignUpdates'): Promise<string[]> {
+    let query = this.createQueryBuilder('user')
       .leftJoinAndSelect('user.profile', 'profile', 'profile."userId" = user.id')
+      .leftJoinAndSelect('user.notificationSettings', 'settings', 'settings."userId" = user.id')
       .select('profile."deviceToken"')
-      .distinctOn(['profile."deviceToken"'])
-      .getRawMany();
+      .distinctOn(['profile."deviceToken"']);
+    if (action === 'campaignCreate') query = query.andWhere('settings."campaignCreate" = true');
+    if (action === 'campaignUpdates') query = query.andWhere('settings."campaignUpdates" = true');
+    const values = await query.getRawMany();
     return values.map(value => value.deviceToken);
   }
 
@@ -147,6 +158,7 @@ export class User extends BaseEntity {
       const loadTwentyFourHourMetrics = fieldNodes.find((node: FieldNode) => node.name.value === 'twentyFourHourMetrics') as FieldNode;
       const loadWallet = fieldNodes.find((node: FieldNode) => node.name.value === 'wallet') as FieldNode;
       const loadFactorLinks = fieldNodes.find((node: FieldNode) => node.name.value === 'factorLinks') as FieldNode;
+      const loadNotificationSettings = fieldNodes.find((node: FieldNode) => node.name.value === 'notificationSettings') as FieldNode;
       if (loadParticipants) {
         query = query.leftJoinAndSelect('user.campaigns', 'participant', 'participant."userId" = user.id');
         const subFields = loadParticipants.selectionSet?.selections.filter(node => node.kind === 'Field') || [];
@@ -182,6 +194,7 @@ export class User extends BaseEntity {
       if (loadPosts) query = query.leftJoinAndSelect('user.posts', 'post', 'post."userId" = user.id');
       if (loadTwentyFourHourMetrics) query = query.leftJoinAndSelect('user.twentyFourHourMetrics', 'metric', 'metric."userId" = user.id')
       if (loadFactorLinks) query = query.leftJoinAndSelect('user.factorLinks', 'factor', 'factor."userId" = user.id');
+      if (loadNotificationSettings) query = query.leftJoinAndSelect('user.notificationSettings', 'settings', 'settings."userId" = user.id');
     }
     query = query.leftJoinAndSelect('user.profile', 'profile', 'profile."userId" = user.id');
     query = query.where('user.identityId = :id', { id });

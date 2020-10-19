@@ -36,13 +36,15 @@ export const update = async (args: { transferIds: string[], status: 'approve'|'r
   const payouts: {value: string, receiver: string, payoutId: string}[] = [];
   const rejected: {[key: string]: any} = {};
   for (let i = 0; i < args.transferIds.length; i++) {
-    const transfer = await Transfer.findOne({ where: { id: args.transferIds[i], action: 'withdraw', withdrawStatus: 'pending' }, relations: ['wallet', 'wallet.user', 'wallet.user.profile'] });
+    const transfer = await Transfer.findOne({ where: { id: args.transferIds[i], action: 'withdraw', withdrawStatus: 'pending' }, relations: ['wallet', 'wallet.user', 'wallet.user.profile', 'wallet.user.notificationSettings'] });
     if (!transfer) throw new Error(`transfer not found: ${args.transferIds[i]}`);
     if (args.status === 'approve' && (transfer.wallet.balance.minus(transfer.amount)).lt(0)) {
       const user = transfer.wallet.user;
       transfer.withdrawStatus = 'rejected';
-      if (!rejected[user.id]) rejected[user.id] = {deviceToken: user.profile.deviceToken, total: new BN(transfer.amount)};
-      else rejected[user.id].total.plus(transfer.amount);
+      if (user.notificationSettings.withdraw) {
+        if (!rejected[user.id]) rejected[user.id] = {deviceToken: user.profile.deviceToken, total: new BN(transfer.amount)};
+        else rejected[user.id].total.plus(transfer.amount);
+      }
     } else {
       switch (args.status) {
         case 'approve':
@@ -54,8 +56,9 @@ export const update = async (args: { transferIds: string[], status: 'approve'|'r
             try { kycData = await S3Client.getUserObject(user.id) } catch (_) { kycData = null; }
             if (kycData) {
               const paymentMethod = transfer.ethAddress ? {ethAddress: transfer.ethAddress} : {paypalEmail: kycData['paypalEmail']};
-              userGroups[user.id] = {totalRedeemedAmount: transfer.amount.toString(), user, transfers: [transfer], deviceToken: user.profile.deviceToken };
+              userGroups[user.id] = {totalRedeemedAmount: transfer.amount.toString(), user, transfers: [transfer] };
               userGroups[user.id] = {...userGroups[user.id], ...paymentMethod};
+              if (user.notificationSettings.withdraw) userGroups[user.id].deviceToken = user.profile.deviceToken;
               if (transfer.ethAddress) {
                 const transactionHash = await EthWithdraw.performCoiinTransfer(transfer.ethAddress, transfer.amount);
                 if (!transactionHash) throw new Error('ethereum transfer failure');
@@ -76,8 +79,9 @@ export const update = async (args: { transferIds: string[], status: 'approve'|'r
           break;
         case 'reject':
           transfer.withdrawStatus = 'rejected';
-          if (!rejected[transfer.wallet.user.id]) rejected[transfer.wallet.user.id] = {deviceToken: transfer.wallet.user.profile.deviceToken, total: new BN(transfer.amount)};
+          if (!rejected[transfer.wallet.user.id]) rejected[transfer.wallet.user.id] = {total: new BN(transfer.amount)};
           else rejected[transfer.wallet.user.id].total.plus(transfer.amount);
+          if (transfer.wallet.user.notificationSettings.withdraw) rejected[transfer.wallet.user.id].deviceToken = transfer.wallet.user.profile.deviceToken;
           break;
         default:
           throw new Error('status provided is not valid');
@@ -91,9 +95,11 @@ export const update = async (args: { transferIds: string[], status: 'approve'|'r
     if (group.paypalEmail) {
       await SesClient.sendRedemptionConfirmationEmail(userId, group['paypalEmail'], (parseFloat(new BN(group['totalRedeemedAmount']).times(0.1).toString())).toFixed(2), group['transfers']);
     }
-    await Firebase.sendWithdrawalApprovalNotification(group.deviceToken, group.totalRedeemedAmount);
+    if (group.deviceToken) await Firebase.sendWithdrawalApprovalNotification(group.deviceToken, group.totalRedeemedAmount);
   }
-  for (const userId in rejected) await Firebase.sendWithdrawalRejectionNotification(rejected[userId].deviceToken, rejected[userId].total);
+  for (const userId in rejected) {
+    if (rejected[userId].deviceToken) await Firebase.sendWithdrawalRejectionNotification(rejected[userId].deviceToken, rejected[userId].total);
+  }
   await Transfer.save(transfers);
   return transfers.map(transfer => transfer.asV1());
 }
