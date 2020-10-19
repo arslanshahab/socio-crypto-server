@@ -3,7 +3,7 @@ import {Transfer} from '../models/Transfer';
 import {User} from '../models/User';
 import { Wallet } from '../models/Wallet';
 import { S3Client } from '../clients/s3';
-// import { SesClient } from '../clients/ses';
+import { SesClient } from '../clients/ses';
 import { performTransfer } from './helpers';
 import {asyncHandler, BN} from '../util/helpers';
 import {Paypal} from "../clients/paypal";
@@ -89,11 +89,11 @@ export const update = async (args: { transferIds: string[], status: 'approve'|'r
     }
     transfers.push(transfer);
   }
-  // await makePayouts(payouts);
+  await makePayouts(payouts);
   for (const userId in userGroups) {
     const group = userGroups[userId];
     if (group.paypalEmail) {
-      // await SesClient.sendRedemptionConfirmationEmail(userId, group['paypalEmail'], (parseFloat(new BN(group['totalRedeemedAmount']).times(0.1).toString())).toFixed(2), group['transfers']);
+      await SesClient.sendRedemptionConfirmationEmail(userId, group['paypalEmail'], (parseFloat(new BN(group['totalRedeemedAmount']).times(0.1).toString())).toFixed(2), group['transfers']);
     }
     if (group.deviceToken) await Firebase.sendWithdrawalApprovalNotification(group.deviceToken, group.totalRedeemedAmount);
   }
