@@ -31,6 +31,7 @@ export class Firebase {
   }
 
   public static async sendCampaignCreatedNotifications(tokens: string[], campaign: Campaign) {
+    if (tokens.length === 0) return;
     const message: admin.messaging.MulticastMessage = {
       notification: {
         title: 'New Campaign Alert!',

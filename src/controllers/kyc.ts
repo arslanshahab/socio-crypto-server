@@ -58,10 +58,12 @@ export const updateKyc = async (args: {user: KycUser}, context: { user: any }) =
 export const updateKycStatus = async (args: { userId: string, status: string }, context: { user: any }) => {
   checkPermissions({ hasRole: ['admin'] }, context);
   if (!['approve', 'reject'].includes(args.status)) throw new Error('Status must be either approve or reject');
-  const user = await User.findOneOrFail({ where: { id: args.userId }, relations: ['profile'] });
+  const user = await User.findOneOrFail({ where: { id: args.userId }, relations: ['profile', 'notificationSettings'] });
   user.kycStatus = (args.status == 'approve') ? 'approved' : 'rejected';
   await user.save();
-  if (user.kycStatus === 'approved') await Firebase.sendKycApprovalNotification(user.profile.deviceToken);
-  else await Firebase.sendKycRejectionNotification(user.profile.deviceToken);
+  if (user.notificationSettings.kyc) {
+    if (user.kycStatus === 'approved') await Firebase.sendKycApprovalNotification(user.profile.deviceToken);
+    else await Firebase.sendKycRejectionNotification(user.profile.deviceToken);
+  }
   return user.asV1();
 }
