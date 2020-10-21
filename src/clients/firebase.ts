@@ -35,7 +35,7 @@ export class Firebase {
     const message: admin.messaging.Message = {
       notification: {
         title: 'Daily Participation Upate',
-        body: `You have earned ${participationScore.toString()} an estimated ${coiins.toString()} Coiin rewards in the past 24 hours from ${campaign.name} Campaign. Currently you are #${rank} out of ${totalParticipants}.`
+        body: `You have earned ${participationScore.toString()} an estimated ${coiins.toFixed(2)} Coiin rewards in the past 24 hours from ${campaign.name} Campaign. Currently you are #${rank} out of ${totalParticipants}.`
       },
       data: { redirection: JSON.stringify({ to: 'harvest' }) },
       token
