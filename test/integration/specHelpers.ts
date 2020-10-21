@@ -12,6 +12,7 @@ import { Profile } from '../../src/models/Profile';
 import { DailyParticipantMetric } from '../../src/models/DailyParticipantMetric';
 import { ExternalWallet } from '../../src/models/ExternalWallet';
 import { getDeterministicId, sha256Hash } from '../../src/util/crypto';
+import { NotificationSettings } from '../../src/models/NotificationSettings';
 
 export const createCampaign = async (runningApp: Application, options?: { [key: string]: any } | any, ) => {
   const campaign = new Campaign();
@@ -58,6 +59,15 @@ export const createDailyMetrics = async (runningApp: Application, options: { [ke
   return await runningApp.databaseConnection.createEntityManager().save(metric);
 }
 
+export const createNotificationSettings = async (runningApp: Application, options?: { [key: string]: any } | any) => {
+  const notificationSettings = new NotificationSettings();
+  notificationSettings.kyc = getValue(['kyc'], options, true);
+  notificationSettings.withdraw = getValue(['withdraw'], options, true);
+  notificationSettings.campaignCreate = getValue(['campaignCreate'], options, true);
+  notificationSettings.campaignUpdates = getValue(['campaignUpdates'], options, true);
+  return await runningApp.databaseConnection.createEntityManager().save(notificationSettings);
+}
+
 export const createUser = async (runningApp: Application, options?: { [key: string]: any } | any) => {
   const user = new User();
   user.identityId = getValue(['identityId'], options) || 'banana';
@@ -68,7 +78,8 @@ export const createUser = async (runningApp: Application, options?: { [key: stri
   user.wallet = getValue(['wallet'], options) || await createWallet(runningApp, getValue(['walletOptions'], options))
   user.socialLinks = getValue(['socialLinks'], options) || [];
   user.factorLinks = getValue(['factorLinks'], options) || [];
-  user.twentyFourHourMetrics = getValue(['twentyFourHourMetrics'], options) || []
+  user.twentyFourHourMetrics = getValue(['twentyFourHourMetrics'], options) || [];
+  user.notificationSettings = getValue(['notificationSettings'], options) || await createNotificationSettings(runningApp, getValue(['notificationOptions'], options));
   await runningApp.databaseConnection.createEntityManager().save(user);
   return user;
 }

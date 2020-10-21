@@ -37,7 +37,7 @@ describe('Withdraw Integration Test', function () {
       process.env.FACTOR_PROVIDER_PRIVATE_KEY = "privKey";
       process.env.FACTOR_PROVIDER_PUBLIC_KEY = "pubKey";
       process.env.ETH_HOT_WALLET_PRIVKEY = "ethPrivKey";
-  };
+    };
 
     before(async () => {
         setEnv();
@@ -47,6 +47,8 @@ describe('Withdraw Integration Test', function () {
         fullAppTestBed.stub(Paypal, 'refreshToken');
         fullAppTestBed.stub(Dragonchain, 'ledgerCampaignAction');
         fullAppTestBed.stub(Firebase, 'sendCampaignCompleteNotifications');
+        fullAppTestBed.stub(Firebase, 'sendWithdrawalApprovalNotification');
+        fullAppTestBed.stub(Firebase, 'sendWithdrawalRejectionNotification');
         fullAppTestBed.stub(SesClient, 'sendRedemptionConfirmationEmail');
         fullAppTestBed.stub(S3Client, 'getUserObject').resolves({paypalEmail: 'david@dragonchain.com'} as KycUser);
         fullAppTestBed.stub(Paypal, 'submitPayouts').resolves({ batch_header: 'paypalHeader' });

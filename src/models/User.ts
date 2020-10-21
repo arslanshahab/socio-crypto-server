@@ -127,6 +127,16 @@ export class User extends BaseEntity {
     return returnedUser;
   }
 
+  public static async getUsersForDailyMetricsCron(): Promise<User[]> {
+    return await this.createQueryBuilder('user')
+      .leftJoinAndSelect('user.profile', 'profile', 'profile."userId" = user.id')
+      .leftJoinAndSelect('user.notificationSettings', 'notifications', 'notifications."userId" = user.id')
+      .leftJoinAndSelect('user.campaigns', 'part', 'part."userId" = user.id')
+      .leftJoinAndSelect('part.campaign', 'campaign', 'part."campaignId" = campaign.id')
+      .leftJoinAndSelect('campaign.participants', 'participants', 'participants."campaignId" = campaign.id')
+      .getMany();
+  }
+
   public static async getAllDeviceTokens(action?: 'campaignCreate'|'campaignUpdates'): Promise<string[]> {
     let query = this.createQueryBuilder('user')
       .leftJoinAndSelect('user.profile', 'profile', 'profile."userId" = user.id')

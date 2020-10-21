@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import * as admin from 'firebase-admin';
 import { Campaign } from '../models/Campaign';
 import { Secrets } from '../util/secrets';
@@ -28,6 +29,18 @@ export class Firebase {
 
   public static setClaims(userId: string, claims: any) {
     return Firebase.client.auth().setCustomUserClaims(userId, claims);
+  }
+
+  public static async sendDailyParticipationUpdate(token: string, campaign: Campaign, coiins: BigNumber, participationScore: BigNumber, rank: number, totalParticipants: number) {
+    const message: admin.messaging.Message = {
+      notification: {
+        title: 'Daily Participation Upate',
+        body: `You have earned ${participationScore.toString()} an estimated ${coiins.toString()} Coiin rewards in the past 24 hours from ${campaign.name} Campaign. Currently you are #${rank} out of ${totalParticipants}.`
+      },
+      data: { redirection: JSON.stringify({ to: 'harvest' }) },
+      token
+    };
+    await Firebase.client.messaging().send(message);
   }
 
   public static async sendCampaignCreatedNotifications(tokens: string[], campaign: Campaign) {
