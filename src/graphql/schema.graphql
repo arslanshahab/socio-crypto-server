@@ -11,6 +11,7 @@ type Mutation {
     description:String,
     company:String,
     algorithm: String!,
+    requirements: String,
     image: String,
     tagline: String,
     suggestedPosts:[String],
@@ -25,6 +26,7 @@ type Mutation {
     endDate:String,
     description:String,
     image:String,
+    requirements: String,
     suggestedPosts:[String],
     suggestedTags:[String]): Campaign
   generateCampaignAuditReport(campaignId:String!): AuditReport
@@ -281,7 +283,7 @@ type Campaign {
   targetVideo: String
   imagePath: String
   tagline: String
-  requirements: [String]
+  requirements: JSON
   suggestedPosts: [String]
   suggestedTags: [String]
   participants: [Participant]
