@@ -1,19 +1,19 @@
 import { createSandbox, assert } from 'sinon'; // , SinonStub
 import { expect } from 'chai';
 import * as admin from "firebase-admin";
-import { Application } from '../../app';
-import { Dragonchain } from '../../clients/dragonchain';
-import { Firebase } from '../../clients/firebase';
-import { Paypal } from '../../clients/paypal';
-import { Participant } from '../../models/Participant';
-import { Transfer } from '../../models/Transfer';
-import { Campaign } from '../../models/Campaign';
-import { Wallet } from '../../models/Wallet';
-import { User } from '../../models/User';
-import { Profile } from '../../models/Profile';
-import { NotificationSettings } from '../../models/NotificationSettings';
-import * as cron from './scoreAggregate';
-import { TwentyFourHourMetric } from '../../models/TwentyFourHourMetric';
+import { Application } from '../../src/app';
+import { Dragonchain } from '../../src/clients/dragonchain';
+import { Firebase } from '../../src/clients/firebase';
+import { Paypal } from '../../src/clients/paypal';
+import { Participant } from '../../src/models/Participant';
+import { Transfer } from '../../src/models/Transfer';
+import { Campaign } from '../../src/models/Campaign';
+import { Wallet } from '../../src/models/Wallet';
+import { User } from '../../src/models/User';
+import { Profile } from '../../src/models/Profile';
+import { NotificationSettings } from '../../src/models/NotificationSettings';
+import * as cron from '../../src/cron/scoreAggregate/scoreAggregate';
+import { TwentyFourHourMetric } from '../../src/models/TwentyFourHourMetric';
 import {
   createCampaign,
   createNotificationSettings,
@@ -21,8 +21,8 @@ import {
   createProfile,
   createUser,
   createDailyMetrics
-} from '../../../test/integration/specHelpers';
-import { BN } from '../../util/helpers';
+} from '../integration/specHelpers';
+import { BN } from '../../src/util/helpers';
 
 const fullAppSandbox = createSandbox();
 const sandbox = createSandbox();
