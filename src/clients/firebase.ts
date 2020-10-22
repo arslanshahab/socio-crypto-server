@@ -47,7 +47,7 @@ export class Firebase {
     if (tokens.length === 0) return;
     const message: admin.messaging.MulticastMessage = {
       notification: {
-        title: 'New Campaign Alert!',
+        title: 'A new campaign has been created',
         body: `The campaign ${campaign.name} was created and is now live!`,
       },
       data: {
@@ -65,6 +65,7 @@ export class Firebase {
         title: 'Your KYC has been approved!',
         body: 'You can now make withdrawals thru your Raiinmaker app'
       },
+      data: { redirection: JSON.stringify({ to: 'harvest' }) },
       token
     };
     await Firebase.client.messaging().send(message);
@@ -76,6 +77,7 @@ export class Firebase {
         title: 'Your KYC has been rejected!',
         body: 'You may re-apply your kyc information'
       },
+      data: { redirection: JSON.stringify({ to: 'settings' }) },
       token
     };
     await Firebase.client.messaging().send(message);
@@ -84,7 +86,7 @@ export class Firebase {
   public static async sendWithdrawalApprovalNotification(token: string, amount: BigInt) {
     const message: admin.messaging.Message = {
       notification: {
-        title: 'Your COIIN withdrawal has been Approved!',
+        title: 'Your withdraw request has been approved',
         body: `Your request for ${amount.toString()} COIIN withdrawal is being processed`
       },
       data: { redirection: JSON.stringify({ to: 'rewards' }) },
@@ -96,10 +98,10 @@ export class Firebase {
   public static async sendWithdrawalRejectionNotification(token: string, amount: BigInt) {
     const message: admin.messaging.Message = {
       notification: {
-        title: 'Your COIIN withdrawal has been Rejected!',
+        title: 'Your withdraw request has been rejected',
         body: `Your request for ${amount.toString()} COIIN using has been rejected. Please attempt with a different amount`
       },
-      data: { redirection: JSON.stringify({ to: 'rewards' }) },
+      data: { redirection: JSON.stringify({ to: 'settings' }) },
       token
     };
     await Firebase.client.messaging().send(message);
