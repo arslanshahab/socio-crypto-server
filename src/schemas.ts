@@ -90,6 +90,23 @@ export const algorithmCreateSchema = {
     }
 };
 
+export const campaignRequirementsSchema = {
+    type: 'object',
+    properties: {
+      version: { type: 'string' },
+      ageRange: {
+        type: 'object',
+        properties: {
+          "0-17": {type: 'boolean'},
+          "18-25": {type: 'boolean'},
+          "26-40": {type: 'boolean'},
+          "41-55": {type: 'boolean'},
+          "55+": {type: 'boolean'},
+        }
+      },
+    }
+};
+
 
 export const kycUser = {
     type: 'object',
@@ -113,17 +130,25 @@ export const kycUser = {
 export class Validator {
     private ajv: Ajv.Ajv;
     private validateAlgorithmCreatePayload: Ajv.ValidateFunction;
+    private validateCampaignRequirementsPayload: Ajv.ValidateFunction;
     private validateKycUser: Ajv.ValidateFunction;
 
     public constructor() {
         this.ajv = new Ajv({schemaId: 'auto'});
         this.validateAlgorithmCreatePayload = this.ajv.compile(algorithmCreateSchema);
+        this.validateCampaignRequirementsPayload = this.ajv.compile(campaignRequirementsSchema);
         this.validateKycUser = this.ajv.compile(kycUser);
     }
 
     public validateAlgorithmCreateSchema = (payload: object) => {
         if (!this.validateAlgorithmCreatePayload(payload)) {
             throw new Error(`Incoming message is invalid ${JSON.stringify(this.validateAlgorithmCreatePayload.errors)}`);
+        }
+    }
+
+  public validateCampaignRequirementsSchema = (payload: object) => {
+        if (!this.validateCampaignRequirementsPayload(payload)) {
+            throw new Error(`Incoming message is invalid ${JSON.stringify(this.validateCampaignRequirementsPayload.errors)}`);
         }
     }
     public validateKycRegistration = (payload: object) => {

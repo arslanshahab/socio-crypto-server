@@ -1,8 +1,7 @@
 import { BaseEntity, Entity, Column, OneToMany, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { DateUtils } from 'typeorm/util/DateUtils';
 import { Participant } from './Participant';
-import {AlgorithmSpecs} from '../types';
-import { Validator } from '../schemas';
+import {AlgorithmSpecs, CampaignRequirementSpecs} from '../types';
 import {SocialPost} from "./SocialPost";
 import {Transfer} from './Transfer';
 import {StringifiedArrayTransformer, BigNumberEntityTransformer, AlgorithmTransformer} from '../util/transformers';
@@ -14,7 +13,6 @@ import { User } from './User';
 
 @Entity()
 export class Campaign extends BaseEntity {
-  public static validate = new Validator();
   @PrimaryGeneratedColumn('uuid')
   public id: string;
 
@@ -56,6 +54,9 @@ export class Campaign extends BaseEntity {
 
   @Column({ nullable: true })
   public imagePath: string;
+
+  @Column({ type: 'jsonb', nullable: true })
+  public requirements: CampaignRequirementSpecs;
 
   @Column({ type: 'text', nullable: false, default: '[]', transformer: StringifiedArrayTransformer })
   public suggestedPosts: string[];
@@ -210,7 +211,7 @@ export class Campaign extends BaseEntity {
     return true;
   }
 
-  public static newCampaign(name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, tagline: string, suggestedPosts: string[], suggestedTags: string[]): Campaign {
+  public static newCampaign(name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, tagline: string, requirements: CampaignRequirementSpecs, suggestedPosts: string[], suggestedTags: string[]): Campaign {
     const campaign = new Campaign();
     campaign.name = name;
     campaign.coiinTotal = new BN(coiinTotal);
@@ -223,6 +224,7 @@ export class Campaign extends BaseEntity {
     campaign.targetVideo = targetVideo;
     if (description) campaign.description = description;
     if (tagline) campaign.tagline = tagline;
+    if (requirements) campaign.requirements = requirements;
     if (suggestedPosts) campaign.suggestedPosts = suggestedPosts;
     if (suggestedTags) campaign.suggestedTags = suggestedTags;
     return campaign;

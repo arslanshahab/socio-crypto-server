@@ -70,6 +70,19 @@ export interface AlgorithmSpecs {
     tiers: Tiers
 }
 
+export interface CampaignRequirementSpecs {
+    version: number;
+    ageRange: AgeRangeRequirementSpecs,
+}
+export interface AgeRangeRequirementSpecs {
+    version: number;
+    "0-17": Boolean
+    "18-25": Boolean
+    "26-40": Boolean,
+    "41-55": Boolean,
+    "55+": Boolean,
+}
+
 export interface CampaignAuditReport {
     totalClicks: BigNumber
     totalViews: BigNumber
