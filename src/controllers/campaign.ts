@@ -35,7 +35,7 @@ export const createNewCampaign = async (args: { name: string, targetVideo: strin
     const { role, company } = checkPermissions({ hasRole: ['admin', 'manager'] }, context);
     const { name, beginDate, endDate, coiinTotal, target, description, algorithm, targetVideo, image, tagline, requirements, suggestedPosts, suggestedTags } = args;
     Campaign.validate.validateAlgorithmCreateSchema(JSON.parse(algorithm));
-    Campaign.validate.validateCampaignRequirementsSchema(JSON.parse(requirements));
+    if(!!requirements) Campaign.validate.validateCampaignRequirementsSchema(JSON.parse(requirements));
     if (role === 'admin' && !args.company) throw new Error('administrators need to specify a company in args');
     const campaignCompany = (role ==='admin') ? args.company : company;
     const campaign = Campaign.newCampaign(name, targetVideo, beginDate, endDate, coiinTotal, target, description, campaignCompany, algorithm, tagline, requirements, suggestedPosts, suggestedTags);

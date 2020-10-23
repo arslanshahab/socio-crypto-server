@@ -147,8 +147,6 @@ export class Validator {
     }
 
   public validateCampaignRequirementsSchema = (payload: object) => {
-      console.log('in validator');
-      console.log(payload);
         if (!this.validateCampaignRequirementsPayload(payload)) {
             throw new Error(`Incoming message is invalid ${JSON.stringify(this.validateCampaignRequirementsPayload.errors)}`);
         }
