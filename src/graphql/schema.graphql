@@ -11,6 +11,7 @@ type Mutation {
     description:String,
     company:String,
     algorithm: String!,
+    requirements: JSON,
     image: String,
     tagline: String,
     suggestedPosts:[String],
@@ -25,6 +26,7 @@ type Mutation {
     endDate:String,
     description:String,
     image:String,
+    requirements: JSON,
     suggestedPosts:[String],
     suggestedTags:[String]): Campaign
   generateCampaignAuditReport(campaignId:String!): AuditReport
@@ -66,6 +68,12 @@ type Mutation {
   generateFactorsFromKyc(factors:[JSON]): JSON
   attachEthereumAddress(ethereumAddress:String!): ExternalWallet
   claimEthereumAddress(ethereumAddress:String!,signature:String!): ExternalWallet
+  updateNotificationSettings(
+    kyc:Boolean,
+    withdraw:Boolean,
+    campaignCreate:Boolean,
+    campaignUpdates:Boolean
+  ): User
 }
 
 type Query {
@@ -94,6 +102,13 @@ type Query {
   getEstimatedGasPrice: String
   getExternalAddress(ethereumAddress:String!): ExternalWallet
   listExternalAddresses: [ExternalWallet]
+}
+
+type NotificationSettings {
+  kyc: Boolean
+  withdraw: Boolean
+  campaignCreate: Boolean
+  campaignUpdates: Boolean
 }
 
 type ExternalWallet {
@@ -194,6 +209,7 @@ type User {
   state:String
   interests:[String]
   values:[String]
+  notificationSettings: NotificationSettings
 }
 
 type PublicUser {
@@ -267,6 +283,7 @@ type Campaign {
   targetVideo: String
   imagePath: String
   tagline: String
+  requirements: JSON
   suggestedPosts: [String]
   suggestedTags: [String]
   participants: [Participant]

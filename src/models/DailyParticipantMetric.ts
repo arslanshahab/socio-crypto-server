@@ -142,6 +142,14 @@ export class DailyParticipantMetric extends BaseEntity {
       .getMany();
   }
 
+  public static async getLatestByParticipantId(participantId: string) {
+    return await this.createQueryBuilder('metric')
+      .where('metric."participantId" = :id', { id: participantId })
+      .orderBy('metric."createdAt"', 'DESC')
+      .limit(1)
+      .getOne();
+  }
+
   public static async getSortedByUser(user: User, today: boolean): Promise<DailyParticipantMetric[]> {
     let where: {[key: string]:  any} = { user };
     if (today) {
@@ -209,5 +217,14 @@ export class DailyParticipantMetric extends BaseEntity {
       .where(`campaign.id IN (:...ids) AND campaign."endDate" >= '${yesterday}' AND metric."createdAt" < '${today}' AND metric."createdAt" >= '${yesterday}'`, {ids: campaignIds})
       .orderBy('metric."createdAt"', 'DESC')
       .getMany();
+  }
+
+  public static async getPreviousDayMetricForUser(userId: string): Promise<DailyParticipantMetric | undefined> {
+    return await this.createQueryBuilder('metric')
+      .leftJoinAndSelect('metric.user', 'user', 'metric."userId" = user.id')
+      .where('user.id = :id', { id: userId })
+      .orderBy('metric."createdAt"', 'DESC')
+      .limit(1)
+      .getOne();
   }
 }

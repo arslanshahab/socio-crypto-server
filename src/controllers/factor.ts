@@ -13,6 +13,7 @@ import { sha256Hash } from '../util/crypto';
 import { limit } from '../util/rateLimiter';
 import { S3Client } from '../clients/s3';
 import { Profile } from '../models/Profile';
+import { NotificationSettings } from '../models/NotificationSettings';
 
 const { NODE_ENV } = process.env;
 
@@ -66,6 +67,7 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
     const wallet = new Wallet();
     const factorLink = new FactorLink();
     const profile = new Profile();
+    const notificationSettings = new NotificationSettings();
     newUser.identityId = identityId;
     profile.username = `raiinmaker-${generateRandomNumber()}`;
     await newUser.save();
@@ -73,7 +75,10 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
     await wallet.save();
     profile.user = newUser;
     await profile.save();
+    notificationSettings.user = newUser;
+    await notificationSettings.save();
     newUser.profile = profile;
+    newUser.notificationSettings = notificationSettings;
     for (let i = 0; i < factors.length; i++) {
       const { type, id, providerId, factor } = factors[i];
       factorLink.type = type;
@@ -126,12 +131,12 @@ export const recover = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { identityId, code, message } = req.user;
   const shouldRateLimit = await limit(message, 4);
   if (shouldRateLimit) return res.status(429).json({ code: 'REQUEST_LIMIT', message: 'too many requests' });
-  if (isNaN(Number(code))) throw new Error('recovery code must be a integer');
-  if (await User.findOne({ where: { identityId } })) throw new Error('An account with that identity already exists');
+  if (isNaN(Number(code))) return res.status(400).json({ code: 'MALFORMED_INPUT', message: 'recovery code must be a integer' });
+  if (await User.findOne({ where: { identityId } })) return res.status(429).json({ code: 'ACCOUNT_CONFLICT', message: 'an account with that identity already exists' })
   const profile = await Profile.findOne({ where: { username: message, recoveryCode: sha256Hash(code.toString()) }, relations: ['user']});
   if (!profile) {
     await Dragonchain.ledgerAccountRecoveryAttempt(undefined, identityId, message, code, false);
-    throw new Error('requested account not found');
+    return res.status(404).json({ code: 'NOT_FOUND', message: 'requested account not found' });
   }
   const user = profile.user;
   await S3Client.deleteUserInfoIfExists(user.id);

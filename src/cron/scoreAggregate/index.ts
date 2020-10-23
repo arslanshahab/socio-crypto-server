@@ -1,9 +1,8 @@
-import {getConnection} from "typeorm";
 import { Application } from '../../app';
+import { Firebase } from '../../clients/firebase';
 import { Secrets } from '../../util/secrets';
-import {User} from '../../models/User';
 import logger from "../../util/logger";
-import { TwentyFourHourMetric } from '../../models/TwentyFourHourMetric';
+import * as cron from './scoreAggregate';
 
 const app = new Application();
 
@@ -11,21 +10,9 @@ const app = new Application();
   // create connections
   logger.info('Starting 24 hour cron');
   await Secrets.initialize();
+  await Firebase.initialize();
   const connection = await app.connectDatabase();
-  const metricsToSave: TwentyFourHourMetric[] = [];
-
-  const users = await User.find();
-
-  for (const user of users) {
-    const totalParticipationScore = await User.getUserTotalParticipationScore(user.id);
-    const metric = new TwentyFourHourMetric();
-    metric.score = totalParticipationScore;
-    metric.user = user;
-    metricsToSave.push(metric);
-  }
-
-  await getConnection().createEntityManager().save(metricsToSave);
-
+  await cron.main();
   // cleanup connections
   logger.info('closing connection');
   await connection.close();
