@@ -213,7 +213,7 @@ export class Campaign extends BaseEntity {
     return true;
   }
 
-  public static newCampaign(name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, tagline: string, requirements: string, suggestedPosts: string[], suggestedTags: string[]): Campaign {
+  public static newCampaign(name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, tagline: string, requirements: JSON, suggestedPosts: string[], suggestedTags: string[]): Campaign {
     const campaign = new Campaign();
     campaign.name = name;
     campaign.coiinTotal = new BN(coiinTotal);
@@ -226,7 +226,7 @@ export class Campaign extends BaseEntity {
     campaign.targetVideo = targetVideo;
     if (description) campaign.description = description;
     if (tagline) campaign.tagline = tagline;
-    if (requirements) campaign.requirements = JSON.parse(requirements);
+    if (requirements) campaign.requirements = requirements;
     if (suggestedPosts) campaign.suggestedPosts = suggestedPosts;
     if (suggestedTags) campaign.suggestedTags = suggestedTags;
     return campaign;

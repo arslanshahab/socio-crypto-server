@@ -72,7 +72,7 @@ export interface AlgorithmSpecs {
 
 export interface CampaignRequirementSpecs {
     version: number;
-    ageRange: AgeRangeRequirementSpecs[]
+    ageRange: AgeRangeRequirementSpecs,
 }
 export interface AgeRangeRequirementSpecs {
     version: number;
