@@ -105,7 +105,7 @@ export const updateUsername = async (args: { username: string }, context: { user
 
 export const setRecoveryCode = async (args: { code: number }, context: { user: any }) => {
   const { id } = context.user;
-  const user = await User.findOne({ where: { identityId: id } });
+  const user = await User.findOne({ where: { identityId: id }, relations: ['profile'] });
   if (!user) throw new Error('user not found');
   user.profile.recoveryCode = sha256Hash(args.code.toString());
   await user.profile.save();
@@ -179,10 +179,6 @@ export const getPreviousDayMetrics = async (_args: any, context: { user: any }) 
 export const updateNotificationSettings = async (args: { kyc: boolean, withdraw: boolean, campaignCreate: boolean, campaignUpdates: boolean }, context: { user: any }) => {
   const { id } = context.user;
   const { kyc, withdraw, campaignCreate, campaignUpdates } = args;
-  if ((kyc === undefined || kyc === null) 
-    && (withdraw === undefined || withdraw === null)
-    && (campaignCreate === undefined || campaignCreate === null)
-    && (campaignUpdates === undefined || campaignUpdates === null)) throw new Error('You must provide one of the required settings');
   const user = await User.findOne({ where: { identityId: id }, relations: ['notificationSettings'] });
   if (!user) throw new Error('user not found');
   const notificationSettings = user.notificationSettings;
