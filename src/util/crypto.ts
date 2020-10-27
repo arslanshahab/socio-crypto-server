@@ -48,7 +48,29 @@ const orderedHashFactorList = (factor: Factor) => {
   }
 }
 
+const orderedIdentityLoginRequestHashList = (identity: any) => {
+  try {
+    const hashBufList = [];
+    hashBufList.push(Buffer.from(identity.service, 'utf8'));
+    hashBufList.push(Buffer.from(identity.timestamp, 'utf8'));
+    hashBufList.push(Buffer.from(identity.identity.publicKey, 'utf8'));
+    hashBufList.push(Buffer.from(identity.identity.keyType, 'utf8'));
+    hashBufList.push(Buffer.from(identity.identity.signature.signingKeyId, 'utf8'));
+    hashBufList.push(Buffer.from(identity.identity.signature.signature));
+    if (identity.identity.revokeTime) hashBufList.push(Buffer.from(identity.identity.revokeTime.timestamp, 'utf8'));
+    return hashBufList;
+  } catch (error) {
+    console.error(error);
+    console.error(error.message);
+    throw new Error('Error while identity factor login request (possible malformed identity request)');
+  }
+};
+
 const hashFactorForSigning = (factor: Factor) => sha256Hash(Buffer.concat(orderedHashFactorList(factor)));
+
+const hashIdentityLoginForSigning = (identity: any) => sha256Hash(Buffer.concat(orderedIdentityLoginRequestHashList(identity)));
+
+export const signIdentityLoginRequest = (identity: any, privateKey: string) => secp256k1.ecdsaSign(Buffer.from(hashIdentityLoginForSigning(identity), 'base64'), Buffer.from(privateKey)).signature;
 
 export const signFactor = (factor: Factor) => secp256k1.ecdsaSign(Buffer.from(hashFactorForSigning(factor), 'base64'), Buffer.from(Secrets.factorProviderPrivateKey, 'base64')).signature;
 

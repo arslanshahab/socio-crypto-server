@@ -105,7 +105,8 @@ export const updateUsername = async (args: { username: string }, context: { user
 
 export const setRecoveryCode = async (args: { code: number }, context: { user: any }) => {
   const { id } = context.user;
-  const user = await User.findOneOrFail({ where: { identityId: id } });
+  const user = await User.findOne({ where: { identityId: id }, relations: ['profile'] });
+  if (!user) throw new Error('user not found');
   user.profile.recoveryCode = sha256Hash(args.code.toString());
   await user.profile.save();
   return user.asV1();
@@ -130,13 +131,14 @@ export const updateProfileInterests = async (args: { ageRange: string, city: str
 export const removeProfileInterests = async (args: { interest: string, value: string, ageRange: string, city: string, state: string, country: string }, context: { user: any }) => {
   const { id } = context.user;
   const { interest, value, ageRange, city, state, country } = args;
-  const user = await User.findOne({ where: { identityId: id } });
+  const user = await User.findOne({ where: { identityId: id }, relations: ['profile'] });
   if (!user) throw new Error('user not found');
-  const profile = user.profile;
-  if (ageRange) delete profile.ageRange;
-  if (city) delete profile.city;
-  if (state) delete profile.state;
-  if (country) delete profile.country;
+  const profile = await Profile.findOne({ where: { user } });
+  if (!profile) throw new Error('profile not found');
+  if (ageRange) profile.ageRange = null;
+  if (city) profile.city = null;
+  if (state) profile.state = null;
+  if (country) profile.country = null;
   if (interest) {
     const index = profile.interests.indexOf(interest);
     if (index > -1) profile.interests.splice(index, 1);
@@ -145,7 +147,7 @@ export const removeProfileInterests = async (args: { interest: string, value: st
     const index = profile.values.indexOf(value);
     if (index > -1) profile.values.splice(index, 1);
   }
-  await profile.save()
+  await profile.save();
   return user.asV1();
 }
 
@@ -172,4 +174,18 @@ export const getPreviousDayMetrics = async (_args: any, context: { user: any }) 
     metrics = await groupDailyMetricsByUser(user.id, allDailyMetrics);
   }
   return metrics;
+}
+
+export const updateNotificationSettings = async (args: { kyc: boolean, withdraw: boolean, campaignCreate: boolean, campaignUpdates: boolean }, context: { user: any }) => {
+  const { id } = context.user;
+  const { kyc, withdraw, campaignCreate, campaignUpdates } = args;
+  const user = await User.findOne({ where: { identityId: id }, relations: ['notificationSettings'] });
+  if (!user) throw new Error('user not found');
+  const notificationSettings = user.notificationSettings;
+  if (kyc !== null && kyc !== undefined) notificationSettings.kyc = kyc;
+  if (withdraw !== null && withdraw !== undefined) notificationSettings.withdraw = withdraw;
+  if (campaignCreate !== null && campaignCreate !== undefined) notificationSettings.campaignCreate = campaignCreate;
+  if (campaignUpdates !== null && campaignUpdates !== undefined) notificationSettings.campaignUpdates = campaignUpdates;
+  await notificationSettings.save();
+  return user.asV1();
 }

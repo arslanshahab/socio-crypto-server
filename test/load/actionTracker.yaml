@@ -1,0 +1,22 @@
+config:
+  target: "https://raiinmaker-staging.api.dragonchain.com/v1/public/graphql/"
+  phases:
+    - duration: 5
+      arrivalRate: 50
+  processor: './actionTracker.js'
+  defaults:
+    - headers:
+      authorization: "{{ $processEnvironment.TEST_API_KEY }}"
+scenarios:
+  - name: 'GraphQL Query load test'
+    flow:
+      - function: 'testCases'
+      - loop:
+          - post:
+              url: '/'
+              # enables response logs
+              # afterResponse: "logging"
+              json:
+                query: '{{ $loopElement.query }}'
+                variables: '{{ $loopElement.variables }}'
+        over: cases

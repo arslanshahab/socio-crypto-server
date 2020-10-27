@@ -14,7 +14,10 @@ import {calculateParticipantPayout, calculateParticipantSocialScore, calculateTi
 import { Transfer } from '../models/Transfer';
 import { BN } from '../util/helpers';
 import { BigNumber } from 'bignumber.js';
+import { Validator } from '../schemas';
+import { CampaignRequirementSpecs } from '../types';
 
+const validator = new Validator();
 
 export const getCurrentCampaignTier = async (args: { campaignId?: string, campaign?: Campaign }) => {
     const { campaignId, campaign } = args;
@@ -31,18 +34,20 @@ export const getCurrentCampaignTier = async (args: { campaignId?: string, campai
     return { currentTier: currentTierSummary.currentTier, currentTotal: parseFloat(currentTierSummary.currentTotal.toString()) };
 }
 
-export const createNewCampaign = async (args: { name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, image: string, tagline: string, suggestedPosts: string[], suggestedTags: string[] }, context: { user: any }) => {
+export const createNewCampaign = async (args: { name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, image: string, tagline: string, requirements:CampaignRequirementSpecs, suggestedPosts: string[], suggestedTags: string[] }, context: { user: any }) => {
     const { role, company } = checkPermissions({ hasRole: ['admin', 'manager'] }, context);
-    const { name, beginDate, endDate, coiinTotal, target, description, algorithm, targetVideo, image, tagline, suggestedPosts, suggestedTags } = args;
-    Campaign.validate.validateAlgorithmCreateSchema(JSON.parse(algorithm));
+    const { name, beginDate, endDate, coiinTotal, target, description, algorithm, targetVideo, image, tagline, requirements, suggestedPosts, suggestedTags } = args;
+    validator.validateAlgorithmCreateSchema(JSON.parse(algorithm));
+    if (!!requirements) validator.validateCampaignRequirementsSchema(requirements);
     if (role === 'admin' && !args.company) throw new Error('administrators need to specify a company in args');
     const campaignCompany = (role ==='admin') ? args.company : company;
-    const campaign = Campaign.newCampaign(name, targetVideo, beginDate, endDate, coiinTotal, target, description, campaignCompany, algorithm, tagline, suggestedPosts, suggestedTags);
+    const campaign = Campaign.newCampaign(name, targetVideo, beginDate, endDate, coiinTotal, target, description, campaignCompany, algorithm, tagline, requirements, suggestedPosts, suggestedTags);
     await campaign.save();
     if (image) {
       campaign.imagePath = await S3Client.setCampaignImage('banner', campaign.id, image);
       await campaign.save();
     }
+    await Firebase.sendCampaignCreatedNotifications(await User.getAllDeviceTokens('campaignCreate'), campaign);
     return campaign.asV1();
 }
 
@@ -60,7 +65,7 @@ export const updateCampaign = async (args: { id: string, name: string, beginDate
     if (target) campaign.target = target;
     if (description) campaign.description = description;
     if (algorithm) {
-        Campaign.validate.validateAlgorithmCreateSchema(JSON.parse(algorithm));
+        validator.validateAlgorithmCreateSchema(JSON.parse(algorithm));
         campaign.algorithm = JSON.parse(algorithm);
     }
     if (targetVideo) campaign.targetVideo = targetVideo;

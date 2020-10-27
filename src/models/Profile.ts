@@ -20,16 +20,16 @@ export class Profile extends BaseEntity {
   public email: string;
 
   @Column({ type: 'text', nullable: true })
-  public ageRange: string;
+  public ageRange: string | null;
 
   @Column({ type: 'text', nullable: true })
-  public city: string;
+  public city: string | null;
 
   @Column({ type: 'text', nullable: true })
-  public state: string;
+  public state: string | null;
 
   @Column({ type: 'text', nullable: true })
-  public country: string;
+  public country: string | null;
 
   @Column({ type: 'text', nullable: false, default: '[]', transformer: StringifiedArrayTransformer })
   public interests: string[];

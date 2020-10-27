@@ -12,6 +12,7 @@ import * as admin from 'firebase-admin';
 import { v4 as uuidv4 } from 'uuid';
 import {createCampaign, createParticipant, createUser, createWallet} from './specHelpers';
 import * as gql from 'gql-query-builder';
+import { Paypal } from '../../src/clients/paypal';
 
 describe('User Integration Test', () => {
   let runningApp: Application;
@@ -26,15 +27,22 @@ describe('User Integration Test', () => {
     process.env.ENCRYPTION_KEY = "bogusEncryptionKey";
     process.env.TWITTER_CONSUMER_KEY = "fakeTwitter";
     process.env.TWITTER_CONSUMER_SECRET_KEY = "fakeTwitter";
+    process.env.PAYPAL_CLIENT_ID = "dummyKey";
+    process.env.PAYPAL_CLIENT_SECRET = "dummyKey";
+    process.env.FACTOR_PROVIDER_PRIVATE_KEY = "privKey";
+    process.env.FACTOR_PROVIDER_PUBLIC_KEY = "pubKey";
+    process.env.ETH_HOT_WALLET_PRIVKEY = "ethPrivKey";
   };
 
   before(async () => {
     setEnv();
+    fullAppTestbed.stub(Dragonchain, 'initialize');
     fullAppTestbed.stub(Firebase, 'initialize');
+    fullAppTestbed.stub(Paypal, 'initialize');
+    fullAppTestbed.stub(Paypal, 'refreshToken');
     Firebase.client = {
       auth: () => {},
     } as admin.app.App;
-    fullAppTestbed.stub(Dragonchain, 'initialize');
     runningApp = new Application();
     await runningApp.initializeServer();
     await runningApp.startServer();
@@ -122,7 +130,6 @@ describe('User Integration Test', () => {
       });
 
       it('should return my user', async () => {
-        console.log(user);
         const query = gql.query({
           operation: 'me',
           fields: ['id', 'username', 'email']

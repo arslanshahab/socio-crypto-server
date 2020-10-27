@@ -124,3 +124,10 @@ export const createFactorsFromKycData = (kycData: KycUser, factorCreateRequests:
   return factors;
 }
 
+export const generateRandomNonce = () => {
+  const characters = '0123456789';
+  const length = 6;
+  let result = '';
+  for (let i = length; i > 0; i--) result += characters[Math.floor(Math.random() * characters.length)];
+  return result;
+}
