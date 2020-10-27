@@ -43,6 +43,7 @@ describe('Campaign Integration Test', () => {
       fullAppTestBed.stub(Paypal, 'initialize');
       fullAppTestBed.stub(Paypal, 'refreshToken');
       fullAppTestBed.stub(Firebase, 'sendCampaignCompleteNotifications');
+      fullAppTestBed.stub(Firebase, 'sendCampaignCreatedNotifications');
       Firebase.client = {
          auth: () => {},
       } as admin.app.App;
