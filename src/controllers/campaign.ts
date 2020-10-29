@@ -1,4 +1,4 @@
-import {CampaignAuditReport} from "../types";
+import {CampaignAuditReport, DateTrunc} from "../types";
 import {Campaign} from "../models/Campaign";
 import {checkPermissions} from "../middleware/authentication";
 import {Participant} from "../models/Participant";
@@ -16,6 +16,8 @@ import { BN } from '../util/helpers';
 import { BigNumber } from 'bignumber.js';
 import { Validator } from '../schemas';
 import { CampaignRequirementSpecs } from '../types';
+import {Org} from "../models/Org";
+import {HourlyCampaignMetric} from "../models/HourlyCampaignMetric";
 
 const validator = new Validator();
 
@@ -41,11 +43,13 @@ export const createNewCampaign = async (args: { name: string, targetVideo: strin
     if (!!requirements) validator.validateCampaignRequirementsSchema(requirements);
     if (role === 'admin' && !args.company) throw new Error('administrators need to specify a company in args');
     const campaignCompany = (role ==='admin') ? args.company : company;
-    const campaign = Campaign.newCampaign(name, targetVideo, beginDate, endDate, coiinTotal, target, description, campaignCompany, algorithm, tagline, requirements, suggestedPosts, suggestedTags);
+    const org = await Org.findOne({where: {name: company}})
+    if (!org) throw new Error('org not found');
+    const campaign = Campaign.newCampaign(org, name, targetVideo, beginDate, endDate, coiinTotal, target, description, campaignCompany, algorithm, tagline, requirements, suggestedPosts, suggestedTags);
     await campaign.save();
     if (image) {
-      campaign.imagePath = await S3Client.setCampaignImage('banner', campaign.id, image);
-      await campaign.save();
+        campaign.imagePath = await S3Client.setCampaignImage('banner', campaign.id, image);
+        await campaign.save();
     }
     await Firebase.sendCampaignCreatedNotifications(await User.getAllDeviceTokens('campaignCreate'), campaign);
     return campaign.asV1();
@@ -76,10 +80,10 @@ export const updateCampaign = async (args: { id: string, name: string, beginDate
     return campaign.asV1();
 }
 
-export const listCampaigns = async (args: { open: boolean, skip: number, take: number, scoped: boolean }, context: { user: any }) => {
-    const { open, skip = 0, take = 10, scoped = false } = args;
+export const listCampaigns = async (args: { open: boolean, skip: number, take: number, scoped: boolean, sort: boolean }, context: { user: any }) => {
+    const { open, skip = 0, take = 10, scoped = false, sort = false } = args;
     const { company } = context.user;
-    const [results, total] = await Campaign.findCampaignsByStatus(open, skip, take, scoped && company);
+    const [results, total] = await Campaign.findCampaignsByStatus(open, skip, take, scoped && company, sort);
     return { results: results.map(result => result.asV1()), total };
 }
 
@@ -117,6 +121,32 @@ export const adminGetCampaignMetrics = async (args: { campaignId: string }, cont
   const campaign = await Campaign.findOne({ where: { id: campaignId } });
   if (!campaign) throw new Error('campaign not found');
   return await Campaign.getCampaignMetrics(campaignId);
+}
+
+export const adminGetPlatformMetrics = async (args: any, context: { user: any }) => {
+    checkPermissions({ hasRole: ['admin'] }, context);
+    const metrics = await Campaign.getPlatformMetrics();
+    return metrics;
+}
+export const adminGetHourlyCampaignMetrics = async (args: {campaignId: string, filter: DateTrunc, startDate: string, endDate: string}, context: {user: any}) => {
+    const {company} = checkPermissions({ hasRole: ['admin']}, context);
+    HourlyCampaignMetric.validate.validateHourlyMetricsArgs(args);
+    const { campaignId, filter, startDate, endDate } = args;
+    const org = await Org.findOne({where: {name: company}});
+    if (!org) throw new Error('org not found');
+    const campaign = await Campaign.findOne({ where: { id: campaignId, org }, relations: ['org'] });
+    if (!campaign) throw new Error('campaign not found');
+    const { currentTotal } = calculateTier(campaign.totalParticipationScore, campaign.algorithm.tiers);
+    const metrics = await HourlyCampaignMetric.getDateGroupedMetrics(filter, startDate, endDate, campaign.id);
+    return HourlyCampaignMetric.parseHourlyCampaignMetrics(metrics, filter, currentTotal);
+}
+
+export const adminGetHourlyPlatformMetrics = async (args: {filter: DateTrunc, startDate: string, endDate: string }, context: {user: any}) => {
+    checkPermissions({ hasRole: ['admin']}, context);
+    HourlyCampaignMetric.validate.validateHourlyMetricsArgs(args);
+    const { filter, startDate, endDate } = args;
+    const metrics = await HourlyCampaignMetric.getDateGroupedMetrics(filter, startDate, endDate);
+    return HourlyCampaignMetric.parseHourlyPlatformMetrics(metrics, filter);
 }
 
 export const generateCampaignAuditReport = async (args: { campaignId: string }, context: { user: any }) => {

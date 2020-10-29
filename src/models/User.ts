@@ -1,4 +1,13 @@
-import { BaseEntity, Entity, PrimaryGeneratedColumn, Column, OneToMany, OneToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  BaseEntity,
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  OneToOne,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { Participant } from './Participant';
 import { Wallet } from './Wallet';
 import { SocialLink } from './SocialLink';
@@ -13,6 +22,7 @@ import { Transfer } from './Transfer';
 import { DailyParticipantMetric } from './DailyParticipantMetric';
 import { ExternalWallet } from './ExternalWallet';
 import { NotificationSettings } from './NotificationSettings';
+import {Admin} from "./Admin";
 
 @Entity()
 export class User extends BaseEntity {
@@ -102,6 +112,12 @@ export class User extends BaseEntity {
     externalWallet => externalWallet.user
   )
   public externalWallets: ExternalWallet[];
+
+  @OneToMany(
+    _type => Admin,
+    admin => admin.user
+  )
+  public admins: Admin[];
 
   public asV1() {
     let returnedUser: any = {...this};
@@ -197,7 +213,7 @@ export class User extends BaseEntity {
           const loadCampaign = transferFields.find((node: FieldNode) => node.name.value === 'campaign') as FieldNode;
           if (loadCampaign) {
             query = query.leftJoinAndSelect('transfer.campaign', 'c', 'c.id = transfer."campaignId"');
-          } 
+          }
         }
       }
       if (loadSocialLinks) query = query.leftJoinAndSelect('user.socialLinks', 'social', 'social."userId" = user.id')

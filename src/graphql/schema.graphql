@@ -68,18 +68,21 @@ type Mutation {
   generateFactorsFromKyc(factors:[JSON]): JSON
   attachEthereumAddress(ethereumAddress:String!): ExternalWallet
   claimEthereumAddress(ethereumAddress:String!,signature:String!): ExternalWallet
+  removeEthereumAddress(ethereumAddress:String!): Boolean
   updateNotificationSettings(
     kyc:Boolean,
     withdraw:Boolean,
     campaignCreate:Boolean,
     campaignUpdates:Boolean
   ): User
+  newOrg(orgName: String!): JSON
+  newEmployee(name: String!, role: String!): JSON
 }
 
 type Query {
   getCurrentCampaignTier(campaignId: String!): CurrentTier
   usernameExists(username:String!): UserExistence
-  listCampaigns(open:Boolean,skip:Int,take:Int,scoped:Boolean): PaginatedCampaignResults
+  listCampaigns(open:Boolean,skip:Int,take:Int,scoped:Boolean,sort:Boolean): PaginatedCampaignResults
   getCampaign(id:String): Campaign
   getParticipant(id:String): Participant
   getParticipantPosts(id:String): [String]
@@ -97,6 +100,9 @@ type Query {
   getWithdrawals(status:String): [AdminWithdrawal]
   accountExists(id:String!): UserExistence
   getCampaignMetrics(campaignId:String!): AdminCampaignMetrics
+  getHourlyCampaignMetrics(campaignId:String!, filter:String!, startDate: String!, endDate: String!): [AdminHourlyCampaignMetrics]
+  getHourlyPlatformMetrics(filter:String!, startDate: String!, endDate: String!): [AdminHourlyPlatformMetrics]
+  getTotalPlatformMetrics: AdminCampaignMetrics
   getFollowerCount: FollowerCounts
   getPreviousDayMetrics: JSON
   getEstimatedGasPrice: String
@@ -149,6 +155,40 @@ type AdminCampaignMetrics {
   likeCount: Int
   commentCount: Int
   shareCount: Int
+  participantCount: Int
+  discoveryCount: Int
+  conversionCount: Int
+}
+
+type AdminHourlyCampaignMetrics {
+  interval: String
+  postCount: Int
+  participantCount: Int
+  clickCount: Int
+  viewCount: Int
+  submissionCount: Int
+  likeCount: Int
+  shareCount: Int
+  commentCount: Int
+  totalDiscoveries: Int
+  totalConversions: Int
+  averagePostCost: Float
+  averageDiscoveryCost: Float
+  averageConversionCost: Float
+}
+
+type AdminHourlyPlatformMetrics {
+  interval: String
+  postCount: Int
+  participantCount: Int
+  clickCount: Int
+  viewCount: Int
+  submissionCount: Int
+  likeCount: Int
+  shareCount: Int
+  commentCount: Int
+  totalDiscoveries: Int
+  totalConversions: Int
 }
 
 type AdminWithdrawal {

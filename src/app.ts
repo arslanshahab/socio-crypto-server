@@ -7,7 +7,7 @@ import {Connection, getConnectionOptions, createConnection} from 'typeorm';
 import logger from './util/logger';
 import { getSchema, root, publicRoot } from './graphql';
 import { Secrets } from './util/secrets';
-import {authenticate} from './middleware/authentication';
+import {authenticate, firebaseAuth} from './middleware/authentication';
 import { errorHandler } from './middleware/errorHandler';
 import { Dragonchain } from './clients/dragonchain';
 import { Firebase } from './clients/firebase';
@@ -62,6 +62,20 @@ export class Application {
       return { operation: params.operationName }
     };
     this.app.use('/v1/graphql', authenticate, expressGraphql({
+      schema: await getSchema(),
+      rootValue: root,
+      graphiql: NODE_ENV !== 'production',
+      extensions: extensions,
+      customFormatErrorFn: (error) => {
+        return {
+          message: error.message,
+          locations: error.locations,
+          stack: error.stack ? error.stack.split('\n') : [],
+          path: error.path,
+        }
+      }
+    }));
+    this.app.use('/v1/admin/graphql',firebaseAuth, expressGraphql({
       schema: await getSchema(),
       rootValue: root,
       graphiql: NODE_ENV !== 'production',

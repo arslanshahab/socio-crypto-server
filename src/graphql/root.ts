@@ -8,6 +8,7 @@ import * as withdrawController from '../controllers/withdraw';
 import * as kycController from '../controllers/kyc';
 import * as ethWithdrawController from '../controllers/ethWithdraw';
 import * as externalWallet from '../controllers/externalWallet';
+import * as orgController from '../controllers/org';
 
 export const root = {
   JSON: GraphQLJSON,
@@ -47,6 +48,10 @@ export const root = {
   setRecoveryCode: userController.setRecoveryCode,
   updateKycStatus: kycController.updateKycStatus,
   getCampaignMetrics: campaignController.adminGetCampaignMetrics,
+  getHourlyCampaignMetrics: campaignController.adminGetHourlyCampaignMetrics,
+  getHourlyPlatformMetrics: campaignController.adminGetHourlyPlatformMetrics,
+  getTotalPlatformMetrics: campaignController.adminGetPlatformMetrics,
+  getHourlyOrgMetrics: orgController.getHourlyOrgMetrics,
   updateProfileInterests: userController.updateProfileInterests,
   removeProfileInterests: userController.removeProfileInterests,
   getParticipantMetrics: participantController.getParticipantMetrics,
@@ -62,6 +67,8 @@ export const root = {
   updateNotificationSettings: userController.updateNotificationSettings,
   adminGetKycByUser: kycController.adminGetKycByUser,
   getWithdrawalsV2: withdrawController.getWithdrawalsV2,
+  newOrg: orgController.newOrg,
+  removeEthereumAddress: externalWallet.remove,
 };
 
 export const publicRoot = {

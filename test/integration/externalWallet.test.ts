@@ -15,7 +15,7 @@ import { Paypal } from '../../src/clients/paypal';
 import { Transfer } from '../../src/models/Transfer';
 import { ExternalWallet } from '../../src/models/ExternalWallet';
 
-describe('External Wallet Integrations Tests', () => {
+describe.only('External Wallet Integrations Tests', () => {
   let runningApp: Application;
   const fullAppTestbed = createSandbox();
   const ethereumAddress = '0xBE9F5eDC8C7047a499ee5279D07c7f4D1D565499';

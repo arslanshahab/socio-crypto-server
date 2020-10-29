@@ -7,6 +7,8 @@ import {SocialPost} from "../models/SocialPost";
 import {calculateParticipantSocialScore} from "./helpers";
 import {User} from '../models/User';
 import { FacebookClient } from '../clients/facebook';
+import {HourlyCampaignMetric} from "../models/HourlyCampaignMetric";
+import {Campaign} from "../models/Campaign";
 
 export const allowedSocialLinks = ['twitter', 'facebook'];
 
@@ -64,10 +66,12 @@ export const postToSocial = async (args: { type: string, text: string, photo: st
   if (!allowedSocialLinks.includes(type)) throw new Error('the type must exist as a predefined type');
   const { id } = context.user;
   const user = await User.findOneOrFail({ where: { identityId: id }, relations: ['socialLinks'] });
-  const participant = await Participant.findOneOrFail({ where: { id: participantId, user } });
+  const participant = await Participant.findOneOrFail({ where: { id: participantId, user }, relations: ['campaign'] });
   if (!participant.campaign.isOpen()) throw new Error('campaign is closed');
   const socialLink = user.socialLinks.find(link => link.type === type);
   if (!socialLink) throw new Error(`you have not linked ${type} as a social platform`);
+  const campaign = await Campaign.findOne({where: {id: participant.campaign.id}, relations: ['org']});
+  if (!campaign) throw new Error('campaign not found');
   const client = getSocialClient(type);
   let postId: string;
   if (video) {
@@ -78,6 +82,8 @@ export const postToSocial = async (args: { type: string, text: string, photo: st
     postId = await client.post(socialLink.asClientCredentials(), text);
   }
   logger.info(`Posted to twitter with ID: ${postId}`);
+  await HourlyCampaignMetric.upsert(campaign, campaign.org, 'post');
+  await participant.campaign.save();
   const socialPost = await SocialPost.newSocialPost(postId, type, participant.id, user, participant.campaign).save();
   return socialPost.id;
 }

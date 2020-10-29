@@ -1,4 +1,4 @@
-import { Entity, BaseEntity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn } from 'typeorm';
+import {Entity, BaseEntity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn} from 'typeorm';
 import { StringifiedArrayTransformer } from '../util/transformers';
 import { User } from './User';
 
@@ -7,16 +7,16 @@ export class Profile extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   public id: string;
 
-  @Column({ nullable: false, unique: true })
+  @Column({nullable: false, unique: true})
   public username: string;
 
-  @Column({ nullable: true })
+  @Column({nullable: true})
   public recoveryCode: string;
 
-  @Column({ nullable: true })
+  @Column({nullable: true})
   public deviceToken: string;
 
-  @Column({ nullable: true })
+  @Column({nullable: true})
   public email: string;
 
   @Column({ type: 'text', nullable: true })
@@ -31,13 +31,13 @@ export class Profile extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   public country: string | null;
 
-  @Column({ type: 'text', nullable: false, default: '[]', transformer: StringifiedArrayTransformer })
+  @Column({type: 'text', nullable: false, default: '[]', transformer: StringifiedArrayTransformer})
   public interests: string[];
 
-  @Column({ type: 'text', nullable: false, default: '[]', transformer: StringifiedArrayTransformer })
+  @Column({type: 'text', nullable: false, default: '[]', transformer: StringifiedArrayTransformer})
   public values: string[];
 
-  @Column({ type: 'text', nullable: false, default: '[]', transformer: StringifiedArrayTransformer })
+  @Column({type: 'text', nullable: false, default: '[]', transformer: StringifiedArrayTransformer})
   public platforms: string[];
 
   @OneToOne(
@@ -47,4 +47,5 @@ export class Profile extends BaseEntity {
   )
   @JoinColumn()
   public user: User;
+
 }

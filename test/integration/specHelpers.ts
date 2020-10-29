@@ -1,7 +1,6 @@
 import { randomBytes } from 'crypto';
 import * as secp256k1 from 'secp256k1';
 import { Campaign } from '../../src/models/Campaign';
-import { Application } from '../../src/app';
 import {Participant} from "../../src/models/Participant";
 import {User} from "../../src/models/User";
 import {Wallet} from "../../src/models/Wallet";
@@ -13,6 +12,9 @@ import { DailyParticipantMetric } from '../../src/models/DailyParticipantMetric'
 import { ExternalWallet } from '../../src/models/ExternalWallet';
 import { getDeterministicId, sha256Hash } from '../../src/util/crypto';
 import { NotificationSettings } from '../../src/models/NotificationSettings';
+import {Application} from "../../src/app";
+import {Org} from "../../src/models/Org";
+import {SocialPost} from "../../src/models/SocialPost";
 
 export const createCampaign = async (runningApp: Application, options?: { [key: string]: any } | any, ) => {
   const campaign = new Campaign();
@@ -28,7 +30,34 @@ export const createCampaign = async (runningApp: Application, options?: { [key: 
   campaign.payouts = getValue(['payouts'], options,[]);
   campaign.beginDate = getBeginDate(getValue(['startDate'], options));
   campaign.endDate = getEndDate(getValue(['endDate'], options));
+  campaign.dailyMetrics = getValue(['dailyMetrics'], options);
+  campaign.org = getValue(['org'], options, await createOrg(runningApp));
+  campaign.suggestedTags = getValue(['suggestedTags'], options, []);
+  campaign.suggestedPosts = getValue(['suggestedPosts'], options, []);
   return await runningApp.databaseConnection.createEntityManager().save(campaign);
+}
+
+export const createDailyParticipantMetric = async (runningApp: Application, options?: { [key: string]: any } | any) => {
+  const dailyMetric = new DailyParticipantMetric();
+  dailyMetric.clickCount = getValue(['clickCount'], options, new BN(0));
+  dailyMetric.viewCount = getValue(['viewCount'], options, new BN(0));
+  dailyMetric.submissionCount = getValue(['submissionCount'], options, new BN(0));
+  dailyMetric.likeCount = getValue(['likeCount'], options, new BN(0));
+  dailyMetric.shareCount = getValue(['shareCount'], options, new BN(0));
+  dailyMetric.commentCount = getValue(['commentCount'], options, new BN(0));
+  dailyMetric.participationScore = getValue(['participationScore'], options, new BN(0));
+  dailyMetric.totalParticipationScore = getValue(['totalParticipationScore'], options, new BN(0));
+  dailyMetric.participantId = getValue(['participantId'], options, new BN(0));
+
+}
+
+export const createOrg = async (runningApp: Application, options?: { [key: string]: any } | any) => {
+  const org = new Org();
+  org.name = getValue(['name'], options, 'Raiinmaker');
+  org.campaigns = getValue(['campaigns'], options, []);
+  org.transfers = getValue(['transfers'], options, []);
+  org.admins = getValue(['admins'], options, []);
+  return await runningApp.databaseConnection.createEntityManager().save(org);
 }
 
 export const createParticipant = async (runningApp: Application, options?: { [key: string]: any } | any) => {
@@ -40,6 +69,18 @@ export const createParticipant = async (runningApp: Application, options?: { [ke
   participant.user = getValue(['user'], options) || await createUser(runningApp, getValue(['userOptions'], options));
   participant.campaign = getValue(['campaign'], options) || await createCampaign(runningApp, getValue(['campaignOptions'], options));
   return await runningApp.databaseConnection.createEntityManager().save(participant);
+}
+
+export const createSocialPost = async (runningApp: Application, options?: { [key: string]: any } | any) => {
+  const post = new SocialPost();
+  post.type = getValue(['type'], options, 'twitter');
+  post.likes = getValue(['likes'], options, new BN(10));
+  post.shares = getValue(['shares'], options, new BN(10));
+  post.comments = getValue(['comments'], options, new BN(10));
+  post.participantId = getValue(['participantId'], options, 'bacon');
+  post.user = getValue(['user'], options, await createUser(runningApp));
+  post.campaign = getValue(['campaign'], await createCampaign(runningApp));
+  return await runningApp.databaseConnection.createEntityManager().save(post);
 }
 
 export const createDailyMetrics = async (runningApp: Application, options: { [key: string]: any } | any) => {
@@ -75,7 +116,7 @@ export const createUser = async (runningApp: Application, options?: { [key: stri
   user.active = getValue(['active'], options) || true;
   user.posts = getValue(['posts'], options) || [];
   user.campaigns = getValue(['campaigns'], options) || [];
-  user.wallet = getValue(['wallet'], options) || await createWallet(runningApp, getValue(['walletOptions'], options))
+  user.wallet = getValue(['wallet'], options) || await createWallet(runningApp, getValue(['walletOptions'], options));
   user.socialLinks = getValue(['socialLinks'], options) || [];
   user.factorLinks = getValue(['factorLinks'], options) || [];
   user.twentyFourHourMetrics = getValue(['twentyFourHourMetrics'], options) || [];
@@ -179,7 +220,7 @@ const getValue = (indexes: string[], options: { [key: string]: any }, defaultVal
 export const getBeginDate = (startDate?: string) => {
   return new Date(startDate || (() => {
     const date = new Date();
-    date.setUTCDate(date.getUTCDate() - 2);
+    date.setUTCDate(date.getUTCDate() - 1);
     return date;
   })());
 }
@@ -187,7 +228,7 @@ export const getBeginDate = (startDate?: string) => {
 export const getEndDate = (endDate?: string) => {
   return new Date(endDate || (() => {
     const date = new Date();
-    date.setUTCDate(date.getUTCDate() + 1);
+    date.setUTCDate(date.getUTCDate() + 10);
     return date;
   })());
 }

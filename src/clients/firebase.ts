@@ -27,8 +27,12 @@ export class Firebase {
     await Firebase.client.messaging().sendMulticast(message);
   }
 
-  public static setClaims(userId: string, claims: any) {
-    return Firebase.client.auth().setCustomUserClaims(userId, claims);
+  public static setCustomUserClaims(uid: string, orgName: string, role: 'manager' | 'admin') {
+    return Firebase.client.auth().setCustomUserClaims(uid, {org: orgName, role})
+  }
+
+  public static verifyToken(token: string) {
+    return Firebase.client.auth().verifyIdToken(token, true);
   }
 
   public static async sendDailyParticipationUpdate(token: string, campaign: Campaign, coiins: BigNumber, participationScore: BigNumber, rank: number, totalParticipants: number) {

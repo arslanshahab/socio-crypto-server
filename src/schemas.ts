@@ -107,6 +107,17 @@ export const campaignRequirementsSchema = {
     }
 };
 
+export const hourlyMetrics = {
+    type: 'object',
+    properties: {
+        campaignId: {type: 'string'},
+        filter: {
+            type: 'string',
+            enum: ['hour', 'day', 'week', 'month', 'quarter', 'year', 'all']
+        }
+    }
+}
+
 
 export const kycUser = {
     type: 'object',
@@ -132,12 +143,14 @@ export class Validator {
     private validateAlgorithmCreatePayload: Ajv.ValidateFunction;
     private validateCampaignRequirementsPayload: Ajv.ValidateFunction;
     private validateKycUser: Ajv.ValidateFunction;
+    private validateHourlyMetrics: Ajv.ValidateFunction;
 
     public constructor() {
         this.ajv = new Ajv({schemaId: 'auto'});
         this.validateAlgorithmCreatePayload = this.ajv.compile(algorithmCreateSchema);
         this.validateCampaignRequirementsPayload = this.ajv.compile(campaignRequirementsSchema);
         this.validateKycUser = this.ajv.compile(kycUser);
+        this.validateHourlyMetrics = this.ajv.compile(hourlyMetrics);
     }
 
     public validateAlgorithmCreateSchema = (payload: object) => {
@@ -154,6 +167,11 @@ export class Validator {
     public validateKycRegistration = (payload: object) => {
         if (!this.validateKycUser(payload)) {
             throw new Error(`Invalid kyc registration ${JSON.stringify(this.validateKycUser.errors)}`);
+        }
+    }
+    public validateHourlyMetricsArgs = (payload: object) => {
+        if (!this.validateHourlyMetrics(payload)) {
+            throw new Error(`Invalid metrics request ${JSON.stringify(this.validateHourlyMetrics.errors)}`);
         }
     }
 
