@@ -60,6 +60,8 @@ export const root = {
   attachEthereumAddress: externalWallet.attach,
   claimEthereumAddress: externalWallet.claim,
   updateNotificationSettings: userController.updateNotificationSettings,
+  adminGetKycByUser: kycController.adminGetKycByUser,
+  getWithdrawalsV2: withdrawController.getWithdrawalsV2,
 };
 
 export const publicRoot = {

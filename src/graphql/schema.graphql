@@ -102,6 +102,8 @@ type Query {
   getEstimatedGasPrice: String
   getExternalAddress(ethereumAddress:String!): ExternalWallet
   listExternalAddresses: [ExternalWallet]
+  getWithdrawalsV2(status:String): [AdminWithdrawal]
+  adminGetKycByUser(userId:String!): KycUser
 }
 
 type NotificationSettings {

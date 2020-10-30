@@ -37,6 +37,19 @@ export const getKyc = async (_args: any, context: { user:  any }) => {
     return response;
 }
 
+export const adminGetKycByUser = async (args: { userId: string }, context: { user: any }) => {
+    checkPermissions({ hasRole: ['admin'] }, context);
+    const { userId } = args;
+    const user = await User.findOne({ where: { id: userId } });
+    if (!user) throw new Error('user not found');
+    const response = await S3Client.getUserObject(userId);
+    if (response) {
+      if (response.hasAddressProof) response.addressProof = await S3Client.getKycImage(userId, 'addressProof');
+      if (response.hasIdProof) response.idProof = await S3Client.getKycImage(userId, 'idProof');
+    }
+    return response;
+}
+
 export const updateKyc = async (args: {user: KycUser}, context: { user: any }) => {
     const { id } = context.user;
     const user = await User.findOneOrFail({ where: { identityId: id } });

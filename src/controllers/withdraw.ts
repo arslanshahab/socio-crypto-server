@@ -122,7 +122,30 @@ export const getWithdrawals = async (args: { status: string }, context: { user: 
       } catch (e) { kycData = null; }
       uniqueUsers[userId] = {
         kyc: kycData,
-        user: transfer.wallet.user,
+        user: {...transfer.wallet.user, username: transfer.wallet.user.profile.username},
+        totalPendingWithdrawal: totalPendingWithdrawal.toString(),
+        totalAnnualWithdrawn: totalWithdrawnThisYear.toString(),
+        transfers: [transfer.asV1()]
+      }
+    } else {
+      uniqueUsers[userId].transfers.push(transfer.asV1());
+    }
+  }
+  return Object.values(uniqueUsers);
+}
+
+export const getWithdrawalsV2 = async (args: { status: string }, context: { user: any }) => {
+  checkPermissions({ hasRole: ['admin'] }, context);
+  const transfers = await Transfer.getWithdrawalsByStatus(args.status);
+  const uniqueUsers: {[key: string]: any} = {};
+  for (let i = 0; i < transfers.length; i++) {
+    const transfer = transfers[i];
+    const userId = transfer.wallet.user.id;
+    if (!uniqueUsers[userId]) {
+      const totalWithdrawnThisYear = await Transfer.getTotalAnnualWithdrawalByWallet(transfer.wallet);
+      const totalPendingWithdrawal = await Transfer.getTotalPendingByWallet(transfer.wallet);
+      uniqueUsers[userId] = {
+        user: {...transfer.wallet.user, username: transfer.wallet.user.profile.username},
         totalPendingWithdrawal: totalPendingWithdrawal.toString(),
         totalAnnualWithdrawn: totalWithdrawnThisYear.toString(),
         transfers: [transfer.asV1()]
