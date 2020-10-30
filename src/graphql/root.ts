@@ -71,6 +71,10 @@ export const root = {
   removeEthereumAddress: externalWallet.remove,
 };
 
+export const adminRoot = {
+
+}
+
 export const publicRoot = {
   trackAction: participantController.trackAction,
   usernameExists: userController.usernameExists,
