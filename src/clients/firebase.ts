@@ -31,6 +31,10 @@ export class Firebase {
     return Firebase.client.auth().setCustomUserClaims(uid, {org: orgName, role})
   }
 
+  public static async createSessionCookie(token: string, expiresIn: number) {
+    await Firebase.client.auth().createSessionCookie(token, {expiresIn});
+  }
+
   public static verifyToken(token: string) {
     return Firebase.client.auth().verifyIdToken(token, true);
   }

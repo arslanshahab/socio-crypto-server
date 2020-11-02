@@ -48,10 +48,6 @@ export const root = {
   setRecoveryCode: userController.setRecoveryCode,
   updateKycStatus: kycController.updateKycStatus,
   getCampaignMetrics: campaignController.adminGetCampaignMetrics,
-  getHourlyCampaignMetrics: campaignController.adminGetHourlyCampaignMetrics,
-  getHourlyPlatformMetrics: campaignController.adminGetHourlyPlatformMetrics,
-  getTotalPlatformMetrics: campaignController.adminGetPlatformMetrics,
-  getHourlyOrgMetrics: orgController.getHourlyOrgMetrics,
   updateProfileInterests: userController.updateProfileInterests,
   removeProfileInterests: userController.removeProfileInterests,
   getParticipantMetrics: participantController.getParticipantMetrics,
@@ -67,12 +63,21 @@ export const root = {
   updateNotificationSettings: userController.updateNotificationSettings,
   adminGetKycByUser: kycController.adminGetKycByUser,
   getWithdrawalsV2: withdrawController.getWithdrawalsV2,
-  newOrg: orgController.newOrg,
   removeEthereumAddress: externalWallet.remove,
 };
 
 export const adminRoot = {
-
+  newOrg: orgController.newOrg,
+  getHourlyCampaignMetrics: campaignController.adminGetHourlyCampaignMetrics,
+  getHourlyPlatformMetrics: campaignController.adminGetHourlyPlatformMetrics,
+  getTotalPlatformMetrics: campaignController.adminGetPlatformMetrics,
+  getHourlyOrgMetrics: orgController.getHourlyOrgMetrics,
+  listCampaigns: campaignController.listCampaigns,
+  newCampaign: campaignController.createNewCampaign,
+  getCurrentCampaignTier: campaignController.getCurrentCampaignTier,
+  getExternalAddress: externalWallet.get,
+  listExternalAddresses: externalWallet.list,
+  getCampaignMetrics: campaignController.adminGetCampaignMetrics,
 }
 
 export const publicRoot = {

@@ -40,7 +40,7 @@ export const firebaseAuth = async (req: AuthRequest, res: Response, next: NextFu
     const decodedToken = await Firebase.verifyToken(token);
     const user = await Firebase.client.auth().getUser(decodedToken.uid);
     if (!user) return res.status(401).json({ code: 'UNAUTHORIZED', message: 'unauthorized' });
-    req.user = { method: 'firebase', id: decodedToken.uid };
+    req.user = { id: decodedToken.uid};
     if (user.customClaims) req.user = {...req.user, role: user.customClaims.role, company: user.customClaims.org};
     return next();
   } catch (e) {

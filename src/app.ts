@@ -15,6 +15,7 @@ import * as FactorController from './controllers/factor';
 import * as Dragonfactor from '@dragonchain-dev/dragonfactor-auth';
 import {paypalWebhook} from "./controllers/withdraw";
 import {Paypal} from "./clients/paypal";
+import {adminRoot} from "./graphql/root";
 
 const { NODE_ENV = 'development' } = process.env;
 
@@ -77,7 +78,7 @@ export class Application {
     }));
     this.app.use('/v1/admin/graphql',firebaseAuth, expressGraphql({
       schema: await getSchema(),
-      rootValue: root,
+      rootValue: adminRoot,
       graphiql: NODE_ENV !== 'production',
       extensions: extensions,
       customFormatErrorFn: (error) => {
