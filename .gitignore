@@ -13,7 +13,6 @@ lerna-debug.log*
 # Coverage directory used by tools like istanbul
 coverage
 *.lcov
-.nyc_output
 
 # Dependency directories
 node_modules/
@@ -42,7 +41,6 @@ dist
 .vscode
 
 #OS files
-.DS_Store
 desktop.ini
 .direnv
 
@@ -51,4 +49,3 @@ aws.yaml
 helm/accounts-service/aws.yaml
 
 bak.dump
-.env

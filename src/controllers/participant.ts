@@ -9,6 +9,7 @@ import { getRedis } from '../clients/redis';
 import { BN } from '../util/helpers';
 import { DailyParticipantMetric } from '../models/DailyParticipantMetric';
 import { getDatesBetweenDates, formatUTCDateForComparision } from './helpers';
+import {HourlyCampaignMetric} from "../models/HourlyCampaignMetric";
 
 const { RATE_LIMIT_MAX = '3', RATE_LIMIT_WINDOW = '1m' } = process.env;
 
@@ -35,7 +36,7 @@ export const trackAction = async (args: { participantId: string, action: 'click'
     const participant = await Participant.findOne({ where: { id: args.participantId }, relations: ['campaign','user'] });
     if (!participant) throw new Error('participant not found');
     if (!participant.campaign.isOpen()) throw new Error('campaign is closed');
-    const campaign = await Campaign.findOne({ where: { id: participant.campaign.id }});
+    const campaign = await Campaign.findOne({ where: { id: participant.campaign.id }, relations: ['org']});
     if (!campaign) throw new Error('campaign not found');
     switch (args.action) {
         case 'click':
@@ -55,6 +56,7 @@ export const trackAction = async (args: { participantId: string, action: 'click'
     participant.participationScore = participant.participationScore.plus(pointValue);
     await campaign.save();
     await participant.save();
+    await HourlyCampaignMetric.upsert(campaign, campaign.org, args.action);
     await DailyParticipantMetric.upsert(participant.user, campaign, participant, args.action, pointValue);
     await Dragonchain.ledgerCampaignAction(args.action, participant.id, participant.campaign.id);
     return participant.asV1();
@@ -81,7 +83,7 @@ export const getPosts = async (args: { id: string }, context: any) => {
       try {
         const tweet = await getTweetById({ id: post.id, type: 'twitter'}, context);
         results.push(tweet);
-      } catch (_) {};
+      } catch (_) {}
     }
     return results;
   } catch (e) {

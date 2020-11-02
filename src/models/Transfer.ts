@@ -6,6 +6,7 @@ import { Campaign } from './Campaign';
 import { BN } from '../util/helpers';
 import {BigNumberEntityTransformer} from "../util/transformers";
 import {PayoutStatus} from "../types";
+import {Org} from "./Org";
 
 @Entity()
 export class Transfer extends BaseEntity {
@@ -55,6 +56,12 @@ export class Transfer extends BaseEntity {
     campaign => campaign.payouts
   )
   public campaign: Campaign;
+
+  @ManyToOne(
+    _type => Org,
+    org => org.transfers
+  )
+  public org: Org;
 
   public asV1() {
     return {...this, amount: parseFloat(this.amount.toString())};

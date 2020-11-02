@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { Secrets } from '../util/secrets';
 import { AuthRequest } from '../types';
 import { serverBaseUrl } from '../config';
+import {Firebase} from "../clients/firebase";
 
 export const authenticate = async (req: AuthRequest, res: Response, next: NextFunction) => {
   const bearerToken = req.headers.authorization;
@@ -31,9 +32,25 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
   }
 };
 
+export const firebaseAuth = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  const token = req.headers.authorization;
+  if (!token) return res.status(401).json({ code: 'UNAUTHORIZED', message: 'unauthorized' });
+  try {
+    if (process.env.NODE_ENV === 'development' && token === 'Bearer raiinmaker') return next();
+    const decodedToken = await Firebase.verifyToken(token);
+    const user = await Firebase.client.auth().getUser(decodedToken.uid);
+    if (!user) return res.status(401).json({ code: 'UNAUTHORIZED', message: 'unauthorized' });
+    req.user = { id: decodedToken.uid};
+    if (user.customClaims) req.user = {...req.user, role: user.customClaims.role, company: user.customClaims.org};
+    return next();
+  } catch (e) {
+    return res.status(401).json({ code: 'UNAUTHORIZED', message: 'unauthorized' });
+  }
+}
+
 export const checkPermissions = (opts: { hasRole: string[] }, context: { user: any }) => {
-  const { role, uid, company } = context.user;
-  console.log(`UID: ${uid} requesting a admin route`);
+  const { role, id, company } = context.user;
+  console.log(`UID: ${id} requesting a admin route`);
   if (!role || !opts.hasRole.includes(role)) throw new Error('forbidden');
   if (role === 'manager' && !company) throw new Error('forbidden, company not specified');
   return { role, company };

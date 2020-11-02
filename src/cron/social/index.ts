@@ -10,13 +10,14 @@ import {Participant} from "../../models/Participant";
 import { BigNumber } from 'bignumber.js';
 import { BN } from '../../util/helpers';
 import { DailyParticipantMetric } from '../../models/DailyParticipantMetric';
+import {HourlyCampaignMetric} from "../../models/HourlyCampaignMetric";
 
 const app = new Application();
 
 const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: SocialPost) => {
     const participant = await Participant.findOne({where:{campaign: post.campaign, user: post.user}, relations: ['campaign', 'user']});
     if (!participant) throw new Error('participant not found');
-    const campaign = await Campaign.findOne({ where: { id: participant.campaign.id } });
+    const campaign = await Campaign.findOne({ where: { id: participant.campaign.id }, relations: ['org'] });
     if (!campaign) throw new Error('campaign not found');
     const likesAdjustedScore = (likes.minus(post.likes)).times(post.campaign.algorithm.pointValues.likes);
     const sharesAdjustedScore = (shares.minus(post.shares)).times(post.campaign.algorithm.pointValues.shares);
@@ -26,6 +27,8 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
     post.shares = shares;
     await participant.save();
     await campaign.save();
+    await HourlyCampaignMetric.upsert(campaign, campaign.org, 'like', likes.minus(post.likes).toNumber());
+    await HourlyCampaignMetric.upsert(campaign, campaign.org, 'share', shares.minus(post.shares).toNumber());
     await DailyParticipantMetric.upsert(participant.user, campaign, participant, 'like', likesAdjustedScore, likes.minus(post.likes).toNumber());
     await DailyParticipantMetric.upsert(participant.user, campaign, participant, 'share', sharesAdjustedScore, shares.minus(post.shares).toNumber());
     return post;

@@ -74,8 +74,8 @@ describe('User Integration Test', () => {
     describe('Username Exists', () => {
 
       beforeEach(async () => {
-        const wallet = await createWallet(runningApp);
-        await createUser(runningApp, {wallet, profileOptions: {username: 'coolestBanana'}});
+        const wallet = await createWallet(runningApp.databaseConnection);
+        await createUser(runningApp.databaseConnection, {wallet, profileOptions: {username: 'coolestBanana'}});
       });
 
       it('should return true if the username exists', async () => {
@@ -121,8 +121,8 @@ describe('User Integration Test', () => {
       let wallet: Wallet;
 
       beforeEach(async () => {
-        wallet = await createWallet(runningApp);
-        user = await createUser(runningApp, {wallet, username: 'coolestBanana', email: 'b@a.com'});
+        wallet = await createWallet(runningApp.databaseConnection);
+        user = await createUser(runningApp.databaseConnection, {wallet, username: 'coolestBanana', email: 'b@a.com'});
       });
 
       afterEach(() => {
@@ -167,8 +167,8 @@ describe('User Integration Test', () => {
       let wallet: Wallet;
 
       beforeEach(async () => {
-        wallet = await createWallet(runningApp);
-        await createUser(runningApp, {wallet});
+        wallet = await createWallet(runningApp.databaseConnection);
+        await createUser(runningApp.databaseConnection, {wallet});
       });
 
       afterEach(() => {
@@ -213,9 +213,9 @@ describe('User Integration Test', () => {
       let campaign: Campaign;
 
       beforeEach(async () => {
-        const wallet = await createWallet(runningApp);
-        user = await createUser(runningApp, {wallet, username: 'coolestBanana', email: 'b@a.com'})
-        campaign = await createCampaign(runningApp, {});
+        const wallet = await createWallet(runningApp.databaseConnection);
+        user = await createUser(runningApp.databaseConnection, {wallet, username: 'coolestBanana', email: 'b@a.com'})
+        campaign = await createCampaign(runningApp.databaseConnection, {});
       });
 
       afterEach(() => {
@@ -290,10 +290,10 @@ describe('User Integration Test', () => {
       let participant: Participant;
 
       beforeEach(async () => {
-        wallet = await createWallet(runningApp);
-        user = await createUser(runningApp, {wallet, username: 'coolestBanana', email: 'b@a.com'})
-        participant = await createParticipant(runningApp, {user})
-        campaign = await createCampaign(runningApp, {participants: [participant]})
+        wallet = await createWallet(runningApp.databaseConnection);
+        user = await createUser(runningApp.databaseConnection, {wallet, username: 'coolestBanana', email: 'b@a.com'})
+        participant = await createParticipant(runningApp.databaseConnection, {user})
+        campaign = await createCampaign(runningApp.databaseConnection, {participants: [participant]})
       });
 
       afterEach(() => {
@@ -361,8 +361,8 @@ describe('User Integration Test', () => {
           },
           fields: ['id']
         })
-        const wallet = await createWallet(runningApp);
-        const user = await createUser(runningApp, {wallet, identityId: 'bacon-salad'});
+        const wallet = await createWallet(runningApp.databaseConnection);
+        const user = await createUser(runningApp.databaseConnection, {wallet, identityId: 'bacon-salad'});
         const res = await request(runningApp.app)
           .post('/v1/graphql')
           .send(mutation)
