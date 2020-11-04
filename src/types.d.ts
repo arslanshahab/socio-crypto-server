@@ -72,8 +72,22 @@ export interface AlgorithmSpecs {
 
 export interface CampaignRequirementSpecs {
     version: number;
+    city: string,
+    state: string,
+    country: string,
+    values: string[],
+    interests: string[],
     ageRange: AgeRangeRequirementSpecs,
+    socialFollowing: SocialFollowingSpecs,
 }
+
+export interface SocialFollowingSpecs {
+    twitter: TwitterSocialFollowingSpecs,
+}
+export interface TwitterSocialFollowingSpecs {
+    minFollower: number,
+}
+
 export interface AgeRangeRequirementSpecs {
     version: number;
     "0-17": Boolean
