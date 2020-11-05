@@ -142,8 +142,6 @@ export class Campaign extends BaseEntity {
   public asV1() {
     const returnedCampaign: Campaign = {
       ...this,
-      beginDate: this.beginDate.toISOString(),
-      endDate: this.endDate.toISOString(),
       totalParticipationScore: parseFloat(this.totalParticipationScore.toString()),
       coiinTotal: parseFloat(this.coiinTotal.toString()),
       algorithm: Campaign.parseAlgorithm(this.algorithm)
@@ -261,9 +259,9 @@ export class Campaign extends BaseEntity {
     return true;
   }
 
-  public static newCampaign(org: Org, name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, tagline: string, requirements: CampaignRequirementSpecs, suggestedPosts: string[], suggestedTags: string[]): Campaign {
+  public static newCampaign(name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, tagline: string, requirements: CampaignRequirementSpecs, suggestedPosts: string[], suggestedTags: string[], org?: Org,): Campaign {
     const campaign = new Campaign();
-    campaign.org = org;
+    if(org) campaign.org = org;
     campaign.name = name;
     campaign.coiinTotal = new BN(coiinTotal);
     campaign.target = target;
