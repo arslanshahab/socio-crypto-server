@@ -7,6 +7,7 @@ import { BN } from '../util/helpers';
 import {BigNumberEntityTransformer} from "../util/transformers";
 import {PayoutStatus} from "../types";
 import {Org} from "./Org";
+import {FundingWallet} from './FundingWallet';
 
 @Entity()
 export class Transfer extends BaseEntity {
@@ -49,6 +50,13 @@ export class Transfer extends BaseEntity {
     wallet => wallet.transfers
   )
   public wallet: Wallet;
+
+  @ManyToOne(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _type => FundingWallet,
+    wallet => wallet.transfers
+  )
+  public fundingWallet: FundingWallet;
 
   @ManyToOne(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -113,13 +121,13 @@ export class Transfer extends BaseEntity {
     return transfer;
   }
 
-  public static newFromDeposit(wallet: Wallet, amount: BigNumber, ethAddress: string, transactionHash: string) {
+  public static newFromDeposit(wallet: FundingWallet, amount: BigNumber, ethAddress: string, transactionHash: string) {
     const transfer = new Transfer();
     transfer.amount = amount;
     transfer.action = 'deposit';
     transfer.ethAddress = ethAddress;
     transfer.transactionHash = transactionHash;
-    transfer.wallet = wallet;
+    transfer.fundingWallet = wallet as FundingWallet;
     return transfer;
   }
 }

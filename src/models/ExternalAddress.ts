@@ -1,12 +1,11 @@
 import { BaseEntity, Column, CreateDateColumn, Entity, In, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
-import { BigNumber } from 'bignumber.js';
-import { BigNumberEntityTransformer } from '../util/transformers';
 import { User } from './User';
 import { generateRandomNonce } from '../util/helpers';
 import { Org } from './Org';
+import { FundingWallet } from './FundingWallet';
 
 @Entity()
-export class ExternalWallet extends BaseEntity {
+export class ExternalAddress extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   public id: string;
 
@@ -19,9 +18,6 @@ export class ExternalWallet extends BaseEntity {
   @Column({ nullable: false })
   public claimMessage: string;
 
-  @Column({ type: 'varchar', nullable: false, default: 0, transformer: BigNumberEntityTransformer })
-  public balance: BigNumber;
-
   @CreateDateColumn()
   public createdAt: Date;
 
@@ -29,31 +25,30 @@ export class ExternalWallet extends BaseEntity {
   public updatedAt: Date;
 
   @ManyToOne(
-    _type => User,
-    user => user.externalWallets
+    _type => FundingWallet,
+    wallet => wallet.addresses
   )
-  public user: User;
+  public fundingWallet: FundingWallet;
 
   @ManyToOne(
-    _type => Org,
-    org => org.externalWallets
+    _type => User,
+    user => user.addresses
   )
-  public org: Org;
+  public user: User;
 
   public asV1() {
     return {
       ethereumAddress: this.ethereumAddress,
       message: this.claimMessage,
       claimed: this.claimed,
-      balance: parseFloat(this.balance.toString()),
     };
   }
 
-  public static newFromAttachment(address: string, user: User|Org, admin: boolean = false): ExternalWallet {
-    const wallet = new ExternalWallet();
+  public static newFromAttachment(address: string, attachment: FundingWallet|User, user: boolean = false): ExternalAddress {
+    const wallet = new ExternalAddress();
     wallet.ethereumAddress = address;
-    if (admin) wallet.org = user as Org;
-    else wallet.user = user as User;
+    if (!user) wallet.fundingWallet = attachment as FundingWallet;
+    else wallet.user = attachment as User;
     wallet.claimMessage = `I am signing this nonce: ${generateRandomNonce()}`;
     return wallet;
   }
@@ -62,11 +57,11 @@ export class ExternalWallet extends BaseEntity {
     let query = this.createQueryBuilder('external')
       .where('external."ethereumAddress" = :address', { address });
     if (admin) {
+      query = query.leftJoinAndSelect('external.fundingWallet', 'wallet', 'external."fundingWalletId" = wallet.id');
       query = query.leftJoin('external.org', 'org', 'org.id = external."orgId"');
-      query = query.leftJoin('org.admins', 'admin', 'admin."orgId" = org.id');
-      query = query.andWhere('admin.id = :admin', { admin: user.id });
+      query = query.andWhere('org.id = :org', { org: user.id });
     } else {
-      query = query.leftJoin('external.user', 'user', 'user.id = external."userId"');
+      query = query.leftJoinAndSelect('external.user', 'user', 'user.id = external."userId"');
       query = query.andWhere('user.id = :user', { user: user.id });
     }
     return await query.getOne();
@@ -75,10 +70,9 @@ export class ExternalWallet extends BaseEntity {
   public static async getWalletsByAddresses(addresses: string[]) {
     if (addresses.length === 0) return {};
     const normalizedWalletAddresses = addresses.map(address => address.toLowerCase());
-    // add in the org and org wallet as relations
-    const wallets = await ExternalWallet.find({ where: { claimed: true, ethereumAddress: In(normalizedWalletAddresses) }, relations: ['user', 'user.wallet'] });
-    return wallets.reduce((accum: {[key: string]: ExternalWallet}, curr: ExternalWallet) => {
-      accum[curr.ethereumAddress.toLowerCase()] = curr;
+    const wallets = await ExternalAddress.find({ where: { claimed: true, ethereumAddress: In(normalizedWalletAddresses) }, relations: ['fundingWallet', 'fundingWallet.user', 'fundingWallet.user.wallet'] });
+    return wallets.reduce((accum: {[key: string]: ExternalAddress}, curr: ExternalAddress) => {
+      if (curr.fundingWallet) accum[curr.ethereumAddress.toLowerCase()] = curr;
       return accum;
     }, {});
   }

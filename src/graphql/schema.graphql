@@ -66,8 +66,8 @@ type Mutation {
     country:String
   ): User
   generateFactorsFromKyc(factors:[JSON]): JSON
-  attachEthereumAddress(ethereumAddress:String!): ExternalWallet
-  claimEthereumAddress(ethereumAddress:String!,signature:String!): ExternalWallet
+  attachEthereumAddress(ethereumAddress:String!): ExternalAddress
+  claimEthereumAddress(ethereumAddress:String!,signature:String!): ExternalAddress
   removeEthereumAddress(ethereumAddress:String!): Boolean
   updateNotificationSettings(
     kyc:Boolean,
@@ -106,8 +106,8 @@ type Query {
   getFollowerCount: FollowerCounts
   getPreviousDayMetrics: JSON
   getEstimatedGasPrice: String
-  getExternalAddress(ethereumAddress:String!): ExternalWallet
-  listExternalAddresses: [ExternalWallet]
+  getExternalAddress(ethereumAddress:String!): ExternalAddress
+  listExternalAddresses: [ExternalAddress]
   getWithdrawalsV2(status:String): [AdminWithdrawal]
   adminGetKycByUser(userId:String!): KycUser
   verifySession: FirebaseUser
@@ -126,7 +126,7 @@ type NotificationSettings {
   campaignUpdates: Boolean
 }
 
-type ExternalWallet {
+type ExternalAddress {
   ethereumAddress: String
   message: String
   claimed: Boolean

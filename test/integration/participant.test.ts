@@ -65,7 +65,7 @@ describe('Participant Integration Test', () => {
     describe('Mutations', () => {
         let mutation;
         it('#trackAction click', async () => {
-            const participant = await createParticipant(runningApp.databaseConnection);
+            const participant = await createParticipant(runningApp);
             mutation = gql.mutation({
                 operation: 'trackAction',
                 variables: {
@@ -90,7 +90,7 @@ describe('Participant Integration Test', () => {
             expect(adjustedClickCount.toString()).to.equal('1');
         });
         it('#trackAction view', async () => {
-            const participant = await createParticipant(runningApp.databaseConnection);
+            const participant = await createParticipant(runningApp);
             mutation = gql.mutation({
                 operation: 'trackAction',
                 variables: {
@@ -115,7 +115,7 @@ describe('Participant Integration Test', () => {
             expect(adjustedViewCount.toString()).to.equal('1');
         });
         it('#trackAction submission', async () => {
-            const participant = await createParticipant(runningApp.databaseConnection);
+            const participant = await createParticipant(runningApp);
             mutation = gql.mutation({
                 operation: 'trackAction',
                 variables: {
@@ -140,7 +140,7 @@ describe('Participant Integration Test', () => {
             expect(adjustedsubmissionCount.toString()).to.equal('1');
         });
         it('#trackAction throws invalid metric', async () => {
-            const participant = await createParticipant(runningApp.databaseConnection);
+            const participant = await createParticipant(runningApp);
             mutation = gql.mutation({
                 operation: 'trackAction',
                 variables: {
@@ -157,7 +157,7 @@ describe('Participant Integration Test', () => {
             expect(res.body.errors[0].message).to.equal('invalid metric specified');
         });
         it('#trackAction registers click with daily metrics table', async () => {
-          const participant = await createParticipant(runningApp.databaseConnection);
+          const participant = await createParticipant(runningApp);
           mutation = gql.mutation({
               operation: 'trackAction',
               variables: {

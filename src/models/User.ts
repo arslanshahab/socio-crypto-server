@@ -20,9 +20,9 @@ import { FieldNode } from 'graphql';
 import { Profile } from './Profile';
 import { Transfer } from './Transfer';
 import { DailyParticipantMetric } from './DailyParticipantMetric';
-import { ExternalWallet } from './ExternalWallet';
 import { NotificationSettings } from './NotificationSettings';
 import {Admin} from "./Admin";
+import { ExternalAddress } from './ExternalAddress';
 
 @Entity()
 export class User extends BaseEntity {
@@ -66,6 +66,13 @@ export class User extends BaseEntity {
 
   @OneToMany(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _type => ExternalAddress,
+    address => address.user
+  )
+  public addresses: ExternalAddress[];
+
+  @OneToMany(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _type => SocialLink,
     link => link.user,
   )
@@ -106,12 +113,6 @@ export class User extends BaseEntity {
     metric => metric.user
   )
   public dailyMetrics: DailyParticipantMetric[];
-
-  @OneToMany(
-    _type => ExternalWallet,
-    externalWallet => externalWallet.user
-  )
-  public externalWallets: ExternalWallet[];
 
   @OneToMany(
     _type => Admin,
@@ -185,6 +186,8 @@ export class User extends BaseEntity {
       const loadWallet = fieldNodes.find((node: FieldNode) => node.name.value === 'wallet') as FieldNode;
       const loadFactorLinks = fieldNodes.find((node: FieldNode) => node.name.value === 'factorLinks') as FieldNode;
       const loadNotificationSettings = fieldNodes.find((node: FieldNode) => node.name.value === 'notificationSettings') as FieldNode;
+      const loadAddresses = fieldNodes.find((node: FieldNode) => node.name.value === 'addresses') as FieldNode;
+
       if (loadParticipants) {
         query = query.leftJoinAndSelect('user.campaigns', 'participant', 'participant."userId" = user.id');
         const subFields = loadParticipants.selectionSet?.selections.filter(node => node.kind === 'Field') || [];
@@ -221,6 +224,7 @@ export class User extends BaseEntity {
       if (loadTwentyFourHourMetrics) query = query.leftJoinAndSelect('user.twentyFourHourMetrics', 'metric', 'metric."userId" = user.id')
       if (loadFactorLinks) query = query.leftJoinAndSelect('user.factorLinks', 'factor', 'factor."userId" = user.id');
       if (loadNotificationSettings) query = query.leftJoinAndSelect('user.notificationSettings', 'settings', 'settings."userId" = user.id');
+      if (loadAddresses) query = query.leftJoinAndSelect('user.addresses', 'address', 'address."userId" = user.id');
     }
     query = query.leftJoinAndSelect('user.profile', 'profile', 'profile."userId" = user.id');
     query = query.where('user.identityId = :id', { id });

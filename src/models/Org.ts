@@ -11,7 +11,7 @@ import {Campaign} from "./Campaign";
 import {Transfer} from "./Transfer";
 import {Admin} from "./Admin";
 import {HourlyCampaignMetric} from "./HourlyCampaignMetric";
-import { ExternalWallet } from './ExternalWallet';
+import { FundingWallet } from './FundingWallet';
 
 
 @Entity()
@@ -47,10 +47,10 @@ export class Org extends BaseEntity {
   public hourlyMetrics: HourlyCampaignMetric[];
 
   @OneToMany(
-    _type => ExternalWallet,
+    _type => FundingWallet,
     wallet => wallet.org
   )
-  public externalWallets: ExternalWallet[];
+  public fundingWallet: FundingWallet;
 
   @CreateDateColumn()
   public createdAt: Date;

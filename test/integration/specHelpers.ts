@@ -9,7 +9,8 @@ import {Transfer} from "../../src/models/Transfer";
 import { BN } from '../../src/util/helpers';
 import { Profile } from '../../src/models/Profile';
 import { DailyParticipantMetric } from '../../src/models/DailyParticipantMetric';
-import { ExternalWallet } from '../../src/models/ExternalWallet';
+import { ExternalAddress } from '../../src/models/ExternalAddress';
+// import { FundingWallet } from '../../src/models/FundingWallet';
 import { getDeterministicId, sha256Hash } from '../../src/util/crypto';
 import { NotificationSettings } from '../../src/models/NotificationSettings';
 import {Application} from "../../src/app";
@@ -155,9 +156,10 @@ export const createTransfer = async (runningApp: Application, options?: { [key: 
   return await runningApp.databaseConnection.createEntityManager().save(transfer);
 };
 
-export const createExternalWallet = async (runningApp: Application, options?: { [key: string]: any } | any) => {
-  const externalWallet = new ExternalWallet();
-  externalWallet.user = getValue(['user'], options) || await createUser(runningApp, getValue(['userOptions'], options));
+export const createExternalAddress = async (runningApp: Application, options?: { [key: string]: any } | any) => {
+  const externalWallet = new ExternalAddress();
+  externalWallet.fundingWallet = getValue(['fundingWallet'], options);
+  externalWallet.user = getValue(['user'], options);
   externalWallet.ethereumAddress = getValue(['ethereumAddress'], options) || '0x0000000000000000000000000000000000000000';
   externalWallet.claimMessage = getValue(['claimMessage'], options) || 'I am signing this nonce: 123456';
   externalWallet.claimed = getValue(['claimed'], options) || false;

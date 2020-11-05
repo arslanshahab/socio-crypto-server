@@ -204,16 +204,16 @@ describe('Withdraw Integration Test', function () {
     describe('Queries', () => {
         let query;
         it('#getWithdrawals', async () => {
-            const wallet = await createWallet(runningApp.databaseConnection, {balance: 200.00});
-            const wallet2 = await createWallet(runningApp.databaseConnection);
-            const user = await createUser(runningApp.databaseConnection, {wallet});
-            const user2 = await createUser(runningApp.databaseConnection, {wallet: wallet2});
-            const participant = await createParticipant(runningApp.databaseConnection, {user});
-            const participant2 = await createParticipant(runningApp.databaseConnection, {user: user2});
-            const campaign = await createCampaign(runningApp.databaseConnection, {participants: [participant, participant2]});
-            await createTransfer(runningApp.databaseConnection, {wallet, campaign, action:'withdraw', withdrawStatus: 'approved', amount: 50})
-            await createTransfer(runningApp.databaseConnection, {wallet, campaign, action:'withdraw', withdrawStatus: 'approved', amount: 50})
-            await createTransfer(runningApp.databaseConnection, {wallet: wallet2, action: 'withdraw', withdrawStatus: 'approved'});
+            const wallet = await createWallet(runningApp, {balance: 200.00});
+            const wallet2 = await createWallet(runningApp);
+            const user = await createUser(runningApp, {wallet});
+            const user2 = await createUser(runningApp, {wallet: wallet2});
+            const participant = await createParticipant(runningApp, {user});
+            const participant2 = await createParticipant(runningApp, {user: user2});
+            const campaign = await createCampaign(runningApp, {participants: [participant, participant2]});
+            await createTransfer(runningApp, {wallet, campaign, action:'withdraw', withdrawStatus: 'approved', amount: 50})
+            await createTransfer(runningApp, {wallet, campaign, action:'withdraw', withdrawStatus: 'approved', amount: 50})
+            await createTransfer(runningApp, {wallet: wallet2, action: 'withdraw', withdrawStatus: 'approved'});
             query = gql.query({
                 operation: 'getWithdrawals',
                 variables: {

@@ -90,6 +90,7 @@ describe('Campaign Integration Test', () => {
              .send(mutation)
              .set('Accepts', 'application/json')
              .set('authorization', 'Bearer raiinmaker');
+         console.log(res.body);
          const response = res.body.data.newCampaign;
          expect(response.name).to.equal('banana');
       })
@@ -100,7 +101,7 @@ describe('Campaign Integration Test', () => {
          expect(currentTotal).to.equal(2000);
       });
       it('#updateCampaign', async () => {
-         const campaign = await createCampaign(runningApp.databaseConnection, {});
+         const campaign = await createCampaign(runningApp, {});
          const mutation = gql.mutation({
             operation: 'updateCampaign',
             variables: {
@@ -118,10 +119,10 @@ describe('Campaign Integration Test', () => {
          expect(res.body.data.updateCampaign.coiinTotal).to.equal(2000.1);
       });
       it('#generateCampaignAudit', async () => {
-         const participant1 = await createParticipant(runningApp.databaseConnection);
-         const participant2 = await createParticipant(runningApp.databaseConnection);
-         const participant3 = await createParticipant(runningApp.databaseConnection);
-         const campaign = await createCampaign(runningApp.databaseConnection, {participants: [participant1, participant2, participant3], totalParticipationScore: 45});
+         const participant1 = await createParticipant(runningApp);
+         const participant2 = await createParticipant(runningApp);
+         const participant3 = await createParticipant(runningApp);
+         const campaign = await createCampaign(runningApp, {participants: [participant1, participant2, participant3], totalParticipationScore: 45});
          const mutation = gql.mutation({
             operation: 'generateCampaignAuditReport',
             variables: {
@@ -142,8 +143,8 @@ describe('Campaign Integration Test', () => {
          expect(response.flaggedParticipants.length).to.equal(3);
       });
       it('#payoutCampaignRewards', async () => {
-         const campaign = await createCampaign(runningApp.databaseConnection, {totalParticipationScore: 60});
-         let participant1 = await createParticipant(runningApp.databaseConnection, {
+         const campaign = await createCampaign(runningApp, {totalParticipationScore: 60});
+         let participant1 = await createParticipant(runningApp, {
             campaign,
             userOptions: {
                walletOptions: {
@@ -151,7 +152,7 @@ describe('Campaign Integration Test', () => {
                }
             }
          });
-         let participant2 = await createParticipant(runningApp.databaseConnection, {
+         let participant2 = await createParticipant(runningApp, {
             campaign,
             ParticipationScore: 30,
             clickCount: 10,
@@ -162,7 +163,7 @@ describe('Campaign Integration Test', () => {
                   balance: 50
                }
          }});
-         let participant3 = await createParticipant(runningApp.databaseConnection, {campaign, userOptions: {walletOptions: {balance: 50}}});
+         let participant3 = await createParticipant(runningApp, {campaign, userOptions: {walletOptions: {balance: 50}}});
          const mutation = gql.mutation({
             operation: 'payoutCampaignRewards',
             variables: {
@@ -212,9 +213,9 @@ describe('Campaign Integration Test', () => {
                },
             }
          }
-         const campaign = await createCampaign(runningApp.databaseConnection, {totalParticipationScore: 94.5, algorithm});
+         const campaign = await createCampaign(runningApp, {totalParticipationScore: 94.5, algorithm});
 
-         let participant1 = await createParticipant(runningApp.databaseConnection, {
+         let participant1 = await createParticipant(runningApp, {
             campaign,
             ParticipationScore: 31.5,
             clickCount: 10.5,
@@ -225,7 +226,7 @@ describe('Campaign Integration Test', () => {
                   balance: 50.5
                }
             }});
-         let participant2 = await createParticipant(runningApp.databaseConnection, {
+         let participant2 = await createParticipant(runningApp, {
             campaign,
             ParticipationScore: 31.5,
             clickCount: 10.5,
@@ -236,7 +237,7 @@ describe('Campaign Integration Test', () => {
                   balance: 50.5
                }
             }});
-         let participant3 = await createParticipant(runningApp.databaseConnection, {
+         let participant3 = await createParticipant(runningApp, {
             campaign,
             ParticipationScore: 31.5,
             clickCount: 10.5,
@@ -272,8 +273,8 @@ describe('Campaign Integration Test', () => {
          expect(parseFloat(wallet3.balance.minus(new BN(50.5)).toString())).to.equal(16.833333333333332);
       });
       it('#payoutCampaignRewards with 0 total participation', async () => {
-         const campaign = await createCampaign(runningApp.databaseConnection, {totalParticipationScore: 0});
-         let participant1 = await createParticipant(runningApp.databaseConnection, {
+         const campaign = await createCampaign(runningApp, {totalParticipationScore: 0});
+         let participant1 = await createParticipant(runningApp, {
             campaign,
             participationScore: 0,
             clickCount: 0,
@@ -284,7 +285,7 @@ describe('Campaign Integration Test', () => {
                   balance: 50
                }
             }});
-         let participant2 = await createParticipant(runningApp.databaseConnection, {
+         let participant2 = await createParticipant(runningApp, {
             campaign,
             participationScore: 0,
             clickCount: 0,
@@ -295,7 +296,7 @@ describe('Campaign Integration Test', () => {
                   balance: 50
                }
          }});
-         let participant3 = await createParticipant(runningApp.databaseConnection, {
+         let participant3 = await createParticipant(runningApp, {
             campaign,
             participationScore: 0,
             clickCount: 0,
@@ -331,22 +332,22 @@ describe('Campaign Integration Test', () => {
          expect(parseFloat(wallet3.balance.toString())).to.equal(50);
       });
       it('#payoutCampaignRewards with rejected participants', async () => {
-         const campaign = await createCampaign(runningApp.databaseConnection);
-         let participant1 = await createParticipant(runningApp.databaseConnection, {
+         const campaign = await createCampaign(runningApp);
+         let participant1 = await createParticipant(runningApp, {
             campaign,
             userOptions: {
                walletOptions: {
                   balance: 50
                }
             }});
-         let participant2 = await createParticipant(runningApp.databaseConnection, {
+         let participant2 = await createParticipant(runningApp, {
             campaign,
             userOptions: {
                walletOptions: {
                   balance: 50
                }
          }});
-         let participant3 = await createParticipant(runningApp.databaseConnection, {
+         let participant3 = await createParticipant(runningApp, {
             campaign,
             userOptions: {
                walletOptions: {
@@ -378,7 +379,7 @@ describe('Campaign Integration Test', () => {
          expect(parseFloat(wallet3.balance.minus(50).toString())).to.equal(20);
       });
       it('#deleteCampaign', async () => {
-         const campaign = await createCampaign(runningApp.databaseConnection);
+         const campaign = await createCampaign(runningApp);
          const mutation = gql.mutation({
             operation: 'deleteCampaign',
             variables: {
@@ -398,7 +399,7 @@ describe('Campaign Integration Test', () => {
    });
    describe('Queries', () => {
       it('#getCurrentCampaignTier', async () => {
-         const campaign = await createCampaign(runningApp.databaseConnection);
+         const campaign = await createCampaign(runningApp);
          const query = gql.query({
             operation: 'getCurrentCampaignTier',
             variables: {
@@ -416,10 +417,10 @@ describe('Campaign Integration Test', () => {
          expect(response.currentTotal).to.equal(40);
       });
       it('#listCampaigns', async () => {
-         await createCampaign(runningApp.databaseConnection);
-         await createCampaign(runningApp.databaseConnection);
-         await createCampaign(runningApp.databaseConnection);
-         await createCampaign(runningApp.databaseConnection);
+         await createCampaign(runningApp);
+         await createCampaign(runningApp);
+         await createCampaign(runningApp);
+         await createCampaign(runningApp);
          const query = gql.query({
             operation: 'listCampaigns',
             fields: ['total']
@@ -433,7 +434,7 @@ describe('Campaign Integration Test', () => {
          expect(response.total).to.equal(4)
       });
       it('#getCampaign', async () => {
-         const campaign = await createCampaign(runningApp.databaseConnection);
+         const campaign = await createCampaign(runningApp);
          const query = gql.query({
             operation:'getCampaign',
             variables: {id: campaign.id},

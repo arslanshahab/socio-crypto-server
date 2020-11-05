@@ -161,7 +161,7 @@ export class HourlyCampaignMetric extends BaseEntity {
     action: 'click'|'view'|'submission'|'like'|'share'|'comment'|'participate'|'removeParticipant'|'post',
     actionCount: number = 1
   ) {
-    if(!['click','view','submission','like','share','comment','participate','post'].includes(action)) throw new Error('action not supported');
+    if(!['click','view','submission','like','share','comment','participate','post','removeParticipant'].includes(action)) throw new Error('action not supported');
     const currentDate = new Date();
     const month = (currentDate.getUTCMonth() + 1) < 10 ? `0${currentDate.getUTCMonth() + 1}` : currentDate.getUTCMonth() + 1;
     const day = currentDate.getUTCDate() < 10 ? `0${currentDate.getUTCDate()}` : currentDate.getUTCDate();
@@ -199,7 +199,7 @@ export class HourlyCampaignMetric extends BaseEntity {
         record.postCount = record.postCount ? record.postCount.plus(new BN(actionCount)) : new BN(actionCount);
         break;
       case "removeParticipant":
-        record.participantCount = record.participantCount.minus(1);
+        if (record.participantCount) record.participantCount = record.participantCount.minus(1);
         break;
     }
     await record.save();

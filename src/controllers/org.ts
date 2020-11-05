@@ -3,16 +3,20 @@ import {Admin} from "../models/Admin";
 import {Org} from "../models/Org";
 import {checkPermissions} from "../middleware/authentication";
 import {HourlyCampaignMetric} from "../models/HourlyCampaignMetric";
+import { FundingWallet } from '../models/FundingWallet';
 
 export const newOrg = async (args: {orgName: string, adminName: string}, context: {user: any}) => {
   const { orgName } = args;
   const { user } = context;
   await Firebase.setCustomUserClaims(user.id, orgName, 'admin');
   const admin = new Admin();
+  const fundingWallet = new FundingWallet();
   admin.firebaseId = user.id;
   await admin.save();
   const org = Org.newOrg(orgName, [admin]);
   await org.save();
+  fundingWallet.org = org;
+  await fundingWallet.save();
   return org;
 };
 
