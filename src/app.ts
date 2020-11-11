@@ -38,7 +38,6 @@ export class Application {
     await Dragonchain.initialize();
     await Paypal.initialize();
     await Paypal.refreshToken();
-
     this.app = express();
     const corsSettings = {
       origin: [

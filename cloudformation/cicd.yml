@@ -11,6 +11,14 @@ Resources:
     Properties:
       RepositoryName: raiinmaker
 
+  CodeBuildSourceCredential:
+    Type: AWS::CodeBuild::SourceCredential
+    Properties:
+      AuthType: PERSONAL_ACCESS_TOKEN
+      ServerType: GITHUB
+      Token:
+        Ref: GitHubSecret
+
   PullRequestCodebuildProject:
     Type: AWS::CodeBuild::Project
     Properties:
@@ -30,8 +38,8 @@ Resources:
         Auth:
           Type: OAUTH
           Resource:
-            Ref: GitHubSecret
-        Location: https://github.com/dragonchain-inc/raiinmaker-server.git
+            Ref: CodeBuildSourceCredential
+        Location: https://github.com/Raiinmaker/raiinmaker-server.git
         BuildSpec: pull-request.buildspec.yml
       Triggers:
         Webhook: true
@@ -55,9 +63,9 @@ Resources:
             Value: staging
         PrivilegedMode: true
       VpcConfig:
-        VpcId: vpc-35ee764c
-        Subnets: [subnet-066fc994a62abcff4]
-        SecurityGroupIds: [sg-8a581bf5]
+        VpcId: vpc-d6c707b0
+        Subnets: [subnet-d9e32c83]
+        SecurityGroupIds: [sg-fdcb0a8a]
       Source:
         Type: CODEPIPELINE
         BuildSpec: buildspec.yml
@@ -81,9 +89,9 @@ Resources:
             Value: production
         PrivilegedMode: true
       VpcConfig:
-        VpcId: vpc-35ee764c
-        Subnets: [subnet-066fc994a62abcff4]
-        SecurityGroupIds: [sg-8a581bf5]
+        VpcId: vpc-d6c707b0
+        Subnets: [subnet-d9e32c83]
+        SecurityGroupIds: [sg-fdcb0a8a]
       Source:
         Type: CODEPIPELINE
         BuildSpec: buildspec.yml
@@ -115,12 +123,13 @@ Resources:
                 - 'ec2:*'
                 - 's3:*'
                 - 'kms:*'
+                - 'eks:*'
                 Effect: Allow
                 Resource: '*'
               - Action:
                 - 'secretsmanager:GetSecretValue'
                 Effect: Allow
-                Resource: 'arn:aws:secretsmanager:us-west-2:381978683274:secret:*'
+                Resource: 'arn:aws:secretsmanager:us-west-1:527252880472:secret:*'
 
   CodeBuildRole:
     Type: AWS::IAM::Role
@@ -149,17 +158,18 @@ Resources:
                 - 'ec2:*'
                 - 's3:*'
                 - 'kms:*'
+                - 'eks:*'
                 Effect: Allow
                 Resource: '*'
               - Action:
                 - 'secretsmanager:GetSecretValue'
                 Effect: Allow
-                Resource: 'arn:aws:secretsmanager:us-west-2:381978683274:secret:*'
+                Resource: 'arn:aws:secretsmanager:us-west-1:527252880472:secret:*'
 
   ArtifactBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: raiinmaker-codebuild-artifacts
+      BucketName: rm-raiinmaker-codebuild-artifacts
 
   StagingCodePipeline:
     Type: AWS::CodePipeline::Pipeline
@@ -182,7 +192,7 @@ Resources:
                 Provider: GitHub
                 Version: 1
               Configuration:
-                Owner: dragonchain-inc
+                Owner: Raiinmaker
                 Repo: raiinmaker-server
                 Branch: master
                 OAuthToken:
@@ -230,7 +240,7 @@ Resources:
                 Provider: GitHub
                 Version: 1
               Configuration:
-                Owner: dragonchain-inc
+                Owner: Raiinmaker
                 Repo: raiinmaker-server
                 Branch: production
                 OAuthToken:

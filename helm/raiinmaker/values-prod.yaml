@@ -1,20 +1,20 @@
 image:
   pullPolicy: IfNotPresent
 
-iamRole: arn:aws:iam::381978683274:role/raiinmaker-production
+iamRole: arn:aws:iam::527252880472:role/raiinmaker-production
 
 pg-bak:
   stage: production
 
 ingress:
-  host: raiinmaker.api.dragonchain.com
+  host: server.api.dragonchain.com
 
 data:
-  IAM_ROLE: arn:aws:iam::381978683274:role/raiinmaker-production
+  IAM_ROLE: arn:aws:iam::527252880472:role/raiinmaker-production
   environment:
     NODE_ENV: "production"
-    BUCKET_NAME: "raiinmaker-production"
-    KYC_BUCKET_NAME: "raiinmaker-kyc-production"
+    BUCKET_NAME: "rm-raiinmaker-production"
+    KYC_BUCKET_NAME: "rm-raiinmaker-kyc-production"
     RATE_LIMIT_MAX: "3"
     RATE_LIMIT_WINDOW: "1m"
     REWARD_REDEMPTION_EMAIL_RECIPIENT: jonel@raiinmaker.com

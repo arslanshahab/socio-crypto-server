@@ -5,11 +5,11 @@
 replicaCount: 1
 
 image:
-  repository: 381978683274.dkr.ecr.us-west-2.amazonaws.com/raiinmaker
+  repository: 527252880472.dkr.ecr.us-west-1.amazonaws.com/raiinmaker
   tag: staging-0.0.1
   pullPolicy: Always
 
-iamRole: arn:aws:iam::381978683274:role/raiinmaker-staging
+iamRole: arn:aws:iam::527252880472:role/raiinmaker-staging
 
 securityContext:
   runAsNonRoot: true
@@ -21,7 +21,7 @@ service:
 
 ingress:
   enabled: true
-  host: raiinmaker-staging.api.dragonchain.com
+  host: server-staging.api.raiinmaker.com
 
 cron:
   frequency:
@@ -44,11 +44,11 @@ aws:
   secret_key:
 
 data:
-  IAM_ROLE: arn:aws:iam::381978683274:role/raiinmaker-staging
+  IAM_ROLE: arn:aws:iam::527252880472:role/raiinmaker-staging
   environment:
     NODE_ENV: "staging"
-    BUCKET_NAME: "raiinmaker-staging"
-    KYC_BUCKET_NAME: "raiinmaker-kyc-staging"
+    BUCKET_NAME: "rm-raiinmaker-staging"
+    KYC_BUCKET_NAME: "rm-raiinmaker-kyc-staging"
     RATE_LIMIT_MAX: "50"
     RATE_LIMIT_WINDOW: "1m"
     REWARD_REDEMPTION_EMAIL_RECIPIENT: alex@dragonchain.com
