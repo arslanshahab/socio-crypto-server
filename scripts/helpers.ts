@@ -46,6 +46,13 @@ export const incrementHour = (date: Date) => {
   return nextHour;
 }
 
+export const getTotalHours = (beginDate: Date) => {
+  const today = new Date();
+  let timeDifference = (today.getTime() - beginDate.getTime()) / 1000;
+  timeDifference /= (60 * 60);
+  return Math.abs(Math.round(timeDifference));
+}
+
 export const generateInterests = () => {
   const interestsArray: string[] = [];
   for (let i = 0; i < 10; i++) {
@@ -159,22 +166,6 @@ export const generateOrg = () => {
   org.admins = [];
   org.hourlyMetrics = [];
   return org;
-}
-
-export const bulkSave = async (connection: Connection, org: Org, chunkAmount: number) => {
-  for (const campaign of org.campaigns) {
-    console.log('SAVING HOURLY METRICS');
-    await connection.manager.save(campaign.hourlyMetrics, {chunk: chunkAmount})
-    console.log('SAVING SOCIAL POSTS');
-    await connection.manager.save(campaign.posts, {chunk: chunkAmount});
-    console.log('SAVING PARTICIPANTS');
-    for (const participant of campaign.participants) {
-      await connection.manager.save(participant.user.posts, {chunk: chunkAmount});
-      await participant.user.profile.save();
-      await participant.user.save();
-      await participant.save();
-    }
-  }
 }
 
 export const generateSocialPost = (

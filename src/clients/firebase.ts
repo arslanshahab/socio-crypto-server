@@ -35,6 +35,10 @@ export class Firebase {
     await Firebase.client.auth().createSessionCookie(token, {expiresIn});
   }
 
+  public static async verifySessionCookie(cookie: string) {
+    return Firebase.client.auth().verifySessionCookie(cookie, true);
+  }
+
   public static verifyToken(token: string) {
     return Firebase.client.auth().verifyIdToken(token, true);
   }

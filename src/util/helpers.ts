@@ -32,9 +32,9 @@ export const BN = BigNumber.clone({
 
 // Prevent use in primitive operations.
 // See https://mikemcl.github.io/bignumber.js/#type-coercion
-BN.prototype.valueOf = function() {
-  throw Error('Conversion to primitive type is prohibited')
-}
+// BN.prototype.valueOf = function() {
+//   throw Error('Conversion to primitive type is prohibited')
+// }
 
 export const deleteFactorFromKycData = (kycData: KycUser, factorName: string) => {
   switch (factorName) {
