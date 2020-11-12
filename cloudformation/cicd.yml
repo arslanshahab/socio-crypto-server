@@ -19,32 +19,6 @@ Resources:
       Token:
         Ref: GitHubSecret
 
-  PullRequestCodebuildProject:
-    Type: AWS::CodeBuild::Project
-    Properties:
-      Name: 'raiinmaker-server-pull-request'
-      ServiceRole:
-        Ref: CodeBuildRole
-      Artifacts:
-        Type: no_artifacts
-      Environment:
-        Type: LINUX_CONTAINER
-        ComputeType: BUILD_GENERAL1_LARGE
-        Image: aws/codebuild/standard:2.0
-        PrivilegedMode: true
-      Source:
-        Type: GITHUB
-        InsecureSsl: false
-        Auth:
-          Type: OAUTH
-          Resource:
-            Ref: CodeBuildSourceCredential
-        Location: https://github.com/Raiinmaker/raiinmaker-server.git
-        BuildSpec: pull-request.buildspec.yml
-      Triggers:
-        Webhook: true
-      TimeoutInMinutes: 60
-
   StgDeployCodeBuildProject:
     Type: AWS::CodeBuild::Project
     Properties:
@@ -62,10 +36,6 @@ Resources:
             Type: PLAINTEXT
             Value: staging
         PrivilegedMode: true
-      VpcConfig:
-        VpcId: vpc-d6c707b0
-        Subnets: [subnet-d9e32c83]
-        SecurityGroupIds: [sg-fdcb0a8a]
       Source:
         Type: CODEPIPELINE
         BuildSpec: buildspec.yml
@@ -88,10 +58,6 @@ Resources:
             Type: PLAINTEXT
             Value: production
         PrivilegedMode: true
-      VpcConfig:
-        VpcId: vpc-d6c707b0
-        Subnets: [subnet-d9e32c83]
-        SecurityGroupIds: [sg-fdcb0a8a]
       Source:
         Type: CODEPIPELINE
         BuildSpec: buildspec.yml
@@ -169,7 +135,7 @@ Resources:
   ArtifactBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: rm-raiinmaker-codebuild-artifacts
+      BucketName: rm-codebuild-artifacts
 
   StagingCodePipeline:
     Type: AWS::CodePipeline::Pipeline

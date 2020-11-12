@@ -7,8 +7,8 @@ phases:
     commands:
       - curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.17.11/2020-09-18/bin/darwin/amd64/kubectl && chmod +x ./kubectl
       - mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$PATH:$HOME/bin
-      - echo 'export PATH=$PATH:$HOME/bin' >> ~/.bashrc
-      - source ~/.bashrc
+      # - echo 'export PATH=$PATH:$HOME/bin' >> ~/.bashrc
+      # - source ~/.bashrc
       - curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 && chmod +x ./get_helm.sh && ./get_helm.sh --version v3.1.0
       - export NPM_TOKEN=$(aws secretsmanager get-secret-value --secret-id=npm/dragonchain-dev/read-only | jq -r '.SecretString | fromjson | .NPM_TOKEN')
       - $(aws ecr get-login --no-include-email --region us-west-1)
