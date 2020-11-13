@@ -99,6 +99,7 @@ Resources:
                 - 'kms:*'
                 - 'eks:*'
                 - 'iam:*'
+                - 'sts:*'
                 Effect: Allow
                 Resource: '*'
               - Action:
@@ -134,6 +135,7 @@ Resources:
                 - 's3:*'
                 - 'kms:*'
                 - 'eks:*'
+                - 'sts:*'
                 Effect: Allow
                 Resource: '*'
               - Action:
