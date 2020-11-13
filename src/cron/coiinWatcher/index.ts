@@ -12,9 +12,7 @@ const app = new Application();
 
 (async () => {
   await Secrets.initialize();
-  console.log('secrets mounted');
   const connection = await app.connectDatabase();
-  console.log('database connected');
   let lastCheckedBlock, currentBlock;
   const currentRunFailures = [];
   try {
