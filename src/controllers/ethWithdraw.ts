@@ -11,9 +11,9 @@ const { NODE_ENV } = process.env;
 const HOT_WALLET = NODE_ENV === 'production' ? '0x955250Fd0F7f4F6eE3570535f9B7AD3B8141F148' : '0xE21095c0be9c57f2ebb4FeE72c418B5CF447e8ae';
 let provider;
 if (NODE_ENV === 'production') {
-  provider = new Web3.providers.HttpProvider('http://internal-Parity-Mainnet-Internal-1844666982.us-west-2.elb.amazonaws.com:8545');
+  provider = new Web3.providers.HttpProvider('https://mainnet.infura.io/v3/c817284c8c504027a5701f2a6bc94c7f');
 } else {
-  provider = new Web3.providers.HttpProvider('http://internal-Parity-Ropsten-Internal-1699752391.us-west-2.elb.amazonaws.com:8545');
+  provider = new Web3.providers.HttpProvider('https://ropsten.infura.io/v3/c817284c8c504027a5701f2a6bc94c7f');
 }
 const web3 = new Web3(provider);
 // In Production, use Coiin. Otherwise, use the TT (test token) on Ropsten.
