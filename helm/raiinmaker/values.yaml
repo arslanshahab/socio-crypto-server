@@ -69,6 +69,11 @@ pg-bak:
   stage: staging
   existingSecret: "raiinmaker"
   postgresHost: raiinmaker-api-postgresql-read
+  s3Bucket: rm-postgres-backups
+  iamRole: arn:aws:iam::527252880472:role/PostgresBackupRole
+  image:
+    repository: 527252880472.dkr.ecr.us-west-1.amazonaws.com/pg_backup
+    tag: "1.0.3"
 
 redis:
   image:
