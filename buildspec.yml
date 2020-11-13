@@ -5,6 +5,10 @@ phases:
     runtime-versions:
       docker: 18
     commands:
+      - apt install -y awscli git python3
+      - curl -o aws-iam-authenticator https://amazon-eks.s3-us-west-2.amazonaws.com/1.12.7/2019-03-27/bin/linux/amd64/aws-iam-authenticator
+      - chmod +x ./aws-iam-authenticator
+      - mkdir -p ~/bin && cp ./aws-iam-authenticator ~/bin/aws-iam-authenticator && export PATH=~/bin:$PATH
       - curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.17.11/2020-09-18/bin/darwin/amd64/kubectl && chmod +x ./kubectl
       - mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$PATH:$HOME/bin
       # - echo 'export PATH=$PATH:$HOME/bin' >> ~/.bashrc
@@ -15,10 +19,10 @@ phases:
   build:
     commands:
       - export VERSION=$(jq -r .version package.json)
-      - AWS_CLUSTER_NAME="raiinmaker-production"
+      - AWS_CLUSTER_NAME="raiinmaker-staging"
       - NAMESPACE="raiinmaker"
       - if [ -z "$VERSION" ]; then echo "VERSION variable is missing"; exit 1; fi
-      - if [ "$STAGE" = "production" ]; then AWS_CLUSTER_NAME="raiinmaker-staging"; fi
+      - if [ "$STAGE" = "production" ]; then AWS_CLUSTER_NAME="raiinmaker-production"; fi
       - export TAG="$STAGE-$VERSION"
       - echo $NPM_TOKEN
       - docker build . --build-arg NPM_TOKEN=$NPM_TOKEN -t 527252880472.dkr.ecr.us-west-1.amazonaws.com/raiinmaker:$TAG
