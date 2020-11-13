@@ -7,7 +7,7 @@ const { NODE_ENV = 'development' } = process.env;
 
 const coldWallet = NODE_ENV === 'production' ? '0x9f6fE7cF8CCC66477c9f7049F22FbbE35234274D' : '0x275EE6238D103fDBE49d4cF6358575aA914F8654';
 const tokenContract = NODE_ENV === 'production' ? '0x87ff4a65200337b88ae5c43650e2b7d5a8f17d10' : '0x0bBd0B3Bca94B037b73FF3E02db3154AA558113f';
-const ethConnectionUrl = NODE_ENV === 'production' ? 'http://internal-Parity-Mainnet-Internal-1844666982.us-west-2.elb.amazonaws.com:8545' : 'http://internal-Parity-Ropsten-Internal-1699752391.us-west-2.elb.amazonaws.com:8545';
+const ethConnectionUrl = NODE_ENV === 'production' ? 'https://mainnet.infura.io/v3/c817284c8c504027a5701f2a6bc94c7f' : 'https://ropsten.infura.io/v3/c817284c8c504027a5701f2a6bc94c7f';
 const web3 = new Web3(new Web3.providers.HttpProvider(ethConnectionUrl));
 
 const getFilterPostParams = (lastCheckedBlock: number, currentBlock: number) => {
