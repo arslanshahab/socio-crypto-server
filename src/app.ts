@@ -43,7 +43,6 @@ export class Application {
     this.app = express();
     const corsSettings = {
       origin: [
-        'http://localhost:9000',
         'https://raiinmaker.dragonchain.com',
         'https://raiinmaker-staging.dragonchain.com',
         'https://mock-raiinmaker-landing.dragonchain.com',
