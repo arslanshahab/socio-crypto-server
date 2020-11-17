@@ -244,11 +244,15 @@ export class HourlyCampaignMetric extends BaseEntity {
                  from range_values
                 ),
                 pCounts as (
-                  SELECT date_trunc('${dateTrunc}', "createdAt") as ${dateTrunc},
-                    "participantCount"
-                    FROM hourly_campaign_metric
-                    WHERE "campaignId" =  '${campaignId}'
-                    ORDER BY "createdAt"::date DESC, "createdAt" DESC
+                    select date_trunc('${dateTrunc}', "createdAt") as ${dateTrunc},
+                           "participantCount"
+                     from (
+                           select distinct on (extract(${dateTrunc} from t."createdAt")) "createdAt" ,
+                           "participantCount"
+                           from hourly_campaign_metric t
+                           WHERE "campaignId" = '${campaignId}'
+                         ) t
+                    order by "createdAt" desc
                 ),
                 counts as (
                  SELECT t."campaignId",
@@ -288,10 +292,14 @@ export class HourlyCampaignMetric extends BaseEntity {
                  from range_values
                 ),
                 pCounts as (
-                  SELECT date_trunc('${dateTrunc}', "createdAt") as ${dateTrunc},
-                    "participantCount"
-                    FROM hourly_campaign_metric
-                    ORDER BY "createdAt"::date DESC, "createdAt" DESC
+                    select date_trunc('${dateTrunc}', "createdAt") as ${dateTrunc},
+                           "participantCount"
+                     from (
+                           select distinct on (extract(${dateTrunc} from t."createdAt")) "createdAt" ,
+                           "participantCount"
+                           from hourly_campaign_metric t
+                         ) t
+                    order by "createdAt" desc
                 ),
                 counts as (
                  SELECT t."orgId",

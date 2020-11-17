@@ -4,7 +4,7 @@ import {
   connectDatabase, generateAlgorithm,
   generateCampaign, generateHourlyCampaignMetric, generateOrg, generateProfile, generateSocialPost,
   generateUniqueName, generateUser, getDailyFrequencies,
-  getRandomInt, getRandomIntWithinRange,
+  getRandomInt, getRandomIntWithinRange, getTotalHours,
   incrementHour, updateCampaign, updateParticipant,
 } from "./helpers";
 import {Connection} from "typeorm";
@@ -21,6 +21,10 @@ import {SocialPost} from "../src/models/SocialPost";
 let dbConn: Connection
 
 const CHUNK_VALUE = 9000;
+
+/**
+ * Temporarily disable error: "Conversion to primitive type is prohibited" in /src/utils/helpers before running this script
+ */
 
 const getDatabase = async () => {
   if (!dbConn) {
@@ -42,7 +46,7 @@ export interface ParticipantMetrics {
     const connection = await getDatabase();
     const org = await generateOrg().save();
     const startDate = new Date();
-    startDate.setUTCDate(startDate.getUTCDate()-60);
+    startDate.setUTCDate(startDate.getUTCDate()-30);
     const endDate = new Date();
     endDate.setUTCDate(endDate.getUTCDate()+7);
     const previousCampaignNames: string[] = [];
@@ -70,7 +74,8 @@ export interface ParticipantMetrics {
         }
         let currentDate = campaign.beginDate;
         let dailyMetrics = getDailyFrequencies();
-        for (let hours = 0; hours < 1460; hours++) {
+        const totalHours = getTotalHours(campaign.beginDate);
+        for (let hours = 0; hours < totalHours; hours++) {
           if (checkFrequency(24, (hours+1))) {
             dailyMetrics = getDailyFrequencies();
           }

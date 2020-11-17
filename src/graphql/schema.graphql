@@ -110,13 +110,7 @@ type Query {
   listExternalAddresses: [ExternalAddress]
   getWithdrawalsV2(status:String): [AdminWithdrawal]
   adminGetKycByUser(userId:String!): KycUser
-  verifySession: FirebaseUser
-}
-
-type FirebaseUser {
-  id: String
-  role: String
-  company: String
+  verifySession: String
 }
 
 type NotificationSettings {

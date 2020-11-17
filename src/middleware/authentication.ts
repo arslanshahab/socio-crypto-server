@@ -33,11 +33,11 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
 };
 
 export const firebaseAuth = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  const token = req.headers.authorization;
-  if (!token) return res.status(401).json({ code: 'UNAUTHORIZED', message: 'unauthorized' });
   try {
-    if (process.env.NODE_ENV === 'development' && token === 'Bearer raiinmaker') return next();
-    const decodedToken = await Firebase.verifyToken(token);
+    if (process.env.NODE_ENV === 'development' && req.headers.token === 'Bearer raiinmaker') return next();
+    const session = req.cookies.session || '';
+    if (!session) return res.status(401).json({ code: 'UNAUTHORIZED', message: 'unauthorized' });
+    const decodedToken = await Firebase.verifySessionCookie(session);
     const user = await Firebase.client.auth().getUser(decodedToken.uid);
     if (!user) return res.status(401).json({ code: 'UNAUTHORIZED', message: 'unauthorized' });
     req.user = { id: decodedToken.uid};
