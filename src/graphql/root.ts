@@ -9,6 +9,7 @@ import * as kycController from '../controllers/kyc';
 import * as ethWithdrawController from '../controllers/ethWithdraw';
 import * as externalWallet from '../controllers/externalWallet';
 import * as orgController from '../controllers/org';
+import * as firebaseController from '../controllers/firebase';
 
 export const root = {
   JSON: GraphQLJSON,
@@ -78,6 +79,7 @@ export const adminRoot = {
   getExternalAddress: externalWallet.get,
   listExternalAddresses: externalWallet.list,
   getCampaignMetrics: campaignController.adminGetCampaignMetrics,
+  verifySession: firebaseController.getUserRole
 }
 
 export const publicRoot = {

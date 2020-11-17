@@ -83,7 +83,6 @@ export const updateCampaign = async (args: { id: string, name: string, beginDate
 export const listCampaigns = async (args: { open: boolean, skip: number, take: number, scoped: boolean, sort: boolean }, context: { user: any }) => {
     const { open, skip = 0, take = 10, scoped = false, sort = false } = args;
     const { company } = context.user;
-    console.log('Company: ', company);
     const [results, total] = await Campaign.findCampaignsByStatus(open, skip, take, scoped && company, sort);
     return { results: results.map(result => result.asV1()), total };
 }
@@ -147,7 +146,6 @@ export const adminGetHourlyPlatformMetrics = async (args: {filter: DateTrunc, st
     HourlyCampaignMetric.validate.validateHourlyMetricsArgs(args);
     const { filter, startDate, endDate } = args;
     const metrics = await HourlyCampaignMetric.getDateGroupedMetrics(filter, startDate, endDate);
-    console.log('HOURLY METRICS: ', metrics);
     return HourlyCampaignMetric.parseHourlyPlatformMetrics(metrics, filter);
 }
 

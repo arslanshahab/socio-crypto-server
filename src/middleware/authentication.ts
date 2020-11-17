@@ -35,7 +35,7 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
 export const firebaseAuth = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     if (process.env.NODE_ENV === 'development' && req.headers.token === 'Bearer raiinmaker') return next();
-    const session = req.cookies.session;
+    const session = req.cookies.session || '';
     if (!session) return res.status(401).json({ code: 'UNAUTHORIZED', message: 'unauthorized' });
     const decodedToken = await Firebase.verifySessionCookie(session);
     const user = await Firebase.client.auth().getUser(decodedToken.uid);

@@ -215,7 +215,6 @@ export class HourlyCampaignMetric extends BaseEntity {
       const totalDays = (end.getTime() - start.getTime()) / (1000 * 3600 * 24);
       dateTrunc = totalDays > 183? 'month' : 'week';
     }
-    console.log('QUERY: ', this.getDateTruncQuery(dateTrunc, startISO, endISO, campaignId));
     return HourlyCampaignMetric.query(this.getDateTruncQuery(dateTrunc, startISO, endISO, campaignId))
   }
 

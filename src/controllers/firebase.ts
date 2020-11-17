@@ -2,6 +2,7 @@ import {Firebase} from "../clients/firebase";
 import {asyncHandler} from "../util/helpers";
 import {Request, Response} from "express";
 
+const isSecure = process.env.NODE_ENV !== 'development';
 
 export const sessionLogin = asyncHandler(async (req: Request, res: Response) => {
   const { idToken } = req.body;
@@ -14,9 +15,17 @@ export const sessionLogin = asyncHandler(async (req: Request, res: Response) => 
   } else {
     res.status(401).send('Recent sign in required!');
   }
-  const options = {maxAge: expiresIn, httpOnly: true, secure: true};
+  const options = {maxAge: expiresIn, httpOnly: true, secure: isSecure};
   res.cookie('session', sessionCookie, options);
-  res.status(200).json({success: true});
+  return res.status(200).json({success: true});
+});
+
+export const sessionLogout = asyncHandler(async (req: Request, res: Response) => {
+  const sessionCookie = req.cookies.session || '';
+  res.clearCookie('session');
+  const decodedToken = await Firebase.verifySessionCookie(sessionCookie);
+  await Firebase.revokeRefreshToken(decodedToken.sub);
+  return res.status(200).json({success: true});
 });
 
 export const getUserRole = async (args: any, context: { user: any}) => {

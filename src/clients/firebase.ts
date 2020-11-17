@@ -32,15 +32,19 @@ export class Firebase {
   }
 
   public static async createSessionCookie(token: string, expiresIn: number) {
-    await Firebase.client.auth().createSessionCookie(token, {expiresIn});
+    return Firebase.client.auth().createSessionCookie(token, {expiresIn});
   }
 
   public static async verifySessionCookie(cookie: string) {
     return Firebase.client.auth().verifySessionCookie(cookie, true);
   }
 
-  public static verifyToken(token: string) {
+  public static async verifyToken(token: string) {
     return Firebase.client.auth().verifyIdToken(token, true);
+  }
+
+  public static async revokeRefreshToken(token: string) {
+    return Firebase.client.auth().revokeRefreshTokens(token);
   }
 
   public static async sendDailyParticipationUpdate(token: string, campaign: Campaign, coiins: BigNumber, participationScore: BigNumber, rank: number, totalParticipants: number) {
