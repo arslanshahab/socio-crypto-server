@@ -58,7 +58,7 @@ export class ExternalAddress extends BaseEntity {
       .where('external."ethereumAddress" = :address', { address });
     if (admin) {
       query = query.leftJoinAndSelect('external.fundingWallet', 'wallet', 'external."fundingWalletId" = wallet.id');
-      query = query.leftJoin('external.org', 'org', 'org.id = external."orgId"');
+      query = query.leftJoin('wallet.org', 'org', 'org.id = wallet."orgId"');
       query = query.andWhere('org.id = :org', { org: user.id });
     } else {
       query = query.leftJoinAndSelect('external.user', 'user', 'user.id = external."userId"');
@@ -70,7 +70,7 @@ export class ExternalAddress extends BaseEntity {
   public static async getWalletsByAddresses(addresses: string[]) {
     if (addresses.length === 0) return {};
     const normalizedWalletAddresses = addresses.map(address => address.toLowerCase());
-    const wallets = await ExternalAddress.find({ where: { claimed: true, ethereumAddress: In(normalizedWalletAddresses) }, relations: ['fundingWallet', 'fundingWallet.user', 'fundingWallet.user.wallet'] });
+    const wallets = await ExternalAddress.find({ where: { claimed: true, ethereumAddress: In(normalizedWalletAddresses) }, relations: ['fundingWallet'] });
     return wallets.reduce((accum: {[key: string]: ExternalAddress}, curr: ExternalAddress) => {
       if (curr.fundingWallet) accum[curr.ethereumAddress.toLowerCase()] = curr;
       return accum;

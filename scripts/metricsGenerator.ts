@@ -1,11 +1,22 @@
 import { BN } from '../src/util/helpers';
 import {
   checkFrequency,
-  connectDatabase, generateAlgorithm,
-  generateCampaign, generateHourlyCampaignMetric, generateOrg, generateProfile, generateSocialPost,
-  generateUniqueName, generateUser, getDailyFrequencies,
-  getRandomInt, getRandomIntWithinRange, getTotalHours,
-  incrementHour, updateCampaign, updateParticipant,
+  connectDatabase,
+  generateAlgorithm,
+  generateCampaign,
+  generateHourlyCampaignMetric,
+  generateOrgIfNotFound,
+  generateProfile,
+  generateSocialPost,
+  generateUniqueName,
+  generateUser,
+  getDailyFrequencies,
+  getRandomInt,
+  getRandomIntWithinRange,
+  getTotalHours,
+  incrementHour,
+  updateCampaign,
+  updateParticipant,
 } from "./helpers";
 import {Connection} from "typeorm";
 import {Participant} from "../src/models/Participant";
@@ -44,12 +55,13 @@ export interface ParticipantMetrics {
   try {
     console.log('CONNECTING TO DATABASE');
     const connection = await getDatabase();
-    const org = await generateOrg().save();
+    const org = await generateOrgIfNotFound();
     const startDate = new Date();
     startDate.setUTCDate(startDate.getUTCDate()-30);
     const endDate = new Date();
     endDate.setUTCDate(endDate.getUTCDate()+7);
     const previousCampaignNames: string[] = [];
+    const previousUsernames: string[] = [];
     let hourlyPostsArray: SocialPost[] = [];
     for (let campaigns = 0; campaigns < 10; campaigns++) {
       let uniqueName = generateUniqueName();
@@ -57,13 +69,18 @@ export interface ParticipantMetrics {
         uniqueName = generateUniqueName();
       }
       previousCampaignNames.push(uniqueName);
-      const campaign = await generateCampaign(generateUniqueName(), org, startDate, endDate).save();
+      const campaign = await generateCampaign(uniqueName, org, startDate, endDate).save();
       let hourlyMetricsArray: HourlyCampaignMetric[] = [];
       const totalParticipants = Number(getRandomIntWithinRange(100, 200));
       let totalParticipationScore = new BN(0);
       let participantCount = new BN(0);
       for (let participants = 0; participants < totalParticipants; participants++) {
-        const profile = await generateProfile().save();
+        let uniqueUsername = generateUniqueName();
+        while (previousUsernames.find(name => name === uniqueUsername)) {
+          uniqueUsername = generateUniqueName();
+        }
+        previousUsernames.push(uniqueUsername);
+        const profile = await generateProfile(uniqueUsername).save();
         const user = await generateUser(profile).save();
         const participant = await Participant.newParticipant(user, campaign).save();
         const participantMetrics: ParticipantMetrics = {

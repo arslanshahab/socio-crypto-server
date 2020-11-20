@@ -10,6 +10,7 @@ import * as ethWithdrawController from '../controllers/ethWithdraw';
 import * as externalWallet from '../controllers/externalWallet';
 import * as orgController from '../controllers/org';
 import * as firebaseController from '../controllers/firebase';
+import * as fundingController from '../controllers/fundingWallet';
 
 export const root = {
   JSON: GraphQLJSON,
@@ -79,7 +80,10 @@ export const adminRoot = {
   getExternalAddress: externalWallet.get,
   listExternalAddresses: externalWallet.list,
   getCampaignMetrics: campaignController.adminGetCampaignMetrics,
-  verifySession: firebaseController.getUserRole
+  verifySession: firebaseController.getUserRole,
+  attachEthereumAddress: externalWallet.attach,
+  claimEthereumAddress: externalWallet.claim,
+  getFundingWallet: fundingController.get
 }
 
 export const publicRoot = {

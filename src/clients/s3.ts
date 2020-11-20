@@ -141,6 +141,7 @@ export class S3Client {
 
   public static async getLastCheckedBillingBlock() {
     const params: AWS.S3.GetObjectRequest = {Bucket: BUCKET_NAME, Key: 'billingWatcher/lastCheckedBlock'};
+    console.log('S3 Bucket name', BUCKET_NAME);
     try {
       return (await this.client.getObject(params).promise()).Body?.toString();
     } catch (e) {

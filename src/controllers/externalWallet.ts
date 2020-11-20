@@ -22,13 +22,18 @@ export const attach = async (args: { ethereumAddress: string }, context: { user:
   if (await ExternalAddress.findOne({ where: { ethereumAddress: address } })) throw new Error('ethereum address already registered');
   let externalWallet: ExternalAddress;
   if (isOrg) {
-    const fundingWallet = new FundingWallet();
-    fundingWallet.org = user as Org;
-    await fundingWallet.save();
-    externalWallet = ExternalAddress.newFromAttachment(address, fundingWallet);
+    if ((user as Org).fundingWallet) {
+      externalWallet = ExternalAddress.newFromAttachment(address, (user as Org).fundingWallet);
+    } else {
+      const fundingWallet = new FundingWallet();
+      fundingWallet.org = user as Org;
+      await fundingWallet.save();
+      externalWallet = ExternalAddress.newFromAttachment(address, fundingWallet);
+    }
   } else {
     externalWallet = ExternalAddress.newFromAttachment(address, user as User, true);
   }
+  console.log('EXTERNAL WALLET: ', externalWallet);
   await externalWallet.save();
   return externalWallet.asV1();
 }

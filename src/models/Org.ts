@@ -3,7 +3,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  OneToMany,
+  OneToMany, OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn
 } from "typeorm";
@@ -46,7 +46,7 @@ export class Org extends BaseEntity {
   )
   public hourlyMetrics: HourlyCampaignMetric[];
 
-  @OneToMany(
+  @OneToOne(
     _type => FundingWallet,
     wallet => wallet.org
   )
@@ -67,7 +67,9 @@ export class Org extends BaseEntity {
 
   public static async getByAdminId(id: string) {
     return await this.createQueryBuilder('org')
-      .leftJoinAndSelect('org.externalWallets', 'wallet', 'wallet."orgId" = org.id')
+      .leftJoinAndSelect('org.fundingWallet', 'wallet', 'wallet."orgId" = org.id')
+      .leftJoinAndSelect('wallet.transfers', 'transfer', 'transfer."fundingWalletId" = wallet.id')
+      .leftJoinAndSelect('wallet.addresses', 'address', 'address."fundingWalletId" = wallet.id')
       .leftJoin('org.admins', 'admin', 'admin."orgId" = org.id')
       .where('admin.id = :id', { id })
       .getOne();
