@@ -31,8 +31,8 @@ export class SesClient {
           Data: subject
         }
       },
-      ReturnPath: 'support@dragonchain.com',
-      Source: 'support@dragonchain.com'
+      ReturnPath: 'support@raiinmaker.com',
+      Source: 'support@raiinmaker.com'
     }
   }
 

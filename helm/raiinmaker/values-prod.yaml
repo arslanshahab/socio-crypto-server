@@ -7,7 +7,7 @@ pg-bak:
   stage: production
 
 ingress:
-  host: server.api.dragonchain.com
+  host: server.api.raiinmaker.com
 
 data:
   IAM_ROLE: arn:aws:iam::527252880472:role/raiinmaker-production
