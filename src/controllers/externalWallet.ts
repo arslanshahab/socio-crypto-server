@@ -33,7 +33,6 @@ export const attach = async (args: { ethereumAddress: string }, context: { user:
   } else {
     externalWallet = ExternalAddress.newFromAttachment(address, user as User, true);
   }
-  console.log('EXTERNAL WALLET: ', externalWallet);
   await externalWallet.save();
   return externalWallet.asV1();
 }

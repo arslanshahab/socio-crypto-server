@@ -2,7 +2,7 @@ import {Firebase} from "../clients/firebase";
 import {asyncHandler} from "../util/helpers";
 import {Request, Response} from "express";
 
-const isSecure = process.env.NODE_ENV !== 'development';
+const isSecure = process.env.NODE_ENV === 'production';
 
 export const sessionLogin = asyncHandler(async (req: Request, res: Response) => {
   const { idToken } = req.body;

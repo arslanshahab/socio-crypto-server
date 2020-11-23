@@ -132,7 +132,6 @@ export const adminGetHourlyCampaignMetrics = async (args: {campaignId: string, f
     const {company} = checkPermissions({ hasRole: ['admin']}, context);
     HourlyCampaignMetric.validate.validateHourlyMetricsArgs(args);
     const { campaignId, filter, startDate, endDate } = args;
-    console.log('COMPANY: ', company);
     const org = await Org.findOne({where: {name: company}});
     if (!org) throw new Error('org not found');
     const campaign = await Campaign.findOne({ where: { id: campaignId, org }, relations: ['org'] });

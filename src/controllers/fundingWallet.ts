@@ -8,6 +8,5 @@ export const get = async (args: any, context: {user: any}) => {
   if (!admin) throw new Error('user not found');
   const org = await Org.getByAdminId(admin.id);
   if (!org) throw Error('org not found');
-  console.log('FUNDING WALLET', org.fundingWallet.asV1())
   return org.fundingWallet.asV1();
 }
