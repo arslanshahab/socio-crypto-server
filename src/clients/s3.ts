@@ -2,7 +2,7 @@ import AWS from 'aws-sdk';
 import {getBase64FileExtension, deleteFactorFromKycData} from '../util/helpers';
 import { KycUser } from '../types';
 
-const { BUCKET_NAME = "rm-raiinmaker-staging", KYC_BUCKET_NAME = "rm-raiinmaker-kyc-staging" } = process.env;
+const { BUCKET_NAME = "rm-raiinmaker-staging", KYC_BUCKET_NAME = "raiinmaker-kyc-staging" } = process.env;
 
 export class S3Client {
   public static client = new AWS.S3({region: 'us-west-2'});
