@@ -16,7 +16,7 @@ Parameters:
   sslCertificateArn:
     Type: "String"
     Description: "Arn for the SSL cert to attach, defaults to *.api.raiinmaker.com cert"
-    Default: "arn:aws:acm:us-east-1:527252880472:certificate/3bef5355-1780-4b2b-af2f-ef175d9ff5d6"
+    Default: "arn:aws:acm:us-east-1:527252880472:certificate/ef2bae53-4c35-482b-806c-86d6178ef73d"
 
 Conditions:
   isProd:
