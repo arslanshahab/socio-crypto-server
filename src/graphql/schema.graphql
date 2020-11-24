@@ -111,6 +111,7 @@ type Query {
   getWithdrawalsV2(status:String): [AdminWithdrawal]
   adminGetKycByUser(userId:String!): KycUser
   verifySession: String
+  getFundingWallet: FundingWallet
 }
 
 type NotificationSettings {
@@ -118,6 +119,11 @@ type NotificationSettings {
   withdraw: Boolean
   campaignCreate: Boolean
   campaignUpdates: Boolean
+}
+
+type FundingWallet {
+  balance: Float
+  transfers: [Transfer]
 }
 
 type ExternalAddress {

@@ -30,7 +30,7 @@ export class FundingWallet extends BaseEntity {
   @OneToMany(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _type => Transfer,
-    transfer => transfer.wallet,
+    transfer => transfer.fundingWallet,
     { eager: true }
   )
   public transfers: Transfer[];
@@ -47,6 +47,7 @@ export class FundingWallet extends BaseEntity {
       ...this,
       balance: parseFloat(this.balance.toString()),
       pendingBalance: pendingBalance,
+      transfers: this.transfers.map(transfer => transfer.asV1())
     }
   }
 }

@@ -1,5 +1,5 @@
-import {adjectives, animals, colors, uniqueNamesGenerator} from "unique-names-generator";
-import {createConnection, getConnectionOptions, Connection} from "typeorm";
+import {adjectives, animals, uniqueNamesGenerator} from "unique-names-generator";
+import {createConnection, getConnectionOptions} from "typeorm";
 import {Campaign} from "../src/models/Campaign";
 import {BN} from "../src/util/helpers";
 import {
@@ -20,7 +20,7 @@ import {ParticipantMetrics} from "./metricsGenerator";
 
 export const generateUniqueName = () => {
   return uniqueNamesGenerator({
-    dictionaries: [adjectives, colors, animals]
+    dictionaries: [adjectives, animals]
   });
 }
 
@@ -158,13 +158,19 @@ export const generateWallet = (org?: Org, user?: User) => {
   return wallet;
 }
 
-export const generateOrg = () => {
-  const org = new Org();
-  org.name =  'Raiinmaker';
-  org.campaigns = [];
-  org.transfers = [];
-  org.admins = [];
-  org.hourlyMetrics = [];
+export const generateOrgIfNotFound = async (name?: string) => {
+  let org;
+  org = await Org.findOne({where: {name: 'Raiinmaker'}});
+  if (org) console.log('ORG FOUND', org.id);
+  if (!org) {
+    org = new Org();
+    org.name =  name || 'Raiinmaker';
+    org.campaigns = [];
+    org.transfers = [];
+    org.admins = [];
+    org.hourlyMetrics = [];
+    await org.save();
+  }
   return org;
 }
 
@@ -195,9 +201,9 @@ export const generateSocialPost = (
   return post;
 }
 
-export const generateProfile = () => {
+export const generateProfile = (username?: string) => {
   const profile = new Profile();
-  profile.username = generateUniqueName();
+  profile.username = username || generateUniqueName();
   profile.email = `${generateUniqueName()}@gmail.com`;
   profile.interests = generateInterests();
   profile.ageRange = generateAgeRange();
