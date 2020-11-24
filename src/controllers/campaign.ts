@@ -51,7 +51,8 @@ export const createNewCampaign = async (args: { name: string, targetVideo: strin
         campaign.imagePath = await S3Client.setCampaignImage('banner', campaign.id, image);
         await campaign.save();
     }
-    await Firebase.sendCampaignCreatedNotifications(await User.getAllDeviceTokens('campaignCreate'), campaign);
+    const deviceTokens = await User.getAllDeviceTokens('campaignCreate');
+    if (deviceTokens.length > 0) await Firebase.sendCampaignCreatedNotifications(deviceTokens, campaign);
     return campaign.asV1();
 }
 

@@ -159,7 +159,8 @@ export class User extends BaseEntity {
       .leftJoinAndSelect('user.profile', 'profile', 'profile."userId" = user.id')
       .leftJoinAndSelect('user.notificationSettings', 'settings', 'settings."userId" = user.id')
       .select('profile."deviceToken"')
-      .distinctOn(['profile."deviceToken"']);
+      .distinctOn(['profile."deviceToken"'])
+      .where(`profile."deviceToken" != NULL AND profile."deviceToken" != ''`);
     if (action === 'campaignCreate') query = query.andWhere('settings."campaignCreate" = true');
     if (action === 'campaignUpdates') query = query.andWhere('settings."campaignUpdates" = true');
     const values = await query.getRawMany();
