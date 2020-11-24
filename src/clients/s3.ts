@@ -2,7 +2,7 @@ import AWS from 'aws-sdk';
 import {getBase64FileExtension, deleteFactorFromKycData} from '../util/helpers';
 import { KycUser } from '../types';
 
-const { BUCKET_NAME = "rm-raiinmaker-staging", KYC_BUCKET_NAME = "raiinmaker-kyc-staging" } = process.env;
+const { BUCKET_NAME = "rm-raiinmaker-staging", KYC_BUCKET_NAME = "rm-raiinmaker-kyc-staging" } = process.env;
 
 export class S3Client {
   public static client = new AWS.S3({region: 'us-west-2'});
@@ -141,7 +141,6 @@ export class S3Client {
 
   public static async getLastCheckedBillingBlock() {
     const params: AWS.S3.GetObjectRequest = {Bucket: BUCKET_NAME, Key: 'billingWatcher/lastCheckedBlock'};
-    console.log('S3 Bucket name', BUCKET_NAME);
     try {
       return (await this.client.getObject(params).promise()).Body?.toString();
     } catch (e) {
