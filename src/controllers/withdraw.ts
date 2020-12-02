@@ -89,7 +89,6 @@ export const update = async (args: { transferIds: string[], status: 'approve'|'r
     }
     transfers.push(transfer);
   }
-  await makePayouts(payouts);
   for (const userId in userGroups) {
     const group = userGroups[userId];
     if (group.paypalEmail) {
