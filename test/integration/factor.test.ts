@@ -16,6 +16,7 @@ import { Transfer } from '../../src/models/Transfer';
 import { ExternalAddress } from '../../src/models/ExternalAddress';
 import { getDeterministicId, sha256Hash } from '../../src/util/crypto';
 import { Profile } from '../../src/models/Profile';
+import { S3Client } from '../../src/clients/s3';
 
 describe('Dragonfactor Integrations Tests', () => {
   let runningApp: Application;
@@ -45,6 +46,8 @@ describe('Dragonfactor Integrations Tests', () => {
       fullAppTestbed.stub(Paypal, 'initialize');
       fullAppTestbed.stub(Paypal, 'refreshToken');
       fullAppTestbed.stub(Dragonchain, 'ledgerAccountRecoveryAttempt');
+      fullAppTestbed.stub(S3Client, 'deleteUserInfoIfExists');
+      fullAppTestbed.stub(S3Client, 'deleteKycImage');
       Firebase.client = {
         auth: () => {},
       } as admin.app.App;
@@ -103,6 +106,8 @@ describe('Dragonfactor Integrations Tests', () => {
         .post('/v1/dragonfactor/recover')
         .send(getAccountRecoveryRequest(newIdentity, '123456', 'banana'))
         .set('Accepts', 'application/json');
+      console.log(res.body);
+      console.log(res.status);
       expect(res.body).to.deep.equal({ success: true });
     });
     it('should return malformed input when recovery code is not a number', async () => {

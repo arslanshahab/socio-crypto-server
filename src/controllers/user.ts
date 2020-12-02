@@ -10,6 +10,7 @@ import { Profile } from '../models/Profile';
 import { DailyParticipantMetric } from '../models/DailyParticipantMetric';
 import { groupDailyMetricsByUser } from './helpers';
 import {HourlyCampaignMetric} from "../models/HourlyCampaignMetric";
+import { serverBaseUrl } from '../config';
 
 export const participate = async (args: { campaignId: string }, context: { user: any }) => {
     const { id } = context.user;
@@ -21,7 +22,7 @@ export const participate = async (args: { campaignId: string }, context: { user:
     if (await Participant.findOne({ where: { campaign, user } })) throw new Error('user already participating in this campaign');
     const participant = Participant.newParticipant(user, campaign);
     await participant.save();
-    const url = `${campaign.target}${campaign.target.endsWith('/') ? '' : '/'}?referrer=${participant.id}`;
+    const url = `${serverBaseUrl}/v1/referral/${participant.id}`;
     participant.link = await TinyUrl.shorten(url);
     await HourlyCampaignMetric.upsert(campaign, campaign.org, 'participate');
     await participant.save();
