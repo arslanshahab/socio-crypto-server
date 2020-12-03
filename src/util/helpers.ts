@@ -131,3 +131,14 @@ export const generateRandomNonce = () => {
   for (let i = length; i > 0; i--) result += characters[Math.floor(Math.random() * characters.length)];
   return result;
 }
+
+export const paginateList = (items: any[], maxItems = 100) => {
+  const pages = [];
+  let idx = 0;
+  while (idx < items.length) {
+    var nextIndex = (idx + maxItems) < items.length ? (idx + maxItems) : items.length;
+    pages.push(items.slice(idx, nextIndex));
+    idx += maxItems;
+  }
+  return pages;
+}
