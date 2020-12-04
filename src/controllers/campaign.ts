@@ -18,6 +18,7 @@ import { Validator } from '../schemas';
 import { CampaignRequirementSpecs } from '../types';
 import {Org} from "../models/Org";
 import {HourlyCampaignMetric} from "../models/HourlyCampaignMetric";
+import { DailyParticipantMetric } from '../models/DailyParticipantMetric';
 
 const validator = new Validator();
 
@@ -92,10 +93,12 @@ export const deleteCampaign = async (args: { id: string }, context: { user: any 
     const { role, company } = checkPermissions({ hasRole: ['admin', 'manager'] }, context);
     const where: {[key: string]: string} = { id: args.id };
     if (role === 'manager') where['company'] = company;
-    const campaign = await Campaign.findOne({ where, relations: ['participants', 'posts'] });
+    const campaign = await Campaign.findOne({ where, relations: ['participants', 'posts', 'dailyMetrics', 'hourlyMetrics'] });
     if (!campaign) throw new Error('campaign not found');
     if (campaign.posts.length > 0) await SocialPost.delete({ id: In(campaign.posts.map((p: any) => p.id)) });
     await Participant.remove(campaign.participants);
+    await DailyParticipantMetric.remove(campaign.dailyMetrics);
+    await HourlyCampaignMetric.remove(campaign.hourlyMetrics);
     await campaign.remove();
     return campaign.asV1();
 }
