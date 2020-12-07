@@ -154,7 +154,6 @@ export const getWithdrawalsV2 = async (args: { status: string }, context: { user
       uniqueUsers[userId].transfers.push(transfer.asV1());
     }
   }
-  console.log('before return')
   return Object.values(uniqueUsers);
 }
 
