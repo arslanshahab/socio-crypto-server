@@ -192,15 +192,15 @@ export const generateCampaignAuditReport = async (args: { campaignId: string }, 
     }
     const report: {[key:string]: any} = auditReport;
     for (const key in report) {
-        if (key === 'flaggedParticipants') {
-            for (const flagged of report[key]) {
-                for (const value in flagged) {
-                    if(value !== 'participantId') flagged[value] = parseFloat(flagged[value].toString());
-                }
-            }
-            continue;
+      if (key === 'flaggedParticipants') {
+        for (const flagged of report[key]) {
+          for (const value in flagged) {
+            if(value !== 'participantId') flagged[value] = parseFloat(flagged[value].toString());
+          }
         }
-        report[key] = parseFloat(report[key].toString());
+        continue;
+      }
+      report[key] = parseFloat(report[key].toString());
     }
     return auditReport;
 };

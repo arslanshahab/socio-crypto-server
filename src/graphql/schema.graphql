@@ -110,7 +110,7 @@ type Query {
   listExternalAddresses: [ExternalAddress]
   getWithdrawalsV2(status:String): [AdminWithdrawal]
   adminGetKycByUser(userId:String!): KycUser
-  verifySession: String
+  verifySession: JSON
   getFundingWallet: FundingWallet
 }
 
