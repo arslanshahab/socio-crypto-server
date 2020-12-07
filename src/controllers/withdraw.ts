@@ -135,7 +135,9 @@ export const getWithdrawals = async (args: { status: string }, context: { user: 
 }
 
 export const getWithdrawalsV2 = async (args: { status: string }, context: { user: any }) => {
+  console.log('in get withdrawals')
   checkPermissions({ hasRole: ['admin'] }, context);
+  console.log('past permission check')
   const transfers = await Transfer.getWithdrawalsByStatus(args.status);
   const uniqueUsers: {[key: string]: any} = {};
   for (let i = 0; i < transfers.length; i++) {
@@ -154,6 +156,7 @@ export const getWithdrawalsV2 = async (args: { status: string }, context: { user
       uniqueUsers[userId].transfers.push(transfer.asV1());
     }
   }
+  console.log('before return')
   return Object.values(uniqueUsers);
 }
 

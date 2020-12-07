@@ -28,6 +28,9 @@ export const sessionLogout = asyncHandler(async (req: Request, res: Response) =>
   return res.status(200).json({success: true});
 });
 
-export const getUserRole = async (args: any, context: { user: any}) => {
-  return context.user.role ? context.user.role : '';
+export const getUserRole = async (args: any, context: { user: any }) => {
+  return {
+    roll: context.user.role ? context.user.role : null,
+    company: context.user.company ? context.user.company : null,
+  }
 }
