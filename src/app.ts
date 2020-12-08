@@ -48,7 +48,9 @@ export class Application {
         'https://raiinmaker-staging.dragonchain.com',
         'https://mock-raiinmaker-landing.dragonchain.com',
         'https://raiinmaker.com',
-        'https://www.raiinmaker.com'
+        'https://www.raiinmaker.com',
+        'https://seed-staging.raiinmaker.com',
+        'https://seed.raiinmaker.com'
       ],
       methods: ['GET','POST'],
       exposedHeaders: ['x-auth-token'],
