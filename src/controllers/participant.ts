@@ -121,8 +121,11 @@ export const trackClickByLink = asyncHandler(async (req: Request, res: Response)
   if (!participant) return res.status(404).json({ code: 'NOT_FOUND', message: 'participant not found' });
   const campaign = await Campaign.findOne({ where: { id: participant.campaign.id }, relations: ['org'] });
   if (!campaign) return res.status(404).json({ code: 'NOT_FOUND', message: 'campaign not found' });
+  let qualityScore = await QualityScore.findOne({where: {participantId: participant.id}});
+  if (!qualityScore) qualityScore = QualityScore.newQualityScore(participant.id);
+  const multiplier = calculateQualityMultiplier(qualityScore.clicks);
   participant.clickCount = participant.clickCount.plus(new BN(1));
-  const pointValue = campaign.algorithm.pointValues['click'];
+  const pointValue = campaign.algorithm.pointValues['click'].times(multiplier);
   campaign.totalParticipationScore = campaign.totalParticipationScore.plus(pointValue);
   participant.participationScore = participant.participationScore.plus(pointValue);
   await campaign.save();
