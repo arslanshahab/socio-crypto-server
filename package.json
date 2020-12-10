@@ -15,7 +15,8 @@
     "format": "prettier --write 'src/**/*.ts'",
     "test:integration:ci": "docker build . -f ./test.Dockerfile",
     "test:integration": "RATE_LIMIT_MAX=10000000000 PG_PASSWORD=password PG_HOST=127.0.0.1 PG_PORT=5432 PG_DATABASE=postgres PG_USER=postgres NODE_ENV=test mocha -r ts-node/register './test/integration/**/*.test.ts' --exit --timeout 20000",
-    "test:unit": "NODE_ENV=test nyc --reporter=text mocha -r ts-node/register './src/**/*.spec.ts' --grep '#unit' --exit",
+    "test:unit:report": "NODE_ENV=test nyc --reporter=text mocha -r ts-node/register './test/unit/**/*.spec.ts' --grep '#unit' --exit",
+    "test:unit": "NODE_ENV=test mocha -r ts-node/register './test/unit/**/*.spec.ts' --grep '#unit' --exit",
     "test:load:app": "$(npm bin)/artillery run test/load/app.yaml",
     "test:load:tracker": "$(npm bin)/artillery run test/load/actionTracker.yaml",
     "test:built": "NODE_ENV=test mocha 'dist/**/*.spec.js' --exit",
@@ -23,7 +24,8 @@
     "typeorm:cli": "ts-node ./node_modules/typeorm/cli",
     "migration:run": "yarn typeorm:cli migration:run",
     "migration:revert": "yarn typeorm:cli migration:revert",
-    "migration:generate": "yarn typeorm:cli migration:generate"
+    "migration:generate": "yarn typeorm:cli migration:generate",
+    "metrics:generate": "NODE_ENV=script ts-node ./scripts/metricsGenerator.ts"
   },
   "dependencies": {
     "@dragonchain-dev/dragonfactor-auth": "^0.0.11",

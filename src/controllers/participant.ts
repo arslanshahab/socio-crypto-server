@@ -7,10 +7,11 @@ import {Participant} from "../models/Participant";
 import {SocialPost} from "../models/SocialPost";
 import {getTweetById} from '../controllers/social';
 import { getRedis } from '../clients/redis';
-import { BN, asyncHandler } from '../util/helpers';
+import {BN, asyncHandler, calculateQualityMultiplier} from '../util/helpers';
 import { DailyParticipantMetric } from '../models/DailyParticipantMetric';
 import { getDatesBetweenDates, formatUTCDateForComparision } from './helpers';
 import {HourlyCampaignMetric} from "../models/HourlyCampaignMetric";
+import {QualityScore} from "../models/QualityScore";
 
 const { RATE_LIMIT_MAX = '3', RATE_LIMIT_WINDOW = '1m' } = process.env;
 
@@ -39,17 +40,22 @@ export const trackAction = async (args: { participantId: string, action: 'click'
     if (!participant.campaign.isOpen()) throw new Error('campaign is closed');
     const campaign = await Campaign.findOne({ where: { id: participant.campaign.id }, relations: ['org']});
     if (!campaign) throw new Error('campaign not found');
+    let qualityScore = await QualityScore.findOne({where: {participantId: participant.id}});
+    if (!qualityScore) qualityScore = QualityScore.newQualityScore(participant.id);
+    let multiplier;
     switch (args.action) {
         case 'view':
             participant.viewCount = participant.viewCount.plus(new BN(1));
+            multiplier = calculateQualityMultiplier(qualityScore.views);
             break;
         case 'submission':
             participant.submissionCount = participant.submissionCount.plus(new BN(1));
+            multiplier = calculateQualityMultiplier(qualityScore.submissions);
             break;
         default:
             throw new Error("Action not supported");
     }
-    const pointValue = campaign.algorithm.pointValues[args.action];
+    const pointValue = campaign.algorithm.pointValues[args.action].times(multiplier);
     campaign.totalParticipationScore = campaign.totalParticipationScore.plus(pointValue);
     participant.participationScore = participant.participationScore.plus(pointValue);
     await campaign.save();
