@@ -19,9 +19,9 @@ export class EngagementRate {
   shareCount: BigNumber;
   commentCount: BigNumber;
 
-  constructor(participant: Participant) {
+  constructor(participant: Participant, campaign: Campaign) {
     this.participant = participant;
-    this.campaign = participant.campaign;
+    this.campaign = campaign;
     this.user = participant.user;
   }
 

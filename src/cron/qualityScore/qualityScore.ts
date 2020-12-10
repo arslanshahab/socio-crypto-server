@@ -24,7 +24,7 @@ const calculateQualityTier = (deviation: BigNumber, engagement: BigNumber, avera
 }
 
 export const main = async () => {
-  const campaigns = await Campaign.find({relations: ['participants']});
+  const campaigns = await Campaign.listCampaignsByStatus(true, false);
 
   for (const campaign of campaigns) {
     const likesEngagementData: BigNumber[] = []
@@ -35,9 +35,9 @@ export const main = async () => {
     const clickEngagementData: BigNumber[] = [];
     const participantEngagementRates: ParticipantEngagement[] = [];
     for (const participant of campaign.participants) {
-      const {likeRate, commentRate, shareRate, clickRate} = await new EngagementRate(participant).social();
-      const viewRate = new EngagementRate(participant).views();
-      const submissionRate = new EngagementRate(participant).submissions();
+      const {likeRate, commentRate, shareRate, clickRate} = await new EngagementRate(participant, campaign).social();
+      const viewRate = new EngagementRate(participant, campaign).views();
+      const submissionRate = new EngagementRate(participant, campaign).submissions();
       likesEngagementData.push(likeRate)
       sharesEngagementData.push(shareRate)
       commentsEngagementData.push(commentRate)

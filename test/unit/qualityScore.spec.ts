@@ -112,13 +112,13 @@ describe('#unit Quality Score cron', () => {
       campaign,
     })
     const c = await Campaign.findOneOrFail({where: {id: campaign.id}, relations: ['participants', 'posts']});
-    const {likeRate, commentRate, shareRate, clickRate} = await new EngagementRate(c.participants[0]).social();
-    const viewRate = new EngagementRate(c.participants[0]).views();
-    const submissionRate = new EngagementRate(c.participants[0]).submissions();
-    expect(likeRate.toString()).to.equal('2');
-    expect(commentRate.toString()).to.equal('2');
-    expect(shareRate.toString()).to.equal('1.76470588235294117647');
-    expect(clickRate.toString()).to.equal('3.15789473684210526316');
+    const {likeRate, commentRate, shareRate, clickRate} = await new EngagementRate(c.participants[0], c).social();
+    const viewRate = new EngagementRate(c.participants[0], c).views();
+    const submissionRate = new EngagementRate(c.participants[0], c).submissions();
+    expect(likeRate.toString()).to.equal('0.5');
+    expect(commentRate.toString()).to.equal('0.5');
+    expect(shareRate.toString()).to.equal('0.56666666666666666667');
+    expect(clickRate.toString()).to.equal('0.31666666666666666667');
     expect(viewRate.toString()).to.equal('1.9');
     expect(submissionRate.toString()).to.equal('1.26666666666666666667');
   });
@@ -128,7 +128,7 @@ describe('#unit Quality Score cron', () => {
     expect(standardDeviation.toString()).to.equal('21.07828332474919552361');
     expect(average.toString()).to.equal('34.44286');
   });
-  it.only('should calculate quality score and catch outlier', async () => {
+  it('should calculate quality score and catch outlier', async () => {
     const campaign = await createCampaign(runningApp);
     await generateParticipation(runningApp, campaign);
     await generateParticipation(runningApp, campaign);
@@ -146,11 +146,11 @@ describe('#unit Quality Score cron', () => {
     await generateParticipation(runningApp, campaign);
     await cron.main();
     const qualityScore = await QualityScore.findOneOrFail({where: {participantId}});
-    expect(qualityScore.likes.toString()).to.equal(1);
-    expect(qualityScore.views.toString()).to.equal(1);
-    expect(qualityScore.clicks.toString()).to.equal(1);
-    expect(qualityScore.submissions.toString()).to.equal(1);
-    expect(qualityScore.shares.toString()).to.equal(1);
-    expect(qualityScore.comments.toString()).to.equal(1);
+    expect(qualityScore.likes.toString()).to.equal('1');
+    expect(qualityScore.views.toString()).to.equal('1');
+    expect(qualityScore.clicks.toString()).to.equal('1');
+    expect(qualityScore.submissions.toString()).to.equal('1');
+    expect(qualityScore.shares.toString()).to.equal('1');
+    expect(qualityScore.comments.toString()).to.equal('1');
   });
 });

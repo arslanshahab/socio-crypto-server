@@ -160,9 +160,9 @@ export class Campaign extends BaseEntity {
   public static async findCampaignsByStatus(open: boolean, skip: number, take: number, company: string, sort: boolean) {
     let where = '';
     const now = DateUtils.mixedDateToDatetimeString(new Date());
-    if (open !== null && open === true) {
+    if (open !== null && open) {
       where = `("beginDate" <= '${now}' AND "endDate" >= '${now}')`;
-    } else if (open !== null && open === false) {
+    } else if (open !== null && !open) {
       where = `("beginDate" >= '${now}' OR "endDate" <= '${now}')`;
     }
     let query = this.createQueryBuilder('campaign')
@@ -175,6 +175,23 @@ export class Campaign extends BaseEntity {
       .skip(skip)
       .take(take)
       .getManyAndCount();
+  }
+
+  public static async listCampaignsByStatus(open: boolean = true, audited: boolean = false) {
+    let where = '';
+    let query = this.createQueryBuilder('campaign');
+    const now = DateUtils.mixedDateToDatetimeString(new Date());
+    if (open !== null && open) {
+      where = `("beginDate" <= '${now}' AND "endDate" >= '${now}')`;
+    } else if (open !== null && !open) {
+      where = `("beginDate" >= '${now}' OR "endDate" <= '${now}')`;
+    }
+    return query
+      .where(where)
+      .andWhere('"audited"=:audited', {audited})
+      .leftJoinAndSelect('campaign.participants', 'participant', 'participant."campaignId" = campaign.id')
+      .leftJoinAndSelect('participant.user', 'user', 'user.id = participant."userId"')
+      .getMany()
   }
 
   public static async findCampaignById(id: string, company: string) {
