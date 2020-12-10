@@ -1,5 +1,6 @@
 import {Request} from 'express';
 import { BigNumber } from 'bignumber.js';
+import {Participant} from "./models/Participant";
 
 export interface FactorGeneration {
   name: string;
@@ -186,4 +187,14 @@ export interface GraphApiInputParameters {
 
 export interface FacebookAuth {
   accessToken: string;
+}
+
+export interface ParticipantEngagement {
+  participantId: string;
+  shareRate: BigNumber;
+  likeRate: BigNumber;
+  commentRate: BigNumber;
+  viewRate: BigNumber;
+  submissionRate: BigNumber;
+  clickRate: BigNumber;
 }

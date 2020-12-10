@@ -176,6 +176,21 @@ export class User extends BaseEntity {
     return new BN(sum || 0);
   }
 
+  public static async getUserTotalSocialEngagement(userId: string, socialType: string = 'twitter') {
+    const {likeCount, shareCount, commentCount} = await this.createQueryBuilder('user')
+      .leftJoin('user.posts', 'post')
+      .where('user.id = :userId AND post."userId" = user.id', {userId})
+      .andWhere('post.type = :socialType', {socialType})
+      .select('SUM(CAST(post.likes AS int)) as "likeCount", SUM(CAST(post.shares AS int)) as "shareCount", SUM(CAST(post.comments AS int)) as "commentCount"')
+      .getRawOne()
+
+    return {
+      likeCount: likeCount || 0,
+      shareCount: shareCount || 0,
+      commentCount: commentCount || 0
+    }
+  }
+
   public static async getUser(id: string, graphqlQuery: FieldNode|undefined): Promise<User|undefined> {
     let query = this.createQueryBuilder('user');
     if (graphqlQuery) {

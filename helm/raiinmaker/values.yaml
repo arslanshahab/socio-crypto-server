@@ -2,8 +2,6 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-replicaCount: 1
-
 image:
   repository: 527252880472.dkr.ecr.us-west-1.amazonaws.com/raiinmaker
   tag: staging-0.0.1
@@ -28,6 +26,7 @@ cron:
     social: '0 * * * *' # At minute 0 every hour
     daily: '0 0 * * *' # At minute 0 every day
     coiinWatcher: '*/5 * * * *'
+    qualityScore: '0 * * * *' # At minute 0 every hour
 
 # up server replica count
 replicaCount: 2

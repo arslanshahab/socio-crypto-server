@@ -1,4 +1,12 @@
-import {BaseEntity, Entity, Column, ManyToOne, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn} from 'typeorm';
+import {
+  BaseEntity,
+  Entity,
+  Column,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { Campaign } from './Campaign';
 import { User } from './User';
 import { BigNumber } from 'bignumber.js';

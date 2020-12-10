@@ -6,7 +6,7 @@ import {
   generateCampaign,
   generateHourlyCampaignMetric,
   generateOrgIfNotFound,
-  generateProfile,
+  generateProfile, generateSocialLink,
   generateSocialPost,
   generateUniqueName,
   generateUser,
@@ -34,7 +34,7 @@ let dbConn: Connection
 const CHUNK_VALUE = 9000;
 
 /**
- * Temporarily disable error: "Conversion to primitive type is prohibited" in /src/utils/helpers before running this script
+ * RUN COMMAND: yarn metrics:generate
  */
 
 const getDatabase = async () => {
@@ -81,7 +81,8 @@ export interface ParticipantMetrics {
         }
         previousUsernames.push(uniqueUsername);
         const profile = await generateProfile(uniqueUsername).save();
-        const user = await generateUser(profile).save();
+        const socialLink = await generateSocialLink().save();
+        const user = await generateUser(profile, socialLink).save();
         const participant = await Participant.newParticipant(user, campaign).save();
         const participantMetrics: ParticipantMetrics = {
           clickCount: new BN(0),

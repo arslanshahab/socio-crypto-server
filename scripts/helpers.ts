@@ -1,7 +1,7 @@
 import {adjectives, animals, uniqueNamesGenerator} from "unique-names-generator";
 import {createConnection, getConnectionOptions} from "typeorm";
 import {Campaign} from "../src/models/Campaign";
-import {BN} from "../src/util/helpers";
+import {BN, generateRandomNumber} from "../src/util/helpers";
 import {
   getBeginDate,
   getEndDate
@@ -17,6 +17,7 @@ import {SocialPost} from "../src/models/SocialPost";
 import { v4 as uuidv4 } from 'uuid';
 import {Participant} from "../src/models/Participant";
 import {ParticipantMetrics} from "./metricsGenerator";
+import {SocialLink} from "../src/models/SocialLink";
 
 export const generateUniqueName = () => {
   return uniqueNamesGenerator({
@@ -213,7 +214,7 @@ export const generateProfile = (username?: string) => {
   return profile;
 }
 
-export const generateUser = (profile: Profile, wallet?: Wallet) => {
+export const generateUser = (profile: Profile, socialLink: SocialLink, wallet?: Wallet) => {
   const user = new User();
   user.identityId = 'banana';
   user.profile = profile;
@@ -221,10 +222,19 @@ export const generateUser = (profile: Profile, wallet?: Wallet) => {
   user.posts = [];
   user.campaigns = [];
   user.wallet = wallet || generateWallet();
-  user.socialLinks = [];
+  user.socialLinks = [socialLink];
   user.factorLinks = [];
   user.twentyFourHourMetrics = [];
   return user;
+}
+
+export const generateSocialLink = () => {
+  const link = new SocialLink();
+  link.type = 'twitter';
+  link.apiKey = 'bacon';
+  link.apiSecret = 'salad';
+  link.followerCount = generateRandomNumber();
+  return link;
 }
 
 export const generateHourlyCampaignMetric = (

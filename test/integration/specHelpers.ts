@@ -10,12 +10,13 @@ import { BN } from '../../src/util/helpers';
 import { Profile } from '../../src/models/Profile';
 import { DailyParticipantMetric } from '../../src/models/DailyParticipantMetric';
 import { ExternalAddress } from '../../src/models/ExternalAddress';
-// import { FundingWallet } from '../../src/models/FundingWallet';
 import { getDeterministicId, sha256Hash } from '../../src/util/crypto';
 import { NotificationSettings } from '../../src/models/NotificationSettings';
 import {Application} from "../../src/app";
 import {Org} from "../../src/models/Org";
 import {SocialPost} from "../../src/models/SocialPost";
+import {SocialLink} from "../../src/models/SocialLink";
+import {getRandomIntWithinRange} from "../../scripts/helpers";
 
 export const createCampaign = async (runningApp: Application, options?: { [key: string]: any } | any, ) => {
   const campaign = new Campaign();
@@ -74,13 +75,14 @@ export const createParticipant = async (runningApp: Application, options?: { [ke
 
 export const createSocialPost = async (runningApp: Application, options?: { [key: string]: any } | any) => {
   const post = new SocialPost();
+  post.id = uuidv4();
   post.type = getValue(['type'], options, 'twitter');
   post.likes = getValue(['likes'], options, new BN(10));
   post.shares = getValue(['shares'], options, new BN(10));
   post.comments = getValue(['comments'], options, new BN(10));
   post.participantId = getValue(['participantId'], options, 'bacon');
-  post.user = getValue(['user'], options, await createUser(runningApp));
-  post.campaign = getValue(['campaign'], await createCampaign(runningApp));
+  post.user = getValue(['user'], options) || await createUser(runningApp);
+  post.campaign = getValue(['campaign'], options) || await createCampaign(runningApp);
   return await runningApp.databaseConnection.createEntityManager().save(post);
 }
 
@@ -108,6 +110,16 @@ export const createNotificationSettings = async (runningApp: Application, option
   notificationSettings.campaignCreate = getValue(['campaignCreate'], options, true);
   notificationSettings.campaignUpdates = getValue(['campaignUpdates'], options, true);
   return await runningApp.databaseConnection.createEntityManager().save(notificationSettings);
+}
+
+export const createSocialLink = async (runningApp: Application, options?: { [key: string]: any } | any) => {
+  const socialLink = new SocialLink();
+  socialLink.type = getValue(['type'], options) || 'twitter';
+  socialLink.apiSecret = getValue(['apiSecret'], options) || 'banana';
+  socialLink.apiKey = getValue(['apiKey'], options) || 'bacon';
+  socialLink.followerCount = getValue(['followerCount'], options) || 100;
+  socialLink.user = getValue(['user'], options) || await createUser(runningApp, getValue(['userOptions'], options));
+  return await runningApp.databaseConnection.createEntityManager().save(socialLink);
 }
 
 export const createUser = async (runningApp: Application, options?: { [key: string]: any } | any) => {
@@ -309,4 +321,42 @@ export const createIdentity = (): IdentityKeyPair => {
   const keypair = newKeypair();
   keypair.sign = (hashedMessage: any) => Buffer.from(secp256k1.ecdsaSign(Buffer.from(hashedMessage, 'base64'), Buffer.from(keypair.privateKey, 'base64')).signature).toString('base64');
   return keypair;
+}
+
+
+export const generateParticipation = async (runningApp: Application, campaign: Campaign, outlier: boolean = false) => {
+  const clickCount = outlier ? getRandomIntWithinRange(100000, 500000) : getRandomIntWithinRange(10, 1000);
+  const viewCount = getRandomIntWithinRange(10, 1000);
+  const submissionCount = getRandomIntWithinRange(10, 1000);
+  const likes = outlier ? getRandomIntWithinRange(100000, 500000) : getRandomIntWithinRange(10, 1000);
+  const shares = outlier ? getRandomIntWithinRange(100000, 500000) : getRandomIntWithinRange(10, 1000);
+  const comments = outlier ? getRandomIntWithinRange(100000, 500000) : getRandomIntWithinRange(10, 1000);
+  const user = await createUser(runningApp);
+  await createSocialLink(runningApp, {user, followerCount: 100});
+  const participant = await createParticipant(runningApp, {user, campaign, clickCount, viewCount, submissionCount});
+  await createSocialPost(runningApp, {
+    likes,
+    shares,
+    comments,
+    participantId: participant.id,
+    user,
+    campaign,
+  })
+  await createSocialPost(runningApp, {
+    likes,
+    shares,
+    comments,
+    participantId: participant.id,
+    user,
+    campaign,
+  })
+  await createSocialPost(runningApp, {
+    likes,
+    shares,
+    comments,
+    participantId: participant.id,
+    user,
+    campaign,
+  })
+  return participant.id;
 }
