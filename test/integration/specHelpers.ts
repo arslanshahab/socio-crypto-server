@@ -19,7 +19,6 @@ import {SocialLink} from "../../src/models/SocialLink";
 import {getRandomIntWithinRange} from "../../scripts/helpers";
 
 export const createCampaign = async (runningApp: Application, options?: { [key: string]: any } | any, ) => {
-  console.log('CREATING CAMPAIGN')
   const campaign = new Campaign();
   campaign.name = getValue(['name'], options,  'bananaCampaign')
   campaign.algorithm = getAlgorithm(getValue(['algorithm'], options));
