@@ -13,7 +13,7 @@ import { v4 as uuidv4 } from 'uuid';
 import * as EthWithdraw from "./ethWithdraw";
 import { Firebase } from '../clients/firebase';
 
-export const start = async (args: { withdrawAmount: number, ethAddress?: string, paypalAddress?: string }, context: { user: any }) => {
+export const start = async (args: { withdrawAmount: number, ethAddress?: string }, context: { user: any }) => {
   if (args.withdrawAmount <= 0) throw new Error('withdraw amount must be a positive number');
   const { id } = context.user;
   const user = await User.findOneOrFail({ where: { identityId: id } });
@@ -21,9 +21,17 @@ export const start = async (args: { withdrawAmount: number, ethAddress?: string,
   const pendingBalance = await Transfer.getTotalPendingByWallet(wallet);
   const totalWithdrawThisYear = await Transfer.getTotalAnnualWithdrawalByWallet(wallet);
   // TODO: check if they have W9 on file
+  let paypalEmail;
+  if (!args.ethAddress) {
+    let kycData;
+    try { kycData = await S3Client.getUserObject(user.id) } catch (_) { kycData = null; }
+    if (kycData) {
+      paypalEmail = kycData['paypalEmail'];
+    }
+  }
   if (((totalWithdrawThisYear.plus(args.withdrawAmount)).multipliedBy(0.1)).gte(600) || ((pendingBalance.plus(args.withdrawAmount)).multipliedBy(0.1)).gte(600)) throw new Error('reached max withdrawals per year');
   if (((wallet.balance.minus(pendingBalance)).minus(args.withdrawAmount)).lt(0)) throw new Error('wallet does not have required balance for this withdraw');
-  const transfer = Transfer.newFromWithdraw(wallet, new BN(args.withdrawAmount), args.ethAddress, args.paypalAddress);
+  const transfer = Transfer.newFromWithdraw(wallet, new BN(args.withdrawAmount), args.ethAddress, paypalEmail);
   await transfer.save();
   return transfer.asV1();
 }
@@ -46,7 +54,6 @@ export const update = async (args: { transferIds: string[], status: 'approve'|'r
         else rejected[user.id].total.plus(transfer.amount);
       }
     } else {
-      console.log(0);
       switch (args.status) {
         case 'approve':
           const user = transfer.wallet.user;
