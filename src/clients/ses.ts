@@ -74,7 +74,7 @@ export class SesClient {
     const template = SesClient.getTemplate(title, text, 'New Raiinmaker User', email);
     try {
       const data = await SesClient.client.sendEmail(template).promise();
-      console.log(`Email sent to ${email} to confirm creation of brand account on Raiinmaker`);
+      console.log(`Email sent to ${email} to confirm creation of brand account on Raiinmaker: ${data}`);
       return true;
     } catch (e) {
       console.error('Error occurred while sending email')
