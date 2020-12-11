@@ -75,7 +75,7 @@ export const calculateParticipantPayoutFromDailyParticipation = (currentCampaign
 }
 
 export const performTransfer = async (walletId: string, amount: string, action: 'credit' | 'debit') => {
-  if (BigInt(amount) <= BigInt(0)) throw new Error("Amount must be a positive number");
+  if (new BN(amount).lte(0)) throw new Error("Amount must be a positive number");
   return getConnection().transaction(async transactionalEntitymanager => {
     const wallet = await transactionalEntitymanager.findOne(Wallet, { where: { id: walletId } });
     if (!wallet) throw new Error('wallet not found');
