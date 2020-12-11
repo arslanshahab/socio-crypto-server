@@ -45,7 +45,7 @@ export const firebaseAuth = async (req: AuthRequest, res: Response, next: NextFu
       ...req.user,
       role: user.customClaims.role,
       company: user.customClaims.company,
-      tempPass: user.customClaims.tempPass,
+      tempPass: user.customClaims.tempPass || false,
     };
     return next();
   } catch (e) {
