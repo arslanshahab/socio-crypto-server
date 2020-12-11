@@ -10,10 +10,11 @@ const { REWARD_REDEMPTION_EMAIL_RECIPIENT = "alex@dragonchain.com" } = process.e
 export class SesClient {
   public static client = new AWS.SES();
 
-  public static getTemplate(title: string, body: string, subject: string) {
+  public static getTemplate(title: string, body: string, subject: string, recipient?: string) {
+    recipient = recipient ? recipient : REWARD_REDEMPTION_EMAIL_RECIPIENT;
     return {
       Destination: {
-        ToAddresses: [REWARD_REDEMPTION_EMAIL_RECIPIENT]
+        ToAddresses: [recipient]
       },
       Message: {
         Body: {
@@ -48,6 +49,36 @@ export class SesClient {
     } catch (error) {
       console.error('Error occurred while sending email')
       console.error(error);
+      return false;
+    }
+  }
+
+  public static async sendNewOrgConfirmationEmail(orgName: string, email: string, tempPassword: string) {
+    const title = `Your brand ${orgName} has been created on Raiinmaker`;
+    const text = `Please login with email: ${email} and temporary password ${tempPassword}. Please change password upon initial login\n`;
+    const template = SesClient.getTemplate(title, text, 'New Brand Account on Raiinmaker!', email);
+    try {
+      const data = await SesClient.client.sendEmail(template).promise();
+      console.log(`Email sent to ${email} to confirm creation of brand account on Raiinmaker: ${data}`);
+      return true;
+    } catch (e) {
+      console.error('Error occurred while sending email')
+      console.error(e);
+      return false;
+    }
+  }
+
+  public static async sendNewUserConfirmationEmail(orgName: string, email: string, tempPassword: string) {
+    const title = `Welcome to your new Raiinmaker account for ${orgName}`;
+    const text = `Please login with email: ${email} and temporary password ${tempPassword}. Please change password upon initial login`;
+    const template = SesClient.getTemplate(title, text, 'New Raiinmaker User', email);
+    try {
+      const data = await SesClient.client.sendEmail(template).promise();
+      console.log(`Email sent to ${email} to confirm creation of brand account on Raiinmaker`);
+      return true;
+    } catch (e) {
+      console.error('Error occurred while sending email')
+      console.error(e);
       return false;
     }
   }

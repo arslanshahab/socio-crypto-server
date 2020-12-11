@@ -41,7 +41,12 @@ export const firebaseAuth = async (req: AuthRequest, res: Response, next: NextFu
     const user = await Firebase.client.auth().getUser(decodedToken.uid);
     if (!user) return res.status(401).json({ code: 'UNAUTHORIZED', message: 'unauthorized' });
     req.user = { id: decodedToken.uid, method: 'firebase'};
-    if (user.customClaims) req.user = {...req.user, role: user.customClaims.role, company: user.customClaims.org};
+    if (user.customClaims) req.user = {
+      ...req.user,
+      role: user.customClaims.role,
+      company: user.customClaims.company,
+      tempPass: user.customClaims.tempPass,
+    };
     return next();
   } catch (e) {
     return res.status(401).json({ code: 'UNAUTHORIZED', message: 'unauthorized' });

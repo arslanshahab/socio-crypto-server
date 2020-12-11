@@ -43,8 +43,8 @@ export class Firebase {
     }
   }
 
-  public static setCustomUserClaims(uid: string, orgName: string, role: 'manager' | 'admin') {
-    return Firebase.client.auth().setCustomUserClaims(uid, {org: orgName, role})
+  public static async setCustomUserClaims(uid: string, orgName: string, role: 'manager' | 'admin', tempPass: boolean) {
+    return Firebase.client.auth().setCustomUserClaims(uid, {company: orgName, role, tempPass})
   }
 
   public static async createSessionCookie(token: string, expiresIn: number) {
@@ -61,6 +61,14 @@ export class Firebase {
 
   public static async revokeRefreshToken(token: string) {
     return Firebase.client.auth().revokeRefreshTokens(token);
+  }
+
+  public static async createNewUser(email: string, password: string) {
+    return Firebase.client.auth().createUser({email, password})
+  }
+
+  public static async updateUserPassword(uid: string, password: string) {
+    return Firebase.client.auth().updateUser(uid, {password})
   }
 
   public static async sendDailyParticipationUpdate(token: string, campaign: Campaign, coiins: BigNumber, participationScore: BigNumber, rank: number, totalParticipants: number) {

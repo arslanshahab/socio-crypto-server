@@ -89,7 +89,11 @@ export const adminRoot = {
   verifySession: firebaseController.getUserRole,
   attachEthereumAddress: externalWallet.attach,
   claimEthereumAddress: externalWallet.claim,
-  getFundingWallet: fundingController.get
+  getFundingWallet: fundingController.get,
+  listOrgs: orgController.listOrgs,
+  updatePassword: firebaseController.updateUserPassword,
+  newUser: orgController.newUser,
+  listEmployees: orgController.listEmployees,
 }
 
 export const publicRoot = {

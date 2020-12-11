@@ -10,6 +10,9 @@ export class Admin extends BaseEntity {
   @Column()
   public firebaseId: string;
 
+  @Column()
+  public name: string;
+
   @ManyToOne(
     _type => User,
     user => user.admins
@@ -21,4 +24,18 @@ export class Admin extends BaseEntity {
     org => org.admins
   )
   public org: Org;
+
+  public asV1() {
+    return {
+      name: this.name
+    }
+  }
+
+  public static async listAdminsByOrg (orgId: string, skip: number, take: number) {
+    return await this.createQueryBuilder('admin')
+      .where('admin."orgId" = :orgId', {orgId})
+      .skip(skip)
+      .take(take)
+      .getMany()
+  }
 }

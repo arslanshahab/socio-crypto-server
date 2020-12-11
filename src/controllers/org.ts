@@ -4,19 +4,26 @@ import {Org} from "../models/Org";
 import {checkPermissions} from "../middleware/authentication";
 import {HourlyCampaignMetric} from "../models/HourlyCampaignMetric";
 import { FundingWallet } from '../models/FundingWallet';
+import {SesClient} from "../clients/ses";
 
-export const newOrg = async (args: {orgName: string, adminName: string}, context: {user: any}) => {
-  const { orgName } = args;
-  const { user } = context;
-  await Firebase.setCustomUserClaims(user.id, orgName, 'admin');
-  const admin = new Admin();
-  const fundingWallet = new FundingWallet();
-  admin.firebaseId = user.id;
-  await admin.save();
-  const org = Org.newOrg(orgName, [admin]);
+export const newOrg = async (args: {orgName: string, email: string, name: string}, context: {user: any}) => {
+  if (context.user.company !== 'raiinmaker') throw new Error('forbidden');
+  const { orgName, email, name } = args;
+  const orgNameToLower = orgName.toLowerCase();
+  const password = Math.random().toString(16).substr(2, 15);
+  const user = await Firebase.createNewUser(email, password);
+  await Firebase.setCustomUserClaims(user.uid, orgNameToLower, 'admin', true);
+  const org = Org.newOrg(orgNameToLower);
   await org.save();
+  const admin = new Admin();
+  admin.firebaseId = user.uid;
+  admin.org = org;
+  admin.name = name;
+  await admin.save();
+  const fundingWallet = new FundingWallet();
   fundingWallet.org = org;
   await fundingWallet.save();
+  await SesClient.sendNewOrgConfirmationEmail(orgName, email, password);
   return org;
 };
 
@@ -25,4 +32,41 @@ export const getHourlyOrgMetrics = async (args: any, context: {user: any}) => {
   const org = await Org.findOne({where: {name: company}});
   if (!org) throw new Error('org not found');
   return await HourlyCampaignMetric.getSortedByOrgId(org.id);
+}
+
+export const listOrgs = async (args: {skip: number, take: number}, context: {user: any}) => {
+  if (context.user.company !== 'raiinmaker') throw new Error('forbidden');
+  const { skip = 0, take = 10 } = args;
+  const orgs = await Org.listOrgs(skip, take);
+  return orgs.map(org => org.asV1());
+}
+
+export const newUser = async (args: {email: string, name: string}, context: {user: any}) => {
+  const {company} = checkPermissions({hasRole: ['admin']}, context);
+  const {email, name} = args;
+  const password = Math.random().toString(16).substr(2, 15);
+  try {
+    const user = await Firebase.createNewUser(email, password);
+    await Firebase.setCustomUserClaims(user.uid, company, 'manager', true);
+    const org = await Org.findOne({where: {name: company}});
+    if (!org) throw new Error('org not found');
+    const admin = new Admin();
+    admin.firebaseId = user.uid;
+    admin.org = org;
+    admin.name = name;
+    await admin.save();
+    console.log(await SesClient.sendNewUserConfirmationEmail(org.name, email, password))
+    return true;
+  } catch (e) {
+    throw new Error(e);
+  }
+}
+
+export const listEmployees = async (args: {skip: number, take: number}, context: {user: any}) => {
+  const {company} = checkPermissions({hasRole: ['admin']}, context);
+  const {skip = 0, take = 10} = args;
+  const org = await Org.findOne({where: {name: company}});
+  if (!org) throw new Error('org not found');
+  const admins = await Admin.listAdminsByOrg(org.id, skip, take);
+  return admins.map(admin => admin.asV1());
 }
