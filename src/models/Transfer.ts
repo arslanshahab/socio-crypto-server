@@ -35,6 +35,9 @@ export class Transfer extends BaseEntity {
   @Column({nullable: true})
   public ethAddress: string;
 
+  @Column({ nullable: true })
+  public paypalAddress: string;
+
   @Column({nullable: true})
   public transactionHash: string;
 
@@ -102,6 +105,16 @@ export class Transfer extends BaseEntity {
       .getMany();
   }
 
+  public static async getAuditedWithdrawals(): Promise<Transfer[]> {
+    return this.createQueryBuilder('transfer')
+      .leftJoinAndSelect('transfer.wallet', 'wallet', 'wallet.id = transfer."walletId"')
+      .leftJoinAndSelect('wallet.user', 'user', 'user.id = wallet."userId"')
+      .leftJoinAndSelect('user.profile', 'profile', 'profile."userId" = user.id')
+      .where(`transfer.action = 'withdraw' AND transfer."withdrawStatus" = 'approved' OR transfer."withdrawStatus" = 'rejected'`)
+      .orderBy('transfer."createdAt"', 'ASC')
+      .getMany();
+  }
+
   public static newFromCampaignPayout(wallet: Wallet, campaign: Campaign, amount: BigNumber): Transfer {
     const transfer = new Transfer();
     transfer.action = 'transfer';
@@ -111,13 +124,14 @@ export class Transfer extends BaseEntity {
     return transfer;
   }
 
-  public static newFromWithdraw(wallet: Wallet, amount: BigNumber, ethAddress?: string): Transfer {
+  public static newFromWithdraw(wallet: Wallet, amount: BigNumber, ethAddress?: string, paypalAddress?: string): Transfer {
     const transfer = new Transfer();
     transfer.amount = amount;
     transfer.action = 'withdraw';
     transfer.wallet = wallet;
     transfer.withdrawStatus = 'pending';
     if (ethAddress) transfer.ethAddress = ethAddress;
+    if (paypalAddress) transfer.paypalAddress = paypalAddress;
     return transfer;
   }
 

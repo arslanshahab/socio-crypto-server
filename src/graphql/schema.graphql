@@ -45,7 +45,7 @@ type Mutation {
   removeFactorLink(factorId:String!): User
   registerKyc(userKyc:JSON!): KycUser
   updateKyc(user: JSON!): KycUser
-  initiateWithdraw(withdrawAmount:Float!, ethAddress:String): Transfer
+  initiateWithdraw(withdrawAmount:Float!, ethAddress:String, paypalAddress:String): Transfer
   updateWithdrawStatus(transferIds:[String]!,status:String!): [Transfer]
   setRecoveryCode(code:Int!): User
   updateKycStatus(userId:String!,status:String!): User
@@ -109,6 +109,7 @@ type Query {
   getExternalAddress(ethereumAddress:String!): ExternalAddress
   listExternalAddresses: [ExternalAddress]
   getWithdrawalsV2(status:String): [AdminWithdrawal]
+  getWithdrawalHistory: [Transfer]
   adminGetKycByUser(userId:String!): KycUser
   verifySession: JSON
   getFundingWallet: FundingWallet
@@ -212,6 +213,7 @@ type Transfer {
   action: String
   withdrawStatus: String
   ethAddress: String
+  paypalAddress: String
   campaign: Campaign
   createdAt: String
   updatedAt: String
