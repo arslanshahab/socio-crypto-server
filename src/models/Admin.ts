@@ -10,7 +10,7 @@ export class Admin extends BaseEntity {
   @Column()
   public firebaseId: string;
 
-  @Column()
+  @Column({nullable: false, default: 'raiinmaker'})
   public name: string;
 
   @ManyToOne(
