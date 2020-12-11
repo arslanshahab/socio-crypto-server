@@ -58,10 +58,15 @@ export class Org extends BaseEntity {
   @UpdateDateColumn()
   public updatedAt: Date;
 
-  public static newOrg(name: string, admin: Admin[]){
+  public asV1() {
+    return {
+      name: this.name
+    }
+  }
+
+  public static newOrg(name: string){
     const org = new Org();
     org.name = name;
-    org.admins = admin;
     return org;
   }
 
@@ -73,5 +78,12 @@ export class Org extends BaseEntity {
       .leftJoin('org.admins', 'admin', 'admin."orgId" = org.id')
       .where('admin.id = :id', { id })
       .getOne();
+  }
+
+  public static async listOrgs (skip: number, take: number) {
+    return await this.createQueryBuilder('org')
+      .skip(skip)
+      .take(take)
+      .getMany()
   }
 }

@@ -8,6 +8,9 @@ export const sessionLogin = asyncHandler(async (req: Request, res: Response) => 
   const { idToken } = req.body;
   let sessionCookie;
   const decodedToken = await Firebase.verifyToken(idToken);
+  const user = await Firebase.client.auth().getUser(decodedToken.uid);
+  if (!user.customClaims) return res.status(401).json({ code: 'UNAUTHORIZED', message: 'unauthorized' });
+  if (user.customClaims.tempPass === true) return res.status(200).json({resetPass: true});
   const expiresIn = 60 * 60 * 24 * 5 * 1000;
   // Only process if the user just signed in in the last 5 minutes.
   if (new Date().getTime() / 1000 - decodedToken.auth_time < 5 * 60) {
@@ -17,6 +20,17 @@ export const sessionLogin = asyncHandler(async (req: Request, res: Response) => 
   }
   const options = {maxAge: expiresIn, httpOnly: true, secure: isSecure};
   res.cookie('session', sessionCookie, options);
+  return res.status(200).json({resetPass: false});
+});
+
+export const updateUserPassword = asyncHandler(async (req: Request, res: Response) => {
+  const { idToken, password } = req.body;
+  const decodedToken = await Firebase.verifyToken(idToken);
+  if (!decodedToken) return res.status(401).json({ code: 'UNAUTHORIZED', message: 'unauthorized' });
+  const user = await Firebase.client.auth().getUser(decodedToken.uid);
+  if (!user.customClaims) return res.status(401).json({ code: 'UNAUTHORIZED', message: 'unauthorized' });
+  await Firebase.updateUserPassword(user.uid, password);
+  await Firebase.setCustomUserClaims(user.uid, user.customClaims.company, user.customClaims.role, false);
   return res.status(200).json({success: true});
 });
 
@@ -30,7 +44,8 @@ export const sessionLogout = asyncHandler(async (req: Request, res: Response) =>
 
 export const getUserRole = async (args: any, context: { user: any }) => {
   return {
-    roll: context.user.role ? context.user.role : null,
+    role: context.user.role ? context.user.role : null,
     company: context.user.company ? context.user.company : null,
+    tempPass: context.user.tempPass ? context.user.tempPass : null,
   }
 }

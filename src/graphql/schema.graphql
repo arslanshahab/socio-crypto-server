@@ -75,8 +75,9 @@ type Mutation {
     campaignCreate:Boolean,
     campaignUpdates:Boolean
   ): User
-  newOrg(orgName: String!): JSON
-  newEmployee(name: String!, role: String!): JSON
+  newOrg(orgName: String!, email: String!, name: String!): JSON
+  newUser(name: String!, email: String!): Boolean
+  updatePassword(password: String!): Boolean
 }
 
 type Query {
@@ -112,6 +113,16 @@ type Query {
   adminGetKycByUser(userId:String!): KycUser
   verifySession: JSON
   getFundingWallet: FundingWallet
+  listOrgs(skip: Int, take: Int): [Org]
+  listEmployees: [Employee]
+}
+
+type Org {
+  name: String
+}
+
+type Employee {
+  name: String
 }
 
 type NotificationSettings {

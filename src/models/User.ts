@@ -247,4 +247,3 @@ export class User extends BaseEntity {
     return query.getOne();
   }
 }
-
