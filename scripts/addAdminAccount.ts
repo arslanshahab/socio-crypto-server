@@ -11,7 +11,7 @@ const EMAIL = process.env.EMAIL || 'testing@raiinmaker.com';
 const PASSWORD = process.env.PASSWORD || 'raiinmaker';
 const ORG_NAME = process.env.ORG_NAME || 'raiinmaker';
 const ACTION = process.env.ACTION || 'create';
-const TEMP_PASSWORD = true;
+const TEMP_PASSWORD = false;
 
 let dbConn: Connection
 
