@@ -83,6 +83,7 @@ export const adminRoot = {
   listExternalAddresses: externalWallet.list,
   getCampaignMetrics: campaignController.adminGetCampaignMetrics,
   getWithdrawalsV2: withdrawController.getWithdrawalsV2,
+  getWithdrawalHistory: withdrawController.getWithdrawalHistory,
   updateWithdrawStatus: withdrawController.update,
   adminGetKycByUser: kycController.adminGetKycByUser,
   updateKycStatus: kycController.updateKycStatus,

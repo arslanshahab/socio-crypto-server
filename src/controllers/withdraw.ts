@@ -21,9 +21,17 @@ export const start = async (args: { withdrawAmount: number, ethAddress?: string 
   const pendingBalance = await Transfer.getTotalPendingByWallet(wallet);
   const totalWithdrawThisYear = await Transfer.getTotalAnnualWithdrawalByWallet(wallet);
   // TODO: check if they have W9 on file
+  let paypalEmail;
+  if (!args.ethAddress) {
+    let kycData;
+    try { kycData = await S3Client.getUserObject(user.id) } catch (_) { kycData = null; }
+    if (kycData) {
+      paypalEmail = kycData['paypalEmail'];
+    }
+  }
   if (((totalWithdrawThisYear.plus(args.withdrawAmount)).multipliedBy(0.1)).gte(600) || ((pendingBalance.plus(args.withdrawAmount)).multipliedBy(0.1)).gte(600)) throw new Error('reached max withdrawals per year');
   if (((wallet.balance.minus(pendingBalance)).minus(args.withdrawAmount)).lt(0)) throw new Error('wallet does not have required balance for this withdraw');
-  const transfer = Transfer.newFromWithdraw(wallet, new BN(args.withdrawAmount), args.ethAddress);
+  const transfer = Transfer.newFromWithdraw(wallet, new BN(args.withdrawAmount), args.ethAddress, paypalEmail);
   await transfer.save();
   return transfer.asV1();
 }
@@ -60,7 +68,12 @@ export const update = async (args: { transferIds: string[], status: 'approve'|'r
               userGroups[user.id] = {...userGroups[user.id], ...paymentMethod};
               if (user.notificationSettings.withdraw) userGroups[user.id].deviceToken = user.profile.deviceToken;
               if (transfer.ethAddress) {
-                const transactionHash = await EthWithdraw.performCoiinTransfer(transfer.ethAddress, transfer.amount);
+                let transactionHash;
+                try {
+                  transactionHash = await EthWithdraw.performCoiinTransfer(transfer.ethAddress, transfer.amount);
+                } catch (e) {
+                  throw new Error(e)
+                }
                 if (!transactionHash) throw new Error('ethereum transfer failure');
                 transfer.transactionHash = transactionHash;
               } else {
@@ -154,6 +167,11 @@ export const getWithdrawalsV2 = async (args: { status: string }, context: { user
     }
   }
   return Object.values(uniqueUsers);
+}
+
+export const getWithdrawalHistory = async () => {
+  const transfers = await Transfer.getAuditedWithdrawals();
+  return transfers.map((transfer) => transfer.asV1());
 }
 
 export const paypalWebhook = asyncHandler(async (req: Request, res: Response) => {

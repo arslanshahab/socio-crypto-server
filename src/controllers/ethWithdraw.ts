@@ -49,26 +49,30 @@ export const performCoiinTransfer = async (to: string, value: BigNumber) => {
   const gasPrice = await web3.eth.getGasPrice();
   const bigBalance = new BN(balance / (10**18));
   if (bigBalance.isLessThan(value))
-    throw new Error('A problem occured sending Coiin to your ethereum wallet. Please try again in a few minutes. If this problem persists, please contact support.');
-  const gasPriceAsCoiin = await getGasPriceAsCoiin(gasPrice);
-  const valueInWei = new BN(web3.utils.toWei(value.toString()));
+  throw new Error('A problem occured sending Coiin to your ethereum wallet. Please try again in a few minutes. If this problem persists, please contact support.');
+    const gasPriceAsCoiin = await getGasPriceAsCoiin(gasPrice);
+    const valueInWei = new BN(web3.utils.toWei(value.toString()));
+  if (valueInWei.minus(gasPriceAsCoiin).isLessThan(0)) {
+      // TODO: instead of failing, reject transfer and send notification that gas was too high
+      throw new Error('Gas price is greater than transfer value.')
+    }
   const hexValue = (valueInWei.minus(gasPriceAsCoiin).toString(16));
   const chainId = NODE_ENV === 'production' ? 1 : 3; // ChainId 1 is MainNet, 3 is Ropsten
   const data = '0xa9059cbb' + to.padStart(64, '0') + hexValue.padStart(64, '0'); // Invoke a transfer on the DRGN ECR20 contract
-  const signedTxn = await web3.eth.accounts.signTransaction(
-    {
-      chainId,
-      to: dragonAddress,
-      data,
-      gasPrice: Math.max(Number(gasPrice), 2000000000), // default to 2Gwei
-      gas: gasLimitString
-    },
-    Secrets.ethHotWalletPrivKey
-  );
-  if (signedTxn.rawTransaction) {
-    const transaction = await web3.eth.sendSignedTransaction(signedTxn.rawTransaction);
-    return transaction['transactionHash'];
-  } else {
-    throw new Error(`${signedTxn}`)
-  }
+    const signedTxn = await web3.eth.accounts.signTransaction(
+      {
+        chainId,
+        to: dragonAddress,
+        data,
+        gasPrice: Math.max(Number(gasPrice), 2000000000), // default to 2Gwei
+        gas: gasLimitString
+      },
+      Secrets.ethHotWalletPrivKey
+      );
+      if (signedTxn.rawTransaction) {
+        const transaction = await web3.eth.sendSignedTransaction(signedTxn.rawTransaction);
+        return transaction['transactionHash'];
+      } else {
+        throw new Error(`${signedTxn}`)
+      }
 };
