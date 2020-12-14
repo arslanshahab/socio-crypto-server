@@ -2,32 +2,31 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-replicaCount: 1
-
 image:
-  repository: 381978683274.dkr.ecr.us-west-2.amazonaws.com/raiinmaker
+  repository: 527252880472.dkr.ecr.us-west-1.amazonaws.com/raiinmaker
   tag: staging-0.0.1
   pullPolicy: Always
 
-iamRole: arn:aws:iam::381978683274:role/raiinmaker-staging
+iamRole: arn:aws:iam::527252880472:role/raiinmaker-staging
 
 securityContext:
   runAsNonRoot: true
   runAsUser: 1000
 
 service:
-  type: ClusterIP
+  type: NodePort
   port: 8080
 
 ingress:
   enabled: true
-  host: raiinmaker-staging.api.dragonchain.com
+  host: server-staging.api.raiinmaker.com
 
 cron:
   frequency:
     social: '0 * * * *' # At minute 0 every hour
     daily: '0 0 * * *' # At minute 0 every day
     coiinWatcher: '*/5 * * * *'
+    qualityScore: '0 * * * *' # At minute 0 every hour
 
 # up server replica count
 replicaCount: 2
@@ -44,11 +43,11 @@ aws:
   secret_key:
 
 data:
-  IAM_ROLE: arn:aws:iam::381978683274:role/raiinmaker-staging
+  IAM_ROLE: arn:aws:iam::527252880472:role/raiinmaker-staging
   environment:
     NODE_ENV: "staging"
-    BUCKET_NAME: "raiinmaker-staging"
-    KYC_BUCKET_NAME: "raiinmaker-kyc-staging"
+    BUCKET_NAME: "rm-raiinmaker-staging"
+    KYC_BUCKET_NAME: "rm-raiinmaker-kyc-staging"
     RATE_LIMIT_MAX: "50"
     RATE_LIMIT_WINDOW: "1m"
     REWARD_REDEMPTION_EMAIL_RECIPIENT: alex@dragonchain.com
@@ -69,6 +68,11 @@ pg-bak:
   stage: staging
   existingSecret: "raiinmaker"
   postgresHost: raiinmaker-api-postgresql-read
+  s3Bucket: rm-postgres-backups
+  iamRole: arn:aws:iam::527252880472:role/PostgresBackupRole
+  image:
+    repository: 527252880472.dkr.ecr.us-west-1.amazonaws.com/pg_backup
+    tag: "1.0.3"
 
 redis:
   image:

@@ -1,5 +1,6 @@
 import {Request} from 'express';
 import { BigNumber } from 'bignumber.js';
+import {Participant} from "./models/Participant";
 
 export interface FactorGeneration {
   name: string;
@@ -46,22 +47,6 @@ export interface AggregateDailyMetrics {
 
 export interface Tiers {
     [index: string]: {threshold:BigNumber; totalCoiins: BigNumber;};
-    2: {
-        threshold: BigNumber;
-        totalCoiins: BigNumber;
-    },
-    3: {
-        threshold: BigNumber;
-        totalCoiins: BigNumber;
-    },
-    4: {
-        threshold: BigNumber;
-        totalCoiins: BigNumber;
-    },
-    5: {
-        threshold: BigNumber;
-        totalCoiins: BigNumber;
-    },
 }
 export interface AlgorithmSpecs {
     version: number;
@@ -72,15 +57,75 @@ export interface AlgorithmSpecs {
 
 export interface CampaignRequirementSpecs {
     version: number;
+    city: string,
+    state: string,
+    country: string,
+    values: string[],
+    interests: string[],
     ageRange: AgeRangeRequirementSpecs,
+    socialFollowing: SocialFollowingSpecs,
 }
+
+export interface SocialFollowingSpecs {
+    twitter: TwitterSocialFollowingSpecs,
+}
+export interface TwitterSocialFollowingSpecs {
+    minFollower: number,
+}
+
 export interface AgeRangeRequirementSpecs {
-    version: number;
-    "0-17": Boolean
-    "18-25": Boolean
-    "26-40": Boolean,
-    "41-55": Boolean,
-    "55+": Boolean,
+  version: number;
+  "0-17": Boolean
+  "18-25": Boolean
+  "26-40": Boolean,
+  "41-55": Boolean,
+  "55+": Boolean,
+}
+
+export type DateTrunc = 'hour' | 'day' | 'week' | 'month' | 'quarter' | 'year' | 'all';
+
+export interface HourlyMetricsGroupedByDateQueryResult {
+  [key: string]: string | Date;
+  interval: Date;
+  postCount: string;
+  participantCount: string;
+  clickCount: string;
+  viewCount: string;
+  submissionCount: string;
+  likeCount: string;
+  shareCount: string;
+  commentCount: string;
+}
+
+export interface CampaignMetricsGroupedByDateParsed {
+  interval: string;
+  postCount: number;
+  participantCount: number;
+  clickCount: number;
+  viewCount: number;
+  submissionCount: number;
+  likeCount: number;
+  shareCount: number;
+  commentCount: number;
+  totalDiscoveries: number;
+  totalConversions: number;
+  averagePostCost: number;
+  averageDiscoveryCost: number;
+  averageConversionCost: number;
+}
+
+export interface PlatformMetricsGroupedByDateParsed {
+  interval: string;
+  postCount: number;
+  participantCount: number;
+  clickCount: number;
+  viewCount: number;
+  submissionCount: number;
+  likeCount: number;
+  shareCount: number;
+  commentCount: number;
+  totalDiscoveries: number;
+  totalConversions: number;
 }
 
 export interface CampaignAuditReport {
@@ -142,4 +187,14 @@ export interface GraphApiInputParameters {
 
 export interface FacebookAuth {
   accessToken: string;
+}
+
+export interface ParticipantEngagement {
+  participantId: string;
+  shareRate: BigNumber;
+  likeRate: BigNumber;
+  commentRate: BigNumber;
+  viewRate: BigNumber;
+  submissionRate: BigNumber;
+  clickRate: BigNumber;
 }

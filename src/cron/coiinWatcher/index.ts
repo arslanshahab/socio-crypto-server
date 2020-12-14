@@ -4,7 +4,7 @@ import { Transaction } from './transactionModel';
 import logger from '../../util/logger';
 import { Secrets } from '../../util/secrets';
 import { Application } from '../../app';
-import { ExternalWallet } from '../../models/ExternalWallet';
+import { ExternalAddress } from '../../models/ExternalAddress';
 import { Transfer } from '../../models/Transfer';
 import { BN } from '../../util/helpers';
 
@@ -16,7 +16,7 @@ const app = new Application();
   let lastCheckedBlock, currentBlock;
   const currentRunFailures = [];
   try {
-    
+
     const missedTransactions = (await S3Client.getMissedBillingTransfers()).map((txn: any) => {
       const { blockNumber, from, to: address, hash: blockHash, type, convertedValue } = txn;
       try {
@@ -34,7 +34,7 @@ const app = new Application();
     const tokenTransactions = await checkForTokenTransactionsOnContract(lastCheckedBlock, currentBlock);
     const transactions = missedTransactions.concat(tokenTransactions);
     if (transactions.length > 0) {
-      const wallets: {[key: string]: ExternalWallet} = await ExternalWallet.getWalletsByAddresses(transactions.map((txn: Transaction) => txn.from.toLowerCase()));
+      const wallets: {[key: string]: ExternalAddress} = await ExternalAddress.getWalletsByAddresses(transactions.map((txn: Transaction) => txn.from.toLowerCase()));
       for (let i = 0; i < transactions.length; i++) {
         const transaction: Transaction = transactions[i];
         try {
@@ -45,11 +45,14 @@ const app = new Application();
           const externalWallet = wallets[transaction.from.toLowerCase()];
           // perform transfer to users wallet
           logger.info(`Wallet ID found: ${externalWallet.id}`);
+          console.log(JSON.stringify(externalWallet.fundingWallet));
           // check that we don't have an existing
           if (!await Transfer.findOne({ where: { transactionHash: transaction.getHash(), action: 'deposit' } })) {
-            await (Transfer.newFromDeposit(externalWallet.user.wallet, new BN(transaction.getValue()), transaction.getFrom().toLowerCase(), transaction.getHash())).save();
-            externalWallet.balance.plus(transaction.getValue());
-            await externalWallet.save();
+            const transfer = (Transfer.newFromDeposit(externalWallet.fundingWallet, new BN(transaction.getValue()), transaction.getFrom().toLowerCase(), transaction.getHash()));
+            externalWallet.fundingWallet.balance = externalWallet.fundingWallet.balance.plus(transaction.getValue());
+            externalWallet.fundingWallet.transfers.push(transfer);
+            await externalWallet.fundingWallet.save();
+            await transfer.save();
           }
         } catch (e) {
           console.error(`Failed to transfer funds for wallet: ${transaction.from} with amount: ${transaction.getValue()}`);

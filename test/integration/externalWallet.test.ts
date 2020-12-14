@@ -9,11 +9,12 @@ import { User } from '../../src/models/User';
 import { Wallet } from '../../src/models/Wallet';
 import { Firebase } from '../../src/clients/firebase';
 import * as admin from 'firebase-admin';
-import {createExternalWallet, createUser} from './specHelpers';
+import {createExternalAddress, createUser} from './specHelpers';
 import * as gql from 'gql-query-builder';
 import { Paypal } from '../../src/clients/paypal';
 import { Transfer } from '../../src/models/Transfer';
-import { ExternalWallet } from '../../src/models/ExternalWallet';
+import { ExternalAddress } from '../../src/models/ExternalAddress';
+import { FundingWallet } from '../../src/models/FundingWallet';
 
 describe('External Wallet Integrations Tests', () => {
   let runningApp: Application;
@@ -52,7 +53,8 @@ describe('External Wallet Integrations Tests', () => {
   });
 
   beforeEach(async () => {
-    await ExternalWallet.query('TRUNCATE public.external_wallet CASCADE');
+    await ExternalAddress.query('TRUNCATE public.external_address CASCADE');
+    await FundingWallet.query('TRUNCATE public.funding_wallet CASCADE');
     await Transfer.query('TRUNCATE public.transfer CASCADE');
     await Participant.query('TRUNCATE public.participant CASCADE');
     await Campaign.query('TRUNCATE public.campaign CASCADE');
@@ -87,7 +89,7 @@ describe('External Wallet Integrations Tests', () => {
       });
       it('attach wallet fails because it is already attached', async () => {
         const user = await createUser(runningApp);
-        await (ExternalWallet.newFromAttachment(ethereumAddress.toLowerCase(), user)).save();
+        await (ExternalAddress.newFromAttachment(ethereumAddress.toLowerCase(), user, true)).save();
         const mutation = gql.mutation({
             operation: 'attachEthereumAddress',
             variables: {
@@ -126,7 +128,7 @@ describe('External Wallet Integrations Tests', () => {
     describe('#claim', () => {
       it('should successfully claim wallet', async () => {
         const user = await createUser(runningApp);
-        await createExternalWallet(runningApp, {ethereumAddress: ethereumAddress.toLowerCase(), user});
+        await createExternalAddress(runningApp, {ethereumAddress: ethereumAddress.toLowerCase(), user});
         const mutation = gql.mutation({
           operation: 'claimEthereumAddress',
           variables: {
@@ -146,7 +148,7 @@ describe('External Wallet Integrations Tests', () => {
       });
       it('should fail to claim because signature is invalid', async () => {
         const user = await createUser(runningApp);
-        await createExternalWallet(runningApp, {ethereumAddress: ethereumAddress.toLowerCase(), user});
+        await createExternalAddress(runningApp, {ethereumAddress: ethereumAddress.toLowerCase(), user});
         let invalidSignature = signature.substring(0, signature.length - 2) + 'bb';
         const mutation = gql.mutation({
           operation: 'claimEthereumAddress',
@@ -167,7 +169,7 @@ describe('External Wallet Integrations Tests', () => {
       });
       it('should fail to claim because signature is invalid because signature from incorrect address', async () => {
         const user = await createUser(runningApp);
-        await createExternalWallet(runningApp, {ethereumAddress: ethereumAddress.toLowerCase(), user});
+        await createExternalAddress(runningApp, {ethereumAddress: ethereumAddress.toLowerCase(), user});
         const mutation = gql.mutation({
           operation: 'claimEthereumAddress',
           variables: {
@@ -204,7 +206,8 @@ describe('External Wallet Integrations Tests', () => {
         expect(res.body.errors[0].message).to.equal('user not found');
       });
       it('should fail to claim because external wallet not found', async () => {
-        await createUser(runningApp);
+        const user = await createUser(runningApp);
+        await createExternalAddress(runningApp, {user, ethereumAddress: 'banana'});
         const mutation = gql.mutation({
           operation: 'claimEthereumAddress',
           variables: {
@@ -224,7 +227,7 @@ describe('External Wallet Integrations Tests', () => {
       });
       it('should fail to claim because address is already claimed', async () => {
         const user = await createUser(runningApp);
-        await createExternalWallet(runningApp, {ethereumAddress: ethereumAddress.toLowerCase(), user, claimed: true});
+        await createExternalAddress(runningApp, {ethereumAddress: ethereumAddress.toLowerCase(), user, claimed: true});
         const mutation = gql.mutation({
           operation: 'claimEthereumAddress',
           variables: {
@@ -249,7 +252,7 @@ describe('External Wallet Integrations Tests', () => {
     describe('#get', () => {
       it('should return the users registered external wallet', async () => {
         const user = await createUser(runningApp);
-        await createExternalWallet(runningApp, {user, ethereumAddress: ethereumAddress.toLowerCase()});
+        await createExternalAddress(runningApp, {user, ethereumAddress: ethereumAddress.toLowerCase()});
         const query = gql.query({
           operation: 'getExternalAddress',
           variables: {
@@ -306,7 +309,7 @@ describe('External Wallet Integrations Tests', () => {
     describe('#list', () => {
       it('should return a list with 1 wallet', async () => {
         const user = await createUser(runningApp);
-        await createExternalWallet(runningApp, {user, ethereumAddress: ethereumAddress.toLowerCase(), claimed: true});
+        await createExternalAddress(runningApp, {user, ethereumAddress: ethereumAddress.toLowerCase(), claimed: true});
         const query = gql.query({
           operation: 'listExternalAddresses',
           fields: ['ethereumAddress']

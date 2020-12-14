@@ -13,9 +13,10 @@ import { createIdentity, getIdentityLoginRequest, getAccountRecoveryRequest } fr
 import {createUser, createProfile} from './specHelpers';
 import { Paypal } from '../../src/clients/paypal';
 import { Transfer } from '../../src/models/Transfer';
-import { ExternalWallet } from '../../src/models/ExternalWallet';
+import { ExternalAddress } from '../../src/models/ExternalAddress';
 import { getDeterministicId, sha256Hash } from '../../src/util/crypto';
 import { Profile } from '../../src/models/Profile';
+import { S3Client } from '../../src/clients/s3';
 
 describe('Dragonfactor Integrations Tests', () => {
   let runningApp: Application;
@@ -45,6 +46,8 @@ describe('Dragonfactor Integrations Tests', () => {
       fullAppTestbed.stub(Paypal, 'initialize');
       fullAppTestbed.stub(Paypal, 'refreshToken');
       fullAppTestbed.stub(Dragonchain, 'ledgerAccountRecoveryAttempt');
+      fullAppTestbed.stub(S3Client, 'deleteUserInfoIfExists');
+      fullAppTestbed.stub(S3Client, 'deleteKycImage');
       Firebase.client = {
         auth: () => {},
       } as admin.app.App;
@@ -55,7 +58,7 @@ describe('Dragonfactor Integrations Tests', () => {
 
   beforeEach(async () => {
     await Profile.query('TRUNCATE public.profile CASCADE');
-    await ExternalWallet.query('TRUNCATE public.external_wallet CASCADE');
+    await ExternalAddress.query('TRUNCATE public.external_address CASCADE');
     await Transfer.query('TRUNCATE public.transfer CASCADE');
     await Participant.query('TRUNCATE public.participant CASCADE');
     await Campaign.query('TRUNCATE public.campaign CASCADE');

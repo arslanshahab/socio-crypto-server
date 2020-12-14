@@ -1,4 +1,12 @@
-import {BaseEntity, Entity, Column, ManyToOne, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn} from 'typeorm';
+import {
+  BaseEntity,
+  Entity,
+  Column,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { Campaign } from './Campaign';
 import { User } from './User';
 import { BigNumber } from 'bignumber.js';
@@ -67,7 +75,7 @@ export class Participant extends BaseEntity {
     };
     if (this.campaign) returnedValue.campaign = this.campaign.asV1();
     if (this.user) returnedValue.user = this.user.asV1();
-    return returnedValue; 
+    return returnedValue;
   }
 
   public static newParticipant(user: User, campaign: Campaign): Participant {

@@ -9,19 +9,22 @@ import { GraphQLResolveInfo } from 'graphql';
 import { Profile } from '../models/Profile';
 import { DailyParticipantMetric } from '../models/DailyParticipantMetric';
 import { groupDailyMetricsByUser } from './helpers';
+import {HourlyCampaignMetric} from "../models/HourlyCampaignMetric";
+import { serverBaseUrl } from '../config';
 
 export const participate = async (args: { campaignId: string }, context: { user: any }) => {
     const { id } = context.user;
     const user = await User.findOne({ where: { identityId: id }, relations: ['campaigns', 'wallet'] });
     if (!user) throw new Error('user not found');
-    const campaign = await Campaign.findOne({ where: { id: args.campaignId } });
+    const campaign = await Campaign.findOne({ where: { id: args.campaignId }, relations: ['org'] });
     if (!campaign) throw new Error('campaign not found');
     if (!campaign.isOpen()) throw new Error('campaign is not open for participation');
     if (await Participant.findOne({ where: { campaign, user } })) throw new Error('user already participating in this campaign');
     const participant = Participant.newParticipant(user, campaign);
     await participant.save();
-    const url = `${campaign.target}${campaign.target.endsWith('/') ? '' : '/'}?referrer=${participant.id}`;
+    const url = `${serverBaseUrl}/v1/referral/${participant.id}`;
     participant.link = await TinyUrl.shorten(url);
+    await HourlyCampaignMetric.upsert(campaign, campaign.org, 'participate');
     await participant.save();
     return participant.asV1();
 };
@@ -47,10 +50,11 @@ export const removeParticipation = async (args: { campaignId: string }, context:
     const { id } = context.user;
     const user = await User.findOne({ where: { identityId: id }, relations: ['campaigns', 'wallet'] });
     if (!user) throw new Error('user not found');
-    const campaign = await Campaign.findOne({ where: { id: args.campaignId } });
+    const campaign = await Campaign.findOne({ where: { id: args.campaignId }, relations: ['org'] });
     if (!campaign) throw new Error('campaign not found');
     const participation = await Participant.findOne({ where: { user, campaign } });
     if (!participation) throw new Error('user was not participating in campaign');
+    await HourlyCampaignMetric.upsert(campaign, campaign.org, 'removeParticipant');
     await participation.remove();
     return user.asV1();
 }

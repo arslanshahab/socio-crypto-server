@@ -313,7 +313,6 @@ describe('User Integration Test', () => {
           .send(mutation)
           .set('authorization', 'Bearer raiinmaker')
           .set('Accepts', 'application/json');
-
         const response = res.body.data.removeParticipation;
         expect(response.id).to.equal(user.id);
       });

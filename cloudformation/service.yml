@@ -5,44 +5,54 @@ Parameters:
     Type: String
     Default: "staging"
 
+  EnableCFDomains:
+    Type: String
+    Default: "true"
+
   hostedZoneId:
     Type: "String"
-    Default: "Z2ADV4KXMZWAVJ"
+    Default: "Z0717136XJL2MFL4R79M"
 
   sslCertificateArn:
     Type: "String"
-    Description: "Arn for the SSL cert to attach, defaults to *.api.dragonchain.com cert"
-    Default: " arn:aws:acm:us-east-1:381978683274:certificate/c319f9d0-e6f2-49cc-93d6-0789cc886011"
+    Description: "Arn for the SSL cert to attach, defaults to *.api.raiinmaker.com cert"
+    Default: "arn:aws:acm:us-east-1:527252880472:certificate/ef2bae53-4c35-482b-806c-86d6178ef73d"
 
 Conditions:
   isProd:
     Fn::Equals:
       - Ref: Stage
       - "production"
+  EnableDomains:
+    Fn::Equals:
+      - Ref: EnableCFDomains
+      - "true"
+
 
 Resources:
     raiinmakerRoute53:
       Type: AWS::Route53::RecordSet
       Properties:
-        HostedZoneId: Z2ADV4KXMZWAVJ
+        HostedZoneId: Z0717136XJL2MFL4R79M
         Name:
           Fn::If:
             - isProd
-            - raiinmaker.api.dragonchain.com
+            - server.api.raiinmaker.com
             - Fn::Join:
                 - ''
-                - - raiinmaker-
+                - - server-
                   - Ref: Stage
-                  - .api.dragonchain.com
+                  - .api.raiinmaker.com
         Type: CNAME
         ResourceRecords:
           - Fn::If:
               - isProd
-              - "uw2-k8s-internal.api.dragonchain.com"
-              - "uw2-k8s-internal-stage.api.dragonchain.com"
+              - "f14185dd-raiinmaker-raiinm-4ef8-1562188963.us-west-1.elb.amazonaws.com"
+              - "eadf2937-raiinmaker-raiinm-4ef8-1121023472.us-west-1.elb.amazonaws.com"
         TTL: "300"
 
     BucketRoute53Configurations:
+      Condition: EnableDomains
       Type: AWS::Route53::RecordSet
       Properties:
         AliasTarget:
@@ -51,17 +61,16 @@ Resources:
             Fn::GetAtt:
               - BucketCloudFrontDistribution
               - DomainName
-        HostedZoneId:
-          Ref: hostedZoneId
+        HostedZoneId: Z0717136XJL2MFL4R79M
         Name:
           Fn::If:
             - isProd
-            - "raiinmaker-media.api.dragonchain.com"
+            - "raiinmaker-media.api.raiinmaker.com"
             - Fn::Join:
               - ""
               - - raiinmaker-media-
                 - Ref: Stage
-                - .api.dragonchain.com
+                - .api.raiinmaker.com
         Type: A
 
 
@@ -72,18 +81,19 @@ Resources:
           Comment: S3 Raiinmaker Media Origin Access Identity
 
     BucketCloudFrontDistribution:
+      Condition: EnableDomains
       Type: AWS::CloudFront::Distribution
       Properties:
         DistributionConfig:
           Aliases:
             - Fn::If:
               - isProd
-              - "raiinmaker-media.api.dragonchain.com"
+              - "raiinmaker-media.api.raiinmaker.com"
               - Fn::Join:
                   - ""
                   - - raiinmaker-media-
                     - Ref: Stage
-                    - .api.dragonchain.com
+                    - .api.raiinmaker.com
           Enabled: true
           Origins:
             - DomainName:
@@ -116,7 +126,7 @@ Resources:
         BucketName:
           Fn::Join:
             - ''
-            - - raiinmaker-
+            - - rm-raiinmaker-
               - Ref: Stage
 
     raiinmakerKycKmsKey:
@@ -139,7 +149,7 @@ Resources:
             Value:
               Fn::Join:
                 - ''
-                - - raiinmaker-kyc-
+                - - rm-raiinmaker-kyc-
                   - Ref: Stage
 
     raiinmakerKycBucket:
@@ -154,7 +164,7 @@ Resources:
         BucketName:
           Fn::Join:
             - ''
-            - - raiinmaker-kyc-
+            - - rm-raiinmaker-kyc-
               - Ref: Stage
 
     raiinmakerMediaBucketPolicy:
@@ -187,8 +197,8 @@ Resources:
                 AWS:
                   Fn::If:
                     - isProd
-                    - arn:aws:iam::381978683274:role/masters.uw2-k8s-internal.api.dragonchain.com
-                    - arn:aws:iam::381978683274:role/masters.uw2-k8s-internal-stage.api.dragonchain.com
+                    - arn:aws:iam::527252880472:role/eksctl-raiinmaker-production-cluster-ServiceRole-1BU2N2RS88OHF
+                    - arn:aws:iam::527252880472:role/eksctl-raiinmaker-staging-cluster-ServiceRole-Q18O77ELY64T
         RoleName:
           Fn::Join:
             - "-"
@@ -212,18 +222,6 @@ Resources:
               Action: ["kms:*"]
               Resource:
                 - Fn::GetAtt: [raiinmakerKycKmsKey, Arn]
-            - Effect: Allow
-              Action: ["logs:GetLogEvents"]
-              Resource:
-                - arn:aws:logs:us-west-2:381978683274:log-group:/k8s/openfaas-stage:*
-                - arn:aws:logs:us-west-2:381978683274:log-group:/k8s/openfaas-prod:*
-            - Effect: Allow
-              Action: ["SNS:Publish"]
-              Resource:
-                Fn::If:
-                  - isProd
-                  - arn:aws:sns:us-west-2:381978683274:ers-production-Topic-LP3TJOCU3EWE
-                  - arn:aws:sns:us-west-2:381978683274:ers-staging-Topic-SVYROUMXZY3V
             - Effect: Allow
               Action:
                 - s3:*

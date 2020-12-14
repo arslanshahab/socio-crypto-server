@@ -3,27 +3,28 @@ import {Transfer} from '../models/Transfer';
 
 const { NODE_ENV = "development" } = process.env;
 
-AWS.config.update({ region: 'us-west-2' });
+AWS.config.update({ region: 'us-west-1' });
 
 const { REWARD_REDEMPTION_EMAIL_RECIPIENT = "alex@dragonchain.com" } = process.env;
 
 export class SesClient {
   public static client = new AWS.SES();
 
-  public static getTemplate(text: string, subject: string) {
+  public static getTemplate(title: string, body: string, subject: string, recipient?: string) {
+    recipient = recipient ? recipient : REWARD_REDEMPTION_EMAIL_RECIPIENT;
     return {
       Destination: {
-        ToAddresses: [REWARD_REDEMPTION_EMAIL_RECIPIENT]
+        ToAddresses: [recipient]
       },
       Message: {
         Body: {
           Html: {
             Charset: 'UTF-8',
-            Data: text.replace('\t\n', '<br />')
+            Data: `<html><body>${title}<br>${body.replace(/\n/g, '<br>')}</body></html>`
           },
           Text: {
             Charset: 'UTF-8',
-            Data: text
+            Data: `${title}\t\n${body}`
           }
         },
         Subject: {
@@ -31,15 +32,16 @@ export class SesClient {
           Data: subject
         }
       },
-      ReturnPath: 'support@dragonchain.com',
-      Source: 'support@dragonchain.com'
+      ReturnPath: 'support@raiinmaker.com',
+      Source: 'support@raiinmaker.com'
     }
   }
 
   public static async sendRedemptionConfirmationEmail(userId: string, paypalEmail: string, amountUSD: string, transfers: Transfer[]): Promise<boolean> {
-    let text = `You have approved the reward redemptions for user ${userId}\t\n\t\n Please send $${amountUSD} to ${paypalEmail}\t\nTransfer Included:\t\n`;
-    transfers.forEach(transfer => text += `\t\nTransfer ID: ${transfer.id} Amount (COIIN): ${transfer.amount} Redeemed At: ${transfer.createdAt}`);
-    const template = SesClient.getTemplate(text, (['staging','development'].includes(NODE_ENV) ? 'TEST EMAIL DO NOT SEND MONEY' : 'Raiinmaker Rewards Redemption Notification'));
+    const title = `You have approved the reward redemptions for user ${userId}`;
+    let text = `Please send $${amountUSD} to ${paypalEmail}\nTransfer Included:\n`;
+    transfers.forEach(transfer => text += `Transfer ID: ${transfer.id} Amount (COIIN): ${transfer.amount} Redeemed At: ${transfer.createdAt}\n`);
+    const template = SesClient.getTemplate(title, text, (NODE_ENV !== 'production' ? 'TEST EMAIL DO NOT SEND MONEY' : 'Raiinmaker Rewards Redemption Notification'));
     try {
       const data = await SesClient.client.sendEmail(template).promise();
       console.log(`Email sent to ${REWARD_REDEMPTION_EMAIL_RECIPIENT}, ${JSON.stringify(data)}`);
@@ -47,6 +49,36 @@ export class SesClient {
     } catch (error) {
       console.error('Error occurred while sending email')
       console.error(error);
+      return false;
+    }
+  }
+
+  public static async sendNewOrgConfirmationEmail(orgName: string, email: string, tempPassword: string) {
+    const title = `Your brand ${orgName} has been created on Raiinmaker`;
+    const text = `Please login with email: ${email} and temporary password ${tempPassword}. Please change password upon initial login\n`;
+    const template = SesClient.getTemplate(title, text, 'New Brand Account on Raiinmaker!', email);
+    try {
+      const data = await SesClient.client.sendEmail(template).promise();
+      console.log(`Email sent to ${email} to confirm creation of brand account on Raiinmaker: ${data}`);
+      return true;
+    } catch (e) {
+      console.error('Error occurred while sending email')
+      console.error(e);
+      return false;
+    }
+  }
+
+  public static async sendNewUserConfirmationEmail(orgName: string, email: string, tempPassword: string) {
+    const title = `Welcome to your new Raiinmaker account for ${orgName}`;
+    const text = `Please login with email: ${email} and temporary password ${tempPassword}. Please change password upon initial login`;
+    const template = SesClient.getTemplate(title, text, 'New Raiinmaker User', email);
+    try {
+      const data = await SesClient.client.sendEmail(template).promise();
+      console.log(`Email sent to ${email} to confirm creation of brand account on Raiinmaker: ${data}`);
+      return true;
+    } catch (e) {
+      console.error('Error occurred while sending email')
+      console.error(e);
       return false;
     }
   }

@@ -8,6 +8,9 @@ import * as withdrawController from '../controllers/withdraw';
 import * as kycController from '../controllers/kyc';
 import * as ethWithdrawController from '../controllers/ethWithdraw';
 import * as externalWallet from '../controllers/externalWallet';
+import * as orgController from '../controllers/org';
+import * as firebaseController from '../controllers/firebase';
+import * as fundingController from '../controllers/fundingWallet';
 
 export const root = {
   JSON: GraphQLJSON,
@@ -60,7 +63,39 @@ export const root = {
   attachEthereumAddress: externalWallet.attach,
   claimEthereumAddress: externalWallet.claim,
   updateNotificationSettings: userController.updateNotificationSettings,
+  adminGetKycByUser: kycController.adminGetKycByUser,
+  getWithdrawalsV2: withdrawController.getWithdrawalsV2,
+  removeEthereumAddress: externalWallet.remove,
 };
+
+export const adminRoot = {
+  newOrg: orgController.newOrg,
+  getHourlyCampaignMetrics: campaignController.adminGetHourlyCampaignMetrics,
+  getHourlyPlatformMetrics: campaignController.adminGetHourlyPlatformMetrics,
+  getTotalPlatformMetrics: campaignController.adminGetPlatformMetrics,
+  generateCampaignAuditReport: campaignController.generateCampaignAuditReport,
+  getHourlyOrgMetrics: orgController.getHourlyOrgMetrics,
+  listCampaigns: campaignController.listCampaigns,
+  newCampaign: campaignController.createNewCampaign,
+  getCurrentCampaignTier: campaignController.getCurrentCampaignTier,
+  getExternalAddress: externalWallet.get,
+  payoutCampaignRewards: campaignController.payoutCampaignRewards,
+  listExternalAddresses: externalWallet.list,
+  getCampaignMetrics: campaignController.adminGetCampaignMetrics,
+  getWithdrawalsV2: withdrawController.getWithdrawalsV2,
+  getWithdrawalHistory: withdrawController.getWithdrawalHistory,
+  updateWithdrawStatus: withdrawController.update,
+  adminGetKycByUser: kycController.adminGetKycByUser,
+  updateKycStatus: kycController.updateKycStatus,
+  verifySession: firebaseController.getUserRole,
+  attachEthereumAddress: externalWallet.attach,
+  claimEthereumAddress: externalWallet.claim,
+  getFundingWallet: fundingController.get,
+  listOrgs: orgController.listOrgs,
+  updatePassword: firebaseController.updateUserPassword,
+  newUser: orgController.newUser,
+  listEmployees: orgController.listEmployees,
+}
 
 export const publicRoot = {
   trackAction: participantController.trackAction,

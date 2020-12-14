@@ -1,4 +1,13 @@
-import { BaseEntity, Entity, PrimaryGeneratedColumn, Column, OneToMany, OneToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  BaseEntity,
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  OneToOne,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { Participant } from './Participant';
 import { Wallet } from './Wallet';
 import { SocialLink } from './SocialLink';
@@ -11,8 +20,9 @@ import { FieldNode } from 'graphql';
 import { Profile } from './Profile';
 import { Transfer } from './Transfer';
 import { DailyParticipantMetric } from './DailyParticipantMetric';
-import { ExternalWallet } from './ExternalWallet';
 import { NotificationSettings } from './NotificationSettings';
+import {Admin} from "./Admin";
+import { ExternalAddress } from './ExternalAddress';
 
 @Entity()
 export class User extends BaseEntity {
@@ -53,6 +63,13 @@ export class User extends BaseEntity {
     wallet => wallet.user,
   )
   public wallet: Wallet;
+
+  @OneToMany(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _type => ExternalAddress,
+    address => address.user
+  )
+  public addresses: ExternalAddress[];
 
   @OneToMany(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -98,10 +115,10 @@ export class User extends BaseEntity {
   public dailyMetrics: DailyParticipantMetric[];
 
   @OneToMany(
-    _type => ExternalWallet,
-    externalWallet => externalWallet.user
+    _type => Admin,
+    admin => admin.user
   )
-  public externalWallets: ExternalWallet[];
+  public admins: Admin[];
 
   public asV1() {
     let returnedUser: any = {...this};
@@ -142,7 +159,8 @@ export class User extends BaseEntity {
       .leftJoinAndSelect('user.profile', 'profile', 'profile."userId" = user.id')
       .leftJoinAndSelect('user.notificationSettings', 'settings', 'settings."userId" = user.id')
       .select('profile."deviceToken"')
-      .distinctOn(['profile."deviceToken"']);
+      .distinctOn(['profile."deviceToken"'])
+      .where(`profile."deviceToken" != NULL AND profile."deviceToken" != ''`);
     if (action === 'campaignCreate') query = query.andWhere('settings."campaignCreate" = true');
     if (action === 'campaignUpdates') query = query.andWhere('settings."campaignUpdates" = true');
     const values = await query.getRawMany();
@@ -158,6 +176,21 @@ export class User extends BaseEntity {
     return new BN(sum || 0);
   }
 
+  public static async getUserTotalSocialEngagement(userId: string, socialType: string = 'twitter') {
+    const {likeCount, shareCount, commentCount} = await this.createQueryBuilder('user')
+      .leftJoin('user.posts', 'post')
+      .where('user.id = :userId AND post."userId" = user.id', {userId})
+      .andWhere('post.type = :socialType', {socialType})
+      .select('SUM(CAST(post.likes AS int)) as "likeCount", SUM(CAST(post.shares AS int)) as "shareCount", SUM(CAST(post.comments AS int)) as "commentCount"')
+      .getRawOne()
+
+    return {
+      likeCount: likeCount || 0,
+      shareCount: shareCount || 0,
+      commentCount: commentCount || 0
+    }
+  }
+
   public static async getUser(id: string, graphqlQuery: FieldNode|undefined): Promise<User|undefined> {
     let query = this.createQueryBuilder('user');
     if (graphqlQuery) {
@@ -169,6 +202,8 @@ export class User extends BaseEntity {
       const loadWallet = fieldNodes.find((node: FieldNode) => node.name.value === 'wallet') as FieldNode;
       const loadFactorLinks = fieldNodes.find((node: FieldNode) => node.name.value === 'factorLinks') as FieldNode;
       const loadNotificationSettings = fieldNodes.find((node: FieldNode) => node.name.value === 'notificationSettings') as FieldNode;
+      const loadAddresses = fieldNodes.find((node: FieldNode) => node.name.value === 'addresses') as FieldNode;
+
       if (loadParticipants) {
         query = query.leftJoinAndSelect('user.campaigns', 'participant', 'participant."userId" = user.id');
         const subFields = loadParticipants.selectionSet?.selections.filter(node => node.kind === 'Field') || [];
@@ -197,7 +232,7 @@ export class User extends BaseEntity {
           const loadCampaign = transferFields.find((node: FieldNode) => node.name.value === 'campaign') as FieldNode;
           if (loadCampaign) {
             query = query.leftJoinAndSelect('transfer.campaign', 'c', 'c.id = transfer."campaignId"');
-          } 
+          }
         }
       }
       if (loadSocialLinks) query = query.leftJoinAndSelect('user.socialLinks', 'social', 'social."userId" = user.id')
@@ -205,10 +240,10 @@ export class User extends BaseEntity {
       if (loadTwentyFourHourMetrics) query = query.leftJoinAndSelect('user.twentyFourHourMetrics', 'metric', 'metric."userId" = user.id')
       if (loadFactorLinks) query = query.leftJoinAndSelect('user.factorLinks', 'factor', 'factor."userId" = user.id');
       if (loadNotificationSettings) query = query.leftJoinAndSelect('user.notificationSettings', 'settings', 'settings."userId" = user.id');
+      if (loadAddresses) query = query.leftJoinAndSelect('user.addresses', 'address', 'address."userId" = user.id');
     }
     query = query.leftJoinAndSelect('user.profile', 'profile', 'profile."userId" = user.id');
     query = query.where('user.identityId = :id', { id });
     return query.getOne();
   }
 }
-

@@ -1,4 +1,13 @@
-import { BaseEntity, Entity, Column, OneToMany, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  BaseEntity,
+  Entity,
+  Column,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne
+} from 'typeorm';
 import { DateUtils } from 'typeorm/util/DateUtils';
 import { Participant } from './Participant';
 import {AlgorithmSpecs, CampaignRequirementSpecs} from '../types';
@@ -10,6 +19,8 @@ import { BN } from '../util/helpers';
 import { DailyParticipantMetric } from './DailyParticipantMetric';
 import { getDatesBetweenDates, formatUTCDateForComparision, getYesterdaysDate } from '../controllers/helpers';
 import { User } from './User';
+import {Org} from "./Org";
+import {HourlyCampaignMetric} from "./HourlyCampaignMetric";
 
 @Entity()
 export class Campaign extends BaseEntity {
@@ -89,6 +100,18 @@ export class Campaign extends BaseEntity {
   )
   public dailyMetrics: DailyParticipantMetric[];
 
+  @OneToMany(
+    _type => HourlyCampaignMetric,
+    metric => metric.campaign
+  )
+  public hourlyMetrics: HourlyCampaignMetric[];
+
+  @ManyToOne(
+    _type => Org,
+    org => org.campaigns
+  )
+  public org: Org;
+
   @CreateDateColumn()
   public createdAt: Date;
 
@@ -134,23 +157,41 @@ export class Campaign extends BaseEntity {
     return (u.campaigns.length > 0) ? u.campaigns.map((participant: Participant) => participant.campaign.id) : [];
   }
 
-  public static async findCampaignsByStatus(open: boolean, skip: number, take: number, company: string) {
+  public static async findCampaignsByStatus(open: boolean, skip: number, take: number, company: string, sort: boolean) {
     let where = '';
     const now = DateUtils.mixedDateToDatetimeString(new Date());
-    if (open !== null && open === true) {
+    if (open !== null && open) {
       where = `("beginDate" <= '${now}' AND "endDate" >= '${now}')`;
-    } else if (open !== null && open === false) {
+    } else if (open !== null && !open) {
       where = `("beginDate" >= '${now}' OR "endDate" <= '${now}')`;
     }
     let query = this.createQueryBuilder('campaign')
       .where(where);
     if (company) query = query.andWhere(`"company"=:company`, { company })
+    if (sort) query = query.orderBy('campaign.endDate', 'DESC');
     return await query
       .leftJoinAndSelect('campaign.participants', 'participant', 'participant."campaignId" = campaign.id')
       .leftJoinAndSelect('participant.user', 'user', 'user.id = participant."userId"')
       .skip(skip)
       .take(take)
       .getManyAndCount();
+  }
+
+  public static async listCampaignsByStatus(open: boolean = true, audited: boolean = false) {
+    let where = '';
+    let query = this.createQueryBuilder('campaign');
+    const now = DateUtils.mixedDateToDatetimeString(new Date());
+    if (open !== null && open) {
+      where = `("beginDate" <= '${now}' AND "endDate" >= '${now}')`;
+    } else if (open !== null && !open) {
+      where = `("beginDate" >= '${now}' OR "endDate" <= '${now}')`;
+    }
+    return query
+      .where(where)
+      .andWhere('"audited"=:audited', {audited})
+      .leftJoinAndSelect('campaign.participants', 'participant', 'participant."campaignId" = campaign.id')
+      .leftJoinAndSelect('participant.user', 'user', 'user.id = participant."userId"')
+      .getMany()
   }
 
   public static async findCampaignById(id: string, company: string) {
@@ -188,6 +229,30 @@ export class Campaign extends BaseEntity {
     };
   }
 
+  public static async getPlatformMetrics() {
+    const { clickCount, submissionCount, viewCount, participants } = await this.createQueryBuilder('campaign')
+      .leftJoinAndSelect('campaign.participants', 'participant', 'participant."campaignId" = campaign.id')
+      .select('SUM(CAST(participant."clickCount" AS int)) as "clickCount", SUM(CAST(participant."submissionCount" AS int)) as "submissionCount", SUM(CAST(participant."viewCount" AS int)) as "viewCount", COUNT(participant.id) as participants')
+      .getRawOne();
+    const { likes, shares, comments, posts } = await this.createQueryBuilder('campaign')
+      .leftJoinAndSelect('campaign.posts', 'post', 'post."campaignId" = campaign.id')
+      .select('SUM(CAST(post.likes AS int)) as "likes", SUM(CAST(post.shares AS int)) as "shares", SUM(CAST(post.comments AS int)) as "comments", COUNT(post.id) as posts')
+      .getRawOne();
+
+    return {
+      clickCount: Number(clickCount) || 0,
+      viewCount: Number(viewCount) || 0,
+      submissionCount: Number(submissionCount) || 0,
+      participantCount: Number(participants) || 0,
+      likeCount: Number(likes) || 0,
+      commentCount: Number(comments) || 0,
+      shareCount: Number(shares) || 0,
+      postCount: Number(posts) || 0,
+      discoveryCount: Number(likes) + Number(shares) + Number(comments) || 0,
+      conversionCount: Number(clickCount) + Number(submissionCount) + Number(viewCount) || 0
+    };
+  }
+
   public static async updateAllDailyParticipationMetrics(campaignId: string) {
     const campaign = await Campaign.findOne({where: {id: campaignId}, relations: ['participants', 'participants.user']});
     if (!campaign) throw new Error('campaign not found');
@@ -211,8 +276,9 @@ export class Campaign extends BaseEntity {
     return true;
   }
 
-  public static newCampaign(name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, tagline: string, requirements: CampaignRequirementSpecs, suggestedPosts: string[], suggestedTags: string[]): Campaign {
+  public static newCampaign(name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, tagline: string, requirements: CampaignRequirementSpecs, suggestedPosts: string[], suggestedTags: string[], org?: Org,): Campaign {
     const campaign = new Campaign();
+    if(org) campaign.org = org;
     campaign.name = name;
     campaign.coiinTotal = new BN(coiinTotal);
     campaign.target = target;

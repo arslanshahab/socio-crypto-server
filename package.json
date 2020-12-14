@@ -1,12 +1,12 @@
 {
   "name": "raiinmaker-server",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "main": "index.js",
   "repository": "git@github.com:dragonchain-inc/raiinmaker-server.git",
   "author": "Alex Benedetto <alex061994@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "start": "TS_NODE_FILES=true NODE_ENV=development ts-node src/index.ts",
+    "start": "PORT=4000 AWS_PROFILE=raiinmaker TS_NODE_FILES=true NODE_ENV=development ts-node src/index.ts",
     "build": "tsc",
     "clean": "rm -rf dist/",
     "postbuild": "cp src/graphql/*.graphql dist/graphql/",
@@ -15,7 +15,8 @@
     "format": "prettier --write 'src/**/*.ts'",
     "test:integration:ci": "docker build . -f ./test.Dockerfile",
     "test:integration": "RATE_LIMIT_MAX=10000000000 PG_PASSWORD=password PG_HOST=127.0.0.1 PG_PORT=5432 PG_DATABASE=postgres PG_USER=postgres NODE_ENV=test mocha -r ts-node/register './test/integration/**/*.test.ts' --exit --timeout 20000",
-    "test:unit": "NODE_ENV=test nyc --reporter=text mocha -r ts-node/register './src/**/*.spec.ts' --grep '#unit' --exit",
+    "test:unit:report": "NODE_ENV=test nyc --reporter=text mocha -r ts-node/register './test/unit/**/*.spec.ts' --grep '#unit' --exit",
+    "test:unit": "NODE_ENV=test mocha -r ts-node/register './test/unit/**/*.spec.ts' --grep '#unit' --exit",
     "test:load:app": "$(npm bin)/artillery run test/load/app.yaml",
     "test:load:tracker": "$(npm bin)/artillery run test/load/actionTracker.yaml",
     "test:built": "NODE_ENV=test mocha 'dist/**/*.spec.js' --exit",
@@ -23,7 +24,9 @@
     "typeorm:cli": "ts-node ./node_modules/typeorm/cli",
     "migration:run": "yarn typeorm:cli migration:run",
     "migration:revert": "yarn typeorm:cli migration:revert",
-    "migration:generate": "yarn typeorm:cli migration:generate"
+    "migration:generate": "yarn typeorm:cli migration:generate",
+    "metrics:generate": "NODE_ENV=script ts-node ./scripts/metricsGenerator.ts",
+    "account:create": "ts-node ./scripts/addAdminAccount.ts"
   },
   "dependencies": {
     "@dragonchain-dev/dragonfactor-auth": "^0.0.11",
@@ -34,13 +37,14 @@
     "bs58": "^4.0.1",
     "cls-hooked": "^4.2.2",
     "cls-rtracer": "^1.4.0",
+    "cookie-parser": "^1.4.5",
     "cors": "^2.8.5",
     "dragonchain-sdk": "^4.3.3",
     "eth-sig-util": "^2.5.3",
     "ethereumjs-util": "^7.0.5",
     "express": "^4.17.1",
     "express-graphql": "^0.9.0",
-    "firebase-admin": "^8.10.0",
+    "firebase-admin": "^9.2.0",
     "graphql": "^14.6.0",
     "graphql-rate-limit": "^2.0.1",
     "graphql-type-json": "^0.3.1",
@@ -49,7 +53,7 @@
     "mocha": "^7.1.0",
     "node-fetch": "^2.6.0",
     "paypal-rest-sdk": "^1.8.1",
-    "pg": "^7.18.2",
+    "pg": "^8.0.3",
     "redis": "^3.0.2",
     "secp256k1": "^4.0.2",
     "twitter": "^1.7.1",
@@ -66,6 +70,7 @@
     "@types/bs58": "^4.0.1",
     "@types/chai": "^4.2.11",
     "@types/cls-hooked": "^4.3.0",
+    "@types/cookie-parser": "^1.4.2",
     "@types/cors": "^2.8.6",
     "@types/eth-sig-util": "^2.1.0",
     "@types/ethereumjs-util": "^6.1.0",
@@ -93,6 +98,7 @@
     "sinon": "^9.0.2",
     "supertest": "^4.0.2",
     "ts-node": "^8.8.2",
-    "typescript": "^3.8.3"
+    "typescript": "^3.8.3",
+    "unique-names-generator": "^4.3.1"
   }
 }

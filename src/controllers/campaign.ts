@@ -1,4 +1,4 @@
-import {CampaignAuditReport} from "../types";
+import {CampaignAuditReport, DateTrunc} from "../types";
 import {Campaign} from "../models/Campaign";
 import {checkPermissions} from "../middleware/authentication";
 import {Participant} from "../models/Participant";
@@ -16,6 +16,9 @@ import { BN } from '../util/helpers';
 import { BigNumber } from 'bignumber.js';
 import { Validator } from '../schemas';
 import { CampaignRequirementSpecs } from '../types';
+import {Org} from "../models/Org";
+import {HourlyCampaignMetric} from "../models/HourlyCampaignMetric";
+import { DailyParticipantMetric } from '../models/DailyParticipantMetric';
 
 const validator = new Validator();
 
@@ -41,13 +44,16 @@ export const createNewCampaign = async (args: { name: string, targetVideo: strin
     if (!!requirements) validator.validateCampaignRequirementsSchema(requirements);
     if (role === 'admin' && !args.company) throw new Error('administrators need to specify a company in args');
     const campaignCompany = (role ==='admin') ? args.company : company;
-    const campaign = Campaign.newCampaign(name, targetVideo, beginDate, endDate, coiinTotal, target, description, campaignCompany, algorithm, tagline, requirements, suggestedPosts, suggestedTags);
+    const org = await Org.findOne({where: {name: company}})
+    if (!org) throw new Error('org not found');
+  const campaign = Campaign.newCampaign(name, targetVideo, beginDate, endDate, coiinTotal, target, description, campaignCompany, algorithm, tagline, requirements, suggestedPosts, suggestedTags, org);
     await campaign.save();
     if (image) {
-      campaign.imagePath = await S3Client.setCampaignImage('banner', campaign.id, image);
-      await campaign.save();
+        campaign.imagePath = await S3Client.setCampaignImage('banner', campaign.id, image);
+        await campaign.save();
     }
-    await Firebase.sendCampaignCreatedNotifications(await User.getAllDeviceTokens('campaignCreate'), campaign);
+    const deviceTokens = await User.getAllDeviceTokens('campaignCreate');
+    if (deviceTokens.length > 0) await Firebase.sendCampaignCreatedNotifications(deviceTokens, campaign);
     return campaign.asV1();
 }
 
@@ -76,10 +82,10 @@ export const updateCampaign = async (args: { id: string, name: string, beginDate
     return campaign.asV1();
 }
 
-export const listCampaigns = async (args: { open: boolean, skip: number, take: number, scoped: boolean }, context: { user: any }) => {
-    const { open, skip = 0, take = 10, scoped = false } = args;
+export const listCampaigns = async (args: { open: boolean, skip: number, take: number, scoped: boolean, sort: boolean }, context: { user: any }) => {
+    const { open, skip = 0, take = 10, scoped = false, sort = false } = args;
     const { company } = context.user;
-    const [results, total] = await Campaign.findCampaignsByStatus(open, skip, take, scoped && company);
+    const [results, total] = await Campaign.findCampaignsByStatus(open, skip, take, scoped && company, sort);
     return { results: results.map(result => result.asV1()), total };
 }
 
@@ -87,10 +93,12 @@ export const deleteCampaign = async (args: { id: string }, context: { user: any 
     const { role, company } = checkPermissions({ hasRole: ['admin', 'manager'] }, context);
     const where: {[key: string]: string} = { id: args.id };
     if (role === 'manager') where['company'] = company;
-    const campaign = await Campaign.findOne({ where, relations: ['participants', 'posts'] });
+    const campaign = await Campaign.findOne({ where, relations: ['participants', 'posts', 'dailyMetrics', 'hourlyMetrics'] });
     if (!campaign) throw new Error('campaign not found');
     if (campaign.posts.length > 0) await SocialPost.delete({ id: In(campaign.posts.map((p: any) => p.id)) });
     await Participant.remove(campaign.participants);
+    await DailyParticipantMetric.remove(campaign.dailyMetrics);
+    await HourlyCampaignMetric.remove(campaign.hourlyMetrics);
     await campaign.remove();
     return campaign.asV1();
 }
@@ -117,6 +125,32 @@ export const adminGetCampaignMetrics = async (args: { campaignId: string }, cont
   const campaign = await Campaign.findOne({ where: { id: campaignId } });
   if (!campaign) throw new Error('campaign not found');
   return await Campaign.getCampaignMetrics(campaignId);
+}
+
+export const adminGetPlatformMetrics = async (args: any, context: { user: any }) => {
+    checkPermissions({ hasRole: ['admin'] }, context);
+    const metrics = await Campaign.getPlatformMetrics();
+    return metrics;
+}
+export const adminGetHourlyCampaignMetrics = async (args: {campaignId: string, filter: DateTrunc, startDate: string, endDate: string}, context: {user: any}) => {
+    const {company} = checkPermissions({ hasRole: ['admin']}, context);
+    HourlyCampaignMetric.validate.validateHourlyMetricsArgs(args);
+    const { campaignId, filter, startDate, endDate } = args;
+    const org = await Org.findOne({where: {name: company}});
+    if (!org) throw new Error('org not found');
+    const campaign = await Campaign.findOne({ where: { id: campaignId, org }, relations: ['org'] });
+    if (!campaign) throw new Error('campaign not found');
+    const { currentTotal } = calculateTier(campaign.totalParticipationScore, campaign.algorithm.tiers);
+    const metrics = await HourlyCampaignMetric.getDateGroupedMetrics(filter, startDate, endDate, campaign.id);
+    return HourlyCampaignMetric.parseHourlyCampaignMetrics(metrics, filter, currentTotal);
+}
+
+export const adminGetHourlyPlatformMetrics = async (args: {filter: DateTrunc, startDate: string, endDate: string }, context: {user: any}) => {
+    checkPermissions({ hasRole: ['admin']}, context);
+    HourlyCampaignMetric.validate.validateHourlyMetricsArgs(args);
+    const { filter, startDate, endDate } = args;
+    const metrics = await HourlyCampaignMetric.getDateGroupedMetrics(filter, startDate, endDate);
+    return HourlyCampaignMetric.parseHourlyPlatformMetrics(metrics, filter);
 }
 
 export const generateCampaignAuditReport = async (args: { campaignId: string }, context: { user: any }) => {
@@ -158,15 +192,15 @@ export const generateCampaignAuditReport = async (args: { campaignId: string }, 
     }
     const report: {[key:string]: any} = auditReport;
     for (const key in report) {
-        if (key === 'flaggedParticipants') {
-            for (const flagged of report[key]) {
-                for (const value in flagged) {
-                    if(value !== 'participantId') flagged[value] = parseFloat(flagged[value].toString());
-                }
-            }
-            continue;
+      if (key === 'flaggedParticipants') {
+        for (const flagged of report[key]) {
+          for (const value in flagged) {
+            if(value !== 'participantId') flagged[value] = parseFloat(flagged[value].toString());
+          }
         }
-        report[key] = parseFloat(report[key].toString());
+        continue;
+      }
+      report[key] = parseFloat(report[key].toString());
     }
     return auditReport;
 };

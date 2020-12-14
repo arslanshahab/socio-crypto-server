@@ -13,7 +13,7 @@ import * as gql from 'gql-query-builder';
 import {createProfile, createUser} from './specHelpers';
 import { Paypal } from '../../src/clients/paypal';
 import { Transfer } from '../../src/models/Transfer';
-import { ExternalWallet } from '../../src/models/ExternalWallet';
+import { ExternalAddress } from '../../src/models/ExternalAddress';
 import { Profile } from '../../src/models/Profile';
 import { sha256Hash } from '../../src/util/crypto';
 
@@ -53,7 +53,7 @@ describe('Profile Integrations Tests', () => {
 
   beforeEach(async () => {
     await Profile.query('TRUNCATE public.profile CASCADE');
-    await ExternalWallet.query('TRUNCATE public.external_wallet CASCADE');
+    await ExternalAddress.query('TRUNCATE public.external_address CASCADE');
     await Transfer.query('TRUNCATE public.transfer CASCADE');
     await Participant.query('TRUNCATE public.participant CASCADE');
     await Campaign.query('TRUNCATE public.campaign CASCADE');

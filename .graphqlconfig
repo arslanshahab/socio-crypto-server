@@ -1,0 +1,5 @@
+{
+  "name": "Raiinmaker GraphQL Schema",
+  "schemaPath": "./src/graphql/schema.graphql",
+  "excludes": ["dist"]
+}

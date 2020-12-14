@@ -32,8 +32,10 @@ export const BN = BigNumber.clone({
 
 // Prevent use in primitive operations.
 // See https://mikemcl.github.io/bignumber.js/#type-coercion
-BN.prototype.valueOf = function() {
-  throw Error('Conversion to primitive type is prohibited')
+if (process.env.NODE_ENV !== 'script') {
+  BN.prototype.valueOf = function() {
+    throw Error('Conversion to primitive type is prohibited')
+  }
 }
 
 export const deleteFactorFromKycData = (kycData: KycUser, factorName: string) => {
@@ -130,4 +132,31 @@ export const generateRandomNonce = () => {
   let result = '';
   for (let i = length; i > 0; i--) result += characters[Math.floor(Math.random() * characters.length)];
   return result;
+}
+
+export const paginateList = (items: any[], maxItems = 100) => {
+  const pages = [];
+  let idx = 0;
+  while (idx < items.length) {
+    var nextIndex = (idx + maxItems) < items.length ? (idx + maxItems) : items.length;
+    pages.push(items.slice(idx, nextIndex));
+    idx += maxItems;
+  }
+  return pages;
+}
+
+export const calculateQualityMultiplier = (tier: BigNumber) => {
+  const tierValue = (value: number) => new BN(value);
+  switch (tier) {
+    case tierValue(1):
+      return new BN(0.625);
+    case tierValue(2):
+      return new BN(1);
+    case tierValue(3):
+      return new BN(1.25);
+    case tierValue(4):
+      return new BN(2.5);
+    default:
+      return new BN(1);
+  }
 }

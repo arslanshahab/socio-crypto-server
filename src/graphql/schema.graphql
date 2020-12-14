@@ -66,20 +66,24 @@ type Mutation {
     country:String
   ): User
   generateFactorsFromKyc(factors:[JSON]): JSON
-  attachEthereumAddress(ethereumAddress:String!): ExternalWallet
-  claimEthereumAddress(ethereumAddress:String!,signature:String!): ExternalWallet
+  attachEthereumAddress(ethereumAddress:String!): ExternalAddress
+  claimEthereumAddress(ethereumAddress:String!,signature:String!): ExternalAddress
+  removeEthereumAddress(ethereumAddress:String!): Boolean
   updateNotificationSettings(
     kyc:Boolean,
     withdraw:Boolean,
     campaignCreate:Boolean,
     campaignUpdates:Boolean
   ): User
+  newOrg(orgName: String!, email: String!, name: String!): JSON
+  newUser(name: String!, email: String!): Boolean
+  updatePassword(password: String!): Boolean
 }
 
 type Query {
   getCurrentCampaignTier(campaignId: String!): CurrentTier
   usernameExists(username:String!): UserExistence
-  listCampaigns(open:Boolean,skip:Int,take:Int,scoped:Boolean): PaginatedCampaignResults
+  listCampaigns(open:Boolean,skip:Int,take:Int,scoped:Boolean,sort:Boolean): PaginatedCampaignResults
   getCampaign(id:String): Campaign
   getParticipant(id:String): Participant
   getParticipantPosts(id:String): [String]
@@ -97,11 +101,29 @@ type Query {
   getWithdrawals(status:String): [AdminWithdrawal]
   accountExists(id:String!): UserExistence
   getCampaignMetrics(campaignId:String!): AdminCampaignMetrics
+  getHourlyCampaignMetrics(campaignId:String!, filter:String!, startDate: String!, endDate: String!): [AdminHourlyCampaignMetrics]
+  getHourlyPlatformMetrics(filter:String!, startDate: String!, endDate: String!): [AdminHourlyPlatformMetrics]
+  getTotalPlatformMetrics: AdminCampaignMetrics
   getFollowerCount: FollowerCounts
   getPreviousDayMetrics: JSON
   getEstimatedGasPrice: String
-  getExternalAddress(ethereumAddress:String!): ExternalWallet
-  listExternalAddresses: [ExternalWallet]
+  getExternalAddress(ethereumAddress:String!): ExternalAddress
+  listExternalAddresses: [ExternalAddress]
+  getWithdrawalsV2(status:String): [AdminWithdrawal]
+  getWithdrawalHistory: [Transfer]
+  adminGetKycByUser(userId:String!): KycUser
+  verifySession: JSON
+  getFundingWallet: FundingWallet
+  listOrgs(skip: Int, take: Int): [Org]
+  listEmployees: [Employee]
+}
+
+type Org {
+  name: String
+}
+
+type Employee {
+  name: String
 }
 
 type NotificationSettings {
@@ -111,7 +133,12 @@ type NotificationSettings {
   campaignUpdates: Boolean
 }
 
-type ExternalWallet {
+type FundingWallet {
+  balance: Float
+  transfers: [Transfer]
+}
+
+type ExternalAddress {
   ethereumAddress: String
   message: String
   claimed: Boolean
@@ -147,6 +174,40 @@ type AdminCampaignMetrics {
   likeCount: Int
   commentCount: Int
   shareCount: Int
+  participantCount: Int
+  discoveryCount: Int
+  conversionCount: Int
+}
+
+type AdminHourlyCampaignMetrics {
+  interval: String
+  postCount: Int
+  participantCount: Int
+  clickCount: Int
+  viewCount: Int
+  submissionCount: Int
+  likeCount: Int
+  shareCount: Int
+  commentCount: Int
+  totalDiscoveries: Int
+  totalConversions: Int
+  averagePostCost: Float
+  averageDiscoveryCost: Float
+  averageConversionCost: Float
+}
+
+type AdminHourlyPlatformMetrics {
+  interval: String
+  postCount: Int
+  participantCount: Int
+  clickCount: Int
+  viewCount: Int
+  submissionCount: Int
+  likeCount: Int
+  shareCount: Int
+  commentCount: Int
+  totalDiscoveries: Int
+  totalConversions: Int
 }
 
 type AdminWithdrawal {
@@ -163,6 +224,7 @@ type Transfer {
   action: String
   withdrawStatus: String
   ethAddress: String
+  paypalAddress: String
   campaign: Campaign
   createdAt: String
   updatedAt: String

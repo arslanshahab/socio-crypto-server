@@ -5,25 +5,41 @@ phases:
     runtime-versions:
       docker: 18
     commands:
-      - curl -Lo kops https://github.com/kubernetes/kops/releases/download/1.15.0/kops-linux-amd64 && chmod +x kops && mv kops /usr/bin/kops
+      - curl -sS -o aws-iam-authenticator https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/aws-iam-authenticator
+      - curl -sS -o kubectl https://amazon-eks.s3-us-west-2.amazonaws.com/1.14.6/2019-08-22/bin/linux/amd64/kubectl
+      - chmod +x ./kubectl ./aws-iam-authenticator
+      - export PATH=$PWD/:$PATH
+      - apt-get update && apt-get -y install jq python3-pip python3-dev && pip3 install --upgrade awscli
+      - curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.17.11/2020-09-18/bin/darwin/amd64/kubectl && chmod +x ./kubectl
+      - mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$PATH:$HOME/bin
       - curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 && chmod +x ./get_helm.sh && ./get_helm.sh --version v3.1.0
       - export NPM_TOKEN=$(aws secretsmanager get-secret-value --secret-id=npm/dragonchain-dev/read-only | jq -r '.SecretString | fromjson | .NPM_TOKEN')
-      - $(aws ecr get-login --no-include-email --region us-west-2)
+      - export KUBECONFIG=$HOME/.kube/config
+      - $(aws ecr get-login --no-include-email --region us-west-1)
   build:
     commands:
       - export VERSION=$(jq -r .version package.json)
-      - CLUSTER="uw2-k8s-internal-stage.api.dragonchain.com"
+      - AWS_CLUSTER_NAME="raiinmaker-staging"
       - NAMESPACE="raiinmaker"
       - if [ -z "$VERSION" ]; then echo "VERSION variable is missing"; exit 1; fi
-      - if [ "$STAGE" = "production" ]; then CLUSTER="uw2-k8s-internal.api.dragonchain.com"; fi
+      - if [ "$STAGE" = "production" ]; then AWS_CLUSTER_NAME="raiinmaker-production"; fi
       - export TAG="$STAGE-$VERSION"
-      - echo $NPM_TOKEN
-      - docker build . --build-arg NPM_TOKEN=$NPM_TOKEN -t 381978683274.dkr.ecr.us-west-2.amazonaws.com/raiinmaker:$TAG
 
-      - docker push 381978683274.dkr.ecr.us-west-2.amazonaws.com/raiinmaker:$TAG
+      - docker build . --build-arg NPM_TOKEN=$NPM_TOKEN -t 527252880472.dkr.ecr.us-west-1.amazonaws.com/raiinmaker:$TAG
 
-      - aws cloudformation deploy --template-file ./cloudformation/service.yml --stack-name raiinmaker-$STAGE --parameter-overrides "Stage=$STAGE" --capabilities CAPABILITY_NAMED_IAM --no-fail-on-empty-changeset
-      - kops export kubecfg $CLUSTER --state s3://kubernetes-state-store-dc
+      - docker push 527252880472.dkr.ecr.us-west-1.amazonaws.com/raiinmaker:$TAG
+
+      - aws cloudformation deploy --template-file ./cloudformation/service.yml --stack-name raiinmaker-$STAGE --parameter-overrides "Stage=$STAGE" --capabilities CAPABILITY_NAMED_IAM --no-fail-on-empty-changeset --region us-west-1
+
+      - echo Assuming role
+      - CREDENTIALS=$(aws sts assume-role --role-arn arn:aws:iam::527252880472:role/EksWorkshopCodeBuildKubectlRole --role-session-name codebuild-kubectl-$STAGE --duration-seconds 900)
+      - export AWS_ACCESS_KEY_ID="$(echo ${CREDENTIALS} | jq -r '.Credentials.AccessKeyId')"
+      - export AWS_SECRET_ACCESS_KEY="$(echo ${CREDENTIALS} | jq -r '.Credentials.SecretAccessKey')"
+      - export AWS_SESSION_TOKEN="$(echo ${CREDENTIALS} | jq -r '.Credentials.SessionToken')"
+      - export AWS_EXPIRATION=$(echo ${CREDENTIALS} | jq -r '.Credentials.Expiration')
+
+      - echo Logging in to Amazon EKS...
+      - aws eks --region us-west-1 update-kubeconfig --name $AWS_CLUSTER_NAME
 
       - if [ "$STAGE" = "production" ]; then VALUES="./helm/raiinmaker/values-prod.yaml"; else VALUES="./helm/raiinmaker/values.yaml"; fi
       - helm upgrade --install raiinmaker-api --namespace $NAMESPACE -f $VALUES ./helm/raiinmaker --set image.tag=$TAG

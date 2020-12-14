@@ -1,3 +1,4 @@
+import { Request, Response } from 'express';
 import { RedisStore, getGraphQLRateLimiter } from 'graphql-rate-limit';
 import {Campaign} from "../models/Campaign";
 import {User} from "../models/User";
@@ -6,9 +7,11 @@ import {Participant} from "../models/Participant";
 import {SocialPost} from "../models/SocialPost";
 import {getTweetById} from '../controllers/social';
 import { getRedis } from '../clients/redis';
-import { BN } from '../util/helpers';
+import {BN, asyncHandler, calculateQualityMultiplier} from '../util/helpers';
 import { DailyParticipantMetric } from '../models/DailyParticipantMetric';
 import { getDatesBetweenDates, formatUTCDateForComparision } from './helpers';
+import {HourlyCampaignMetric} from "../models/HourlyCampaignMetric";
+import {QualityScore} from "../models/QualityScore";
 
 const { RATE_LIMIT_MAX = '3', RATE_LIMIT_WINDOW = '1m' } = process.env;
 
@@ -31,30 +34,33 @@ export const getParticipantByCampaignId = async (args: { campaignId: string }, c
 export const trackAction = async (args: { participantId: string, action: 'click' | 'view' | 'submission' }, context: any, info: any) => {
     const errorMessage = await rateLimiter({ parent: {}, args, context, info }, { max: Number(RATE_LIMIT_MAX), window: RATE_LIMIT_WINDOW });
     if (errorMessage) throw new Error(errorMessage);
-    if (!['click', 'view', 'submission'].includes(args.action)) throw new Error('invalid metric specified');
+    if (!['view', 'submission'].includes(args.action)) throw new Error('invalid metric specified');
     const participant = await Participant.findOne({ where: { id: args.participantId }, relations: ['campaign','user'] });
     if (!participant) throw new Error('participant not found');
     if (!participant.campaign.isOpen()) throw new Error('campaign is closed');
-    const campaign = await Campaign.findOne({ where: { id: participant.campaign.id }});
+    const campaign = await Campaign.findOne({ where: { id: participant.campaign.id }, relations: ['org']});
     if (!campaign) throw new Error('campaign not found');
+    let qualityScore = await QualityScore.findOne({where: {participantId: participant.id}});
+    if (!qualityScore) qualityScore = QualityScore.newQualityScore(participant.id);
+    let multiplier;
     switch (args.action) {
-        case 'click':
-            participant.clickCount = participant.clickCount.plus(new BN(1));
-            break;
         case 'view':
             participant.viewCount = participant.viewCount.plus(new BN(1));
+            multiplier = calculateQualityMultiplier(qualityScore.views);
             break;
         case 'submission':
             participant.submissionCount = participant.submissionCount.plus(new BN(1));
+            multiplier = calculateQualityMultiplier(qualityScore.submissions);
             break;
         default:
             throw new Error("Action not supported");
     }
-    const pointValue = campaign.algorithm.pointValues[args.action];
+    const pointValue = campaign.algorithm.pointValues[args.action].times(multiplier);
     campaign.totalParticipationScore = campaign.totalParticipationScore.plus(pointValue);
     participant.participationScore = participant.participationScore.plus(pointValue);
     await campaign.save();
     await participant.save();
+    await HourlyCampaignMetric.upsert(campaign, campaign.org, args.action);
     await DailyParticipantMetric.upsert(participant.user, campaign, participant, args.action, pointValue);
     await Dragonchain.ledgerCampaignAction(args.action, participant.id, participant.campaign.id);
     return participant.asV1();
@@ -81,7 +87,7 @@ export const getPosts = async (args: { id: string }, context: any) => {
       try {
         const tweet = await getTweetById({ id: post.id, type: 'twitter'}, context);
         results.push(tweet);
-      } catch (_) {};
+      } catch (_) {}
     }
     return results;
   } catch (e) {
@@ -107,3 +113,25 @@ export const getParticipantMetrics = async (args: { participantId: string }, con
   }
   return metrics.concat(additionalRows).map(metric => metric.asV1());
 }
+
+export const trackClickByLink = asyncHandler(async (req: Request, res: Response) => {
+  const { participantId } = req.params;
+  if (!participantId) return res.status(400).json({ code: 'MALFORMED_INPUT', message: 'missing participant ID in request' });
+  const participant = await Participant.findOne({ where: { id: participantId }, relations: ['campaign', 'user'] });
+  if (!participant) return res.status(404).json({ code: 'NOT_FOUND', message: 'participant not found' });
+  const campaign = await Campaign.findOne({ where: { id: participant.campaign.id }, relations: ['org'] });
+  if (!campaign) return res.status(404).json({ code: 'NOT_FOUND', message: 'campaign not found' });
+  let qualityScore = await QualityScore.findOne({where: {participantId: participant.id}});
+  if (!qualityScore) qualityScore = QualityScore.newQualityScore(participant.id);
+  const multiplier = calculateQualityMultiplier(qualityScore.clicks);
+  participant.clickCount = participant.clickCount.plus(new BN(1));
+  const pointValue = campaign.algorithm.pointValues['click'].times(multiplier);
+  campaign.totalParticipationScore = campaign.totalParticipationScore.plus(pointValue);
+  participant.participationScore = participant.participationScore.plus(pointValue);
+  await campaign.save();
+  await participant.save();
+  await HourlyCampaignMetric.upsert(campaign, campaign.org, 'click');
+  await DailyParticipantMetric.upsert(participant.user, campaign, participant, 'click', pointValue);
+  await Dragonchain.ledgerCampaignAction('click', participant.id, participant.campaign.id);
+  return res.redirect(campaign.target);
+});

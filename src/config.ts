@@ -1,8 +1,8 @@
 const { NODE_ENV = 'development' } = process.env;
 
 const serverUrls: {[key: string]: string} = {
-  'production': 'https://raiinmaker.api.dragonchain.com',
-  'staging': 'https://raiinmaker-staging.api.dragonchain.com',
+  'production': 'https://server.api.raiinmaker.com',
+  'staging': 'https://server-staging.api.raiinmaker.com',
   'development': 'http://localhost:4000'
 };
 
