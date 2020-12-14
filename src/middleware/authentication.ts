@@ -53,10 +53,15 @@ export const firebaseAuth = async (req: AuthRequest, res: Response, next: NextFu
   }
 }
 
-export const checkPermissions = (opts: { hasRole: string[] }, context: { user: any }) => {
+export const checkPermissions = (opts: { hasRole?: string[], restrictCompany?: string }, context: { user: any }) => {
   const { role, id, company } = context.user;
   console.log(`UID: ${id} requesting a admin route`);
-  if (!role || !opts.hasRole.includes(role)) throw new Error('forbidden');
+  if (opts.hasRole) {
+    if (!role || !opts.hasRole.includes(role)) throw new Error('forbidden');
+  }
+  if (opts.restrictCompany) {
+    if (company !== opts.restrictCompany) throw new Error('forbidden');
+  }
   if (role === 'manager' && !company) throw new Error('forbidden, company not specified');
   return { role, company };
 }
