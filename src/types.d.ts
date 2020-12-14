@@ -7,6 +7,12 @@ export interface FactorGeneration {
   id: string;
 }
 
+export interface RafflePrizeStructure {
+  displayName: string;
+  affiliateLink?: string;
+  image?: string;
+}
+
 export interface KycUser {
   firstName: string;
   lastName: string;

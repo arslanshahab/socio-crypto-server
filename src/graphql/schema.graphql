@@ -15,7 +15,9 @@ type Mutation {
     image: String,
     tagline: String,
     suggestedPosts:[String],
-    suggestedTags:[String]): Campaign
+    suggestedTags:[String],
+    type: String,
+    rafflePrize: JSON): Campaign
   updateCampaign(
     id:String!
     name:String,
@@ -349,6 +351,15 @@ type Campaign {
   suggestedPosts: [String]
   suggestedTags: [String]
   participants: [Participant]
+  type: String
+  prize: RafflePrize
+}
+
+type RafflePrize {
+  id: String
+  displayName: String
+  affiliateLink: String
+  image: Boolean
 }
 
 type Participant {

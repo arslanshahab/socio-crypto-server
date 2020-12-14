@@ -6,7 +6,8 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
-  ManyToOne
+  ManyToOne,
+  OneToOne
 } from 'typeorm';
 import { DateUtils } from 'typeorm/util/DateUtils';
 import { Participant } from './Participant';
@@ -21,6 +22,7 @@ import { getDatesBetweenDates, formatUTCDateForComparision, getYesterdaysDate } 
 import { User } from './User';
 import {Org} from "./Org";
 import {HourlyCampaignMetric} from "./HourlyCampaignMetric";
+import { RafflePrize } from './RafflePrize';
 
 @Entity()
 export class Campaign extends BaseEntity {
@@ -75,6 +77,9 @@ export class Campaign extends BaseEntity {
   @Column({ type: 'text', nullable: false, default: '[]', transformer: StringifiedArrayTransformer })
   public suggestedTags: string[];
 
+  @Column({ type: 'text', nullable: true })
+  public type: string;
+
   @OneToMany(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _type => Participant,
@@ -111,6 +116,12 @@ export class Campaign extends BaseEntity {
     org => org.campaigns
   )
   public org: Org;
+
+  @OneToOne(
+    _type => RafflePrize,
+    prize => prize.campaign
+  )
+  public prize: RafflePrize;
 
   @CreateDateColumn()
   public createdAt: Date;
@@ -276,7 +287,7 @@ export class Campaign extends BaseEntity {
     return true;
   }
 
-  public static newCampaign(name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, tagline: string, requirements: CampaignRequirementSpecs, suggestedPosts: string[], suggestedTags: string[], org?: Org,): Campaign {
+  public static newCampaign(name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, tagline: string, requirements: CampaignRequirementSpecs, suggestedPosts: string[], suggestedTags: string[], type: string, org?: Org): Campaign {
     const campaign = new Campaign();
     if(org) campaign.org = org;
     campaign.name = name;
@@ -288,6 +299,7 @@ export class Campaign extends BaseEntity {
     campaign.algorithm = JSON.parse(algorithm);
     campaign.totalParticipationScore = new BN(0);
     campaign.targetVideo = targetVideo;
+    campaign.type = type;
     if (description) campaign.description = description;
     if (tagline) campaign.tagline = tagline;
     if (requirements) campaign.requirements = requirements;

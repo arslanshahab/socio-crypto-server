@@ -8,13 +8,15 @@ import {Campaign} from "../../src/models/Campaign";
 import {Wallet} from "../../src/models/Wallet";
 import {User} from "../../src/models/User";
 import * as RedisClient from "../../src/clients/redis";
-import {createCampaign, createParticipant, getBeginDate, getEndDate} from "./specHelpers";
+import {createCampaign, createParticipant, createRafflePrize, getBeginDate, getEndDate} from "./specHelpers";
 import * as gql from 'gql-query-builder';
 import {Firebase} from "../../src/clients/firebase";
 import * as admin from "firebase-admin";
 import {calculateTier} from "../../src/controllers/helpers";
 import { BN } from '../../src/util/helpers';
 import { Paypal } from '../../src/clients/paypal';
+import { RafflePrize } from '../../src/models/RafflePrize';
+import { SesClient } from '../../src/clients/ses';
 
 describe('Campaign Integration Test', () => {
    let runningApp: Application;
@@ -44,10 +46,12 @@ describe('Campaign Integration Test', () => {
       fullAppTestBed.stub(Paypal, 'refreshToken');
       fullAppTestBed.stub(Firebase, 'sendCampaignCompleteNotifications');
       fullAppTestBed.stub(Firebase, 'sendCampaignCreatedNotifications');
+      fullAppTestBed.stub(SesClient, 'sendRafflePrizeRedemptionEmail');
       Firebase.client = {
-         auth: () => {},
+        auth: () => {},
       } as admin.app.App;
-      fullAppTestBed.stub(Dragonchain, 'ledgerCampaignAudit');
+      fullAppTestBed.stub(Dragonchain, 'ledgerCoiinCampaignAudit');
+      fullAppTestBed.stub(Dragonchain, 'ledgerRaffleCampaignAudit');
       fullAppTestBed.stub(RedisClient, 'getRedis');
       runningApp = new Application();
       await runningApp.initializeServer();
@@ -59,6 +63,7 @@ describe('Campaign Integration Test', () => {
       await Campaign.query('TRUNCATE public.campaign CASCADE');
       await Wallet.query('TRUNCATE public.wallet CASCADE');
       await User.query('TRUNCATE public.user CASCADE');
+      await RafflePrize.query('TRUNCATE public."raffle_prize" CASCADE');
    });
 
    after(async () => {
@@ -67,32 +72,65 @@ describe('Campaign Integration Test', () => {
       await runningApp.runningServer.close();
    });
    describe('Mutations', () => {
-      it('#newCampaign', async () => {
-         const beginDate = getBeginDate().toString();
-         const endDate = getEndDate().toString();
-         const algorithm = JSON.stringify({"version": "1", "initialTotal": "1000", "tiers":{"1":{"threshold":"25000","totalCoiins":"1000"},"2":{"threshold":"50000","totalCoiins":"3000"},"3":{"threshold":"75000","totalCoiins":"5000"},"4":{"threshold":"100000","totalCoiins":"7000"},"5":{"threshold":"250000","totalCoiins":"10000"}},"pointValues":{"click": "14","view": "10","submission": "201", "likes": "201", "shares": "201"}});
-         const mutation = gql.mutation({
-            operation: 'newCampaign',
-            variables: {
-               name: {value: 'banana', required: true},
-               coiinTotal: {value: 21.24, required: true},
-               target: {value: "bacon", required: true},
-               targetVideo: {value: "bacon-video", required: true},
-               beginDate: {value: beginDate, required: true },
-               endDate: {value: endDate, required: true},
-               algorithm: {value: algorithm, required: true },
-               company: 'raiinmaker',
-            },
-            fields: ['name']
-         })
-         const res = await request(runningApp.app)
-             .post('/v1/graphql')
-             .send(mutation)
-             .set('Accepts', 'application/json')
-             .set('authorization', 'Bearer raiinmaker');
-         const response = res.body.data.newCampaign;
-         expect(response.name).to.equal('banana');
-      })
+      describe('#newCampaign', () => {
+        it('#newCampaign', async () => {
+          const beginDate = getBeginDate().toString();
+          const endDate = getEndDate().toString();
+          const algorithm = JSON.stringify({"version": "1", "initialTotal": "1000", "tiers":{"1":{"threshold":"25000","totalCoiins":"1000"},"2":{"threshold":"50000","totalCoiins":"3000"},"3":{"threshold":"75000","totalCoiins":"5000"},"4":{"threshold":"100000","totalCoiins":"7000"},"5":{"threshold":"250000","totalCoiins":"10000"}},"pointValues":{"click": "14","view": "10","submission": "201", "likes": "201", "shares": "201"}});
+          const mutation = gql.mutation({
+             operation: 'newCampaign',
+             variables: {
+                name: {value: 'banana', required: true},
+                coiinTotal: {value: 21.24, required: true},
+                target: {value: "bacon", required: true},
+                targetVideo: {value: "bacon-video", required: true},
+                beginDate: {value: beginDate, required: true },
+                endDate: {value: endDate, required: true},
+                algorithm: {value: algorithm, required: true },
+                company: 'raiinmaker',
+             },
+             fields: ['name']
+          })
+          const res = await request(runningApp.app)
+              .post('/v1/graphql')
+              .send(mutation)
+              .set('Accepts', 'application/json')
+              .set('authorization', 'Bearer raiinmaker');
+          const response = res.body.data.newCampaign;
+          expect(response.name).to.equal('banana');
+       });
+       it('#newRaffleCampaign with raffle prize', async () => {
+        const beginDate = getBeginDate().toString();
+        const endDate = getEndDate().toString();
+        const algorithm = JSON.stringify({"version": "1","pointValues":{"click": "14","view": "10","submission": "201", "likes": "201", "shares": "201"}});
+        const mutation = gql.mutation({
+           operation: 'newCampaign',
+           variables: {
+              name: {value: 'banana', required: true},
+              coiinTotal: {value: 21.24, required: true},
+              target: {value: "bacon", required: true},
+              targetVideo: {value: "bacon-video", required: true},
+              beginDate: {value: beginDate, required: true },
+              endDate: {value: endDate, required: true},
+              algorithm: {value: algorithm, required: true },
+              company: 'raiinmaker',
+              type: 'raffle',
+              rafflePrize: { value: { displayName: 'banana' }, type: 'JSON' }
+           },
+           fields: ['id']
+        })
+        const res = await request(runningApp.app)
+            .post('/v1/graphql')
+            .send(mutation)
+            .set('Accepts', 'application/json')
+            .set('authorization', 'Bearer raiinmaker');
+        const response = res.body.data.newCampaign;
+        expect(!!response.id).to.be.true;
+        const campaign = await Campaign.findOneOrFail({ where: { id: response.id }, relations: ['prize'] });
+        expect(!!campaign.prize).to.be.true;
+        expect(campaign.prize.displayName).to.equal('banana');
+     })
+      });
       it('#calculateTier calculates correct max tier', async () => {
          const algorithm = JSON.parse('{"tiers": {"1": {"threshold": 0, "totalCoiins": 1000}, "2": {"threshold": 10, "totalCoiins": 2000}, "3": {"threshold": "", "totalCoiins": ""}, "4": {"threshold": "", "totalCoiins": ""}, "5": {"threshold": "", "totalCoiins": ""}, "6": {"threshold": "", "totalCoiins": ""}, "7": {"threshold": "", "totalCoiins": ""}, "8": {"threshold": "", "totalCoiins": ""}, "9": {"threshold": "", "totalCoiins": ""}, "10": {"threshold": "", "totalCoiins": ""}}, "pointValues": {"view": "1", "click": "1", "likes": "1", "shares": "1", "submission": "1"}}');
          const { currentTier, currentTotal } = await calculateTier(new BN(30), algorithm.tiers);
@@ -141,6 +179,137 @@ describe('Campaign Integration Test', () => {
          expect(response.totalRewardPayout).to.equal(40);
          expect(response.flaggedParticipants.length).to.equal(3);
       });
+      it('#generateCampaignAudit for raffle campaign', async () => {
+        const participant1 = await createParticipant(runningApp);
+        const participant2 = await createParticipant(runningApp);
+        const participant3 = await createParticipant(runningApp);
+        const campaign = await createCampaign(runningApp, {type: 'raffle', participants: [participant1, participant2, participant3], totalParticipationScore: 45});
+        const mutation = gql.mutation({
+           operation: 'generateCampaignAuditReport',
+           variables: {
+              campaignId: {value: campaign.id, required: true},
+           },
+           fields: ['totalViews', 'totalClicks', 'totalSubmissions', 'totalRewardPayout', {flaggedParticipants: ['participantId', 'totalPayout']}]
+        })
+        const res = await request(runningApp.app)
+            .post('/v1/graphql')
+            .send(mutation)
+            .set('Accepts', 'application/json')
+            .set('authorization', 'Bearer raiinmaker');
+        const response = res.body.data.generateCampaignAuditReport;
+        expect(response.totalViews).to.equal(15);
+        expect(response.totalClicks).to.equal(15);
+        expect(response.totalSubmissions).to.equal(15);
+        expect(response.totalRewardPayout).to.equal(0);
+        expect(response.flaggedParticipants.length).to.equal(3);
+     });
+     it('#generateCampaignAudit for raffle campaign with only 1 flagged participant', async () => {
+      const participant1 = await createParticipant(runningApp, { participationScore: 5 });
+      const participant2 = await createParticipant(runningApp, { participationScore: 5 });
+      const participant3 = await createParticipant(runningApp, { participationScore: 35 });
+      const campaign = await createCampaign(runningApp, {type: 'raffle', participants: [participant1, participant2, participant3], totalParticipationScore: 45});
+      const mutation = gql.mutation({
+         operation: 'generateCampaignAuditReport',
+         variables: {
+            campaignId: {value: campaign.id, required: true},
+         },
+         fields: ['totalViews', 'totalClicks', 'totalSubmissions', 'totalRewardPayout', {flaggedParticipants: ['participantId', 'totalPayout']}]
+      })
+      const res = await request(runningApp.app)
+          .post('/v1/graphql')
+          .send(mutation)
+          .set('Accepts', 'application/json')
+          .set('authorization', 'Bearer raiinmaker');
+      const response = res.body.data.generateCampaignAuditReport;
+      expect(response.totalViews).to.equal(15);
+      expect(response.totalClicks).to.equal(15);
+      expect(response.totalSubmissions).to.equal(15);
+      expect(response.totalRewardPayout).to.equal(0);
+      expect(response.flaggedParticipants.length).to.equal(1);
+      expect(response.flaggedParticipants[0].participantId).to.equal(participant3.id);
+   });
+     it('#payoutCampaignRewards from a raffle campaign', async () => {
+      const campaign = await createCampaign(runningApp, {type: 'raffle', totalParticipationScore: 60});
+      await createRafflePrize(runningApp, { displayName: 'rafflePrize1', campaign });
+      await createParticipant(runningApp, {
+         campaign,
+         participationScore: 20,
+         userOptions: {
+            walletOptions: {
+               balance: 50
+            }
+         }
+      });
+      await createParticipant(runningApp, {
+         campaign,
+         participationScore: 30,
+         clickCount: 10,
+         viewCount: 10,
+         submissionCount: 10,
+         userOptions: {
+            walletOptions: {
+               balance: 50
+            }
+      }});
+      await createParticipant(runningApp, {participationScore: 10, campaign, userOptions: {walletOptions: {balance: 50}}});
+      const mutation = gql.mutation({
+         operation: 'payoutCampaignRewards',
+         variables: {
+            campaignId: { value: campaign.id, required: true },
+            rejected: { value: [], type:'[String]', required: true }
+         },
+      })
+      const res = await request(runningApp.app)
+          .post('/v1/graphql')
+          .send(mutation)
+          .set('Accepts', 'application/json')
+          .set('authorization', 'Bearer raiinmaker');
+      expect(res.body.data.payoutCampaignRewards).to.equal(true);
+      const c = await Campaign.findOneOrFail({ where: { id: campaign.id }, relations: ['payouts'] });
+      expect(c.payouts.length).to.equal(1);
+      expect(c.payouts[0].action).to.equal('prize');
+   });
+   it('#payoutCampaignRewards from a raffle campaign with 1 flagged participant', async () => {
+      const campaign = await createCampaign(runningApp, {type: 'raffle', totalParticipationScore: 60});
+      await createRafflePrize(runningApp, { displayName: 'rafflePrize1', campaign });
+      const participant = await createParticipant(runningApp, {
+        campaign,
+        participationScore: 20,
+        userOptions: {
+            walletOptions: {
+              balance: 50
+            }
+        }
+      });
+      await createParticipant(runningApp, {
+        campaign,
+        participationScore: 30,
+        clickCount: 10,
+        viewCount: 10,
+        submissionCount: 10,
+        userOptions: {
+            walletOptions: {
+              balance: 50
+            }
+      }});
+      await createParticipant(runningApp, {participationScore: 10, campaign, userOptions: {walletOptions: {balance: 50}}});
+      const mutation = gql.mutation({
+        operation: 'payoutCampaignRewards',
+        variables: {
+            campaignId: { value: campaign.id, required: true },
+            rejected: { value: [participant.id], type:'[String]', required: true }
+        },
+      })
+      const res = await request(runningApp.app)
+          .post('/v1/graphql')
+          .send(mutation)
+          .set('Accepts', 'application/json')
+          .set('authorization', 'Bearer raiinmaker');
+      expect(res.body.data.payoutCampaignRewards).to.equal(true);
+      const c = await Campaign.findOneOrFail({ where: { id: campaign.id }, relations: ['payouts'] });
+      expect(c.payouts.length).to.equal(1);
+      expect(c.payouts[0].action).to.equal('prize');
+    });
       it('#payoutCampaignRewards', async () => {
          const campaign = await createCampaign(runningApp, {totalParticipationScore: 60});
          let participant1 = await createParticipant(runningApp, {

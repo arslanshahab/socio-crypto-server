@@ -17,6 +17,7 @@ import {Org} from "../../src/models/Org";
 import {SocialPost} from "../../src/models/SocialPost";
 import {SocialLink} from "../../src/models/SocialLink";
 import {getRandomIntWithinRange} from "../../scripts/helpers";
+import { RafflePrize } from '../../src/models/RafflePrize';
 
 export const createCampaign = async (runningApp: Application, options?: { [key: string]: any } | any, ) => {
   const campaign = new Campaign();
@@ -36,7 +37,15 @@ export const createCampaign = async (runningApp: Application, options?: { [key: 
   campaign.org = getValue(['org'], options, await createOrg(runningApp));
   campaign.suggestedTags = getValue(['suggestedTags'], options, []);
   campaign.suggestedPosts = getValue(['suggestedPosts'], options, []);
+  campaign.type = getValue(['type'], options, 'coiin');
   return await runningApp.databaseConnection.createEntityManager().save(campaign);
+}
+
+export const createRafflePrize = async (runningApp: Application, options?: { [key: string]: any } | any) => {
+  const prize = new RafflePrize();
+  prize.displayName = getValue(['displayName'], options);
+  prize.campaign = getValue(['campaign'], options) || await createCampaign(runningApp);
+  return await runningApp.databaseConnection.createEntityManager().save(prize);
 }
 
 export const createDailyParticipantMetric = async (runningApp: Application, options?: { [key: string]: any } | any) => {

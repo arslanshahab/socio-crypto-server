@@ -24,7 +24,7 @@ export const extractFactor = (factor: string): string => {
   }
 };
 
-export const generateRandomNumber = () => Math.floor(Math.random() * 9000000);
+export const generateRandomNumber = (max = 9000000) => Math.floor(Math.random() * max);
 
 export const BN = BigNumber.clone({
   EXPONENTIAL_AT: [-1e9, 1e9]

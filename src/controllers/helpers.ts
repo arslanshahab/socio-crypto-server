@@ -4,9 +4,24 @@ import {Participant} from "../models/Participant";
 import {Campaign} from "../models/Campaign";
 import { getConnection } from 'typeorm';
 import { Wallet } from '../models/Wallet';
-import {BN} from '../util/helpers';
+import { BN, generateRandomNumber } from '../util/helpers';
 import { BigNumber } from 'bignumber.js';
 import { DailyParticipantMetric } from '../models/DailyParticipantMetric';
+
+export const calculateRaffleWinner = (totalParticipationScore: BigNumber, participants: Participant[], currentRun = 1): Participant => {
+  if (currentRun > 5) throw new Error('no winner found in 5 runs. Try again');
+  const sumOfWeights = totalParticipationScore;
+  let rand = generateRandomNumber(sumOfWeights.toNumber());
+  const numberOfChoices = participants.length;
+  for (let i = 0; i < numberOfChoices; i++) {
+    const participant = participants[i];
+    if (rand < participant.participationScore.toNumber()) {
+      return participant;
+    }
+    rand -= participant.participationScore.toNumber();
+  }
+  return calculateRaffleWinner(totalParticipationScore, participants, currentRun+1);
+}
 
 export const calculateParticipantSocialScore = async (participant: Participant, campaign: Campaign) => {
     const socialPosts = await SocialPost.find({where: {participantId: participant.id}});

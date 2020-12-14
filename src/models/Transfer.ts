@@ -8,6 +8,7 @@ import {BigNumberEntityTransformer} from "../util/transformers";
 import {PayoutStatus} from "../types";
 import {Org} from "./Org";
 import {FundingWallet} from './FundingWallet';
+import { RafflePrize } from './RafflePrize';
 
 @Entity()
 export class Transfer extends BaseEntity {
@@ -21,7 +22,7 @@ export class Transfer extends BaseEntity {
   public usdAmount: BigNumber;
 
   @Column({ nullable: false })
-  public action: 'transfer'|'withdraw'|'deposit';
+  public action: 'transfer'|'withdraw'|'deposit'|'prize';
 
   @Column({ nullable: true })
   public withdrawStatus: 'pending'|'approved'|'rejected';
@@ -73,6 +74,12 @@ export class Transfer extends BaseEntity {
     org => org.transfers
   )
   public org: Org;
+
+  @ManyToOne(
+    _type => RafflePrize,
+    prize => prize.transfers
+  )
+  public rafflePrize: RafflePrize;
 
   public asV1() {
     return {...this, amount: parseFloat(this.amount.toString())};
@@ -142,6 +149,16 @@ export class Transfer extends BaseEntity {
     transfer.ethAddress = ethAddress;
     transfer.transactionHash = transactionHash;
     transfer.fundingWallet = wallet as FundingWallet;
+    return transfer;
+  }
+
+  public static newFromRaffleSelection(wallet: Wallet, campaign: Campaign, prize: RafflePrize) {
+    const transfer = new Transfer();
+    transfer.amount = new BN(0);
+    transfer.action = 'prize';
+    transfer.wallet = wallet;
+    transfer.campaign = campaign;
+    transfer.rafflePrize = prize;
     return transfer;
   }
 }

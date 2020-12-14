@@ -3,22 +3,24 @@ import {Campaign} from "../models/Campaign";
 import {checkPermissions} from "../middleware/authentication";
 import {Participant} from "../models/Participant";
 import {S3Client} from '../clients/s3';
-import {getConnection, In} from "typeorm";
+import {EntityManager, getConnection, In} from "typeorm";
 import {User} from "../models/User";
 import {Wallet} from "../models/Wallet";
 import {SocialPost} from '../models/SocialPost';
 import {getParticipant} from "./participant";
 import {Firebase} from "../clients/firebase";
 import {Dragonchain} from '../clients/dragonchain';
-import {calculateParticipantPayout, calculateParticipantSocialScore, calculateTier} from "./helpers";
+import {calculateParticipantPayout, calculateParticipantSocialScore, calculateRaffleWinner, calculateTier} from "./helpers";
 import { Transfer } from '../models/Transfer';
 import { BN } from '../util/helpers';
 import { BigNumber } from 'bignumber.js';
 import { Validator } from '../schemas';
-import { CampaignRequirementSpecs } from '../types';
+import { CampaignRequirementSpecs, RafflePrizeStructure } from '../types';
 import {Org} from "../models/Org";
 import {HourlyCampaignMetric} from "../models/HourlyCampaignMetric";
 import { DailyParticipantMetric } from '../models/DailyParticipantMetric';
+import { RafflePrize } from '../models/RafflePrize';
+import { SesClient } from '../clients/ses';
 
 const validator = new Validator();
 
@@ -29,28 +31,39 @@ export const getCurrentCampaignTier = async (args: { campaignId?: string, campai
         const where: {[key: string]: string } = { 'id': campaignId };
         const currentCampaign = await Campaign.findOne({ where });
         if (!currentCampaign) throw new Error('campaign not found');
+        if (currentCampaign.type !== 'coiin') return { currentTier: -1, currentTotal: 0 };
         currentTierSummary = calculateTier(currentCampaign.totalParticipationScore, currentCampaign.algorithm.tiers);
     } else if (campaign) {
+        if (campaign.type !== 'coiin') return { currentTier: -1, currentTotal: 0 };
         currentTierSummary = calculateTier(campaign.totalParticipationScore, campaign.algorithm.tiers);
     }
     if (!currentTierSummary) throw new Error('failure calculating current tier');
     return { currentTier: currentTierSummary.currentTier, currentTotal: parseFloat(currentTierSummary.currentTotal.toString()) };
 }
 
-export const createNewCampaign = async (args: { name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, image: string, tagline: string, requirements:CampaignRequirementSpecs, suggestedPosts: string[], suggestedTags: string[] }, context: { user: any }) => {
+export const createNewCampaign = async (args: { name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, image: string, tagline: string, requirements:CampaignRequirementSpecs, suggestedPosts: string[], suggestedTags: string[], type: string, rafflePrize: RafflePrizeStructure }, context: { user: any }) => {
     const { role, company } = checkPermissions({ hasRole: ['admin', 'manager'] }, context);
-    const { name, beginDate, endDate, coiinTotal, target, description, algorithm, targetVideo, image, tagline, requirements, suggestedPosts, suggestedTags } = args;
+    const { name, beginDate, endDate, coiinTotal, target, description, algorithm, targetVideo, image, tagline, requirements, suggestedPosts, suggestedTags, type = 'coiin', rafflePrize } = args;
     validator.validateAlgorithmCreateSchema(JSON.parse(algorithm));
     if (!!requirements) validator.validateCampaignRequirementsSchema(requirements);
+    if (type === 'raffle') {
+      if (!rafflePrize) throw new Error('must specify prize for raffle');
+      validator.validateRafflePrizeSchema(rafflePrize);
+    }
     if (role === 'admin' && !args.company) throw new Error('administrators need to specify a company in args');
     const campaignCompany = (role ==='admin') ? args.company : company;
     const org = await Org.findOne({where: {name: company}})
-    if (!org) throw new Error('org not found');
-  const campaign = Campaign.newCampaign(name, targetVideo, beginDate, endDate, coiinTotal, target, description, campaignCompany, algorithm, tagline, requirements, suggestedPosts, suggestedTags, org);
+    // if (!org) throw new Error('org not found');
+    const campaign = Campaign.newCampaign(name, targetVideo, beginDate, endDate, coiinTotal, target, description, campaignCompany, algorithm, tagline, requirements, suggestedPosts, suggestedTags, type, org);
     await campaign.save();
     if (image) {
         campaign.imagePath = await S3Client.setCampaignImage('banner', campaign.id, image);
         await campaign.save();
+    }
+    if (type === 'raffle') {
+      const prize = RafflePrize.newFromCampaignCreate(campaign, rafflePrize);
+      await prize.save();
+      if (rafflePrize.image && rafflePrize.image !== '') await S3Client.setCampaignRafflePrizeImage(campaign.id, prize.id, rafflePrize.image);
     }
     const deviceTokens = await User.getAllDeviceTokens('campaignCreate');
     if (deviceTokens.length > 0) await Firebase.sendCampaignCreatedNotifications(deviceTokens, campaign);
@@ -106,7 +119,7 @@ export const deleteCampaign = async (args: { id: string }, context: { user: any 
 export const get = async (args: { id: string }) => {
     const { id } = args;
     const where: { [key: string]: string } = { id };
-    const campaign = await Campaign.findOne({ where, relations: ['participants'] });
+    const campaign = await Campaign.findOne({ where, relations: ['participants', 'prize'] });
     if (!campaign) throw new Error('campaign not found');
     campaign.participants.sort((a,b) => {return parseFloat((b.participationScore.minus(a.participationScore).toString()))});
     return campaign.asV1();
@@ -159,7 +172,7 @@ export const generateCampaignAuditReport = async (args: { campaignId: string }, 
     const campaign = await Campaign.findCampaignById(campaignId, company);
     if (!campaign) throw new Error('Campaign not found');
     const {currentTotal} = await getCurrentCampaignTier({campaign});
-    const bigNumTotal = new BN(currentTotal);
+    const bigNumTotal = new BN(campaign.type !== 'coiin' ? 0 : currentTotal);
     const auditReport: CampaignAuditReport = {
         totalClicks: new BN(0),
         totalViews: new BN(0),
@@ -178,7 +191,12 @@ export const generateCampaignAuditReport = async (args: { campaignId: string }, 
         auditReport.totalViews =  auditReport.totalViews.plus(participant.viewCount);
         auditReport.totalSubmissions = auditReport.totalSubmissions.plus(participant.submissionCount);
         const totalParticipantPayout = await calculateParticipantPayout(bigNumTotal, campaign, participant);
-        if (totalParticipantPayout.gt(auditReport.totalRewardPayout.times(new BN(0.15)))) {
+
+        const condition = campaign.type === 'raffle' ? 
+          participant.participationScore.gt(auditReport.totalParticipationScore.times(new BN(0.15))) : 
+          totalParticipantPayout.gt(auditReport.totalRewardPayout.times(new BN(0.15)));
+
+        if (condition) {
             auditReport.flaggedParticipants.push({
                 participantId: participant.id,
                 viewPayout: participant.viewCount.times(campaign.algorithm.pointValues.view),
@@ -207,66 +225,100 @@ export const generateCampaignAuditReport = async (args: { campaignId: string }, 
 
 export const payoutCampaignRewards = async (args: { campaignId: string, rejected: string[] }, context: { user: any }) => {
     const {company} = checkPermissions({hasRole: ['admin', 'manager']}, context);
-    const usersWalletValues: { [key: string]: BigNumber } = {};
-    const userDeviceIds: { [key: string]: string } = {};
-    const transfers: Transfer[] = [];
     return getConnection().transaction(async transactionalEntityManager => {
         const {campaignId, rejected} = args;
-        const campaign = await Campaign.findOneOrFail({where: {id: campaignId, company}});
-        const {currentTotal} = await getCurrentCampaignTier({campaign});
-        const bigNumTotal = new BN(currentTotal);
-        const participants = await Participant.find({where: {campaign}, relations: ['user']});
-        const users = (participants.length > 0) ? await User.find({
-            where: {id: In(participants.map(p => p.user.id))},
-            relations: ['wallet']
-        }) : [];
-        const wallets = (users.length > 0) ? await Wallet.find({
-            where: {id: In(users.map(u => u.wallet.id))},
-            relations: ['user']
-        }) : [];
-        if (rejected.length > 0) {
-            const newParticipationCount = participants.length - rejected.length;
-            let totalRejectedPayout = new BN(0);
-            for (const id of rejected) {
-                const participant = await getParticipant({id});
-                const totalParticipantPayout = await calculateParticipantPayout(bigNumTotal, campaign, participant);
-                totalRejectedPayout = totalRejectedPayout.plus(totalParticipantPayout);
-            }
-            const addedPayoutToEachParticipant = totalRejectedPayout.div(new BN(newParticipationCount));
-            for (const participant of participants) {
-                if (!rejected.includes(participant.id)) {
-                    const subtotal = await calculateParticipantPayout(bigNumTotal, campaign, participant);
-                    const totalParticipantPayout = subtotal.plus(addedPayoutToEachParticipant);
-                    if (participant.user.profile.deviceToken) userDeviceIds[participant.user.id] = participant.user.profile.deviceToken;
-                    if (!usersWalletValues[participant.user.id]) usersWalletValues[participant.user.id] = totalParticipantPayout;
-                    else usersWalletValues[participant.user.id] = usersWalletValues[participant.user.id].plus(totalParticipantPayout);
-                }
-            }
-        } else {
-            for (const participant of participants) {
-                const totalParticipantPayout = await calculateParticipantPayout(bigNumTotal, campaign, participant);
-                if (participant.user.profile.deviceToken) userDeviceIds[participant.user.id] = participant.user.profile.deviceToken;
-                if (!usersWalletValues[participant.user.id]) usersWalletValues[participant.user.id] = totalParticipantPayout;
-                else usersWalletValues[participant.user.id] = usersWalletValues[participant.user.id].plus(totalParticipantPayout);
-            }
+        const campaign = await Campaign.findOneOrFail({where: {id: campaignId, company}, relations: ['participants', 'prize']});
+        let deviceIds;
+        switch (campaign.type) {
+          case 'coiin':
+            deviceIds = await payoutCoiinCampaignRewards(transactionalEntityManager, campaign, rejected);
+            break;
+          case 'raffle':
+            deviceIds = await payoutRaffleCampaignRewards(transactionalEntityManager, campaign, rejected);
+            break;
+          default:
+            throw new Error('campaign type is invalid');
         }
-        for (const userId in usersWalletValues) {
-            const currentWallet = wallets.find(w => w.user.id === userId);
-            if (currentWallet) {
-              currentWallet.balance = currentWallet.balance.plus(usersWalletValues[userId]);
-              const transfer = Transfer.newFromCampaignPayout(currentWallet, campaign, usersWalletValues[userId]);
-              transfers.push(transfer);
-            }
-        }
-        campaign.audited = true;
-        await transactionalEntityManager.save(campaign);
-        await transactionalEntityManager.save(participants);
-        await transactionalEntityManager.save(wallets);
-        await transactionalEntityManager.save(transfers);
-        await Firebase.sendCampaignCompleteNotifications(Object.values(userDeviceIds), campaign.name);
-        await Dragonchain.ledgerCampaignAudit(usersWalletValues, rejected, campaign.id);
+        if (deviceIds) await Firebase.sendCampaignCompleteNotifications(Object.values(deviceIds), campaign.name);
         return true;
     });
 };
 
+const payoutRaffleCampaignRewards = async (entityManager: EntityManager, campaign: Campaign, rejected: string[]) => {
+  if (!campaign.prize) throw new Error('no campaign prize');
+  if (campaign.participants.length === 0) throw new Error('no participants on campaign for audit');
+  let totalParticipationScore = new BN(0).plus(campaign.totalParticipationScore);
+  const clonedParticipants = (rejected.length > 0) ? campaign.participants.reduce((accum: Participant[], current: Participant) => {
+    if (rejected.indexOf(current.id) > -1) totalParticipationScore = totalParticipationScore.minus(current.participationScore);
+    else accum.push(current);
+    return accum;
+  }, []) : campaign.participants;
+  const winner = calculateRaffleWinner(totalParticipationScore, clonedParticipants);
+  const wallet = await Wallet.findOneOrFail({ where: { user: winner.user } });
+  const prize = await RafflePrize.findOneOrFail({ where: { id: campaign.prize.id } });
+  const transfer = Transfer.newFromRaffleSelection(wallet, campaign, prize);
+  campaign.audited = true;
+  await entityManager.save([campaign, wallet, transfer]);
+  await SesClient.sendRafflePrizeRedemptionEmail(winner.user.id, winner.user.profile.email, campaign);
+  await Dragonchain.ledgerRaffleCampaignAudit({ [winner.user.id]: campaign.prize.displayName }, [], campaign.id);
+  return {[winner.user.id]: winner.user.profile.deviceToken};
+}
 
+const payoutCoiinCampaignRewards = async (entityManager: EntityManager, campaign: Campaign, rejected: string[]) => {
+  const usersWalletValues: { [key: string]: BigNumber } = {};
+  const userDeviceIds: { [key: string]: string } = {};
+  const transfers: Transfer[] = [];
+  const {currentTotal} = await getCurrentCampaignTier({campaign});
+  const bigNumTotal = new BN(currentTotal);
+  const participants = await Participant.find({where: {campaign}, relations: ['user']});
+  const users = (participants.length > 0) ? await User.find({
+      where: {id: In(participants.map(p => p.user.id))},
+      relations: ['wallet']
+  }) : [];
+  const wallets = (users.length > 0) ? await Wallet.find({
+      where: {id: In(users.map(u => u.wallet.id))},
+      relations: ['user']
+  }) : [];
+  if (rejected.length > 0) {
+      const newParticipationCount = participants.length - rejected.length;
+      let totalRejectedPayout = new BN(0);
+      for (const id of rejected) {
+          const participant = await getParticipant({id});
+          const totalParticipantPayout = await calculateParticipantPayout(bigNumTotal, campaign, participant);
+          totalRejectedPayout = totalRejectedPayout.plus(totalParticipantPayout);
+      }
+      const addedPayoutToEachParticipant = totalRejectedPayout.div(new BN(newParticipationCount));
+      for (const participant of participants) {
+          if (!rejected.includes(participant.id)) {
+              const subtotal = await calculateParticipantPayout(bigNumTotal, campaign, participant);
+              const totalParticipantPayout = subtotal.plus(addedPayoutToEachParticipant);
+              if (participant.user.profile.deviceToken) userDeviceIds[participant.user.id] = participant.user.profile.deviceToken;
+              if (!usersWalletValues[participant.user.id]) usersWalletValues[participant.user.id] = totalParticipantPayout;
+              else usersWalletValues[participant.user.id] = usersWalletValues[participant.user.id].plus(totalParticipantPayout);
+          }
+      }
+  } else {
+      for (const participant of participants) {
+          const totalParticipantPayout = await calculateParticipantPayout(bigNumTotal, campaign, participant);
+          if (participant.user.profile.deviceToken) userDeviceIds[participant.user.id] = participant.user.profile.deviceToken;
+          if (!usersWalletValues[participant.user.id]) usersWalletValues[participant.user.id] = totalParticipantPayout;
+          else usersWalletValues[participant.user.id] = usersWalletValues[participant.user.id].plus(totalParticipantPayout);
+      }
+  }
+  for (const userId in usersWalletValues) {
+      const currentWallet = wallets.find(w => w.user.id === userId);
+      if (currentWallet) {
+        currentWallet.balance = currentWallet.balance.plus(usersWalletValues[userId]);
+        const transfer = Transfer.newFromCampaignPayout(currentWallet, campaign, usersWalletValues[userId]);
+        transfers.push(transfer);
+      }
+  }
+  campaign.audited = true;
+  await entityManager.save(campaign);
+  await entityManager.save(participants);
+  await entityManager.save(wallets);
+  await entityManager.save(transfers);
+  
+  await Dragonchain.ledgerCoiinCampaignAudit(usersWalletValues, rejected, campaign.id);
+  return userDeviceIds;
+}
