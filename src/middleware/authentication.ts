@@ -60,7 +60,7 @@ export const checkPermissions = (opts: { hasRole?: string[], company?: string },
     if (!role || !opts.hasRole.includes(role)) throw new Error('forbidden');
   }
   if (opts.company) {
-    if (company !== company) throw new Error('forbidden');
+    if (company !== opts.company) throw new Error('forbidden');
   }
   if (role === 'manager' && !company) throw new Error('forbidden, company not specified');
   return { role, company };
