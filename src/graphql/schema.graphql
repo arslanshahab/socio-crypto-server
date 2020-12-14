@@ -45,7 +45,7 @@ type Mutation {
   removeFactorLink(factorId:String!): User
   registerKyc(userKyc:JSON!): KycUser
   updateKyc(user: JSON!): KycUser
-  initiateWithdraw(withdrawAmount:Float!, ethAddress:String, paypalAddress:String): Transfer
+  initiateWithdraw(withdrawAmount:Float!, ethAddress:String): Transfer
   updateWithdrawStatus(transferIds:[String]!,status:String!): [Transfer]
   setRecoveryCode(code:Int!): User
   updateKycStatus(userId:String!,status:String!): User

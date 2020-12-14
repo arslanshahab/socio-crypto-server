@@ -45,7 +45,7 @@ export const createNewCampaign = async (args: { name: string, targetVideo: strin
     if (role === 'admin' && !args.company) throw new Error('administrators need to specify a company in args');
     const campaignCompany = (role ==='admin') ? args.company : company;
     const org = await Org.findOne({where: {name: company}})
-    // if (!org) throw new Error('org not found');
+    if (!org) throw new Error('org not found');
   const campaign = Campaign.newCampaign(name, targetVideo, beginDate, endDate, coiinTotal, target, description, campaignCompany, algorithm, tagline, requirements, suggestedPosts, suggestedTags, org);
     await campaign.save();
     if (image) {

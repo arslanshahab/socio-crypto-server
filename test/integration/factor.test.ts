@@ -106,8 +106,6 @@ describe('Dragonfactor Integrations Tests', () => {
         .post('/v1/dragonfactor/recover')
         .send(getAccountRecoveryRequest(newIdentity, '123456', 'banana'))
         .set('Accepts', 'application/json');
-      console.log(res.body);
-      console.log(res.status);
       expect(res.body).to.deep.equal({ success: true });
     });
     it('should return malformed input when recovery code is not a number', async () => {

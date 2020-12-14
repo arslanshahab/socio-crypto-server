@@ -90,7 +90,6 @@ describe('Campaign Integration Test', () => {
              .send(mutation)
              .set('Accepts', 'application/json')
              .set('authorization', 'Bearer raiinmaker');
-         console.log(res.body);
          const response = res.body.data.newCampaign;
          expect(response.name).to.equal('banana');
       })

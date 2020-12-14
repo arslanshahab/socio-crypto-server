@@ -319,7 +319,6 @@ describe('External Wallet Integrations Tests', () => {
             .send(query)
             .set('Accepts', 'application/json')
             .set('authorization', 'Bearer raiinmaker');
-        console.log(res.body);
         const response = res.body.data.listExternalAddresses;
         expect(response.length).to.equal(1);
         expect(response[0].ethereumAddress).to.equal(ethereumAddress.toLowerCase());

@@ -38,7 +38,7 @@ export const getKyc = async (_args: any, context: { user:  any }) => {
 }
 
 export const adminGetKycByUser = async (args: { userId: string }, context: { user: any }) => {
-    checkPermissions({ hasRole: ['admin'] }, context);
+    checkPermissions({ company: 'raiinmaker' }, context);
     const { userId } = args;
     const user = await User.findOne({ where: { id: userId } });
     if (!user) throw new Error('user not found');
