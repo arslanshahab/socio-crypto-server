@@ -104,6 +104,24 @@ export const campaignRequirementsSchema = {
           "55+": {type: 'boolean'},
         }
       },
+      city: { type: 'string' },
+      state: { type: 'string' },
+      country: { type: 'string' },
+      socialFollowing: {
+        type: 'object',
+        twitter: {
+          type: 'object',
+          minFollower: {
+            type: 'string'
+          }
+        }
+      },
+      values: {
+        type: ["string"],
+      },
+      interests: {
+        type: ["string"]
+      },
     }
 };
 
