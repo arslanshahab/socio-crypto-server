@@ -117,7 +117,7 @@ export const campaignRequirementsSchema = {
         }
       },
       values: {
-        type: ["string"],
+        type: "array",
         items: { type: "string" }
       },
       interests: {
