@@ -8,6 +8,7 @@ metadata:
     alb.ingress.kubernetes.io/scheme: "internet-facing"
     alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:us-west-1:527252880472:certificate/2999f96d-59d6-4014-813b-f1b619aec2ba"
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/healthcheck-path: '/v1/health'
   labels:
     app.kubernetes.io/name: {{ .Release.Name }}
     helm.sh/chart: {{ include "raiinmaker.chart" . }}
