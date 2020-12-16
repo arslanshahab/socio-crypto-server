@@ -71,6 +71,10 @@ export class Firebase {
     return Firebase.client.auth().updateUser(uid, {password})
   }
 
+  public static async getUser(email: string) {
+    return Firebase.client.auth().getUserByEmail(email);
+  }
+
   public static async sendDailyParticipationUpdate(token: string, campaign: Campaign, coiins: BigNumber, participationScore: BigNumber, rank: number, totalParticipants: number) {
     const message: admin.messaging.Message = {
       notification: {

@@ -21,6 +21,7 @@ import {HourlyCampaignMetric} from "../models/HourlyCampaignMetric";
 import { DailyParticipantMetric } from '../models/DailyParticipantMetric';
 import { RafflePrize } from '../models/RafflePrize';
 import { SesClient } from '../clients/ses';
+import { decrypt } from '../util/crypto';
 
 const validator = new Validator();
 
@@ -259,7 +260,7 @@ const payoutRaffleCampaignRewards = async (entityManager: EntityManager, campaig
   const transfer = Transfer.newFromRaffleSelection(wallet, campaign, prize);
   campaign.audited = true;
   await entityManager.save([campaign, wallet, transfer]);
-  await SesClient.sendRafflePrizeRedemptionEmail(winner.user.id, winner.user.profile.email, campaign);
+  await SesClient.sendRafflePrizeRedemptionEmail(winner.user.id, decrypt(winner.email), campaign);
   await Dragonchain.ledgerRaffleCampaignAudit({ [winner.user.id]: campaign.prize.displayName }, [], campaign.id);
   return {[winner.user.id]: winner.user.profile.deviceToken};
 }

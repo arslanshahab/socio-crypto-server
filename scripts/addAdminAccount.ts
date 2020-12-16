@@ -32,7 +32,12 @@ const handleError = async (e: any, connection: Connection) => {
 const createNewOrg = async (connection: Connection) => {
   try {
     console.log('Initializing new Org')
-    const user = await Firebase.createNewUser(EMAIL, PASSWORD);
+    let user;
+    try {
+      user = await Firebase.createNewUser(EMAIL, PASSWORD);
+    } catch (e) {
+      user = await Firebase.getUser(EMAIL);
+    }
     await Firebase.setCustomUserClaims(user.uid, ORG_NAME, 'admin', TEMP_PASSWORD);
     const org = Org.newOrg(ORG_NAME);
     await org.save();

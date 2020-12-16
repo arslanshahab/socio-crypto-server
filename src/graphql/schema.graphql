@@ -34,7 +34,7 @@ type Mutation {
   generateCampaignAuditReport(campaignId:String!): AuditReport
   payoutCampaignRewards(campaignId: String!, rejected: [String]!): Boolean
   deleteCampaign(id:String!): Campaign
-  participate(campaignId:String!): Participant
+  participate(campaignId:String!,email:String): Participant
   removeParticipation(campaignId:String!): User
   trackAction(participantId:String!,action: String!): Participant
   promoteUserPermissions(userId:String,email:String,company:String,role:String): User
