@@ -10,7 +10,7 @@ import { BN } from '../../src/util/helpers';
 import { Profile } from '../../src/models/Profile';
 import { DailyParticipantMetric } from '../../src/models/DailyParticipantMetric';
 import { ExternalAddress } from '../../src/models/ExternalAddress';
-import { getDeterministicId, sha256Hash } from '../../src/util/crypto';
+import { encrypt, getDeterministicId, sha256Hash } from '../../src/util/crypto';
 import { NotificationSettings } from '../../src/models/NotificationSettings';
 import {Application} from "../../src/app";
 import {Org} from "../../src/models/Org";
@@ -18,6 +18,7 @@ import {SocialPost} from "../../src/models/SocialPost";
 import {SocialLink} from "../../src/models/SocialLink";
 import {getRandomIntWithinRange} from "../../scripts/helpers";
 import { RafflePrize } from '../../src/models/RafflePrize';
+import { FundingWallet } from '../../src/models/FundingWallet';
 
 export const createCampaign = async (runningApp: Application, options?: { [key: string]: any } | any, ) => {
   const campaign = new Campaign();
@@ -68,7 +69,14 @@ export const createOrg = async (runningApp: Application, options?: { [key: strin
   org.campaigns = getValue(['campaigns'], options, []);
   org.transfers = getValue(['transfers'], options, []);
   org.admins = getValue(['admins'], options, []);
+  org.fundingWallet = await createFundingWallet(runningApp);
   return await runningApp.databaseConnection.createEntityManager().save(org);
+}
+
+export const createFundingWallet = async (runningApp: Application, options?: { [key: string]: any } | any) => {
+  const fundingWallet = new FundingWallet();
+  fundingWallet.balance = new BN(getValue(['balance'], options, 100));
+  return await runningApp.databaseConnection.createEntityManager().save(fundingWallet);
 }
 
 export const createParticipant = async (runningApp: Application, options?: { [key: string]: any } | any) => {
@@ -79,6 +87,7 @@ export const createParticipant = async (runningApp: Application, options?: { [ke
   participant.participationScore = new BN(getValue(['participationScore'], options,15));
   participant.user = getValue(['user'], options) || await createUser(runningApp, getValue(['userOptions'], options));
   participant.campaign = getValue(['campaign'], options) || await createCampaign(runningApp, getValue(['campaignOptions'], options));
+  participant.email = getValue(['email'], options, encrypt('demo@demo.com'));
   return await runningApp.databaseConnection.createEntityManager().save(participant);
 }
 

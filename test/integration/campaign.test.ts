@@ -17,6 +17,9 @@ import { BN } from '../../src/util/helpers';
 import { Paypal } from '../../src/clients/paypal';
 import { RafflePrize } from '../../src/models/RafflePrize';
 import { SesClient } from '../../src/clients/ses';
+import { encrypt } from '../../src/util/crypto';
+import { FundingWallet } from '../../src/models/FundingWallet';
+import { Org } from '../../src/models/Org';
 
 describe('Campaign Integration Test', () => {
    let runningApp: Application;
@@ -64,6 +67,8 @@ describe('Campaign Integration Test', () => {
       await Wallet.query('TRUNCATE public.wallet CASCADE');
       await User.query('TRUNCATE public.user CASCADE');
       await RafflePrize.query('TRUNCATE public."raffle_prize" CASCADE');
+      await FundingWallet.query('TRUNCATE public."funding_wallet" CASCADE');
+      await Org.query('TRUNCATE public.org CASCADE');
    });
 
    after(async () => {
@@ -232,26 +237,28 @@ describe('Campaign Integration Test', () => {
       const campaign = await createCampaign(runningApp, {type: 'raffle', totalParticipationScore: 60});
       await createRafflePrize(runningApp, { displayName: 'rafflePrize1', campaign });
       await createParticipant(runningApp, {
-         campaign,
-         participationScore: 20,
-         userOptions: {
-            walletOptions: {
-               balance: 50
-            }
-         }
+        email: encrypt('demo@email.com'),
+        campaign,
+        participationScore: 20,
+        userOptions: {
+          walletOptions: {
+              balance: 50
+          }
+        }
       });
       await createParticipant(runningApp, {
-         campaign,
-         participationScore: 30,
-         clickCount: 10,
-         viewCount: 10,
-         submissionCount: 10,
-         userOptions: {
-            walletOptions: {
-               balance: 50
-            }
+        email: encrypt('demo@email.com'),
+        campaign,
+        participationScore: 30,
+        clickCount: 10,
+        viewCount: 10,
+        submissionCount: 10,
+        userOptions: {
+          walletOptions: {
+              balance: 50
+          }
       }});
-      await createParticipant(runningApp, {participationScore: 10, campaign, userOptions: {walletOptions: {balance: 50}}});
+      await createParticipant(runningApp, {email: encrypt('demo@email.com'), participationScore: 10, campaign, userOptions: {walletOptions: {balance: 50}}});
       const mutation = gql.mutation({
          operation: 'payoutCampaignRewards',
          variables: {
@@ -311,50 +318,52 @@ describe('Campaign Integration Test', () => {
       expect(c.payouts[0].action).to.equal('prize');
     });
       it('#payoutCampaignRewards', async () => {
-         const campaign = await createCampaign(runningApp, {totalParticipationScore: 60});
-         let participant1 = await createParticipant(runningApp, {
-            campaign,
-            userOptions: {
-               walletOptions: {
-                  balance: 50
-               }
-            }
-         });
-         let participant2 = await createParticipant(runningApp, {
-            campaign,
-            ParticipationScore: 30,
-            clickCount: 10,
-            viewCount: 10,
-            submissionCount: 10,
-            userOptions: {
-               walletOptions: {
-                  balance: 50
-               }
-         }});
-         let participant3 = await createParticipant(runningApp, {campaign, userOptions: {walletOptions: {balance: 50}}});
-         const mutation = gql.mutation({
-            operation: 'payoutCampaignRewards',
-            variables: {
-               campaignId: { value: campaign.id, required: true },
-               rejected: { value: [], type:'[String]', required: true }
-            },
-         })
-         const res = await request(runningApp.app)
-             .post('/v1/graphql')
-             .send(mutation)
-             .set('Accepts', 'application/json')
-             .set('authorization', 'Bearer raiinmaker');
-         participant1 = await Participant.findOneOrFail({id: participant1.id}) ;
-         participant2 = await Participant.findOneOrFail({id: participant2.id})
-         participant3 = await Participant.findOneOrFail({id: participant3.id})
-         const response = res.body.data.payoutCampaignRewards;
-         expect(response).to.be.true;
-         const wallet1 = await Wallet.findOneOrFail({where: {user: participant1.user.id}, relations: ['user']});
-         const wallet2 = await Wallet.findOneOrFail({where: {user: participant2.user.id}, relations: ['user']});
-         const wallet3 = await Wallet.findOneOrFail({where: {user: participant3.user.id}, relations: ['user']});
-         expect(parseFloat(wallet1.balance.minus(new BN(50)).toString())).to.equal(12.5);
-         expect(parseFloat(wallet2.balance.minus(new BN(50)).toString())).to.equal(25);
-         expect(parseFloat(wallet3.balance.minus(new BN(50)).toString())).to.equal(12.5);
+        const campaign = await createCampaign(runningApp, {totalParticipationScore: 60, coiinTotal: 100});
+        let participant1 = await createParticipant(runningApp, {
+          campaign,
+          userOptions: {
+              walletOptions: {
+                balance: 50
+              }
+          }
+        });
+        let participant2 = await createParticipant(runningApp, {
+          campaign,
+          participationScore: 30,
+          clickCount: 10,
+          viewCount: 10,
+          submissionCount: 10,
+          userOptions: {
+              walletOptions: {
+                balance: 50
+              }
+        }});
+        let participant3 = await createParticipant(runningApp, {campaign, userOptions: {walletOptions: {balance: 50}}});
+        const mutation = gql.mutation({
+          operation: 'payoutCampaignRewards',
+          variables: {
+              campaignId: { value: campaign.id, required: true },
+              rejected: { value: [], type:'[String]', required: true }
+          },
+        })
+        const res = await request(runningApp.app)
+            .post('/v1/graphql')
+            .send(mutation)
+            .set('Accepts', 'application/json')
+            .set('authorization', 'Bearer raiinmaker');
+        participant1 = await Participant.findOneOrFail({id: participant1.id})
+        participant2 = await Participant.findOneOrFail({id: participant2.id})
+        participant3 = await Participant.findOneOrFail({id: participant3.id})
+        const response = res.body.data.payoutCampaignRewards;
+        expect(response).to.be.true;
+        const wallet1 = await Wallet.findOneOrFail({where: {user: participant1.user.id}, relations: ['user']});
+        const wallet2 = await Wallet.findOneOrFail({where: {user: participant2.user.id}, relations: ['user']});
+        const wallet3 = await Wallet.findOneOrFail({where: {user: participant3.user.id}, relations: ['user']});
+        expect(parseFloat(wallet1.balance.minus(new BN(50)).toString())).to.equal(12.5);
+        expect(parseFloat(wallet2.balance.minus(new BN(50)).toString())).to.equal(25);
+        expect(parseFloat(wallet3.balance.minus(new BN(50)).toString())).to.equal(12.5);
+        const fundingWallet = await FundingWallet.findOneOrFail({where: {id: campaign.org.fundingWallet.id}});
+        expect(fundingWallet.balance.toString()).to.equal(new BN(50).toString());
       });
       it('#payoutCampaignRewards with float values', async () => {
          const algorithm = {
@@ -385,7 +394,7 @@ describe('Campaign Integration Test', () => {
 
          let participant1 = await createParticipant(runningApp, {
             campaign,
-            ParticipationScore: 31.5,
+            participationScore: 31.5,
             clickCount: 10.5,
             viewCount: 10.5,
             submissionCount: 10.5,
@@ -396,7 +405,7 @@ describe('Campaign Integration Test', () => {
             }});
          let participant2 = await createParticipant(runningApp, {
             campaign,
-            ParticipationScore: 31.5,
+            participationScore: 31.5,
             clickCount: 10.5,
             viewCount: 10.5,
             submissionCount: 10.5,
@@ -407,7 +416,7 @@ describe('Campaign Integration Test', () => {
             }});
          let participant3 = await createParticipant(runningApp, {
             campaign,
-            ParticipationScore: 31.5,
+            participationScore: 31.5,
             clickCount: 10.5,
             viewCount: 10.5,
             submissionCount: 10.5,

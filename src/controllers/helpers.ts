@@ -73,7 +73,7 @@ export const calculateTier = (totalParticipation: BigNumber, tiers: Tiers) => {
 
 export const calculateParticipantPayout = async (currentCampaignTierTotal: BigNumber, campaign: Campaign, participant: Participant) => {
     if (campaign.totalParticipationScore.eq(new BN(0))) return new BN(0);
-    const percentageOfTotalParticipation = participant.participationScore.div(campaign.totalParticipationScore);
+    const percentageOfTotalParticipation = new BN(participant.participationScore).div(campaign.totalParticipationScore);
     return currentCampaignTierTotal.multipliedBy(percentageOfTotalParticipation);
 }
 

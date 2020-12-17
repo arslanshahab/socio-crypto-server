@@ -228,7 +228,7 @@ export const payoutCampaignRewards = async (args: { campaignId: string, rejected
     const {company} = checkPermissions({hasRole: ['admin', 'manager']}, context);
     return getConnection().transaction(async transactionalEntityManager => {
         const {campaignId, rejected} = args;
-        const campaign = await Campaign.findOneOrFail({where: {id: campaignId, company}, relations: ['participants', 'prize']});
+        const campaign = await Campaign.findOneOrFail({where: {id: campaignId, company}, relations: ['participants', 'prize', 'org', 'org.fundingWallet']});
         let deviceIds;
         switch (campaign.type) {
           case 'coiin':
@@ -272,6 +272,8 @@ const payoutCoiinCampaignRewards = async (entityManager: EntityManager, campaign
   const {currentTotal} = await getCurrentCampaignTier({campaign});
   const bigNumTotal = new BN(currentTotal);
   const participants = await Participant.find({where: {campaign}, relations: ['user']});
+  const fundingWallet = campaign.org.fundingWallet;
+  let totalPayout = new BN(0);
   const users = (participants.length > 0) ? await User.find({
       where: {id: In(participants.map(p => p.user.id))},
       relations: ['wallet']
@@ -309,15 +311,20 @@ const payoutCoiinCampaignRewards = async (entityManager: EntityManager, campaign
   for (const userId in usersWalletValues) {
       const currentWallet = wallets.find(w => w.user.id === userId);
       if (currentWallet) {
+        totalPayout = totalPayout.plus(usersWalletValues[userId]);
         currentWallet.balance = currentWallet.balance.plus(usersWalletValues[userId]);
         const transfer = Transfer.newFromCampaignPayout(currentWallet, campaign, usersWalletValues[userId]);
         transfers.push(transfer);
       }
-  }
+    }
+  fundingWallet.balance = fundingWallet.balance.minus(totalPayout);
+  const payoutTransfer = Transfer.newFromFundingWalletPayout(campaign.org.fundingWallet, campaign, totalPayout);
+  transfers.push(payoutTransfer);
   campaign.audited = true;
   await entityManager.save(campaign);
   await entityManager.save(participants);
   await entityManager.save(wallets);
+  await entityManager.save(fundingWallet);
   await entityManager.save(transfers);
   
   await Dragonchain.ledgerCoiinCampaignAudit(usersWalletValues, rejected, campaign.id);

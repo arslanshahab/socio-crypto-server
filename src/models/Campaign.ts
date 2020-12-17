@@ -171,9 +171,9 @@ export class Campaign extends BaseEntity {
   public static async findCampaignsByStatus(open: boolean, skip: number, take: number, company: string, sort: boolean) {
     let where = '';
     const now = DateUtils.mixedDateToDatetimeString(new Date());
-    if (open !== null && open) {
+    if (open !== null && open !== undefined && open) {
       where = `("beginDate" <= '${now}' AND "endDate" >= '${now}')`;
-    } else if (open !== null && !open) {
+    } else if (open !== null && open !== undefined && !open) {
       where = `("beginDate" >= '${now}' OR "endDate" <= '${now}')`;
     }
     let query = this.createQueryBuilder('campaign')

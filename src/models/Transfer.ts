@@ -122,6 +122,15 @@ export class Transfer extends BaseEntity {
       .getMany();
   }
 
+  public static newFromFundingWalletPayout(wallet: FundingWallet, campaign: Campaign, amount: BigNumber): Transfer {
+    const transfer = new Transfer();
+    transfer.action = 'transfer';
+    transfer.campaign = campaign;
+    transfer.amount = amount;
+    transfer.fundingWallet = wallet;
+    return transfer;
+  }
+
   public static newFromCampaignPayout(wallet: Wallet, campaign: Campaign, amount: BigNumber): Transfer {
     const transfer = new Transfer();
     transfer.action = 'transfer';
