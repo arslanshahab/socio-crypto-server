@@ -86,7 +86,7 @@ describe('Participant Integration Test', () => {
                 operation: 'trackAction',
                 variables: {
                     participantId: {value: participant.id, required: true},
-                    action: {value: 'view', required: true}
+                    action: {value: 'views', required: true}
                 },
                 fields: ['id']
             });
@@ -101,8 +101,8 @@ describe('Participant Integration Test', () => {
             const adjustedTotalParticipationScore = campaignResult.totalParticipationScore.minus(participant.campaign.totalParticipationScore);
             const adjustedViewCount = participantResult.viewCount.minus(participant.viewCount);
             const adjustedParticipationScore = participantResult.participationScore.minus(participant.participationScore);
-            expect(adjustedParticipationScore.toString()).to.equal(campaignResult.algorithm.pointValues.view.toString());
-            expect(adjustedTotalParticipationScore.toString()).to.equal(campaignResult.algorithm.pointValues.view.toString());
+            expect(adjustedParticipationScore.toString()).to.equal(campaignResult.algorithm.pointValues.views.toString());
+            expect(adjustedTotalParticipationScore.toString()).to.equal(campaignResult.algorithm.pointValues.views.toString());
             expect(adjustedViewCount.toString()).to.equal('1');
         });
         it('#trackAction submission', async () => {
@@ -111,7 +111,7 @@ describe('Participant Integration Test', () => {
                 operation: 'trackAction',
                 variables: {
                     participantId: {value: participant.id, required: true},
-                    action: {value: 'submission', required: true}
+                    action: {value: 'submissions', required: true}
                 },
                 fields: ['id']
             });
@@ -126,8 +126,8 @@ describe('Participant Integration Test', () => {
             const adjustedTotalParticipationScore = campaignResult.totalParticipationScore.minus(participant.campaign.totalParticipationScore);
             const adjustedsubmissionCount = participantResult.submissionCount.minus(participant.submissionCount);
             const adjustedParticipationScore = participantResult.participationScore.minus(participant.participationScore);
-            expect(adjustedParticipationScore.toString()).to.equal(campaignResult.algorithm.pointValues.submission.toString());
-            expect(adjustedTotalParticipationScore.toString()).to.equal(campaignResult.algorithm.pointValues.submission.toString());
+            expect(adjustedParticipationScore.toString()).to.equal(campaignResult.algorithm.pointValues.submissions.toString());
+            expect(adjustedTotalParticipationScore.toString()).to.equal(campaignResult.algorithm.pointValues.submissions.toString());
             expect(adjustedsubmissionCount.toString()).to.equal('1');
         });
         it('#trackAction throws invalid metric', async () => {

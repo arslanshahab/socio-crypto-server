@@ -221,9 +221,9 @@ export const getAlgorithm = (options?: { [key: string]: any } | any) => {
         "totalCoiins": new BN(getValue(['tiers', '5', 'totalCoiins'], options, 50)),
       }},
     "pointValues":{
-      "click": new BN(getValue(['pointValues', 'click'], options, 1)),
-      "view": new BN(getValue(['pointValues', 'view'], options, 1)),
-      "submission": new BN(getValue(['pointValues', 'submission'], options, 1)),
+      "clicks": new BN(getValue(['pointValues', 'click'], options, 1)),
+      "views": new BN(getValue(['pointValues', 'view'], options, 1)),
+      "submissions": new BN(getValue(['pointValues', 'submission'], options, 1)),
       "likes": new BN(getValue(['pointValues', 'likes'], options, 1)),
       "shares": new BN(getValue(['pointValues', 'view'], options, 1)),
     }

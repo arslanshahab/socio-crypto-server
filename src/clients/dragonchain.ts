@@ -28,7 +28,7 @@ export class Dragonchain {
     }
   }
 
-  public static async ledgerCampaignAction(action: 'click'|'view'|'submission', participantId: string, campaignId: string) {
+  public static async ledgerCampaignAction(action: 'clicks'|'views'|'submissions', participantId: string, campaignId: string) {
     const tag = getActionKey(action, participantId);
     const res = await this.client.createTransaction({ transactionType: 'trackAction', tag, payload: { action, participantId, campaignId } });
     if (!res.ok) throw new Error('Failed to ledger action to the Dragonchain');

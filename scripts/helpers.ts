@@ -363,9 +363,9 @@ export const generateAlgorithm = (totalScore?: BigNumber) => {
     initialTotal: new BN( 10),
     tiers,
     pointValues:{
-      click: new BN(1),
-      view: new BN(1),
-      submission: new BN(1),
+      clicks: new BN(1),
+      views: new BN(1),
+      submissions: new BN(1),
       likes: new BN(1),
       shares: new BN(1),
     }

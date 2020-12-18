@@ -32,10 +32,10 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
     post.shares = shares;
     await participant.save();
     await campaign.save();
-    await HourlyCampaignMetric.upsert(campaign, campaign.org, 'like', likes.minus(post.likes).toNumber());
-    await HourlyCampaignMetric.upsert(campaign, campaign.org, 'share', shares.minus(post.shares).toNumber());
-    await DailyParticipantMetric.upsert(participant.user, campaign, participant, 'like', likesAdjustedScore, likes.minus(post.likes).toNumber());
-    await DailyParticipantMetric.upsert(participant.user, campaign, participant, 'share', sharesAdjustedScore, shares.minus(post.shares).toNumber());
+    await HourlyCampaignMetric.upsert(campaign, campaign.org, 'likes', likes.minus(post.likes).toNumber());
+    await HourlyCampaignMetric.upsert(campaign, campaign.org, 'shares', shares.minus(post.shares).toNumber());
+    await DailyParticipantMetric.upsert(participant.user, campaign, participant, 'likes', likesAdjustedScore, likes.minus(post.likes).toNumber());
+    await DailyParticipantMetric.upsert(participant.user, campaign, participant, 'shares', sharesAdjustedScore, shares.minus(post.shares).toNumber());
     return post;
 }
 

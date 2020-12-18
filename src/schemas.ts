@@ -7,9 +7,12 @@ export const algorithmCreateSchema = {
         pointValues: {
             type: 'object',
             properties: {
-                click: {type: 'string'},
-                view: {type: 'string'},
-                submission: {type: 'string'},
+                clicks: {type: 'string'},
+                views: {type: 'string'},
+                submissions: {type: 'string'},
+                likes: {type: 'string'},
+                comments: {type: 'string'},
+                shares: {type: 'string'}
             }
         },
         tiers: {
