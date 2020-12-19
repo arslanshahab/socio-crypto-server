@@ -289,7 +289,7 @@ export class Campaign extends BaseEntity {
 
   public static newCampaign(name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, tagline: string, requirements: CampaignRequirementSpecs, suggestedPosts: string[], suggestedTags: string[], type: string, org?: Org): Campaign {
     const campaign = new Campaign();
-    if(org) campaign.org = org;
+    if (org) campaign.org = org;
     campaign.name = name;
     campaign.coiinTotal = new BN(coiinTotal);
     campaign.target = target;

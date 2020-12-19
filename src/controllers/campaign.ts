@@ -53,8 +53,8 @@ export const createNewCampaign = async (args: { name: string, targetVideo: strin
     }
     if (role === 'admin' && !args.company) throw new Error('administrators need to specify a company in args');
     const campaignCompany = (role ==='admin') ? args.company : company;
-    const org = await Org.findOne({where: {name: company}})
-    // if (!org) throw new Error('org not found');
+    const org = await Org.findOne({where: {name: company}});
+    if (!org) throw new Error('org not found');
     const campaign = Campaign.newCampaign(name, targetVideo, beginDate, endDate, coiinTotal, target, description, campaignCompany, algorithm, tagline, requirements, suggestedPosts, suggestedTags, type, org);
     await campaign.save();
     if (image) {
@@ -107,10 +107,11 @@ export const deleteCampaign = async (args: { id: string }, context: { user: any 
     const { role, company } = checkPermissions({ hasRole: ['admin', 'manager'] }, context);
     const where: {[key: string]: string} = { id: args.id };
     if (role === 'manager') where['company'] = company;
-    const campaign = await Campaign.findOne({ where, relations: ['participants', 'posts', 'dailyMetrics', 'hourlyMetrics', 'prize'] });
+    const campaign = await Campaign.findOne({ where, relations: ['participants', 'posts', 'dailyMetrics', 'hourlyMetrics', 'prize', 'payouts'] });
     if (!campaign) throw new Error('campaign not found');
     if (campaign.posts.length > 0) await SocialPost.delete({ id: In(campaign.posts.map((p: any) => p.id)) });
     if (campaign.prize) await RafflePrize.remove(campaign.prize);
+    if (campaign.payouts) await Transfer.remove(campaign.payouts);
     await Participant.remove(campaign.participants);
     await DailyParticipantMetric.remove(campaign.dailyMetrics);
     await HourlyCampaignMetric.remove(campaign.hourlyMetrics);
