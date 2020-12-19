@@ -11,7 +11,7 @@ import {
 } from 'typeorm';
 import { DateUtils } from 'typeorm/util/DateUtils';
 import { Participant } from './Participant';
-import {AlgorithmSpecs, CampaignRequirementSpecs} from '../types';
+import {AlgorithmSpecs, CampaignRequirementSpecs, CampaignStatus} from '../types';
 import {SocialPost} from "./SocialPost";
 import {Transfer} from './Transfer';
 import {StringifiedArrayTransformer, BigNumberEntityTransformer, AlgorithmTransformer} from '../util/transformers';
@@ -23,6 +23,7 @@ import { User } from './User';
 import {Org} from "./Org";
 import {HourlyCampaignMetric} from "./HourlyCampaignMetric";
 import { RafflePrize } from './RafflePrize';
+import {Escrow} from "./Escrow";
 
 @Entity()
 export class Campaign extends BaseEntity {
@@ -37,6 +38,9 @@ export class Campaign extends BaseEntity {
 
   @Column({ type: 'timestamptz', nullable: false })
   public endDate: Date;
+
+  @Column({nullable: false, default: 'DEFAULT'})
+  public status: CampaignStatus;
 
   @Column({ type: 'varchar', transformer: BigNumberEntityTransformer })
   public coiinTotal: BigNumber;
@@ -123,6 +127,12 @@ export class Campaign extends BaseEntity {
   )
   public prize: RafflePrize;
 
+  @OneToOne(
+    _type => Escrow,
+    escrow => escrow.campaign
+  )
+  public escrow: Escrow;
+
   @CreateDateColumn()
   public createdAt: Date;
 
@@ -160,6 +170,7 @@ export class Campaign extends BaseEntity {
     if (this.participants && this.participants.length > 0) returnedCampaign.participants = this.participants.map((participant) => participant.asV1());
     if (this.payouts && this.payouts.length > 0) returnedCampaign.payouts = this.payouts.map((payout) => payout.asV1());
     if (this.posts && this.posts.length > 0) returnedCampaign.posts = this.posts.map((post) => post.asV1());
+    if (this.org) returnedCampaign.org = this.org.asV1();
     return returnedCampaign;
   }
 
@@ -169,6 +180,7 @@ export class Campaign extends BaseEntity {
   }
 
   public static async findCampaignsByStatus(open: boolean, skip: number, take: number, company: string, sort: boolean) {
+    console.log(open, skip, take, company, sort);
     let where = '';
     const now = DateUtils.mixedDateToDatetimeString(new Date());
     if (open !== null && open !== undefined && open) {
@@ -203,6 +215,15 @@ export class Campaign extends BaseEntity {
       .leftJoinAndSelect('campaign.participants', 'participant', 'participant."campaignId" = campaign.id')
       .leftJoinAndSelect('participant.user', 'user', 'user.id = participant."userId"')
       .getMany()
+  }
+
+  public static async adminListCampaignsByStatus(skip: number, take: number, status: string = 'PENDING') {
+    return this.createQueryBuilder('campaign')
+      .leftJoinAndSelect('campaign.org', 'org', 'campaign."orgId" = org.id')
+      .where('status=:status', {status})
+      .skip(skip)
+      .take(take)
+      .getManyAndCount()
   }
 
   public static async findCampaignById(id: string, company: string) {
@@ -294,6 +315,7 @@ export class Campaign extends BaseEntity {
     campaign.coiinTotal = new BN(coiinTotal);
     campaign.target = target;
     campaign.company = company;
+    campaign.status = "PENDING";
     campaign.beginDate = new Date(beginDate);
     campaign.endDate = new Date(endDate);
     campaign.algorithm = JSON.parse(algorithm);

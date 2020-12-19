@@ -11,6 +11,7 @@ import * as externalWallet from '../controllers/externalWallet';
 import * as orgController from '../controllers/org';
 import * as firebaseController from '../controllers/firebase';
 import * as fundingController from '../controllers/fundingWallet';
+import * as stripeController from '../controllers/stripe';
 
 export const root = {
   JSON: GraphQLJSON,
@@ -95,6 +96,11 @@ export const adminRoot = {
   updatePassword: firebaseController.updateUserPassword,
   newUser: orgController.newUser,
   listEmployees: orgController.listEmployees,
+  addPaymentMethod: stripeController.addPaymentMethod,
+  chargePaymentMethod: stripeController.chargePaymentMethod,
+  listPaymentMethods: stripeController.listPaymentMethods,
+  listPendingCampaigns: campaignController.adminListPendingCampaigns,
+  updateCampaignStatus: campaignController.adminUpdateCampaignStatus
 }
 
 export const publicRoot = {

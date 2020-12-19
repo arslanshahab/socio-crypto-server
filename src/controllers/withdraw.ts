@@ -44,11 +44,11 @@ export const update = async (args: { transferIds: string[], status: 'approve'|'r
   const payouts: {value: string, receiver: string, payoutId: string}[] = [];
   const rejected: {[key: string]: any} = {};
   for (let i = 0; i < args.transferIds.length; i++) {
-    const transfer = await Transfer.findOne({ where: { id: args.transferIds[i], action: 'withdraw', withdrawStatus: 'pending' }, relations: ['wallet', 'wallet.user', 'wallet.user.profile', 'wallet.user.notificationSettings'] });
+    const transfer = await Transfer.findOne({ where: { id: args.transferIds[i], action: 'withdraw', status: 'pending' }, relations: ['wallet', 'wallet.user', 'wallet.user.profile', 'wallet.user.notificationSettings'] });
     if (!transfer) throw new Error(`transfer not found: ${args.transferIds[i]}`);
     if (args.status === 'approve' && (transfer.wallet.balance.minus(transfer.amount)).lt(0)) {
       const user = transfer.wallet.user;
-      transfer.withdrawStatus = 'rejected';
+      transfer.status = 'REJECTED';
       if (user.notificationSettings.withdraw) {
         if (!rejected[user.id]) rejected[user.id] = {deviceToken: user.profile.deviceToken, total: new BN(transfer.amount)};
         else rejected[user.id].total.plus(transfer.amount);
@@ -57,7 +57,7 @@ export const update = async (args: { transferIds: string[], status: 'approve'|'r
       switch (args.status) {
         case 'approve':
           const user = transfer.wallet.user;
-          transfer.withdrawStatus = 'approved';
+          transfer.status = 'APPROVED';
           await performTransfer(transfer.wallet.id, transfer.amount.toString(), 'debit');
           if (!userGroups[user.id]) {
             let kycData;
@@ -81,7 +81,8 @@ export const update = async (args: { transferIds: string[], status: 'approve'|'r
                 const dollarAmount = transfer.amount.times(new BN('0.1'));
                 payouts.push({value: dollarAmount.toString(), receiver: kycData['paypalEmail'], payoutId});
                 transfer.payoutId = payoutId;
-                transfer.usdAmount = dollarAmount;
+                transfer.amount = dollarAmount;
+                transfer.currency = "usd";
               }
             }
           } else {
@@ -91,7 +92,7 @@ export const update = async (args: { transferIds: string[], status: 'approve'|'r
           }
           break;
         case 'reject':
-          transfer.withdrawStatus = 'rejected';
+          transfer.status = 'REJECTED';
           if (!rejected[transfer.wallet.user.id]) rejected[transfer.wallet.user.id] = {total: new BN(transfer.amount)};
           else rejected[transfer.wallet.user.id].total.plus(transfer.amount);
           if (transfer.wallet.user.notificationSettings.withdraw) rejected[transfer.wallet.user.id].deviceToken = transfer.wallet.user.profile.deviceToken;

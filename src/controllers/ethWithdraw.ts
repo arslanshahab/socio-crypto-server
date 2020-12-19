@@ -1,5 +1,5 @@
 import Web3 from 'web3';
-import {BN} from "../util/helpers";
+import {BN, USD_PER_COIIN} from "../util/helpers";
 import abi from '../abi.json'
 import {getEthPriceInUSD} from "../clients/ethereum";
 import {AbiItem} from "web3-utils";
@@ -17,14 +17,14 @@ if (NODE_ENV === 'production') {
 }
 const web3 = new Web3(provider);
 // In Production, use Coiin. Otherwise, use the TT (test token) on Ropsten.
-const dragonAddress = NODE_ENV === 'production' ? '0x87ff4a65200337b88ae5c43650e2b7d5a8f17d10' : '0x0bbd0b3bca94b037b73ff3e02db3154aa558113f';
-const contract = new web3.eth.Contract(abi as AbiItem[], dragonAddress);
+const coiinAddress = NODE_ENV === 'production' ? '0x87ff4a65200337b88ae5c43650e2b7d5a8f17d10' : '0x0bbd0b3bca94b037b73ff3e02db3154aa558113f';
+const contract = new web3.eth.Contract(abi as AbiItem[], coiinAddress);
 const gasLimitString = '200000';
 
 export const getWeiPerCoiin = async () => {
   const usdPerEth = new BN(await getEthPriceInUSD());
-  // pinning value of coiin at 10 cents
-  const ethPerCoiin = new BN(0.1).div(usdPerEth).toPrecision(6)
+
+  const ethPerCoiin = new BN(USD_PER_COIIN).div(usdPerEth).toPrecision(6)
   return web3.utils.toWei(ethPerCoiin.toString());
 }
 
@@ -62,7 +62,7 @@ export const performCoiinTransfer = async (to: string, value: BigNumber) => {
     const signedTxn = await web3.eth.accounts.signTransaction(
       {
         chainId,
-        to: dragonAddress,
+        to: coiinAddress,
         data,
         gasPrice: Math.max(Number(gasPrice), 2000000000), // default to 2Gwei
         gas: gasLimitString
