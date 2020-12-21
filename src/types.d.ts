@@ -212,5 +212,6 @@ export interface ParticipantEngagement {
 export interface PaymentIntent extends Stripe.PaymentIntent{
   metadata: {
     transferId: string;
+    stage: string;
   }
 }

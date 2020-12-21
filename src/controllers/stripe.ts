@@ -47,14 +47,14 @@ export const chargePaymentMethod = async (args: {amount: number, paymentMethodId
 export const stripeWebhook = asyncHandler(async (req: Request, res: Response) => {
   const sig = req.headers['stripe-signature'];
   let event;
-  let paymentIntent;
   let transfer;
   try {
     if (!sig) throw new Error('missing signature');
     event = await StripeAPI.constructWebhookEvent(req.body, sig, Secrets.stripeWebhookSecret);
+    const paymentIntent = event.data.object as PaymentIntent;
+    if (paymentIntent.metadata.stage !== process.env.NODE_ENV) return res.status(200).json({received: true})
     switch (event.type) {
       case 'payment_intent.succeeded':
-        paymentIntent = event.data.object as PaymentIntent;
         const amountInDollars = new BN(paymentIntent.amount).div(100);
         transfer = await Transfer.findOne({where: {id: paymentIntent.metadata.transferId}, relations: ['fundingWallet']});
         if (!transfer) throw new Error('transfer not found');
@@ -65,7 +65,6 @@ export const stripeWebhook = asyncHandler(async (req: Request, res: Response) =>
         await transfer.save();
         break;
       case 'payment_intent.payment_failed':
-        paymentIntent = event.data.object as PaymentIntent;
         console.log('PaymentIntent failed!');
         transfer = await Transfer.findOne({where: {id: paymentIntent.metadata.transferId}, relations: ['fundingWallet']});
         if (!transfer) throw new Error('transfer not found');
@@ -79,4 +78,5 @@ export const stripeWebhook = asyncHandler(async (req: Request, res: Response) =>
   } catch (err) {
     res.status(400).send(`Webhook Error: ${err.message}`);
   }
+  return;
 });

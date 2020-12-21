@@ -1,6 +1,8 @@
 import {Secrets} from "../util/secrets";
 import Stripe from 'stripe';
 
+const {NODE_ENV = 'development'} = process.env;
+
 export class StripeAPI {
   public static client: Stripe;
 
@@ -32,7 +34,8 @@ export class StripeAPI {
         off_session: false,
         confirm: true,
         metadata: {
-          transferId
+          transferId,
+          stage: NODE_ENV
         }
       });
       return paymentIntent.client_secret
