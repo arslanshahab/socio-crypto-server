@@ -105,7 +105,6 @@ export const adminUpdateCampaignStatus = async (args: {status: CampaignStatus, c
   switch (status) {
     case "APPROVED":
       const wallet = campaign.org.fundingWallet;
-      console.log(wallet.balance, campaign.coiinTotal)
       if (wallet.balance.lt(campaign.coiinTotal)) {
         campaign.status = 'INSUFFICIENT_FUNDS';
       } else {
@@ -127,9 +126,7 @@ export const adminUpdateCampaignStatus = async (args: {status: CampaignStatus, c
 export const listCampaigns = async (args: { open: boolean, skip: number, take: number, scoped: boolean, sort: boolean }, context: { user: any }) => {
     const { open, skip = 0, take = 10, scoped = false, sort = false } = args;
     const { company } = context.user;
-    console.log(company)
     const [results, total] = await Campaign.findCampaignsByStatus(open, skip, take, scoped && company, sort);
-    console.log(results)
     return { results: results.map(result => result.asV1()), total };
 }
 

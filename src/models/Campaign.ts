@@ -180,7 +180,6 @@ export class Campaign extends BaseEntity {
   }
 
   public static async findCampaignsByStatus(open: boolean, skip: number, take: number, company: string, sort: boolean) {
-    console.log(open, skip, take, company, sort);
     let where = '';
     const now = DateUtils.mixedDateToDatetimeString(new Date());
     if (open !== null && open !== undefined && open) {

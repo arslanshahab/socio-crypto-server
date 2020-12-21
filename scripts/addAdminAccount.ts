@@ -31,7 +31,6 @@ const handleError = async (e: any, connection: Connection) => {
 
 const createNewOrg = async (connection: Connection) => {
   try {
-    console.log('Initializing new Org')
     let user;
     try {
       user = await Firebase.createNewUser(EMAIL, PASSWORD);
