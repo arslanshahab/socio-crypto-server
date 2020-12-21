@@ -8,19 +8,28 @@ import { BN, generateRandomNumber } from '../util/helpers';
 import { BigNumber } from 'bignumber.js';
 import { DailyParticipantMetric } from '../models/DailyParticipantMetric';
 
+export const shuffle = (a: any[]) => {
+  for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 export const calculateRaffleWinner = (totalParticipationScore: BigNumber, participants: Participant[], currentRun = 1): Participant => {
   if (currentRun > 5) throw new Error('no winner found in 5 runs. Try again');
   const sumOfWeights = totalParticipationScore;
   let rand = generateRandomNumber(sumOfWeights.toNumber());
   const numberOfChoices = participants.length;
+  const shuffledParticipants = shuffle(participants);
   for (let i = 0; i < numberOfChoices; i++) {
-    const participant = participants[i];
+    const participant = shuffledParticipants[i];
     if (rand < participant.participationScore.toNumber()) {
       return participant;
     }
     rand -= participant.participationScore.toNumber();
   }
-  return calculateRaffleWinner(totalParticipationScore, participants, currentRun+1);
+  return calculateRaffleWinner(totalParticipationScore, shuffledParticipants, currentRun+1);
 }
 
 export const calculateParticipantSocialScore = async (participant: Participant, campaign: Campaign) => {
@@ -79,9 +88,9 @@ export const calculateParticipantPayout = async (currentCampaignTierTotal: BigNu
 
 export const calculateParticipantPayoutFromDailyParticipation = (currentCampaignTierTotal: BigNumber, campaign: Campaign, metrics: AggregateDailyMetrics) => {
   if (campaign.totalParticipationScore.eq(new BN(0))) return new BN(0);
-  const viewScore = campaign.algorithm.pointValues.view.times(metrics.viewCount);
-  const clickScore = campaign.algorithm.pointValues.click.times(metrics.clickCount);
-  const submissionScore = campaign.algorithm.pointValues.submission.times(metrics.submissionCount);
+  const viewScore = campaign.algorithm.pointValues.views.times(metrics.viewCount);
+  const clickScore = campaign.algorithm.pointValues.clicks.times(metrics.clickCount);
+  const submissionScore = campaign.algorithm.pointValues.submissions.times(metrics.submissionCount);
   const likesScore = campaign.algorithm.pointValues.likes.times(metrics.likeCount);
   const sharesScore = campaign.algorithm.pointValues.shares.times(metrics.shareCount);
   const totalParticipantPoints = viewScore.plus(clickScore).plus(submissionScore).plus(likesScore).plus(sharesScore);

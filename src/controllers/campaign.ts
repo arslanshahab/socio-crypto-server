@@ -202,9 +202,9 @@ export const generateCampaignAuditReport = async (args: { campaignId: string }, 
         if (condition) {
             auditReport.flaggedParticipants.push({
                 participantId: participant.id,
-                viewPayout: participant.viewCount.times(campaign.algorithm.pointValues.view),
-                clickPayout: participant.clickCount.times(campaign.algorithm.pointValues.click),
-                submissionPayout: participant.submissionCount.times(campaign.algorithm.pointValues.submission),
+                viewPayout: participant.viewCount.times(campaign.algorithm.pointValues.views),
+                clickPayout: participant.clickCount.times(campaign.algorithm.pointValues.clicks),
+                submissionPayout: participant.submissionCount.times(campaign.algorithm.pointValues.submissions),
                 likesPayout: totalLikes.times(campaign.algorithm.pointValues.likes),
                 sharesPayout: totalShares.times(campaign.algorithm.pointValues.shares),
                 totalPayout: totalParticipantPayout
