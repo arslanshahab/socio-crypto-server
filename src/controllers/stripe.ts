@@ -74,7 +74,7 @@ export const stripeWebhook = asyncHandler(async (req: Request, res: Response) =>
       default:
         console.log(`Unhandled event type ${event.type}`);
     }
-    res.status(200).json({received: true})
+    return res.status(200).json({received: true});
   } catch (err) {
     res.status(400).send(`Webhook Error: ${err.message}`);
   }
