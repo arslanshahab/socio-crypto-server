@@ -31,7 +31,6 @@ const handleError = async (e: any, connection: Connection) => {
 
 const createNewOrg = async (connection: Connection) => {
   try {
-    console.log('Initializing new Org')
     let user;
     try {
       user = await Firebase.createNewUser(EMAIL, PASSWORD);
@@ -60,7 +59,12 @@ const createNewOrg = async (connection: Connection) => {
 const addAccountToOrg = async (connection: Connection) => {
   try {
     console.log('Adding account to existing org');
-    const user = await Firebase.createNewUser(EMAIL, PASSWORD);
+    let user;
+    try {
+      user = await Firebase.createNewUser(EMAIL, PASSWORD);
+    } catch (e) {
+      user = await Firebase.getUser(EMAIL);
+    }
     await Firebase.setCustomUserClaims(user.uid, ORG_NAME, 'admin', TEMP_PASSWORD);
     const org = await Org.findOne({where: {name: ORG_NAME}});
     if (!org) throw new Error('org not found');

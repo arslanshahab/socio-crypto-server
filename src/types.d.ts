@@ -1,6 +1,8 @@
 import {Request} from 'express';
 import { BigNumber } from 'bignumber.js';
 import {Participant} from "./models/Participant";
+import {Stripe} from "stripe";
+import {Campaign} from "./models/Campaign";
 
 export interface FactorGeneration {
   name: string;
@@ -178,7 +180,9 @@ export interface PaypalPayout {
     "receiver": string,
 }
 
-export type PayoutStatus = 'BLOCKED' | 'CANCELED' | 'DENIED' | 'FAILED' | 'HELD' | 'REFUNDED' | 'RETURNED' | 'SUCCEEDED' | 'UNCLAIMED'
+export type TransferStatus = 'BLOCKED' | 'CANCELED' | 'DENIED' | 'FAILED' | 'HELD' | 'REFUNDED' | 'RETURNED' | 'SUCCEEDED' | 'UNCLAIMED' | 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export type CampaignStatus = 'ACTIVE' | 'PENDING' | 'INSUFFICIENT_FUNDS' | 'CLOSED' | 'APPROVED' | 'DENIED';
 
 export interface GraphApiInputParameters {
   fields?: string[] | string;
@@ -203,4 +207,11 @@ export interface ParticipantEngagement {
   viewRate: BigNumber;
   submissionRate: BigNumber;
   clickRate: BigNumber;
+}
+
+export interface PaymentIntent extends Stripe.PaymentIntent{
+  metadata: {
+    transferId: string;
+    stage: string;
+  }
 }

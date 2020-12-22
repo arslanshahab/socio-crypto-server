@@ -80,6 +80,9 @@ type Mutation {
   newOrg(orgName: String!, email: String!, name: String!): JSON
   newUser(name: String!, email: String!): Boolean
   updatePassword(password: String!): Boolean
+  addPaymentMethod: Stripe
+  chargePaymentMethod(amount: Float!, paymentMethodId:String!): Stripe
+  updateCampaignStatus(status: String!, campaignId: String!): Boolean
 }
 
 type Query {
@@ -118,14 +121,30 @@ type Query {
   getFundingWallet: FundingWallet
   listOrgs(skip: Int, take: Int): [Org]
   listEmployees: [Employee]
+  listPaymentMethods: [PaymentMethod]
+  listPendingCampaigns(skip: Int, take: Int): PaginatedCampaignResults
 }
 
 type Org {
+  id: String
   name: String
+  stripeId: String
+  createdAt: String
+  updatedAt: String
+}
+
+type PaymentMethod {
+  id: String
+  last4: String
+  brand: String
 }
 
 type Employee {
   name: String
+}
+
+type Stripe {
+  clientSecret: String
 }
 
 type NotificationSettings {
@@ -226,6 +245,7 @@ type Transfer {
   action: String
   withdrawStatus: String
   ethAddress: String
+  currency: String
   paypalAddress: String
   campaign: Campaign
   createdAt: String
@@ -338,6 +358,7 @@ type Campaign {
   beginDate: String
   endDate: String
   coiinTotal: Float
+  status: String
   totalParticipationScore: Float
   target: String
   description: String
@@ -353,6 +374,7 @@ type Campaign {
   participants: [Participant]
   type: String
   prize: RafflePrize
+  org: Org
 }
 
 type RafflePrize {

@@ -21,6 +21,8 @@ export class Secrets {
   public static factorProviderPrivateKey: string;
   public static factorProviderPublicKey: string;
   public static ethHotWalletPrivKey: string;
+  public static stripeApiKey: string;
+  public static stripeWebhookSecret: string;
 
   public static async initialize() {
     Secrets.firebaseProjectId = process.env.FIREBASE_PROJECT_ID || (await readFilePromise('/var/secrets/firebase-credentials/firebaseProjectId', 'utf8'));
@@ -41,5 +43,7 @@ export class Secrets {
     Secrets.paypalClientSecret = process.env.PAYPAL_CLIENT_SECRET || (await readFilePromise('/var/secrets/paypal-credentials/clientSecret', 'utf8'));
     Secrets.paypalWebhookId = process.env.PAYPAL_WEBHOOK_ID || (await readFilePromise('/var/secrets/paypal-credentials/webhookId', 'utf8'));
     Secrets.ethHotWalletPrivKey = process.env.ETH_HOT_WALLET_PRIVKEY || (await readFilePromise('/var/secrets/eth-hot-wallet-privkey/SecretString', 'utf8'));
+    Secrets.stripeApiKey = process.env.STRIPE_API_KEY || (await readFilePromise('/var/secrets/stripe-api-key/SecretString', 'utf8'));
+    Secrets.stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET || (await readFilePromise('/var/secrets/stripe-webhook-secret/SecretString', 'utf8'));
   }
 }

@@ -22,6 +22,9 @@ export class Org extends BaseEntity {
   @Column()
   public name: string;
 
+  @Column({nullable: true})
+  public stripeId: string;
+
   @OneToMany(
     _type => Campaign,
     campaign => campaign.org
@@ -59,9 +62,15 @@ export class Org extends BaseEntity {
   public updatedAt: Date;
 
   public asV1() {
-    return {
-      name: this.name
-    }
+    const returnValue: Org = {
+      ...this
+    };
+    if (this.campaigns) returnValue.campaigns = returnValue.campaigns.map(campaign => campaign.asV1())
+    if (this.transfers) returnValue.transfers = returnValue.transfers.map(transfer => transfer.asV1())
+    if (this.admins) returnValue.admins = returnValue.admins.map(admin => admin.asV1());
+    if (this.hourlyMetrics) returnValue.hourlyMetrics = returnValue.hourlyMetrics.map(hourlyMetric => hourlyMetric.asV1())
+    if (this.fundingWallet) returnValue.fundingWallet = this.fundingWallet.asV1()
+    return returnValue;
   }
 
   public static newOrg(name: string){

@@ -18,6 +18,7 @@ import { v4 as uuidv4 } from 'uuid';
 import {Participant} from "../src/models/Participant";
 import {ParticipantMetrics} from "./metricsGenerator";
 import {SocialLink} from "../src/models/SocialLink";
+import {FundingWallet} from "../src/models/FundingWallet";
 
 export const generateUniqueName = () => {
   return uniqueNamesGenerator({
@@ -161,15 +162,19 @@ export const generateWallet = (org?: Org, user?: User) => {
 
 export const generateOrgIfNotFound = async (name?: string) => {
   let org;
-  org = await Org.findOne({where: {name: 'Raiinmaker'}});
+  org = await Org.findOne({where: {name: 'raiinmaker'}});
   if (org) console.log('ORG FOUND', org.id);
   if (!org) {
     org = new Org();
-    org.name =  name || 'Raiinmaker';
+    const fundingWallet = new FundingWallet();
+    org.name =  name || 'raiinmaker';
     org.campaigns = [];
     org.transfers = [];
     org.admins = [];
     org.hourlyMetrics = [];
+    org.fundingWallet = fundingWallet;
+
+    await org.fundingWallet.save();
     await org.save();
   }
   return org;

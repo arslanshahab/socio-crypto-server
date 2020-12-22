@@ -72,7 +72,7 @@ export class HourlyCampaignMetric extends BaseEntity {
   public org: Org;
 
   public asV1() {
-    const response: {[key: string]: any} = {
+    const returnValue: HourlyCampaignMetric = {
       ...this,
       clickCount: this.clickCount.toNumber(),
       viewCount: this.viewCount.toNumber(),
@@ -83,8 +83,8 @@ export class HourlyCampaignMetric extends BaseEntity {
       participantCount: parseFloat(this.participantCount.toString()),
       postCount: parseFloat(this.postCount.toString()),
     }
-    if (this.campaign) response.campaignId = this.campaign.id;
-    return response
+    if (this.campaign) returnValue.campaign = this.campaign.asV1();
+    return returnValue;
   }
 
   public static parseHourlyCampaignMetrics(hourlyMetrics: HourlyMetricsGroupedByDateQueryResult[], filter: DateTrunc, currentTotal: BigNumber) {

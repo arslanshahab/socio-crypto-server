@@ -53,6 +53,12 @@ spec:
                 - name: eth-hot-wallet-privkey
                   mountPath: "/var/secrets/eth-hot-wallet-privkey"
                   readOnly: true
+                - name: stripe-api-key
+                  mountPath: "/var/secrets/stripe-api-key"
+                  readOnly: true
+                - name: stripe-webhook-secret
+                  mountPath: "/var/secrets/stripe-webhook-secret"
+                  readOnly: true
               resources:
                 requests:
                   memory: "128Mi"
@@ -86,6 +92,12 @@ spec:
             - name: eth-hot-wallet-privkey
               secret:
                 secretName: eth-hot-wallet-privkey
+            - name: stripe-api-key
+              secret:
+                secretName: stripe-api-key
+            - name: stripe-webhook-secret
+              secret:
+                secretName: stripe-webhook-secret
 ---
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -142,6 +154,12 @@ spec:
                 - name: eth-hot-wallet-privkey
                   mountPath: "/var/secrets/eth-hot-wallet-privkey"
                   readOnly: true
+                - name: stripe-api-key
+                  mountPath: "/var/secrets/stripe-api-key"
+                  readOnly: true
+                - name: stripe-webhook-secret
+                  mountPath: "/var/secrets/stripe-webhook-secret"
+                  readOnly: true
               resources:
                 requests:
                   memory: "128Mi"
@@ -175,6 +193,12 @@ spec:
             - name: eth-hot-wallet-privkey
               secret:
                 secretName: eth-hot-wallet-privkey
+            - name: stripe-api-key
+              secret:
+                secretName: stripe-api-key
+            - name: stripe-webhook-secret
+              secret:
+                secretName: stripe-webhook-secret
 ---
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -234,6 +258,12 @@ spec:
                 - name: eth-hot-wallet-privkey
                   mountPath: "/var/secrets/eth-hot-wallet-privkey"
                   readOnly: true
+                - name: stripe-api-key
+                  mountPath: "/var/secrets/stripe-api-key"
+                  readOnly: true
+                - name: stripe-webhook-secret
+                  mountPath: "/var/secrets/stripe-webhook-secret"
+                  readOnly: true
               resources:
                 requests:
                   memory: "128Mi"
@@ -267,6 +297,12 @@ spec:
             - name: eth-hot-wallet-privkey
               secret:
                 secretName: eth-hot-wallet-privkey
+            - name: stripe-api-key
+              secret:
+                secretName: stripe-api-key
+            - name: stripe-webhook-secret
+              secret:
+                secretName: stripe-webhook-secret
 ---
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -326,6 +362,12 @@ spec:
                 - name: eth-hot-wallet-privkey
                   mountPath: "/var/secrets/eth-hot-wallet-privkey"
                   readOnly: true
+                - name: stripe-api-key
+                  mountPath: "/var/secrets/stripe-api-key"
+                  readOnly: true
+                - name: stripe-webhook-secret
+                  mountPath: "/var/secrets/stripe-webhook-secret"
+                  readOnly: true
               resources:
                 requests:
                   memory: "128Mi"
@@ -359,3 +401,9 @@ spec:
             - name: eth-hot-wallet-privkey
               secret:
                 secretName: eth-hot-wallet-privkey
+            - name: stripe-api-key
+              secret:
+                secretName: stripe-api-key
+            - name: stripe-webhook-secret
+              secret:
+                secretName: stripe-webhook-secret

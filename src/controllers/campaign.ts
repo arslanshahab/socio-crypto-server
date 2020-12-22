@@ -1,4 +1,4 @@
-import {CampaignAuditReport, DateTrunc} from "../types";
+import {CampaignAuditReport, CampaignStatus, DateTrunc} from "../types";
 import {Campaign} from "../models/Campaign";
 import {checkPermissions} from "../middleware/authentication";
 import {Participant} from "../models/Participant";
@@ -22,6 +22,7 @@ import { DailyParticipantMetric } from '../models/DailyParticipantMetric';
 import { RafflePrize } from '../models/RafflePrize';
 import { SesClient } from '../clients/ses';
 import { decrypt } from '../util/crypto';
+import {Escrow} from "../models/Escrow";
 
 const validator = new Validator();
 
@@ -53,7 +54,7 @@ export const createNewCampaign = async (args: { name: string, targetVideo: strin
     }
     if (role === 'admin' && !args.company) throw new Error('administrators need to specify a company in args');
     const campaignCompany = (role ==='admin') ? args.company : company;
-    const org = await Org.findOne({where: {name: company}});
+    const org = await Org.findOne({where: {name: company}, relations: ['fundingWallet']});
     if (!org) throw new Error('org not found');
     const campaign = Campaign.newCampaign(name, targetVideo, beginDate, endDate, coiinTotal, target, description, campaignCompany, algorithm, tagline, requirements, suggestedPosts, suggestedTags, type, org);
     await campaign.save();
@@ -96,11 +97,44 @@ export const updateCampaign = async (args: { id: string, name: string, beginDate
     return campaign.asV1();
 }
 
+export const adminUpdateCampaignStatus = async (args: {status: CampaignStatus, campaignId:string}, context: {user:any}) => {
+  checkPermissions({ restrictCompany: 'raiinmaker' }, context);
+  const { status, campaignId } = args;
+  const campaign = await Campaign.findOne({where: {id: campaignId}, relations: ['org', 'org.fundingWallet']});
+  if (!campaign) throw new Error('campaign not found');
+  switch (status) {
+    case "APPROVED":
+      const wallet = campaign.org.fundingWallet;
+      if (wallet.balance.lt(campaign.coiinTotal)) {
+        campaign.status = 'INSUFFICIENT_FUNDS';
+      } else {
+        campaign.status = 'APPROVED';
+        const escrow = Escrow.newCampaignEscrow(campaign, wallet);
+        wallet.balance = wallet.balance.minus(campaign.coiinTotal);
+        await wallet.save();
+        await escrow.save();
+      }
+      break;
+    case "DENIED":
+      campaign.status = 'DENIED';
+      break;
+  }
+  await campaign.save();
+  return true;
+}
+
 export const listCampaigns = async (args: { open: boolean, skip: number, take: number, scoped: boolean, sort: boolean }, context: { user: any }) => {
     const { open, skip = 0, take = 10, scoped = false, sort = false } = args;
     const { company } = context.user;
     const [results, total] = await Campaign.findCampaignsByStatus(open, skip, take, scoped && company, sort);
     return { results: results.map(result => result.asV1()), total };
+}
+
+export const adminListPendingCampaigns = async (args: {skip: number, take: number}, context: {user: any}) => {
+    checkPermissions({restrictCompany:'raiinmaker'}, context);
+    const {skip = 0, take = 10} = args;
+    const [results, total] = await Campaign.adminListCampaignsByStatus(skip, take);
+    return { results: results.map(result => result.asV1()), total};
 }
 
 export const deleteCampaign = async (args: { id: string }, context: { user: any }) => {
@@ -195,8 +229,8 @@ export const generateCampaignAuditReport = async (args: { campaignId: string }, 
         auditReport.totalSubmissions = auditReport.totalSubmissions.plus(participant.submissionCount);
         const totalParticipantPayout = await calculateParticipantPayout(bigNumTotal, campaign, participant);
 
-        const condition = campaign.type === 'raffle' ? 
-          participant.participationScore.gt(auditReport.totalParticipationScore.times(new BN(0.15))) : 
+        const condition = campaign.type === 'raffle' ?
+          participant.participationScore.gt(auditReport.totalParticipationScore.times(new BN(0.15))) :
           totalParticipantPayout.gt(auditReport.totalRewardPayout.times(new BN(0.15)));
 
         if (condition) {
@@ -328,7 +362,7 @@ const payoutCoiinCampaignRewards = async (entityManager: EntityManager, campaign
   await entityManager.save(wallets);
   await entityManager.save(fundingWallet);
   await entityManager.save(transfers);
-  
+
   await Dragonchain.ledgerCoiinCampaignAudit(usersWalletValues, rejected, campaign.id);
   return userDeviceIds;
 }

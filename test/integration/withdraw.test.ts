@@ -101,7 +101,7 @@ describe('Withdraw Integration Test', function () {
           const response = res.body.data.initiateWithdraw;
           expect(response.amount).to.equal(99.01);
           const newTransfer = await Transfer.findOneOrFail(response.id);
-          expect(newTransfer.withdrawStatus).to.equal('pending');
+          expect(newTransfer.status).to.equal('pending');
       });
       it('#initiateWithdraw [ERROR] throws wallet does not have required balance for this withdraw', async () => {
           individualTestBed.stub(EthWithdraw, 'performCoiinTransfer')

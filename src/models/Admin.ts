@@ -26,9 +26,12 @@ export class Admin extends BaseEntity {
   public org: Org;
 
   public asV1() {
-    return {
-      name: this.name
+    const returnValue: Admin = {
+      ...this
     }
+    if (this.user) returnValue.user = this.user.asV1();
+    if (this.org) returnValue.org = this.org.asV1();
+    return returnValue;
   }
 
   public static async listAdminsByOrg (orgId: string, skip: number, take: number) {

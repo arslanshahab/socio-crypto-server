@@ -38,6 +38,9 @@ if (process.env.NODE_ENV !== 'script') {
   }
 }
 
+// pinning value of coiin at 10 cents
+export const USD_PER_COIIN = new BN(0.1);
+
 export const deleteFactorFromKycData = (kycData: KycUser, factorName: string) => {
   switch (factorName) {
     case 'MyFii-Verified-FirstName':
