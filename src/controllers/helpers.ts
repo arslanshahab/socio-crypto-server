@@ -20,9 +20,9 @@ export const updateOrgCampaignsStatusOnDeposit = async (fundingWallet: FundingWa
   const campaigns: Campaign[] = [];
   let totalCost = new BN(0);
   for (const campaign of org.campaigns) {
+    totalCost = totalCost.plus(campaign.coiinTotal);
     if (org.fundingWallet.balance.gte(totalCost)) {
       campaign.status = campaign.beginDate <= now ? 'ACTIVE' : 'APPROVED';
-      totalCost = totalCost.plus(campaign.coiinTotal);
       escrows.push(Escrow.newCampaignEscrow(campaign, org.fundingWallet));
       campaigns.push(campaign);
     }
