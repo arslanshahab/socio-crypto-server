@@ -12,6 +12,7 @@ import {Transfer} from "./Transfer";
 import {Admin} from "./Admin";
 import {HourlyCampaignMetric} from "./HourlyCampaignMetric";
 import { FundingWallet } from './FundingWallet';
+import {CampaignStatus} from "../types";
 
 
 @Entity()
@@ -77,6 +78,15 @@ export class Org extends BaseEntity {
     const org = new Org();
     org.name = name;
     return org;
+  }
+
+  public static async listOrgCampaignsByWalletIdAndStatus(fundingWalletId: string, status: CampaignStatus) {
+    return await this.createQueryBuilder('org')
+      .leftJoinAndSelect('org.fundingWallet', 'wallet', 'wallet."orgId" = org.id')
+      .leftJoinAndSelect('org.campaigns', 'campaign', 'campaign."orgId" = org.id')
+      .where('campaign.status = :status', {status})
+      .andWhere('wallet.id = :fundingWalletId', {fundingWalletId})
+      .getOne()
   }
 
   public static async getByAdminId(id: string) {

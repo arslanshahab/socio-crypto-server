@@ -81,8 +81,9 @@ type Mutation {
   newUser(name: String!, email: String!): Boolean
   updatePassword(password: String!): Boolean
   addPaymentMethod: Stripe
-  chargePaymentMethod(amount: Float!, paymentMethodId:String!): Stripe
+  purchaseCoiin(amount: Float!, paymentMethodId:String!, campaignId: String): Stripe
   updateCampaignStatus(status: String!, campaignId: String!): Boolean
+  fundCampaigns(campaignIds: [String]): Boolean
 }
 
 type Query {

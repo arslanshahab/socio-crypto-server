@@ -97,10 +97,10 @@ export const adminRoot = {
   newUser: orgController.newUser,
   listEmployees: orgController.listEmployees,
   addPaymentMethod: stripeController.addPaymentMethod,
-  chargePaymentMethod: stripeController.chargePaymentMethod,
+  purchaseCoiin: stripeController.purchaseCoiin,
   listPaymentMethods: stripeController.listPaymentMethods,
   listPendingCampaigns: campaignController.adminListPendingCampaigns,
-  updateCampaignStatus: campaignController.adminUpdateCampaignStatus
+  updateCampaignStatus: campaignController.adminUpdateCampaignStatus,
 }
 
 export const publicRoot = {

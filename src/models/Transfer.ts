@@ -26,7 +26,7 @@ export class Transfer extends BaseEntity {
   public currency: 'coiin' | 'usd';
 
   @Column({ nullable: false })
-  public action: 'transfer'|'withdraw'|'deposit'|'prize';
+  public action: 'transfer'|'withdraw'|'deposit'|'prize'|'refund';
 
   @Column({ nullable: true })
   public status: TransferStatus;
@@ -145,6 +145,15 @@ export class Transfer extends BaseEntity {
     transfer.campaign = campaign;
     transfer.amount = amount;
     transfer.wallet = wallet;
+    return transfer;
+  }
+
+  public static newFromCampaignPayoutRefund(wallet: FundingWallet, campaign: Campaign, amount: BigNumber): Transfer {
+    const transfer = new Transfer();
+    transfer.action = 'refund';
+    transfer.campaign = campaign;
+    transfer.amount = amount;
+    transfer.fundingWallet = wallet;
     return transfer;
   }
 
