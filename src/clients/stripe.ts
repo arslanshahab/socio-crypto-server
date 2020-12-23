@@ -27,7 +27,7 @@ export class StripeAPI {
   public static async chargePaymentMethod(amount: string, customerId: string, paymentMethodId: string, transferId: string) {
     try {
       const paymentIntent = await StripeAPI.client.paymentIntents.create({
-        amount: parseFloat(amount),
+        amount: parseInt(amount),
         currency: 'usd',
         customer: customerId,
         payment_method: paymentMethodId,
