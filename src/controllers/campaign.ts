@@ -10,7 +10,12 @@ import {SocialPost} from '../models/SocialPost';
 import {getParticipant} from "./participant";
 import {Firebase} from "../clients/firebase";
 import {Dragonchain} from '../clients/dragonchain';
-import {calculateParticipantPayout, calculateParticipantSocialScore, calculateRaffleWinner, calculateTier} from "./helpers";
+import {
+  calculateParticipantPayout,
+  calculateParticipantSocialScore,
+  calculateRaffleWinner,
+  calculateTier,
+} from "./helpers";
 import { Transfer } from '../models/Transfer';
 import { BN } from '../util/helpers';
 import { BigNumber } from 'bignumber.js';
@@ -308,6 +313,8 @@ const payoutCoiinCampaignRewards = async (entityManager: EntityManager, campaign
   const {currentTotal} = await getCurrentCampaignTier({campaign});
   const bigNumTotal = new BN(currentTotal);
   const participants = await Participant.find({where: {campaign}, relations: ['user']});
+  const escrow = await Escrow.findOne({where: {campaign}, relations: ['fundingWallet']});
+  if (!escrow) throw new Error('escrow not found');
   const fundingWallet = campaign.org.fundingWallet;
   let totalPayout = new BN(0);
   const users = (participants.length > 0) ? await User.find({
@@ -353,9 +360,17 @@ const payoutCoiinCampaignRewards = async (entityManager: EntityManager, campaign
         transfers.push(transfer);
       }
     }
-  fundingWallet.balance = fundingWallet.balance.minus(totalPayout);
-  const payoutTransfer = Transfer.newFromFundingWalletPayout(campaign.org.fundingWallet, campaign, totalPayout);
+  fundingWallet.balance = escrow.amount.minus(totalPayout);
+  const payoutTransfer = Transfer.newFromFundingWalletPayout(escrow.fundingWallet, campaign, totalPayout);
   transfers.push(payoutTransfer);
+  if (escrow.amount.gt(0)) {
+    fundingWallet.balance = fundingWallet.balance.plus(escrow.amount);
+    const transfer = Transfer.newFromCampaignPayoutRefund(escrow.fundingWallet, campaign, escrow.amount);
+    await transfer.save();
+    await escrow.remove();
+  } else {
+    await escrow.remove();
+  }
   campaign.audited = true;
   await entityManager.save(campaign);
   await entityManager.save(participants);

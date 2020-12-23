@@ -7,6 +7,33 @@ import { Wallet } from '../models/Wallet';
 import { BN, generateRandomNumber } from '../util/helpers';
 import { BigNumber } from 'bignumber.js';
 import { DailyParticipantMetric } from '../models/DailyParticipantMetric';
+import {FundingWallet} from "../models/FundingWallet";
+import {Org} from "../models/Org";
+import {Escrow} from "../models/Escrow";
+
+export const updateOrgCampaignsStatusOnDeposit = async (fundingWallet: FundingWallet) => {
+  const org = await Org.listOrgCampaignsByWalletIdAndStatus(fundingWallet.id, 'INSUFFICIENT_FUNDS');
+  if (!org) throw new Error('org not found');
+  if (!org.campaigns) return;
+  const now = new Date();
+  const escrows: Escrow[] = [];
+  const campaigns: Campaign[] = [];
+  let totalCost = new BN(0);
+  for (const campaign of org.campaigns) {
+    if (org.fundingWallet.balance.gte(totalCost)) {
+      campaign.status = campaign.beginDate <= now ? 'ACTIVE' : 'APPROVED';
+      totalCost = totalCost.plus(campaign.coiinTotal);
+      escrows.push(Escrow.newCampaignEscrow(campaign, org.fundingWallet));
+      campaigns.push(campaign);
+    }
+  }
+  await Campaign.save(campaigns);
+  await Escrow.save(escrows);
+  org.fundingWallet.balance = org.fundingWallet.balance.minus(totalCost);
+  await org.fundingWallet.save();
+
+  return true;
+}
 
 export const shuffle = (a: any[]) => {
   for (let i = a.length - 1; i > 0; i--) {

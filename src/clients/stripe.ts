@@ -24,10 +24,10 @@ export class StripeAPI {
     return StripeAPI.client.webhooks.constructEvent(payload, header, secret);
   }
 
-  public static async chargePaymentMethod(amount: number, customerId: string, paymentMethodId: string, transferId: string) {
+  public static async chargePaymentMethod(amount: string, customerId: string, paymentMethodId: string, transferId: string) {
     try {
       const paymentIntent = await StripeAPI.client.paymentIntents.create({
-        amount,
+        amount: parseInt(amount),
         currency: 'usd',
         customer: customerId,
         payment_method: paymentMethodId,

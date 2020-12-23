@@ -5,6 +5,7 @@ import {Request, Response} from "express";
 import {Secrets} from "../util/secrets";
 import {Transfer} from "../models/Transfer";
 import {PaymentIntent} from "../types";
+import {updateOrgCampaignsStatusOnDeposit} from "./helpers";
 
 export const addPaymentMethod = async (args: any, context: { user: any }) => {
   const {company} = context.user;
@@ -33,15 +34,16 @@ export const listPaymentMethods = async (args: any, context: {user: any}) => {
   })
 }
 
-export const chargePaymentMethod = async (args: {amount: number, paymentMethodId: string}, context: { user: any }) => {
+export const purchaseCoiin = async (args: {amount: number, paymentMethodId: string}, context: { user: any }) => {
   const {company} = context.user;
   const {amount, paymentMethodId} = args;
   const org = await Org.findOne({where: {name: company}, relations: ['fundingWallet']});
   if (!org) throw new Error('org not found');
-  const transfer = Transfer.newPendingUsdDeposit(org.fundingWallet, org, new BN(amount), org.stripeId);
+  const amountInDollar = new BN(amount).times(.1);
+  const transfer = Transfer.newPendingUsdDeposit(org.fundingWallet, org, amountInDollar, org.stripeId);
   await transfer.save();
-  const amountInCents = amount * 100;
-  return await StripeAPI.chargePaymentMethod(amountInCents, org.stripeId, paymentMethodId, transfer.id);
+  const amountInCents = amountInDollar.times(100);
+  return await StripeAPI.chargePaymentMethod(amountInCents.toString(), org.stripeId, paymentMethodId, transfer.id);
 }
 
 export const stripeWebhook = asyncHandler(async (req: Request, res: Response) => {
@@ -63,6 +65,7 @@ export const stripeWebhook = asyncHandler(async (req: Request, res: Response) =>
         transfer.fundingWallet.balance = transfer.fundingWallet.balance.plus(amountInCoiin);
         await transfer.fundingWallet.save();
         await transfer.save();
+        await updateOrgCampaignsStatusOnDeposit(transfer.fundingWallet);
         break;
       case 'payment_intent.payment_failed':
         console.log('PaymentIntent failed!');
