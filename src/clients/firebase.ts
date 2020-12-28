@@ -91,7 +91,7 @@ export class Firebase {
           }
         }
       },
-      data: { redirection: JSON.stringify({ to: 'harvest' }) },
+      data: {redirection: JSON.stringify({to: 'harvest'})},
       token
     };
     await Firebase.client.messaging().send(message);
@@ -116,7 +116,10 @@ export class Firebase {
           }
         },
         data: {
-          redirection: JSON.stringify({ to: 'campaign', extraData: { campaignId: campaign.id, campaignName: campaign.name } }),
+          redirection: JSON.stringify({
+            to: 'campaign',
+            extraData: {campaignId: campaign.id, campaignName: campaign.name}
+          }),
           notifyOn: new Date(campaign.beginDate).getTime().toString()
         },
         tokens: currentSet
@@ -141,7 +144,7 @@ export class Firebase {
           }
         }
       },
-      data: { redirection: JSON.stringify({ to: 'harvest' }) },
+      data: {redirection: JSON.stringify({to: 'harvest'})},
       token
     };
     await Firebase.client.messaging().send(message);
@@ -163,7 +166,7 @@ export class Firebase {
           }
         }
       },
-      data: { redirection: JSON.stringify({ to: 'settings' }) },
+      data: {redirection: JSON.stringify({to: 'settings'})},
       token
     };
     await Firebase.client.messaging().send(message);
@@ -185,7 +188,7 @@ export class Firebase {
           }
         }
       },
-      data: { redirection: JSON.stringify({ to: 'rewards' }) },
+      data: {redirection: JSON.stringify({to: 'rewards'})},
       token
     };
     await Firebase.client.messaging().send(message);
@@ -207,7 +210,7 @@ export class Firebase {
           }
         }
       },
-      data: { redirection: JSON.stringify({ to: 'settings' }) },
+      data: {redirection: JSON.stringify({to: 'settings'})},
       token
     };
     await Firebase.client.messaging().send(message);

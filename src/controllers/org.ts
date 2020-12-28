@@ -5,6 +5,7 @@ import {checkPermissions} from "../middleware/authentication";
 import {HourlyCampaignMetric} from "../models/HourlyCampaignMetric";
 import { FundingWallet } from '../models/FundingWallet';
 import {SesClient} from "../clients/ses";
+import {FailureByDesign} from "../util/errors";
 
 export const newOrg = async (args: {orgName: string, email: string, name: string}, context: {user: any}) => {
   if (context.user.company !== 'raiinmaker') throw new Error('forbidden');
@@ -41,25 +42,26 @@ export const listOrgs = async (args: {skip: number, take: number}, context: {use
   return orgs.map(org => org.asV1());
 }
 
-export const newUser = async (args: {email: string, name: string}, context: {user: any}) => {
+export const newUser = async (args: {email: string, name: string, role: string}, context: {user: any}) => {
   const {company} = checkPermissions({hasRole: ['admin']}, context);
-  const {email, name} = args;
+  const {email, name, role} = args;
   const password = Math.random().toString(16).substr(2, 15);
   try {
-    const user = await Firebase.createNewUser(email, password);
-    await Firebase.setCustomUserClaims(user.uid, company, 'manager', true);
     const org = await Org.findOne({where: {name: company}});
-    if (!org) throw new Error('org not found');
+    if (!org) throw new FailureByDesign('NOT_FOUND', 'org not found');
+    const user = await Firebase.createNewUser(email, password);
+    const userRole = role === 'admin' ? 'admin' : 'manager';
+    await Firebase.setCustomUserClaims(user.uid, company, userRole, true);
     const admin = new Admin();
     admin.firebaseId = user.uid;
     admin.org = org;
     admin.name = name;
     await admin.save();
     console.log(await SesClient.sendNewUserConfirmationEmail(org.name, email, password))
-    return true;
   } catch (e) {
-    throw new Error(e);
+    throw new FailureByDesign(e.code, e.message);
   }
+  return true;
 }
 
 export const listEmployees = async (args: {skip: number, take: number}, context: {user: any}) => {
