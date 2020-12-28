@@ -366,7 +366,6 @@ const payoutCoiinCampaignRewards = async (entityManager: EntityManager, campaign
         transfers.push(transfer);
       }
   }
-  fundingWallet.balance = escrow.amount.minus(totalPayout);
   escrow.amount = escrow.amount.minus(totalPayout);
   await Transfer.transferCampaignPayoutFee(campaign, totalFee);
   const payoutTransfer = Transfer.newFromFundingWalletPayout(escrow.fundingWallet, campaign, totalPayout);
