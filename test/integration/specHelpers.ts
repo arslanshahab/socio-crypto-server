@@ -19,6 +19,8 @@ import {SocialLink} from "../../src/models/SocialLink";
 import {getRandomIntWithinRange} from "../../scripts/helpers";
 import { RafflePrize } from '../../src/models/RafflePrize';
 import { FundingWallet } from '../../src/models/FundingWallet';
+import { Admin } from '../../src/models/Admin';
+import { Escrow } from '../../src/models/Escrow';
 
 export const createCampaign = async (runningApp: Application, options?: { [key: string]: any } | any, ) => {
   const campaign = new Campaign();
@@ -39,7 +41,17 @@ export const createCampaign = async (runningApp: Application, options?: { [key: 
   campaign.suggestedTags = getValue(['suggestedTags'], options, []);
   campaign.suggestedPosts = getValue(['suggestedPosts'], options, []);
   campaign.type = getValue(['type'], options, 'coiin');
+  campaign.escrow = getValue(['escrow'], options, []);
+  campaign.status = getValue(['status'], options, 'PENDING')
   return await runningApp.databaseConnection.createEntityManager().save(campaign);
+}
+
+export const createEscrow = async (runningApp: Application, options?: { [key: string]: any } | any) => {
+  const escrow = new Escrow();
+  escrow.amount = getValue(['amount'], options, new BN(100));
+  escrow.fundingWallet = getValue(['fundingWallet'], options);
+  escrow.campaign = getValue(['campaign'], options);
+  return await runningApp.databaseConnection.createEntityManager().save(escrow);
 }
 
 export const createRafflePrize = async (runningApp: Application, options?: { [key: string]: any } | any) => {
@@ -65,11 +77,11 @@ export const createDailyParticipantMetric = async (runningApp: Application, opti
 
 export const createOrg = async (runningApp: Application, options?: { [key: string]: any } | any) => {
   const org = new Org();
-  org.name = getValue(['name'], options, 'Raiinmaker');
+  org.name = getValue(['name'], options, 'raiinmaker');
   org.campaigns = getValue(['campaigns'], options, []);
   org.transfers = getValue(['transfers'], options, []);
   org.admins = getValue(['admins'], options, []);
-  org.fundingWallet = await createFundingWallet(runningApp);
+  org.fundingWallet = await createFundingWallet(runningApp, { balance: new BN(100000) });
   return await runningApp.databaseConnection.createEntityManager().save(org);
 }
 
@@ -138,6 +150,15 @@ export const createSocialLink = async (runningApp: Application, options?: { [key
   socialLink.followerCount = getValue(['followerCount'], options) || 100;
   socialLink.user = getValue(['user'], options) || await createUser(runningApp, getValue(['userOptions'], options));
   return await runningApp.databaseConnection.createEntityManager().save(socialLink);
+}
+
+export const createAdmin = async (runningApp: Application, options?: { [key: string]: any } | any) => {
+  const admin = new Admin();
+  admin.firebaseId = getValue(['firebaseId'], options, 'banana');
+  admin.org = getValue(['org'], options);
+  admin.user = getValue(['user'], options) || await createUser(runningApp);
+  admin.name = getValue(['name'], options, 'banana');
+  return await runningApp.databaseConnection.createEntityManager().save(admin);
 }
 
 export const createUser = async (runningApp: Application, options?: { [key: string]: any } | any) => {

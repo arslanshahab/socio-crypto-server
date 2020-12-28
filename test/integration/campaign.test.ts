@@ -8,11 +8,11 @@ import {Campaign} from "../../src/models/Campaign";
 import {Wallet} from "../../src/models/Wallet";
 import {User} from "../../src/models/User";
 import * as RedisClient from "../../src/clients/redis";
-import {createCampaign, createParticipant, createRafflePrize, getBeginDate, getEndDate} from "./specHelpers";
+import {createAdmin, createCampaign, createOrg, createParticipant, createRafflePrize, createUser, getBeginDate, getEndDate} from "./specHelpers";
 import * as gql from 'gql-query-builder';
 import {Firebase} from "../../src/clients/firebase";
 import * as admin from "firebase-admin";
-import {calculateTier} from "../../src/controllers/helpers";
+import {calculateTier, updateOrgCampaignsStatusOnDeposit} from "../../src/controllers/helpers";
 import { BN } from '../../src/util/helpers';
 import { Paypal } from '../../src/clients/paypal';
 import { RafflePrize } from '../../src/models/RafflePrize';
@@ -20,6 +20,7 @@ import { SesClient } from '../../src/clients/ses';
 import { encrypt } from '../../src/util/crypto';
 import { FundingWallet } from '../../src/models/FundingWallet';
 import { Org } from '../../src/models/Org';
+import { Escrow } from '../../src/models/Escrow';
 
 describe('Campaign Integration Test', () => {
    let runningApp: Application;
@@ -39,6 +40,8 @@ describe('Campaign Integration Test', () => {
     process.env.FACTOR_PROVIDER_PRIVATE_KEY = "privKey";
     process.env.FACTOR_PROVIDER_PUBLIC_KEY = "pubKey";
     process.env.ETH_HOT_WALLET_PRIVKEY = "ethPrivKey";
+    process.env.STRIPE_API_KEY = "banana";
+    process.env.STRIPE_WEBHOOK_SECRET = "banana";
   };
 
    before(async () => {
@@ -69,6 +72,7 @@ describe('Campaign Integration Test', () => {
       await RafflePrize.query('TRUNCATE public."raffle_prize" CASCADE');
       await FundingWallet.query('TRUNCATE public."funding_wallet" CASCADE');
       await Org.query('TRUNCATE public.org CASCADE');
+      await Escrow.query('TRUNCATE public.escrow CASCADE');
    });
 
    after(async () => {
@@ -79,6 +83,9 @@ describe('Campaign Integration Test', () => {
    describe('Mutations', () => {
       describe('#newCampaign', () => {
         it('#newCampaign', async () => {
+          const org = await createOrg(runningApp);
+          const user = await createUser(runningApp);
+          await createAdmin(runningApp, { org, user });
           const beginDate = getBeginDate().toString();
           const endDate = getEndDate().toString();
           const algorithm = JSON.stringify({"version": "1", "initialTotal": "1000", "tiers":{"1":{"threshold":"25000","totalCoiins":"1000"},"2":{"threshold":"50000","totalCoiins":"3000"},"3":{"threshold":"75000","totalCoiins":"5000"},"4":{"threshold":"100000","totalCoiins":"7000"},"5":{"threshold":"250000","totalCoiins":"10000"}},"pointValues":{"click": "14","view": "10","submission": "201", "likes": "201", "shares": "201"}});
@@ -100,11 +107,16 @@ describe('Campaign Integration Test', () => {
               .post('/v1/graphql')
               .send(mutation)
               .set('Accepts', 'application/json')
+              .set('company', 'raiinmaker')
               .set('authorization', 'Bearer raiinmaker');
+          console.log(JSON.stringify(res.body));
           const response = res.body.data.newCampaign;
           expect(response.name).to.equal('banana');
        });
        it('#newRaffleCampaign with raffle prize', async () => {
+        const org = await createOrg(runningApp);
+        const user = await createUser(runningApp);
+        await createAdmin(runningApp, { org, user });
         const beginDate = getBeginDate().toString();
         const endDate = getEndDate().toString();
         const algorithm = JSON.stringify({"version": "1","pointValues":{"click": "14","view": "10","submission": "201", "likes": "201", "shares": "201"}});
@@ -128,6 +140,7 @@ describe('Campaign Integration Test', () => {
             .post('/v1/graphql')
             .send(mutation)
             .set('Accepts', 'application/json')
+            .set('company', 'raiinmaker')
             .set('authorization', 'Bearer raiinmaker');
         const response = res.body.data.newCampaign;
         expect(!!response.id).to.be.true;
@@ -318,7 +331,9 @@ describe('Campaign Integration Test', () => {
       expect(c.payouts[0].action).to.equal('prize');
     });
       it('#payoutCampaignRewards', async () => {
-        const campaign = await createCampaign(runningApp, {totalParticipationScore: 60, coiinTotal: 100});
+        const org = await createOrg(runningApp);
+        const campaign = await createCampaign(runningApp, {totalParticipationScore: 60, coiinTotal: 100, org, status: 'INSUFFICIENT_FUNDS'});
+        await updateOrgCampaignsStatusOnDeposit(org.fundingWallet);
         let participant1 = await createParticipant(runningApp, {
           campaign,
           userOptions: {
@@ -350,6 +365,7 @@ describe('Campaign Integration Test', () => {
             .post('/v1/graphql')
             .send(mutation)
             .set('Accepts', 'application/json')
+            .set('company', 'raiinmaker')
             .set('authorization', 'Bearer raiinmaker');
         participant1 = await Participant.findOneOrFail({id: participant1.id})
         participant2 = await Participant.findOneOrFail({id: participant2.id})
@@ -359,40 +375,41 @@ describe('Campaign Integration Test', () => {
         const wallet1 = await Wallet.findOneOrFail({where: {user: participant1.user.id}, relations: ['user']});
         const wallet2 = await Wallet.findOneOrFail({where: {user: participant2.user.id}, relations: ['user']});
         const wallet3 = await Wallet.findOneOrFail({where: {user: participant3.user.id}, relations: ['user']});
-        expect(parseFloat(wallet1.balance.minus(new BN(50)).toString())).to.equal(12.5);
-        expect(parseFloat(wallet2.balance.minus(new BN(50)).toString())).to.equal(25);
-        expect(parseFloat(wallet3.balance.minus(new BN(50)).toString())).to.equal(12.5);
+        expect(parseFloat(wallet1.balance.minus(new BN(50)).toString())).to.equal(12.5*0.9);
+        expect(parseFloat(wallet2.balance.minus(new BN(50)).toString())).to.equal(25*0.9);
+        expect(parseFloat(wallet3.balance.minus(new BN(50)).toString())).to.equal(12.5*0.9);
         const fundingWallet = await FundingWallet.findOneOrFail({where: {id: campaign.org.fundingWallet.id}});
-        expect(fundingWallet.balance.toString()).to.equal(new BN(50).toString());
+        expect(fundingWallet.balance.toString()).to.equal(new BN(100).toString());
       });
       it('#payoutCampaignRewards with float values', async () => {
-         const algorithm = {
-            tiers: {
-               1: {
-                  threshold: 10.5,
-                  totalCoiins: 10.5
-               },
-               2: {
-                  threshold: 20.5,
-                  totalCoiins: 20.5
-               },
-               3: {
-                  threshold: 30.5,
-                  totalCoiins: 30.5
-               },
-               4: {
-                  threshold: 40.5,
-                  totalCoiins: 40.5
-               },
-               5: {
-                  threshold: 50.5,
-                  totalCoiins: 50.5
-               },
-            }
-         }
-         const campaign = await createCampaign(runningApp, {totalParticipationScore: 94.5, algorithm});
-
-         let participant1 = await createParticipant(runningApp, {
+        const org = await createOrg(runningApp);
+        const algorithm = {
+          tiers: {
+              1: {
+                threshold: 10.5,
+                totalCoiins: 10.5
+              },
+              2: {
+                threshold: 20.5,
+                totalCoiins: 20.5
+              },
+              3: {
+                threshold: 30.5,
+                totalCoiins: 30.5
+              },
+              4: {
+                threshold: 40.5,
+                totalCoiins: 40.5
+              },
+              5: {
+                threshold: 50.5,
+                totalCoiins: 50.5
+              },
+          }
+        }
+        const campaign = await createCampaign(runningApp, {totalParticipationScore: 94.5, algorithm, org, status: 'INSUFFICIENT_FUNDS'});
+        await updateOrgCampaignsStatusOnDeposit(org.fundingWallet);
+        let participant1 = await createParticipant(runningApp, {
             campaign,
             participationScore: 31.5,
             clickCount: 10.5,
@@ -436,22 +453,25 @@ describe('Campaign Integration Test', () => {
              .post('/v1/graphql')
              .send(mutation)
              .set('Accepts', 'application/json')
+             .set('company', 'raiinmaker')
              .set('authorization', 'Bearer raiinmaker');
-         participant1 = await Participant.findOneOrFail({id: participant1.id}) ;
-         participant2 = await Participant.findOneOrFail({id: participant2.id})
-         participant3 = await Participant.findOneOrFail({id: participant3.id})
+         participant1 = await Participant.findOneOrFail({id: participant1.id});
+         participant2 = await Participant.findOneOrFail({id: participant2.id});
+         participant3 = await Participant.findOneOrFail({id: participant3.id});
          const response = res.body.data.payoutCampaignRewards;
          expect(response).to.be.true;
          const wallet1 = await Wallet.findOneOrFail({where: {user: participant1.user.id}, relations: ['user']});
          const wallet2 = await Wallet.findOneOrFail({where: {user: participant2.user.id}, relations: ['user']});
          const wallet3 = await Wallet.findOneOrFail({where: {user: participant3.user.id}, relations: ['user']});
-         expect(parseFloat(wallet1.balance.minus(new BN(50.5)).toString())).to.equal(16.833333333333332);
-         expect(parseFloat(wallet2.balance.minus(new BN(50.5)).toString())).to.equal(16.833333333333332);
-         expect(parseFloat(wallet3.balance.minus(new BN(50.5)).toString())).to.equal(16.833333333333332);
+         expect(parseFloat(wallet1.balance.minus(new BN(50.5)).toString())).to.equal(15.15); // 16.833333333333 * 0.9
+         expect(parseFloat(wallet2.balance.minus(new BN(50.5)).toString())).to.equal(15.15); // 16.833333333333 * 0.9
+         expect(parseFloat(wallet3.balance.minus(new BN(50.5)).toString())).to.equal(15.15); // 16.833333333333 * 0.9
       });
       it('#payoutCampaignRewards with 0 total participation', async () => {
-         const campaign = await createCampaign(runningApp, {totalParticipationScore: 0});
-         let participant1 = await createParticipant(runningApp, {
+          const org = await createOrg(runningApp);
+          const campaign = await createCampaign(runningApp, {org, totalParticipationScore: 0, status: 'INSUFFICIENT_FUNDS'});
+          await updateOrgCampaignsStatusOnDeposit(org.fundingWallet);
+          let participant1 = await createParticipant(runningApp, {
             campaign,
             participationScore: 0,
             clickCount: 0,
@@ -509,8 +529,10 @@ describe('Campaign Integration Test', () => {
          expect(parseFloat(wallet3.balance.toString())).to.equal(50);
       });
       it('#payoutCampaignRewards with rejected participants', async () => {
-         const campaign = await createCampaign(runningApp);
-         let participant1 = await createParticipant(runningApp, {
+        const org = await createOrg(runningApp);
+        const campaign = await createCampaign(runningApp, {org, status: 'INSUFFICIENT_FUNDS'});
+        await updateOrgCampaignsStatusOnDeposit(org.fundingWallet);
+        let participant1 = await createParticipant(runningApp, {
             campaign,
             userOptions: {
                walletOptions: {
@@ -552,8 +574,8 @@ describe('Campaign Integration Test', () => {
          const wallet2 = await Wallet.findOneOrFail({where: {user: participant2.user.id}, relations: ['user']});
          const wallet3 = await Wallet.findOneOrFail({where: {user: participant3.user.id}, relations: ['user']});
          expect(parseFloat(wallet1.balance.minus(50).toString())).to.equal(0);
-         expect(parseFloat(wallet2.balance.minus(50).toString())).to.equal(20);
-         expect(parseFloat(wallet3.balance.minus(50).toString())).to.equal(20);
+         expect(parseFloat(wallet2.balance.minus(50).toString())).to.equal(20*0.9);
+         expect(parseFloat(wallet3.balance.minus(50).toString())).to.equal(20*0.9);
       });
       it('#deleteCampaign', async () => {
          const campaign = await createCampaign(runningApp);

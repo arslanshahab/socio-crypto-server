@@ -26,7 +26,7 @@ export class Transfer extends BaseEntity {
   public currency: 'coiin' | 'usd';
 
   @Column({ nullable: false })
-  public action: 'transfer'|'withdraw'|'deposit'|'prize'|'refund';
+  public action: 'transfer'|'withdraw'|'deposit'|'prize'|'refund'|'fee';
 
   @Column({ nullable: true })
   public status: TransferStatus;
@@ -128,6 +128,20 @@ export class Transfer extends BaseEntity {
       .where(`transfer.action = 'withdraw' AND transfer."status" = 'approved' OR transfer."status" = 'rejected'`)
       .orderBy('transfer."createdAt"', 'ASC')
       .getMany();
+  }
+
+  public static async transferCampaignPayoutFee(campaign: Campaign, amount: BigNumber): Promise<Transfer> {
+    const org = await Org.findOne({ where: { name: 'raiinmaker' }, relations: ['fundingWallet'] });
+    if (!org) throw new Error('raiinmaker org not found for payout');
+    const transfer = new Transfer();
+    transfer.action = 'fee';
+    transfer.campaign = campaign;
+    transfer.amount = amount;
+    transfer.fundingWallet = org.fundingWallet;
+    await transfer.save();
+    org.fundingWallet.balance = org.fundingWallet.balance.plus(amount);
+    await org.fundingWallet.save();
+    return transfer;
   }
 
   public static newFromFundingWalletPayout(wallet: FundingWallet, campaign: Campaign, amount: BigNumber): Transfer {

@@ -15,6 +15,7 @@ import {
   calculateParticipantSocialScore,
   calculateRaffleWinner,
   calculateTier,
+  FEE_RATE
 } from "./helpers";
 import { Transfer } from '../models/Transfer';
 import { BN } from '../util/helpers';
@@ -314,6 +315,7 @@ const payoutCoiinCampaignRewards = async (entityManager: EntityManager, campaign
   const bigNumTotal = new BN(currentTotal);
   const participants = await Participant.find({where: {campaign}, relations: ['user']});
   const escrow = await Escrow.findOne({where: {campaign}, relations: ['fundingWallet']});
+  let totalFee = new BN(0);
   if (!escrow) throw new Error('escrow not found');
   const fundingWallet = campaign.org.fundingWallet;
   let totalPayout = new BN(0);
@@ -354,13 +356,19 @@ const payoutCoiinCampaignRewards = async (entityManager: EntityManager, campaign
   for (const userId in usersWalletValues) {
       const currentWallet = wallets.find(w => w.user.id === userId);
       if (currentWallet) {
-        totalPayout = totalPayout.plus(usersWalletValues[userId]);
-        currentWallet.balance = currentWallet.balance.plus(usersWalletValues[userId]);
-        const transfer = Transfer.newFromCampaignPayout(currentWallet, campaign, usersWalletValues[userId]);
+        const allottedPayment = usersWalletValues[userId];
+        const fee = new BN(allottedPayment).times(FEE_RATE);
+        const payout = new BN(allottedPayment).minus(fee);
+        totalFee = totalFee.plus(fee);
+        totalPayout = totalPayout.plus(allottedPayment);
+        currentWallet.balance = currentWallet.balance.plus(payout);
+        const transfer = Transfer.newFromCampaignPayout(currentWallet, campaign, payout);
         transfers.push(transfer);
       }
-    }
+  }
   fundingWallet.balance = escrow.amount.minus(totalPayout);
+  escrow.amount = escrow.amount.minus(totalPayout);
+  await Transfer.transferCampaignPayoutFee(campaign, totalFee);
   const payoutTransfer = Transfer.newFromFundingWalletPayout(escrow.fundingWallet, campaign, totalPayout);
   transfers.push(payoutTransfer);
   if (escrow.amount.gt(0)) {

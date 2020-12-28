@@ -37,6 +37,8 @@ describe('Withdraw Integration Test', function () {
       process.env.FACTOR_PROVIDER_PRIVATE_KEY = "privKey";
       process.env.FACTOR_PROVIDER_PUBLIC_KEY = "pubKey";
       process.env.ETH_HOT_WALLET_PRIVKEY = "ethPrivKey";
+      process.env.STRIPE_API_KEY = "banana";
+      process.env.STRIPE_WEBHOOK_SECRET = "banana";
     };
 
     before(async () => {
@@ -101,7 +103,7 @@ describe('Withdraw Integration Test', function () {
           const response = res.body.data.initiateWithdraw;
           expect(response.amount).to.equal(99.01);
           const newTransfer = await Transfer.findOneOrFail(response.id);
-          expect(newTransfer.status).to.equal('pending');
+          expect(newTransfer.status.toLowerCase()).to.equal('pending');
       });
       it('#initiateWithdraw [ERROR] throws wallet does not have required balance for this withdraw', async () => {
           individualTestBed.stub(EthWithdraw, 'performCoiinTransfer')

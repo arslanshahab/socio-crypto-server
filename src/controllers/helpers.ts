@@ -11,6 +11,9 @@ import {FundingWallet} from "../models/FundingWallet";
 import {Org} from "../models/Org";
 import {Escrow} from "../models/Escrow";
 
+export const FEE_RATE = process.env.FEE_RATE ? parseFloat(process.env.FEE_RATE) : 0.1;
+export const feeMultiplier = new BN(1).minus(FEE_RATE);
+
 export const updateOrgCampaignsStatusOnDeposit = async (fundingWallet: FundingWallet) => {
   const org = await Org.listOrgCampaignsByWalletIdAndStatus(fundingWallet.id, 'INSUFFICIENT_FUNDS');
   if (!org) throw new Error('org not found');
@@ -25,13 +28,12 @@ export const updateOrgCampaignsStatusOnDeposit = async (fundingWallet: FundingWa
       campaign.status = campaign.beginDate <= now ? 'ACTIVE' : 'APPROVED';
       escrows.push(Escrow.newCampaignEscrow(campaign, org.fundingWallet));
       campaigns.push(campaign);
+      org.fundingWallet.balance = org.fundingWallet.balance.minus(totalCost);
     }
   }
   await Campaign.save(campaigns);
   await Escrow.save(escrows);
-  org.fundingWallet.balance = org.fundingWallet.balance.minus(totalCost);
   await org.fundingWallet.save();
-
   return true;
 }
 
