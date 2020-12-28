@@ -8,7 +8,7 @@ import logger from './util/logger';
 import { getSchema, root, publicRoot } from './graphql';
 import { Secrets } from './util/secrets';
 import {authenticate, firebaseAuth} from './middleware/authentication';
-import { errorHandler } from './middleware/errorHandler';
+import {errorHandler, getGraphQlError} from './middleware/errorHandler';
 import { Dragonchain } from './clients/dragonchain';
 import { Firebase } from './clients/firebase';
 import * as FactorController from './controllers/factor';
@@ -90,8 +90,11 @@ export class Application {
       graphiql: NODE_ENV !== 'production',
       extensions: extensions,
       customFormatErrorFn: (error) => {
+        const {status, message, code} = getGraphQlError(error);
         return {
-          message: error.message,
+          message,
+          status,
+          code,
           locations: error.locations,
           stack: error.stack ? error.stack.split('\n') : [],
           path: error.path,

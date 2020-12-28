@@ -78,7 +78,7 @@ type Mutation {
     campaignUpdates:Boolean
   ): User
   newOrg(orgName: String!, email: String!, name: String!): JSON
-  newUser(name: String!, email: String!): Boolean
+  newUser(name: String!, email: String!, role: String!): Boolean
   updatePassword(password: String!): Boolean
   addPaymentMethod: Stripe
   purchaseCoiin(amount: Float!, paymentMethodId:String!, campaignId: String): Stripe
