@@ -23,6 +23,6 @@ export const getGraphQlError = (err: GraphQLError) => {
     case 'NOT_FOUND':
       return { status: 404, ...surfaceError };
     default:
-      return { status: 500, code: 'INTERNAL_SERVER_ERROR', message: 'An unexpected error occurred' }
+      return { status: 500, code: 'INTERNAL_SERVER_ERROR', message: err.message }
   }
 }
