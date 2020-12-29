@@ -32,6 +32,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
     post.shares = shares;
     await participant.save();
     await campaign.save();
+    await qualityScore.save();
     await HourlyCampaignMetric.upsert(campaign, campaign.org, 'likes', likes.minus(post.likes).toNumber());
     await HourlyCampaignMetric.upsert(campaign, campaign.org, 'shares', shares.minus(post.shares).toNumber());
     await DailyParticipantMetric.upsert(participant.user, campaign, participant, 'likes', likesAdjustedScore, likes.minus(post.likes).toNumber());

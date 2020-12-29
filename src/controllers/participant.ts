@@ -132,6 +132,7 @@ export const trackClickByLink = asyncHandler(async (req: Request, res: Response)
   participant.participationScore = participant.participationScore.plus(pointValue);
   await campaign.save();
   await participant.save();
+  await qualityScore.save();
   await HourlyCampaignMetric.upsert(campaign, campaign.org, action);
   await DailyParticipantMetric.upsert(participant.user, campaign, participant, action, pointValue);
   await Dragonchain.ledgerCampaignAction(action, participant.id, participant.campaign.id);
