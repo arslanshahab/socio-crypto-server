@@ -82,8 +82,9 @@ export class DailyParticipantMetric extends BaseEntity {
     participant: Participant,
     action: 'clicks'|'views'|'submissions'|'likes'|'shares'|'comments',
     additiveParticipationScore: BigNumber,
-    actionCount: number = 1
-  ) {
+    actionCount: number = 1,
+    shouldSave: boolean = true,
+  ): Promise<DailyParticipantMetric> {
     if (!['clicks','views','submissions','likes','shares','comments'].includes(action)) throw new Error('action not supported');
     const currentDate = new Date();
     const month = (currentDate.getUTCMonth() + 1) < 10 ? `0${currentDate.getUTCMonth() + 1}` : currentDate.getUTCMonth() + 1;
@@ -118,7 +119,7 @@ export class DailyParticipantMetric extends BaseEntity {
         break;
     }
     record.participationScore = (record.participationScore) ? record.participationScore.plus(additiveParticipationScore) : new BN(additiveParticipationScore);
-    await record.save();
+    if (shouldSave) await record.save();
     return record;
   }
 

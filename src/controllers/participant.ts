@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { getManager } from 'typeorm';
 import { RedisStore, getGraphQLRateLimiter } from 'graphql-rate-limit';
 import {Campaign} from "../models/Campaign";
 import {User} from "../models/User";
@@ -35,11 +36,11 @@ export const trackAction = async (args: { participantId: string, action: 'clicks
     const errorMessage = await rateLimiter({ parent: {}, args, context, info }, { max: Number(RATE_LIMIT_MAX), window: RATE_LIMIT_WINDOW });
     if (errorMessage) throw new Error(errorMessage);
     if (!['views', 'submissions'].includes(args.action)) throw new Error('invalid metric specified');
-    const participant = await Participant.findOne({ where: { id: args.participantId }, relations: ['campaign','user'] });
+    const participant = await Participant.findOne({ where: { id: args.participantId }, relations: ['campaign','campaign.org','user'] });
     if (!participant) throw new Error('participant not found');
-    if (!participant.campaign.isOpen()) throw new Error('campaign is closed');
-    const campaign = await Campaign.findOne({ where: { id: participant.campaign.id }, relations: ['org']});
+    const campaign = participant.campaign;
     if (!campaign) throw new Error('campaign not found');
+    if (!participant.campaign.isOpen()) throw new Error('campaign is closed');
     let qualityScore = await QualityScore.findOne({where: {participantId: participant.id}});
     if (!qualityScore) qualityScore = QualityScore.newQualityScore(participant.id);
     let multiplier;
@@ -58,11 +59,9 @@ export const trackAction = async (args: { participantId: string, action: 'clicks
     const pointValue = campaign.algorithm.pointValues[args.action].times(multiplier);
     campaign.totalParticipationScore = campaign.totalParticipationScore.plus(pointValue);
     participant.participationScore = participant.participationScore.plus(pointValue);
-    await campaign.save();
-    await participant.save();
-    await qualityScore.save();
-    await HourlyCampaignMetric.upsert(campaign, campaign.org, args.action);
-    await DailyParticipantMetric.upsert(participant.user, campaign, participant, args.action, pointValue);
+    const hourlyMetric = await HourlyCampaignMetric.upsert(campaign, campaign.org, args.action, undefined, false);
+    const dailyMetric = await DailyParticipantMetric.upsert(participant.user, campaign, participant, args.action, pointValue, undefined, false);
+    await getManager().save([campaign, participant, hourlyMetric, dailyMetric, qualityScore]);
     await Dragonchain.ledgerCampaignAction(args.action, participant.id, participant.campaign.id);
     return participant.asV1();
 };

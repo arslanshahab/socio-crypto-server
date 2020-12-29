@@ -159,8 +159,9 @@ export class HourlyCampaignMetric extends BaseEntity {
     campaign: Campaign,
     org: Org,
     action: 'clicks'|'views'|'submissions'|'likes'|'shares'|'comments'|'participate'|'removeParticipant'|'post',
-    actionCount: number = 1
-  ) {
+    actionCount: number = 1,
+    shouldSave: boolean = true,
+  ): Promise<HourlyCampaignMetric> {
     if(!['clicks','views','submissions','likes','shares','comments','participate','post','removeParticipant'].includes(action)) throw new Error('action not supported');
     const currentDate = new Date();
     const month = (currentDate.getUTCMonth() + 1) < 10 ? `0${currentDate.getUTCMonth() + 1}` : currentDate.getUTCMonth() + 1;
@@ -202,7 +203,7 @@ export class HourlyCampaignMetric extends BaseEntity {
         if (record.participantCount) record.participantCount = record.participantCount.minus(1);
         break;
     }
-    await record.save();
+    if (shouldSave) await record.save();
     return record;
   }
 
