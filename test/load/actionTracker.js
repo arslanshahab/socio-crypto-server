@@ -7,7 +7,7 @@ const LoadTesting = require('easygraphql-load-tester')
 const args = {
   trackAction: {
     participantId: '58a46312-d6ba-4904-97c3-265d411ccfdc',
-    action: 'click',
+    action: 'views',
   },
 }
 

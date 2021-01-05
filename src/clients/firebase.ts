@@ -17,22 +17,65 @@ export class Firebase {
     });
   }
 
+  public static async sendGenericNotification(tokens: string[], title: string, body: string) {
+    if (tokens.length === 0) return;
+    const tokenList = paginateList(tokens);
+    for (let i = 0; i < tokenList.length; i++) {
+      const currentTokens = tokenList[i];
+      const message: admin.messaging.MulticastMessage = {
+        notification: {
+          title,
+          body
+        },
+        data: {
+          'hello': 'world',
+          title,
+          body
+        },
+        apns: {
+          payload: {
+            aps: {
+              contentAvailable: true,
+              sound: "default",
+              badge: 4,
+              alert: {
+                title,
+                body
+              }
+            }
+          }
+        },
+        tokens: currentTokens
+      };
+      await Firebase.client.messaging().sendMulticast(message);
+    }
+  }
+
   public static async sendCampaignCompleteNotifications(tokens: string[], campaignName: string) {
     if (tokens.length === 0) return;
+    const title = `Campaign ${campaignName} has been audited!`;
+    const body = 'Please check your Raiinmaker app for your rewards';
     const tokenList = paginateList(tokens);
     for (let i = 0; i < tokenList.length; i++) {
       const currentSet = tokenList[i];
       const message: admin.messaging.MulticastMessage = {
         notification: {
-          title: `Campaign ${campaignName} has been audited!`,
-          body: 'Please check your Raiinmaker app for your rewards'
+          title,
+          body
+        },
+        data: {
+          title,
+          body
         },
         apns: {
           payload: {
             aps: {
+              contentAvailable: true,
+              sound: "default",
+              badge: 4,
               alert: {
-                title: `Campaign ${campaignName} has been audited!`,
-                body: 'Please check your Raiinmaker app for your rewards'
+                title,
+                body
               }
             }
           }
@@ -76,22 +119,27 @@ export class Firebase {
   }
 
   public static async sendDailyParticipationUpdate(token: string, campaign: Campaign, coiins: BigNumber, participationScore: BigNumber, rank: number, totalParticipants: number) {
+    const title = 'Daily Participation Upate';
+    const body = `You have earned ${participationScore.toString()} an estimated ${coiins.toFixed(2)} Coiin rewards in the past 24 hours from ${campaign.name} Campaign. Currently you are #${rank} out of ${totalParticipants}.`;
     const message: admin.messaging.Message = {
       notification: {
-        title: 'Daily Participation Upate',
-        body: `You have earned ${participationScore.toString()} an estimated ${coiins.toFixed(2)} Coiin rewards in the past 24 hours from ${campaign.name} Campaign. Currently you are #${rank} out of ${totalParticipants}.`
+        title,
+        body
       },
       apns: {
         payload: {
           aps: {
+            contentAvailable: true,
+            sound: "default",
+            badge: 4,
             alert: {
-              title: 'Daily Participation Upate',
-              body: `You have earned ${participationScore.toString()} an estimated ${coiins.toFixed(2)} Coiin rewards in the past 24 hours from ${campaign.name} Campaign. Currently you are #${rank} out of ${totalParticipants}.`
+              title,
+              body
             }
           }
         }
       },
-      data: {redirection: JSON.stringify({to: 'harvest'})},
+      data: {title, body, redirection: JSON.stringify({to: 'harvest'})},
       token
     };
     await Firebase.client.messaging().send(message);
@@ -99,23 +147,32 @@ export class Firebase {
 
   public static async sendCampaignCreatedNotifications(tokens: string[], campaign: Campaign) {
     if (tokens.length === 0) return;
+    const title = 'A new campaign has been created';
+    const body = `The campaign ${campaign.name} was created and is now live!`;
     const tokenList = paginateList(tokens);
     for (let i = 0; i < tokenList.length; i++) {
       const currentSet = tokenList[i];
       const message: admin.messaging.MulticastMessage = {
         notification: {
-          title: 'A new campaign has been created',
-          body: `The campaign ${campaign.name} was created and is now live!`,
+          title,
+          body
         },
         apns: {
           payload: {
             aps: {
-              title: 'A new campaign has been created',
-              body: `The campaign ${campaign.name} was created and is now live!`,
+              contentAvailable: true,
+              sound: "default",
+              badge: 4,
+              alert: {
+                title,
+                body
+              }
             }
           }
         },
         data: {
+          title,
+          body,
           redirection: JSON.stringify({
             to: 'campaign',
             extraData: {campaignId: campaign.id, campaignName: campaign.name}
@@ -129,88 +186,108 @@ export class Firebase {
   }
 
   public static async sendKycApprovalNotification(token: string) {
+    const title = 'Your KYC has been approved!';
+    const body = 'You can now make withdrawals thru your Raiinmaker app';
     const message: admin.messaging.Message = {
       notification: {
-        title: 'Your KYC has been approved!',
-        body: 'You can now make withdrawals thru your Raiinmaker app'
+        title,
+        body
       },
       apns: {
         payload: {
           aps: {
+            contentAvailable: true,
+            sound: "default",
+            badge: 4,
             alert: {
-              title: 'Your KYC has been approved!',
-              body: 'You can now make withdrawals thru your Raiinmaker app'
+              title,
+              body
             }
           }
         }
       },
-      data: {redirection: JSON.stringify({to: 'harvest'})},
+      data: {title, body, redirection: JSON.stringify({to: 'harvest'})},
       token
     };
     await Firebase.client.messaging().send(message);
   }
 
   public static async sendKycRejectionNotification(token: string) {
+    const title = 'Your KYC has been rejected!';
+    const body = 'You may re-apply your kyc information';
     const message: admin.messaging.Message = {
       notification: {
-        title: 'Your KYC has been rejected!',
-        body: 'You may re-apply your kyc information'
+        title,
+        body
       },
       apns: {
         payload: {
           aps: {
+            contentAvailable: true,
+            sound: "default",
+            badge: 4,
             alert: {
-              title: 'Your KYC has been rejected!',
-              body: 'You may re-apply your kyc information'
+              title,
+              body
             }
           }
         }
       },
-      data: {redirection: JSON.stringify({to: 'settings'})},
+      data: {title, body, redirection: JSON.stringify({to: 'settings'})},
       token
     };
     await Firebase.client.messaging().send(message);
   }
 
   public static async sendWithdrawalApprovalNotification(token: string, amount: BigInt) {
+    const title = 'Your withdraw request has been approved';
+    const body = `Your request for ${amount.toString()} COIIN withdrawal is being processed`;
     const message: admin.messaging.Message = {
       notification: {
-        title: 'Your withdraw request has been approved',
-        body: `Your request for ${amount.toString()} COIIN withdrawal is being processed`
+        title,
+        body
       },
       apns: {
         payload: {
           aps: {
+            contentAvailable: true,
+            sound: "default",
+            badge: 4,
             alert: {
-              title: 'Your withdraw request has been approved',
-              body: `Your request for ${amount.toString()} COIIN withdrawal is being processed`
+              title,
+              body
             }
           }
         }
       },
-      data: {redirection: JSON.stringify({to: 'rewards'})},
+      data: {title, body, redirection: JSON.stringify({to: 'rewards'})},
       token
     };
     await Firebase.client.messaging().send(message);
   }
 
   public static async sendWithdrawalRejectionNotification(token: string, amount: BigInt) {
+    const title = 'Your withdraw request has been rejected';
+    const body = `Your request for ${amount.toString()} COIIN using has been rejected. Please attempt with a different amount`;
     const message: admin.messaging.Message = {
       notification: {
-        title: 'Your withdraw request has been rejected',
-        body: `Your request for ${amount.toString()} COIIN using has been rejected. Please attempt with a different amount`
+        title,
+        body
       },
       apns: {
         payload: {
           aps: {
+            contentAvailable: true,
+            sound: "default",
+            badge: 4,
             alert: {
-              title: 'Your withdraw request has been rejected',
-              body: `Your request for ${amount.toString()} COIIN using has been rejected. Please attempt with a different amount`
+              title,
+              body
             }
           }
         }
       },
-      data: {redirection: JSON.stringify({to: 'settings'})},
+      data: {title, body, redirection: JSON.stringify({to: 'settings'})},
       token
     };
     await Firebase.client.messaging().send(message);

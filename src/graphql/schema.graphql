@@ -84,6 +84,7 @@ type Mutation {
   purchaseCoiin(amount: Float!, paymentMethodId:String!, campaignId: String): Stripe
   updateCampaignStatus(status: String!, campaignId: String!): Boolean
   fundCampaigns(campaignIds: [String]): Boolean
+  sendUserMessages(usernames: [String]!, title: String!, message: String!): Boolean
 }
 
 type Query {

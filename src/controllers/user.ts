@@ -11,6 +11,7 @@ import { DailyParticipantMetric } from '../models/DailyParticipantMetric';
 import { groupDailyMetricsByUser } from './helpers';
 import {HourlyCampaignMetric} from "../models/HourlyCampaignMetric";
 import { serverBaseUrl } from '../config';
+import { In } from "typeorm";
 
 export const participate = async (args: { campaignId: string, email: string }, context: { user: any }) => {
     const { id } = context.user;
@@ -193,4 +194,16 @@ export const updateNotificationSettings = async (args: { kyc: boolean, withdraw:
   if (campaignUpdates !== null && campaignUpdates !== undefined) notificationSettings.campaignUpdates = campaignUpdates;
   await notificationSettings.save();
   return user.asV1();
+}
+
+export const sendUserMessages = async (args: { usernames: string[], title: string, message: string }, context: { user: any }) => {
+  checkPermissions({ hasRole: ['admin'], restrictCompany: 'raiinmaker' }, context);
+  const { usernames, title, message } = args;
+  if (usernames.length === 0) return false;
+  const tokens = (await Profile.find({ where: { username: In(usernames) } })).reduce((accum: string[], curr: Profile) => {
+    if (curr.deviceToken) accum.push(curr.deviceToken);
+    return accum;
+  }, []);
+  await Firebase.sendGenericNotification(tokens, title, message);
+  return true;
 }

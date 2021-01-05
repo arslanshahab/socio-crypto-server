@@ -1,5 +1,5 @@
 config:
-  target: "https://raiinmaker-staging.api.dragonchain.com/v1/public/graphql/"
+  target: "https://server-staging.api.raiinmaker.com/v1/public/graphql/"
   phases:
     - duration: 5
       arrivalRate: 50

@@ -30,10 +30,6 @@ function logging(requestParams, response, context, ee, next) {
 }
 
 const testCases = easyGraphQLLoadTester.artillery({
-  customQueries,
-  onlyCustomQueries: true,
-  queryFile: true,
-  withMutations: false,
 })
 module.exports = {
   testCases,
