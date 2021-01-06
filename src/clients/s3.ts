@@ -184,7 +184,15 @@ export class S3Client {
   }
 
   public static async uploadProfilePicture(userId: string, image: string) {
-    const params: AWS.S3.PutObjectRequest = {Bucket: BUCKET_NAME, Key: `profile/${userId}`, Body: image};
+    const extension = getBase64FileExtension(image);
+    const params: AWS.S3.PutObjectRequest = {
+      Bucket: BUCKET_NAME,
+      Key: `profile/${userId}`,
+      ContentEncoding: 'base64',
+      ContentType: extension,
+      Body: Buffer.from(image.replace(/^data:image\/\w+;base64,/, ""), 'base64'),
+    };
+    console.log(params);
     return await this.client.putObject(params).promise();
   }
 }

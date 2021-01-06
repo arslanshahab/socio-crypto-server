@@ -67,6 +67,7 @@ export const root = {
   adminGetKycByUser: kycController.adminGetKycByUser,
   getWithdrawalsV2: withdrawController.getWithdrawalsV2,
   removeEthereumAddress: externalWallet.remove,
+  uploadProfilePicture: userController.uploadProfilePicture,
 };
 
 export const adminRoot = {
@@ -102,7 +103,6 @@ export const adminRoot = {
   listPendingCampaigns: campaignController.adminListPendingCampaigns,
   updateCampaignStatus: campaignController.adminUpdateCampaignStatus,
   sendUserMessages: userController.sendUserMessages,
-  uploadProfilePicture: userController.uploadProfilePicture,
 }
 
 export const publicRoot = {
