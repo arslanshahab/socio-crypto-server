@@ -190,9 +190,9 @@ export class S3Client {
       Key: `profile/${userId}`,
       ContentEncoding: 'base64',
       ContentType: extension,
+      CacheControl: 'max-age=1800',
       Body: Buffer.from(image.replace(/^data:image\/\w+;base64,/, ""), 'base64'),
     };
-    console.log(params);
     return await this.client.putObject(params).promise();
   }
 }
