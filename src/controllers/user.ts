@@ -4,6 +4,7 @@ import {checkPermissions} from "../middleware/authentication";
 import {Firebase} from "../clients/firebase";
 import {User} from "../models/User";
 import { TinyUrl } from '../clients/tinyUrl';
+import { S3Client } from "../clients/s3";
 import {sha256Hash} from '../util/crypto';
 import { GraphQLResolveInfo } from 'graphql';
 import { Profile } from '../models/Profile';
@@ -205,5 +206,14 @@ export const sendUserMessages = async (args: { usernames: string[], title: strin
     return accum;
   }, []);
   await Firebase.sendGenericNotification(tokens, title, message);
+  return true;
+}
+
+export const uploadProfilePicture = async (args: { image: string }, context: { user: any }) => {
+  const { id } = context.user;
+  const { image } = args;
+  const user = await User.findOne({ where: { identityId: id } });
+  if (!user) throw new Error('user not found');
+  await S3Client.uploadProfilePicture(user.id, image);
   return true;
 }

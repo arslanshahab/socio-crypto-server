@@ -102,6 +102,7 @@ export const adminRoot = {
   listPendingCampaigns: campaignController.adminListPendingCampaigns,
   updateCampaignStatus: campaignController.adminUpdateCampaignStatus,
   sendUserMessages: userController.sendUserMessages,
+  uploadProfilePicture: userController.uploadProfilePicture,
 }
 
 export const publicRoot = {
