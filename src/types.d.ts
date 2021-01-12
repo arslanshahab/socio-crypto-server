@@ -1,8 +1,6 @@
 import {Request} from 'express';
 import { BigNumber } from 'bignumber.js';
-import {Participant} from "./models/Participant";
 import {Stripe} from "stripe";
-import {Campaign} from "./models/Campaign";
 
 export interface FactorGeneration {
   name: string;

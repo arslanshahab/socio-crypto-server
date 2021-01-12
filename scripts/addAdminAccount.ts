@@ -7,10 +7,11 @@ import {connectDatabase} from "./helpers";
 import {Connection} from "typeorm";
 
 const NAME = process.env.NAME || 'developer';
-const EMAIL = process.env.EMAIL || 'testing@raiinmaker.com';
-const PASSWORD = process.env.PASSWORD || 'raiinmaker';
-const ORG_NAME = process.env.ORG_NAME || 'raiinmaker';
-const ACTION = process.env.ACTION || 'create';
+const EMAIL = 'testingnoah@raiinmaker.com';
+const PASSWORD = 'raiinmaker';
+const ORG_NAME = 'raiinmaker';
+let  ACTION = 'create';
+ACTION = 'add';
 const TEMP_PASSWORD = false;
 
 let dbConn: Connection
@@ -57,14 +58,15 @@ const createNewOrg = async (connection: Connection) => {
 }
 
 const addAccountToOrg = async (connection: Connection) => {
+
   try {
-    console.log('Adding account to existing org');
     let user;
     try {
       user = await Firebase.createNewUser(EMAIL, PASSWORD);
     } catch (e) {
       user = await Firebase.getUser(EMAIL);
     }
+    console.log('Adding account to existing org');
     await Firebase.setCustomUserClaims(user.uid, ORG_NAME, 'admin', TEMP_PASSWORD);
     const org = await Org.findOne({where: {name: ORG_NAME}});
     if (!org) throw new Error('org not found');
@@ -81,7 +83,9 @@ const addAccountToOrg = async (connection: Connection) => {
   }
 
 }
+
 (async () => {
+
   const connection = await getDatabase();
     console.log('CONNECTING TO DATABASE');
     await Secrets.initialize();

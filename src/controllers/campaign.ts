@@ -272,7 +272,7 @@ export const payoutCampaignRewards = async (args: { campaignId: string, rejected
         const {campaignId, rejected} = args;
         const campaign = await Campaign.findOneOrFail({where: {id: campaignId, company}, relations: ['participants', 'prize', 'org', 'org.fundingWallet']});
         let deviceIds;
-        switch (campaign.type) {
+      switch (campaign.type) {
           case 'coiin':
             deviceIds = await payoutCoiinCampaignRewards(transactionalEntityManager, campaign, rejected);
             break;
@@ -281,9 +281,9 @@ export const payoutCampaignRewards = async (args: { campaignId: string, rejected
             break;
           default:
             throw new Error('campaign type is invalid');
-        }
-        if (deviceIds) await Firebase.sendCampaignCompleteNotifications(Object.values(deviceIds), campaign.name);
-        return true;
+      }
+      if (deviceIds) await Firebase.sendCampaignCompleteNotifications(Object.values(deviceIds), campaign.name);
+      return true;
     });
 };
 

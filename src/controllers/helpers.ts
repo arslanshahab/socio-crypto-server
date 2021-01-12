@@ -46,6 +46,8 @@ export const shuffle = (a: any[]) => {
 }
 
 export const calculateRaffleWinner = (totalParticipationScore: BigNumber, participants: Participant[], currentRun = 1): Participant => {
+  if (participants.length === 0) throw new Error('no participants found');
+  if (participants.length === 1) return participants[0];
   if (currentRun > 5) throw new Error('no winner found in 5 runs. Try again');
   const sumOfWeights = totalParticipationScore;
   let rand = generateRandomNumber(sumOfWeights.toNumber());

@@ -101,6 +101,7 @@ export const adminRoot = {
   listPaymentMethods: stripeController.listPaymentMethods,
   listPendingCampaigns: campaignController.adminListPendingCampaigns,
   updateCampaignStatus: campaignController.adminUpdateCampaignStatus,
+  sendUserMessages: userController.sendUserMessages,
 }
 
 export const publicRoot = {
