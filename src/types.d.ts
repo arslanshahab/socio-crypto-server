@@ -1,10 +1,16 @@
 import {Request} from 'express';
 import { BigNumber } from 'bignumber.js';
-import {Participant} from "./models/Participant";
+import {Stripe} from "stripe";
 
 export interface FactorGeneration {
   name: string;
   id: string;
+}
+
+export interface RafflePrizeStructure {
+  displayName: string;
+  affiliateLink?: string;
+  image?: string;
 }
 
 export interface KycUser {
@@ -149,9 +155,9 @@ export interface CampaignAuditReport {
 
 export interface ActionValues {
     [key: string]: BigNumber;
-    click: BigNumber;
-    view: BigNumber;
-    submission: BigNumber;
+    clicks: BigNumber;
+    views: BigNumber;
+    submissions: BigNumber;
     likes: BigNumber;
     shares: BigNumber;
 }
@@ -172,7 +178,9 @@ export interface PaypalPayout {
     "receiver": string,
 }
 
-export type PayoutStatus = 'BLOCKED' | 'CANCELED' | 'DENIED' | 'FAILED' | 'HELD' | 'REFUNDED' | 'RETURNED' | 'SUCCEEDED' | 'UNCLAIMED'
+export type TransferStatus = 'BLOCKED' | 'CANCELED' | 'DENIED' | 'FAILED' | 'HELD' | 'REFUNDED' | 'RETURNED' | 'SUCCEEDED' | 'UNCLAIMED' | 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export type CampaignStatus = 'ACTIVE' | 'PENDING' | 'INSUFFICIENT_FUNDS' | 'CLOSED' | 'APPROVED' | 'DENIED';
 
 export interface GraphApiInputParameters {
   fields?: string[] | string;
@@ -197,4 +205,11 @@ export interface ParticipantEngagement {
   viewRate: BigNumber;
   submissionRate: BigNumber;
   clickRate: BigNumber;
+}
+
+export interface PaymentIntent extends Stripe.PaymentIntent{
+  metadata: {
+    transferId: string;
+    stage: string;
+  }
 }

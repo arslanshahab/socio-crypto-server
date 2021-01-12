@@ -1,4 +1,5 @@
 import * as AWS from 'aws-sdk';
+import { Campaign } from '../models/Campaign';
 import {Transfer} from '../models/Transfer';
 
 const { NODE_ENV = "development" } = process.env;
@@ -79,6 +80,21 @@ export class SesClient {
     } catch (e) {
       console.error('Error occurred while sending email')
       console.error(e);
+      return false;
+    }
+  }
+
+  public static async sendRafflePrizeRedemptionEmail(userId: string, emailAddress: string, campaign: Campaign) {
+    const title = `A raffle prize winner has been chosen for campaign: ${campaign.name}`;
+    const text = `A winner, ${userId}, has been chosen for the campaign ${campaign.name}. \n Please contact the user at ${emailAddress} to coordinate sending of prize.`;
+    const template = SesClient.getTemplate(title, text, 'Raffle Campaign Has Been Audited');
+    try {
+      const data = await SesClient.client.sendEmail(template).promise();
+      console.log(`Email sent to ${REWARD_REDEMPTION_EMAIL_RECIPIENT}, ${JSON.stringify(data)}`);
+      return true;
+    } catch (error) {
+      console.error('Error occurred while sending email')
+      console.error(error);
       return false;
     }
   }

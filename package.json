@@ -19,6 +19,7 @@
     "test:unit": "NODE_ENV=test mocha -r ts-node/register './test/unit/**/*.spec.ts' --grep '#unit' --exit",
     "test:load:app": "$(npm bin)/artillery run test/load/app.yaml",
     "test:load:tracker": "$(npm bin)/artillery run test/load/actionTracker.yaml",
+    "test:load:health": "$(npm bin)/artillery run test/load/health.yaml",
     "test:built": "NODE_ENV=test mocha 'dist/**/*.spec.js' --exit",
     "update:cicd": "aws cloudformation deploy --template-file cicd.cft.yml --stack-name creatorworks-cicd --capabilities CAPABILITY_NAMED_IAM",
     "typeorm:cli": "ts-node ./node_modules/typeorm/cli",
@@ -26,7 +27,8 @@
     "migration:revert": "yarn typeorm:cli migration:revert",
     "migration:generate": "yarn typeorm:cli migration:generate",
     "metrics:generate": "NODE_ENV=script ts-node ./scripts/metricsGenerator.ts",
-    "account:create": "ts-node ./scripts/addAdminAccount.ts"
+    "account:create": "ts-node ./scripts/addAdminAccount.ts",
+    "account:add": "ACTION=add ts-node ./scripts/addAdminAccount.ts"
   },
   "dependencies": {
     "@dragonchain-dev/dragonfactor-auth": "^0.0.11",
@@ -56,6 +58,7 @@
     "pg": "^8.0.3",
     "redis": "^3.0.2",
     "secp256k1": "^4.0.2",
+    "stripe": "^8.128.0",
     "twitter": "^1.7.1",
     "typeorm": "^0.2.24",
     "uuid": "^3.3.3",

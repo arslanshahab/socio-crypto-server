@@ -5,9 +5,10 @@ import { Wallet } from './Wallet';
 import { Campaign } from './Campaign';
 import { BN } from '../util/helpers';
 import {BigNumberEntityTransformer} from "../util/transformers";
-import {PayoutStatus} from "../types";
+import {TransferStatus} from "../types";
 import {Org} from "./Org";
 import {FundingWallet} from './FundingWallet';
+import { RafflePrize } from './RafflePrize';
 
 @Entity()
 export class Transfer extends BaseEntity {
@@ -17,20 +18,28 @@ export class Transfer extends BaseEntity {
   @Column({ type: 'varchar', nullable: false, transformer: BigNumberEntityTransformer })
   public amount: BigNumber;
 
+  // TODO: We should get rid of this column. Having amount and currency seems to be a better way to go.
   @Column({ type: 'varchar', nullable: true, transformer: BigNumberEntityTransformer })
   public usdAmount: BigNumber;
 
+  @Column({ type: 'varchar', nullable: true})
+  public currency: 'coiin' | 'usd';
+
   @Column({ nullable: false })
-  public action: 'transfer'|'withdraw'|'deposit';
+  public action: 'transfer'|'withdraw'|'deposit'|'prize'|'refund'|'fee';
 
   @Column({ nullable: true })
-  public withdrawStatus: 'pending'|'approved'|'rejected';
+  public status: TransferStatus;
 
+  // TODO: We should get rid of this column as well. It seems pretty redundant, and considering payouts aren't a thing yet this should be doable.
   @Column({nullable: true})
-  public payoutStatus: PayoutStatus;
+  public payoutStatus: TransferStatus;
 
   @Column({nullable: true})
   public payoutId: string;
+
+  @Column({nullable: true})
+  public stripeCardId: string;
 
   @Column({nullable: true})
   public ethAddress: string;
@@ -74,6 +83,12 @@ export class Transfer extends BaseEntity {
   )
   public org: Org;
 
+  @ManyToOne(
+    _type => RafflePrize,
+    prize => prize.transfers
+  )
+  public rafflePrize: RafflePrize;
+
   public asV1() {
     return {...this, amount: parseFloat(this.amount.toString())};
   }
@@ -81,7 +96,7 @@ export class Transfer extends BaseEntity {
   public static async getTotalAnnualWithdrawalByWallet(wallet: Wallet): Promise<BigNumber> {
     const startOfYear = DateUtils.mixedDateToUtcDatetimeString(new Date(Date.UTC(new Date().getFullYear(), 0, 1)));
     const { sum } = await this.createQueryBuilder('transfer')
-      .where(`transfer.action = 'withdraw' AND transfer."withdrawStatus" = 'approved' AND transfer."walletId" = :id AND transfer."updatedAt" >= '${startOfYear}' `, { id: wallet.id })
+      .where(`transfer.action = 'withdraw' AND transfer."status" = 'approved' AND transfer."walletId" = :id AND transfer."updatedAt" >= '${startOfYear}' `, { id: wallet.id })
       .select('SUM(CAST(transfer.amount AS DECIMAL))')
       .getRawOne();
     return new BN(sum || 0);
@@ -89,7 +104,7 @@ export class Transfer extends BaseEntity {
 
   public static async getTotalPendingByWallet(wallet: Wallet): Promise<BigNumber> {
     const { sum } = await this.createQueryBuilder('transfer')
-      .where(`transfer.action = 'withdraw' AND transfer."withdrawStatus" = 'pending' AND transfer."walletId" = :id`, { id: wallet.id })
+      .where(`transfer.action = 'withdraw' AND transfer."status" = 'pending' AND transfer."walletId" = :id`, { id: wallet.id })
       .select('SUM(CAST(transfer.amount AS DECIMAL))')
       .getRawOne();
     return new BN(sum || 0);
@@ -100,7 +115,7 @@ export class Transfer extends BaseEntity {
       .leftJoinAndSelect('transfer.wallet', 'wallet', 'wallet.id = transfer."walletId"')
       .leftJoinAndSelect('wallet.user', 'user', 'user.id = wallet."userId"')
       .leftJoinAndSelect('user.profile', 'profile', 'profile."userId" = user.id')
-      .where(`transfer.action = 'withdraw' AND transfer."withdrawStatus" = :status`, { status })
+      .where(`transfer.action = 'withdraw' AND transfer."status" = :status`, { status })
       .orderBy('transfer."createdAt"', 'ASC')
       .getMany();
   }
@@ -110,9 +125,32 @@ export class Transfer extends BaseEntity {
       .leftJoinAndSelect('transfer.wallet', 'wallet', 'wallet.id = transfer."walletId"')
       .leftJoinAndSelect('wallet.user', 'user', 'user.id = wallet."userId"')
       .leftJoinAndSelect('user.profile', 'profile', 'profile."userId" = user.id')
-      .where(`transfer.action = 'withdraw' AND transfer."withdrawStatus" = 'approved' OR transfer."withdrawStatus" = 'rejected'`)
+      .where(`transfer.action = 'withdraw' AND transfer."status" = 'approved' OR transfer."status" = 'rejected'`)
       .orderBy('transfer."createdAt"', 'ASC')
       .getMany();
+  }
+
+  public static async transferCampaignPayoutFee(campaign: Campaign, amount: BigNumber): Promise<Transfer> {
+    const org = await Org.findOne({ where: { name: 'raiinmaker' }, relations: ['fundingWallet'] });
+    if (!org) throw new Error('raiinmaker org not found for payout');
+    const transfer = new Transfer();
+    transfer.action = 'fee';
+    transfer.campaign = campaign;
+    transfer.amount = amount;
+    transfer.fundingWallet = org.fundingWallet;
+    await transfer.save();
+    org.fundingWallet.balance = org.fundingWallet.balance.plus(amount);
+    await org.fundingWallet.save();
+    return transfer;
+  }
+
+  public static newFromFundingWalletPayout(wallet: FundingWallet, campaign: Campaign, amount: BigNumber): Transfer {
+    const transfer = new Transfer();
+    transfer.action = 'transfer';
+    transfer.campaign = campaign;
+    transfer.amount = amount;
+    transfer.fundingWallet = wallet;
+    return transfer;
   }
 
   public static newFromCampaignPayout(wallet: Wallet, campaign: Campaign, amount: BigNumber): Transfer {
@@ -124,13 +162,35 @@ export class Transfer extends BaseEntity {
     return transfer;
   }
 
+  public static newFromCampaignPayoutRefund(wallet: FundingWallet, campaign: Campaign, amount: BigNumber): Transfer {
+    const transfer = new Transfer();
+    transfer.action = 'refund';
+    transfer.campaign = campaign;
+    transfer.amount = amount;
+    transfer.fundingWallet = wallet;
+    return transfer;
+  }
+
   public static newFromWithdraw(wallet: Wallet, amount: BigNumber, ethAddress?: string, paypalAddress?: string): Transfer {
     const transfer = new Transfer();
     transfer.amount = amount;
     transfer.action = 'withdraw';
     transfer.wallet = wallet;
-    transfer.withdrawStatus = 'pending';
+    transfer.status = 'PENDING';
     if (ethAddress) transfer.ethAddress = ethAddress;
+    if (paypalAddress) transfer.paypalAddress = paypalAddress;
+    return transfer;
+  }
+
+  public static newPendingUsdDeposit(wallet: FundingWallet, org: Org, amount: BigNumber, stripeCardId?: string, paypalAddress?: string): Transfer {
+    const transfer = new Transfer();
+    transfer.fundingWallet = wallet;
+    transfer.org = org;
+    transfer.amount = amount;
+    transfer.status = 'PENDING';
+    transfer.currency = 'usd';
+    transfer.action = 'deposit';
+    if (stripeCardId) transfer.stripeCardId = stripeCardId;
     if (paypalAddress) transfer.paypalAddress = paypalAddress;
     return transfer;
   }
@@ -142,6 +202,16 @@ export class Transfer extends BaseEntity {
     transfer.ethAddress = ethAddress;
     transfer.transactionHash = transactionHash;
     transfer.fundingWallet = wallet as FundingWallet;
+    return transfer;
+  }
+
+  public static newFromRaffleSelection(wallet: Wallet, campaign: Campaign, prize: RafflePrize) {
+    const transfer = new Transfer();
+    transfer.amount = new BN(0);
+    transfer.action = 'prize';
+    transfer.wallet = wallet;
+    transfer.campaign = campaign;
+    transfer.rafflePrize = prize;
     return transfer;
   }
 }

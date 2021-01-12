@@ -72,7 +72,7 @@ export class HourlyCampaignMetric extends BaseEntity {
   public org: Org;
 
   public asV1() {
-    const response: {[key: string]: any} = {
+    const returnValue: HourlyCampaignMetric = {
       ...this,
       clickCount: this.clickCount.toNumber(),
       viewCount: this.viewCount.toNumber(),
@@ -83,8 +83,8 @@ export class HourlyCampaignMetric extends BaseEntity {
       participantCount: parseFloat(this.participantCount.toString()),
       postCount: parseFloat(this.postCount.toString()),
     }
-    if (this.campaign) response.campaignId = this.campaign.id;
-    return response
+    if (this.campaign) returnValue.campaign = this.campaign.asV1();
+    return returnValue;
   }
 
   public static parseHourlyCampaignMetrics(hourlyMetrics: HourlyMetricsGroupedByDateQueryResult[], filter: DateTrunc, currentTotal: BigNumber) {
@@ -158,10 +158,11 @@ export class HourlyCampaignMetric extends BaseEntity {
   public static async upsert(
     campaign: Campaign,
     org: Org,
-    action: 'click'|'view'|'submission'|'like'|'share'|'comment'|'participate'|'removeParticipant'|'post',
-    actionCount: number = 1
-  ) {
-    if(!['click','view','submission','like','share','comment','participate','post','removeParticipant'].includes(action)) throw new Error('action not supported');
+    action: 'clicks'|'views'|'submissions'|'likes'|'shares'|'comments'|'participate'|'removeParticipant'|'post',
+    actionCount: number = 1,
+    shouldSave: boolean = true,
+  ): Promise<HourlyCampaignMetric> {
+    if(!['clicks','views','submissions','likes','shares','comments','participate','post','removeParticipant'].includes(action)) throw new Error('action not supported');
     const currentDate = new Date();
     const month = (currentDate.getUTCMonth() + 1) < 10 ? `0${currentDate.getUTCMonth() + 1}` : currentDate.getUTCMonth() + 1;
     const day = currentDate.getUTCDate() < 10 ? `0${currentDate.getUTCDate()}` : currentDate.getUTCDate();
@@ -174,22 +175,22 @@ export class HourlyCampaignMetric extends BaseEntity {
       record.org = org;
     }
     switch (action) {
-      case 'click':
+      case 'clicks':
         record.clickCount = (record.clickCount) ? record.clickCount.plus(new BN(actionCount)) : new BN(actionCount);
         break;
-      case 'view':
+      case 'views':
         record.viewCount = (record.viewCount) ? record.viewCount.plus(new BN(actionCount)) : new BN(actionCount);
         break;
-      case 'submission':
+      case 'submissions':
         record.submissionCount = (record.submissionCount) ? record.submissionCount.plus(new BN(actionCount)) : new BN(actionCount);
         break;
-      case 'like':
+      case 'likes':
         record.likeCount = (record.likeCount) ? record.likeCount.plus(new BN(actionCount)) : new BN(actionCount);
         break;
-      case 'share':
+      case 'shares':
         record.shareCount = (record.shareCount) ? record.shareCount.plus(new BN(actionCount)) : new BN(actionCount);
         break;
-      case 'comment':
+      case 'comments':
         record.commentCount = (record.commentCount) ? record.commentCount.plus(new BN(actionCount)) : new BN(actionCount);
         break;
       case "participate":
@@ -202,7 +203,7 @@ export class HourlyCampaignMetric extends BaseEntity {
         if (record.participantCount) record.participantCount = record.participantCount.minus(1);
         break;
     }
-    await record.save();
+    if (shouldSave) await record.save();
     return record;
   }
 

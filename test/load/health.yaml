@@ -1,0 +1,17 @@
+config:
+  target: "https://server-staging.api.raiinmaker.com/v1/"
+  phases:
+    - duration: 20
+      arrivalRate: 500
+  defaults:
+    - headers:
+      authorization: "{{ $processEnvironment.TEST_API_KEY }}"
+scenarios:
+  - name: 'Check Health'
+    flow:
+      - loop:
+          - get:
+              url: '/health'
+              # enables response logs
+              # afterResponse: "logging"
+        over: cases

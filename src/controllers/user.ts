@@ -11,16 +11,18 @@ import { DailyParticipantMetric } from '../models/DailyParticipantMetric';
 import { groupDailyMetricsByUser } from './helpers';
 import {HourlyCampaignMetric} from "../models/HourlyCampaignMetric";
 import { serverBaseUrl } from '../config';
+import { In } from "typeorm";
 
-export const participate = async (args: { campaignId: string }, context: { user: any }) => {
+export const participate = async (args: { campaignId: string, email: string }, context: { user: any }) => {
     const { id } = context.user;
     const user = await User.findOne({ where: { identityId: id }, relations: ['campaigns', 'wallet'] });
     if (!user) throw new Error('user not found');
     const campaign = await Campaign.findOne({ where: { id: args.campaignId }, relations: ['org'] });
     if (!campaign) throw new Error('campaign not found');
+    if (campaign.type === 'raffle' && !args.email) throw new Error('raffle campaigns require an email');
     if (!campaign.isOpen()) throw new Error('campaign is not open for participation');
     if (await Participant.findOne({ where: { campaign, user } })) throw new Error('user already participating in this campaign');
-    const participant = Participant.newParticipant(user, campaign);
+    const participant = Participant.newParticipant(user, campaign, args.email);
     await participant.save();
     const url = `${serverBaseUrl}/v1/referral/${participant.id}`;
     participant.link = await TinyUrl.shorten(url);
@@ -192,4 +194,16 @@ export const updateNotificationSettings = async (args: { kyc: boolean, withdraw:
   if (campaignUpdates !== null && campaignUpdates !== undefined) notificationSettings.campaignUpdates = campaignUpdates;
   await notificationSettings.save();
   return user.asV1();
+}
+
+export const sendUserMessages = async (args: { usernames: string[], title: string, message: string }, context: { user: any }) => {
+  checkPermissions({ hasRole: ['admin'], restrictCompany: 'raiinmaker' }, context);
+  const { usernames, title, message } = args;
+  if (usernames.length === 0) return false;
+  const tokens = (await Profile.find({ where: { username: In(usernames) } })).reduce((accum: string[], curr: Profile) => {
+    if (curr.deviceToken) accum.push(curr.deviceToken);
+    return accum;
+  }, []);
+  await Firebase.sendGenericNotification(tokens, title, message);
+  return true;
 }

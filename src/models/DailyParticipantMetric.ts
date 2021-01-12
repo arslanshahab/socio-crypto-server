@@ -80,11 +80,12 @@ export class DailyParticipantMetric extends BaseEntity {
     user: User,
     campaign: Campaign,
     participant: Participant,
-    action: 'click'|'view'|'submission'|'like'|'share'|'comment',
+    action: 'clicks'|'views'|'submissions'|'likes'|'shares'|'comments',
     additiveParticipationScore: BigNumber,
-    actionCount: number = 1
-  ) {
-    if (!['click','view','submission','like','share','comment'].includes(action)) throw new Error('action not supported');
+    actionCount: number = 1,
+    shouldSave: boolean = true,
+  ): Promise<DailyParticipantMetric> {
+    if (!['clicks','views','submissions','likes','shares','comments'].includes(action)) throw new Error('action not supported');
     const currentDate = new Date();
     const month = (currentDate.getUTCMonth() + 1) < 10 ? `0${currentDate.getUTCMonth() + 1}` : currentDate.getUTCMonth() + 1;
     const day = currentDate.getUTCDate() < 10 ? `0${currentDate.getUTCDate()}` : currentDate.getUTCDate();
@@ -98,27 +99,27 @@ export class DailyParticipantMetric extends BaseEntity {
     }
     record.totalParticipationScore = participant.participationScore;
     switch (action) {
-      case 'click':
+      case 'clicks':
         record.clickCount = (record.clickCount) ? record.clickCount.plus(new BN(actionCount)) : new BN(actionCount);
         break;
-      case 'view':
+      case 'views':
         record.viewCount = (record.viewCount) ? record.viewCount.plus(new BN(actionCount)) : new BN(actionCount);
         break;
-      case 'submission':
+      case 'submissions':
         record.submissionCount = (record.submissionCount) ? record.submissionCount.plus(new BN(actionCount)) : new BN(actionCount);
         break;
-      case 'like':
+      case 'likes':
         record.likeCount = (record.likeCount) ? record.likeCount.plus(new BN(actionCount)) : new BN(actionCount);
         break;
-      case 'share':
+      case 'shares':
         record.shareCount = (record.shareCount) ? record.shareCount.plus(new BN(actionCount)) : new BN(actionCount);
         break;
-      case 'comment':
+      case 'comments':
         record.commentCount = (record.commentCount) ? record.commentCount.plus(new BN(actionCount)) : new BN(actionCount);
         break;
     }
     record.participationScore = (record.participationScore) ? record.participationScore.plus(additiveParticipationScore) : new BN(additiveParticipationScore);
-    await record.save();
+    if (shouldSave) await record.save();
     return record;
   }
 

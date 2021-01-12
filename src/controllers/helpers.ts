@@ -4,9 +4,64 @@ import {Participant} from "../models/Participant";
 import {Campaign} from "../models/Campaign";
 import { getConnection } from 'typeorm';
 import { Wallet } from '../models/Wallet';
-import {BN} from '../util/helpers';
+import { BN, generateRandomNumber } from '../util/helpers';
 import { BigNumber } from 'bignumber.js';
 import { DailyParticipantMetric } from '../models/DailyParticipantMetric';
+import {FundingWallet} from "../models/FundingWallet";
+import {Org} from "../models/Org";
+import {Escrow} from "../models/Escrow";
+
+export const FEE_RATE = process.env.FEE_RATE ? parseFloat(process.env.FEE_RATE) : 0.1;
+export const feeMultiplier = new BN(1).minus(FEE_RATE);
+
+export const updateOrgCampaignsStatusOnDeposit = async (fundingWallet: FundingWallet) => {
+  const org = await Org.listOrgCampaignsByWalletIdAndStatus(fundingWallet.id, 'INSUFFICIENT_FUNDS');
+  if (!org) throw new Error('org not found');
+  if (!org.campaigns) return;
+  const now = new Date();
+  const escrows: Escrow[] = [];
+  const campaigns: Campaign[] = [];
+  let totalCost = new BN(0);
+  for (const campaign of org.campaigns) {
+    totalCost = totalCost.plus(campaign.coiinTotal);
+    if (org.fundingWallet.balance.gte(totalCost)) {
+      campaign.status = campaign.beginDate <= now ? 'ACTIVE' : 'APPROVED';
+      escrows.push(Escrow.newCampaignEscrow(campaign, org.fundingWallet));
+      campaigns.push(campaign);
+      org.fundingWallet.balance = org.fundingWallet.balance.minus(totalCost);
+    }
+  }
+  await Campaign.save(campaigns);
+  await Escrow.save(escrows);
+  await org.fundingWallet.save();
+  return true;
+}
+
+export const shuffle = (a: any[]) => {
+  for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+export const calculateRaffleWinner = (totalParticipationScore: BigNumber, participants: Participant[], currentRun = 1): Participant => {
+  if (participants.length === 0) throw new Error('no participants found');
+  if (participants.length === 1) return participants[0];
+  if (currentRun > 5) throw new Error('no winner found in 5 runs. Try again');
+  const sumOfWeights = totalParticipationScore;
+  let rand = generateRandomNumber(sumOfWeights.toNumber());
+  const numberOfChoices = participants.length;
+  const shuffledParticipants = shuffle(participants);
+  for (let i = 0; i < numberOfChoices; i++) {
+    const participant = shuffledParticipants[i];
+    if (rand < participant.participationScore.toNumber()) {
+      return participant;
+    }
+    rand -= participant.participationScore.toNumber();
+  }
+  return calculateRaffleWinner(totalParticipationScore, shuffledParticipants, currentRun+1);
+}
 
 export const calculateParticipantSocialScore = async (participant: Participant, campaign: Campaign) => {
     const socialPosts = await SocialPost.find({where: {participantId: participant.id}});
@@ -58,15 +113,15 @@ export const calculateTier = (totalParticipation: BigNumber, tiers: Tiers) => {
 
 export const calculateParticipantPayout = async (currentCampaignTierTotal: BigNumber, campaign: Campaign, participant: Participant) => {
     if (campaign.totalParticipationScore.eq(new BN(0))) return new BN(0);
-    const percentageOfTotalParticipation = participant.participationScore.div(campaign.totalParticipationScore);
+    const percentageOfTotalParticipation = new BN(participant.participationScore).div(campaign.totalParticipationScore);
     return currentCampaignTierTotal.multipliedBy(percentageOfTotalParticipation);
 }
 
 export const calculateParticipantPayoutFromDailyParticipation = (currentCampaignTierTotal: BigNumber, campaign: Campaign, metrics: AggregateDailyMetrics) => {
   if (campaign.totalParticipationScore.eq(new BN(0))) return new BN(0);
-  const viewScore = campaign.algorithm.pointValues.view.times(metrics.viewCount);
-  const clickScore = campaign.algorithm.pointValues.click.times(metrics.clickCount);
-  const submissionScore = campaign.algorithm.pointValues.submission.times(metrics.submissionCount);
+  const viewScore = campaign.algorithm.pointValues.views.times(metrics.viewCount);
+  const clickScore = campaign.algorithm.pointValues.clicks.times(metrics.clickCount);
+  const submissionScore = campaign.algorithm.pointValues.submissions.times(metrics.submissionCount);
   const likesScore = campaign.algorithm.pointValues.likes.times(metrics.likeCount);
   const sharesScore = campaign.algorithm.pointValues.shares.times(metrics.shareCount);
   const totalParticipantPoints = viewScore.plus(clickScore).plus(submissionScore).plus(likesScore).plus(sharesScore);

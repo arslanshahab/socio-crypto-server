@@ -4,6 +4,7 @@ import { BigNumberEntityTransformer } from '../util/transformers';
 import { Transfer } from './Transfer';
 import { ExternalAddress } from './ExternalAddress';
 import { Org } from './Org';
+import {Escrow} from "./Escrow";
 
 @Entity()
 export class FundingWallet extends BaseEntity {
@@ -41,6 +42,13 @@ export class FundingWallet extends BaseEntity {
     address => address.fundingWallet
   )
   public addresses: ExternalAddress[];
+
+  @OneToMany(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _type => Escrow,
+    escrow => escrow.fundingWallet
+  )
+  public escrows: Escrow[];
 
   public asV1(pendingBalance?: string){
     return {

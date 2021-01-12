@@ -24,7 +24,7 @@ export const extractFactor = (factor: string): string => {
   }
 };
 
-export const generateRandomNumber = () => Math.floor(Math.random() * 9000000);
+export const generateRandomNumber = (max = 9000000) => Math.floor(Math.random() * max);
 
 export const BN = BigNumber.clone({
   EXPONENTIAL_AT: [-1e9, 1e9]
@@ -37,6 +37,9 @@ if (process.env.NODE_ENV !== 'script') {
     throw Error('Conversion to primitive type is prohibited')
   }
 }
+
+// pinning value of coiin at 10 cents
+export const USD_PER_COIIN = new BN(0.1);
 
 export const deleteFactorFromKycData = (kycData: KycUser, factorName: string) => {
   switch (factorName) {

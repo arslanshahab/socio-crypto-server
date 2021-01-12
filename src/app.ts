@@ -8,7 +8,7 @@ import logger from './util/logger';
 import { getSchema, root, publicRoot } from './graphql';
 import { Secrets } from './util/secrets';
 import {authenticate, firebaseAuth} from './middleware/authentication';
-import { errorHandler } from './middleware/errorHandler';
+import {errorHandler, getGraphQlError} from './middleware/errorHandler';
 import { Dragonchain } from './clients/dragonchain';
 import { Firebase } from './clients/firebase';
 import * as FactorController from './controllers/factor';
@@ -19,6 +19,8 @@ import {adminRoot} from "./graphql/root";
 import {sessionLogin, sessionLogout, updateUserPassword} from "./controllers/firebase";
 import {trackClickByLink} from './controllers/participant';
 import cookieParser from 'cookie-parser';
+import {StripeAPI} from "./clients/stripe";
+import {stripeWebhook} from "./controllers/stripe";
 
 const { NODE_ENV = 'development' } = process.env;
 
@@ -41,6 +43,7 @@ export class Application {
     await Dragonchain.initialize();
     await Paypal.initialize();
     await Paypal.refreshToken();
+    StripeAPI.initialize();
     this.app = express();
     const corsSettings = {
       origin: [
@@ -58,6 +61,7 @@ export class Application {
     };
     if (NODE_ENV !== 'production') corsSettings.origin.push('http://localhost:3000');
     this.app.use(cors(corsSettings));
+    this.app.post('/v1/payments', bodyParser.raw({type: 'application/json'}), stripeWebhook);
     this.app.use(bodyParser.json({ limit: "30mb" }));
     this.app.use(bodyParser.urlencoded({ extended: true }));
     this.app.use(cookieParser());
@@ -86,8 +90,11 @@ export class Application {
       graphiql: NODE_ENV !== 'production',
       extensions: extensions,
       customFormatErrorFn: (error) => {
+        const {status, message, code} = getGraphQlError(error);
         return {
-          message: error.message,
+          message,
+          status,
+          code,
           locations: error.locations,
           stack: error.stack ? error.stack.split('\n') : [],
           path: error.path,

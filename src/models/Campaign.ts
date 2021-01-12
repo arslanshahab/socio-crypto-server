@@ -6,11 +6,12 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
-  ManyToOne
+  ManyToOne,
+  OneToOne
 } from 'typeorm';
 import { DateUtils } from 'typeorm/util/DateUtils';
 import { Participant } from './Participant';
-import {AlgorithmSpecs, CampaignRequirementSpecs} from '../types';
+import {AlgorithmSpecs, CampaignRequirementSpecs, CampaignStatus} from '../types';
 import {SocialPost} from "./SocialPost";
 import {Transfer} from './Transfer';
 import {StringifiedArrayTransformer, BigNumberEntityTransformer, AlgorithmTransformer} from '../util/transformers';
@@ -21,6 +22,8 @@ import { getDatesBetweenDates, formatUTCDateForComparision, getYesterdaysDate } 
 import { User } from './User';
 import {Org} from "./Org";
 import {HourlyCampaignMetric} from "./HourlyCampaignMetric";
+import { RafflePrize } from './RafflePrize';
+import {Escrow} from "./Escrow";
 
 @Entity()
 export class Campaign extends BaseEntity {
@@ -35,6 +38,9 @@ export class Campaign extends BaseEntity {
 
   @Column({ type: 'timestamptz', nullable: false })
   public endDate: Date;
+
+  @Column({nullable: false, default: 'DEFAULT'})
+  public status: CampaignStatus;
 
   @Column({ type: 'varchar', transformer: BigNumberEntityTransformer })
   public coiinTotal: BigNumber;
@@ -75,6 +81,9 @@ export class Campaign extends BaseEntity {
   @Column({ type: 'text', nullable: false, default: '[]', transformer: StringifiedArrayTransformer })
   public suggestedTags: string[];
 
+  @Column({ type: 'text', nullable: true })
+  public type: string;
+
   @OneToMany(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _type => Participant,
@@ -111,6 +120,18 @@ export class Campaign extends BaseEntity {
     org => org.campaigns
   )
   public org: Org;
+
+  @OneToOne(
+    _type => RafflePrize,
+    prize => prize.campaign
+  )
+  public prize: RafflePrize;
+
+  @OneToOne(
+    _type => Escrow,
+    escrow => escrow.campaign
+  )
+  public escrow: Escrow;
 
   @CreateDateColumn()
   public createdAt: Date;
@@ -149,6 +170,7 @@ export class Campaign extends BaseEntity {
     if (this.participants && this.participants.length > 0) returnedCampaign.participants = this.participants.map((participant) => participant.asV1());
     if (this.payouts && this.payouts.length > 0) returnedCampaign.payouts = this.payouts.map((payout) => payout.asV1());
     if (this.posts && this.posts.length > 0) returnedCampaign.posts = this.posts.map((post) => post.asV1());
+    if (this.org) returnedCampaign.org = this.org.asV1();
     return returnedCampaign;
   }
 
@@ -160,9 +182,9 @@ export class Campaign extends BaseEntity {
   public static async findCampaignsByStatus(open: boolean, skip: number, take: number, company: string, sort: boolean) {
     let where = '';
     const now = DateUtils.mixedDateToDatetimeString(new Date());
-    if (open !== null && open) {
+    if (open !== null && open !== undefined && open) {
       where = `("beginDate" <= '${now}' AND "endDate" >= '${now}')`;
-    } else if (open !== null && !open) {
+    } else if (open !== null && open !== undefined && !open) {
       where = `("beginDate" >= '${now}' OR "endDate" <= '${now}')`;
     }
     let query = this.createQueryBuilder('campaign')
@@ -192,6 +214,15 @@ export class Campaign extends BaseEntity {
       .leftJoinAndSelect('campaign.participants', 'participant', 'participant."campaignId" = campaign.id')
       .leftJoinAndSelect('participant.user', 'user', 'user.id = participant."userId"')
       .getMany()
+  }
+
+  public static async adminListCampaignsByStatus(skip: number, take: number, status: string = 'PENDING') {
+    return this.createQueryBuilder('campaign')
+      .leftJoinAndSelect('campaign.org', 'org', 'campaign."orgId" = org.id')
+      .where('status=:status', {status})
+      .skip(skip)
+      .take(take)
+      .getManyAndCount()
   }
 
   public static async findCampaignById(id: string, company: string) {
@@ -276,18 +307,20 @@ export class Campaign extends BaseEntity {
     return true;
   }
 
-  public static newCampaign(name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, tagline: string, requirements: CampaignRequirementSpecs, suggestedPosts: string[], suggestedTags: string[], org?: Org,): Campaign {
+  public static newCampaign(name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, tagline: string, requirements: CampaignRequirementSpecs, suggestedPosts: string[], suggestedTags: string[], type: string, org?: Org): Campaign {
     const campaign = new Campaign();
-    if(org) campaign.org = org;
+    if (org) campaign.org = org;
     campaign.name = name;
     campaign.coiinTotal = new BN(coiinTotal);
     campaign.target = target;
     campaign.company = company;
+    campaign.status = "PENDING";
     campaign.beginDate = new Date(beginDate);
     campaign.endDate = new Date(endDate);
     campaign.algorithm = JSON.parse(algorithm);
     campaign.totalParticipationScore = new BN(0);
     campaign.targetVideo = targetVideo;
+    campaign.type = type;
     if (description) campaign.description = description;
     if (tagline) campaign.tagline = tagline;
     if (requirements) campaign.requirements = requirements;

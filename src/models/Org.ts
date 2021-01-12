@@ -12,6 +12,7 @@ import {Transfer} from "./Transfer";
 import {Admin} from "./Admin";
 import {HourlyCampaignMetric} from "./HourlyCampaignMetric";
 import { FundingWallet } from './FundingWallet';
+import {CampaignStatus} from "../types";
 
 
 @Entity()
@@ -21,6 +22,9 @@ export class Org extends BaseEntity {
 
   @Column()
   public name: string;
+
+  @Column({nullable: true})
+  public stripeId: string;
 
   @OneToMany(
     _type => Campaign,
@@ -59,15 +63,30 @@ export class Org extends BaseEntity {
   public updatedAt: Date;
 
   public asV1() {
-    return {
-      name: this.name
-    }
+    const returnValue: Org = {
+      ...this
+    };
+    if (this.campaigns) returnValue.campaigns = returnValue.campaigns.map(campaign => campaign.asV1())
+    if (this.transfers) returnValue.transfers = returnValue.transfers.map(transfer => transfer.asV1())
+    if (this.admins) returnValue.admins = returnValue.admins.map(admin => admin.asV1());
+    if (this.hourlyMetrics) returnValue.hourlyMetrics = returnValue.hourlyMetrics.map(hourlyMetric => hourlyMetric.asV1())
+    if (this.fundingWallet) returnValue.fundingWallet = this.fundingWallet.asV1()
+    return returnValue;
   }
 
   public static newOrg(name: string){
     const org = new Org();
     org.name = name;
     return org;
+  }
+
+  public static async listOrgCampaignsByWalletIdAndStatus(fundingWalletId: string, status: CampaignStatus) {
+    return await this.createQueryBuilder('org')
+      .leftJoinAndSelect('org.fundingWallet', 'wallet', 'wallet."orgId" = org.id')
+      .leftJoinAndSelect('org.campaigns', 'campaign', 'campaign."orgId" = org.id')
+      .where('campaign.status = :status', {status})
+      .andWhere('wallet.id = :fundingWalletId', {fundingWalletId})
+      .getOne()
   }
 
   public static async getByAdminId(id: string) {

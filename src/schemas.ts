@@ -7,9 +7,12 @@ export const algorithmCreateSchema = {
         pointValues: {
             type: 'object',
             properties: {
-                click: {type: 'string'},
-                view: {type: 'string'},
-                submission: {type: 'string'},
+                clicks: {type: 'string'},
+                views: {type: 'string'},
+                submissions: {type: 'string'},
+                likes: {type: 'string'},
+                comments: {type: 'string'},
+                shares: {type: 'string'}
             }
         },
         tiers: {
@@ -158,12 +161,23 @@ export const kycUser = {
     }
 }
 
+const rafflePrizeSchema = {
+  type: 'object',
+  properties: {
+    displayName: { type: 'string' },
+    affiliateLink: { type: 'string' },
+    image: { type: 'string' }
+  },
+  required: ['displayName']
+}
+
 export class Validator {
     private ajv: Ajv.Ajv;
     private validateAlgorithmCreatePayload: Ajv.ValidateFunction;
     private validateCampaignRequirementsPayload: Ajv.ValidateFunction;
     private validateKycUser: Ajv.ValidateFunction;
     private validateHourlyMetrics: Ajv.ValidateFunction;
+    private validateRafflePrizePayload: Ajv.ValidateFunction;
 
     public constructor() {
         this.ajv = new Ajv({schemaId: 'auto'});
@@ -171,7 +185,14 @@ export class Validator {
         this.validateCampaignRequirementsPayload = this.ajv.compile(campaignRequirementsSchema);
         this.validateKycUser = this.ajv.compile(kycUser);
         this.validateHourlyMetrics = this.ajv.compile(hourlyMetrics);
+        this.validateRafflePrizePayload = this.ajv.compile(rafflePrizeSchema);
     }
+
+    public validateRafflePrizeSchema = (payload: object) => {
+        if (!this.validateRafflePrizePayload(payload)) {
+            throw new Error(`Incoming raffle prize structure is invalid: ${JSON.stringify(this.validateRafflePrizePayload.errors)}`);
+        }
+    } 
 
     public validateAlgorithmCreateSchema = (payload: object) => {
         if (!this.validateAlgorithmCreatePayload(payload)) {

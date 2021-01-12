@@ -7,6 +7,7 @@ import { Application } from '../../app';
 import { ExternalAddress } from '../../models/ExternalAddress';
 import { Transfer } from '../../models/Transfer';
 import { BN } from '../../util/helpers';
+import {updateOrgCampaignsStatusOnDeposit} from "../../controllers/helpers";
 
 const app = new Application();
 
@@ -54,6 +55,7 @@ const app = new Application();
             await externalWallet.fundingWallet.save();
             await transfer.save();
           }
+          await updateOrgCampaignsStatusOnDeposit(externalWallet.fundingWallet);
         } catch (e) {
           console.error(`Failed to transfer funds for wallet: ${transaction.from} with amount: ${transaction.getValue()}`);
           console.error(e);

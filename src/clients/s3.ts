@@ -22,6 +22,20 @@ export class S3Client {
     return filename;
   }
 
+  public static async setCampaignRafflePrizeImage(campaignId: string, rafflePrizeId: string, image: string) {
+    const extension = getBase64FileExtension(image);
+    const key = `rafflePrize/${campaignId}/${rafflePrizeId}`;
+    const params: AWS.S3.PutObjectRequest = {
+      Bucket: BUCKET_NAME,
+      Key: key,
+      Body: Buffer.from(image.replace(/^data:image\/\w+;base64,/, ""), 'base64'),
+      ContentEncoding: 'base64',
+      ContentType: extension
+    };
+    await S3Client.client.putObject(params).promise();
+    return;
+  }
+
   public static async getUserObject(userId: string): Promise<KycUser> {
     try {
       const params: AWS.S3.GetObjectRequest = {Bucket: KYC_BUCKET_NAME, Key: `kyc/${userId}`}

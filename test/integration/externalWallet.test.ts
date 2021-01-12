@@ -36,6 +36,8 @@ describe('External Wallet Integrations Tests', () => {
       process.env.FACTOR_PROVIDER_PRIVATE_KEY = "privKey";
       process.env.FACTOR_PROVIDER_PUBLIC_KEY = "pubKey";
       process.env.ETH_HOT_WALLET_PRIVKEY = "ethPrivKey";
+      process.env.STRIPE_API_KEY = "banana";
+      process.env.STRIPE_WEBHOOK_SECRET = "banana";
   };
 
   before(async () => {

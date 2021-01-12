@@ -28,16 +28,23 @@ export class Dragonchain {
     }
   }
 
-  public static async ledgerCampaignAction(action: 'click'|'view'|'submission', participantId: string, campaignId: string) {
+  public static async ledgerCampaignAction(action: 'clicks'|'views'|'submissions', participantId: string, campaignId: string) {
     const tag = getActionKey(action, participantId);
     const res = await this.client.createTransaction({ transactionType: 'trackAction', tag, payload: { action, participantId, campaignId } });
     if (!res.ok) throw new Error('Failed to ledger action to the Dragonchain');
     return res.response.transaction_id;
   }
 
-  public static async ledgerCampaignAudit(payouts: {[key: string]: BigNumber}, rejectedUsers: string[], campaignId: string) {
+  public static async ledgerCoiinCampaignAudit(payouts: {[key: string]: BigNumber}, rejectedUsers: string[], campaignId: string) {
     const tag = getCampaignAuditKey(campaignId);
     const res = await this.client.createTransaction({ transactionType: 'campaignAudit', tag, payload: { payouts, rejectedUsers } });
+    if (!res.ok) throw new Error('Failed to ledger campaign audit to the Dragonchain');
+    return res.response.transaction_id;
+  }
+
+  public static async ledgerRaffleCampaignAudit(prizes: {[key: string]: string}, rejectedUsers: string[], campaignId: string) {
+    const tag = getCampaignAuditKey(campaignId);
+    const res = await this.client.createTransaction({ transactionType: 'campaignAudit', tag, payload: { prizes, rejectedUsers } });
     if (!res.ok) throw new Error('Failed to ledger campaign audit to the Dragonchain');
     return res.response.transaction_id;
   }

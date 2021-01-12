@@ -1,8 +1,10 @@
 config:
-  target: "https://raiinmaker-staging.api.dragonchain.com/v1/public/graphql/"
+  target: "https://server-staging.api.raiinmaker.com/v1/public/graphql/"
+  http:
+    timeout: 300
   phases:
-    - duration: 5
-      arrivalRate: 50
+    - duration: 10
+      arrivalRate: 150
   processor: './actionTracker.js'
   defaults:
     - headers:
@@ -15,7 +17,7 @@ scenarios:
           - post:
               url: '/'
               # enables response logs
-              # afterResponse: "logging"
+              afterResponse: "logging"
               json:
                 query: '{{ $loopElement.query }}'
                 variables: '{{ $loopElement.variables }}'

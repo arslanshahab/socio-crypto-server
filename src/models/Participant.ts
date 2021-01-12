@@ -12,6 +12,7 @@ import { User } from './User';
 import { BigNumber } from 'bignumber.js';
 import { BigNumberEntityTransformer } from '../util/transformers';
 import { BN } from '../util/helpers';
+import { encrypt } from '../util/crypto';
 
 @Entity()
 export class Participant extends BaseEntity {
@@ -32,6 +33,9 @@ export class Participant extends BaseEntity {
 
   @Column({ nullable: true })
   public link: string;
+
+  @Column({ nullable: true })
+  public email: string;
 
   @ManyToOne(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -78,7 +82,7 @@ export class Participant extends BaseEntity {
     return returnedValue;
   }
 
-  public static newParticipant(user: User, campaign: Campaign): Participant {
+  public static newParticipant(user: User, campaign: Campaign, email?: string): Participant {
     const participant = new Participant();
     participant.clickCount = new BN(0)
     participant.viewCount = new BN(0)
@@ -86,6 +90,7 @@ export class Participant extends BaseEntity {
     participant.participationScore = new BN(0)
     participant.user = user;
     participant.campaign = campaign;
+    if (email) participant.email = encrypt(email);
     return participant;
   }
 }

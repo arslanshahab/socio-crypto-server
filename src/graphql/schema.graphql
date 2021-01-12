@@ -15,7 +15,9 @@ type Mutation {
     image: String,
     tagline: String,
     suggestedPosts:[String],
-    suggestedTags:[String]): Campaign
+    suggestedTags:[String],
+    type: String,
+    rafflePrize: JSON): Campaign
   updateCampaign(
     id:String!
     name:String,
@@ -32,7 +34,7 @@ type Mutation {
   generateCampaignAuditReport(campaignId:String!): AuditReport
   payoutCampaignRewards(campaignId: String!, rejected: [String]!): Boolean
   deleteCampaign(id:String!): Campaign
-  participate(campaignId:String!): Participant
+  participate(campaignId:String!,email:String): Participant
   removeParticipation(campaignId:String!): User
   trackAction(participantId:String!,action: String!): Participant
   promoteUserPermissions(userId:String,email:String,company:String,role:String): User
@@ -76,8 +78,13 @@ type Mutation {
     campaignUpdates:Boolean
   ): User
   newOrg(orgName: String!, email: String!, name: String!): JSON
-  newUser(name: String!, email: String!): Boolean
+  newUser(name: String!, email: String!, role: String!): Boolean
   updatePassword(password: String!): Boolean
+  addPaymentMethod: Stripe
+  purchaseCoiin(amount: Float!, paymentMethodId:String!, campaignId: String): Stripe
+  updateCampaignStatus(status: String!, campaignId: String!): Boolean
+  fundCampaigns(campaignIds: [String]): Boolean
+  sendUserMessages(usernames: [String]!, title: String!, message: String!): Boolean
 }
 
 type Query {
@@ -116,14 +123,30 @@ type Query {
   getFundingWallet: FundingWallet
   listOrgs(skip: Int, take: Int): [Org]
   listEmployees: [Employee]
+  listPaymentMethods: [PaymentMethod]
+  listPendingCampaigns(skip: Int, take: Int): PaginatedCampaignResults
 }
 
 type Org {
+  id: String
   name: String
+  stripeId: String
+  createdAt: String
+  updatedAt: String
+}
+
+type PaymentMethod {
+  id: String
+  last4: String
+  brand: String
 }
 
 type Employee {
   name: String
+}
+
+type Stripe {
+  clientSecret: String
 }
 
 type NotificationSettings {
@@ -224,6 +247,7 @@ type Transfer {
   action: String
   withdrawStatus: String
   ethAddress: String
+  currency: String
   paypalAddress: String
   campaign: Campaign
   createdAt: String
@@ -336,6 +360,7 @@ type Campaign {
   beginDate: String
   endDate: String
   coiinTotal: Float
+  status: String
   totalParticipationScore: Float
   target: String
   description: String
@@ -349,6 +374,16 @@ type Campaign {
   suggestedPosts: [String]
   suggestedTags: [String]
   participants: [Participant]
+  type: String
+  prize: RafflePrize
+  org: Org
+}
+
+type RafflePrize {
+  id: String
+  displayName: String
+  affiliateLink: String
+  image: Boolean
 }
 
 type Participant {
