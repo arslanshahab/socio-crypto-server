@@ -182,4 +182,17 @@ export class S3Client {
     const params: AWS.S3.PutObjectRequest = {Bucket: BUCKET_NAME, Key: 'billingWatcher/missedTransfers', Body: JSON.stringify(transfers)};
     return await this.client.putObject(params).promise();
   }
+
+  public static async uploadProfilePicture(userId: string, image: string) {
+    const extension = getBase64FileExtension(image);
+    const params: AWS.S3.PutObjectRequest = {
+      Bucket: BUCKET_NAME,
+      Key: `profile/${userId}`,
+      ContentEncoding: 'base64',
+      ContentType: extension,
+      CacheControl: 'no-cache',
+      Body: Buffer.from(image.replace(/^data:image\/\w+;base64,/, ""), 'base64'),
+    };
+    return await this.client.putObject(params).promise();
+  }
 }

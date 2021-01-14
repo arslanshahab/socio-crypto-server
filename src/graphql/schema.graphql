@@ -85,6 +85,7 @@ type Mutation {
   updateCampaignStatus(status: String!, campaignId: String!): Boolean
   fundCampaigns(campaignIds: [String]): Boolean
   sendUserMessages(usernames: [String]!, title: String!, message: String!): Boolean
+  uploadProfilePicture(image:String!): Boolean
 }
 
 type Query {
