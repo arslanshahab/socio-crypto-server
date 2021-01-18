@@ -13,6 +13,7 @@ import { DailyParticipantMetric } from '../models/DailyParticipantMetric';
 import { getDatesBetweenDates, formatUTCDateForComparision } from './helpers';
 import {HourlyCampaignMetric} from "../models/HourlyCampaignMetric";
 import {QualityScore} from "../models/QualityScore";
+import { limit } from '../util/rateLimiter';
 
 const { RATE_LIMIT_MAX = '3', RATE_LIMIT_WINDOW = '1m' } = process.env;
 
@@ -117,23 +118,27 @@ export const getParticipantMetrics = async (args: { participantId: string }, con
 export const trackClickByLink = asyncHandler(async (req: Request, res: Response) => {
   const { participantId } = req.params;
   const action = 'clicks';
+  const ipAddress = req.connection.remoteAddress || req.socket.remoteAddress;
+  const shouldRateLimit = await limit(`${ipAddress}-${participantId}-click`, Number(RATE_LIMIT_MAX), 'minute');
   if (!participantId) return res.status(400).json({ code: 'MALFORMED_INPUT', message: 'missing participant ID in request' });
   const participant = await Participant.findOne({ where: { id: participantId }, relations: ['campaign', 'user'] });
   if (!participant) return res.status(404).json({ code: 'NOT_FOUND', message: 'participant not found' });
   const campaign = await Campaign.findOne({ where: { id: participant.campaign.id }, relations: ['org'] });
   if (!campaign) return res.status(404).json({ code: 'NOT_FOUND', message: 'campaign not found' });
-  let qualityScore = await QualityScore.findOne({where: {participantId: participant.id}});
-  if (!qualityScore) qualityScore = QualityScore.newQualityScore(participant.id);
-  const multiplier = calculateQualityMultiplier(qualityScore.clicks);
-  participant.clickCount = participant.clickCount.plus(new BN(1));
-  const pointValue = campaign.algorithm.pointValues[action].times(multiplier);
-  campaign.totalParticipationScore = campaign.totalParticipationScore.plus(pointValue);
-  participant.participationScore = participant.participationScore.plus(pointValue);
-  await campaign.save();
-  await participant.save();
-  await qualityScore.save();
-  await HourlyCampaignMetric.upsert(campaign, campaign.org, action);
-  await DailyParticipantMetric.upsert(participant.user, campaign, participant, action, pointValue);
-  await Dragonchain.ledgerCampaignAction(action, participant.id, participant.campaign.id);
+  if (!shouldRateLimit) {
+    let qualityScore = await QualityScore.findOne({where: {participantId: participant.id}});
+    if (!qualityScore) qualityScore = QualityScore.newQualityScore(participant.id);
+    const multiplier = calculateQualityMultiplier(qualityScore.clicks);
+    participant.clickCount = participant.clickCount.plus(new BN(1));
+    const pointValue = campaign.algorithm.pointValues[action].times(multiplier);
+    campaign.totalParticipationScore = campaign.totalParticipationScore.plus(pointValue);
+    participant.participationScore = participant.participationScore.plus(pointValue);
+    await campaign.save();
+    await participant.save();
+    await qualityScore.save();
+    await HourlyCampaignMetric.upsert(campaign, campaign.org, action);
+    await DailyParticipantMetric.upsert(participant.user, campaign, participant, action, pointValue);
+    await Dragonchain.ledgerCampaignAction(action, participant.id, participant.campaign.id);
+  }
   return res.redirect(campaign.target);
 });
