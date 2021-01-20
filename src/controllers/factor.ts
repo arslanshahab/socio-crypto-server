@@ -60,38 +60,38 @@ export const isLastFactor = async (_args: any, context: {user: any}) => {
 
 export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { identityId, factors } = req.user;
-  const user = await User.findOne({ where: { identityId }, relations: ['factorLinks'] });
+  let user = await User.findOne({ where: { identityId }, relations: ['factorLinks'] });
   let emailAddress: string;
   if (!user) {
-    const newUser = new User();
+    user = new User();
     const wallet = new Wallet();
     const factorLink = new FactorLink();
     const profile = new Profile();
     const notificationSettings = new NotificationSettings();
-    newUser.identityId = identityId;
+    user.identityId = identityId;
     profile.username = `raiinmaker-${generateRandomNumber()}`;
-    await newUser.save();
-    wallet.user = newUser;
+    await user.save();
+    wallet.user = user;
     await wallet.save();
-    profile.user = newUser;
+    profile.user = user;
     await profile.save();
-    notificationSettings.user = newUser;
+    notificationSettings.user = user;
     await notificationSettings.save();
-    newUser.profile = profile;
-    newUser.notificationSettings = notificationSettings;
+    user.profile = profile;
+    user.notificationSettings = notificationSettings;
     for (let i = 0; i < factors.length; i++) {
       const { type, id, providerId, factor } = factors[i];
       factorLink.type = type;
       factorLink.factorId = id;
       factorLink.identityId = identityId;
       factorLink.providerId = providerId;
-      factorLink.user = newUser;
+      factorLink.user = user;
       await factorLink.save();
       if (factor && type === 'email') {
         emailAddress = extractFactor(factor);
         profile.email = emailAddress;
         emailAddress = emailAddress.split('@')[1];
-        await newUser.save();
+        await user.save();
         await profile.save();
       }
     }
@@ -124,7 +124,7 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
     jwtPayload.company = 'raiinmaker';
   }
   const token = jwt.sign(jwtPayload, Secrets.encryptionKey, { expiresIn: 60 * 30, audience: serverBaseUrl });
-  return res.status(200).json({ success: true, token, id: identityId, role: jwtPayload.role, company: jwtPayload.company });
+  return res.status(200).json({ success: true, token, id: user.id, role: jwtPayload.role, company: jwtPayload.company });
 });
 
 export const recover = asyncHandler(async (req: AuthRequest, res: Response) => {
