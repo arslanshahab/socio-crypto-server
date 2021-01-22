@@ -1,26 +1,26 @@
 import express from 'express';
 import cors from 'cors';
-import expressGraphql from 'express-graphql';
 import { Server } from 'http';
 import bodyParser from 'body-parser';
 import {Connection, getConnectionOptions, createConnection} from 'typeorm';
 import logger from './util/logger';
-import { getSchema, root, publicRoot } from './graphql';
+import { getSchema } from './graphql';
 import { Secrets } from './util/secrets';
 import {authenticate, firebaseAuth} from './middleware/authentication';
-import {errorHandler, getGraphQlError} from './middleware/errorHandler';
+import {errorHandler} from './middleware/errorHandler';
 import { Dragonchain } from './clients/dragonchain';
 import { Firebase } from './clients/firebase';
 import * as FactorController from './controllers/factor';
 import * as Dragonfactor from '@dragonchain-dev/dragonfactor-auth';
 import {paypalWebhook} from "./controllers/withdraw";
 import {Paypal} from "./clients/paypal";
-import {adminRoot} from "./graphql/root";
+import {adminResolvers, publicResolvers, resolvers} from "./graphql/resolvers";
 import {sessionLogin, sessionLogout, updateUserPassword} from "./controllers/firebase";
 import {trackClickByLink} from './controllers/participant';
 import cookieParser from 'cookie-parser';
 import {StripeAPI} from "./clients/stripe";
 import {stripeWebhook} from "./controllers/stripe";
+import { ApolloServer } from "apollo-server-express";
 
 const { NODE_ENV = 'development' } = process.env;
 
@@ -60,53 +60,66 @@ export class Application {
       credentials: true
     };
     if (NODE_ENV !== 'production') corsSettings.origin.push('http://localhost:3000');
+    this.app.use(cookieParser());
     this.app.use(cors(corsSettings));
     this.app.post('/v1/payments', bodyParser.raw({type: 'application/json'}), stripeWebhook);
     this.app.use(bodyParser.json({ limit: "30mb" }));
     this.app.use(bodyParser.urlencoded({ extended: true }));
-    this.app.use(cookieParser());
     this.app.set('port', process.env.PORT || 8080);
-    const extensions: any = (params: any) => {
-      console.log({ timestamp: new Date().toISOString(), operation: params.operationName });
-      return { operation: params.operationName }
-    };
-    this.app.use('/v1/graphql', authenticate, expressGraphql({
-      schema: await getSchema(),
-      rootValue: root,
-      graphiql: NODE_ENV !== 'production',
-      extensions: extensions,
-      customFormatErrorFn: (error) => {
-        return {
-          message: error.message,
-          locations: error.locations,
-          stack: error.stack ? error.stack.split('\n') : [],
-          path: error.path,
-        }
-      }
-    }));
-    this.app.use('/v1/admin/graphql',firebaseAuth, expressGraphql({
-      schema: await getSchema(),
-      rootValue: adminRoot,
-      graphiql: NODE_ENV !== 'production',
-      extensions: extensions,
-      customFormatErrorFn: (error) => {
-        const {status, message, code} = getGraphQlError(error);
-        return {
-          message,
-          status,
-          code,
-          locations: error.locations,
-          stack: error.stack ? error.stack.split('\n') : [],
-          path: error.path,
-        }
-      }
-    }));
-    this.app.use('/v1/public/graphql', expressGraphql({
-      schema: await getSchema(),
-      rootValue: publicRoot,
-      graphiql: NODE_ENV === 'development',
-      extensions: extensions,
-    }));
+    // const myPlugin: ApolloServerPlugin = {
+    //   requestDidStart(requestContext) {
+    //     console.log('Request started!', Object.keys(requestContext));
+    //
+    //     return {
+    //
+    //       parsingDidStart(requestContext) {
+    //         console.log('Parsing started!');
+    //       },
+    //
+    //       validationDidStart(requestContext) {
+    //         console.log('Validation started!');
+    //       },
+    //
+    //       didResolveOperation(requestContext) {
+    //         console.log('Resolved Operation', Object.keys(requestContext))
+    //       },
+    //
+    //       // responseForOperation(requestContext) {
+    //       //   console.log('Resolved Operation', Object.keys(requestContext))
+    //       // },
+    //
+    //       didEncounterErrors(requestContext) {
+    //         console.log('didEncounterErrors', Object.keys(requestContext))
+    //       },
+    //
+    //       willSendResponse(requestContext) {
+    //         console.log('willSendResponse', Object.keys(requestContext))
+    //         console.log(requestContext)
+    //       }
+    //
+    //     }
+    //   },
+    // };
+    const server = new ApolloServer({
+      schema: getSchema(),
+      resolvers,
+      context: authenticate
+    })
+    const serverAdmin = new ApolloServer({
+      schema: getSchema(),
+      resolvers: adminResolvers,
+      // plugins: [myPlugin],
+      context: firebaseAuth,
+      debug: true,
+      mocks: true,
+    })
+    const serverPublic = new ApolloServer({
+      schema: getSchema(),
+      resolvers: publicResolvers,
+    })
+    server.applyMiddleware({ app: this.app, path: '/v1/graphql', cors: corsSettings });
+    serverAdmin.applyMiddleware({app: this.app, path: '/v1/admin/graphql', cors: corsSettings });
+    serverPublic.applyMiddleware({app: this.app, path: '/v1/public/graphql', cors: corsSettings });
     this.app.get('/v1/health', (_req: express.Request, res: express.Response) => res.send('I am alive and well, thank you!'));
     this.app.post('/v1/login', sessionLogin);
     this.app.post('/v1/logout', sessionLogout);

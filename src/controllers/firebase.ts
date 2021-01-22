@@ -42,7 +42,13 @@ export const sessionLogout = asyncHandler(async (req: Request, res: Response) =>
   return res.status(200).json({success: true});
 });
 
-export const getUserRole = async (args: any, context: { user: any }) => {
+export const getUserRole = async (parent: any, args: any, context: { user: any }) => {
+  console.log('IT HIT ME');
+  console.log('CONTEXT: ', {
+    role: context.user.role ? context.user.role : null,
+    company: context.user.company ? context.user.company : null,
+    tempPass: context.user.tempPass ? context.user.tempPass : null,
+  });
   return {
     role: context.user.role ? context.user.role : null,
     company: context.user.company ? context.user.company : null,

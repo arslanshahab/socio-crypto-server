@@ -2,9 +2,10 @@ import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { Secrets } from '../util/secrets';
-import { AuthRequest } from '../types';
+import {AuthRequest} from '../types';
 import { serverBaseUrl } from '../config';
 import {Firebase} from "../clients/firebase";
+import { AuthenticationError } from 'apollo-server-express';
 
 export const authenticate = async (req: AuthRequest, res: Response, next: NextFunction) => {
   const bearerToken = req.headers.authorization;
@@ -32,24 +33,25 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
   }
 };
 
-export const firebaseAuth = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const firebaseAuth = async ({req, res}: {req: AuthRequest, res: Response}) => {
   try {
-    if (process.env.NODE_ENV === 'development' && req.headers.token === 'Bearer raiinmaker') return next();
+    if (process.env.NODE_ENV === 'development' && req.headers.token === 'Bearer raiinmaker') return;
     const session = req.cookies.session || '';
-    if (!session) return res.status(401).json({ code: 'UNAUTHORIZED', message: 'unauthorized' });
+    if (!session) throw new AuthenticationError('unauthorized');
     const decodedToken = await Firebase.verifySessionCookie(session);
-    const user = await Firebase.client.auth().getUser(decodedToken.uid);
-    if (!user) return res.status(401).json({ code: 'UNAUTHORIZED', message: 'unauthorized' });
-    req.user = { id: decodedToken.uid, method: 'firebase'};
-    if (user.customClaims) req.user = {
-      ...req.user,
-      role: user.customClaims.role,
-      company: user.customClaims.company,
-      tempPass: user.customClaims.tempPass || false,
+    const firebaseUser = await Firebase.client.auth().getUser(decodedToken.uid);
+    if (!firebaseUser) throw new AuthenticationError('unauthorized');
+    let user: { [key: string]: string | boolean } = { id: decodedToken.uid, method: 'firebase'};
+    if (firebaseUser.customClaims) user = {
+      ...user,
+      role: firebaseUser.customClaims.role,
+      company: firebaseUser.customClaims.company,
+      tempPass: firebaseUser.customClaims.tempPass || false,
     };
-    return next();
+    console.log('USER CONTEXT', user);
+    return {user};
   } catch (e) {
-    return res.status(401).json({ code: 'UNAUTHORIZED', message: 'unauthorized' });
+    throw new AuthenticationError('unauthorized');
   }
 }
 
