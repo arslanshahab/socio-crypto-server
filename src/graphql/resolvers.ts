@@ -1,4 +1,3 @@
-import GraphQLJSON from 'graphql-type-json';
 import * as participantController from "../controllers/participant";
 import * as userController from "../controllers/user";
 import * as campaignController from "../controllers/campaign";
@@ -14,7 +13,6 @@ import * as fundingController from '../controllers/fundingWallet';
 import * as stripeController from '../controllers/stripe';
 
 export const resolvers = {
-  JSON: GraphQLJSON,
   Query: {
     helloWorld: () => 'Hello world!',
     listCampaigns: campaignController.listCampaigns,
@@ -34,7 +32,6 @@ export const resolvers = {
     getUserMetrics: userController.getUserMetrics,
     getFollowerCount: socialController.getTotalFollowers,
     getPreviousDayMetrics: userController.getPreviousDayMetrics,
-    generateFactorsFromKyc: factorController.generateFactors,
     getEstimatedGasPrice: ethWithdrawController.getEstimatedGasPrice,
     getExternalAddress: externalWallet.get,
     getWithdrawalsV2: withdrawController.getWithdrawalsV2,
@@ -43,6 +40,7 @@ export const resolvers = {
     adminGetKycByUser: kycController.adminGetKycByUser,
   },
   Mutation: {
+    generateFactorsFromKyc: factorController.generateFactors,
     registerSocialLink: socialController.registerSocialLink,
     postToSocial: socialController.postToSocial,
     setDevice: userController.setDevice,
@@ -79,7 +77,6 @@ export const adminResolvers = {
     getHourlyCampaignMetrics: campaignController.adminGetHourlyCampaignMetrics,
     getHourlyPlatformMetrics: campaignController.adminGetHourlyPlatformMetrics,
     getTotalPlatformMetrics: campaignController.adminGetPlatformMetrics,
-    getHourlyOrgMetrics: orgController.getHourlyOrgMetrics,
     getCurrentCampaignTier: campaignController.getCurrentCampaignTier,
     getExternalAddress: externalWallet.get,
     listCampaigns: campaignController.listCampaigns,
@@ -115,9 +112,11 @@ export const adminResolvers = {
 
 export const publicResolvers = {
   Query: {
-    trackAction: participantController.trackAction,
     usernameExists: userController.usernameExists,
     campaignGet: campaignController.publicGet,
     accountExists: userController.accountExists,
+  },
+  Mutation: {
+    trackAction: participantController.trackAction,
   }
 };

@@ -4,7 +4,6 @@ import { Server } from 'http';
 import bodyParser from 'body-parser';
 import {Connection, getConnectionOptions, createConnection} from 'typeorm';
 import logger from './util/logger';
-import { getSchema } from './graphql';
 import { Secrets } from './util/secrets';
 import {authenticate, firebaseAuth} from './middleware/authentication';
 import {errorHandler} from './middleware/errorHandler';
@@ -21,6 +20,7 @@ import cookieParser from 'cookie-parser';
 import {StripeAPI} from "./clients/stripe";
 import {stripeWebhook} from "./controllers/stripe";
 import { ApolloServer } from "apollo-server-express";
+import {typeDefs} from "./graphql/schema";
 
 const { NODE_ENV = 'development' } = process.env;
 
@@ -66,55 +66,18 @@ export class Application {
     this.app.use(bodyParser.json({ limit: "30mb" }));
     this.app.use(bodyParser.urlencoded({ extended: true }));
     this.app.set('port', process.env.PORT || 8080);
-    // const myPlugin: ApolloServerPlugin = {
-    //   requestDidStart(requestContext) {
-    //     console.log('Request started!', Object.keys(requestContext));
-    //
-    //     return {
-    //
-    //       parsingDidStart(requestContext) {
-    //         console.log('Parsing started!');
-    //       },
-    //
-    //       validationDidStart(requestContext) {
-    //         console.log('Validation started!');
-    //       },
-    //
-    //       didResolveOperation(requestContext) {
-    //         console.log('Resolved Operation', Object.keys(requestContext))
-    //       },
-    //
-    //       // responseForOperation(requestContext) {
-    //       //   console.log('Resolved Operation', Object.keys(requestContext))
-    //       // },
-    //
-    //       didEncounterErrors(requestContext) {
-    //         console.log('didEncounterErrors', Object.keys(requestContext))
-    //       },
-    //
-    //       willSendResponse(requestContext) {
-    //         console.log('willSendResponse', Object.keys(requestContext))
-    //         console.log(requestContext)
-    //       }
-    //
-    //     }
-    //   },
-    // };
     const server = new ApolloServer({
-      schema: getSchema(),
+      typeDefs,
       resolvers,
       context: authenticate
     })
     const serverAdmin = new ApolloServer({
-      schema: getSchema(),
+      typeDefs,
       resolvers: adminResolvers,
-      // plugins: [myPlugin],
       context: firebaseAuth,
-      debug: true,
-      mocks: true,
     })
     const serverPublic = new ApolloServer({
-      schema: getSchema(),
+      typeDefs,
       resolvers: publicResolvers,
     })
     server.applyMiddleware({ app: this.app, path: '/v1/graphql', cors: corsSettings });
