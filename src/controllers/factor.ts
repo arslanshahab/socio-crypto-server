@@ -2,7 +2,7 @@ import { Response } from 'express';
 import jwt from 'jsonwebtoken';
 import * as Dragonfactor from '@dragonchain-dev/dragonfactor-auth';
 import { asyncHandler, extractFactor, generateRandomNumber, createFactorsFromKycData } from '../util/helpers';
-import { AuthRequest, FactorGeneration } from '../types';
+import {AuthRequest, FactorGeneration} from '../types';
 import {FactorLink} from '../models/FactorLink';
 import { Secrets } from '../util/secrets';
 import { User } from '../models/User';
