@@ -42,13 +42,6 @@ export interface AuthRequest extends express.Request {
     user: any;
 }
 
-export interface ApolloContext {
-  req: AuthRequest;
-  res: express.Response;
-  next: express.NextFunction;
-}
-
-
 export interface AggregateDailyMetrics {
   clickCount: number;
   submissionCount: number;
