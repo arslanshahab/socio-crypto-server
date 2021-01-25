@@ -2,7 +2,7 @@ import {Admin} from "../models/Admin";
 import {Org} from "../models/Org";
 
 
-export const get = async (args: any, context: {user: any}) => {
+export const get = async (parent: any, args: any, context: {user: any}) => {
   const { id } = context.user;
   const admin = await Admin.findOne({ where: { firebaseId: id }});
   if (!admin) throw new Error('user not found');

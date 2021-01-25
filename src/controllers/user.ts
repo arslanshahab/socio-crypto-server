@@ -14,7 +14,7 @@ import {HourlyCampaignMetric} from "../models/HourlyCampaignMetric";
 import { serverBaseUrl } from '../config';
 import { In } from "typeorm";
 
-export const participate = async (args: { campaignId: string, email: string }, context: { user: any }) => {
+export const participate = async (parent: any, args: { campaignId: string, email: string }, context: { user: any }) => {
     const { id } = context.user;
     const user = await User.findOne({ where: { identityId: id }, relations: ['campaigns', 'wallet'] });
     if (!user) throw new Error('user not found');
@@ -32,7 +32,7 @@ export const participate = async (args: { campaignId: string, email: string }, c
     return participant.asV1();
 };
 
-export const promotePermissions = async (args: { userId: string, email: string, company: string, role: 'admin'|'manager' }, context: { user: any }) => {
+export const promotePermissions = async (parent: any, args: { userId: string, email: string, company: string, role: 'admin'|'manager' }, context: { user: any }) => {
     const { role, company } = checkPermissions({ hasRole: ['admin', 'manager'] }, context);
     const where: {[key: string]: string} = {};
     if (args.userId) where['id'] = args.userId;
@@ -49,7 +49,7 @@ export const promotePermissions = async (args: { userId: string, email: string, 
     return user.asV1();
 }
 
-export const removeParticipation = async (args: { campaignId: string }, context: { user: any }) => {
+export const removeParticipation = async (parent: any, args: { campaignId: string }, context: { user: any }) => {
     const { id } = context.user;
     const user = await User.findOne({ where: { identityId: id }, relations: ['campaigns', 'wallet'] });
     if (!user) throw new Error('user not found');
@@ -62,17 +62,17 @@ export const removeParticipation = async (args: { campaignId: string }, context:
     return user.asV1();
 }
 
-export const usernameExists = async (args: { username: string }) => {
+export const usernameExists = async (parent: any, args: { username: string }) => {
     const profile = await Profile.findOne({ where: { username: args.username } });
     return { exists: !!profile };
 }
 
-export const accountExists = async (args: { id: string }) => {
+export const accountExists = async (parent: any, args: { id: string }) => {
     const user = await User.findOne({ identityId: args.id });
     return { exists: !!user };
 }
 
-export const me = async (args: { openCampaigns?: boolean } = {}, context: { user: any }, info: GraphQLResolveInfo) => {
+export const me = async (parent: any, args: { openCampaigns?: boolean } = {}, context: { user: any }, info: GraphQLResolveInfo) => {
     const { id } = context.user;
     const query = info.fieldNodes.find(field => field.name.value === info.fieldName);
     const user = await User.getUser(id, query);
@@ -85,14 +85,14 @@ export const me = async (args: { openCampaigns?: boolean } = {}, context: { user
     return user.asV1();
 }
 
-export const list = async (args: { skip: number, take: number }, context: { user: any }) => {
+export const list = async (parent: any, args: { skip: number, take: number }, context: { user: any }) => {
     checkPermissions({ hasRole: ['admin'] }, context);
     const { skip = 0, take = 10 } = args;
     const [results, total] = await User.findAndCount({ skip, take });
     return { results: results.map(user => user.asV1()), total };
 }
 
-export const setDevice = async (args: { deviceToken: string }, context: { user: any }) => {
+export const setDevice = async (parent: any, args: { deviceToken: string }, context: { user: any }) => {
   const { deviceToken } = args;
   const { id } = context.user;
   const user = await User.findOneOrFail({ where: { identityId: id } });
@@ -101,7 +101,7 @@ export const setDevice = async (args: { deviceToken: string }, context: { user: 
   return true;
 }
 
-export const updateUsername = async (args: { username: string }, context: { user: any }) => {
+export const updateUsername = async (parent: any, args: { username: string }, context: { user: any }) => {
   const { id } = context.user;
   const user = await User.findOneOrFail({ where: { identityId: id } });
   if (await Profile.findOne({ where: { username: args.username } })) throw new Error('username is already registered');
@@ -110,7 +110,7 @@ export const updateUsername = async (args: { username: string }, context: { user
   return user.asV1();
 }
 
-export const setRecoveryCode = async (args: { code: number }, context: { user: any }) => {
+export const setRecoveryCode = async (parent: any, args: { code: number }, context: { user: any }) => {
   const { id } = context.user;
   const user = await User.findOne({ where: { identityId: id }, relations: ['profile'] });
   if (!user) throw new Error('user not found');
@@ -119,7 +119,7 @@ export const setRecoveryCode = async (args: { code: number }, context: { user: a
   return user.asV1();
 }
 
-export const updateProfileInterests = async (args: { ageRange: string, city: string, state: string, country: string, interests: string[], values: string[] }, context: { user: any }) => {
+export const updateProfileInterests = async (parent: any, args: { ageRange: string, city: string, state: string, country: string, interests: string[], values: string[] }, context: { user: any }) => {
   const { id } = context.user;
   const { ageRange, city, state, interests, values, country } = args;
   const user = await User.findOne({ where: { identityId: id } });
@@ -135,7 +135,7 @@ export const updateProfileInterests = async (args: { ageRange: string, city: str
   return user.asV1();
 }
 
-export const removeProfileInterests = async (args: { interest: string, value: string, ageRange: string, city: string, state: string, country: string }, context: { user: any }) => {
+export const removeProfileInterests = async (parent: any, args: { interest: string, value: string, ageRange: string, city: string, state: string, country: string }, context: { user: any }) => {
   const { id } = context.user;
   const { interest, value, ageRange, city, state, country } = args;
   const user = await User.findOne({ where: { identityId: id }, relations: ['profile'] });
@@ -158,7 +158,7 @@ export const removeProfileInterests = async (args: { interest: string, value: st
   return user.asV1();
 }
 
-export const getUserMetrics = async (args: { today: boolean }, context: { user: any }) => {
+export const getUserMetrics = async (parent: any, args: { today: boolean }, context: { user: any }) => {
   const { id } = context.user;
   const { today = false } = args;
   const user = await User.findOne({ where: { identityId: id } });
@@ -166,7 +166,7 @@ export const getUserMetrics = async (args: { today: boolean }, context: { user: 
   return (await DailyParticipantMetric.getSortedByUser(user, today)).map(metric => metric.asV1());
 }
 
-export const getPreviousDayMetrics = async (_args: any, context: { user: any }) => {
+export const getPreviousDayMetrics = async (_parent: any, args: any, context: { user: any }) => {
   const { id } = context.user;
   let metrics: {[key: string]: any} = {};
   const user = await User.findOne({ where: { identityId: id }, relations: ['campaigns', 'campaigns.campaign'] });
@@ -183,7 +183,7 @@ export const getPreviousDayMetrics = async (_args: any, context: { user: any }) 
   return metrics;
 }
 
-export const updateNotificationSettings = async (args: { kyc: boolean, withdraw: boolean, campaignCreate: boolean, campaignUpdates: boolean }, context: { user: any }) => {
+export const updateNotificationSettings = async (parent: any, args: { kyc: boolean, withdraw: boolean, campaignCreate: boolean, campaignUpdates: boolean }, context: { user: any }) => {
   const { id } = context.user;
   const { kyc, withdraw, campaignCreate, campaignUpdates } = args;
   const user = await User.findOne({ where: { identityId: id }, relations: ['notificationSettings'] });
@@ -197,7 +197,7 @@ export const updateNotificationSettings = async (args: { kyc: boolean, withdraw:
   return user.asV1();
 }
 
-export const sendUserMessages = async (args: { usernames: string[], title: string, message: string }, context: { user: any }) => {
+export const sendUserMessages = async (parent: any, args: { usernames: string[], title: string, message: string }, context: { user: any }) => {
   checkPermissions({ hasRole: ['admin'], restrictCompany: 'raiinmaker' }, context);
   const { usernames, title, message } = args;
   if (usernames.length === 0) return false;
@@ -209,7 +209,7 @@ export const sendUserMessages = async (args: { usernames: string[], title: strin
   return true;
 }
 
-export const uploadProfilePicture = async (args: { image: string }, context: { user: any }) => {
+export const uploadProfilePicture = async (parent: any, args: { image: string }, context: { user: any }) => {
   const { id } = context.user;
   const { image } = args;
   const user = await User.findOne({ where: { identityId: id } });

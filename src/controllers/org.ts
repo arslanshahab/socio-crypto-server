@@ -7,7 +7,7 @@ import { FundingWallet } from '../models/FundingWallet';
 import {SesClient} from "../clients/ses";
 import {FailureByDesign} from "../util/errors";
 
-export const newOrg = async (args: {orgName: string, email: string, name: string}, context: {user: any}) => {
+export const newOrg = async (parent: any, args: {orgName: string, email: string, name: string}, context: {user: any}) => {
   if (context.user.company !== 'raiinmaker') throw new Error('forbidden');
   const { orgName, email, name } = args;
   const orgNameToLower = orgName.toLowerCase();
@@ -28,21 +28,21 @@ export const newOrg = async (args: {orgName: string, email: string, name: string
   return org;
 };
 
-export const getHourlyOrgMetrics = async (args: any, context: {user: any}) => {
+export const getHourlyOrgMetrics = async (parent: any, args: any, context: {user: any}) => {
   const {company} = checkPermissions({ hasRole: ['admin']}, context);
   const org = await Org.findOne({where: {name: company}});
   if (!org) throw new Error('org not found');
   return await HourlyCampaignMetric.getSortedByOrgId(org.id);
 }
 
-export const listOrgs = async (args: {skip: number, take: number}, context: {user: any}) => {
+export const listOrgs = async (parent: any, args: {skip: number, take: number}, context: {user: any}) => {
   if (context.user.company !== 'raiinmaker') throw new Error('forbidden');
   const { skip = 0, take = 10 } = args;
   const orgs = await Org.listOrgs(skip, take);
   return orgs.map(org => org.asV1());
 }
 
-export const newUser = async (args: {email: string, name: string, role: string}, context: {user: any}) => {
+export const newUser = async (parent: any, args: {email: string, name: string, role: string}, context: {user: any}) => {
   const {company} = checkPermissions({hasRole: ['admin']}, context);
   const {email, name, role} = args;
   const password = Math.random().toString(16).substr(2, 15);
@@ -64,7 +64,7 @@ export const newUser = async (args: {email: string, name: string, role: string},
   return true;
 }
 
-export const listEmployees = async (args: {skip: number, take: number}, context: {user: any}) => {
+export const listEmployees = async (parent: any, args: {skip: number, take: number}, context: {user: any}) => {
   const {company} = checkPermissions({hasRole: ['admin']}, context);
   const {skip = 0, take = 10} = args;
   const org = await Org.findOne({where: {name: company}});

@@ -32,7 +32,7 @@ import {Escrow} from "../models/Escrow";
 
 const validator = new Validator();
 
-export const getCurrentCampaignTier = async (args: { campaignId?: string, campaign?: Campaign }) => {
+export const getCurrentCampaignTier = async (parent: any, args: { campaignId?: string, campaign?: Campaign }) => {
     const { campaignId, campaign } = args;
     let currentTierSummary;
     if (campaignId) {
@@ -49,7 +49,7 @@ export const getCurrentCampaignTier = async (args: { campaignId?: string, campai
     return { currentTier: currentTierSummary.currentTier, currentTotal: parseFloat(currentTierSummary.currentTotal.toString()) };
 }
 
-export const createNewCampaign = async (args: { name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, image: string, tagline: string, requirements:CampaignRequirementSpecs, suggestedPosts: string[], suggestedTags: string[], type: string, rafflePrize: RafflePrizeStructure }, context: { user: any }) => {
+export const createNewCampaign = async (parent: any, args: { name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, image: string, tagline: string, requirements:CampaignRequirementSpecs, suggestedPosts: string[], suggestedTags: string[], type: string, rafflePrize: RafflePrizeStructure }, context: { user: any }) => {
     const { role, company } = checkPermissions({ hasRole: ['admin', 'manager'] }, context);
     const { name, beginDate, endDate, coiinTotal, target, description, algorithm, targetVideo, image, tagline, requirements, suggestedPosts, suggestedTags, type = 'coiin', rafflePrize } = args;
     validator.validateAlgorithmCreateSchema(JSON.parse(algorithm));
@@ -78,7 +78,7 @@ export const createNewCampaign = async (args: { name: string, targetVideo: strin
     return campaign.asV1();
 }
 
-export const updateCampaign = async (args: { id: string, name: string, beginDate: string, targetVideo: string, endDate: string, coiinTotal: number, target: string, description: string, algorithm: string, suggestedPosts: string[], suggestedTags: string[], image: string }, context: { user: any }) => {
+export const updateCampaign = async (parent: any, args: { id: string, name: string, beginDate: string, targetVideo: string, endDate: string, coiinTotal: number, target: string, description: string, algorithm: string, suggestedPosts: string[], suggestedTags: string[], image: string }, context: { user: any }) => {
     const { role, company } = checkPermissions({ hasRole: ['admin', 'manager'] }, context);
     const { id, name, beginDate, endDate, coiinTotal, target, description, algorithm, targetVideo, suggestedPosts, suggestedTags, image } = args;
     const where: {[key: string]: string} = { id };
@@ -103,7 +103,7 @@ export const updateCampaign = async (args: { id: string, name: string, beginDate
     return campaign.asV1();
 }
 
-export const adminUpdateCampaignStatus = async (args: {status: CampaignStatus, campaignId:string}, context: {user:any}) => {
+export const adminUpdateCampaignStatus = async (parent: any, args: {status: CampaignStatus, campaignId:string}, context: {user:any}) => {
   checkPermissions({ restrictCompany: 'raiinmaker' }, context);
   const { status, campaignId } = args;
   const campaign = await Campaign.findOne({where: {id: campaignId}, relations: ['org', 'org.fundingWallet']});
@@ -129,21 +129,21 @@ export const adminUpdateCampaignStatus = async (args: {status: CampaignStatus, c
   return true;
 }
 
-export const listCampaigns = async (args: { open: boolean, skip: number, take: number, scoped: boolean, sort: boolean }, context: { user: any }) => {
+export const listCampaigns = async (parent: any, args: { open: boolean, skip: number, take: number, scoped: boolean, sort: boolean }, context: { user: any }) => {
     const { open, skip = 0, take = 10, scoped = false, sort = false } = args;
     const { company } = context.user;
     const [results, total] = await Campaign.findCampaignsByStatus(open, skip, take, scoped && company, sort);
     return { results: results.map(result => result.asV1()), total };
 }
 
-export const adminListPendingCampaigns = async (args: {skip: number, take: number}, context: {user: any}) => {
+export const adminListPendingCampaigns = async (parent: any, args: {skip: number, take: number}, context: {user: any}) => {
     checkPermissions({restrictCompany:'raiinmaker'}, context);
     const {skip = 0, take = 10} = args;
     const [results, total] = await Campaign.adminListCampaignsByStatus(skip, take);
     return { results: results.map(result => result.asV1()), total};
 }
 
-export const deleteCampaign = async (args: { id: string }, context: { user: any }) => {
+export const deleteCampaign = async (parent: any, args: { id: string }, context: { user: any }) => {
     const { role, company } = checkPermissions({ hasRole: ['admin', 'manager'] }, context);
     const where: {[key: string]: string} = { id: args.id };
     if (role === 'manager') where['company'] = company;
@@ -159,7 +159,7 @@ export const deleteCampaign = async (args: { id: string }, context: { user: any 
     return campaign.asV1();
 }
 
-export const get = async (args: { id: string }) => {
+export const get = async (parent: any, args: { id: string }) => {
     const { id } = args;
     const where: { [key: string]: string } = { id };
     const campaign = await Campaign.findOne({ where, relations: ['participants', 'prize'] });
@@ -168,14 +168,14 @@ export const get = async (args: { id: string }) => {
     return campaign.asV1();
 }
 
-export const publicGet = async (args: { campaignId: string }) => {
+export const publicGet = async (parent: any, args: { campaignId: string }) => {
     const { campaignId } = args;
     const campaign = await Campaign.findOne({ where: { id: campaignId } });
     if (!campaign) throw new Error('campaign not found');
     return campaign.asV1();
 }
 
-export const adminGetCampaignMetrics = async (args: { campaignId: string }, context: { user: any }) => {
+export const adminGetCampaignMetrics = async (parent: any, args: { campaignId: string }, context: { user: any }) => {
   checkPermissions({ hasRole: ['admin'] }, context);
   const { campaignId } = args;
   const campaign = await Campaign.findOne({ where: { id: campaignId } });
@@ -183,12 +183,12 @@ export const adminGetCampaignMetrics = async (args: { campaignId: string }, cont
   return await Campaign.getCampaignMetrics(campaignId);
 }
 
-export const adminGetPlatformMetrics = async (args: any, context: { user: any }) => {
+export const adminGetPlatformMetrics = async (parent: any, args: any, context: { user: any }) => {
     checkPermissions({ hasRole: ['admin'] }, context);
     const metrics = await Campaign.getPlatformMetrics();
     return metrics;
 }
-export const adminGetHourlyCampaignMetrics = async (args: {campaignId: string, filter: DateTrunc, startDate: string, endDate: string}, context: {user: any}) => {
+export const adminGetHourlyCampaignMetrics = async (parent: any, args: {campaignId: string, filter: DateTrunc, startDate: string, endDate: string}, context: {user: any}) => {
     const {company} = checkPermissions({ hasRole: ['admin']}, context);
     HourlyCampaignMetric.validate.validateHourlyMetricsArgs(args);
     const { campaignId, filter, startDate, endDate } = args;
@@ -201,7 +201,7 @@ export const adminGetHourlyCampaignMetrics = async (args: {campaignId: string, f
     return HourlyCampaignMetric.parseHourlyCampaignMetrics(metrics, filter, currentTotal);
 }
 
-export const adminGetHourlyPlatformMetrics = async (args: {filter: DateTrunc, startDate: string, endDate: string }, context: {user: any}) => {
+export const adminGetHourlyPlatformMetrics = async (parent: any, args: {filter: DateTrunc, startDate: string, endDate: string }, context: {user: any}) => {
     checkPermissions({ hasRole: ['admin']}, context);
     HourlyCampaignMetric.validate.validateHourlyMetricsArgs(args);
     const { filter, startDate, endDate } = args;
@@ -209,12 +209,12 @@ export const adminGetHourlyPlatformMetrics = async (args: {filter: DateTrunc, st
     return HourlyCampaignMetric.parseHourlyPlatformMetrics(metrics, filter);
 }
 
-export const generateCampaignAuditReport = async (args: { campaignId: string }, context: { user: any }) => {
+export const generateCampaignAuditReport = async (parent: any, args: { campaignId: string }, context: { user: any }) => {
     const {company} = checkPermissions({hasRole: ['admin', 'manager']}, context);
     const {campaignId} = args;
     const campaign = await Campaign.findCampaignById(campaignId, company);
     if (!campaign) throw new Error('Campaign not found');
-    const {currentTotal} = await getCurrentCampaignTier({campaign});
+    const {currentTotal} = await getCurrentCampaignTier(null,{campaign});
     const bigNumTotal = new BN(campaign.type !== 'coiin' ? 0 : currentTotal);
     const auditReport: CampaignAuditReport = {
         totalClicks: new BN(0),
@@ -266,7 +266,7 @@ export const generateCampaignAuditReport = async (args: { campaignId: string }, 
     return auditReport;
 };
 
-export const payoutCampaignRewards = async (args: { campaignId: string, rejected: string[] }, context: { user: any }) => {
+export const payoutCampaignRewards = async (parent: any, args: { campaignId: string, rejected: string[] }, context: { user: any }) => {
     const {company} = checkPermissions({hasRole: ['admin', 'manager']}, context);
     return getConnection().transaction(async transactionalEntityManager => {
         const {campaignId, rejected} = args;
@@ -311,7 +311,7 @@ const payoutCoiinCampaignRewards = async (entityManager: EntityManager, campaign
   const usersWalletValues: { [key: string]: BigNumber } = {};
   const userDeviceIds: { [key: string]: string } = {};
   const transfers: Transfer[] = [];
-  const {currentTotal} = await getCurrentCampaignTier({campaign});
+  const {currentTotal} = await getCurrentCampaignTier(null,{campaign});
   const bigNumTotal = new BN(currentTotal);
   const participants = await Participant.find({where: {campaign}, relations: ['user']});
   const escrow = await Escrow.findOne({where: {campaign}, relations: ['fundingWallet']});
@@ -331,7 +331,7 @@ const payoutCoiinCampaignRewards = async (entityManager: EntityManager, campaign
       const newParticipationCount = participants.length - rejected.length;
       let totalRejectedPayout = new BN(0);
       for (const id of rejected) {
-          const participant = await getParticipant({id});
+          const participant = await getParticipant(null,{id});
           const totalParticipantPayout = await calculateParticipantPayout(bigNumTotal, campaign, participant);
           totalRejectedPayout = totalRejectedPayout.plus(totalParticipantPayout);
       }

@@ -1,4 +1,4 @@
-import {Request} from 'express';
+import express, {Request} from 'express';
 import { BigNumber } from 'bignumber.js';
 import {Stripe} from "stripe";
 
@@ -38,7 +38,7 @@ export interface KycUser {
   hasAddressProof: boolean;
 }
 
-export interface AuthRequest extends Request {
+export interface AuthRequest extends express.Request {
     user: any;
 }
 

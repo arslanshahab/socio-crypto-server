@@ -9,7 +9,6 @@
     "start": "PORT=4000 AWS_PROFILE=raiinmaker TS_NODE_FILES=true NODE_ENV=development ts-node src/index.ts",
     "build": "tsc",
     "clean": "rm -rf dist/",
-    "postbuild": "cp src/graphql/*.graphql dist/graphql/",
     "test": "yarn test:integration:ci",
     "lint": "eslint --ext .ts --format unix src/ && prettier --check 'src/**/*.ts'",
     "format": "prettier --write 'src/**/*.ts'",
@@ -33,6 +32,7 @@
   "dependencies": {
     "@dragonchain-dev/dragonfactor-auth": "^0.0.11",
     "ajv": "^6.12.2",
+    "apollo-server-express": "^2.19.2",
     "aws-sdk": "^2.632.0",
     "bignumber.js": "^9.0.0",
     "body-parser": "^1.19.0",
@@ -45,7 +45,6 @@
     "eth-sig-util": "^2.5.3",
     "ethereumjs-util": "^7.0.5",
     "express": "^4.17.1",
-    "express-graphql": "^0.9.0",
     "firebase-admin": "^9.2.0",
     "graphql": "^14.6.0",
     "graphql-rate-limit": "^2.0.1",
