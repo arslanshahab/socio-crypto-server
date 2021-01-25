@@ -38,10 +38,6 @@ export interface KycUser {
   hasAddressProof: boolean;
 }
 
-export interface AuthRequest extends express.Request {
-    user: any;
-}
-
 export interface AggregateDailyMetrics {
   clickCount: number;
   submissionCount: number;
