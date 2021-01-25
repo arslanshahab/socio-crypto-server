@@ -40,7 +40,7 @@ export const main = async () => {
               campaignLeaderboards[participant.campaign.id][part.id] = idx+1;
             });
           }
-          if (!campaignInformation[participant.campaign.id]) campaignInformation[participant.campaign.id] = await campaignController.getCurrentCampaignTier({ campaignId: participant.campaign.id });
+          if (!campaignInformation[participant.campaign.id]) campaignInformation[participant.campaign.id] = await campaignController.getCurrentCampaignTier(null,{ campaignId: participant.campaign.id });
           const latestParticipation = await DailyParticipantMetric.getLatestByParticipantId(participant.id);
           if (latestParticipation && latestParticipation.participationScore.gt(0)) {
             const percentageOfParticipation = new BN(latestParticipation.participationScore).div(participant.campaign.totalParticipationScore);

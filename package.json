@@ -9,7 +9,6 @@
     "start": "PORT=4000 AWS_PROFILE=raiinmaker TS_NODE_FILES=true NODE_ENV=development ts-node src/index.ts",
     "build": "tsc",
     "clean": "rm -rf dist/",
-    "postbuild": "cp src/graphql/*.graphql dist/graphql/",
     "test": "yarn test:integration:ci",
     "lint": "eslint --ext .ts --format unix src/ && prettier --check 'src/**/*.ts'",
     "format": "prettier --write 'src/**/*.ts'",

@@ -21,6 +21,7 @@ import {StripeAPI} from "./clients/stripe";
 import {stripeWebhook} from "./controllers/stripe";
 import { ApolloServer } from "apollo-server-express";
 import {typeDefs} from "./graphql/schema";
+import {ApolloServerPlugin} from "apollo-server-plugin-base";
 
 const { NODE_ENV = 'development' } = process.env;
 
@@ -66,18 +67,26 @@ export class Application {
     this.app.use(bodyParser.json({ limit: "30mb" }));
     this.app.use(bodyParser.urlencoded({ extended: true }));
     this.app.set('port', process.env.PORT || 8080);
+    const requestPlugin: ApolloServerPlugin = {
+      requestDidStart(requestContext) {
+        console.log({ timestamp: new Date().toISOString(), operation: requestContext.request.operationName });
+      }
+    }
     const server = new ApolloServer({
       typeDefs,
       resolvers,
+      plugins: [requestPlugin],
       context: authenticate
     })
     const serverAdmin = new ApolloServer({
       typeDefs,
       resolvers: adminResolvers,
+      plugins: [requestPlugin],
       context: firebaseAuth,
     })
     const serverPublic = new ApolloServer({
       typeDefs,
+      plugins: [requestPlugin],
       resolvers: publicResolvers,
     })
     server.applyMiddleware({ app: this.app, path: '/v1/graphql', cors: corsSettings });

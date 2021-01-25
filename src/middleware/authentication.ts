@@ -48,7 +48,6 @@ export const firebaseAuth = async ({req, res}: {req: AuthRequest, res: Response}
       company: firebaseUser.customClaims.company,
       tempPass: firebaseUser.customClaims.tempPass || false,
     };
-    console.log('USER CONTEXT', user);
     return {user};
   } catch (e) {
     throw new AuthenticationError('unauthorized');

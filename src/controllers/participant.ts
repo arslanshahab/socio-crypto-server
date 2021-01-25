@@ -25,7 +25,7 @@ const rateLimiter = getGraphQLRateLimiter({
   store: new RedisStore(getRedis().client),
 });
 
-export const getParticipantByCampaignId = async (args: { campaignId: string }, context: { user: any }) => {
+export const getParticipantByCampaignId = async (parent: any, args: { campaignId: string }, context: { user: any }) => {
   const { id } = context.user;
   const user = await User.findOneOrFail({ where: { identityId: id } });
   const campaign = await Campaign.findOneOrFail({ where: { id: args.campaignId } });
@@ -33,7 +33,7 @@ export const getParticipantByCampaignId = async (args: { campaignId: string }, c
   return particpant.asV1();
 };
 
-export const trackAction = async (args: { participantId: string, action: 'clicks' | 'views' | 'submissions' }, context: any, info: any) => {
+export const trackAction = async (parent: any, args: { participantId: string, action: 'clicks' | 'views' | 'submissions' }, context: any, info: any) => {
     const errorMessage = await rateLimiter({ parent: {}, args, context, info }, { max: Number(RATE_LIMIT_MAX), window: RATE_LIMIT_WINDOW });
     if (errorMessage) throw new Error(errorMessage);
     if (!['views', 'submissions'].includes(args.action)) throw new Error('invalid metric specified');
@@ -67,7 +67,7 @@ export const trackAction = async (args: { participantId: string, action: 'clicks
     return participant.asV1();
 };
 
-export const getParticipant = async (args: { id: string }) => {
+export const getParticipant = async (parent: any, args: { id: string }) => {
     const { id } = args;
     const where: { [key: string]: string } = { id };
     const participant = await Participant.findOne({ where, relations: ['user'] });
@@ -75,7 +75,7 @@ export const getParticipant = async (args: { id: string }) => {
     return participant.asV1();
 };
 
-export const getPosts = async (args: { id: string }, context: any) => {
+export const getPosts = async (parent: any, args: { id: string }, context: any) => {
   try {
     const { id } = args;
     const results: Promise<any>[] = [];
@@ -86,7 +86,7 @@ export const getPosts = async (args: { id: string }, context: any) => {
     for (let i = 0; i < posts.length; i++) {
       const post = posts[i];
       try {
-        const tweet = await getTweetById({ id: post.id, type: 'twitter'}, context);
+        const tweet = await getTweetById(null,{ id: post.id, type: 'twitter'}, context);
         results.push(tweet);
       } catch (_) {}
     }
@@ -99,7 +99,7 @@ export const getPosts = async (args: { id: string }, context: any) => {
   }
 }
 
-export const getParticipantMetrics = async (args: { participantId: string }, context: { user: any }) => {
+export const getParticipantMetrics = async (parent: any, args: { participantId: string }, context: { user: any }) => {
   const { id } = context.user;
   const { participantId } = args;
   const additionalRows = [];

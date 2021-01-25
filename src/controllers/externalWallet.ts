@@ -6,7 +6,7 @@ import { ExternalAddress } from '../models/ExternalAddress';
 import { User } from '../models/User';
 import { FundingWallet } from '../models/FundingWallet';
 
-export const attach = async (args: { ethereumAddress: string }, context: { user: any }) => {
+export const attach = async (parent: any, args: { ethereumAddress: string }, context: { user: any }) => {
   const { id, method } = context.user;
   const address = args.ethereumAddress.toLowerCase();
   let isOrg = false;
@@ -37,7 +37,7 @@ export const attach = async (args: { ethereumAddress: string }, context: { user:
   return externalWallet.asV1();
 }
 
-export const claim = async (args: { ethereumAddress: string, signature: string }, context: { user: any }) => {
+export const claim = async (parent: any, args: { ethereumAddress: string, signature: string }, context: { user: any }) => {
   const { id, method } = context.user;
   const address = args.ethereumAddress.toLowerCase();
   let user;
@@ -59,7 +59,7 @@ export const claim = async (args: { ethereumAddress: string, signature: string }
   return externalWallet.asV1();
 }
 
-export const get = async (args: { ethereumAddress: string }, context: { user: any }) => {
+export const get = async (parent: any, args: { ethereumAddress: string }, context: { user: any }) => {
   const { id, method } = context.user;
   const address = args.ethereumAddress.toLowerCase();
   let user;
@@ -75,7 +75,7 @@ export const get = async (args: { ethereumAddress: string }, context: { user: an
   return externalWallet.asV1();
 }
 
-export const list = async (_args: any, context: { user: any }) => {
+export const list = async (parent: any, _args: any, context: { user: any }) => {
   const { id, method } = context.user;
   let isOrg = false;
   let user;
@@ -91,7 +91,7 @@ export const list = async (_args: any, context: { user: any }) => {
     ((user as User) && (user as User).addresses) ? (user as User).addresses.map(address => address.asV1()) : [];
 }
 
-export const remove = async (args: { ethereumAddress: string }, context: { user: any }) => {
+export const remove = async (parent: any, args: { ethereumAddress: string }, context: { user: any }) => {
   const { id } = context.user;
   const wallet = await ExternalAddress.getWalletByAddressAndUserId(id, args.ethereumAddress);
   if (!wallet) throw new Error('external wallet not found');

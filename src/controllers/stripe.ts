@@ -7,7 +7,7 @@ import {Transfer} from "../models/Transfer";
 import {PaymentIntent} from "../types";
 import {updateOrgCampaignsStatusOnDeposit} from "./helpers";
 
-export const addPaymentMethod = async (args: any, context: { user: any }) => {
+export const addPaymentMethod = async (parent: any, args: any, context: { user: any }) => {
   const {company} = context.user;
   const org = await Org.findOne({where: {name: company}});
   if (!org) throw new Error('org not found');
@@ -20,7 +20,7 @@ export const addPaymentMethod = async (args: any, context: { user: any }) => {
   return {clientSecret: intent.client_secret}
 }
 
-export const listPaymentMethods = async (args: any, context: {user: any}) => {
+export const listPaymentMethods = async (parent: any, args: any, context: {user: any}) => {
   const {company} = context.user;
   const org = await Org.findOne({where: {name: company}});
   if (!org) throw new Error('org not found');
@@ -34,7 +34,7 @@ export const listPaymentMethods = async (args: any, context: {user: any}) => {
   })
 }
 
-export const purchaseCoiin = async (args: {amount: number, paymentMethodId: string}, context: { user: any }) => {
+export const purchaseCoiin = async (parent: any, args: {amount: number, paymentMethodId: string}, context: { user: any }) => {
   const {company} = context.user;
   const {amount, paymentMethodId} = args;
   const org = await Org.findOne({where: {name: company}, relations: ['fundingWallet']});

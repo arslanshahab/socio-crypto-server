@@ -7,7 +7,7 @@ import { Firebase } from '../clients/firebase';
 
 const validator = new Validator();
 
-export const registerKyc = async (args: {userKyc: any}, context: {user: any}) => {
+export const registerKyc = async (parent: any, args: {userKyc: any}, context: {user: any}) => {
     validator.validateKycRegistration(args.userKyc);
     const { id } = context.user;
     const user = await User.findOneOrFail({ where: { identityId: id } });
@@ -27,7 +27,7 @@ export const registerKyc = async (args: {userKyc: any}, context: {user: any}) =>
     return args.userKyc;
 }
 
-export const getKyc = async (_args: any, context: { user:  any }) => {
+export const getKyc = async (_parent: any, args: any, context: { user:  any }) => {
     const { id, role } = context.user;
     const user = await User.findOneOrFail({ where: { identityId: id } });
     const response = await S3Client.getUserObject(user.id);
@@ -37,7 +37,7 @@ export const getKyc = async (_args: any, context: { user:  any }) => {
     return response;
 }
 
-export const adminGetKycByUser = async (args: { userId: string }, context: { user: any }) => {
+export const adminGetKycByUser = async (parent: any, args: { userId: string }, context: { user: any }) => {
   checkPermissions({ restrictCompany: 'raiinmaker' }, context);
     const { userId } = args;
     const user = await User.findOne({ where: { id: userId } });
@@ -50,7 +50,7 @@ export const adminGetKycByUser = async (args: { userId: string }, context: { use
     return response;
 }
 
-export const updateKyc = async (args: {user: KycUser}, context: { user: any }) => {
+export const updateKyc = async (parent: any, args: {user: KycUser}, context: { user: any }) => {
     const { id } = context.user;
     const user = await User.findOneOrFail({ where: { identityId: id } });
     if (args.user.idProof) {
@@ -68,7 +68,7 @@ export const updateKyc = async (args: {user: KycUser}, context: { user: any }) =
     return S3Client.updateUserInfo(user.id, args.user);
 }
 
-export const updateKycStatus = async (args: { userId: string, status: string }, context: { user: any }) => {
+export const updateKycStatus = async (parent: any, args: { userId: string, status: string }, context: { user: any }) => {
   checkPermissions({ hasRole: ['admin'] }, context);
   if (!['approve', 'reject'].includes(args.status)) throw new Error('Status must be either approve or reject');
   const user = await User.findOneOrFail({ where: { id: args.userId }, relations: ['profile', 'notificationSettings'] });

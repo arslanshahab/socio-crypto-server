@@ -13,7 +13,7 @@ import { v4 as uuidv4 } from 'uuid';
 import * as EthWithdraw from "./ethWithdraw";
 import { Firebase } from '../clients/firebase';
 
-export const start = async (args: { withdrawAmount: number, ethAddress?: string }, context: { user: any }) => {
+export const start = async (parent: any, args: { withdrawAmount: number, ethAddress?: string }, context: { user: any }) => {
   if (args.withdrawAmount <= 0) throw new Error('withdraw amount must be a positive number');
   const { id } = context.user;
   const user = await User.findOneOrFail({ where: { identityId: id } });
@@ -36,7 +36,7 @@ export const start = async (args: { withdrawAmount: number, ethAddress?: string 
   return transfer.asV1();
 }
 
-export const update = async (args: { transferIds: string[], status: 'approve'|'reject' }, context: { user: any }) => {
+export const update = async (parent: any, args: { transferIds: string[], status: 'approve'|'reject' }, context: { user: any }) => {
   checkPermissions({ hasRole: ['admin'] }, context);
   if (args.transferIds.length === 0) throw new Error('empty array of transfer IDs provided');
   const transfers: Transfer[] = [];
@@ -117,7 +117,7 @@ export const update = async (args: { transferIds: string[], status: 'approve'|'r
   return transfers.map(transfer => transfer.asV1());
 }
 
-export const getWithdrawals = async (args: { status: string }, context: { user: any }) => {
+export const getWithdrawals = async (parent: any, args: { status: string }, context: { user: any }) => {
   checkPermissions({ hasRole: ['admin'] }, context);
   const transfers = await Transfer.getWithdrawalsByStatus(args.status);
   const uniqueUsers: {[key: string]: any} = {};
@@ -147,7 +147,7 @@ export const getWithdrawals = async (args: { status: string }, context: { user: 
   return Object.values(uniqueUsers);
 }
 
-export const getWithdrawalsV2 = async (args: { status: string }, context: { user: any }) => {
+export const getWithdrawalsV2 = async (parent: any, args: { status: string }, context: { user: any }) => {
   checkPermissions({ hasRole: ['admin'] }, context);
   const transfers = await Transfer.getWithdrawalsByStatus(args.status);
   const uniqueUsers: {[key: string]: any} = {};
@@ -240,7 +240,7 @@ export const makePayouts = async (payouts: {value: string, receiver: string, pay
   return response.batch_header;
 }
 
-export const getWalletWithPendingBalance = async (_args: any, context: { user: any }) => {
+export const getWalletWithPendingBalance = async (_parent: any, args: any, context: { user: any }) => {
   const { id } = context.user;
   const user = await User.findOneOrFail({ where: { identityId: id } });
   const wallet = await Wallet.findOneOrFail({ where: { user }, relations: ['transfers'] });
