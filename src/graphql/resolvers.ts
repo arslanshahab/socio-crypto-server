@@ -107,6 +107,7 @@ export const adminResolvers = {
     purchaseCoiin: stripeController.purchaseCoiin,
     updateCampaignStatus: campaignController.adminUpdateCampaignStatus,
     sendUserMessages: userController.sendUserMessages,
+    removePaymentMethod: stripeController.deletePaymentMethod,
   }
 }
 

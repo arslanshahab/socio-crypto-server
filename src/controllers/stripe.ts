@@ -20,7 +20,19 @@ export const addPaymentMethod = async (parent: any, args: any, context: { user: 
   return {clientSecret: intent.client_secret}
 }
 
-export const listPaymentMethods = async (parent: any, args: any, context: {user: any}) => {
+export const deletePaymentMethod = async (_: any, args: { paymentMethodId: string }, context: { user: any }) => {
+  const {company} = context.user;
+  const { paymentMethodId } = args;
+  const org = await Org.findOne({where: {name: company}});
+  if (!org) throw new Error('org not found');
+  if (!org.stripeId) throw new Error('missing stripe ID');
+  const { customer } = await StripeAPI.getPaymentMethod(paymentMethodId);
+  if (customer !== org.stripeId) throw new Error('card not registered');
+  await StripeAPI.removePaymentMethod(paymentMethodId);
+  return true;
+}
+
+export const listPaymentMethods = async (_: any, args: any, context: {user: any}) => {
   const {company} = context.user;
   const org = await Org.findOne({where: {name: company}});
   if (!org) throw new Error('org not found');

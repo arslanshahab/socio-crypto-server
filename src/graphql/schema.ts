@@ -89,6 +89,7 @@ export const typeDefs = gql`
         fundCampaigns(campaignIds: [String]): Boolean
         sendUserMessages(usernames: [String]!, title: String!, message: String!): Boolean
         uploadProfilePicture(image:String!): Boolean
+        removePaymentMethod(paymentMethodId:String!): Boolean
     }
 
     type Query {
