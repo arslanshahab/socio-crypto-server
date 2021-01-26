@@ -8,7 +8,7 @@ export const typeDefs = gql`
             name:String!,
             coiinTotal:Float!,
             target:String!,
-            targetVideo:String!,
+            targetVideo:String,
             beginDate:String!,
             endDate:String!,
             description:String,
