@@ -113,6 +113,37 @@ describe('Campaign Integration Test', () => {
           const response = res.body.data.newCampaign;
           expect(response.name).to.equal('banana');
        });
+        it('#newCampaign - no target video', async () => {
+          const org = await createOrg(runningApp);
+          const user = await createUser(runningApp);
+          await createAdmin(runningApp, { org, user });
+          const beginDate = getBeginDate().toString();
+          const endDate = getEndDate().toString();
+          const algorithm = JSON.stringify({"version": "1", "initialTotal": "1000", "tiers":{"1":{"threshold":"25000","totalCoiins":"1000"},"2":{"threshold":"50000","totalCoiins":"3000"},"3":{"threshold":"75000","totalCoiins":"5000"},"4":{"threshold":"100000","totalCoiins":"7000"},"5":{"threshold":"250000","totalCoiins":"10000"}},"pointValues":{"click": "14","view": "10","submission": "201", "likes": "201", "shares": "201"}});
+          const mutation = gql.mutation({
+             operation: 'newCampaign',
+             variables: {
+                name: {value: 'banana', required: true},
+                coiinTotal: {value: 21.24, required: true},
+                target: {value: "bacon", required: true},
+                beginDate: {value: beginDate, required: true },
+                endDate: {value: endDate, required: true},
+                algorithm: {value: algorithm, required: true },
+                company: 'raiinmaker',
+             },
+             fields: ['name']
+          })
+          const res = await request(runningApp.app)
+              .post('/v1/graphql')
+              .send(mutation)
+              .set('Accepts', 'application/json')
+              .set('company', 'raiinmaker')
+              .set('authorization', 'Bearer raiinmaker');
+          console.log(JSON.stringify(res.body));
+          const response = res.body.data.newCampaign;
+          expect(response.name).to.equal('banana');
+          expect(response.targetVideo).to.be.undefined;
+       });
        it('#newRaffleCampaign with raffle prize', async () => {
         const org = await createOrg(runningApp);
         const user = await createUser(runningApp);

@@ -49,7 +49,7 @@ export const getCurrentCampaignTier = async (parent: any, args: { campaignId?: s
     return { currentTier: currentTierSummary.currentTier, currentTotal: parseFloat(currentTierSummary.currentTotal.toString()) };
 }
 
-export const createNewCampaign = async (parent: any, args: { name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, image: string, tagline: string, requirements:CampaignRequirementSpecs, suggestedPosts: string[], suggestedTags: string[], type: string, rafflePrize: RafflePrizeStructure }, context: { user: any }) => {
+export const createNewCampaign = async (parent: any, args: { name: string, targetVideo?: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, image: string, tagline: string, requirements:CampaignRequirementSpecs, suggestedPosts: string[], suggestedTags: string[], type: string, rafflePrize: RafflePrizeStructure }, context: { user: any }) => {
     const { role, company } = checkPermissions({ hasRole: ['admin', 'manager'] }, context);
     const { name, beginDate, endDate, coiinTotal, target, description, algorithm, targetVideo, image, tagline, requirements, suggestedPosts, suggestedTags, type = 'coiin', rafflePrize } = args;
     validator.validateAlgorithmCreateSchema(JSON.parse(algorithm));
@@ -62,7 +62,7 @@ export const createNewCampaign = async (parent: any, args: { name: string, targe
     const campaignCompany = (role ==='admin') ? args.company : company;
     const org = await Org.findOne({where: {name: company}, relations: ['fundingWallet']});
     if (!org) throw new Error('org not found');
-    const campaign = Campaign.newCampaign(name, targetVideo, beginDate, endDate, coiinTotal, target, description, campaignCompany, algorithm, tagline, requirements, suggestedPosts, suggestedTags, type, org);
+  const campaign = Campaign.newCampaign(name, beginDate, endDate, coiinTotal, target, description, campaignCompany, algorithm, tagline, requirements, suggestedPosts, suggestedTags, type, targetVideo, org, );
     await campaign.save();
     if (image) {
         campaign.imagePath = await S3Client.setCampaignImage('banner', campaign.id, image);
