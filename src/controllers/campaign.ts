@@ -62,7 +62,7 @@ export const createNewCampaign = async (parent: any, args: { name: string, targe
     const campaignCompany = (role ==='admin') ? args.company : company;
     const org = await Org.findOne({where: {name: company}, relations: ['fundingWallet']});
     if (!org) throw new Error('org not found');
-  const campaign = Campaign.newCampaign(name, beginDate, endDate, coiinTotal, target, description, campaignCompany, algorithm, tagline, requirements, suggestedPosts, suggestedTags, type, targetVideo, org, );
+  const campaign = Campaign.newCampaign(name, beginDate, endDate, coiinTotal, target, description, campaignCompany, algorithm, tagline, requirements, suggestedPosts, suggestedTags, type, targetVideo, org);
     await campaign.save();
     if (image) {
         campaign.imagePath = await S3Client.setCampaignImage('banner', campaign.id, image);
