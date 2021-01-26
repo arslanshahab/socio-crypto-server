@@ -307,7 +307,7 @@ export class Campaign extends BaseEntity {
     return true;
   }
 
-  public static newCampaign(name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, tagline: string, requirements: CampaignRequirementSpecs, suggestedPosts: string[], suggestedTags: string[], type: string, org?: Org): Campaign {
+  public static newCampaign(name: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, tagline: string, requirements: CampaignRequirementSpecs, suggestedPosts: string[], suggestedTags: string[], type: string, targetVideo?: string, org?: Org): Campaign {
     const campaign = new Campaign();
     if (org) campaign.org = org;
     campaign.name = name;
@@ -319,8 +319,8 @@ export class Campaign extends BaseEntity {
     campaign.endDate = new Date(endDate);
     campaign.algorithm = JSON.parse(algorithm);
     campaign.totalParticipationScore = new BN(0);
-    campaign.targetVideo = targetVideo;
     campaign.type = type;
+    if (targetVideo) campaign.targetVideo = targetVideo;
     if (description) campaign.description = description;
     if (tagline) campaign.tagline = tagline;
     if (requirements) campaign.requirements = requirements;
