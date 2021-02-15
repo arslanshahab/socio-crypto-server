@@ -13,7 +13,7 @@ import { v4 as uuidv4 } from 'uuid';
 import * as EthWithdraw from "./ethWithdraw";
 import { Firebase } from '../clients/firebase';
 import {WalletCurrency} from "../models/WalletCurrency";
-import { getTokenPriceInUsd } from "src/clients/ethereum";
+import { getTokenPriceInUsd } from "../clients/ethereum";
 
 export const start = async (parent: any, args: { withdrawAmount: number, ethAddress?: string, tokenSymbol?: string }, context: { user: any }) => {
   if (args.withdrawAmount <= 0) throw new Error('withdraw amount must be a positive number');
