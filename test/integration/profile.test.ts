@@ -3,17 +3,11 @@ import { createSandbox } from 'sinon';
 import request from 'supertest';
 import { Application } from '../../src/app';
 import { Dragonchain } from '../../src/clients/dragonchain';
-import { Participant } from '../../src/models/Participant';
-import { Campaign } from '../../src/models/Campaign';
-import { User } from '../../src/models/User';
-import { Wallet } from '../../src/models/Wallet';
 import { Firebase } from '../../src/clients/firebase';
 import * as admin from 'firebase-admin';
 import * as gql from 'gql-query-builder';
-import {createProfile, createUser} from './specHelpers';
+import {clearDB, createProfile, createUser} from './specHelpers';
 import { Paypal } from '../../src/clients/paypal';
-import { Transfer } from '../../src/models/Transfer';
-import { ExternalAddress } from '../../src/models/ExternalAddress';
 import { Profile } from '../../src/models/Profile';
 import { sha256Hash } from '../../src/util/crypto';
 
@@ -54,13 +48,7 @@ describe('Profile Integrations Tests', () => {
   });
 
   beforeEach(async () => {
-    await Profile.query('TRUNCATE public.profile CASCADE');
-    await ExternalAddress.query('TRUNCATE public.external_address CASCADE');
-    await Transfer.query('TRUNCATE public.transfer CASCADE');
-    await Participant.query('TRUNCATE public.participant CASCADE');
-    await Campaign.query('TRUNCATE public.campaign CASCADE');
-    await Wallet.query('TRUNCATE public.wallet CASCADE');
-    await User.query('TRUNCATE public.user CASCADE');
+    await clearDB();
   });
 
   after(async () => {

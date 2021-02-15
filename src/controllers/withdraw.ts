@@ -4,7 +4,7 @@ import {User} from '../models/User';
 import { Wallet } from '../models/Wallet';
 import { S3Client } from '../clients/s3';
 import { SesClient } from '../clients/ses';
-import { performTransfer } from './helpers';
+import {performCurrencyAction} from './helpers';
 import {asyncHandler, BN} from '../util/helpers';
 import {Paypal} from "../clients/paypal";
 import { Response, Request } from 'express';
@@ -12,13 +12,17 @@ import {PaypalPayout} from "../types";
 import { v4 as uuidv4 } from 'uuid';
 import * as EthWithdraw from "./ethWithdraw";
 import { Firebase } from '../clients/firebase';
+import {WalletCurrency} from "../models/WalletCurrency";
+import { getTokenPriceInUsd } from "src/clients/ethereum";
 
-export const start = async (parent: any, args: { withdrawAmount: number, ethAddress?: string }, context: { user: any }) => {
+export const start = async (parent: any, args: { withdrawAmount: number, ethAddress?: string, tokenSymbol?: string }, context: { user: any }) => {
   if (args.withdrawAmount <= 0) throw new Error('withdraw amount must be a positive number');
   const { id } = context.user;
+  const { tokenSymbol = 'coiin' } = args;
+  const normalizedTokenSymbol = tokenSymbol.toLowerCase();
   const user = await User.findOneOrFail({ where: { identityId: id } });
-  const wallet = await Wallet.findOneOrFail({ where: { user }, relations: ['transfers'] });
-  const pendingBalance = await Transfer.getTotalPendingByWallet(wallet);
+  const wallet = await Wallet.findOneOrFail({ where: { user }, relations: ['transfers', 'currency'] });
+  const pendingBalance = await Transfer.getTotalPendingByWallet(wallet, normalizedTokenSymbol, true);
   const totalWithdrawThisYear = await Transfer.getTotalAnnualWithdrawalByWallet(wallet);
   // TODO: check if they have W9 on file
   let paypalEmail;
@@ -29,9 +33,13 @@ export const start = async (parent: any, args: { withdrawAmount: number, ethAddr
       paypalEmail = kycData['paypalEmail'];
     }
   }
-  if (((totalWithdrawThisYear.plus(args.withdrawAmount)).multipliedBy(0.1)).gte(600) || ((pendingBalance.plus(args.withdrawAmount)).multipliedBy(0.1)).gte(600)) throw new Error('reached max withdrawals per year');
-  if (((wallet.balance.minus(pendingBalance)).minus(args.withdrawAmount)).lt(0)) throw new Error('wallet does not have required balance for this withdraw');
-  const transfer = Transfer.newFromWithdraw(wallet, new BN(args.withdrawAmount), args.ethAddress, paypalEmail);
+  const currency = wallet.currency.find(currency => currency.type === normalizedTokenSymbol);
+  const currencyBalance = currency ? currency.balance : new BN(0);
+  const tokenPrice = (tokenSymbol === 'coiin') ? 0.1 : await getTokenPriceInUsd(normalizedTokenSymbol);
+  const withdrawAmountInUsd = (tokenSymbol === 'coiin') ? new BN(args.withdrawAmount).times(0.1) : new BN(args.withdrawAmount).times(tokenPrice);
+  if (((totalWithdrawThisYear.plus(withdrawAmountInUsd))).gte(600) || ((pendingBalance.plus(withdrawAmountInUsd))).gte(600)) throw new Error('reached max withdrawals per year');
+  if ((((currencyBalance.times(tokenPrice)).minus(pendingBalance)).minus(withdrawAmountInUsd)).lt(0)) throw new Error('wallet does not have required balance for this withdraw');
+  const transfer = Transfer.newFromWithdraw(wallet, new BN(args.withdrawAmount), args.ethAddress, paypalEmail, (args.ethAddress) ? normalizedTokenSymbol : 'usd', new BN(tokenPrice));
   await transfer.save();
   return transfer.asV1();
 }
@@ -44,9 +52,10 @@ export const update = async (parent: any, args: { transferIds: string[], status:
   const payouts: {value: string, receiver: string, payoutId: string}[] = [];
   const rejected: {[key: string]: any} = {};
   for (let i = 0; i < args.transferIds.length; i++) {
-    const transfer = await Transfer.findOne({ where: { id: args.transferIds[i], action: 'withdraw', status: 'pending' }, relations: ['wallet', 'wallet.user', 'wallet.user.profile', 'wallet.user.notificationSettings'] });
+    const transfer = await Transfer.findOne({ where: { id: args.transferIds[i], action: 'withdraw', status: 'PENDING' }, relations: ['wallet', 'wallet.user', 'wallet.user.profile', 'wallet.user.notificationSettings'] });
     if (!transfer) throw new Error(`transfer not found: ${args.transferIds[i]}`);
-    if (args.status === 'approve' && (transfer.wallet.balance.minus(transfer.amount)).lt(0)) {
+    const walletCurrency = await WalletCurrency.getFundingWalletCurrency('coiin', transfer.wallet);
+    if (args.status === 'approve' && (walletCurrency.balance.minus(transfer.amount)).lt(0)) {
       const user = transfer.wallet.user;
       transfer.status = 'REJECTED';
       if (user.notificationSettings.withdraw) {
@@ -58,7 +67,6 @@ export const update = async (parent: any, args: { transferIds: string[], status:
         case 'approve':
           const user = transfer.wallet.user;
           transfer.status = 'APPROVED';
-          await performTransfer(transfer.wallet.id, transfer.amount.toString(), 'debit');
           if (!userGroups[user.id]) {
             let kycData;
             try { kycData = await S3Client.getUserObject(user.id) } catch (_) { kycData = null; }
@@ -70,7 +78,7 @@ export const update = async (parent: any, args: { transferIds: string[], status:
               if (transfer.ethAddress) {
                 let transactionHash;
                 try {
-                  transactionHash = await EthWithdraw.performCoiinTransfer(transfer.ethAddress, transfer.amount);
+                  transactionHash = await EthWithdraw.performCoiinTransfer(transfer.ethAddress, transfer.amount, transfer.currency);
                 } catch (e) {
                   throw new Error(e)
                 }
@@ -90,6 +98,7 @@ export const update = async (parent: any, args: { transferIds: string[], status:
             userGroups[user.id].totalRedeemedAmount = totalRedeemedAmount.plus(transfer.amount);
             userGroups[user.id].transfers.push(transfer);
           }
+          await performCurrencyAction(transfer.wallet.id, transfer.currency === 'usd' ? 'coiin' : transfer.currency, transfer.amount.toString(), 'debit');
           break;
         case 'reject':
           transfer.status = 'REJECTED';
@@ -119,14 +128,14 @@ export const update = async (parent: any, args: { transferIds: string[], status:
 
 export const getWithdrawals = async (parent: any, args: { status: string }, context: { user: any }) => {
   checkPermissions({ hasRole: ['admin'] }, context);
-  const transfers = await Transfer.getWithdrawalsByStatus(args.status);
+  const transfers = await Transfer.getWithdrawalsByStatus(args.status.toUpperCase());
   const uniqueUsers: {[key: string]: any} = {};
   for (let i = 0; i < transfers.length; i++) {
     const transfer = transfers[i];
     const userId = transfer.wallet.user.id;
     if (!uniqueUsers[userId]) {
       const totalWithdrawnThisYear = await Transfer.getTotalAnnualWithdrawalByWallet(transfer.wallet);
-      const totalPendingWithdrawal = await Transfer.getTotalPendingByWallet(transfer.wallet);
+      const totalPendingWithdrawal = await Transfer.getTotalPendingByWallet(transfer.wallet, transfer.currency);
       let kycData: any;
       try {
         kycData = await S3Client.getUserObject(userId);
@@ -149,17 +158,18 @@ export const getWithdrawals = async (parent: any, args: { status: string }, cont
 
 export const getWithdrawalsV2 = async (parent: any, args: { status: string }, context: { user: any }) => {
   checkPermissions({ hasRole: ['admin'] }, context);
-  const transfers = await Transfer.getWithdrawalsByStatus(args.status);
+  const { status = 'PENDING' } = args;
+  const transfers = await Transfer.getWithdrawalsByStatus(status);
   const uniqueUsers: {[key: string]: any} = {};
   for (let i = 0; i < transfers.length; i++) {
     const transfer = transfers[i];
     const userId = transfer.wallet.user.id;
     if (!uniqueUsers[userId]) {
       const totalWithdrawnThisYear = await Transfer.getTotalAnnualWithdrawalByWallet(transfer.wallet);
-      const totalPendingWithdrawal = await Transfer.getTotalPendingByWallet(transfer.wallet);
+      const totalPendingWithdrawal = await Transfer.getTotalPendingByCurrencyInUsd(transfer.wallet);
       uniqueUsers[userId] = {
         user: {...transfer.wallet.user, username: transfer.wallet.user.profile.username},
-        totalPendingWithdrawal: totalPendingWithdrawal.toString(),
+        totalPendingWithdrawal: totalPendingWithdrawal,
         totalAnnualWithdrawn: totalWithdrawnThisYear.toString(),
         transfers: [transfer.asV1()]
       }
@@ -240,10 +250,11 @@ export const makePayouts = async (payouts: {value: string, receiver: string, pay
   return response.batch_header;
 }
 
-export const getWalletWithPendingBalance = async (_parent: any, args: any, context: { user: any }) => {
+export const getWalletWithPendingBalance = async (_parent: any, args: { tokenSymbol: string }, context: { user: any }) => {
   const { id } = context.user;
+  const { tokenSymbol = 'coiin' } = args;
   const user = await User.findOneOrFail({ where: { identityId: id } });
   const wallet = await Wallet.findOneOrFail({ where: { user }, relations: ['transfers'] });
-  const pendingBalance = await Transfer.getTotalPendingByWallet(wallet);
+  const pendingBalance = await Transfer.getTotalPendingByWallet(wallet, tokenSymbol.toLowerCase());
   return wallet.asV1(pendingBalance.toString())
 }

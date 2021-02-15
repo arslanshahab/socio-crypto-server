@@ -2,7 +2,7 @@ import { BaseEntity, Column, CreateDateColumn, Entity, In, ManyToOne, PrimaryGen
 import { User } from './User';
 import { generateRandomNonce } from '../util/helpers';
 import { Org } from './Org';
-import { FundingWallet } from './FundingWallet';
+import {Wallet} from "./Wallet";
 
 @Entity()
 export class ExternalAddress extends BaseEntity {
@@ -25,10 +25,10 @@ export class ExternalAddress extends BaseEntity {
   public updatedAt: Date;
 
   @ManyToOne(
-    _type => FundingWallet,
+    _type => Wallet,
     wallet => wallet.addresses
   )
-  public fundingWallet: FundingWallet;
+  public wallet: Wallet;
 
   @ManyToOne(
     _type => User,
@@ -44,10 +44,10 @@ export class ExternalAddress extends BaseEntity {
     };
   }
 
-  public static newFromAttachment(address: string, attachment: FundingWallet|User, user: boolean = false): ExternalAddress {
+  public static newFromAttachment(address: string, attachment: Wallet|User, user: boolean = false): ExternalAddress {
     const wallet = new ExternalAddress();
     wallet.ethereumAddress = address;
-    if (!user) wallet.fundingWallet = attachment as FundingWallet;
+    if (!user) wallet.wallet = attachment as Wallet;
     else wallet.user = attachment as User;
     wallet.claimMessage = `I am signing this nonce: ${generateRandomNonce()}`;
     return wallet;
@@ -57,7 +57,7 @@ export class ExternalAddress extends BaseEntity {
     let query = this.createQueryBuilder('external')
       .where('external."ethereumAddress" = :address', { address });
     if (admin) {
-      query = query.leftJoinAndSelect('external.fundingWallet', 'wallet', 'external."fundingWalletId" = wallet.id');
+      query = query.leftJoinAndSelect('external.wallet', 'wallet', 'external."walletId" = wallet.id');
       query = query.leftJoin('wallet.org', 'org', 'org.id = wallet."orgId"');
       query = query.andWhere('org.id = :org', { org: user.id });
     } else {
@@ -70,9 +70,9 @@ export class ExternalAddress extends BaseEntity {
   public static async getWalletsByAddresses(addresses: string[]) {
     if (addresses.length === 0) return {};
     const normalizedWalletAddresses = addresses.map(address => address.toLowerCase());
-    const wallets = await ExternalAddress.find({ where: { claimed: true, ethereumAddress: In(normalizedWalletAddresses) }, relations: ['fundingWallet'] });
+    const wallets = await ExternalAddress.find({ where: { claimed: true, ethereumAddress: In(normalizedWalletAddresses) }, relations: ['wallet'] });
     return wallets.reduce((accum: {[key: string]: ExternalAddress}, curr: ExternalAddress) => {
-      if (curr.fundingWallet) accum[curr.ethereumAddress.toLowerCase()] = curr;
+      if (curr.wallet) accum[curr.ethereumAddress.toLowerCase()] = curr;
       return accum;
     }, {});
   }

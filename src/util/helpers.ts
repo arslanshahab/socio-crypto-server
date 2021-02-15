@@ -163,3 +163,11 @@ export const calculateQualityMultiplier = (tier: BigNumber) => {
       return new BN(1);
   }
 }
+
+export const getDecimal = (str: string) =>  {
+  if (str.length <= 18) {
+    return `0.${str.padStart(18, '0')}`;
+  }
+  const pos = str.length - 18;
+  return [str.slice(0, pos), str.slice(pos)].join('.');
+}

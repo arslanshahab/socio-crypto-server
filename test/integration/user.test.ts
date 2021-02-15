@@ -10,7 +10,7 @@ import { Wallet } from '../../src/models/Wallet';
 import { Firebase } from '../../src/clients/firebase';
 import * as admin from 'firebase-admin';
 import { v4 as uuidv4 } from 'uuid';
-import {createCampaign, createParticipant, createUser, createWallet} from './specHelpers';
+import {clearDB, createCampaign, createParticipant, createUser, createWallet} from './specHelpers';
 import * as gql from 'gql-query-builder';
 import { Paypal } from '../../src/clients/paypal';
 
@@ -51,10 +51,7 @@ describe('User Integration Test', () => {
   });
 
   afterEach(async () => {
-    await Participant.query('TRUNCATE public.participant CASCADE');
-    await Campaign.query('TRUNCATE public.campaign CASCADE');
-    await Wallet.query('TRUNCATE public.wallet CASCADE');
-    await User.query('TRUNCATE public.user CASCADE');
+    await clearDB();
   });
 
   after(async () => {

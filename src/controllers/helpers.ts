@@ -7,33 +7,32 @@ import { Wallet } from '../models/Wallet';
 import { BN, generateRandomNumber } from '../util/helpers';
 import { BigNumber } from 'bignumber.js';
 import { DailyParticipantMetric } from '../models/DailyParticipantMetric';
-import {FundingWallet} from "../models/FundingWallet";
 import {Org} from "../models/Org";
 import {Escrow} from "../models/Escrow";
+import {WalletCurrency} from "../models/WalletCurrency";
 
 export const FEE_RATE = process.env.FEE_RATE ? parseFloat(process.env.FEE_RATE) : 0.1;
 export const feeMultiplier = new BN(1).minus(FEE_RATE);
 
-export const updateOrgCampaignsStatusOnDeposit = async (fundingWallet: FundingWallet) => {
-  const org = await Org.listOrgCampaignsByWalletIdAndStatus(fundingWallet.id, 'INSUFFICIENT_FUNDS');
-  if (!org) throw new Error('org not found');
-  if (!org.campaigns) return;
+export const updateOrgCampaignsStatusOnDeposit = async (wallet: Wallet) => {
+  const org = await Org.listOrgCampaignsByWalletIdAndStatus(wallet.id, 'INSUFFICIENT_FUNDS');
+  if (!org) return;
   const now = new Date();
   const escrows: Escrow[] = [];
   const campaigns: Campaign[] = [];
   let totalCost = new BN(0);
   for (const campaign of org.campaigns) {
     totalCost = totalCost.plus(campaign.coiinTotal);
-    if (org.fundingWallet.balance.gte(totalCost)) {
+    const walletCurrency = await WalletCurrency.getFundingWalletCurrency(campaign.crypto.type, org.wallet);
+    if (walletCurrency.balance.gte(totalCost)) {
       campaign.status = campaign.beginDate <= now ? 'ACTIVE' : 'APPROVED';
-      escrows.push(Escrow.newCampaignEscrow(campaign, org.fundingWallet));
+      escrows.push(Escrow.newCampaignEscrow(campaign, org.wallet));
       campaigns.push(campaign);
-      org.fundingWallet.balance = org.fundingWallet.balance.minus(totalCost);
+      await performCurrencyAction(wallet.id, campaign.crypto.type, totalCost.toString(), "debit");
     }
   }
   await Campaign.save(campaigns);
   await Escrow.save(escrows);
-  await org.fundingWallet.save();
   return true;
 }
 
@@ -129,25 +128,59 @@ export const calculateParticipantPayoutFromDailyParticipation = (currentCampaign
   return currentCampaignTierTotal.multipliedBy(percentageOfTotalParticipation);
 }
 
-export const performTransfer = async (walletId: string, amount: string, action: 'credit' | 'debit') => {
+export const performCurrencyTransfer = async (fromId: string, toId: string, currencyType: string, amount: string, isEscrow: boolean = false) => {
   if (new BN(amount).lte(0)) throw new Error("Amount must be a positive number");
-  return getConnection().transaction(async transactionalEntitymanager => {
-    const wallet = await transactionalEntitymanager.findOne(Wallet, { where: { id: walletId } });
+  return getConnection().transaction(async transactionalEntityManager => {
+    let from, to;
+    if (isEscrow) {
+      from = await transactionalEntityManager.findOne(Escrow, {where: {id: fromId}});
+      if (!from) throw new Error('escrow not found');
+      from.amount = from.amount.minus(amount);
+    } else {
+      from = await transactionalEntityManager.findOne(WalletCurrency, {where: { type: currencyType, wallet: {id: fromId} }, relations: ['wallet']});
+      if (!from) throw Error('from wallet currency not found');
+      if (from.balance.minus(amount).lt(0)) throw new Error("wallet does not have the necessary funds to complete this action");
+      from.balance = from.balance.minus(amount);
+    }
+    to = await transactionalEntityManager.findOne(WalletCurrency, {where: { type: currencyType, wallet: {id: toId} }, relations: ['wallet']});
+    if (!to) {
+      const toWallet = await transactionalEntityManager.findOne(Wallet, {where: {id: toId}});
+      const newCurrency = WalletCurrency.newWalletCurrency(currencyType, toWallet);
+      await newCurrency.save();
+      to = await transactionalEntityManager.findOneOrFail(WalletCurrency, {where: {type: currencyType, wallet: toWallet}})
+    }
+    to.balance = to.balance.plus(amount);
+    await transactionalEntityManager.save([from, to]);
+  });
+};
+
+export const performCurrencyAction = async (walletId: string, currencyType: string, amount: string, action: 'credit' | 'debit') => {
+  if (new BN(amount).lte(0)) throw new Error("Amount must be a positive number");
+  return getConnection().transaction(async transactionalEntityManager => {
+    const wallet = await transactionalEntityManager.findOne(Wallet, { where: { id: walletId } });
     if (!wallet) throw new Error('wallet not found');
+    let walletCurrency = await transactionalEntityManager.findOne(WalletCurrency, {where: { type: currencyType, wallet }});
     switch (action) {
       case 'credit':
-        wallet.balance = wallet.balance.plus(amount);
+        if (!walletCurrency) {
+          const newCurrency = WalletCurrency.newWalletCurrency(currencyType, wallet);
+          await newCurrency.save();
+          walletCurrency = await transactionalEntityManager.findOneOrFail(WalletCurrency, {where: {type: currencyType, wallet}})
+        }
+        walletCurrency.balance = walletCurrency.balance.plus(amount);
         break;
       case 'debit':
-        wallet.balance = wallet.balance.minus(amount);
-        if (wallet.balance.lt(0)) throw new Error("wallet does not have the necessary funds to complete this action");
+        if (!walletCurrency) throw new Error('wallet currency not found');
+        walletCurrency.balance = walletCurrency.balance.minus(amount);
+        if (walletCurrency.balance.lt(0)) throw new Error("wallet does not have the necessary funds to complete this action");
         break;
       default:
         throw new Error(`transfer method ${action} not provided`);
     }
-    await transactionalEntitymanager.save(wallet);
+    console.log('NEW WALLET BALANCE', walletCurrency.type, walletCurrency.id, walletCurrency.balance.toString())
+    await transactionalEntityManager.save(walletCurrency);
   });
-};
+}
 
 const addDays = (date: Date, days: number): Date => {
   const d = new Date(date);

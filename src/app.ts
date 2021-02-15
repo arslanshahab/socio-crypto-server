@@ -95,7 +95,7 @@ export class Application {
     this.app.get('/v1/health', (_req: express.Request, res: express.Response) => res.send('I am alive and well, thank you!'));
     this.app.post('/v1/login', sessionLogin);
     this.app.post('/v1/logout', sessionLogout);
-    this.app.put('/v1/password', updateUserPassword)
+    this.app.put('/v1/password', updateUserPassword);
     this.app.post('/v1/payouts', paypalWebhook);
     this.app.use('/v1/dragonfactor/login', Dragonfactor.expressMiddleware({ service: 'raiinmaker', acceptedFactors: ['email'], timeVariance: 5000 }), FactorController.login);
     this.app.use('/v1/dragonfactor/recover', Dragonfactor.accountRecoveryMiddleware({ service: 'raiinmaker', timeVariance: 5000 }), FactorController.recover);

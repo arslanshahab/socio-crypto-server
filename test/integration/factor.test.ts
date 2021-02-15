@@ -3,19 +3,12 @@ import { createSandbox } from 'sinon';
 import request from 'supertest';
 import { Application } from '../../src/app';
 import { Dragonchain } from '../../src/clients/dragonchain';
-import { Participant } from '../../src/models/Participant';
-import { Campaign } from '../../src/models/Campaign';
-import { User } from '../../src/models/User';
-import { Wallet } from '../../src/models/Wallet';
 import { Firebase } from '../../src/clients/firebase';
 import * as admin from 'firebase-admin';
-import { createIdentity, getIdentityLoginRequest, getAccountRecoveryRequest } from './specHelpers';
+import {createIdentity, getIdentityLoginRequest, getAccountRecoveryRequest, clearDB} from './specHelpers';
 import {createUser, createProfile} from './specHelpers';
 import { Paypal } from '../../src/clients/paypal';
-import { Transfer } from '../../src/models/Transfer';
-import { ExternalAddress } from '../../src/models/ExternalAddress';
 import { getDeterministicId, sha256Hash } from '../../src/util/crypto';
-import { Profile } from '../../src/models/Profile';
 import { S3Client } from '../../src/clients/s3';
 
 describe('Dragonfactor Integrations Tests', () => {
@@ -59,13 +52,7 @@ describe('Dragonfactor Integrations Tests', () => {
   });
 
   beforeEach(async () => {
-    await Profile.query('TRUNCATE public.profile CASCADE');
-    await ExternalAddress.query('TRUNCATE public.external_address CASCADE');
-    await Transfer.query('TRUNCATE public.transfer CASCADE');
-    await Participant.query('TRUNCATE public.participant CASCADE');
-    await Campaign.query('TRUNCATE public.campaign CASCADE');
-    await Wallet.query('TRUNCATE public.wallet CASCADE');
-    await User.query('TRUNCATE public.user CASCADE');
+    await clearDB()
   });
 
   after(async () => {

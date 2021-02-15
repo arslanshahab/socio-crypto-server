@@ -18,7 +18,6 @@ import BigNumber from 'bignumber.js';
 import { BN } from '../util/helpers';
 import { FieldNode } from 'graphql';
 import { Profile } from './Profile';
-import { Transfer } from './Transfer';
 import { DailyParticipantMetric } from './DailyParticipantMetric';
 import { NotificationSettings } from './NotificationSettings';
 import {Admin} from "./Admin";
@@ -126,20 +125,22 @@ export class User extends BaseEntity {
       delete this.profile.id;
       returnedUser = {...returnedUser, ...this.profile, hasRecoveryCodeSet: this.profile.recoveryCode !== null && this.profile.recoveryCode !== ""};
     }
-    if (this.posts && this.posts.length > 0) {
-      returnedUser.posts = this.posts.map(post => post.asV1());
-    }
-    if (this.twentyFourHourMetrics && this.twentyFourHourMetrics.length > 0) {
-      returnedUser.twentyFourHourMetrics = this.twentyFourHourMetrics.map(metric => metric.asV1());
-    }
-    if (this.wallet) {
-      returnedUser.wallet = this.wallet.asV1();
-      if (this.wallet.transfers && this.wallet.transfers.length > 0) {
-        returnedUser.wallet.transfers = returnedUser.wallet.transfers.map((transfer: Transfer) => transfer.asV1());
+    try {
+      if (this.posts && this.posts.length > 0) {
+        returnedUser.posts = this.posts.map(post => post.asV1());
       }
-    }
-    if (this.campaigns && this.campaigns.length > 0) {
-      returnedUser.campaigns = this.campaigns.map(participant => participant.asV1());
+      if (this.twentyFourHourMetrics && this.twentyFourHourMetrics.length > 0) {
+        returnedUser.twentyFourHourMetrics = this.twentyFourHourMetrics.map(metric => metric.asV1());
+      }
+      if (this.wallet) {
+        returnedUser.wallet = this.wallet.asV1();
+      }
+      if (this.campaigns && this.campaigns.length > 0) {
+        returnedUser.campaigns = this.campaigns.map(participant => participant.asV1());
+      }
+    } catch (e) {
+      console.log(e)
+      
     }
     return returnedUser;
   }
@@ -212,6 +213,10 @@ export class User extends BaseEntity {
           query = query.leftJoinAndSelect('participant.campaign', 'campaign', 'participant."campaignId" = campaign.id');
           const subFields = loadParticipantCampaign.selectionSet?.selections.filter(node => node.kind === 'Field') || [];
           const loadParticipantsOfCampaign = subFields.find((node: FieldNode) => node.name.value === 'participants') as FieldNode;
+          const loadCampaignCrypto = subFields.find((node: FieldNode) => node.name.value === 'participants') as FieldNode;
+          if (loadCampaignCrypto) {
+            query = query.leftJoinAndSelect('campaign.crypto', 'crypto', 'campaign."cryptoId" = crypto.id')
+          }
           if (loadParticipantsOfCampaign) {
             query = query.leftJoinAndSelect('campaign.participants', 'part', 'part."campaignId" = campaign.id');
             const subFields = loadParticipantsOfCampaign.selectionSet?.selections.filter(node => node.kind === 'Field') || [];
@@ -226,6 +231,7 @@ export class User extends BaseEntity {
         query = query.leftJoinAndSelect('user.wallet', 'wallet', 'wallet."userId" = user.id');
         const subFields = loadWallet.selectionSet?.selections.filter(node => node.kind === 'Field') || [];
         const loadTransfers = subFields.find((node: FieldNode) => node.name.value === 'transfers') as FieldNode;
+        const loadCurrencies = subFields.find((node: FieldNode) => node.name.value === 'currency') as FieldNode;
         if (loadTransfers) {
           query = query.leftJoinAndSelect('wallet.transfers', 'transfer', 'transfer."walletId" = wallet.id');
           const transferFields = loadTransfers.selectionSet?.selections.filter(node => node.kind === 'Field') || [];
@@ -234,6 +240,7 @@ export class User extends BaseEntity {
             query = query.leftJoinAndSelect('transfer.campaign', 'c', 'c.id = transfer."campaignId"');
           }
         }
+        if (loadCurrencies) query = query.leftJoinAndSelect('wallet.currency', 'currency', 'currency."walletId" = wallet.id');
       }
       if (loadSocialLinks) query = query.leftJoinAndSelect('user.socialLinks', 'social', 'social."userId" = user.id')
       if (loadPosts) query = query.leftJoinAndSelect('user.posts', 'post', 'post."userId" = user.id');

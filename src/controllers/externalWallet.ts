@@ -4,7 +4,7 @@ import { Admin } from '../models/Admin';
 import { Org } from '../models/Org';
 import { ExternalAddress } from '../models/ExternalAddress';
 import { User } from '../models/User';
-import { FundingWallet } from '../models/FundingWallet';
+import {Wallet} from "../models/Wallet";
 
 export const attach = async (parent: any, args: { ethereumAddress: string }, context: { user: any }) => {
   const { id, method } = context.user;
@@ -22,13 +22,13 @@ export const attach = async (parent: any, args: { ethereumAddress: string }, con
   if (await ExternalAddress.findOne({ where: { ethereumAddress: address } })) throw new Error('ethereum address already registered');
   let externalWallet: ExternalAddress;
   if (isOrg) {
-    if ((user as Org).fundingWallet) {
-      externalWallet = ExternalAddress.newFromAttachment(address, (user as Org).fundingWallet);
+    if ((user as Org).wallet) {
+      externalWallet = ExternalAddress.newFromAttachment(address, (user as Org).wallet);
     } else {
-      const fundingWallet = new FundingWallet();
-      fundingWallet.org = user as Org;
-      await fundingWallet.save();
-      externalWallet = ExternalAddress.newFromAttachment(address, fundingWallet);
+      const wallet = new Wallet();
+      wallet.org = user as Org;
+      await wallet.save();
+      externalWallet = ExternalAddress.newFromAttachment(address, wallet);
     }
   } else {
     externalWallet = ExternalAddress.newFromAttachment(address, user as User, true);
@@ -87,7 +87,7 @@ export const list = async (parent: any, _args: any, context: { user: any }) => {
   }
   else user = await User.findOne({ where: { identityId: id }, relations: ['addresses'] });
   if (!user) throw new Error('user not found');
-  return (isOrg && (user as Org).fundingWallet.addresses) ? (user as Org).fundingWallet.addresses.map(address => address.asV1()) :
+  return (isOrg && (user as Org).wallet.addresses) ? (user as Org).wallet.addresses.map(address => address.asV1()) :
     ((user as User) && (user as User).addresses) ? (user as User).addresses.map(address => address.asV1()) : [];
 }
 
