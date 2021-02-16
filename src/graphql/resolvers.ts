@@ -11,6 +11,8 @@ import * as orgController from '../controllers/org';
 import * as firebaseController from '../controllers/firebase';
 import * as fundingController from '../controllers/fundingWallet';
 import * as stripeController from '../controllers/stripe';
+import * as cryptoController from '../controllers/crypto';
+
 
 export const resolvers = {
   Query: {
@@ -38,6 +40,8 @@ export const resolvers = {
     listExternalAddresses: externalWallet.list,
     getSocialMetrics: socialController.getParticipantSocialMetrics,
     adminGetKycByUser: kycController.adminGetKycByUser,
+    getTokenInUSD: cryptoController.getTokenInUSD,
+    getTokenIdBySymbol: cryptoController.getTokenIdBySymbol,
   },
   Mutation: {
     generateFactorsFromKyc: factorController.generateFactors,
@@ -91,6 +95,7 @@ export const adminResolvers = {
     listEmployees: orgController.listEmployees,
     listPaymentMethods: stripeController.listPaymentMethods,
     listPendingCampaigns: campaignController.adminListPendingCampaigns,
+    listSupportedCrypto: cryptoController.listSupportedCrypto,
   },
   Mutation: {
     newOrg: orgController.newOrg,
@@ -108,6 +113,9 @@ export const adminResolvers = {
     updateCampaignStatus: campaignController.adminUpdateCampaignStatus,
     sendUserMessages: userController.sendUserMessages,
     removePaymentMethod: stripeController.deletePaymentMethod,
+    registerNewCrypto: cryptoController.registerNewCrypto,
+    addCryptoToWallet: cryptoController.addCryptoToWallet,
+    deleteCryptoFromWallet: cryptoController.deleteCryptoFromWallet,
   }
 }
 
