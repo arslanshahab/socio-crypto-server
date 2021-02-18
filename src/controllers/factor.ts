@@ -1,8 +1,8 @@
 import { Response } from 'express';
 import jwt from 'jsonwebtoken';
 import * as Dragonfactor from '@dragonchain-dev/dragonfactor-auth';
-import { asyncHandler, extractFactor, generateRandomNumber, createFactorsFromKycData } from '../util/helpers';
-import {AuthRequest, FactorGeneration} from '../types';
+import { asyncHandler, extractFactor, generateRandomNumber, createFactorsFromKycData, BN } from '../util/helpers';
+import { AuthRequest, FactorGeneration } from '../types';
 import {FactorLink} from '../models/FactorLink';
 import { Secrets } from '../util/secrets';
 import { User } from '../models/User';
@@ -14,6 +14,7 @@ import { limit } from '../util/rateLimiter';
 import { S3Client } from '../clients/s3';
 import { Profile } from '../models/Profile';
 import { NotificationSettings } from '../models/NotificationSettings';
+import { WalletCurrency } from '../models/WalletCurrency';
 
 const { NODE_ENV } = process.env;
 
@@ -65,6 +66,9 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
   if (!user) {
     user = new User();
     const wallet = new Wallet();
+    const coiinWallet = new WalletCurrency();
+    coiinWallet.type = 'coiin';
+    coiinWallet.balance = new BN(0);
     const factorLink = new FactorLink();
     const profile = new Profile();
     const notificationSettings = new NotificationSettings();
@@ -73,6 +77,8 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
     await user.save();
     wallet.user = user;
     await wallet.save();
+    coiinWallet.wallet = wallet;
+    await coiinWallet.save();
     profile.user = user;
     await profile.save();
     notificationSettings.user = user;

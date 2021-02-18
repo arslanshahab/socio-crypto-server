@@ -12,6 +12,7 @@ export const typeDefs = gql`
             beginDate:String!,
             endDate:String!,
             description:String,
+            cryptoId: String,
             company:String,
             algorithm: String!,
             requirements: JSON,
@@ -50,7 +51,7 @@ export const typeDefs = gql`
         removeFactorLink(factorId:String!): User
         registerKyc(userKyc:JSON!): KycUser
         updateKyc(user: JSON!): KycUser
-        initiateWithdraw(withdrawAmount:Float!, ethAddress:String): Transfer
+        initiateWithdraw(withdrawAmount:Float!, ethAddress:String, tokenSymbol:String): Transfer
         updateWithdrawStatus(transferIds:[String]!,status:String!): [Transfer]
         setRecoveryCode(code:Int!): User
         updateKycStatus(userId:String!,status:String!): User
@@ -88,8 +89,11 @@ export const typeDefs = gql`
         updateCampaignStatus(status: String!, campaignId: String!): Boolean
         fundCampaigns(campaignIds: [String]): Boolean
         sendUserMessages(usernames: [String]!, title: String!, message: String!): Boolean
-        uploadProfilePicture(image:String!): Boolean
-        removePaymentMethod(paymentMethodId:String!): Boolean
+        uploadProfilePicture(image: String!): Boolean
+        registerNewCrypto(name: String!, contractAddress: String): WalletCurrency
+        addCryptoToWallet(contractAddress: String!): WalletCurrency
+        deleteCryptoFromWallet(id: String!): String
+        removePaymentMethod(paymentMethodId: String): Boolean
     }
 
     type Query {
@@ -109,7 +113,7 @@ export const typeDefs = gql`
         isLastFactor: Boolean
         me(openCampaigns: Boolean): User
         getKyc: KycUser
-        getWalletWithPendingBalance: Wallet
+        getWalletWithPendingBalance(tokenSymbol:String): Wallet
         getWithdrawals(status:String): [AdminWithdrawal]
         accountExists(id:String!): UserExistence
         getCampaignMetrics(campaignId:String!): AdminCampaignMetrics
@@ -118,7 +122,7 @@ export const typeDefs = gql`
         getTotalPlatformMetrics: AdminCampaignMetrics
         getFollowerCount: FollowerCounts
         getPreviousDayMetrics: JSON
-        getEstimatedGasPrice: String
+        getEstimatedGasPrice(symbol:String): String
         getExternalAddress(ethereumAddress:String!): ExternalAddress
         listExternalAddresses: [ExternalAddress]
         getWithdrawalsV2(status:String): [AdminWithdrawal]
@@ -130,6 +134,9 @@ export const typeDefs = gql`
         listEmployees: [Employee]
         listPaymentMethods: [PaymentMethod]
         listPendingCampaigns(skip: Int, take: Int): PaginatedCampaignResults
+        listSupportedCrypto: [CryptoCurrency]
+        getTokenInUSD(symbol:String!): Float
+        getTokenIdBySymbol(symbol:String!): String
     }
 
     type Org {
@@ -162,8 +169,14 @@ export const typeDefs = gql`
     }
 
     type FundingWallet {
-        balance: Float
+        currency: [WalletCurrency]
         transfers: [Transfer]
+    }
+
+    type WalletCurrency {
+        id: String
+        type: String
+        balance: Float
     }
 
     type ExternalAddress {
@@ -240,7 +253,7 @@ export const typeDefs = gql`
 
     type AdminWithdrawal {
         user: User
-        totalPendingWithdrawal: Float
+        totalPendingWithdrawal: [JSON]
         totalAnnualWithdrawn: Float
         transfers: [Transfer]
         kyc: KycUser
@@ -248,8 +261,10 @@ export const typeDefs = gql`
 
     type Transfer {
         id: String
+        usdAmount: Float
         amount: Float
         action: String
+        status: String
         withdrawStatus: String
         ethAddress: String
         currency: String
@@ -276,6 +291,9 @@ export const typeDefs = gql`
     type CurrentTier {
         currentTier: Int
         currentTotal: Float
+        campaignType: String
+        tokenValueUsd: String
+        tokenValueCoiin: String
     }
 
     type UserExistence {
@@ -340,8 +358,8 @@ export const typeDefs = gql`
 
     type Wallet {
         id: String
-        balance: Float
         pendingBalance: String
+        currency: [WalletCurrency]
         transfers: [Transfer]
     }
 
@@ -382,6 +400,12 @@ export const typeDefs = gql`
         type: String
         prize: RafflePrize
         org: Org
+        crypto: CryptoCurrency
+    }
+
+    type CryptoCurrency {
+        type: String
+        contractAddress: String
     }
 
     type RafflePrize {

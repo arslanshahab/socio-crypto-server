@@ -1,4 +1,13 @@
-import {Entity, BaseEntity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn} from 'typeorm';
+import {
+  Entity,
+  BaseEntity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToOne,
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn
+} from 'typeorm';
 import { StringifiedArrayTransformer } from '../util/transformers';
 import { User } from './User';
 
@@ -47,5 +56,11 @@ export class Profile extends BaseEntity {
   )
   @JoinColumn()
   public user: User;
+
+  @CreateDateColumn()
+  public createdAt: Date;
+
+  @UpdateDateColumn()
+  public updatedAt: Date;
 
 }

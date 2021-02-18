@@ -1,11 +1,14 @@
 import {Firebase} from "../src/clients/firebase";
 import {Secrets} from "../src/util/secrets";
+import * as dotenv from "dotenv";
+dotenv.config();
+
 
 
 const actions = ['updateClaims']
 
 const ACTION = actions[0];
-const FIREBASE_ID = '';
+const FIREBASE_ID = process.env.FIREBASE_ID || '';
 
 (async () => {
   try {

@@ -1,4 +1,4 @@
-import {BaseEntity, Column, Entity, PrimaryGeneratedColumn} from "typeorm";
+import {BaseEntity, Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn} from "typeorm";
 import {BigNumberEntityTransformer} from "../util/transformers";
 import {BigNumber} from "bignumber.js";
 import { BN } from '../util/helpers';
@@ -29,6 +29,12 @@ export class QualityScore extends BaseEntity {
 
   @Column({nullable: false})
   public participantId: string;
+
+  @CreateDateColumn()
+  public createdAt: Date;
+
+  @UpdateDateColumn()
+  public updatedAt: Date;
 
   public static newQualityScore(participantId: string): QualityScore {
     const qualityScore = new QualityScore();

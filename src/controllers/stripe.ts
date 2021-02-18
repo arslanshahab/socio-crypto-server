@@ -5,7 +5,7 @@ import {Request, Response} from "express";
 import {Secrets} from "../util/secrets";
 import {Transfer} from "../models/Transfer";
 import {PaymentIntent} from "../types";
-import {updateOrgCampaignsStatusOnDeposit} from "./helpers";
+import {performCurrencyAction, updateOrgCampaignsStatusOnDeposit} from "./helpers";
 
 export const addPaymentMethod = async (parent: any, args: any, context: { user: any }) => {
   const {company} = context.user;
@@ -49,10 +49,10 @@ export const listPaymentMethods = async (_: any, args: any, context: {user: any}
 export const purchaseCoiin = async (parent: any, args: {amount: number, paymentMethodId: string}, context: { user: any }) => {
   const {company} = context.user;
   const {amount, paymentMethodId} = args;
-  const org = await Org.findOne({where: {name: company}, relations: ['fundingWallet']});
+  const org = await Org.findOne({where: {name: company}, relations: ['wallet']});
   if (!org) throw new Error('org not found');
   const amountInDollar = new BN(amount).times(.1);
-  const transfer = Transfer.newPendingUsdDeposit(org.fundingWallet, org, amountInDollar, org.stripeId);
+  const transfer = Transfer.newPendingUsdDeposit(org.wallet, org, amountInDollar, org.stripeId);
   await transfer.save();
   const amountInCents = amountInDollar.times(100);
   return await StripeAPI.chargePaymentMethod(amountInCents.toString(), org.stripeId, paymentMethodId, transfer.id);
@@ -70,18 +70,17 @@ export const stripeWebhook = asyncHandler(async (req: Request, res: Response) =>
     switch (event.type) {
       case 'payment_intent.succeeded':
         const amountInDollars = new BN(paymentIntent.amount).div(100);
-        transfer = await Transfer.findOne({where: {id: paymentIntent.metadata.transferId}, relations: ['fundingWallet']});
+        transfer = await Transfer.findOne({where: {id: paymentIntent.metadata.transferId}, relations: ['wallet']});
         if (!transfer) throw new Error('transfer not found');
         transfer.status = 'SUCCEEDED';
         const amountInCoiin = amountInDollars.div(USD_PER_COIIN);
-        transfer.fundingWallet.balance = transfer.fundingWallet.balance.plus(amountInCoiin);
-        await transfer.fundingWallet.save();
+        await performCurrencyAction(transfer.wallet.id, 'coiin', amountInCoiin.toString(), "credit");
         await transfer.save();
-        await updateOrgCampaignsStatusOnDeposit(transfer.fundingWallet);
+        await updateOrgCampaignsStatusOnDeposit(transfer.wallet);
         break;
       case 'payment_intent.payment_failed':
         console.log('PaymentIntent failed!');
-        transfer = await Transfer.findOne({where: {id: paymentIntent.metadata.transferId}, relations: ['fundingWallet']});
+        transfer = await Transfer.findOne({where: {id: paymentIntent.metadata.transferId}, relations: ['wallet']});
         if (!transfer) throw new Error('transfer not found');
         transfer.status = "FAILED";
         await transfer.save();

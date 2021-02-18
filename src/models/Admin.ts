@@ -1,4 +1,12 @@
-import {BaseEntity, Column, Entity, ManyToOne, PrimaryGeneratedColumn} from "typeorm";
+import {
+  BaseEntity,
+  Column,
+  CreateDateColumn,
+  Entity,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn
+} from "typeorm";
 import {User} from "./User";
 import {Org} from "./Org";
 
@@ -24,6 +32,12 @@ export class Admin extends BaseEntity {
     org => org.admins
   )
   public org: Org;
+
+  @CreateDateColumn()
+  public createdAt: Date;
+
+  @UpdateDateColumn()
+  public updatedAt: Date;
 
   public asV1() {
     const returnValue: Admin = {

@@ -11,8 +11,8 @@ import {Campaign} from "./Campaign";
 import {Transfer} from "./Transfer";
 import {Admin} from "./Admin";
 import {HourlyCampaignMetric} from "./HourlyCampaignMetric";
-import { FundingWallet } from './FundingWallet';
 import {CampaignStatus} from "../types";
+import {Wallet} from "./Wallet";
 
 
 @Entity()
@@ -51,10 +51,10 @@ export class Org extends BaseEntity {
   public hourlyMetrics: HourlyCampaignMetric[];
 
   @OneToOne(
-    _type => FundingWallet,
+    _type => Wallet,
     wallet => wallet.org
   )
-  public fundingWallet: FundingWallet;
+  public wallet: Wallet;
 
   @CreateDateColumn()
   public createdAt: Date;
@@ -70,7 +70,7 @@ export class Org extends BaseEntity {
     if (this.transfers) returnValue.transfers = returnValue.transfers.map(transfer => transfer.asV1())
     if (this.admins) returnValue.admins = returnValue.admins.map(admin => admin.asV1());
     if (this.hourlyMetrics) returnValue.hourlyMetrics = returnValue.hourlyMetrics.map(hourlyMetric => hourlyMetric.asV1())
-    if (this.fundingWallet) returnValue.fundingWallet = this.fundingWallet.asV1()
+    if (this.wallet) returnValue.wallet = this.wallet.asV1()
     return returnValue;
   }
 
@@ -80,20 +80,23 @@ export class Org extends BaseEntity {
     return org;
   }
 
-  public static async listOrgCampaignsByWalletIdAndStatus(fundingWalletId: string, status: CampaignStatus) {
+  public static async listOrgCampaignsByWalletIdAndStatus(walletId: string, status: CampaignStatus) {
     return await this.createQueryBuilder('org')
-      .leftJoinAndSelect('org.fundingWallet', 'wallet', 'wallet."orgId" = org.id')
+      .leftJoinAndSelect('org.wallet', 'wallet', 'wallet."orgId" = org.id')
+      .leftJoinAndSelect('wallet.currency', 'currency', 'currency."walletId" = currency.id')
       .leftJoinAndSelect('org.campaigns', 'campaign', 'campaign."orgId" = org.id')
+      .leftJoinAndSelect('campaign.crypto', 'crypto', 'campaign."cryptoId" = crypto.id')
       .where('campaign.status = :status', {status})
-      .andWhere('wallet.id = :fundingWalletId', {fundingWalletId})
+      .andWhere('wallet.id = :walletId', {walletId})
       .getOne()
   }
 
   public static async getByAdminId(id: string) {
     return await this.createQueryBuilder('org')
-      .leftJoinAndSelect('org.fundingWallet', 'wallet', 'wallet."orgId" = org.id')
-      .leftJoinAndSelect('wallet.transfers', 'transfer', 'transfer."fundingWalletId" = wallet.id')
-      .leftJoinAndSelect('wallet.addresses', 'address', 'address."fundingWalletId" = wallet.id')
+      .leftJoinAndSelect('org.wallet', 'wallet', 'wallet."orgId" = org.id')
+      .leftJoinAndSelect('wallet.transfers', 'transfer', 'transfer."walletId" = wallet.id')
+      .leftJoinAndSelect('wallet.addresses', 'address', 'address."walletId" = wallet.id')
+      .leftJoinAndSelect('wallet.currency', 'currency', 'currency."walletId" = wallet.id')
       .leftJoin('org.admins', 'admin', 'admin."orgId" = org.id')
       .where('admin.id = :id', { id })
       .getOne();

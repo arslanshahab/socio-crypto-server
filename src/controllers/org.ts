@@ -3,9 +3,10 @@ import {Admin} from "../models/Admin";
 import {Org} from "../models/Org";
 import {checkPermissions} from "../middleware/authentication";
 import {HourlyCampaignMetric} from "../models/HourlyCampaignMetric";
-import { FundingWallet } from '../models/FundingWallet';
 import {SesClient} from "../clients/ses";
 import {FailureByDesign} from "../util/errors";
+import {WalletCurrency} from "../models/WalletCurrency";
+import {Wallet} from "../models/Wallet";
 
 export const newOrg = async (parent: any, args: {orgName: string, email: string, name: string}, context: {user: any}) => {
   if (context.user.company !== 'raiinmaker') throw new Error('forbidden');
@@ -21,9 +22,11 @@ export const newOrg = async (parent: any, args: {orgName: string, email: string,
   admin.org = org;
   admin.name = name;
   await admin.save();
-  const fundingWallet = new FundingWallet();
-  fundingWallet.org = org;
-  await fundingWallet.save();
+  const wallet = new Wallet();
+  wallet.org = org;
+  const walletCurrency = WalletCurrency.newWalletCurrency('coiin', wallet);
+  await walletCurrency.save();
+  await wallet.save();
   await SesClient.sendNewOrgConfirmationEmail(orgName, email, password);
   return org;
 };

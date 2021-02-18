@@ -16,17 +16,29 @@ import {Application} from "../../src/app";
 import {Org} from "../../src/models/Org";
 import {SocialPost} from "../../src/models/SocialPost";
 import {SocialLink} from "../../src/models/SocialLink";
-import {getRandomIntWithinRange} from "../../scripts/helpers";
+import {getRandomIntWithinRange} from "../../scripts/metrics/helpers";
 import { RafflePrize } from '../../src/models/RafflePrize';
-import { FundingWallet } from '../../src/models/FundingWallet';
 import { Admin } from '../../src/models/Admin';
 import { Escrow } from '../../src/models/Escrow';
+import {CryptoCurrency} from "../../src/models/CryptoCurrency";
+import {WalletCurrency} from "../../src/models/WalletCurrency";
+
+export const clearDB = async () => {
+  await Participant.query('TRUNCATE public.participant CASCADE');
+  await Campaign.query('TRUNCATE public.campaign CASCADE');
+  await Wallet.query('TRUNCATE public.wallet CASCADE');
+  await User.query('TRUNCATE public.user CASCADE');
+  await RafflePrize.query('TRUNCATE public."raffle_prize" CASCADE');
+  await Org.query('TRUNCATE public.org CASCADE');
+  await Escrow.query('TRUNCATE public.escrow CASCADE');
+  await CryptoCurrency.query('TRUNCATE public.crypto_currency CASCADE');
+}
 
 export const createCampaign = async (runningApp: Application, options?: { [key: string]: any } | any, ) => {
   const campaign = new Campaign();
   campaign.name = getValue(['name'], options,  'bananaCampaign')
   campaign.algorithm = getAlgorithm(getValue(['algorithm'], options));
-  campaign.coiinTotal = new BN(getValue(['coiinTotal'], options,  1000));
+  campaign.coiinTotal = new BN(getValue(['coiinTotal'], options,  50));
   campaign.totalParticipationScore = new BN(getValue(['totalParticipationScore'], options, 45));
   campaign.company = getValue(['company'], options,   'raiinmaker');
   campaign.target = getValue(['target'], options,   "https://mock-raiinmaker-landing.dragonchain.com");
@@ -36,6 +48,7 @@ export const createCampaign = async (runningApp: Application, options?: { [key: 
   campaign.payouts = getValue(['payouts'], options,[]);
   campaign.beginDate = getBeginDate(getValue(['startDate'], options));
   campaign.endDate = getEndDate(getValue(['endDate'], options));
+  campaign.crypto = getValue(['crypto'], options) || await createCrypto(runningApp, options)
   campaign.dailyMetrics = getValue(['dailyMetrics'], options);
   campaign.org = getValue(['org'], options, await createOrg(runningApp));
   campaign.suggestedTags = getValue(['suggestedTags'], options, []);
@@ -46,10 +59,19 @@ export const createCampaign = async (runningApp: Application, options?: { [key: 
   return await runningApp.databaseConnection.createEntityManager().save(campaign);
 }
 
+export const createCrypto = async (runningApp: Application, options?: {[key: string]: any} | any) => {
+  const crypto = new CryptoCurrency();
+  crypto.type = getValue(['type'], options) || uuidv4();
+  crypto.contractAddress = getValue(['contractAddress'], options) || uuidv4();
+  crypto.missedTransfers = getValue(['missedTransfers'], options) || [];
+  crypto.campaigns = getValue(['campaigns'], options) || [];
+  return await runningApp.databaseConnection.createEntityManager().save(crypto);
+}
+
 export const createEscrow = async (runningApp: Application, options?: { [key: string]: any } | any) => {
   const escrow = new Escrow();
   escrow.amount = getValue(['amount'], options, new BN(100));
-  escrow.fundingWallet = getValue(['fundingWallet'], options);
+  escrow.wallet = getValue(['wallet'], options);
   escrow.campaign = getValue(['campaign'], options);
   return await runningApp.databaseConnection.createEntityManager().save(escrow);
 }
@@ -81,14 +103,16 @@ export const createOrg = async (runningApp: Application, options?: { [key: strin
   org.campaigns = getValue(['campaigns'], options, []);
   org.transfers = getValue(['transfers'], options, []);
   org.admins = getValue(['admins'], options, []);
-  org.fundingWallet = await createFundingWallet(runningApp, { balance: new BN(100000) });
+  org.wallet = getValue(['wallet'], options) || await createWallet(runningApp, options);
   return await runningApp.databaseConnection.createEntityManager().save(org);
 }
 
-export const createFundingWallet = async (runningApp: Application, options?: { [key: string]: any } | any) => {
-  const fundingWallet = new FundingWallet();
-  fundingWallet.balance = new BN(getValue(['balance'], options, 100));
-  return await runningApp.databaseConnection.createEntityManager().save(fundingWallet);
+export const createWalletCurrency = async (runningApp: Application, options?: { [key: string]: any } | any) => {
+  const walletCurrency = new WalletCurrency();
+  walletCurrency.type = getValue(['type'], options) || 'coiin';
+  walletCurrency.balance = getValue(['balance'], options) || new BN(50);
+  walletCurrency.wallet = getValue(['wallet'], options);
+  return await runningApp.databaseConnection.createEntityManager().save(walletCurrency);
 }
 
 export const createParticipant = async (runningApp: Application, options?: { [key: string]: any } | any) => {
@@ -179,7 +203,7 @@ export const createUser = async (runningApp: Application, options?: { [key: stri
 
 export const createWallet = async (runningApp: Application, options?: { [key: string]: any } | any) => {
   const wallet = new Wallet();
-  wallet.balance = new BN(getValue(['balance'], options, 10000));
+  wallet.currency = getValue(['currency'], options) || [await createWalletCurrency(runningApp)];
   wallet.transfers = getValue(['transfers'], options, []);
   return await runningApp.databaseConnection.createEntityManager().save(wallet);
 }
@@ -204,12 +228,14 @@ export const createTransfer = async (runningApp: Application, options?: { [key: 
   transfer.wallet = getValue(['wallet'], options) || await createWallet(runningApp);
   transfer.campaign = getValue(['campaign'], options) || await createCampaign(runningApp);
   transfer.ethAddress = getValue(['ethAddress'], options);
+  transfer.currency = getValue(['currency'], options) || 'coiin';
+  transfer.usdAmount = transfer.amount.times(0.1);
   return await runningApp.databaseConnection.createEntityManager().save(transfer);
 };
 
 export const createExternalAddress = async (runningApp: Application, options?: { [key: string]: any } | any) => {
   const externalWallet = new ExternalAddress();
-  externalWallet.fundingWallet = getValue(['fundingWallet'], options);
+  externalWallet.wallet = getValue(['wallet'], options);
   externalWallet.user = getValue(['user'], options);
   externalWallet.ethereumAddress = getValue(['ethereumAddress'], options) || '0x0000000000000000000000000000000000000000';
   externalWallet.claimMessage = getValue(['claimMessage'], options) || 'I am signing this nonce: 123456';
