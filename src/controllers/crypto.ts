@@ -7,13 +7,9 @@ import { getTokenPriceInUsd, listCoinGeckoTokens } from '../clients/ethereum'
 import * as RedisClient from '../clients/redis';
 
 export const registerNewCrypto = async (parent: any, args: { name: string, contractAddress: string }, context: { user: any }) => {
-  console.log('REGISTER NEW CRYPTO');
   const { company } = checkPermissions({ hasRole: ['admin'] }, context);
-  console.log('past permission check');
   const { name, contractAddress } = args;
   const org = await Org.findOne({where: {name: company}, relations: ['wallet']});
-  console.log('org');
-  console.log(org);
   if (!org) throw new FailureByDesign('NOT_FOUND', 'org not found');
   let cryptoCurrency = await CryptoCurrency.findOne({where: {contractAddress: contractAddress}});
   if (cryptoCurrency) throw new FailureByDesign('ALREADY_EXISTS', 'crypto currency already exists');
@@ -27,7 +23,6 @@ export const registerNewCrypto = async (parent: any, args: { name: string, contr
 }
 
 export const addCryptoToWallet = async (parent: any, args: {contractAddress: string}, context: { user: any }) => {
-  console.log('ADD CRYPTO TO WALLET');
   const {company} = checkPermissions({hasRole: ['admin']}, context);
   const { contractAddress } = args;
   const org = await Org.findOne({where: {name: company}, relations: ['wallet']});

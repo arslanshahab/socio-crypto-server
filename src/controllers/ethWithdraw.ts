@@ -55,7 +55,6 @@ export const performCoiinTransfer = async (to: string, value: BigNumber, currenc
   const gasPrice = await web3.eth.getGasPrice();
   const bigBalance = new BN(balance / (10**18));
   if (bigBalance.isLessThan(value)){
-    console.log(bigBalance.toString());
     throw new Error(`A problem occured sending ${currency} to your ethereum wallet. Please try again in a few minutes. If this problem persists, please contact support.`);
   }
   const gasPriceAsCoiin = await getGasPriceAsToken(gasPrice, currency);
