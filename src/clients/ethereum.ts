@@ -10,7 +10,7 @@ export const listCoinGeckoTokens = async () => {
   const shouldRefresh = !(await RedisClient.getRedis().get('TOKENS:LIST'));
   if (!shouldRefresh) return await RedisClient.getRedis().get('TOKENS:LIST');
   const resp = await (await fetch(`${v3BaseUrl}/coins/list`)).json();
-  for (let i = 0; i < resp.length; i++) await RedisClient.getRedis().set(`TOKEN:IDS:${resp[i].symbol}`, resp[i].id);
+  for (let i = 0; i < resp.length; i++) await RedisClient.getRedis().set(`TOKEN:IDS:${resp[i].symbol.toLowerCase()}`, resp[i].id);
   await RedisClient.getRedis().set('TOKENS:LIST', 'a');
   return await RedisClient.getRedis().expire('TOKENS:LIST', 1800);
 }
