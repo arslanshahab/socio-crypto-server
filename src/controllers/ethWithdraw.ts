@@ -30,7 +30,7 @@ export const getWeiPerToken = async (token: string = 'coiin') => {
   return web3.utils.toWei(ethPerToken.toString());
 }
 
-export const getEstimatedGasPrice = async (args: { symbol: string }, context: any) => {
+export const getEstimatedGasPrice = async (parent: any, args: { symbol: string }, context: any) => {
   const { symbol } = args;
   const gasPrice = new BN(await getGasPriceAsToken(undefined, symbol));
   return gasPrice.div((10**18)).toString();

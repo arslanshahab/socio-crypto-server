@@ -39,7 +39,7 @@ export const start = async (parent: any, args: { withdrawAmount: number, ethAddr
   const withdrawAmountInUsd = (tokenSymbol === 'coiin') ? new BN(args.withdrawAmount).times(0.1) : new BN(args.withdrawAmount).times(tokenPrice);
   if (((totalWithdrawThisYear.plus(withdrawAmountInUsd))).gte(600) || ((pendingBalance.plus(withdrawAmountInUsd))).gte(600)) throw new Error('reached max withdrawals per year');
   if ((((currencyBalance.times(tokenPrice)).minus(pendingBalance)).minus(withdrawAmountInUsd)).lt(0)) throw new Error('wallet does not have required balance for this withdraw');
-  const transfer = Transfer.newFromWithdraw(wallet, new BN(args.withdrawAmount), args.ethAddress, paypalEmail, (args.ethAddress) ? normalizedTokenSymbol : 'usd', new BN(tokenPrice));
+  const transfer = Transfer.newFromWithdraw(wallet, new BN(args.withdrawAmount), args.ethAddress, paypalEmail, (args.ethAddress) ? normalizedTokenSymbol : 'usd', new BN(withdrawAmountInUsd));
   await transfer.save();
   return transfer.asV1();
 }
@@ -67,13 +67,18 @@ export const update = async (parent: any, args: { transferIds: string[], status:
         case 'approve':
           const user = transfer.wallet.user;
           transfer.status = 'APPROVED';
+          let kycData;
           if (!userGroups[user.id]) {
-            let kycData;
             try { kycData = await S3Client.getUserObject(user.id) } catch (_) { kycData = null; }
-            if (kycData) {
-              const paymentMethod = transfer.ethAddress ? {ethAddress: transfer.ethAddress} : {paypalEmail: kycData['paypalEmail']};
-              userGroups[user.id] = {totalRedeemedAmount: transfer.amount.toString(), user, transfers: [transfer] };
-              userGroups[user.id] = {...userGroups[user.id], ...paymentMethod};
+          } else {
+            const totalRedeemedAmount = new BN(userGroups[user.id].totalRedeemedAmount);
+            userGroups[user.id].totalRedeemedAmount = totalRedeemedAmount.plus(transfer.amount);
+            userGroups[user.id].transfers.push(transfer);
+          }
+          if (kycData) {
+            const paymentMethod = transfer.ethAddress ? {ethAddress: transfer.ethAddress} : {paypalEmail: kycData['paypalEmail']};
+            userGroups[user.id] = { totalRedeemedAmount: transfer.currency == "usd"  ? transfer.amount.dividedBy(10): transfer.amount.toString(), user, transfers: [transfer], symbol: transfer.currency};
+            userGroups[user.id] = {...userGroups[user.id], ...paymentMethod};
               if (user.notificationSettings.withdraw) userGroups[user.id].deviceToken = user.profile.deviceToken;
               if (transfer.ethAddress) {
                 let transactionHash;
@@ -86,23 +91,16 @@ export const update = async (parent: any, args: { transferIds: string[], status:
                 transfer.transactionHash = transactionHash;
               } else {
                 const payoutId = uuidv4();
-                const dollarAmount = transfer.amount.times(new BN('0.1'));
-                payouts.push({value: dollarAmount.toString(), receiver: kycData['paypalEmail'], payoutId});
+                payouts.push({value: transfer.amount.toString(), receiver: kycData['paypalEmail'], payoutId});
                 transfer.payoutId = payoutId;
-                transfer.amount = dollarAmount;
                 transfer.currency = "usd";
               }
             }
-          } else {
-            const totalRedeemedAmount = new BN(userGroups[user.id].totalRedeemedAmount);
-            userGroups[user.id].totalRedeemedAmount = totalRedeemedAmount.plus(transfer.amount);
-            userGroups[user.id].transfers.push(transfer);
-          }
-          await performCurrencyAction(transfer.wallet.id, transfer.currency === 'usd' ? 'coiin' : transfer.currency, transfer.amount.toString(), 'debit');
+          await performCurrencyAction(transfer.wallet.id, transfer.currency === 'usd' ? 'coiin' : transfer.currency, transfer.currency === 'usd' ? transfer.amount.div(0.1).toString() : transfer.amount.toString(), 'debit');
           break;
         case 'reject':
           transfer.status = 'REJECTED';
-          if (!rejected[transfer.wallet.user.id]) rejected[transfer.wallet.user.id] = {total: new BN(transfer.amount)};
+          if (!rejected[transfer.wallet.user.id]) rejected[transfer.wallet.user.id] = {total: new BN(transfer.amount), symbol: transfer.currency};
           else rejected[transfer.wallet.user.id].total.plus(transfer.amount);
           if (transfer.wallet.user.notificationSettings.withdraw) rejected[transfer.wallet.user.id].deviceToken = transfer.wallet.user.profile.deviceToken;
           break;
@@ -117,10 +115,10 @@ export const update = async (parent: any, args: { transferIds: string[], status:
     if (group.paypalEmail) {
       await SesClient.sendRedemptionConfirmationEmail(userId, group['paypalEmail'], (parseFloat(new BN(group['totalRedeemedAmount']).times(0.1).toString())).toFixed(2), group['transfers']);
     }
-    if (group.deviceToken) await Firebase.sendWithdrawalApprovalNotification(group.deviceToken, group.totalRedeemedAmount);
+    if (group.deviceToken) await Firebase.sendWithdrawalApprovalNotification(group.deviceToken, group.totalRedeemedAmount, group.symbol);
   }
   for (const userId in rejected) {
-    if (rejected[userId].deviceToken) await Firebase.sendWithdrawalRejectionNotification(rejected[userId].deviceToken, rejected[userId].total);
+    if (rejected[userId].deviceToken) await Firebase.sendWithdrawalRejectionNotification(rejected[userId].deviceToken, rejected[userId].total, rejected[userId].symbol);
   }
   await Transfer.save(transfers);
   return transfers.map(transfer => transfer.asV1());

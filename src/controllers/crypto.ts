@@ -17,10 +17,6 @@ export const registerNewCrypto = async (parent: any, args: { name: string, contr
   if (!org) throw new FailureByDesign('NOT_FOUND', 'org not found');
   let cryptoCurrency = await CryptoCurrency.findOne({where: {contractAddress: contractAddress}});
   if (cryptoCurrency) throw new FailureByDesign('ALREADY_EXISTS', 'crypto currency already exists');
-
-  await listCoinGeckoTokens();
-  const tokenId = await RedisClient.getRedis().get(`TOKEN:IDS:${args.name.toLowerCase()}`);
-  if (!tokenId) throw new FailureByDesign('TOKEN_NOT_FOUND', 'Token not found on coingecko LIST');
   cryptoCurrency = CryptoCurrency.newCryptoCurrency(name, contractAddress);
   const walletCurrency = WalletCurrency.newWalletCurrency(name, org.wallet);
   await walletCurrency.save();
