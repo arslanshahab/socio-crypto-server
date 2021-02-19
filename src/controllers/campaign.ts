@@ -81,7 +81,7 @@ export const createNewCampaign = async (parent: any, args: { name: string, targe
     if (type === 'crypto') {
       const walletCurrency = await WalletCurrency.findOne({where: {wallet: org.wallet, id: cryptoId}});
       if (!walletCurrency) throw new Error('currency not found in wallet');
-      cryptoCurrency = await CryptoCurrency.findOne({where: {type: walletCurrency.type}});
+      cryptoCurrency = await CryptoCurrency.findOne({where: {type: walletCurrency.type.toLowerCase()}});
       if (!cryptoCurrency) throw new Error('this currency is not supported');
     }
     const campaign = Campaign.newCampaign(name, beginDate, endDate, coiinTotal, target, description, campaignCompany, algorithm, tagline, requirements, suggestedPosts, suggestedTags, type,targetVideo, org, cryptoCurrency);
@@ -295,6 +295,7 @@ export const payoutCampaignRewards = async (parent: any, args: { campaignId: str
         const campaign = await Campaign.findOneOrFail({where: {id: campaignId, company}, relations: ['participants', 'prize', 'org', 'org.wallet', 'escrow']});
         let deviceIds;
       switch (campaign.type) {
+          case 'crypto':
           case 'coiin':
             deviceIds = await payoutCoiinCampaignRewards(transactionalEntityManager, campaign, rejected);
             break;

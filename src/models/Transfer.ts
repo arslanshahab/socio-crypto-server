@@ -163,6 +163,7 @@ export class Transfer extends BaseEntity {
     transfer.campaign = campaign;
     transfer.amount = amount;
     transfer.wallet = wallet;
+    transfer.currency = campaign.type == 'crypto' ? campaign.crypto.type : campaign.type;
     return transfer;
   }
 
