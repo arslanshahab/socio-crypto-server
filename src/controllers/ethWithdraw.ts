@@ -69,7 +69,7 @@ export const performCoiinTransfer = async (to: string, value: BigNumber, currenc
   const signedTxn = await web3.eth.accounts.signTransaction(
     {
       chainId,
-      to: coiinAddress,
+      to: tokenContractAddress,
       data,
       gasPrice: Math.max(Number(gasPrice), 2000000000), // default to 2Gwei
       gas: gasLimitString

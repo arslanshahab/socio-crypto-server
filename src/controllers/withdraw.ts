@@ -54,7 +54,7 @@ export const update = async (parent: any, args: { transferIds: string[], status:
   for (let i = 0; i < args.transferIds.length; i++) {
     const transfer = await Transfer.findOne({ where: { id: args.transferIds[i], action: 'withdraw', status: 'PENDING' }, relations: ['wallet', 'wallet.user', 'wallet.user.profile', 'wallet.user.notificationSettings'] });
     if (!transfer) throw new Error(`transfer not found: ${args.transferIds[i]}`);
-    const walletCurrency = await WalletCurrency.getFundingWalletCurrency('coiin', transfer.wallet);
+    const walletCurrency = await WalletCurrency.getFundingWalletCurrency(transfer.currency == 'usd' ? 'coiin' : transfer.currency.toLowerCase(), transfer.wallet);
     if (args.status === 'approve' && (walletCurrency.balance.minus(transfer.amount)).lt(0)) {
       const user = transfer.wallet.user;
       transfer.status = 'REJECTED';

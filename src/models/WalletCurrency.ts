@@ -40,7 +40,6 @@ export class WalletCurrency extends BaseEntity {
       ...this,
       balance: parseFloat(this.balance.toString())
     }
-    if (this.wallet) returnedCurrency.wallet = this.wallet.asV1();
     return returnedCurrency;
   }
 

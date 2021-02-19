@@ -27,6 +27,7 @@
     "migration:revert": "yarn typeorm:cli migration:revert",
     "migration:generate": "yarn clean && yarn build && yarn typeorm:cli migration:generate",
     "metrics:generate": "NODE_ENV=script ts-node scripts/metrics/index.ts",
+    "admin:generate": "NODE_ENV=script ts-node scripts/admin/index.ts",
     "cron:watcher:run": "AWS_PROFILE=raiinmaker LOAD_ENV=true ts-node ./src/cron/coiinWatcher/index.ts"
   },
   "dependencies": {

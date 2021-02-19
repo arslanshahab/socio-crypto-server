@@ -22,8 +22,7 @@ const app = new Application();
   const tokens = await CryptoCurrency.find();
   let lastCheckedBlock, currentBlock;
   try {
-    const storedLastCheckedBlock = await S3Client.getLastCheckedBillingBlock();
-    console.log('last Checked Block', storedLastCheckedBlock)
+    const storedLastCheckedBlock = process.env.LAST_BLOCK || await S3Client.getLastCheckedBillingBlock();
     if (!storedLastCheckedBlock) return await S3Client.setLastCheckedBillingBlock(await getLatestBlock());
     else lastCheckedBlock = Number(storedLastCheckedBlock) + 1;
     const latestBlock = await getLatestBlock();
@@ -75,8 +74,7 @@ const app = new Application();
       await token.save();
     }
     logger.info(`setting latest block as ${currentBlock}`);
-    await S3Client.setLastCheckedBillingBlock(currentBlock);
-  } catch (error) {
+    if (!process.env.LAST_BLOCK) await S3Client.setLastCheckedBillingBlock(currentBlock);  } catch (error) {
     logger.error(`An error occurred: ${error.message || JSON.stringify(error)}`);
   }
   await connection.close();
