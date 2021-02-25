@@ -1,4 +1,5 @@
 import fetch from "node-fetch";
+import { CryptoCurrency } from "../models/CryptoCurrency";
 import { BN } from "../util/helpers";
 import * as RedisClient from './redis';
 
@@ -9,14 +10,21 @@ const getTokenPriceInUsdKey = (symbol: string) => `TOKEN:PRICE:USD:${symbol}`;
 export const listCoinGeckoTokens = async () => {
   const shouldRefresh = !(await RedisClient.getRedis().get('TOKENS:LIST'));
   if (!shouldRefresh) return await RedisClient.getRedis().get('TOKENS:LIST');
-  const resp = await (await fetch(`${v3BaseUrl}/coins/list`)).json();
-  for (let i = 0; i < resp.length; i++) await RedisClient.getRedis().set(`TOKEN:IDS:${resp[i].symbol.toLowerCase()}`, resp[i].id);
+  const resp = await (await fetch(`${v3BaseUrl}/coins/list?include_platform=true`)).json();
+  for (let i = 0; i < resp.length; i++) {
+    await RedisClient.getRedis().set(`TOKEN:IDS:${resp[i].symbol.toLowerCase()}`, resp[i].id);
+    await RedisClient.getRedis().set(`TOKEN:ADDRESS:${resp[i].symbol.toLowerCase()}`, resp[i].platforms.ethereum != null ? resp[i].platforms.ethereum : "");
+  }
   await RedisClient.getRedis().set('TOKENS:LIST', 'a');
   return await RedisClient.getRedis().expire('TOKENS:LIST', 1800);
 }
 
 export const getTokenPriceInUsd = async (symbol: string) => {
   await listCoinGeckoTokens();
+  const cryptoCurrency = await CryptoCurrency.findOne({ where: { type: symbol.toLowerCase() } });
+  const contractAddress = await RedisClient.getRedis().get(`TOKEN:ADDRESS:${symbol.toLowerCase()}`)
+  if (!contractAddress) return new BN(0); // If symbol does not have an eth address listen on coiingeck
+  if (contractAddress != cryptoCurrency?.contractAddress) return new BN(0); // If raiinmaker token and coiingecko token have different addresses
   const key = getTokenPriceInUsdKey(symbol);
   const cachedResponse = await RedisClient.getRedis().get(key);
   if (cachedResponse) return new BN(cachedResponse);

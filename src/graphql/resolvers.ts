@@ -42,6 +42,7 @@ export const resolvers = {
     adminGetKycByUser: kycController.adminGetKycByUser,
     getTokenInUSD: cryptoController.getTokenInUSD,
     getTokenIdBySymbol: cryptoController.getTokenIdBySymbol,
+    checkCoinGecko: cryptoController.coinGeckoCheck,
   },
   Mutation: {
     generateFactorsFromKyc: factorController.generateFactors,
@@ -96,6 +97,8 @@ export const adminResolvers = {
     listPaymentMethods: stripeController.listPaymentMethods,
     listPendingCampaigns: campaignController.adminListPendingCampaigns,
     listSupportedCrypto: cryptoController.listSupportedCrypto,
+    checkCoinGecko: cryptoController.coinGeckoCheck,
+
   },
   Mutation: {
     newOrg: orgController.newOrg,
