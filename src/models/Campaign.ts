@@ -188,7 +188,7 @@ export class Campaign extends BaseEntity {
     return (u.campaigns.length > 0) ? u.campaigns.map((participant: Participant) => participant.campaign.id) : [];
   }
 
-  public static async findCampaignsByStatus(open: boolean, skip: number, take: number, company: string, sort: boolean) {
+  public static async findCampaignsByStatus(open: boolean, skip: number, take: number, company: string, sort: boolean, approved: boolean) {
     let where = '';
     const now = DateUtils.mixedDateToDatetimeString(new Date());
     if (open !== null && open !== undefined && open) {
@@ -199,6 +199,7 @@ export class Campaign extends BaseEntity {
     let query = this.createQueryBuilder('campaign')
       .where(where);
     if (company) query = query.andWhere(`"company"=:company`, { company })
+    if (approved) query = query.andWhere('"status"=:status',{status: 'APPROVED'});
     if (sort) query = query.orderBy('campaign.endDate', 'DESC');
     return await query
       .leftJoinAndSelect('campaign.participants', 'participant', 'participant."campaignId" = campaign.id')

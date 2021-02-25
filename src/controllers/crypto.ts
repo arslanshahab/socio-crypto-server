@@ -39,6 +39,15 @@ export const listSupportedCrypto = async (parent: any, args: any, context: any) 
   return crypto.map(token => token.asV1());
 }
 
+export const coinGeckoCheck = async (parent: any, args: {symbol: string}, context: any) => {
+  await listCoinGeckoTokens();
+  const contractAddress = await RedisClient.getRedis().get(`TOKEN:ADDRESS:${args.symbol.toLowerCase()}`)
+  const cryptoCurrency = await CryptoCurrency.findOne({ where: { type: args.symbol.toLowerCase() } });
+  if (!contractAddress) return false // If symbol does not have an eth address listen on coiingeck
+  if (contractAddress.toLowerCase() != cryptoCurrency?.contractAddress.toLowerCase()) return false // If raiinmaker token and coiingecko token have different addresses
+  return true;
+}
+
 export const deleteCryptoFromWallet = async (parent: any, args: {id: string}, context: {user: any}) => {
   const {company} = checkPermissions({hasRole: ['admin']}, context);
   const org = await Org.findOne({where: {name: company}, relations: ['wallet']});
