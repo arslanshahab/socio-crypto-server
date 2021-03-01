@@ -230,7 +230,8 @@ export class Campaign extends BaseEntity {
   public static async adminListCampaignsByStatus(skip: number, take: number, status: string = 'PENDING') {
     return this.createQueryBuilder('campaign')
       .leftJoinAndSelect('campaign.org', 'org', 'campaign."orgId" = org.id')
-      .where('status=:status', {status})
+      .leftJoinAndSelect('campaign.crypto', 'crypto', 'campaign."cryptoId" = crypto.id')
+      .where('status=:status', { status: status.toUpperCase() })
       .skip(skip)
       .take(take)
       .getManyAndCount()
