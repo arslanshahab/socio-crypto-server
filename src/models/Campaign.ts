@@ -231,7 +231,7 @@ export class Campaign extends BaseEntity {
     return this.createQueryBuilder('campaign')
       .leftJoinAndSelect('campaign.org', 'org', 'campaign."orgId" = org.id')
       .leftJoinAndSelect('campaign.crypto', 'crypto', 'campaign."cryptoId" = crypto.id')
-      .where('status=:status', { status })
+      .where('status=:status', { status: status.toUpperCase() })
       .skip(skip)
       .take(take)
       .getManyAndCount()
