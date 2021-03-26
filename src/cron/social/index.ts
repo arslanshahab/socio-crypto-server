@@ -28,15 +28,17 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
     const sharesAdjustedScore = (shares.minus(post.shares)).times(post.campaign.algorithm.pointValues.shares).times(sharesMultiplier);
     campaign.totalParticipationScore = campaign.totalParticipationScore.plus(likesAdjustedScore.plus(sharesAdjustedScore));
     participant.participationScore = participant.participationScore.plus(likesAdjustedScore.plus(sharesAdjustedScore));
+    const adjustedRawLikes = likes.minus(post.likes).toNumber()
+    const adjustedRawShares = shares.minus(post.shares).toNumber()
     post.likes = likes;
     post.shares = shares;
     await participant.save();
     await campaign.save();
     await qualityScore.save();
-    await HourlyCampaignMetric.upsert(campaign, campaign.org, 'likes', likes.minus(post.likes).toNumber());
-    await HourlyCampaignMetric.upsert(campaign, campaign.org, 'shares', shares.minus(post.shares).toNumber());
-    await DailyParticipantMetric.upsert(participant.user, campaign, participant, 'likes', likesAdjustedScore, likes.minus(post.likes).toNumber());
-    await DailyParticipantMetric.upsert(participant.user, campaign, participant, 'shares', sharesAdjustedScore, shares.minus(post.shares).toNumber());
+    await HourlyCampaignMetric.upsert(campaign, campaign.org, 'likes', adjustedRawLikes);
+    await HourlyCampaignMetric.upsert(campaign, campaign.org, 'shares', adjustedRawShares);
+    await DailyParticipantMetric.upsert(participant.user, campaign, participant, 'likes', likesAdjustedScore, adjustedRawLikes);
+    await DailyParticipantMetric.upsert(participant.user, campaign, participant, 'shares', sharesAdjustedScore, adjustedRawShares);
     return post;
 }
 
