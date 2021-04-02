@@ -44,6 +44,11 @@ export const addSupportedCurrency = async () => {
   await crypto.save();
 }
 
+export const patchRaysAccount = async () => {
+  var user = await Firebase.getUser('rayokadaparker@gmail.com');
+  await Firebase.setCustomUserClaims(user.uid, 'raiinmaker', 'admin', TEMP_PASSWORD === 'false');
+
+}
 export const createNewOrg = async () => {
   let user;
   try {
