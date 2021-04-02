@@ -1,4 +1,12 @@
-import { BaseEntity, Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne } from 'typeorm';
+import {
+  BaseEntity,
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  ManyToOne,
+  UpdateDateColumn
+} from 'typeorm';
 import { User } from './User';
 import { BigNumberEntityTransformer } from '../util/transformers';
 import BigNumber from 'bignumber.js';
@@ -13,6 +21,9 @@ export class TwentyFourHourMetric extends BaseEntity {
 
   @CreateDateColumn()
   public createdAt: Date;
+
+  @UpdateDateColumn()
+  public updatedAt: Date;
 
   @ManyToOne(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

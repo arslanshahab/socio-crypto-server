@@ -1,78 +1,82 @@
-import { checkForTokenTransactionsOnContract, getLatestBlock } from './ethFunctions';
-import { S3Client } from '../../clients/s3';
-import { Transaction } from './transactionModel';
+import {checkForEthTransactionsOnWallet, checkForTokenTransactionsOnContract, getLatestBlock} from './ethFunctions';
 import logger from '../../util/logger';
 import { Secrets } from '../../util/secrets';
 import { Application } from '../../app';
 import { ExternalAddress } from '../../models/ExternalAddress';
 import { Transfer } from '../../models/Transfer';
-import { BN } from '../../util/helpers';
-import {updateOrgCampaignsStatusOnDeposit} from "../../controllers/helpers";
+import {BN, getDecimal} from '../../util/helpers';
+import {performCurrencyAction, updateOrgCampaignsStatusOnDeposit} from "../../controllers/helpers";
+import {CryptoCurrency} from "../../models/CryptoCurrency";
+import {CryptoTransaction} from "../../models/CryptoTransaction";
+import dotenv from "dotenv";
+import {S3Client} from "../../clients/s3";
+if (process.env.LOAD_ENV) {
+  dotenv.config();
+}
 
 const app = new Application();
 
 (async () => {
   await Secrets.initialize();
   const connection = await app.connectDatabase();
+  const tokens = await CryptoCurrency.find();
   let lastCheckedBlock, currentBlock;
-  const currentRunFailures = [];
   try {
-
-    const missedTransactions = (await S3Client.getMissedBillingTransfers()).map((txn: any) => {
-      const { blockNumber, from, to: address, hash: blockHash, type, convertedValue } = txn;
-      try {
-        return new Transaction({ blockNumber, from, address, blockHash, type, convertedValue });
-      } catch (e) {
-        currentRunFailures.push(txn);
-        return null;
-      }
-    }).filter((x: any) => !!x);
-    const storedLastCheckedBlock = await S3Client.getLastCheckedBillingBlock();
+    const storedLastCheckedBlock = process.env.LAST_BLOCK || await S3Client.getLastCheckedBillingBlock();
     if (!storedLastCheckedBlock) return await S3Client.setLastCheckedBillingBlock(await getLatestBlock());
     else lastCheckedBlock = Number(storedLastCheckedBlock) + 1;
     const latestBlock = await getLatestBlock();
     currentBlock = Math.min(lastCheckedBlock + 1000, latestBlock);
-    const tokenTransactions = await checkForTokenTransactionsOnContract(lastCheckedBlock, currentBlock);
-    const transactions = missedTransactions.concat(tokenTransactions);
-    if (transactions.length > 0) {
-      const wallets: {[key: string]: ExternalAddress} = await ExternalAddress.getWalletsByAddresses(transactions.map((txn: Transaction) => txn.from.toLowerCase()));
-      for (let i = 0; i < transactions.length; i++) {
-        const transaction: Transaction = transactions[i];
-        try {
-          if (!wallets[transaction.from.toLowerCase()]) {
-            currentRunFailures.push(transaction.asFailedTransfer());
-            continue;
-          }
-          const externalWallet = wallets[transaction.from.toLowerCase()];
-          // perform transfer to users wallet
-          logger.info(`Wallet ID found: ${externalWallet.id}`);
-          console.log(JSON.stringify(externalWallet.fundingWallet));
-          // check that we don't have an existing
-          if (!await Transfer.findOne({ where: { transactionHash: transaction.getHash(), action: 'deposit' } })) {
-            const transfer = (Transfer.newFromDeposit(externalWallet.fundingWallet, new BN(transaction.getValue()), transaction.getFrom().toLowerCase(), transaction.getHash()));
-            externalWallet.fundingWallet.balance = externalWallet.fundingWallet.balance.plus(transaction.getValue());
-            externalWallet.fundingWallet.transfers.push(transfer);
-            await externalWallet.fundingWallet.save();
-            await transfer.save();
-          }
-          await updateOrgCampaignsStatusOnDeposit(externalWallet.fundingWallet);
-        } catch (e) {
-          console.error(`Failed to transfer funds for wallet: ${transaction.from} with amount: ${transaction.getValue()}`);
-          console.error(e);
-          currentRunFailures.push(transaction.asFailedTransfer());
-          continue;
-        }
+    for (const token of tokens) {
+      let transactions: CryptoTransaction[] = [];
+      if (token.type === 'ether') {
+        logger.info('Checking for Ethereum transactions')
+        transactions = await checkForEthTransactionsOnWallet(lastCheckedBlock, currentBlock);
+      } else {
+        logger.info(`Checking for contract transactions: ${token.contractAddress} ${token.type}`)
+        transactions = await checkForTokenTransactionsOnContract(lastCheckedBlock, currentBlock, token.contractAddress) as CryptoTransaction[];
       }
-    } else {
-      logger.info('NO TRANSACTIONS FOUND FOR RUN');
+      const transactionEntities = await CryptoTransaction.save(transactions);
+      if (transactions.length > 0) {
+        const wallets: {[key: string]: ExternalAddress} = await ExternalAddress.getWalletsByAddresses(transactions.map((txn) => txn.from.toLowerCase()));
+        for (const transaction of transactionEntities) {
+          try {
+            if (!wallets[transaction.from.toLowerCase()]) {
+              if (token.missedTransfers) {
+                token.missedTransfers.push(transaction);
+              } else {
+                token.missedTransfers = [transaction];
+              }
+              continue;
+            }
+            const externalWallet = wallets[transaction.from.toLowerCase()];
+            console.log('EXTERNAL WALLET', externalWallet);
+            // perform transfer to users wallet
+            logger.info(`Wallet ID found: ${externalWallet.id}`);
+            // check that we don't have an existing
+            if (!await Transfer.findOne({ where: { transactionHash: transaction.hash, action: 'deposit' } })) {
+              const transfer = (Transfer.newFromDeposit(externalWallet.wallet, new BN(getDecimal(transaction.convertedValue)), transaction.from.toLowerCase(), transaction.hash));
+              await performCurrencyAction(externalWallet.wallet.id, token.type, getDecimal(transaction.convertedValue), "credit");
+              externalWallet.wallet.transfers.push(transfer);
+              await externalWallet.wallet.save();
+              await transfer.save();
+            }
+            await updateOrgCampaignsStatusOnDeposit(externalWallet.wallet);
+          } catch (e) {
+            console.error(`Failed to transfer funds for wallet: ${transaction.from} with amount: ${getDecimal(transaction.convertedValue)}`);
+            console.error(e);
+            token.missedTransfers.push(transaction);
+          }
+        }
+      } else {
+        logger.info('NO TRANSACTIONS FOUND FOR RUN');
+      }
+      await token.save();
     }
     logger.info(`setting latest block as ${currentBlock}`);
-    await S3Client.setLastCheckedBillingBlock(currentBlock);
-  } catch (error) {
+    if (!process.env.LAST_BLOCK) await S3Client.setLastCheckedBillingBlock(currentBlock);  } catch (error) {
     logger.error(`An error occurred: ${error.message || JSON.stringify(error)}`);
   }
-  logger.info(`uploading ${currentRunFailures.length} missed transfers`);
-  await S3Client.uploadMissedTransfers(currentRunFailures);
   await connection.close();
   process.exit(0);
 })();

@@ -28,7 +28,7 @@ export const getSocialClient = (type: string, accessToken?: string) => {
     return client ;
 }
 
-export const registerSocialLink = async (args: { type: string, apiKey: string, apiSecret: string }, context: { user: any }) => {
+export const registerSocialLink = async (parent: any, args: { type: string, apiKey: string, apiSecret: string }, context: { user: any }) => {
   const { id } = context.user;
   const user = await User.findOneOrFail({ where: { identityId: id }, relations: ['socialLinks'] });
     const { type, apiKey, apiSecret } = args;
@@ -51,7 +51,7 @@ export const registerSocialLink = async (args: { type: string, apiKey: string, a
     return true;
 }
 
-export const removeSocialLink = async (args: { type: string }, context: { user: any }) => {
+export const removeSocialLink = async (parent: any, args: { type: string }, context: { user: any }) => {
     const { type } = args;
     const { id } = context.user;
     const user = await User.findOneOrFail({ where: { identityId: id }, relations: ['socialLinks'] });
@@ -61,7 +61,7 @@ export const removeSocialLink = async (args: { type: string }, context: { user: 
     return true;
 }
 
-export const postToSocial = async (args: { type: string, text: string, photo: string, video: string, participantId: string }, context: { user: any }) => {
+export const postToSocial = async (parent: any, args: { type: string, text: string, photo: string, video: string, participantId: string }, context: { user: any }) => {
   const { type, text, photo, video, participantId } = args;
   if (!allowedSocialLinks.includes(type)) throw new Error('the type must exist as a predefined type');
   const { id } = context.user;
@@ -88,7 +88,7 @@ export const postToSocial = async (args: { type: string, text: string, photo: st
   return socialPost.id;
 }
 
-export const getTotalFollowers = async (args: any, context: { user: any }) => {
+export const getTotalFollowers = async (parent: any, args: any, context: { user: any }) => {
   let client;
   const { id } = context.user;
   const followerTotals: { [key: string]: number } = {}
@@ -119,7 +119,7 @@ export const getTotalFollowers = async (args: any, context: { user: any }) => {
   return followerTotals;
 };
 
-export const getTweetById = async (args: { id: string, type: string }, context: { user: any }) => {
+export const getTweetById = async (parent: any, args: { id: string, type: string }, context: { user: any }) => {
     const { id, type } = args;
     const { id: identityId } = context.user;
     const user = await User.findOneOrFail({ where: { identityId }, relations: ['socialLinks'] });
@@ -129,7 +129,7 @@ export const getTweetById = async (args: { id: string, type: string }, context: 
     return client.get(socialLink.asClientCredentials(), id);
 }
 
-export const getParticipantSocialMetrics = async (args: { id: string }, context: { user: any }) => {
+export const getParticipantSocialMetrics = async (parent: any, args: { id: string }, context: { user: any }) => {
     const { id } = args;
     const where: { [key: string]: string } = { id };
     const participant = await Participant.findOne({ where, relations: ['campaign'] });

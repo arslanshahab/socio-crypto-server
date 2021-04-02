@@ -4,19 +4,25 @@ import {createSandbox} from "sinon";
 import {Firebase} from "../../src/clients/firebase";
 import * as admin from "firebase-admin";
 import {Dragonchain} from "../../src/clients/dragonchain";
-import {Participant} from "../../src/models/Participant";
-import {Campaign} from "../../src/models/Campaign";
 import {Wallet} from "../../src/models/Wallet";
-import {User} from "../../src/models/User";
 import * as gql from 'gql-query-builder';
 import request from "supertest";
-import {createCampaign, createParticipant, createTransfer, createUser, createWallet} from "./specHelpers";
+import {
+  clearDB,
+  createCampaign,
+  createParticipant,
+  createTransfer,
+  createUser,
+  createWallet,
+  createWalletCurrency
+} from "./specHelpers";
 import {Transfer} from "../../src/models/Transfer";
 import { S3Client } from "../../src/clients/s3";
 import { KycUser } from "../../src/types";
 import { SesClient } from "../../src/clients/ses";
 import { Paypal } from "../../src/clients/paypal";
 import * as EthWithdraw from '../../src/controllers/ethWithdraw';
+import {BN} from "../../src/util/helpers";
 
 describe('Withdraw Integration Test', function () {
     let runningApp: Application;
@@ -63,11 +69,7 @@ describe('Withdraw Integration Test', function () {
     });
 
     beforeEach(async () => {
-      await Transfer.query('TRUNCATE public.transfer CASCADE');
-      await Participant.query('TRUNCATE public.participant CASCADE');
-      await Campaign.query('TRUNCATE public.campaign CASCADE');
-      await Wallet.query('TRUNCATE public.wallet CASCADE');
-      await User.query('TRUNCATE public.user CASCADE');
+      await clearDB();
     })
 
     afterEach(async () => {
@@ -82,35 +84,41 @@ describe('Withdraw Integration Test', function () {
     describe('Mutations', () => {
       let mutation;
       it('#initiateWithdraw', async () => {
-          const wallet = await createWallet(runningApp, {balance: 200.00});
-          const user = await createUser(runningApp, {wallet});
-          const participant = await createParticipant(runningApp, {user});
-          const campaign = await createCampaign(runningApp, {participant});
-          await createTransfer(runningApp, {wallet, campaign, action:'withdraw', withdrawStatus: 'pending', amount: 50})
-          await createTransfer(runningApp, {wallet, campaign, action:'withdraw', withdrawStatus: 'pending', amount: 50})
-          mutation = gql.mutation({
-              operation: 'initiateWithdraw',
-              variables: {
-                  withdrawAmount: {value: 99.01, required: true}
-              },
-              fields: ['amount', 'id']
-          })
-          const res = await request(runningApp.app)
-              .post('/v1/graphql')
-              .send(mutation)
-              .set('Accepts', 'application/json')
-              .set('authorization', 'Bearer raiinmaker');
-          const response = res.body.data.initiateWithdraw;
-          expect(response.amount).to.equal(99.01);
-          const newTransfer = await Transfer.findOneOrFail(response.id);
-          expect(newTransfer.status.toLowerCase()).to.equal('pending');
+        const wallet = await createWallet(runningApp);
+        const user = await createUser(runningApp, {wallet});
+        const participant = await createParticipant(runningApp, {user});
+        const campaign = await createCampaign(runningApp, {participant});
+        const walletCurrency = await createWalletCurrency(runningApp, {type: 'coiin', balance: new BN(200.00)})
+        wallet.currency = [walletCurrency];
+        await wallet.save();
+        await createTransfer(runningApp, {wallet, campaign, action:'withdraw', withdrawStatus: 'pending', amount: 50})
+        await createTransfer(runningApp, {wallet, campaign, action:'withdraw', withdrawStatus: 'pending', amount: 50})
+        mutation = gql.mutation({
+            operation: 'initiateWithdraw',
+            variables: {
+                withdrawAmount: {value: 99.01, required: true}
+            },
+            fields: ['amount', 'id']
+        })
+        const res = await request(runningApp.app)
+            .post('/v1/graphql')
+            .send(mutation)
+            .set('Accepts', 'application/json')
+            .set('authorization', 'Bearer raiinmaker');
+        const response = res.body.data.initiateWithdraw;
+        expect(response.amount).to.equal(99.01);
+        const newTransfer = await Transfer.findOneOrFail(response.id);
+        expect(newTransfer.status.toLowerCase()).to.equal('pending');
       });
       it('#initiateWithdraw [ERROR] throws wallet does not have required balance for this withdraw', async () => {
           individualTestBed.stub(EthWithdraw, 'performCoiinTransfer')
-          const wallet = await createWallet(runningApp, {balance: 200.00});
+          const wallet = await createWallet(runningApp);
           const user = await createUser(runningApp, {wallet});
           const participant = await createParticipant(runningApp, {user});
           const campaign = await createCampaign(runningApp, {participant});
+          const walletCurrency = await createWalletCurrency(runningApp, {type: 'coiin', balance: new BN(50)})
+          wallet.currency = [walletCurrency];
+          await wallet.save();
           await createTransfer(runningApp, {wallet, campaign, action:'withdraw', withdrawStatus: 'pending', amount: 50})
           await createTransfer(runningApp, {wallet, campaign, action:'withdraw', withdrawStatus: 'pending', amount: 50})
           mutation = gql.mutation({
@@ -128,14 +136,43 @@ describe('Withdraw Integration Test', function () {
           expect(res.body.errors.length).to.equal(1);
           expect(res.body.errors[0].message).to.equal('wallet does not have required balance for this withdraw');
       });
+      it('#initiateWithdraw [ERROR] throws reached max withdrawals per year', async () => {
+        individualTestBed.stub(EthWithdraw, 'performCoiinTransfer')
+        const wallet = await createWallet(runningApp);
+        const user = await createUser(runningApp, {wallet});
+        const participant = await createParticipant(runningApp, {user});
+        const campaign = await createCampaign(runningApp, {participant});
+        const walletCurrency = await createWalletCurrency(runningApp, {type: 'coiin', balance: new BN(50)})
+        wallet.currency = [walletCurrency];
+        await wallet.save();
+        await createTransfer(runningApp, {wallet, campaign, action:'withdraw', withdrawStatus: 'APPROVED', amount: 3000})
+        await createTransfer(runningApp, {wallet, campaign, action:'withdraw', withdrawStatus: 'APPROVED', amount: 3000})
+        mutation = gql.mutation({
+            operation: 'initiateWithdraw',
+            variables: {
+                withdrawAmount: {value: 100.01, required: true}
+            },
+            fields: ['amount', 'id']
+        })
+        const res = await request(runningApp.app)
+            .post('/v1/graphql')
+            .send(mutation)
+            .set('Accepts', 'application/json')
+            .set('authorization', 'Bearer raiinmaker');
+        expect(res.body.errors.length).to.equal(1);
+        expect(res.body.errors[0].message).to.equal('reached max withdrawals per year');
+      });
       it('#updateWithdrawStatus', async () => {
           individualTestBed.stub(EthWithdraw, 'performCoiinTransfer')
-          const wallet = await createWallet(runningApp, {balance: 200.00});
+          const wallet = await createWallet(runningApp);
           const user = await createUser(runningApp, {wallet});
           const participant = await createParticipant(runningApp, {user});
           const campaign = await createCampaign(runningApp, {participant});
-          const transfer1 = await createTransfer(runningApp, {wallet, campaign, action:'withdraw', withdrawStatus: 'pending', amount: 50})
-          const transfer2 = await createTransfer(runningApp, {wallet, campaign, action:'withdraw', withdrawStatus: 'pending', amount: 50})
+          const walletCurrency = await createWalletCurrency(runningApp, {type: 'coiin', balance: new BN(200.00)})
+          wallet.currency = [walletCurrency];
+          await wallet.save();
+          const transfer1 = await createTransfer(runningApp, {wallet, campaign, action:'withdraw', withdrawStatus: 'PENDING', amount: 50})
+          const transfer2 = await createTransfer(runningApp, {wallet, campaign, action:'withdraw', withdrawStatus: 'PENDING', amount: 50})
           mutation = gql.mutation({
               operation: 'updateWithdrawStatus',
               variables: {
@@ -151,16 +188,19 @@ describe('Withdraw Integration Test', function () {
               .set('authorization', 'Bearer raiinmaker');
           const response = res.body.data.updateWithdrawStatus;
           expect(response.length).to.equal(2);
-          const walletResult = await Wallet.findOneOrFail(wallet.id);
-          expect(walletResult.asV1().balance).to.equal(100);
+          const walletResult = await Wallet.findOneOrFail(wallet.id, {relations: ['currency']});
+          expect(walletResult.asV1().currency[0].balance).to.equal(100);
       });
       it('#updateWithdrawStatus COIIN ERC20 withdrawal', async () => {
         individualTestBed.stub(EthWithdraw, 'performCoiinTransfer').resolves('transactionHash');
-        const wallet = await createWallet(runningApp, {balance: 200.00});
+        const wallet = await createWallet(runningApp);
         const user = await createUser(runningApp, {wallet});
         const participant = await createParticipant(runningApp, {user});
         const campaign = await createCampaign(runningApp, {participant});
-        const transfer1 = await createTransfer(runningApp, {wallet, campaign, action:'withdraw', withdrawStatus: 'pending', amount: 50, ethAddress: '0x2a841EeF07312B4C568Ef09c63EdC088033476ae'});
+        const walletCurrency = await createWalletCurrency(runningApp, {type: 'coiin', balance: new BN(200.00)})
+        wallet.currency = [walletCurrency];
+        await wallet.save();
+        const transfer1 = await createTransfer(runningApp, {wallet, campaign, action:'withdraw', withdrawStatus: 'PENDING', amount: 50, ethAddress: '0x2a841EeF07312B4C568Ef09c63EdC088033476ae'});
         mutation = gql.mutation({
           operation: 'updateWithdrawStatus',
           variables: {
@@ -180,11 +220,14 @@ describe('Withdraw Integration Test', function () {
       });
       it('#updateWithdrawStatus COIIN ERC20 withdrawal results in error', async () => {
         individualTestBed.stub(EthWithdraw, 'performCoiinTransfer').resolves(undefined);
-        const wallet = await createWallet(runningApp, {balance: 200.00});
+        const wallet = await createWallet(runningApp);
         const user = await createUser(runningApp, {wallet});
         const participant = await createParticipant(runningApp, {user});
         const campaign = await createCampaign(runningApp, {participant});
-        const transfer1 = await createTransfer(runningApp, {wallet, campaign, action:'withdraw', withdrawStatus: 'pending', amount: 50, ethAddress: '0x2a841EeF07312B4C568Ef09c63EdC088033476ae'});
+        const walletCurrency = await createWalletCurrency(runningApp, {type: 'coiin', balance: new BN(200.00)})
+        wallet.currency = [walletCurrency];
+        await wallet.save();
+        const transfer1 = await createTransfer(runningApp, {wallet, campaign, action:'withdraw', withdrawStatus: 'PENDING', amount: 50, ethAddress: '0x2a841EeF07312B4C568Ef09c63EdC088033476ae'});
         mutation = gql.mutation({
           operation: 'updateWithdrawStatus',
           variables: {
@@ -206,16 +249,19 @@ describe('Withdraw Integration Test', function () {
     describe('Queries', () => {
         let query;
         it('#getWithdrawals', async () => {
-            const wallet = await createWallet(runningApp, {balance: 200.00});
+            const wallet = await createWallet(runningApp);
             const wallet2 = await createWallet(runningApp);
             const user = await createUser(runningApp, {wallet});
             const user2 = await createUser(runningApp, {wallet: wallet2});
             const participant = await createParticipant(runningApp, {user});
+            const walletCurrency = await createWalletCurrency(runningApp, {type: 'coiin', balance: new BN(200.00)})
+            wallet.currency = [walletCurrency];
+            await wallet.save();
             const participant2 = await createParticipant(runningApp, {user: user2});
             const campaign = await createCampaign(runningApp, {participants: [participant, participant2]});
-            await createTransfer(runningApp, {wallet, campaign, action:'withdraw', withdrawStatus: 'approved', amount: 50})
-            await createTransfer(runningApp, {wallet, campaign, action:'withdraw', withdrawStatus: 'approved', amount: 50})
-            await createTransfer(runningApp, {wallet: wallet2, action: 'withdraw', withdrawStatus: 'approved'});
+            await createTransfer(runningApp, {wallet, campaign, action:'withdraw', withdrawStatus: 'APPROVED', amount: 50})
+            await createTransfer(runningApp, {wallet, campaign, action:'withdraw', withdrawStatus: 'APPROVED', amount: 50})
+            await createTransfer(runningApp, {wallet: wallet2, action: 'withdraw', withdrawStatus: 'APPROVED'});
             query = gql.query({
                 operation: 'getWithdrawals',
                 variables: {

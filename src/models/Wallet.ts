@@ -1,16 +1,39 @@
-import { PrimaryGeneratedColumn, Entity, BaseEntity, Column, OneToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
-import BigNumber from 'bignumber.js';
-import { BigNumberEntityTransformer } from '../util/transformers';
+import {
+  PrimaryGeneratedColumn,
+  Entity,
+  BaseEntity,
+  OneToOne,
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+} from 'typeorm';
 import { Transfer } from './Transfer';
 import { User } from './User';
+import {WalletCurrency} from "./WalletCurrency";
+import {Org} from "./Org";
+import {ExternalAddress} from "./ExternalAddress";
+import {Escrow} from "./Escrow";
 
 @Entity()
 export class Wallet extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
-  public id: string
+  public id: string;
 
-  @Column({ type: 'varchar', nullable: false, default: 0, transformer: BigNumberEntityTransformer })
-  public balance: BigNumber;
+  @OneToMany(
+    _type => WalletCurrency,
+    currency => currency.wallet,
+    {eager: true}
+  )
+  public currency: WalletCurrency[];
+
+  @OneToOne(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _type => Org,
+    org => org.wallet,
+  )
+  @JoinColumn()
+  public org: Org;
 
   @OneToOne(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -20,11 +43,19 @@ export class Wallet extends BaseEntity {
   @JoinColumn()
   public user: User;
 
-  @CreateDateColumn()
-  public createdAt: Date;
+  @OneToMany(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _type => ExternalAddress,
+    address => address.wallet
+  )
+  public addresses: ExternalAddress[];
 
-  @UpdateDateColumn()
-  public updatedAt: Date;
+  @OneToMany(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _type => Escrow,
+    escrow => escrow.wallet
+  )
+  public escrows: Escrow[];
 
   @OneToMany(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -34,11 +65,19 @@ export class Wallet extends BaseEntity {
   )
   public transfers: Transfer[];
 
-  public asV1(pendingBalance?: string){
-    return {
+  @CreateDateColumn()
+  public createdAt: Date;
+
+  @UpdateDateColumn()
+  public updatedAt: Date;
+
+  public asV1(pendingBalance?: string) {
+    const returnedWallet: Wallet = {
       ...this,
-      balance: parseFloat(this.balance.toString()),
       pendingBalance: pendingBalance,
+      transfers: this.transfers ? this.transfers.map(transfer => transfer.asV1()) : [],
     }
+    if (this.currency) returnedWallet.currency = this.currency.map(token => token.asV1());
+    return returnedWallet;
   }
 }

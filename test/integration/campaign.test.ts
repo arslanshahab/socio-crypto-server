@@ -6,21 +6,27 @@ import {Dragonchain} from "../../src/clients/dragonchain";
 import {Participant} from "../../src/models/Participant";
 import {Campaign} from "../../src/models/Campaign";
 import {Wallet} from "../../src/models/Wallet";
-import {User} from "../../src/models/User";
 import * as RedisClient from "../../src/clients/redis";
-import {createAdmin, createCampaign, createOrg, createParticipant, createRafflePrize, createUser, getBeginDate, getEndDate} from "./specHelpers";
+import {
+  clearDB,
+  createAdmin,
+  createCampaign, createCrypto,
+  createOrg,
+  createParticipant,
+  createRafflePrize,
+  createUser, createWalletCurrency,
+  getBeginDate,
+  getEndDate
+} from "./specHelpers";
 import * as gql from 'gql-query-builder';
 import {Firebase} from "../../src/clients/firebase";
 import * as admin from "firebase-admin";
 import {calculateTier, updateOrgCampaignsStatusOnDeposit} from "../../src/controllers/helpers";
 import { BN } from '../../src/util/helpers';
 import { Paypal } from '../../src/clients/paypal';
-import { RafflePrize } from '../../src/models/RafflePrize';
 import { SesClient } from '../../src/clients/ses';
 import { encrypt } from '../../src/util/crypto';
-import { FundingWallet } from '../../src/models/FundingWallet';
-import { Org } from '../../src/models/Org';
-import { Escrow } from '../../src/models/Escrow';
+import {WalletCurrency} from "../../src/models/WalletCurrency";
 
 describe('Campaign Integration Test', () => {
    let runningApp: Application;
@@ -65,14 +71,7 @@ describe('Campaign Integration Test', () => {
    });
 
    afterEach(async () => {
-      await Participant.query('TRUNCATE public.participant CASCADE');
-      await Campaign.query('TRUNCATE public.campaign CASCADE');
-      await Wallet.query('TRUNCATE public.wallet CASCADE');
-      await User.query('TRUNCATE public.user CASCADE');
-      await RafflePrize.query('TRUNCATE public."raffle_prize" CASCADE');
-      await FundingWallet.query('TRUNCATE public."funding_wallet" CASCADE');
-      await Org.query('TRUNCATE public.org CASCADE');
-      await Escrow.query('TRUNCATE public.escrow CASCADE');
+     await clearDB();
    });
 
    after(async () => {
@@ -86,6 +85,41 @@ describe('Campaign Integration Test', () => {
           const org = await createOrg(runningApp);
           const user = await createUser(runningApp);
           await createAdmin(runningApp, { org, user });
+          const cryptoCurrency = await createCrypto(runningApp)
+          let walletCurrency = await createWalletCurrency(runningApp, {type: cryptoCurrency.type, balance: new BN(150)})
+          org.wallet.currency.push(walletCurrency);
+          await org.wallet.save();
+          const beginDate = getBeginDate().toString();
+          const endDate = getEndDate().toString();
+          const algorithm = JSON.stringify({"version": "1", "initialTotal": "1000", "tiers":{"1":{"threshold":"25000","totalCoiins":"1000"},"2":{"threshold":"50000","totalCoiins":"3000"},"3":{"threshold":"75000","totalCoiins":"5000"},"4":{"threshold":"100000","totalCoiins":"7000"},"5":{"threshold":"250000","totalCoiins":"10000"}},"pointValues":{"click": "14","view": "10","submission": "201", "likes": "201", "shares": "201"}});
+          const mutation = gql.mutation({
+             operation: 'newCampaign',
+             variables: {
+               name: {value: 'banana', required: true},
+               coiinTotal: {value: 21.24, required: true},
+               target: {value: "bacon", required: true},
+               cryptoId: {value: walletCurrency.id},
+               targetVideo: {value: "bacon-video", required: true},
+               beginDate: {value: beginDate, required: true },
+               endDate: {value: endDate, required: true},
+               algorithm: {value: algorithm, required: true },
+               company: 'raiinmaker',
+             },
+             fields: ['name']
+          })
+          const res = await request(runningApp.app)
+              .post('/v1/graphql')
+              .send(mutation)
+              .set('Accepts', 'application/json')
+              .set('company', 'raiinmaker')
+              .set('authorization', 'Bearer raiinmaker');
+          const response = res.body.data.newCampaign;
+          expect(response.name).to.equal('banana');
+       });
+        it('#newCampaign - no target video', async () => {
+          const org = await createOrg(runningApp);
+          const user = await createUser(runningApp);
+          await createAdmin(runningApp, { org, user });
           const beginDate = getBeginDate().toString();
           const endDate = getEndDate().toString();
           const algorithm = JSON.stringify({"version": "1", "initialTotal": "1000", "tiers":{"1":{"threshold":"25000","totalCoiins":"1000"},"2":{"threshold":"50000","totalCoiins":"3000"},"3":{"threshold":"75000","totalCoiins":"5000"},"4":{"threshold":"100000","totalCoiins":"7000"},"5":{"threshold":"250000","totalCoiins":"10000"}},"pointValues":{"click": "14","view": "10","submission": "201", "likes": "201", "shares": "201"}});
@@ -95,7 +129,6 @@ describe('Campaign Integration Test', () => {
                 name: {value: 'banana', required: true},
                 coiinTotal: {value: 21.24, required: true},
                 target: {value: "bacon", required: true},
-                targetVideo: {value: "bacon-video", required: true},
                 beginDate: {value: beginDate, required: true },
                 endDate: {value: endDate, required: true},
                 algorithm: {value: algorithm, required: true },
@@ -112,6 +145,7 @@ describe('Campaign Integration Test', () => {
           console.log(JSON.stringify(res.body));
           const response = res.body.data.newCampaign;
           expect(response.name).to.equal('banana');
+          expect(response.targetVideo).to.be.undefined;
        });
        it('#newRaffleCampaign with raffle prize', async () => {
         const org = await createOrg(runningApp);
@@ -253,11 +287,6 @@ describe('Campaign Integration Test', () => {
         email: encrypt('demo@email.com'),
         campaign,
         participationScore: 20,
-        userOptions: {
-          walletOptions: {
-              balance: 50
-          }
-        }
       });
       await createParticipant(runningApp, {
         email: encrypt('demo@email.com'),
@@ -266,12 +295,8 @@ describe('Campaign Integration Test', () => {
         clickCount: 10,
         viewCount: 10,
         submissionCount: 10,
-        userOptions: {
-          walletOptions: {
-              balance: 50
-          }
-      }});
-      await createParticipant(runningApp, {email: encrypt('demo@email.com'), participationScore: 10, campaign, userOptions: {walletOptions: {balance: 50}}});
+        });
+      await createParticipant(runningApp, {email: encrypt('demo@email.com'), participationScore: 10, campaign});
       const mutation = gql.mutation({
          operation: 'payoutCampaignRewards',
          variables: {
@@ -295,11 +320,6 @@ describe('Campaign Integration Test', () => {
       const participant = await createParticipant(runningApp, {
         campaign,
         participationScore: 20,
-        userOptions: {
-            walletOptions: {
-              balance: 50
-            }
-        }
       });
       await createParticipant(runningApp, {
         campaign,
@@ -307,12 +327,8 @@ describe('Campaign Integration Test', () => {
         clickCount: 10,
         viewCount: 10,
         submissionCount: 10,
-        userOptions: {
-            walletOptions: {
-              balance: 50
-            }
-      }});
-      await createParticipant(runningApp, {participationScore: 10, campaign, userOptions: {walletOptions: {balance: 50}}});
+        });
+      await createParticipant(runningApp, {participationScore: 10, campaign});
       const mutation = gql.mutation({
         operation: 'payoutCampaignRewards',
         variables: {
@@ -331,15 +347,22 @@ describe('Campaign Integration Test', () => {
       expect(c.payouts[0].action).to.equal('prize');
     });
       it('#payoutCampaignRewards', async () => {
-        const org = await createOrg(runningApp);
-        const campaign = await createCampaign(runningApp, {totalParticipationScore: 60, coiinTotal: 100, org, status: 'INSUFFICIENT_FUNDS'});
-        await updateOrgCampaignsStatusOnDeposit(org.fundingWallet);
+        await createOrg(runningApp);
+        const org = await createOrg(runningApp, {name: 'banana'});
+        const campaign = await createCampaign(runningApp, {totalParticipationScore: 60, org, status: 'INSUFFICIENT_FUNDS'});
+        let walletCurrency = await createWalletCurrency(runningApp, {type: campaign.crypto.type, balance: new BN(150)})
+        let walletCurrency1 = await createWalletCurrency(runningApp, {type: campaign.crypto.type, balance: new BN(50)})
+        let walletCurrency2 = await createWalletCurrency(runningApp, {type: campaign.crypto.type, balance: new BN(50)})
+        let walletCurrency3 = await createWalletCurrency(runningApp, {type: campaign.crypto.type, balance: new BN(50)})
+        org.wallet.currency.push(walletCurrency);
+        await org.wallet.save();
+        await updateOrgCampaignsStatusOnDeposit(org.wallet);
         let participant1 = await createParticipant(runningApp, {
           campaign,
           userOptions: {
-              walletOptions: {
-                balance: 50
-              }
+            walletOptions: {
+              currency: [walletCurrency1]
+            }
           }
         });
         let participant2 = await createParticipant(runningApp, {
@@ -349,11 +372,12 @@ describe('Campaign Integration Test', () => {
           viewCount: 10,
           submissionCount: 10,
           userOptions: {
-              walletOptions: {
-                balance: 50
-              }
-        }});
-        let participant3 = await createParticipant(runningApp, {campaign, userOptions: {walletOptions: {balance: 50}}});
+            walletOptions: {
+              currency: [walletCurrency2]
+            }
+          }
+          });
+        let participant3 = await createParticipant(runningApp, {campaign, userOptions: {walletOptions: {currency: [walletCurrency3]}}});
         const mutation = gql.mutation({
           operation: 'payoutCampaignRewards',
           variables: {
@@ -375,14 +399,17 @@ describe('Campaign Integration Test', () => {
         const wallet1 = await Wallet.findOneOrFail({where: {user: participant1.user.id}, relations: ['user']});
         const wallet2 = await Wallet.findOneOrFail({where: {user: participant2.user.id}, relations: ['user']});
         const wallet3 = await Wallet.findOneOrFail({where: {user: participant3.user.id}, relations: ['user']});
-        expect(parseFloat(wallet1.balance.minus(new BN(50)).toString())).to.equal(12.5*0.9);
-        expect(parseFloat(wallet2.balance.minus(new BN(50)).toString())).to.equal(25*0.9);
-        expect(parseFloat(wallet3.balance.minus(new BN(50)).toString())).to.equal(12.5*0.9);
-        const fundingWallet = await FundingWallet.findOneOrFail({where: {id: campaign.org.fundingWallet.id}});
-        expect(fundingWallet.balance.toString()).to.equal(new BN(100).toString());
+        walletCurrency1 = await WalletCurrency.getFundingWalletCurrency(campaign.crypto.type, wallet1);
+        walletCurrency2 = await WalletCurrency.getFundingWalletCurrency(campaign.crypto.type, wallet2);
+        walletCurrency3 = await WalletCurrency.getFundingWalletCurrency(campaign.crypto.type, wallet3);
+        expect(parseFloat(walletCurrency1.balance.minus(new BN(50)).toString())).to.equal(12.5*0.9);
+        expect(parseFloat(walletCurrency2.balance.minus(new BN(50)).toString())).to.equal(25*0.9);
+        expect(parseFloat(walletCurrency3.balance.minus(new BN(50)).toString())).to.equal(12.5*0.9);
+        const fundingWallet = await Wallet.findOneOrFail({where: {id: campaign.org.wallet.id}, relations: ['currency']});
+        walletCurrency = await WalletCurrency.getFundingWalletCurrency(campaign.crypto.type, fundingWallet);
+        expect(walletCurrency.balance.toString()).to.equal(new BN(100).toString());
       });
       it('#payoutCampaignRewards with float values', async () => {
-        const org = await createOrg(runningApp);
         const algorithm = {
           tiers: {
               1: {
@@ -407,8 +434,16 @@ describe('Campaign Integration Test', () => {
               },
           }
         }
+        await createOrg(runningApp);
+        const org = await createOrg(runningApp, {name: 'banana'});
         const campaign = await createCampaign(runningApp, {totalParticipationScore: 94.5, algorithm, org, status: 'INSUFFICIENT_FUNDS'});
-        await updateOrgCampaignsStatusOnDeposit(org.fundingWallet);
+        let walletCurrency = await createWalletCurrency(runningApp, {type: campaign.crypto.type, balance: new BN(150)})
+        let walletCurrency1 = await createWalletCurrency(runningApp, {type: campaign.crypto.type, balance: new BN(50.5)})
+        let walletCurrency2 = await createWalletCurrency(runningApp, {type: campaign.crypto.type, balance: new BN(50.5)})
+        let walletCurrency3 = await createWalletCurrency(runningApp, {type: campaign.crypto.type, balance: new BN(50.5)})
+        org.wallet.currency.push(walletCurrency);
+        await org.wallet.save();
+        await updateOrgCampaignsStatusOnDeposit(org.wallet);
         let participant1 = await createParticipant(runningApp, {
             campaign,
             participationScore: 31.5,
@@ -416,32 +451,33 @@ describe('Campaign Integration Test', () => {
             viewCount: 10.5,
             submissionCount: 10.5,
             userOptions: {
-               walletOptions: {
-                  balance: 50.5
-               }
-            }});
+              walletOptions: {
+                currency: [walletCurrency1]
+              }
+            }
+            });
          let participant2 = await createParticipant(runningApp, {
             campaign,
             participationScore: 31.5,
             clickCount: 10.5,
             viewCount: 10.5,
             submissionCount: 10.5,
-            userOptions: {
-               walletOptions: {
-                  balance: 50.5
-               }
-            }});
+           userOptions: {
+             walletOptions: {
+               currency: [walletCurrency2]
+             }
+           }});
          let participant3 = await createParticipant(runningApp, {
             campaign,
             participationScore: 31.5,
             clickCount: 10.5,
             viewCount: 10.5,
             submissionCount: 10.5,
-            userOptions: {
-               walletOptions: {
-                  balance: 50.5
-               }
-            }});
+           userOptions: {
+             walletOptions: {
+               currency: [walletCurrency3]
+             }
+           }});
           const mutation = gql.mutation({
             operation: 'payoutCampaignRewards',
             variables: {
@@ -455,22 +491,32 @@ describe('Campaign Integration Test', () => {
              .set('Accepts', 'application/json')
              .set('company', 'raiinmaker')
              .set('authorization', 'Bearer raiinmaker');
-         participant1 = await Participant.findOneOrFail({id: participant1.id});
-         participant2 = await Participant.findOneOrFail({id: participant2.id});
-         participant3 = await Participant.findOneOrFail({id: participant3.id});
-         const response = res.body.data.payoutCampaignRewards;
-         expect(response).to.be.true;
-         const wallet1 = await Wallet.findOneOrFail({where: {user: participant1.user.id}, relations: ['user']});
-         const wallet2 = await Wallet.findOneOrFail({where: {user: participant2.user.id}, relations: ['user']});
-         const wallet3 = await Wallet.findOneOrFail({where: {user: participant3.user.id}, relations: ['user']});
-         expect(parseFloat(wallet1.balance.minus(new BN(50.5)).toString())).to.equal(15.15); // 16.833333333333 * 0.9
-         expect(parseFloat(wallet2.balance.minus(new BN(50.5)).toString())).to.equal(15.15); // 16.833333333333 * 0.9
-         expect(parseFloat(wallet3.balance.minus(new BN(50.5)).toString())).to.equal(15.15); // 16.833333333333 * 0.9
+          participant1 = await Participant.findOneOrFail({id: participant1.id});
+          participant2 = await Participant.findOneOrFail({id: participant2.id});
+          participant3 = await Participant.findOneOrFail({id: participant3.id});
+          const response = res.body.data.payoutCampaignRewards;
+          expect(response).to.be.true;
+          const wallet1 = await Wallet.findOneOrFail({where: {user: participant1.user.id}, relations: ['user']});
+          const wallet2 = await Wallet.findOneOrFail({where: {user: participant2.user.id}, relations: ['user']});
+          const wallet3 = await Wallet.findOneOrFail({where: {user: participant3.user.id}, relations: ['user']});
+          walletCurrency1 = await WalletCurrency.getFundingWalletCurrency(campaign.crypto.type, wallet1);
+          walletCurrency2 = await WalletCurrency.getFundingWalletCurrency(campaign.crypto.type, wallet2);
+          walletCurrency3 = await WalletCurrency.getFundingWalletCurrency(campaign.crypto.type, wallet3);
+          expect(parseFloat(walletCurrency1.balance.minus(new BN(50.5)).toString())).to.equal(15.15); // 16.833333333333 * 0.9
+          expect(parseFloat(walletCurrency2.balance.minus(new BN(50.5)).toString())).to.equal(15.15); // 16.833333333333 * 0.9
+          expect(parseFloat(walletCurrency3.balance.minus(new BN(50.5)).toString())).to.equal(15.15); // 16.833333333333 * 0.9
       });
       it('#payoutCampaignRewards with 0 total participation', async () => {
-          const org = await createOrg(runningApp);
+          await createOrg(runningApp);
+          const org = await createOrg(runningApp, {name: 'banana'});
           const campaign = await createCampaign(runningApp, {org, totalParticipationScore: 0, status: 'INSUFFICIENT_FUNDS'});
-          await updateOrgCampaignsStatusOnDeposit(org.fundingWallet);
+          let walletCurrency = await createWalletCurrency(runningApp, {type: campaign.crypto.type, balance: new BN(150)})
+          let walletCurrency1 = await createWalletCurrency(runningApp, {type: campaign.crypto.type, balance: new BN(50)})
+          let walletCurrency2 = await createWalletCurrency(runningApp, {type: campaign.crypto.type, balance: new BN(50)})
+          let walletCurrency3 = await createWalletCurrency(runningApp, {type: campaign.crypto.type, balance: new BN(50)})
+          org.wallet.currency.push(walletCurrency);
+          await org.wallet.save();
+          await updateOrgCampaignsStatusOnDeposit(org.wallet);
           let participant1 = await createParticipant(runningApp, {
             campaign,
             participationScore: 0,
@@ -478,9 +524,9 @@ describe('Campaign Integration Test', () => {
             viewCount: 0,
             submissionCount: 0,
             userOptions: {
-               walletOptions: {
-                  balance: 50
-               }
+              walletOptions: {
+                currency: [walletCurrency1]
+              }
             }});
          let participant2 = await createParticipant(runningApp, {
             campaign,
@@ -488,22 +534,18 @@ describe('Campaign Integration Test', () => {
             clickCount: 0,
             viewCount: 0,
             submissionCount: 0,
-            userOptions: {
-               walletOptions: {
-                  balance: 50
-               }
-         }});
+           userOptions: {
+             walletOptions: {
+               currency: [walletCurrency2]
+             }
+           }});
          let participant3 = await createParticipant(runningApp, {
             campaign,
             participationScore: 0,
             clickCount: 0,
             viewCount: 0,
             submissionCount: 0,
-            userOptions: {
-               walletOptions: {
-                  balance: 50
-               }
-            }});
+           userOptions: {walletOptions: {currency: [walletCurrency3]}}});
          const mutation = gql.mutation({
             operation: 'payoutCampaignRewards',
             variables: {
@@ -516,43 +558,49 @@ describe('Campaign Integration Test', () => {
              .send(mutation)
              .set('Accepts', 'application/json')
              .set('authorization', 'Bearer raiinmaker');
+         console.log(JSON.stringify(res.body));
          participant1 = await Participant.findOneOrFail({id: participant1.id}) ;
          participant2 = await Participant.findOneOrFail({id: participant2.id})
          participant3 = await Participant.findOneOrFail({id: participant3.id})
          const response = res.body.data.payoutCampaignRewards;
          expect(response).to.be.true;
-         const wallet1 = await Wallet.findOneOrFail({where: {user: participant1.user.id}, relations: ['user']});
-         const wallet2 = await Wallet.findOneOrFail({where: {user: participant2.user.id}, relations: ['user']});
-         const wallet3 = await Wallet.findOneOrFail({where: {user: participant3.user.id}, relations: ['user']});
-         expect(parseFloat(wallet1.balance.toString())).to.equal(50);
-         expect(parseFloat(wallet2.balance.toString())).to.equal(50);
-         expect(parseFloat(wallet3.balance.toString())).to.equal(50);
+        const wallet1 = await Wallet.findOneOrFail({where: {user: participant1.user.id}, relations: ['user']});
+        const wallet2 = await Wallet.findOneOrFail({where: {user: participant2.user.id}, relations: ['user']});
+        const wallet3 = await Wallet.findOneOrFail({where: {user: participant3.user.id}, relations: ['user']});
+        walletCurrency1 = await WalletCurrency.getFundingWalletCurrency(campaign.crypto.type, wallet1);
+        walletCurrency2 = await WalletCurrency.getFundingWalletCurrency(campaign.crypto.type, wallet2);
+        walletCurrency3 = await WalletCurrency.getFundingWalletCurrency(campaign.crypto.type, wallet3);
+         expect(parseFloat(walletCurrency1.balance.toString())).to.equal(50);
+         expect(parseFloat(walletCurrency2.balance.toString())).to.equal(50);
+         expect(parseFloat(walletCurrency3.balance.toString())).to.equal(50);
       });
       it('#payoutCampaignRewards with rejected participants', async () => {
         const org = await createOrg(runningApp);
         const campaign = await createCampaign(runningApp, {org, status: 'INSUFFICIENT_FUNDS'});
-        await updateOrgCampaignsStatusOnDeposit(org.fundingWallet);
+        let walletCurrency = await createWalletCurrency(runningApp, {type: campaign.crypto.type, balance: new BN(150)})
+        let walletCurrency1 = await createWalletCurrency(runningApp, {type: campaign.crypto.type, balance: new BN(50)})
+        let walletCurrency2 = await createWalletCurrency(runningApp, {type: campaign.crypto.type, balance: new BN(50)})
+        let walletCurrency3 = await createWalletCurrency(runningApp, {type: campaign.crypto.type, balance: new BN(50)})
+        org.wallet.currency.push(walletCurrency);
+        await org.wallet.save();
+        await updateOrgCampaignsStatusOnDeposit(org.wallet);
         let participant1 = await createParticipant(runningApp, {
             campaign,
-            userOptions: {
-               walletOptions: {
-                  balance: 50
-               }
-            }});
+          userOptions: {
+            walletOptions: {
+              currency: [walletCurrency1]
+            }
+          }});
          let participant2 = await createParticipant(runningApp, {
             campaign,
-            userOptions: {
-               walletOptions: {
-                  balance: 50
-               }
-         }});
+           userOptions: {
+             walletOptions: {
+               currency: [walletCurrency2]
+             }
+           }});
          let participant3 = await createParticipant(runningApp, {
             campaign,
-            userOptions: {
-               walletOptions: {
-                  balance: 50
-               }
-            }});
+           userOptions: {walletOptions: {currency: [walletCurrency3]}}});
          const mutation = gql.mutation({
             operation: 'payoutCampaignRewards',
             variables: {
@@ -570,12 +618,15 @@ describe('Campaign Integration Test', () => {
          participant3 = await Participant.findOneOrFail({id: participant3.id})
          const response = res.body.data.payoutCampaignRewards;
          expect(response).to.be.true;
-         const wallet1 = await Wallet.findOneOrFail({where: {user: participant1.user.id}, relations: ['user']});
-         const wallet2 = await Wallet.findOneOrFail({where: {user: participant2.user.id}, relations: ['user']});
-         const wallet3 = await Wallet.findOneOrFail({where: {user: participant3.user.id}, relations: ['user']});
-         expect(parseFloat(wallet1.balance.minus(50).toString())).to.equal(0);
-         expect(parseFloat(wallet2.balance.minus(50).toString())).to.equal(20*0.9);
-         expect(parseFloat(wallet3.balance.minus(50).toString())).to.equal(20*0.9);
+        const wallet1 = await Wallet.findOneOrFail({where: {user: participant1.user.id}, relations: ['user']});
+        const wallet2 = await Wallet.findOneOrFail({where: {user: participant2.user.id}, relations: ['user']});
+        const wallet3 = await Wallet.findOneOrFail({where: {user: participant3.user.id}, relations: ['user']});
+        walletCurrency1 = await WalletCurrency.getFundingWalletCurrency(campaign.crypto.type, wallet1);
+        walletCurrency2 = await WalletCurrency.getFundingWalletCurrency(campaign.crypto.type, wallet2);
+        walletCurrency3 = await WalletCurrency.getFundingWalletCurrency(campaign.crypto.type, wallet3);
+         expect(parseFloat(walletCurrency1.balance.minus(50).toString())).to.equal(0);
+         expect(parseFloat(walletCurrency2.balance.minus(50).toString())).to.equal(20*0.9);
+         expect(parseFloat(walletCurrency3.balance.minus(50).toString())).to.equal(20*0.9);
       });
       it('#deleteCampaign', async () => {
          const campaign = await createCampaign(runningApp);

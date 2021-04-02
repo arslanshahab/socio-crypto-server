@@ -1,8 +1,17 @@
-import {BaseEntity, Column, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn} from "typeorm";
+import {
+  BaseEntity,
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToOne,
+  PrimaryGeneratedColumn, UpdateDateColumn
+} from "typeorm";
 import {BigNumberEntityTransformer} from "../util/transformers";
 import BigNumber from "bignumber.js";
-import {FundingWallet} from "./FundingWallet";
 import {Campaign} from "./Campaign";
+import {Wallet} from "./Wallet";
 
 
 @Entity()
@@ -14,10 +23,10 @@ export class Escrow extends BaseEntity {
   public amount: BigNumber;
 
   @ManyToOne(
-    _type => FundingWallet,
+    _type => Wallet,
     wallet => wallet.escrows
   )
-  public fundingWallet: FundingWallet;
+  public wallet: Wallet;
 
   @OneToOne(
     _type => Campaign,
@@ -26,10 +35,16 @@ export class Escrow extends BaseEntity {
   @JoinColumn()
   public campaign: Campaign;
 
-  public static newCampaignEscrow(campaign: Campaign, fundingWallet: FundingWallet) {
+  @CreateDateColumn()
+  public createdAt: Date;
+
+  @UpdateDateColumn()
+  public updatedAt: Date;
+
+  public static newCampaignEscrow(campaign: Campaign, wallet: Wallet) {
     const escrow = new Escrow();
     escrow.campaign = campaign;
-    escrow.fundingWallet = fundingWallet;
+    escrow.wallet = wallet;
     escrow.amount = campaign.coiinTotal;
     return escrow;
   }

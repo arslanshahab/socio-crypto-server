@@ -6,10 +6,8 @@ import * as admin from "firebase-admin";
 import {Dragonchain} from "../../src/clients/dragonchain";
 import {Participant} from "../../src/models/Participant";
 import {Campaign} from "../../src/models/Campaign";
-import {Wallet} from "../../src/models/Wallet";
-import {User} from "../../src/models/User";
 import * as gql from 'gql-query-builder';
-import {createParticipant} from "./specHelpers";
+import {clearDB, createParticipant} from "./specHelpers";
 import request from "supertest";
 import { Paypal } from "../../src/clients/paypal";
 
@@ -52,10 +50,7 @@ describe('Participant Integration Test', () => {
     });
 
     afterEach(async () => {
-        await Participant.query('TRUNCATE public.participant CASCADE');
-        await Campaign.query('TRUNCATE public.campaign CASCADE');
-        await Wallet.query('TRUNCATE public.wallet CASCADE');
-        await User.query('TRUNCATE public.user CASCADE');
+        await clearDB();
     });
 
     after(async () => {

@@ -6,6 +6,7 @@ import { DailyParticipantMetric } from '../../models/DailyParticipantMetric';
 import { Participant } from '../../models/Participant';
 import { BN } from '../../util/helpers';
 import * as campaignController from '../../controllers/campaign';
+import { getTokenPriceInUsd } from "src/clients/ethereum";
 
 /**
  * {
@@ -40,19 +41,32 @@ export const main = async () => {
               campaignLeaderboards[participant.campaign.id][part.id] = idx+1;
             });
           }
-          if (!campaignInformation[participant.campaign.id]) campaignInformation[participant.campaign.id] = await campaignController.getCurrentCampaignTier({ campaignId: participant.campaign.id });
+          if (!campaignInformation[participant.campaign.id]) campaignInformation[participant.campaign.id] = await campaignController.getCurrentCampaignTier(null,{ campaignId: participant.campaign.id });
           const latestParticipation = await DailyParticipantMetric.getLatestByParticipantId(participant.id);
           if (latestParticipation && latestParticipation.participationScore.gt(0)) {
             const percentageOfParticipation = new BN(latestParticipation.participationScore).div(participant.campaign.totalParticipationScore);
-            const coiinTotal = campaignInformation[participant.campaign.id].currentTotal;
-            await Firebase.sendDailyParticipationUpdate(
-              user.profile.deviceToken,
-              participant.campaign,
-              percentageOfParticipation.times(coiinTotal),
-              latestParticipation.participationScore,
-              campaignLeaderboards[participant.campaign.id][participant.id],
-              participant.campaign.participants.length,
-            );
+            const currentTotal = campaignInformation[participant.campaign.id].currentTotal;
+
+            if (participant.campaign.type == 'crypto') {
+              const tokenPrice = (participant.campaign.crypto.type === 'coiin') ? 0.1 : await getTokenPriceInUsd(participant.campaign.crypto.type);
+              return await Firebase.sendDailyParticipationUpdate(
+                user.profile.deviceToken,
+                participant.campaign,
+                percentageOfParticipation.times(currentTotal).times(tokenPrice).times(10), // value in coiin
+                latestParticipation.participationScore,
+                campaignLeaderboards[participant.campaign.id][participant.id],
+                participant.campaign.participants.length,
+              );
+            } else {
+              await Firebase.sendDailyParticipationUpdate(
+                user.profile.deviceToken,
+                participant.campaign,
+                percentageOfParticipation.times(currentTotal),
+                latestParticipation.participationScore,
+                campaignLeaderboards[participant.campaign.id][participant.id],
+                participant.campaign.participants.length,
+                );
+              }
           }
         }
       }

@@ -1,7 +1,6 @@
-import { BN } from '../src/util/helpers';
+import { BN } from '../../src/util/helpers';
 import {
   checkFrequency,
-  connectDatabase,
   generateAlgorithm,
   generateCampaign,
   generateHourlyCampaignMetric,
@@ -18,31 +17,11 @@ import {
   updateCampaign,
   updateParticipant,
 } from "./helpers";
-import {Connection} from "typeorm";
-import {Participant} from "../src/models/Participant";
-import {Campaign} from "../src/models/Campaign";
-import {Wallet} from "../src/models/Wallet";
-import {User} from "../src/models/User";
-import {Org} from "../src/models/Org";
-import {HourlyCampaignMetric} from "../src/models/HourlyCampaignMetric";
+import {Participant} from "../../src/models/Participant";
+import {HourlyCampaignMetric} from "../../src/models/HourlyCampaignMetric";
 import BigNumber from 'bignumber.js';
-import {AlgorithmSpecs} from "../src/types";
-import {SocialPost} from "../src/models/SocialPost";
-
-let dbConn: Connection
-
-const CHUNK_VALUE = 9000;
-
-/**
- * RUN COMMAND: yarn metrics:generate
- */
-
-const getDatabase = async () => {
-  if (!dbConn) {
-    dbConn = await connectDatabase();
-  }
-  return dbConn;
-}
+import {AlgorithmSpecs} from "../../src/types";
+import {SocialPost} from "../../src/models/SocialPost";
 
 export interface ParticipantMetrics {
   clickCount: BigNumber;
@@ -50,11 +29,8 @@ export interface ParticipantMetrics {
   submissionCount: BigNumber;
   participationScore: BigNumber;
 }
-
-(async () => {
-  try {
-    console.log('CONNECTING TO DATABASE');
-    const connection = await getDatabase();
+const CHUNK_VALUE = 9000;
+export const main = async () => {
     const org = await generateOrgIfNotFound();
     const startDate = new Date();
     startDate.setUTCDate(startDate.getUTCDate()-30);
@@ -166,14 +142,4 @@ export interface ParticipantMetrics {
     }
     console.log('SAVING SOCIAL POSTS', hourlyPostsArray.length);
     await SocialPost.save(hourlyPostsArray, {chunk: CHUNK_VALUE});
-    console.log('CLOSING CONNECTION')
-    await connection.close();
-  } catch (e) {
-    console.log('SCRIPT ERROR: ', e.message);
-    await Participant.query('TRUNCATE public.participant CASCADE');
-    await Campaign.query('TRUNCATE public.campaign CASCADE');
-    await Wallet.query('TRUNCATE public.wallet CASCADE');
-    await User.query('TRUNCATE public.user CASCADE');
-    await Org.query('TRUNCATE public.org CASCADE');
-  }
-})();
+};

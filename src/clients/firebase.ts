@@ -239,9 +239,9 @@ export class Firebase {
     await Firebase.client.messaging().send(message);
   }
 
-  public static async sendWithdrawalApprovalNotification(token: string, amount: BigInt) {
+  public static async sendWithdrawalApprovalNotification(token: string, amount: BigInt, symbol: String = 'COIIN') {
     const title = 'Your withdraw request has been approved';
-    const body = `Your request for ${amount.toString()} COIIN withdrawal is being processed`;
+    const body = `Your request for ${amount.toString()} ${symbol.toUpperCase()} withdrawal is being processed`;
     const message: admin.messaging.Message = {
       notification: {
         title,
@@ -266,9 +266,9 @@ export class Firebase {
     await Firebase.client.messaging().send(message);
   }
 
-  public static async sendWithdrawalRejectionNotification(token: string, amount: BigInt) {
+  public static async sendWithdrawalRejectionNotification(token: string, amount: BigInt, symbol: string = "COIIN") {
     const title = 'Your withdraw request has been rejected';
-    const body = `Your request for ${amount.toString()} COIIN using has been rejected. Please attempt with a different amount`;
+    const body = `Your request for ${amount.toString()} ${symbol.toUpperCase()} using has been rejected. Please attempt with a different amount`;
     const message: admin.messaging.Message = {
       notification: {
         title,

@@ -54,6 +54,10 @@ export class StripeAPI {
     });
   }
 
+  public static async getPaymentMethod(paymentMethodId: string) {
+    return StripeAPI.client.paymentMethods.retrieve(paymentMethodId);
+  }
+
   public static async removePaymentMethod(paymentMethodId: string) {
     return StripeAPI.client.paymentMethods.detach(paymentMethodId);
   }

@@ -24,6 +24,7 @@ import {Org} from "./Org";
 import {HourlyCampaignMetric} from "./HourlyCampaignMetric";
 import { RafflePrize } from './RafflePrize';
 import {Escrow} from "./Escrow";
+import {CryptoCurrency} from "./CryptoCurrency";
 
 @Entity()
 export class Campaign extends BaseEntity {
@@ -133,6 +134,13 @@ export class Campaign extends BaseEntity {
   )
   public escrow: Escrow;
 
+  @ManyToOne(
+    _type => CryptoCurrency,
+    crypto => crypto.campaigns,
+    {eager: true, nullable: true}
+  )
+  public crypto: CryptoCurrency;
+
   @CreateDateColumn()
   public createdAt: Date;
 
@@ -171,6 +179,7 @@ export class Campaign extends BaseEntity {
     if (this.payouts && this.payouts.length > 0) returnedCampaign.payouts = this.payouts.map((payout) => payout.asV1());
     if (this.posts && this.posts.length > 0) returnedCampaign.posts = this.posts.map((post) => post.asV1());
     if (this.org) returnedCampaign.org = this.org.asV1();
+    if (this.crypto) returnedCampaign.crypto = this.crypto.asV1();
     return returnedCampaign;
   }
 
@@ -179,7 +188,7 @@ export class Campaign extends BaseEntity {
     return (u.campaigns.length > 0) ? u.campaigns.map((participant: Participant) => participant.campaign.id) : [];
   }
 
-  public static async findCampaignsByStatus(open: boolean, skip: number, take: number, company: string, sort: boolean) {
+  public static async findCampaignsByStatus(open: boolean, skip: number, take: number, company: string, sort: boolean, approved: boolean) {
     let where = '';
     const now = DateUtils.mixedDateToDatetimeString(new Date());
     if (open !== null && open !== undefined && open) {
@@ -190,10 +199,12 @@ export class Campaign extends BaseEntity {
     let query = this.createQueryBuilder('campaign')
       .where(where);
     if (company) query = query.andWhere(`"company"=:company`, { company })
+    if (approved) query = query.andWhere('"status"=:status',{status: 'APPROVED'});
     if (sort) query = query.orderBy('campaign.endDate', 'DESC');
     return await query
       .leftJoinAndSelect('campaign.participants', 'participant', 'participant."campaignId" = campaign.id')
       .leftJoinAndSelect('participant.user', 'user', 'user.id = participant."userId"')
+      .leftJoinAndSelect('campaign.crypto', 'crypto', 'campaign."cryptoId" = crypto.id')
       .skip(skip)
       .take(take)
       .getManyAndCount();
@@ -219,7 +230,8 @@ export class Campaign extends BaseEntity {
   public static async adminListCampaignsByStatus(skip: number, take: number, status: string = 'PENDING') {
     return this.createQueryBuilder('campaign')
       .leftJoinAndSelect('campaign.org', 'org', 'campaign."orgId" = org.id')
-      .where('status=:status', {status})
+      .leftJoinAndSelect('campaign.crypto', 'crypto', 'campaign."cryptoId" = crypto.id')
+      .where('status=:status', { status: status.toUpperCase() })
       .skip(skip)
       .take(take)
       .getManyAndCount()
@@ -307,7 +319,7 @@ export class Campaign extends BaseEntity {
     return true;
   }
 
-  public static newCampaign(name: string, targetVideo: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, tagline: string, requirements: CampaignRequirementSpecs, suggestedPosts: string[], suggestedTags: string[], type: string, org?: Org): Campaign {
+  public static newCampaign(name: string, beginDate: string, endDate: string, coiinTotal: number, target: string, description: string, company: string, algorithm: string, tagline: string, requirements: CampaignRequirementSpecs, suggestedPosts: string[], suggestedTags: string[], type: string, targetVideo?: string, org?: Org, crypto?: CryptoCurrency): Campaign {
     const campaign = new Campaign();
     if (org) campaign.org = org;
     campaign.name = name;
@@ -319,13 +331,14 @@ export class Campaign extends BaseEntity {
     campaign.endDate = new Date(endDate);
     campaign.algorithm = JSON.parse(algorithm);
     campaign.totalParticipationScore = new BN(0);
-    campaign.targetVideo = targetVideo;
     campaign.type = type;
+    if (targetVideo) campaign.targetVideo = targetVideo;
     if (description) campaign.description = description;
     if (tagline) campaign.tagline = tagline;
     if (requirements) campaign.requirements = requirements;
     if (suggestedPosts) campaign.suggestedPosts = suggestedPosts;
     if (suggestedTags) campaign.suggestedTags = suggestedTags;
+    if (crypto) campaign.crypto = crypto;
     return campaign;
   }
 

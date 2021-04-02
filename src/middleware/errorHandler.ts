@@ -19,6 +19,8 @@ export const getGraphQlError = (err: GraphQLError) => {
     case 'auth/invalid-email':
       return {status: 400, ...surfaceError}
     case 'auth/email-already-exists':
+    case 'ALREADY_EXISTS':
+    case 'FUNDS_EXIST':
       return { status: 409, ...surfaceError }
     case 'NOT_FOUND':
       return { status: 404, ...surfaceError };

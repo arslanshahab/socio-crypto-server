@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import jwt from 'jsonwebtoken';
 import * as Dragonfactor from '@dragonchain-dev/dragonfactor-auth';
-import { asyncHandler, extractFactor, generateRandomNumber, createFactorsFromKycData } from '../util/helpers';
+import { asyncHandler, extractFactor, generateRandomNumber, createFactorsFromKycData, BN } from '../util/helpers';
 import { AuthRequest, FactorGeneration } from '../types';
 import {FactorLink} from '../models/FactorLink';
 import { Secrets } from '../util/secrets';
@@ -14,10 +14,11 @@ import { limit } from '../util/rateLimiter';
 import { S3Client } from '../clients/s3';
 import { Profile } from '../models/Profile';
 import { NotificationSettings } from '../models/NotificationSettings';
+import { WalletCurrency } from '../models/WalletCurrency';
 
 const { NODE_ENV } = process.env;
 
-export const registerFactorLink = async (args: { factor: Dragonfactor.FactorLoginRequest }, context: { user: any }) => {
+export const registerFactorLink = async (parent: any, args: { factor: Dragonfactor.FactorLoginRequest }, context: { user: any }) => {
   const { identityId, factors } = await Dragonfactor.validateFactor({ factorRequest: args.factor, acceptedFactors: ['email', 'myfii-kyc'], service: 'raiinmaker' });
   const { id } = context.user;
   const user = await User.findOneOrFail({ where: { identityId: id }, relations: ['factorLinks'] });
@@ -37,7 +38,7 @@ export const registerFactorLink = async (args: { factor: Dragonfactor.FactorLogi
   return user.asV1();
 }
 
-export const removeFactorLink = async (args: { factorId: string }, context: { user: any }) => {
+export const removeFactorLink = async (parent: any, args: { factorId: string }, context: { user: any }) => {
   const { id } = context.user;
   const user = await User.findOneOrFail({ where: { identityId: id }, relations: ['factorLinks'] });
   const factorLink = user.factorLinks.find((link: FactorLink) => link.factorId === args.factorId);
@@ -51,7 +52,7 @@ export const removeFactorLink = async (args: { factorId: string }, context: { us
   return user.asV1();
 }
 
-export const isLastFactor = async (_args: any, context: {user: any}) => {
+export const isLastFactor = async (_parent: any, args: any, context: {user: any}) => {
   const { id } = context.user;
   const user = await User.findOneOrFail({ where: { identityId: id }, relations: ['factorLinks'] });
   return user.factorLinks.length === 1;
@@ -65,6 +66,9 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
   if (!user) {
     user = new User();
     const wallet = new Wallet();
+    const coiinWallet = new WalletCurrency();
+    coiinWallet.type = 'coiin';
+    coiinWallet.balance = new BN(0);
     const factorLink = new FactorLink();
     const profile = new Profile();
     const notificationSettings = new NotificationSettings();
@@ -73,6 +77,8 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
     await user.save();
     wallet.user = user;
     await wallet.save();
+    coiinWallet.wallet = wallet;
+    await coiinWallet.save();
     profile.user = user;
     await profile.save();
     notificationSettings.user = user;
@@ -149,7 +155,7 @@ export const recover = asyncHandler(async (req: AuthRequest, res: Response) => {
   return res.status(200).json({ success: true });
 });
 
-export const generateFactors = async (args: { factors: FactorGeneration[] }, context: { user: any }) => {
+export const generateFactors = async (parent: any, args: { factors: FactorGeneration[] }, context: { user: any }) => {
   const { id } = context.user;
   const { factors } = args;
   if (!factors) throw new Error('must provide factor association IDs');
