@@ -40,7 +40,7 @@ export const firebaseAuth = async ({req}: {req: express.Request}) => {
     const decodedToken = await Firebase.verifySessionCookie(session);
     const firebaseUser = await Firebase.client.auth().getUser(decodedToken.uid);
     if (!firebaseUser) throw new AuthenticationError('unauthorized');
-    let user: { [key: string]: string | boolean } = { id: decodedToken.uid, method: 'firebase'};
+    let user: { [key: string]: string | boolean } = { id: decodedToken.uid, method: 'firebase' };
     if (firebaseUser.customClaims) user = {
       ...user,
       role: firebaseUser.customClaims.role,
