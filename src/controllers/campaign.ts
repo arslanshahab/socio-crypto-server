@@ -132,6 +132,10 @@ export const adminUpdateCampaignStatus = async (parent: any, args: {status: Camp
   if (!campaign) throw new Error('campaign not found');
   switch (status) {
     case "APPROVED":
+      if (campaign.type == "raffle") {
+        campaign.status = 'APPROVED';
+        break
+      };
       const walletCurrency = await WalletCurrency.getFundingWalletCurrency(campaign.crypto.type, campaign.org.wallet);
       if (walletCurrency.balance.lt(campaign.coiinTotal)) {
         campaign.status = 'INSUFFICIENT_FUNDS';
