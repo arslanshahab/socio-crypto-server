@@ -134,7 +134,8 @@ export const adminUpdateCampaignStatus = async (parent: any, args: {status: Camp
     case "APPROVED":
       if (campaign.type == "raffle") {
         campaign.status = 'APPROVED';
-        break
+        await campaign.save();
+        return true;
       };
       const walletCurrency = await WalletCurrency.getFundingWalletCurrency(campaign.crypto.type, campaign.org.wallet);
       if (walletCurrency.balance.lt(campaign.coiinTotal)) {
