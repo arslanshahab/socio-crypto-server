@@ -8,6 +8,7 @@ const ACTION = process.env.ACTION || 'patchAccount';
 let dbConn: Connection
 
 const getDatabase = async () => {
+  if(ACTION == 'patchAccount') return
   if (!dbConn) {
     dbConn = await connectDatabase();
   }
@@ -48,12 +49,12 @@ const getDatabase = async () => {
         throw new Error('invalid action');
     }
     console.log('CLOSING CONNECTION');
-    await connection.close();
+    if (connection) await connection.close();
     process.exit(0);
   } catch (e) {
     console.log('ERROR', e)
     console.log('CLOSING CONNECTION')
-    await connection.close();
+    if (connection) await connection.close();
     process.exit(0);
   }
 })();

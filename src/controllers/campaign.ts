@@ -156,10 +156,10 @@ export const adminUpdateCampaignStatus = async (parent: any, args: {status: Camp
   return true;
 }
 
-export const listCampaigns = async (parent: any, args: { open: boolean, skip: number, take: number, scoped: boolean, sort: boolean, approved: boolean }, context: { user: any }) => {
-  const { open, skip = 0, take = 10, scoped = false, sort = false, approved = true } = args;
+export const listCampaigns = async (parent: any, args: { open: boolean, skip: number, take: number, scoped: boolean, sort: boolean, approved: boolean, pendingAudit: boolean }, context: { user: any }) => {
+  const { open, skip = 0, take = 10, scoped = false, sort = false, approved = true, pendingAudit = false } = args;
     const { company } = context.user;
-  const [results, total] = await Campaign.findCampaignsByStatus(open, skip, take, scoped && company, sort, approved);
+  const [results, total] = await Campaign.findCampaignsByStatus(open, skip, take, scoped && company, sort, approved, pendingAudit);
     return { results: results.map(result => result.asV1()), total };
 }
 
