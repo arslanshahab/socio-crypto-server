@@ -99,7 +99,7 @@ export const typeDefs = gql`
     type Query {
         getCurrentCampaignTier(campaignId: String!): CurrentTier
         usernameExists(username:String!): UserExistence
-        listCampaigns(open:Boolean,skip:Int,take:Int,scoped:Boolean,sort:Boolean, approved:Boolean): PaginatedCampaignResults
+        listCampaigns(open:Boolean,skip:Int,take:Int,scoped:Boolean,sort:Boolean, approved:Boolean, pendingAudit: Boolean): PaginatedCampaignResults
         getCampaign(id:String): Campaign
         getParticipant(id:String): Participant
         getParticipantPosts(id:String): [String]
