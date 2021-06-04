@@ -75,7 +75,7 @@ export const checkForTokenTransactionsOnContract = async (lastBlockChecked: numb
   logger.info(`ETH RESPONSE: ${JSON.stringify(filteredContractTransactions)}`);
   if (filteredContractTransactions.result.length === 0) logger.info(`NO TRANSACTIONS FOUND IN ${currentBlock - lastBlockChecked} BLOCKS`);
   return (filteredContractTransactions.result.length > 0) ? filteredContractTransactions.result.map((txn: any) => {
-    const convertedValue = new BN(txn.data).div(decimalConversionValue);
+    const convertedValue = txn.value ? new BN(txn.value).toString() : new BN(txn.data).div(decimalConversionValue).toString();
     const newTransaction = new CryptoTransaction();
     newTransaction.blockNumber = parseInt(txn.blockNumber, 16);
     newTransaction.from = txn.from || `0x${txn.topics[1].substr(txn.topics[1].length - 40)}`;
