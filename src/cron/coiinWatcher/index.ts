@@ -4,7 +4,7 @@ import { Secrets } from '../../util/secrets';
 import { Application } from '../../app';
 import { ExternalAddress } from '../../models/ExternalAddress';
 import { Transfer } from '../../models/Transfer';
-import {BN, getDecimal} from '../../util/helpers';
+import { BN } from '../../util/helpers';
 import {performCurrencyAction, updateOrgCampaignsStatusOnDeposit} from "../../controllers/helpers";
 import {CryptoCurrency} from "../../models/CryptoCurrency";
 import {CryptoTransaction} from "../../models/CryptoTransaction";
@@ -55,15 +55,15 @@ const app = new Application();
             logger.info(`Wallet ID found: ${externalWallet.id}`);
             // check that we don't have an existing
             if (!await Transfer.findOne({ where: { transactionHash: transaction.hash, action: 'deposit' } })) {
-              const transfer = (Transfer.newFromDeposit(externalWallet.wallet, new BN(getDecimal(transaction.convertedValue)), transaction.from.toLowerCase(), transaction.hash));
-              await performCurrencyAction(externalWallet.wallet.id, token.type, getDecimal(transaction.convertedValue), "credit");
+              const transfer = (Transfer.newFromDeposit(externalWallet.wallet, new BN(transaction.convertedValue), transaction.from.toLowerCase(), transaction.hash));
+              await performCurrencyAction(externalWallet.wallet.id, token.type, transaction.convertedValue, "credit");
               externalWallet.wallet.transfers.push(transfer);
               await externalWallet.wallet.save();
               await transfer.save();
             }
             await updateOrgCampaignsStatusOnDeposit(externalWallet.wallet);
           } catch (e) {
-            console.error(`Failed to transfer funds for wallet: ${transaction.from} with amount: ${getDecimal(transaction.convertedValue)}`);
+            console.error(`Failed to transfer funds for wallet: ${transaction.from} with amount: ${transaction.convertedValue}`);
             console.error(e);
             token.missedTransfers.push(transaction);
           }

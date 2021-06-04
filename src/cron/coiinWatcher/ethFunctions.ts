@@ -3,6 +3,8 @@ import Web3 from 'web3';
 import logger from '../../util/logger';
 import {CryptoTransaction} from "../../models/CryptoTransaction";
 import {BN} from "../../util/helpers";
+import {AbiItem} from "web3-utils";
+import abi from '../../abi.json';
 
 const { NODE_ENV = 'development' } = process.env;
 
@@ -63,6 +65,9 @@ export const checkForEthTransactionsOnWallet = async (startBlockNumber: number, 
 }
 
 export const checkForTokenTransactionsOnContract = async (lastBlockChecked: number,  currentBlock: number, contractAddress: string) => {
+  const contract = new web3.eth.Contract(abi as AbiItem[], contractAddress);
+  const contractDecimals = await contract.methods.decimals().call();
+  const decimalConversionValue = new BN(10).exponentiatedBy(contractDecimals)
   logger.info(`LAST CHECKED BLOCK: ${lastBlockChecked}, CURRENT BLOCK: ${currentBlock} CONTRACT: ${contractAddress}`);
   const filteredContractTransactions = await (await fetch(ethConnectionUrl, getFilterPostParams(lastBlockChecked, currentBlock, contractAddress))).json();
   logger.info(JSON.stringify(filteredContractTransactions));
@@ -70,13 +75,14 @@ export const checkForTokenTransactionsOnContract = async (lastBlockChecked: numb
   logger.info(`ETH RESPONSE: ${JSON.stringify(filteredContractTransactions)}`);
   if (filteredContractTransactions.result.length === 0) logger.info(`NO TRANSACTIONS FOUND IN ${currentBlock - lastBlockChecked} BLOCKS`);
   return (filteredContractTransactions.result.length > 0) ? filteredContractTransactions.result.map((txn: any) => {
+    const convertedValue = txn.value ? new BN(txn.value).div(decimalConversionValue) : new BN(txn.data).div(decimalConversionValue);
     const newTransaction = new CryptoTransaction();
     newTransaction.blockNumber = parseInt(txn.blockNumber, 16);
     newTransaction.from = txn.from || `0x${txn.topics[1].substr(txn.topics[1].length - 40)}`;
     newTransaction.to = txn.address;
     newTransaction.hash = txn.transactionHash;
     newTransaction.type = txn.type;
-    newTransaction.convertedValue = txn.convertedValue || new BN(txn.data, 16).toString(10);
+    newTransaction.convertedValue = convertedValue.toString();
     return newTransaction
   }) : [];
 }
