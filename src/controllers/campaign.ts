@@ -376,6 +376,7 @@ export const deleteCampaign = async (
             "hourlyMetrics",
             "prize",
             "payouts",
+            "escrow",
         ],
     });
     if (!campaign) throw new Error("campaign not found");
@@ -385,6 +386,7 @@ export const deleteCampaign = async (
         });
     if (campaign.prize) await RafflePrize.remove(campaign.prize);
     if (campaign.payouts) await Transfer.remove(campaign.payouts);
+    if (campaign.escrow) await Escrow.remove(campaign.escrow);
     await Participant.remove(campaign.participants);
     await DailyParticipantMetric.remove(campaign.dailyMetrics);
     await HourlyCampaignMetric.remove(campaign.hourlyMetrics);
@@ -500,6 +502,7 @@ export const generateCampaignAuditReport = async (
     );
     const { campaignId } = args;
     const campaign = await Campaign.findCampaignById(campaignId, company);
+    console.log(campaign?.escrow);
     if (!campaign) throw new Error("Campaign not found");
     const { currentTotal } = await getCurrentCampaignTier(null, { campaign });
     const bigNumTotal = new BN(campaign.type !== "coiin" ? 0 : currentTotal);

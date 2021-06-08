@@ -6,7 +6,6 @@
     "author": "Alex Benedetto <alex061994@gmail.com>",
     "license": "MIT",
     "scripts": {
-        "dev": "nodemon",
         "start": "PORT=4000 AWS_PROFILE=raiinmaker TS_NODE_FILES=true NODE_ENV=development ts-node src/index.ts",
         "build": "tsc",
         "clean": "rm -rf dist/",
@@ -32,6 +31,7 @@
         "cron:watcher:run": "AWS_PROFILE=raiinmaker LOAD_ENV=true ts-node ./src/cron/coiinWatcher/index.ts"
     },
     "dependencies": {
+        "@dragonchain-dev/dragonfactor-auth": "^0.0.11",
         "ajv": "^6.12.2",
         "apollo-server-express": "^2.19.2",
         "aws-sdk": "^2.632.0",
@@ -63,8 +63,7 @@
         "typeorm": "^0.2.24",
         "uuid": "^3.3.3",
         "web3": "^1.3.0",
-        "winston": "^3.2.1",
-        "@dragonchain-dev/dragonfactor-auth": "^0.0.11"
+        "winston": "^3.2.1"
     },
     "devDependencies": {
         "@types/ajv": "^1.0.0",
