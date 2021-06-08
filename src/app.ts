@@ -10,7 +10,7 @@ import { errorHandler } from "./middleware/errorHandler";
 import { Dragonchain } from "./clients/dragonchain";
 import { Firebase } from "./clients/firebase";
 import * as FactorController from "./controllers/factor";
-import * as Dragonfactor from "@dragonchain-dev/dragonfactor-auth";
+import * as Dragonfactor from "@myfii-dev/dragonfactor-auth";
 import { paypalWebhook } from "./controllers/withdraw";
 // import {Paypal} from "./clients/paypal";
 import {
