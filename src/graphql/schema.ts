@@ -5,87 +5,89 @@ export const typeDefs = gql`
 
     type Mutation {
         newCampaign(
-            name:String!,
-            coiinTotal:Float!,
-            target:String!,
-            targetVideo:String,
-            beginDate:String!,
-            endDate:String!,
-            description:String,
-            cryptoId: String,
-            company:String,
-            algorithm: String!,
-            requirements: JSON,
-            image: String,
-            tagline: String,
-            suggestedPosts:[String],
-            suggestedTags:[String],
-            type: String,
-            rafflePrize: JSON): Campaign
+            name: String!
+            coiinTotal: Float!
+            target: String!
+            targetVideo: String
+            beginDate: String!
+            endDate: String!
+            description: String
+            cryptoId: String
+            company: String
+            algorithm: String!
+            requirements: JSON
+            image: String
+            tagline: String
+            suggestedPosts: [String]
+            suggestedTags: [String]
+            type: String
+            rafflePrize: JSON
+        ): Campaign
         updateCampaign(
-            id:String!
-            name:String,
-            coiinTotal:Float,
-            target:String,
-            targetVideo:String,
-            beginDate:String,
-            endDate:String,
-            description:String,
-            image:String,
-            requirements: JSON,
-            suggestedPosts:[String],
-            suggestedTags:[String]): Campaign
-        generateCampaignAuditReport(campaignId:String!): AuditReport
+            id: String!
+            name: String
+            coiinTotal: Float
+            target: String
+            targetVideo: String
+            beginDate: String
+            endDate: String
+            description: String
+            image: String
+            requirements: JSON
+            suggestedPosts: [String]
+            suggestedTags: [String]
+        ): Campaign
+        generateCampaignAuditReport(campaignId: String!): AuditReport
         payoutCampaignRewards(campaignId: String!, rejected: [String]!): Boolean
-        deleteCampaign(id:String!): Campaign
-        participate(campaignId:String!,email:String): Participant
-        removeParticipation(campaignId:String!): User
-        trackAction(participantId:String!,action: String!): Participant
-        promoteUserPermissions(userId:String,email:String,company:String,role:String): User
-        registerSocialLink(type:String!,apiKey:String!,apiSecret:String!): Boolean
-        removeSocialLink(type:String!): Boolean
-        postToSocial(type:String!,text:String!,photo:String,video:String,participantId:String!): String
-        setDevice(deviceToken:String!): Boolean
+        deleteCampaign(id: String!): Campaign
+        participate(campaignId: String!, email: String): Participant
+        removeParticipation(campaignId: String!): User
+        trackAction(participantId: String!, action: String!): Participant
+        promoteUserPermissions(userId: String, email: String, company: String, role: String): User
+        registerSocialLink(type: String!, apiKey: String!, apiSecret: String!): Boolean
+        removeSocialLink(type: String!): Boolean
+        postToSocial(type: String!, text: String!, photo: String, video: String, participantId: String!): String
+        setDevice(deviceToken: String!): Boolean
         registerFactorLink(factor: JSON): User
-        updateUsername(username:String!): User
-        removeFactorLink(factorId:String!): User
-        registerKyc(userKyc:JSON!): KycUser
+        updateUsername(username: String!): User
+        removeFactorLink(factorId: String!): User
+        registerKyc(userKyc: JSON!): KycUser
         updateKyc(user: JSON!): KycUser
-        initiateWithdraw(withdrawAmount:Float!, ethAddress:String, tokenSymbol:String): Transfer
-        updateWithdrawStatus(transferIds:[String]!,status:String!): [Transfer]
-        setRecoveryCode(code:Int!): User
-        updateKycStatus(userId:String!,status:String!): User
+        initiateWithdraw(withdrawAmount: Float!, ethAddress: String, tokenSymbol: String): Transfer
+        updateWithdrawStatus(transferIds: [String]!, status: String!): [Transfer]
+        setRecoveryCode(code: Int!): User
+        updateKycStatus(userId: String!, status: String!): User
         updateProfileInterests(
-            city:String
-            country:String
-            state:String
-            ageRange:String
-            interests:[String]
-            values:[String]
+            city: String
+            country: String
+            state: String
+            ageRange: String
+            interests: [String]
+            values: [String]
         ): User
         removeProfileInterests(
-            interest:String
-            value:String
-            ageRange:String
-            city:String
-            state:String
-            country:String
+            interest: String
+            value: String
+            ageRange: String
+            city: String
+            state: String
+            country: String
         ): User
-        generateFactorsFromKyc(factors:[JSON]): JSON
-        attachEthereumAddress(ethereumAddress:String!): ExternalAddress
-        claimEthereumAddress(ethereumAddress:String!,signature:String!): ExternalAddress
-        removeEthereumAddress(ethereumAddress:String!): Boolean
+        generateFactorsFromKyc(factors: [JSON]): JSON
+        attachEthereumAddress(ethereumAddress: String!): ExternalAddress
+        claimEthereumAddress(ethereumAddress: String!, signature: String!): ExternalAddress
+        removeEthereumAddress(ethereumAddress: String!): Boolean
         updateNotificationSettings(
-            kyc:Boolean,
-            withdraw:Boolean,
-            campaignCreate:Boolean,
-            campaignUpdates:Boolean
+            kyc: Boolean
+            withdraw: Boolean
+            campaignCreate: Boolean
+            campaignUpdates: Boolean
         ): User
         newOrg(orgName: String!, email: String!, name: String!): JSON
         newUser(name: String!, email: String!, role: String!): Boolean
         updatePassword(password: String!): Boolean
         addPaymentMethod: Stripe
-        purchaseCoiin(amount: Float!, paymentMethodId:String!, campaignId: String): Stripe
+        purchaseCoiin(amount: Float!, paymentMethodId: String!, campaignId: String): Stripe
         updateCampaignStatus(status: String!, campaignId: String!): Boolean
         fundCampaigns(campaignIds: [String]): Boolean
         sendUserMessages(usernames: [String]!, title: String!, message: String!): Boolean
@@ -98,36 +100,49 @@ export const typeDefs = gql`
 
     type Query {
         getCurrentCampaignTier(campaignId: String!): CurrentTier
-        usernameExists(username:String!): UserExistence
-        listCampaigns(open:Boolean,skip:Int,take:Int,scoped:Boolean,sort:Boolean, approved:Boolean, pendingAudit: Boolean): PaginatedCampaignResults
-        getCampaign(id:String): Campaign
-        getParticipant(id:String): Participant
-        getParticipantPosts(id:String): [String]
-        getSocialMetrics(id:String!): SocialMetrics
-        campaignGet(campaignId:String!): Campaign
-        getParticipantByCampaignId(campaignId:String!): Participant
-        getParticipantMetrics(participantId:String!): [ParticipantMetric]
-        getUserMetrics(today:Boolean): [ParticipantMetric]
-        listUsers(skip:Int,take:Int): PaginatedUserResults
+        usernameExists(username: String!): UserExistence
+        listCampaigns(
+            open: Boolean
+            skip: Int
+            take: Int
+            scoped: Boolean
+            sort: Boolean
+            approved: Boolean
+            pendingAudit: Boolean
+        ): PaginatedCampaignResults
+        getCampaign(id: String): Campaign
+        getParticipant(id: String): Participant
+        getParticipantPosts(id: String): [String]
+        getSocialMetrics(id: String!): SocialMetrics
+        campaignGet(campaignId: String!): Campaign
+        getParticipantByCampaignId(campaignId: String!): Participant
+        getParticipantMetrics(participantId: String!): [ParticipantMetric]
+        getUserMetrics(today: Boolean): [ParticipantMetric]
+        listUsers(skip: Int, take: Int): PaginatedUserResults
         helloWorld: String
         isLastFactor: Boolean
         me(openCampaigns: Boolean): User
         getKyc: KycUser
-        getWalletWithPendingBalance(tokenSymbol:String): Wallet
-        getWithdrawals(status:String): [AdminWithdrawal]
-        accountExists(id:String!): UserExistence
-        getCampaignMetrics(campaignId:String!): AdminCampaignMetrics
-        getHourlyCampaignMetrics(campaignId:String!, filter:String!, startDate: String!, endDate: String!): [AdminHourlyCampaignMetrics]
-        getHourlyPlatformMetrics(filter:String!, startDate: String!, endDate: String!): [AdminHourlyPlatformMetrics]
+        getWalletWithPendingBalance(tokenSymbol: String): Wallet
+        getWithdrawals(status: String): [AdminWithdrawal]
+        accountExists(id: String!): UserExistence
+        getCampaignMetrics(campaignId: String!): AdminCampaignMetrics
+        getHourlyCampaignMetrics(
+            campaignId: String!
+            filter: String!
+            startDate: String!
+            endDate: String!
+        ): [AdminHourlyCampaignMetrics]
+        getHourlyPlatformMetrics(filter: String!, startDate: String!, endDate: String!): [AdminHourlyPlatformMetrics]
         getTotalPlatformMetrics: AdminCampaignMetrics
         getFollowerCount: FollowerCounts
         getPreviousDayMetrics: JSON
-        getEstimatedGasPrice(symbol:String): String
-        getExternalAddress(ethereumAddress:String!): ExternalAddress
+        getEstimatedGasPrice(symbol: String): String
+        getExternalAddress(ethereumAddress: String!): ExternalAddress
         listExternalAddresses: [ExternalAddress]
-        getWithdrawalsV2(status:String): [AdminWithdrawal]
+        getWithdrawalsV2(status: String): [AdminWithdrawal]
         getWithdrawalHistory: [Transfer]
-        adminGetKycByUser(userId:String!): KycUser
+        adminGetKycByUser(userId: String!): KycUser
         verifySession: JSON
         getFundingWallet: FundingWallet
         listOrgs(skip: Int, take: Int): [Org]
@@ -135,9 +150,9 @@ export const typeDefs = gql`
         listPaymentMethods: [PaymentMethod]
         listPendingCampaigns(skip: Int, take: Int): PaginatedCampaignResults
         listSupportedCrypto: [CryptoCurrency]
-        getTokenInUSD(symbol:String!): Float
-        getTokenIdBySymbol(symbol:String!): String
-        checkCoinGecko(symbol:String): Boolean
+        getTokenInUSD(symbol: String!): Float
+        getTokenIdBySymbol(symbol: String!): String
+        checkCoinGecko(symbol: String): Boolean
     }
 
     type Org {
@@ -313,19 +328,19 @@ export const typeDefs = gql`
         socialLinks: [SocialLink]
         factorLinks: [FactorLink]
         twentyFourHourMetrics: [TwentyFourHourMetric]
-        ageRange:String
-        city:String
-        country:String
-        state:String
-        interests:[String]
-        values:[String]
+        ageRange: String
+        city: String
+        country: String
+        state: String
+        interests: [String]
+        values: [String]
         notificationSettings: NotificationSettings
     }
 
     type PublicUser {
         id: String
         username: String
-        ageRange:String
+        ageRange: String
     }
 
     type KycUser {
@@ -443,9 +458,9 @@ export const typeDefs = gql`
 
     type ParticipantAudit {
         participantId: String
-        viewPayout: Float,
-        clickPayout: Float,
-        submissionPayout: Float,
+        viewPayout: Float
+        clickPayout: Float
+        submissionPayout: Float
         totalPayout: Float
     }
 
@@ -461,5 +476,4 @@ export const typeDefs = gql`
         totalRewardPayout: Float
         flaggedParticipants: [ParticipantAudit]
     }
-
-`
+`;

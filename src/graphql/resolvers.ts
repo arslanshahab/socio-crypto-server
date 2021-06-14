@@ -24,12 +24,10 @@ export const resolvers = {
         me: userController.me,
         getCurrentCampaignTier: campaignController.getCurrentCampaignTier,
         isLastFactor: factorController.isLastFactor,
-        getParticipantByCampaignId:
-            participantController.getParticipantByCampaignId,
+        getParticipantByCampaignId: participantController.getParticipantByCampaignId,
         getKyc: kycController.getKyc,
         getWithdrawals: withdrawController.getWithdrawals,
-        getWalletWithPendingBalance:
-            withdrawController.getWalletWithPendingBalance,
+        getWalletWithPendingBalance: withdrawController.getWalletWithPendingBalance,
         getCampaignMetrics: campaignController.adminGetCampaignMetrics,
         getParticipantMetrics: participantController.getParticipantMetrics,
         getUserMetrics: userController.getUserMetrics,
@@ -57,8 +55,7 @@ export const resolvers = {
         deleteCampaign: campaignController.deleteCampaign,
         promoteUserPermissions: userController.promotePermissions,
         removeSocialLink: socialController.removeSocialLink,
-        generateCampaignAuditReport:
-            campaignController.generateCampaignAuditReport,
+        generateCampaignAuditReport: campaignController.generateCampaignAuditReport,
         payoutCampaignRewards: campaignController.payoutCampaignRewards,
         registerFactorLink: factorController.registerFactorLink,
         removeFactorLink: factorController.removeFactorLink,
@@ -81,10 +78,8 @@ export const resolvers = {
 
 export const adminResolvers = {
     Query: {
-        getHourlyCampaignMetrics:
-            campaignController.adminGetHourlyCampaignMetrics,
-        getHourlyPlatformMetrics:
-            campaignController.adminGetHourlyPlatformMetrics,
+        getHourlyCampaignMetrics: campaignController.adminGetHourlyCampaignMetrics,
+        getHourlyPlatformMetrics: campaignController.adminGetHourlyPlatformMetrics,
         getTotalPlatformMetrics: campaignController.adminGetPlatformMetrics,
         getCurrentCampaignTier: campaignController.getCurrentCampaignTier,
         getExternalAddress: externalWallet.get,
@@ -105,8 +100,7 @@ export const adminResolvers = {
     },
     Mutation: {
         newOrg: orgController.newOrg,
-        generateCampaignAuditReport:
-            campaignController.generateCampaignAuditReport,
+        generateCampaignAuditReport: campaignController.generateCampaignAuditReport,
         newCampaign: campaignController.createNewCampaign,
         payoutCampaignRewards: campaignController.payoutCampaignRewards,
         deleteCampaign: campaignController.deleteCampaign,

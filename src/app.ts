@@ -13,16 +13,8 @@ import * as FactorController from "./controllers/factor";
 import * as Dragonfactor from "@myfii-dev/dragonfactor-auth";
 import { paypalWebhook } from "./controllers/withdraw";
 // import {Paypal} from "./clients/paypal";
-import {
-    adminResolvers,
-    publicResolvers,
-    resolvers,
-} from "./graphql/resolvers";
-import {
-    sessionLogin,
-    sessionLogout,
-    updateUserPassword,
-} from "./controllers/firebase";
+import { adminResolvers, publicResolvers, resolvers } from "./graphql/resolvers";
+import { sessionLogin, sessionLogout, updateUserPassword } from "./controllers/firebase";
 import { trackClickByLink } from "./controllers/participant";
 import cookieParser from "cookie-parser";
 import { StripeAPI } from "./clients/stripe";
@@ -69,15 +61,10 @@ export class Application {
             exposedHeaders: ["x-auth-token"],
             credentials: true,
         };
-        if (NODE_ENV !== "production")
-            corsSettings.origin.push("http://localhost:3000");
+        if (NODE_ENV !== "production") corsSettings.origin.push("http://localhost:3000");
         this.app.use(cookieParser());
         this.app.use(cors(corsSettings));
-        this.app.post(
-            "/v1/payments",
-            bodyParser.raw({ type: "application/json" }),
-            stripeWebhook
-        );
+        this.app.post("/v1/payments", bodyParser.raw({ type: "application/json" }), stripeWebhook);
         this.app.use(bodyParser.json({ limit: "30mb" }));
         this.app.use(bodyParser.urlencoded({ extended: true }));
         this.app.set("port", process.env.PORT || 8080);
@@ -121,10 +108,8 @@ export class Application {
             path: "/v1/public/graphql",
             cors: corsSettings,
         });
-        this.app.get(
-            "/v1/health",
-            (_req: express.Request, res: express.Response) =>
-                res.send("I am alive and well, thank you!")
+        this.app.get("/v1/health", (_req: express.Request, res: express.Response) =>
+            res.send("I am alive and well, thank you!")
         );
         this.app.post("/v1/login", sessionLogin);
         this.app.post("/v1/logout", sessionLogout);
@@ -152,19 +137,11 @@ export class Application {
     }
 
     public async startServer() {
-        this.runningServer = this.app.listen(
-            this.app.get("port"),
-            "0.0.0.0",
-            () => {
-                this.runningServer.timeout = 1000000;
-                this.runningServer.keepAliveTimeout = 90000;
-                logger.info(
-                    `App is running at http://localhost:${this.app.get(
-                        "port"
-                    )} in ${this.app.get("env")} mode`
-                );
-                logger.info("Press CTRL-C to stop\n");
-            }
-        );
+        this.runningServer = this.app.listen(this.app.get("port"), "0.0.0.0", () => {
+            this.runningServer.timeout = 1000000;
+            this.runningServer.keepAliveTimeout = 90000;
+            logger.info(`App is running at http://localhost:${this.app.get("port")} in ${this.app.get("env")} mode`);
+            logger.info("Press CTRL-C to stop\n");
+        });
     }
 }
