@@ -27,11 +27,7 @@ export class StripeAPI {
         header: string | Buffer | Array<string>,
         secret: string
     ) {
-        return StripeAPI.client.webhooks.constructEvent(
-            payload,
-            header,
-            secret
-        );
+        return StripeAPI.client.webhooks.constructEvent(payload, header, secret);
     }
 
     public static async chargePaymentMethod(
@@ -57,10 +53,9 @@ export class StripeAPI {
         } catch (err) {
             console.log("Error code is: ", err.code);
             if (err.raw.payment_intent && err.raw.payment_intent.id) {
-                const paymentIntentRetrieved =
-                    await StripeAPI.client.paymentIntents.retrieve(
-                        err.raw.payment_intent.id
-                    );
+                const paymentIntentRetrieved = await StripeAPI.client.paymentIntents.retrieve(
+                    err.raw.payment_intent.id
+                );
                 console.log("PI retrieved: ", paymentIntentRetrieved.id);
             }
         }

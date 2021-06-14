@@ -1,7 +1,6 @@
-import {MigrationInterface, QueryRunner} from "typeorm";
+import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class Float8ToVarChar1594237602479 implements MigrationInterface {
-
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`ALTER TABLE "participant" ALTER COLUMN "clickCount" TYPE VARCHAR`);
         await queryRunner.query(`ALTER TABLE "participant" ALTER COLUMN "viewCount" TYPE VARCHAR`);
@@ -31,5 +30,4 @@ export class Float8ToVarChar1594237602479 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "social_post" ALTER COLUMN "shares" TYPE bigint`);
         await queryRunner.query(`ALTER TABLE "social_post" ALTER COLUMN "comments" TYPE bigint`);
     }
-
 }

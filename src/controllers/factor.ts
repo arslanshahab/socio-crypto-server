@@ -1,13 +1,7 @@
 import { Response } from "express";
 import jwt from "jsonwebtoken";
 import * as Dragonfactor from "@myfii-dev/dragonfactor-auth";
-import {
-    asyncHandler,
-    extractFactor,
-    generateRandomNumber,
-    createFactorsFromKycData,
-    BN,
-} from "../util/helpers";
+import { asyncHandler, extractFactor, generateRandomNumber, createFactorsFromKycData, BN } from "../util/helpers";
 import { AuthRequest, FactorGeneration } from "../types";
 import { FactorLink } from "../models/FactorLink";
 import { Secrets } from "../util/secrets";
@@ -56,19 +50,13 @@ export const registerFactorLink = async (
     return user.asV1();
 };
 
-export const removeFactorLink = async (
-    parent: any,
-    args: { factorId: string },
-    context: { user: any }
-) => {
+export const removeFactorLink = async (parent: any, args: { factorId: string }, context: { user: any }) => {
     const { id } = context.user;
     const user = await User.findOneOrFail({
         where: { identityId: id },
         relations: ["factorLinks"],
     });
-    const factorLink = user.factorLinks.find(
-        (link: FactorLink) => link.factorId === args.factorId
-    );
+    const factorLink = user.factorLinks.find((link: FactorLink) => link.factorId === args.factorId);
     if (!factorLink) throw new Error("requested factor not found");
     await factorLink.remove();
     if (factorLink.type === "myfii-kyc") {
@@ -79,11 +67,7 @@ export const removeFactorLink = async (
     return user.asV1();
 };
 
-export const isLastFactor = async (
-    _parent: any,
-    args: any,
-    context: { user: any }
-) => {
+export const isLastFactor = async (_parent: any, args: any, context: { user: any }) => {
     const { id } = context.user;
     const user = await User.findOneOrFail({
         where: { identityId: id },
@@ -141,11 +125,7 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
         if (user.profile.email) emailAddress = user.profile.email.split("@")[1];
         for (let i = 0; i < factors.length; i++) {
             const { type, id, providerId, factor } = factors[i];
-            if (
-                !user.factorLinks.find(
-                    (link: FactorLink) => link.factorId === id
-                )
-            ) {
+            if (!user.factorLinks.find((link: FactorLink) => link.factorId === id)) {
                 const factorLink = new FactorLink();
                 factorLink.type = type;
                 factorLink.factorId = id;
@@ -166,8 +146,7 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
     }
     const jwtPayload: { [key: string]: string } = { id: identityId };
     if (
-        (emailAddress! &&
-            ["raiinmaker.com", "dragonchain.com"].includes(emailAddress!)) ||
+        (emailAddress! && ["raiinmaker.com", "dragonchain.com"].includes(emailAddress!)) ||
         NODE_ENV === "development"
     ) {
         jwtPayload.role = "admin";
@@ -177,86 +156,58 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
         expiresIn: 60 * 30,
         audience: serverBaseUrl,
     });
-    return res
-        .status(200)
-        .json({
-            success: true,
-            token,
-            id: user.id,
-            role: jwtPayload.role,
-            company: jwtPayload.company,
-        });
+    return res.status(200).json({
+        success: true,
+        token,
+        id: user.id,
+        role: jwtPayload.role,
+        company: jwtPayload.company,
+    });
 });
 
 export const recover = asyncHandler(async (req: AuthRequest, res: Response) => {
     const { identityId, code, message } = req.user;
     const shouldRateLimit = await limit(message, 4);
-    if (shouldRateLimit)
-        return res
-            .status(429)
-            .json({ code: "REQUEST_LIMIT", message: "too many requests" });
+    if (shouldRateLimit) return res.status(429).json({ code: "REQUEST_LIMIT", message: "too many requests" });
     if (isNaN(Number(code)))
-        return res
-            .status(400)
-            .json({
-                code: "MALFORMED_INPUT",
-                message: "recovery code must be a integer",
-            });
+        return res.status(400).json({
+            code: "MALFORMED_INPUT",
+            message: "recovery code must be a integer",
+        });
     if (await User.findOne({ where: { identityId } }))
-        return res
-            .status(429)
-            .json({
-                code: "ACCOUNT_CONFLICT",
-                message: "an account with that identity already exists",
-            });
+        return res.status(429).json({
+            code: "ACCOUNT_CONFLICT",
+            message: "an account with that identity already exists",
+        });
     const profile = await Profile.findOne({
         where: { username: message, recoveryCode: sha256Hash(code.toString()) },
         relations: ["user"],
     });
     if (!profile) {
-        await Dragonchain.ledgerAccountRecoveryAttempt(
-            undefined,
-            identityId,
-            message,
-            code,
-            false
-        );
-        return res
-            .status(404)
-            .json({
-                code: "NOT_FOUND",
-                message: "requested account not found",
-            });
+        await Dragonchain.ledgerAccountRecoveryAttempt(undefined, identityId, message, code, false);
+        return res.status(404).json({
+            code: "NOT_FOUND",
+            message: "requested account not found",
+        });
     }
     const user = profile.user;
     await S3Client.deleteUserInfoIfExists(user.id);
     await S3Client.deleteKycImage(user.id, "idProof");
     await S3Client.deleteKycImage(user.id, "addressProof");
-    await Dragonchain.ledgerAccountRecoveryAttempt(
-        user.id,
-        identityId,
-        message,
-        code,
-        true
-    );
+    await Dragonchain.ledgerAccountRecoveryAttempt(user.id, identityId, message, code, true);
     user.identityId = identityId;
     user.kycStatus = "";
     await user.save();
     return res.status(200).json({ success: true });
 });
 
-export const generateFactors = async (
-    parent: any,
-    args: { factors: FactorGeneration[] },
-    context: { user: any }
-) => {
+export const generateFactors = async (parent: any, args: { factors: FactorGeneration[] }, context: { user: any }) => {
     const { id } = context.user;
     const { factors } = args;
     if (!factors) throw new Error("must provide factor association IDs");
     const user = await User.findOne({ where: { identityId: id } });
     if (!user) throw new Error("user not found");
-    if (user.kycStatus !== "approved")
-        throw new Error("you can only generate factors with an approved KYC");
+    if (user.kycStatus !== "approved") throw new Error("you can only generate factors with an approved KYC");
     const kycData = await S3Client.getUserObject(user.id);
     return createFactorsFromKycData(kycData, factors);
 };

@@ -14,11 +14,7 @@ import { HourlyCampaignMetric } from "../models/HourlyCampaignMetric";
 import { serverBaseUrl } from "../config";
 import { In } from "typeorm";
 
-export const participate = async (
-    parent: any,
-    args: { campaignId: string; email: string },
-    context: { user: any }
-) => {
+export const participate = async (parent: any, args: { campaignId: string; email: string }, context: { user: any }) => {
     const { id } = context.user;
     const user = await User.findOne({
         where: { identityId: id },
@@ -30,10 +26,8 @@ export const participate = async (
         relations: ["org"],
     });
     if (!campaign) throw new Error("campaign not found");
-    if (campaign.type === "raffle" && !args.email)
-        throw new Error("raffle campaigns require an email");
-    if (!campaign.isOpen())
-        throw new Error("campaign is not open for participation");
+    if (campaign.type === "raffle" && !args.email) throw new Error("raffle campaigns require an email");
+    if (!campaign.isOpen()) throw new Error("campaign is not open for participation");
     if (await Participant.findOne({ where: { campaign, user } }))
         throw new Error("user already participating in this campaign");
     const participant = Participant.newParticipant(user, campaign, args.email);
@@ -55,10 +49,7 @@ export const promotePermissions = async (
     },
     context: { user: any }
 ) => {
-    const { role, company } = checkPermissions(
-        { hasRole: ["admin", "manager"] },
-        context
-    );
+    const { role, company } = checkPermissions({ hasRole: ["admin", "manager"] }, context);
     const where: { [key: string]: string } = {};
     if (args.userId) where["id"] = args.userId;
     else if (args.email) where["email"] = args.email;
@@ -66,14 +57,9 @@ export const promotePermissions = async (
     const user = await User.findOne({ where });
     if (!user) throw new Error("user not found");
     if (role === "manager") {
-        await Firebase.client
-            .auth()
-            .setCustomUserClaims(user.id, { role: "manager", company });
+        await Firebase.client.auth().setCustomUserClaims(user.id, { role: "manager", company });
     } else {
-        if (!args.role)
-            throw new Error(
-                "administrators must specify a role to promote user to"
-            );
+        if (!args.role) throw new Error("administrators must specify a role to promote user to");
         await Firebase.client.auth().setCustomUserClaims(user.id, {
             role: args.role,
             company: args.company || company,
@@ -82,11 +68,7 @@ export const promotePermissions = async (
     return user.asV1();
 };
 
-export const removeParticipation = async (
-    parent: any,
-    args: { campaignId: string },
-    context: { user: any }
-) => {
+export const removeParticipation = async (parent: any, args: { campaignId: string }, context: { user: any }) => {
     const { id } = context.user;
     const user = await User.findOne({
         where: { identityId: id },
@@ -101,21 +83,13 @@ export const removeParticipation = async (
     const participation = await Participant.findOne({
         where: { user, campaign },
     });
-    if (!participation)
-        throw new Error("user was not participating in campaign");
-    await HourlyCampaignMetric.upsert(
-        campaign,
-        campaign.org,
-        "removeParticipant"
-    );
+    if (!participation) throw new Error("user was not participating in campaign");
+    await HourlyCampaignMetric.upsert(campaign, campaign.org, "removeParticipant");
     await participation.remove();
     return user.asV1();
 };
 
-export const usernameExists = async (
-    parent: any,
-    args: { username: string }
-) => {
+export const usernameExists = async (parent: any, args: { username: string }) => {
     const profile = await Profile.findOne({
         where: { username: args.username },
     });
@@ -134,9 +108,7 @@ export const me = async (
     info: GraphQLResolveInfo
 ) => {
     const { id } = context.user;
-    const query = info.fieldNodes.find(
-        (field) => field.name.value === info.fieldName
-    );
+    const query = info.fieldNodes.find((field) => field.name.value === info.fieldName);
     const user = await User.getUser(id, query);
     if (!user) throw new Error("user not found");
     if (args.openCampaigns !== null && args.openCampaigns === true) {
@@ -147,22 +119,14 @@ export const me = async (
     return user.asV1();
 };
 
-export const list = async (
-    parent: any,
-    args: { skip: number; take: number },
-    context: { user: any }
-) => {
+export const list = async (parent: any, args: { skip: number; take: number }, context: { user: any }) => {
     checkPermissions({ hasRole: ["admin"] }, context);
     const { skip = 0, take = 10 } = args;
     const [results, total] = await User.findAndCount({ skip, take });
     return { results: results.map((user) => user.asV1()), total };
 };
 
-export const setDevice = async (
-    parent: any,
-    args: { deviceToken: string },
-    context: { user: any }
-) => {
+export const setDevice = async (parent: any, args: { deviceToken: string }, context: { user: any }) => {
     const { deviceToken } = args;
     const { id } = context.user;
     const user = await User.findOneOrFail({ where: { identityId: id } });
@@ -171,11 +135,7 @@ export const setDevice = async (
     return true;
 };
 
-export const updateUsername = async (
-    parent: any,
-    args: { username: string },
-    context: { user: any }
-) => {
+export const updateUsername = async (parent: any, args: { username: string }, context: { user: any }) => {
     const { id } = context.user;
     const user = await User.findOneOrFail({ where: { identityId: id } });
     if (await Profile.findOne({ where: { username: args.username } }))
@@ -185,11 +145,7 @@ export const updateUsername = async (
     return user.asV1();
 };
 
-export const setRecoveryCode = async (
-    parent: any,
-    args: { code: number },
-    context: { user: any }
-) => {
+export const setRecoveryCode = async (parent: any, args: { code: number }, context: { user: any }) => {
     const { id } = context.user;
     const user = await User.findOne({
         where: { identityId: id },
@@ -265,25 +221,15 @@ export const removeProfileInterests = async (
     return user.asV1();
 };
 
-export const getUserMetrics = async (
-    parent: any,
-    args: { today: boolean },
-    context: { user: any }
-) => {
+export const getUserMetrics = async (parent: any, args: { today: boolean }, context: { user: any }) => {
     const { id } = context.user;
     const { today = false } = args;
     const user = await User.findOne({ where: { identityId: id } });
     if (!user) throw new Error("user not found");
-    return (await DailyParticipantMetric.getSortedByUser(user, today)).map(
-        (metric) => metric.asV1()
-    );
+    return (await DailyParticipantMetric.getSortedByUser(user, today)).map((metric) => metric.asV1());
 };
 
-export const getPreviousDayMetrics = async (
-    _parent: any,
-    args: any,
-    context: { user: any }
-) => {
+export const getPreviousDayMetrics = async (_parent: any, args: any, context: { user: any }) => {
     const { id } = context.user;
     let metrics: { [key: string]: any } = {};
     const user = await User.findOne({
@@ -294,18 +240,12 @@ export const getPreviousDayMetrics = async (
     if (user.campaigns.length > 0) {
         for (let i = 0; i < user.campaigns.length; i++) {
             const participant = user.campaigns[i];
-            await Campaign.updateAllDailyParticipationMetrics(
-                participant.campaign.id
-            );
+            await Campaign.updateAllDailyParticipationMetrics(participant.campaign.id);
         }
-        const allParticipatingCampaigns = [...user.campaigns].map(
-            (participant) => participant.campaign.id
-        );
+        const allParticipatingCampaigns = [...user.campaigns].map((participant) => participant.campaign.id);
         const allDailyMetrics =
             allParticipatingCampaigns.length > 0
-                ? await DailyParticipantMetric.getPreviousDayMetricsForAllCampaigns(
-                      allParticipatingCampaigns
-                  )
+                ? await DailyParticipantMetric.getPreviousDayMetricsForAllCampaigns(allParticipatingCampaigns)
                 : [];
         metrics = await groupDailyMetricsByUser(user.id, allDailyMetrics);
     }
@@ -331,10 +271,8 @@ export const updateNotificationSettings = async (
     if (!user) throw new Error("user not found");
     const notificationSettings = user.notificationSettings;
     if (kyc !== null && kyc !== undefined) notificationSettings.kyc = kyc;
-    if (withdraw !== null && withdraw !== undefined)
-        notificationSettings.withdraw = withdraw;
-    if (campaignCreate !== null && campaignCreate !== undefined)
-        notificationSettings.campaignCreate = campaignCreate;
+    if (withdraw !== null && withdraw !== undefined) notificationSettings.withdraw = withdraw;
+    if (campaignCreate !== null && campaignCreate !== undefined) notificationSettings.campaignCreate = campaignCreate;
     if (campaignUpdates !== null && campaignUpdates !== undefined)
         notificationSettings.campaignUpdates = campaignUpdates;
     await notificationSettings.save();
@@ -346,27 +284,21 @@ export const sendUserMessages = async (
     args: { usernames: string[]; title: string; message: string },
     context: { user: any }
 ) => {
-    checkPermissions(
-        { hasRole: ["admin"], restrictCompany: "raiinmaker" },
-        context
-    );
+    checkPermissions({ hasRole: ["admin"], restrictCompany: "raiinmaker" }, context);
     const { usernames, title, message } = args;
     if (usernames.length === 0) return false;
-    const tokens = (
-        await Profile.find({ where: { username: In(usernames) } })
-    ).reduce((accum: string[], curr: Profile) => {
-        if (curr.deviceToken) accum.push(curr.deviceToken);
-        return accum;
-    }, []);
+    const tokens = (await Profile.find({ where: { username: In(usernames) } })).reduce(
+        (accum: string[], curr: Profile) => {
+            if (curr.deviceToken) accum.push(curr.deviceToken);
+            return accum;
+        },
+        []
+    );
     await Firebase.sendGenericNotification(tokens, title, message);
     return true;
 };
 
-export const uploadProfilePicture = async (
-    parent: any,
-    args: { image: string },
-    context: { user: any }
-) => {
+export const uploadProfilePicture = async (parent: any, args: { image: string }, context: { user: any }) => {
     const { id } = context.user;
     const { image } = args;
     const user = await User.findOne({ where: { identityId: id } });

@@ -119,9 +119,7 @@ export class DailyParticipantMetric extends BaseEntity {
             shareCount: this.shareCount.toNumber(),
             commentCount: this.commentCount.toNumber(),
             participationScore: parseFloat(this.participationScore.toString()),
-            totalParticipationScore: parseFloat(
-                this.totalParticipationScore.toString()
-            ),
+            totalParticipationScore: parseFloat(this.totalParticipationScore.toString()),
         };
         if (this.campaign) response.campaignId = this.campaign.id;
         return response;
@@ -131,37 +129,17 @@ export class DailyParticipantMetric extends BaseEntity {
         user: User,
         campaign: Campaign,
         participant: Participant,
-        action:
-            | "clicks"
-            | "views"
-            | "submissions"
-            | "likes"
-            | "shares"
-            | "comments",
+        action: "clicks" | "views" | "submissions" | "likes" | "shares" | "comments",
         additiveParticipationScore: BigNumber,
         actionCount: number = 1,
         shouldSave: boolean = true
     ): Promise<DailyParticipantMetric> {
-        if (
-            ![
-                "clicks",
-                "views",
-                "submissions",
-                "likes",
-                "shares",
-                "comments",
-            ].includes(action)
-        )
+        if (!["clicks", "views", "submissions", "likes", "shares", "comments"].includes(action))
             throw new Error("action not supported");
         const currentDate = new Date();
         const month =
-            currentDate.getUTCMonth() + 1 < 10
-                ? `0${currentDate.getUTCMonth() + 1}`
-                : currentDate.getUTCMonth() + 1;
-        const day =
-            currentDate.getUTCDate() < 10
-                ? `0${currentDate.getUTCDate()}`
-                : currentDate.getUTCDate();
+            currentDate.getUTCMonth() + 1 < 10 ? `0${currentDate.getUTCMonth() + 1}` : currentDate.getUTCMonth() + 1;
+        const day = currentDate.getUTCDate() < 10 ? `0${currentDate.getUTCDate()}` : currentDate.getUTCDate();
         const yyymmdd = `${currentDate.getUTCFullYear()}-${month}-${day}`;
         let record = await DailyParticipantMetric.findOne({
             where: {
@@ -183,9 +161,7 @@ export class DailyParticipantMetric extends BaseEntity {
                     : new BN(actionCount);
                 break;
             case "views":
-                record.viewCount = record.viewCount
-                    ? record.viewCount.plus(new BN(actionCount))
-                    : new BN(actionCount);
+                record.viewCount = record.viewCount ? record.viewCount.plus(new BN(actionCount)) : new BN(actionCount);
                 break;
             case "submissions":
                 record.submissionCount = record.submissionCount
@@ -193,9 +169,7 @@ export class DailyParticipantMetric extends BaseEntity {
                     : new BN(actionCount);
                 break;
             case "likes":
-                record.likeCount = record.likeCount
-                    ? record.likeCount.plus(new BN(actionCount))
-                    : new BN(actionCount);
+                record.likeCount = record.likeCount ? record.likeCount.plus(new BN(actionCount)) : new BN(actionCount);
                 break;
             case "shares":
                 record.shareCount = record.shareCount
@@ -234,9 +208,7 @@ export class DailyParticipantMetric extends BaseEntity {
         return metric;
     }
 
-    public static async getSortedByParticipantId(
-        participantId: string
-    ): Promise<DailyParticipantMetric[]> {
+    public static async getSortedByParticipantId(participantId: string): Promise<DailyParticipantMetric[]> {
         return this.createQueryBuilder("metrics")
             .where('metrics."participantId" = :id', { id: participantId })
             .orderBy('metrics."createdAt"', "ASC")
@@ -251,10 +223,7 @@ export class DailyParticipantMetric extends BaseEntity {
             .getOne();
     }
 
-    public static async getSortedByUser(
-        user: User,
-        today: boolean
-    ): Promise<DailyParticipantMetric[]> {
+    public static async getSortedByUser(user: User, today: boolean): Promise<DailyParticipantMetric[]> {
         let where: { [key: string]: any } = { user };
         if (today) {
             const currentDate = new Date();
@@ -262,10 +231,7 @@ export class DailyParticipantMetric extends BaseEntity {
                 currentDate.getUTCMonth() + 1 < 10
                     ? `0${currentDate.getUTCMonth() + 1}`
                     : currentDate.getUTCMonth() + 1;
-            const day =
-                currentDate.getUTCDate() < 10
-                    ? `0${currentDate.getUTCDate()}`
-                    : currentDate.getUTCDate();
+            const day = currentDate.getUTCDate() < 10 ? `0${currentDate.getUTCDate()}` : currentDate.getUTCDate();
             const yyymmdd = `${currentDate.getUTCFullYear()}-${month}-${day}`;
             where["createdAt"] = MoreThan(`${yyymmdd} 00:00:00`);
         }
@@ -276,9 +242,7 @@ export class DailyParticipantMetric extends BaseEntity {
         });
     }
 
-    public static async getAggregatedMetrics(
-        participantId: string
-    ): Promise<AggregateDailyMetrics> {
+    public static async getAggregatedMetrics(participantId: string): Promise<AggregateDailyMetrics> {
         const yesterdayDate = new Date();
         yesterdayDate.setDate(new Date().getDate() - 1);
         yesterdayDate.setHours(0);
@@ -292,22 +256,16 @@ export class DailyParticipantMetric extends BaseEntity {
         todayDate.setSeconds(0);
         todayDate.setMilliseconds(0);
         const today = DateUtils.mixedDateToDatetimeString(todayDate);
-        const {
-            clickCount,
-            submissionCount,
-            viewCount,
-            likeCount,
-            shareCount,
-            commentCount,
-        } = await this.createQueryBuilder("metric")
-            .select(
-                'SUM(CAST(metric."clickCount" AS int)) as "clickCount", SUM(CAST(metric."submissionCount" AS int)) as "submissionCount", SUM(CAST(metric."viewCount" AS int)) as "viewCount", SUM(CAST(metric."likeCount" as int)) as "likeCount", SUM(CAST(metric."shareCount" as int)) as "shareCount"'
-            )
-            .where(
-                `metric."participantId" = :participant AND metric."createdAt" >= '${yesterday}' AND metric."createdAt" < '${today}'`,
-                { participant: participantId }
-            )
-            .getRawOne();
+        const { clickCount, submissionCount, viewCount, likeCount, shareCount, commentCount } =
+            await this.createQueryBuilder("metric")
+                .select(
+                    'SUM(CAST(metric."clickCount" AS int)) as "clickCount", SUM(CAST(metric."submissionCount" AS int)) as "submissionCount", SUM(CAST(metric."viewCount" AS int)) as "viewCount", SUM(CAST(metric."likeCount" as int)) as "likeCount", SUM(CAST(metric."shareCount" as int)) as "shareCount"'
+                )
+                .where(
+                    `metric."participantId" = :participant AND metric."createdAt" >= '${yesterday}' AND metric."createdAt" < '${today}'`,
+                    { participant: participantId }
+                )
+                .getRawOne();
         return {
             clickCount: clickCount || 0,
             submissionCount: submissionCount || 0,
@@ -318,9 +276,7 @@ export class DailyParticipantMetric extends BaseEntity {
         };
     }
 
-    public static async getPreviousDayMetricsForAllCampaigns(
-        campaignIds: string[]
-    ): Promise<DailyParticipantMetric[]> {
+    public static async getPreviousDayMetricsForAllCampaigns(campaignIds: string[]): Promise<DailyParticipantMetric[]> {
         const yesterdayDate = new Date();
         yesterdayDate.setDate(new Date().getDate() - 1);
         yesterdayDate.setHours(0);
@@ -335,16 +291,8 @@ export class DailyParticipantMetric extends BaseEntity {
         todayDate.setMilliseconds(0);
         const today = DateUtils.mixedDateToDatetimeString(todayDate);
         return this.createQueryBuilder("metric")
-            .leftJoinAndSelect(
-                "metric.user",
-                "user",
-                'user.id = metric."userId"'
-            )
-            .leftJoinAndSelect(
-                "metric.campaign",
-                "campaign",
-                'campaign.id = metric."campaignId"'
-            )
+            .leftJoinAndSelect("metric.user", "user", 'user.id = metric."userId"')
+            .leftJoinAndSelect("metric.campaign", "campaign", 'campaign.id = metric."campaignId"')
             .where(
                 `campaign.id IN (:...ids) AND campaign."endDate" >= '${yesterday}' AND metric."createdAt" < '${today}' AND metric."createdAt" >= '${yesterday}'`,
                 { ids: campaignIds }
@@ -353,15 +301,9 @@ export class DailyParticipantMetric extends BaseEntity {
             .getMany();
     }
 
-    public static async getPreviousDayMetricForUser(
-        userId: string
-    ): Promise<DailyParticipantMetric | undefined> {
+    public static async getPreviousDayMetricForUser(userId: string): Promise<DailyParticipantMetric | undefined> {
         return await this.createQueryBuilder("metric")
-            .leftJoinAndSelect(
-                "metric.user",
-                "user",
-                'metric."userId" = user.id'
-            )
+            .leftJoinAndSelect("metric.user", "user", 'metric."userId" = user.id')
             .where("user.id = :id", { id: userId })
             .orderBy('metric."createdAt"', "DESC")
             .limit(1)

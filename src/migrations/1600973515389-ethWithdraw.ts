@@ -1,7 +1,7 @@
-import {MigrationInterface, QueryRunner} from "typeorm";
+import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class ethWithdraw1600973515389 implements MigrationInterface {
-    name = 'ethWithdraw1600973515389'
+    name = "ethWithdraw1600973515389";
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`ALTER TABLE "transfer" ADD "ethAddress" character varying`);
@@ -12,5 +12,4 @@ export class ethWithdraw1600973515389 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "transfer" DROP COLUMN "transactionHash"`);
         await queryRunner.query(`ALTER TABLE "transfer" DROP COLUMN "ethAddress"`);
     }
-
 }

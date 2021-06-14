@@ -1,181 +1,180 @@
-import Ajv from 'ajv';
+import Ajv from "ajv";
 
 export const algorithmCreateSchema = {
-    type: 'object',
+    type: "object",
     properties: {
-        version: {type: 'string'},
+        version: { type: "string" },
         pointValues: {
-            type: 'object',
+            type: "object",
             properties: {
-                clicks: {type: 'string'},
-                views: {type: 'string'},
-                submissions: {type: 'string'},
-                likes: {type: 'string'},
-                comments: {type: 'string'},
-                shares: {type: 'string'}
-            }
+                clicks: { type: "string" },
+                views: { type: "string" },
+                submissions: { type: "string" },
+                likes: { type: "string" },
+                comments: { type: "string" },
+                shares: { type: "string" },
+            },
         },
         tiers: {
-            type: 'object',
+            type: "object",
             properties: {
-                '1': {
-                    type: 'object',
+                "1": {
+                    type: "object",
                     properties: {
-                        threshold: {type: 'string'},
-                        totalCoiins: {type: 'string'}
+                        threshold: { type: "string" },
+                        totalCoiins: { type: "string" },
                     },
                 },
-                '2': {
-                    type: 'object',
+                "2": {
+                    type: "object",
                     properties: {
-                        threshold: {type: 'string'},
-                        totalCoiins: {type: 'string'}
+                        threshold: { type: "string" },
+                        totalCoiins: { type: "string" },
                     },
                 },
-                '3': {
-                    type: 'object',
+                "3": {
+                    type: "object",
                     properties: {
-                        threshold: {type: 'string'},
-                        totalCoiins: {type: 'string'}
+                        threshold: { type: "string" },
+                        totalCoiins: { type: "string" },
                     },
                 },
-                '4': {
-                    type: 'object',
+                "4": {
+                    type: "object",
                     properties: {
-                        threshold: {type: 'string'},
-                        totalCoiins: {type: 'string'}
+                        threshold: { type: "string" },
+                        totalCoiins: { type: "string" },
                     },
                 },
-                '5': {
-                    type: 'object',
+                "5": {
+                    type: "object",
                     properties: {
-                        threshold: {type: 'string'},
-                        totalCoiins: {type: 'string'}
+                        threshold: { type: "string" },
+                        totalCoiins: { type: "string" },
                     },
                 },
-                '6': {
-                    type: 'object',
+                "6": {
+                    type: "object",
                     properties: {
-                        threshold: {type: 'string'},
-                        totalCoiins: {type: 'string'}
+                        threshold: { type: "string" },
+                        totalCoiins: { type: "string" },
                     },
                 },
-                '7': {
-                    type: 'object',
+                "7": {
+                    type: "object",
                     properties: {
-                        threshold: {type: 'string'},
-                        totalCoiins: {type: 'string'}
+                        threshold: { type: "string" },
+                        totalCoiins: { type: "string" },
                     },
                 },
-                '8': {
-                    type: 'object',
+                "8": {
+                    type: "object",
                     properties: {
-                        threshold: {type: 'string'},
-                        totalCoiins: {type: 'string'}
+                        threshold: { type: "string" },
+                        totalCoiins: { type: "string" },
                     },
                 },
-                '9': {
-                    type: 'object',
+                "9": {
+                    type: "object",
                     properties: {
-                        threshold: {type: 'string'},
-                        totalCoiins: {type: 'string'}
+                        threshold: { type: "string" },
+                        totalCoiins: { type: "string" },
                     },
                 },
-                '10': {
-                    type: 'object',
+                "10": {
+                    type: "object",
                     properties: {
-                        threshold: {type: 'string'},
-                        totalCoiins: {type: 'string'}
+                        threshold: { type: "string" },
+                        totalCoiins: { type: "string" },
                     },
                 },
-            }
-        }
-    }
+            },
+        },
+    },
 };
 
 export const campaignRequirementsSchema = {
-    type: 'object',
+    type: "object",
     properties: {
-      version: { type: 'string' },
-      ageRange: {
-        type: 'object',
-        properties: {
-          "0-17": {type: 'boolean'},
-          "18-25": {type: 'boolean'},
-          "26-40": {type: 'boolean'},
-          "41-55": {type: 'boolean'},
-          "55+": {type: 'boolean'},
-        }
-      },
-      location: {
-        type: 'array',
-        items: {
-          type: 'object',
-          city: { type: 'string' },
-          state: { type: 'string' },
-          country: { type: 'string' }
-        }
-      },
-      socialFollowing: {
-        type: 'object',
-        twitter: {
-          type: 'object',
-          minFollower: {
-            type: 'string'
-          }
-        }
-      },
-      values: {
-        type: "array",
-        items: { type: "string" }
-      },
-      interests: {
-        type: "array",
-        items: { type: "string" }
-      },
-    }
+        version: { type: "string" },
+        ageRange: {
+            type: "object",
+            properties: {
+                "0-17": { type: "boolean" },
+                "18-25": { type: "boolean" },
+                "26-40": { type: "boolean" },
+                "41-55": { type: "boolean" },
+                "55+": { type: "boolean" },
+            },
+        },
+        location: {
+            type: "array",
+            items: {
+                type: "object",
+                city: { type: "string" },
+                state: { type: "string" },
+                country: { type: "string" },
+            },
+        },
+        socialFollowing: {
+            type: "object",
+            twitter: {
+                type: "object",
+                minFollower: {
+                    type: "string",
+                },
+            },
+        },
+        values: {
+            type: "array",
+            items: { type: "string" },
+        },
+        interests: {
+            type: "array",
+            items: { type: "string" },
+        },
+    },
 };
 
 export const hourlyMetrics = {
-    type: 'object',
+    type: "object",
     properties: {
-        campaignId: {type: 'string'},
+        campaignId: { type: "string" },
         filter: {
-            type: 'string',
-            enum: ['hour', 'day', 'week', 'month', 'quarter', 'year', 'all']
-        }
-    }
-}
-
+            type: "string",
+            enum: ["hour", "day", "week", "month", "quarter", "year", "all"],
+        },
+    },
+};
 
 export const kycUser = {
-    type: 'object',
+    type: "object",
     properties: {
-        firstName: {type: 'string'},
-        lastName: {type: 'string'},
-        businessName: {type: 'string'},
-        email: {type: 'string'},
-        address: {type: 'object'},
-        phoneNumber: {type: 'string'},
-        paypalEmail: {type: 'string'},
-        idProof: {type: 'string'},
-        addressProof: {type: 'string'},
-        exceptions: {type: 'string'},
-        typeOfStructure: {type: 'string'},
-        accountNumbers: {type: 'string'},
-        ssn: {type: 'string'},
-    }
-}
+        firstName: { type: "string" },
+        lastName: { type: "string" },
+        businessName: { type: "string" },
+        email: { type: "string" },
+        address: { type: "object" },
+        phoneNumber: { type: "string" },
+        paypalEmail: { type: "string" },
+        idProof: { type: "string" },
+        addressProof: { type: "string" },
+        exceptions: { type: "string" },
+        typeOfStructure: { type: "string" },
+        accountNumbers: { type: "string" },
+        ssn: { type: "string" },
+    },
+};
 
 const rafflePrizeSchema = {
-  type: 'object',
-  properties: {
-    displayName: { type: 'string' },
-    affiliateLink: { type: 'string' },
-    image: { type: 'string' }
-  },
-  required: ['displayName']
-}
+    type: "object",
+    properties: {
+        displayName: { type: "string" },
+        affiliateLink: { type: "string" },
+        image: { type: "string" },
+    },
+    required: ["displayName"],
+};
 
 export class Validator {
     private ajv: Ajv.Ajv;
@@ -186,7 +185,7 @@ export class Validator {
     private validateRafflePrizePayload: Ajv.ValidateFunction;
 
     public constructor() {
-        this.ajv = new Ajv({schemaId: 'auto'});
+        this.ajv = new Ajv({ schemaId: "auto" });
         this.validateAlgorithmCreatePayload = this.ajv.compile(algorithmCreateSchema);
         this.validateCampaignRequirementsPayload = this.ajv.compile(campaignRequirementsSchema);
         this.validateKycUser = this.ajv.compile(kycUser);
@@ -196,30 +195,35 @@ export class Validator {
 
     public validateRafflePrizeSchema = (payload: object) => {
         if (!this.validateRafflePrizePayload(payload)) {
-            throw new Error(`Incoming raffle prize structure is invalid: ${JSON.stringify(this.validateRafflePrizePayload.errors)}`);
+            throw new Error(
+                `Incoming raffle prize structure is invalid: ${JSON.stringify(this.validateRafflePrizePayload.errors)}`
+            );
         }
-    } 
+    };
 
     public validateAlgorithmCreateSchema = (payload: object) => {
         if (!this.validateAlgorithmCreatePayload(payload)) {
-            throw new Error(`Incoming message is invalid ${JSON.stringify(this.validateAlgorithmCreatePayload.errors)}`);
+            throw new Error(
+                `Incoming message is invalid ${JSON.stringify(this.validateAlgorithmCreatePayload.errors)}`
+            );
         }
-    }
+    };
 
-  public validateCampaignRequirementsSchema = (payload: object) => {
+    public validateCampaignRequirementsSchema = (payload: object) => {
         if (!this.validateCampaignRequirementsPayload(payload)) {
-            throw new Error(`Incoming message is invalid ${JSON.stringify(this.validateCampaignRequirementsPayload.errors)}`);
+            throw new Error(
+                `Incoming message is invalid ${JSON.stringify(this.validateCampaignRequirementsPayload.errors)}`
+            );
         }
-    }
+    };
     public validateKycRegistration = (payload: object) => {
         if (!this.validateKycUser(payload)) {
             throw new Error(`Invalid kyc registration ${JSON.stringify(this.validateKycUser.errors)}`);
         }
-    }
+    };
     public validateHourlyMetricsArgs = (payload: object) => {
         if (!this.validateHourlyMetrics(payload)) {
             throw new Error(`Invalid metrics request ${JSON.stringify(this.validateHourlyMetrics.errors)}`);
         }
-    }
-
+    };
 }

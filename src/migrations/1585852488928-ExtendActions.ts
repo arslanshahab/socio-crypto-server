@@ -1,7 +1,6 @@
-import {MigrationInterface, QueryRunner} from "typeorm";
+import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class ExtendActions1585852488928 implements MigrationInterface {
-
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`ALTER TABLE "participant" ADD "viewCount" integer NOT NULL DEFAULT 0`);
         await queryRunner.query(`ALTER TABLE "participant" ADD "submissionCount" integer NOT NULL DEFAULT 0`);
@@ -13,5 +12,4 @@ export class ExtendActions1585852488928 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "participant" DROP COLUMN "submissionCount"`);
         await queryRunner.query(`ALTER TABLE "participant" DROP COLUMN "viewCount"`);
     }
-
 }

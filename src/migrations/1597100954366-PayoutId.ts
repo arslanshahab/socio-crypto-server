@@ -1,7 +1,7 @@
-import {MigrationInterface, QueryRunner} from "typeorm";
+import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class PayoutId1597100954366 implements MigrationInterface {
-    name = 'PayoutId1597100954366'
+    name = "PayoutId1597100954366";
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`ALTER TABLE "transfer" ADD "payoutStatus" character varying`);
@@ -12,5 +12,4 @@ export class PayoutId1597100954366 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "transfer" DROP COLUMN "payoutId"`);
         await queryRunner.query(`ALTER TABLE "transfer" DROP COLUMN "payoutStatus"`);
     }
-
 }

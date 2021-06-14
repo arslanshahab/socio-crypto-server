@@ -1,47 +1,51 @@
-import { Entity, BaseEntity, Column, PrimaryGeneratedColumn, OneToOne, CreateDateColumn, UpdateDateColumn, JoinColumn, OneToMany } from 'typeorm';
-import { Campaign } from './Campaign';
-import { Transfer } from './Transfer';
-import { RafflePrizeStructure } from '../types';
+import {
+    Entity,
+    BaseEntity,
+    Column,
+    PrimaryGeneratedColumn,
+    OneToOne,
+    CreateDateColumn,
+    UpdateDateColumn,
+    JoinColumn,
+    OneToMany,
+} from "typeorm";
+import { Campaign } from "./Campaign";
+import { Transfer } from "./Transfer";
+import { RafflePrizeStructure } from "../types";
 
 @Entity()
 export class RafflePrize extends BaseEntity {
-  @PrimaryGeneratedColumn('uuid')
-  public id: string;
+    @PrimaryGeneratedColumn("uuid")
+    public id: string;
 
-  @Column()
-  public displayName: string;
+    @Column()
+    public displayName: string;
 
-  @Column({ nullable: true })
-  public image: boolean;
-  
-  @Column({ nullable: true })
-  public affiliateLink: string;
+    @Column({ nullable: true })
+    public image: boolean;
 
-  @UpdateDateColumn()
-  public updatedAt: Date;
+    @Column({ nullable: true })
+    public affiliateLink: string;
 
-  @CreateDateColumn()
-  public createdAt: Date;
+    @UpdateDateColumn()
+    public updatedAt: Date;
 
-  @OneToOne(
-    _type => Campaign,
-    campaign => campaign.prize
-  )
-  @JoinColumn()
-  public campaign: Campaign;
+    @CreateDateColumn()
+    public createdAt: Date;
 
-  @OneToMany(
-    _type => Transfer,
-    transfer => transfer.rafflePrize
-  )
-  public transfers: Transfer[];
+    @OneToOne((_type) => Campaign, (campaign) => campaign.prize)
+    @JoinColumn()
+    public campaign: Campaign;
 
-  public static newFromCampaignCreate(campaign: Campaign, prize: RafflePrizeStructure) {
-    const rafflePrize = new RafflePrize();
-    rafflePrize.campaign = campaign;
-    rafflePrize.displayName = prize.displayName;
-    if (prize.affiliateLink) rafflePrize.affiliateLink = prize.affiliateLink;
-    if (prize.image) rafflePrize.image = true;
-    return rafflePrize;
-  }
+    @OneToMany((_type) => Transfer, (transfer) => transfer.rafflePrize)
+    public transfers: Transfer[];
+
+    public static newFromCampaignCreate(campaign: Campaign, prize: RafflePrizeStructure) {
+        const rafflePrize = new RafflePrize();
+        rafflePrize.campaign = campaign;
+        rafflePrize.displayName = prize.displayName;
+        if (prize.affiliateLink) rafflePrize.affiliateLink = prize.affiliateLink;
+        if (prize.image) rafflePrize.image = true;
+        return rafflePrize;
+    }
 }
