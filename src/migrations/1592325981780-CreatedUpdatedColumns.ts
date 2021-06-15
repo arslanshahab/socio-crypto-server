@@ -1,7 +1,6 @@
-import {MigrationInterface, QueryRunner} from "typeorm";
+import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class CreatedUpdatedColumns1592325981780 implements MigrationInterface {
-
     public async up(queryRunner: QueryRunner): Promise<any> {
         await queryRunner.query(`ALTER TABLE "wallet" ADD "createdAt" TIMESTAMP NOT NULL DEFAULT now()`);
         await queryRunner.query(`ALTER TABLE "wallet" ADD "updatedAt" TIMESTAMP NOT NULL DEFAULT now()`);
@@ -35,5 +34,4 @@ export class CreatedUpdatedColumns1592325981780 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "wallet" DROP COLUMN "updatedAt"`);
         await queryRunner.query(`ALTER TABLE "wallet" DROP COLUMN "createdAt"`);
     }
-
 }

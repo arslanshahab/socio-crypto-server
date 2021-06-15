@@ -1,7 +1,7 @@
-import {MigrationInterface, QueryRunner} from "typeorm";
+import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class ModelTimeStamps1610655281022 implements MigrationInterface {
-    name = 'ModelTimeStamps1610655281022'
+    name = "ModelTimeStamps1610655281022";
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`ALTER TABLE "wallet_currency" ADD "createdAt" TIMESTAMP NOT NULL DEFAULT now()`);
@@ -12,7 +12,9 @@ export class ModelTimeStamps1610655281022 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "crypto_transaction" ADD "updatedAt" TIMESTAMP NOT NULL DEFAULT now()`);
         await queryRunner.query(`ALTER TABLE "crypto_currency" ADD "createdAt" TIMESTAMP NOT NULL DEFAULT now()`);
         await queryRunner.query(`ALTER TABLE "crypto_currency" ADD "updatedAt" TIMESTAMP NOT NULL DEFAULT now()`);
-        await queryRunner.query(`ALTER TABLE "twenty_four_hour_metric" ADD "updatedAt" TIMESTAMP NOT NULL DEFAULT now()`);
+        await queryRunner.query(
+            `ALTER TABLE "twenty_four_hour_metric" ADD "updatedAt" TIMESTAMP NOT NULL DEFAULT now()`
+        );
         await queryRunner.query(`ALTER TABLE "profile" ADD "createdAt" TIMESTAMP NOT NULL DEFAULT now()`);
         await queryRunner.query(`ALTER TABLE "profile" ADD "updatedAt" TIMESTAMP NOT NULL DEFAULT now()`);
         await queryRunner.query(`ALTER TABLE "admin" ADD "createdAt" TIMESTAMP NOT NULL DEFAULT now()`);
@@ -38,5 +40,4 @@ export class ModelTimeStamps1610655281022 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "wallet_currency" DROP COLUMN "updatedAt"`);
         await queryRunner.query(`ALTER TABLE "wallet_currency" DROP COLUMN "createdAt"`);
     }
-
 }
