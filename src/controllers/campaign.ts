@@ -82,6 +82,7 @@ export const createNewCampaign = async (
         requirements: CampaignRequirementSpecs;
         suggestedPosts: string[];
         suggestedTags: string[];
+        keywords: string[];
         type: string;
         rafflePrize: RafflePrizeStructure;
         cryptoId: string;
@@ -103,6 +104,7 @@ export const createNewCampaign = async (
         requirements,
         suggestedPosts,
         suggestedTags,
+        keywords,
         type = "crypto",
         rafflePrize,
         cryptoId,
@@ -144,6 +146,7 @@ export const createNewCampaign = async (
         requirements,
         suggestedPosts,
         suggestedTags,
+        keywords,
         type,
         targetVideo,
         org,

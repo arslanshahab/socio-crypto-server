@@ -20,6 +20,7 @@ export const typeDefs = gql`
             tagline: String
             suggestedPosts: [String]
             suggestedTags: [String]
+            keywords: [String]
             type: String
             rafflePrize: JSON
         ): Campaign
@@ -110,6 +111,7 @@ export const typeDefs = gql`
             approved: Boolean
             pendingAudit: Boolean
         ): PaginatedCampaignResults
+        getUserParticipationKeywords: [String]
         getCampaign(id: String): Campaign
         getParticipant(id: String): Participant
         getParticipantPosts(id: String): [String]
@@ -411,6 +413,8 @@ export const typeDefs = gql`
         tagline: String
         requirements: JSON
         suggestedPosts: [String]
+        createdAt: String
+        keywords: [String]
         suggestedTags: [String]
         participants: [Participant]
         type: String

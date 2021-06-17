@@ -229,6 +229,22 @@ export const getUserMetrics = async (parent: any, args: { today: boolean }, cont
     return (await DailyParticipantMetric.getSortedByUser(user, today)).map((metric) => metric.asV1());
 };
 
+export const getUserParticipationKeywords = async (parent: any, args: { id: string }, context: { user: any }) => {
+    const { id } = context.user;
+    const user = await User.findOne({ where: { identityId: id } });
+    if (!user) throw new Error("user not found");
+    const participations = await Participant.find({
+        where: { user: user },
+        relations: ["campaign"],
+    });
+    if (!participations) return [];
+    let keywordsArray: String[][] = [];
+    participations.forEach((item) => {
+        keywordsArray.push(item.campaign.keywords);
+    });
+    return [...new Set(keywordsArray.flat())];
+};
+
 export const getPreviousDayMetrics = async (_parent: any, args: any, context: { user: any }) => {
     const { id } = context.user;
     let metrics: { [key: string]: any } = {};
