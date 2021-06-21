@@ -21,7 +21,7 @@
         "test:load:tracker": "$(npm bin)/artillery run test/load/actionTracker.yaml",
         "test:load:health": "$(npm bin)/artillery run test/load/health.yaml",
         "test:built": "NODE_ENV=test mocha 'dist/**/*.spec.js' --exit",
-        "update:cicd": "aws cloudformation deploy --template-file cicd.cft.yml --stack-name creatorworks-cicd --capabilities CAPABILITY_NAMED_IAM",
+        "update:cicd": "aws cloudformation deploy --template-file ./cloudformation/cicd.yml --stack-name raiinmaker-cicd --capabilities CAPABILITY_NAMED_IAM",
         "typeorm:cli": "ts-node ./node_modules/typeorm/cli",
         "migration:run": "yarn typeorm:cli migration:run",
         "migration:run:clean": "yarn clean && yarn build && yarn typeorm:cli migration:run",
