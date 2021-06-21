@@ -42,6 +42,7 @@ export const resolvers = {
         getTokenInUSD: cryptoController.getTokenInUSD,
         getTokenIdBySymbol: cryptoController.getTokenIdBySymbol,
         checkCoinGecko: cryptoController.coinGeckoCheck,
+        getUserParticipationKeywords: userController.getUserParticipationKeywords,
     },
     Mutation: {
         generateFactorsFromKyc: factorController.generateFactors,

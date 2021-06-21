@@ -101,6 +101,14 @@ export class Campaign extends BaseEntity {
     })
     public suggestedTags: string[];
 
+    @Column({
+        type: "text",
+        nullable: false,
+        default: "[]",
+        transformer: StringifiedArrayTransformer,
+    })
+    public keywords: string[];
+
     @Column({ type: "text", nullable: true })
     public type: string;
 
@@ -376,6 +384,7 @@ export class Campaign extends BaseEntity {
         requirements: CampaignRequirementSpecs,
         suggestedPosts: string[],
         suggestedTags: string[],
+        keywords: string[],
         type: string,
         targetVideo?: string,
         org?: Org,
@@ -399,6 +408,7 @@ export class Campaign extends BaseEntity {
         if (requirements) campaign.requirements = requirements;
         if (suggestedPosts) campaign.suggestedPosts = suggestedPosts;
         if (suggestedTags) campaign.suggestedTags = suggestedTags;
+        if (keywords) campaign.keywords = keywords;
         if (crypto) campaign.crypto = crypto;
         return campaign;
     }
