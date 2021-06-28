@@ -21,7 +21,7 @@ export class Xoxoday {
         };
         const response = await doFetch(`${this.baseUrl}/v1/oauth/token/user`, "POST", payload);
         const authData = await response.json();
-        if (authData.error) throw new Error("Code expired");
+        // if (authData.error) throw new Error("Code expired");
         const s3Resp = await S3Client.refreshXoxodayAuthData(authData);
         console.log(s3Resp);
         return authData;
