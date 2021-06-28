@@ -22,6 +22,7 @@ import { stripeWebhook } from "./controllers/stripe";
 import { ApolloServer } from "apollo-server-express";
 import { typeDefs } from "./graphql/schema";
 import { ApolloServerPlugin } from "apollo-server-plugin-base";
+import { initXoxoday } from "./controllers/xoxoday";
 
 const { NODE_ENV = "development" } = process.env;
 
@@ -115,6 +116,7 @@ export class Application {
         this.app.post("/v1/logout", sessionLogout);
         this.app.put("/v1/password", updateUserPassword);
         this.app.post("/v1/payouts", paypalWebhook);
+        this.app.post("/v1/xoxoday", initXoxoday);
         this.app.use(
             "/v1/dragonfactor/login",
             Dragonfactor.expressMiddleware({

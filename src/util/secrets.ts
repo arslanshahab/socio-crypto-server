@@ -23,6 +23,9 @@ export class Secrets {
     public static ethHotWalletPrivKey: string;
     public static stripeApiKey: string;
     public static stripeWebhookSecret: string;
+    public static xoxodayClientID: string;
+    public static xoxodayClientSecret: string;
+    public static xoxodayURL: string;
 
     public static async initialize() {
         Secrets.firebaseProjectId =
@@ -80,5 +83,10 @@ export class Secrets {
         Secrets.stripeWebhookSecret =
             process.env.STRIPE_WEBHOOK_SECRET ||
             (await readFilePromise("/var/secrets/stripe-webhook-secret/SecretString", "utf8"));
+        Secrets.xoxodayClientID =
+            process.env.XOXODAY_CLIENT_ID || (await readFilePromise("/var/secrets/xoxoday-secret/ClientID", "utf8"));
+        Secrets.xoxodayClientSecret =
+            process.env.XOXODAY_CLIENT_SECRET ||
+            (await readFilePromise("/var/secrets/xoxoday-secret/ClientSecret", "utf8"));
     }
 }
