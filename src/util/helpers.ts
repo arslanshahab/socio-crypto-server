@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { BigNumber } from "bignumber.js";
 import { FactorGeneration, KycUser } from "../types";
 import { Factor } from "../models/Factor";
+import { SupportedCountryType } from "../types";
 
 export const getBase64FileExtension = (image: string) => {
     if (image === "") throw new Error("invalid image uploaded");
@@ -170,4 +171,39 @@ export const getDecimal = (str: string) => {
     }
     const pos = str.length - 18;
     return [str.slice(0, pos), str.slice(pos)].join(".");
+};
+
+export const generateRandomId = () => {
+    const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    const stringLength = 20;
+    function pickRandom() {
+        return possible[Math.floor(Math.random() * possible.length)];
+    }
+    return Array.apply(null, Array(stringLength)).map(pickRandom).join("");
+};
+
+export const supportedCountries = (): Array<SupportedCountryType> => {
+    return [
+        { name: "Austria", currency: "EUR", enabled: true, filterValue: "austria" },
+        { name: "Canada", currency: "CAD", enabled: true, filterValue: "canada" },
+        { name: "France", currency: "EUR", enabled: true, filterValue: "france" },
+        { name: "Germany", currency: "EUR", enabled: true, filterValue: "germany" },
+        { name: "India", currency: "INR", enabled: true, filterValue: "india" },
+        { name: "Ireland", currency: "GBP", enabled: true, filterValue: "ireland" },
+        { name: "Italy", currency: "EUR", enabled: true, filterValue: "italy" },
+        { name: "Japan", currency: "JPY", enabled: true, filterValue: "japan" },
+        { name: "Luxembourg", currency: "EUR", enabled: true, filterValue: "luxembourg" },
+        { name: "Mexico", currency: "MXN", enabled: true, filterValue: "mexico" },
+        { name: "Netherlands", currency: "EUR", enabled: true, filterValue: "netherlands" },
+        { name: "Poland", currency: "EUR", enabled: true, filterValue: "poland" },
+        { name: "Singapore", currency: "SGD", enabled: true, filterValue: "singapore" },
+        { name: "Spain", currency: "EUR", enabled: true, filterValue: "spain" },
+        { name: "Sweden", currency: "SEK", enabled: true, filterValue: "sweden" },
+        { name: "Switzerland", currency: "EUR", enabled: true, filterValue: "switzerland" },
+        { name: "United Kingdom", currency: "GBP", enabled: true, filterValue: "uk" },
+        { name: "United States", currency: "USD", enabled: true, filterValue: "usa" },
+        { name: "Morocco", currency: "MAD", enabled: true, filterValue: "morocco" },
+        { name: "Saudi Arabia", currency: "SAR", enabled: true, filterValue: "saudi_arabia" },
+        { name: "United Arab, Emirates", currency: "AED", enabled: true, filterValue: "uae" },
+    ];
 };

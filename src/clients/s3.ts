@@ -1,11 +1,17 @@
 import AWS from "aws-sdk";
+AWS.config.update({
+    accessKeyId: "AKIAXVQVYPRMCYPTATXJ",
+    secretAccessKey: "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",
+    region: "us-west-1",
+});
+
 import { getBase64FileExtension, deleteFactorFromKycData } from "../util/helpers";
 import { KycUser } from "../types";
 
 const {
     BUCKET_NAME = "rm-raiinmaker-staging",
     KYC_BUCKET_NAME = "rm-raiinmaker-kyc-staging",
-    RM_SECRETS = "rm-secrets",
+    RM_SECRETS = "re-secrets-staging",
 } = process.env;
 
 export class S3Client {

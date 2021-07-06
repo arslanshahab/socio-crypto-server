@@ -2,6 +2,36 @@ import express, { Request } from "express";
 import { BigNumber } from "bignumber.js";
 import { Stripe } from "stripe";
 
+export interface XoxodayVoucher {
+    productId: string;
+    name: string;
+    imageUrl: string;
+    countryName: string;
+    countryCode: string;
+    currencyCode: string;
+    exchangeRate: string;
+    valueDenominations: Array<string>;
+}
+
+export interface XoxodayOrder {
+    poNumber: string;
+    productId: string;
+    quantity: number;
+    denomination: number;
+    email: string;
+    tag: string;
+    contact: string;
+    notifyAdminEmail?: number;
+    notifyReceiverEmail?: number;
+}
+
+export interface SupportedCountryType {
+    name: string;
+    currency: string;
+    enabled: boolean;
+    filterValue: string;
+}
+
 export interface FactorGeneration {
     name: string;
     id: string;
