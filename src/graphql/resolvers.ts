@@ -12,6 +12,7 @@ import * as firebaseController from "../controllers/firebase";
 import * as fundingController from "../controllers/fundingWallet";
 import * as stripeController from "../controllers/stripe";
 import * as cryptoController from "../controllers/crypto";
+import * as xoxodayController from "../controllers/xoxoday";
 
 export const resolvers = {
     Query: {
@@ -43,6 +44,7 @@ export const resolvers = {
         getTokenIdBySymbol: cryptoController.getTokenIdBySymbol,
         checkCoinGecko: cryptoController.coinGeckoCheck,
         getUserParticipationKeywords: userController.getUserParticipationKeywords,
+        getStoreVouchers: xoxodayController.getVouchers,
     },
     Mutation: {
         generateFactorsFromKyc: factorController.generateFactors,
@@ -74,6 +76,7 @@ export const resolvers = {
         updateNotificationSettings: userController.updateNotificationSettings,
         removeEthereumAddress: externalWallet.remove,
         uploadProfilePicture: userController.uploadProfilePicture,
+        placeStoreOrder: xoxodayController.placeOrder,
     },
 };
 
@@ -127,6 +130,7 @@ export const publicResolvers = {
         usernameExists: userController.usernameExists,
         campaignGet: campaignController.publicGet,
         accountExists: userController.accountExists,
+        getStoreVouchers: xoxodayController.getVouchers,
     },
     Mutation: {
         trackAction: participantController.trackAction,
