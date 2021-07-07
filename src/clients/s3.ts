@@ -6,7 +6,7 @@ import { KycUser } from "../types";
 const {
     BUCKET_NAME = "rm-raiinmaker-staging",
     KYC_BUCKET_NAME = "rm-raiinmaker-kyc-staging",
-    RM_SECRETS = "re-secrets-staging",
+    RM_SECRETS = "rm-secrets-staging",
 } = process.env;
 
 export class S3Client {

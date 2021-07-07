@@ -1,7 +1,6 @@
 import { asyncHandler } from "../util/helpers";
 import { Request, Response } from "express";
 import { Xoxoday } from "../clients/xoxoday";
-import { isArray } from "lodash";
 import { generateRandomId, supportedCountries } from "../util/helpers";
 import { XoxodayOrder, XoxodayVoucher } from "src/types";
 import { getExchangeRate } from "../util/forex";
@@ -45,7 +44,8 @@ export const getVouchers = async (parent: any, args: { country: string; page: nu
         );
         if (!found) return [];
         const vouchers = await Xoxoday.getVouchers(found.filterValue, page);
-        return isArray(vouchers) ? await prepareVouchersList(vouchers) : [];
+        const responseList = await prepareVouchersList(vouchers);
+        return responseList;
     } catch (error) {
         return [];
     }
