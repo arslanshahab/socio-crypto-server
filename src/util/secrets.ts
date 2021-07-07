@@ -84,9 +84,8 @@ export class Secrets {
             process.env.STRIPE_WEBHOOK_SECRET ||
             (await readFilePromise("/var/secrets/stripe-webhook-secret/SecretString", "utf8"));
         Secrets.xoxodayClientID =
-            process.env.XOXODAY_CLIENT_ID || (await readFilePromise("/var/secrets/xoxoday-secret/ClientID", "utf8"));
+            process.env.XOXODAY_CLIENT_ID || (await readFilePromise("/var/secrets/xoxoday/clientId", "utf8"));
         Secrets.xoxodayClientSecret =
-            process.env.XOXODAY_CLIENT_SECRET ||
-            (await readFilePromise("/var/secrets/xoxoday-secret/ClientSecret", "utf8"));
+            process.env.XOXODAY_CLIENT_SECRET || (await readFilePromise("/var/secrets/xoxoday/clientSecret", "utf8"));
     }
 }
