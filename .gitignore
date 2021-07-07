@@ -47,7 +47,7 @@ desktop.ini
 
 # aws yaml files
 aws.yaml
-aws..creds.json
+aws.creds.json
 helm/accounts-service/aws.yaml
 
 bak.dump
