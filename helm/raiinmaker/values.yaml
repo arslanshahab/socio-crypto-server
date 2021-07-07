@@ -3,85 +3,86 @@
 # Declare variables to be passed into your templates.
 
 image:
-  repository: 527252880472.dkr.ecr.us-west-1.amazonaws.com/raiinmaker
-  tag: staging-0.0.1
-  pullPolicy: Always
+    repository: 527252880472.dkr.ecr.us-west-1.amazonaws.com/raiinmaker
+    tag: staging-0.0.1
+    pullPolicy: Always
 
 iamRole: arn:aws:iam::527252880472:role/raiinmaker-staging
 
 securityContext:
-  runAsNonRoot: true
-  runAsUser: 1000
+    runAsNonRoot: true
+    runAsUser: 1000
 
 service:
-  type: NodePort
-  port: 8080
+    type: NodePort
+    port: 8080
 
 ingress:
-  enabled: true
-  host: server-staging.api.raiinmaker.com
+    enabled: true
+    host: server-staging.api.raiinmaker.com
 
 cron:
-  frequency:
-    social: '0 * * * *' # At minute 0 every hour
-    daily: '0 0 * * *' # At minute 0 every day
-    coiinWatcher: '*/5 * * * *'
-    qualityScore: '0 * * * *' # At minute 0 every hour
+    frequency:
+        social: "0 * * * *" # At minute 0 every hour
+        daily: "0 0 * * *" # At minute 0 every day
+        coiinWatcher: "*/5 * * * *"
+        qualityScore: "0 * * * *" # At minute 0 every hour
 
 # up server replica count
 replicaCount: 2
 server:
-  resources:
-    limits:
-      cpu: 500m
-      memory: 3Gi
-    requests:
-      cpu: 500m
-      memory: 3Gi
+    resources:
+        limits:
+            cpu: 500m
+            memory: 3Gi
+        requests:
+            cpu: 500m
+            memory: 3Gi
 
 aws:
-  secret_key:
+    secret_key:
 
 data:
-  IAM_ROLE: arn:aws:iam::527252880472:role/raiinmaker-staging
-  environment:
-    NODE_ENV: "staging"
-    BUCKET_NAME: "rm-raiinmaker-staging"
-    KYC_BUCKET_NAME: "rm-raiinmaker-kyc-staging"
-    RATE_LIMIT_MAX: "50"
-    RATE_LIMIT_WINDOW: "1m"
-    REWARD_REDEMPTION_EMAIL_RECIPIENT: alex@dragonchain.com
+    IAM_ROLE: arn:aws:iam::527252880472:role/raiinmaker-staging
+    environment:
+        NODE_ENV: "staging"
+        BUCKET_NAME: "rm-raiinmaker-staging"
+        KYC_BUCKET_NAME: "rm-raiinmaker-kyc-staging"
+        RM_SECRETS: "rm-secrets-staging"
+        RATE_LIMIT_MAX: "50"
+        RATE_LIMIT_WINDOW: "1m"
+        REWARD_REDEMPTION_EMAIL_RECIPIENT: alex@dragonchain.com
 
 postgresql:
-  existingSecret: "raiinmaker"
-  persistence:
-    storageClass: gp2
-    accessMode: ReadWriteOnce
-  replication:
-    enabled: true
-    synchronousCommit: "on"
-    numSynchronousReplicas: 1
-    slaveReplicas: 1
+    existingSecret: "raiinmaker"
+    persistence:
+        storageClass: gp2
+        accessMode: ReadWriteOnce
+    replication:
+        enabled: true
+        synchronousCommit: "on"
+        numSynchronousReplicas: 1
+        slaveReplicas: 1
 
 pg-bak:
-  service: raiinmaker
-  stage: staging
-  existingSecret: "raiinmaker"
-  postgresHost: raiinmaker-api-postgresql-read
-  s3Bucket: rm-postgres-backups
-  iamRole: arn:aws:iam::527252880472:role/PostgresBackupRole
-  image:
-    repository: 527252880472.dkr.ecr.us-west-1.amazonaws.com/pg_backup
-    tag: "1.0.3"
+    service: raiinmaker
+    stage: staging
+    existingSecret: "raiinmaker"
+    postgresHost: raiinmaker-api-postgresql-read
+    s3Bucket: rm-postgres-backups
+    iamRole: arn:aws:iam::527252880472:role/PostgresBackupRole
+    image:
+        repository: 527252880472.dkr.ecr.us-west-1.amazonaws.com/pg_backup
+        tag: "1.0.3"
 
 redis:
-  image:
-    repository: redis
-    tag: 5.0.7-alpine
-  resources:
-    limits:
-      cpu: 1
-      memory: 200Mi
-    requests:
-      cpu: 15m
-      memory: 200Mi
+    image:
+        repository: redis
+        tag: 5.0.7-alpine
+    resources:
+        limits:
+            cpu: 1
+            memory: 200Mi
+        requests:
+            cpu: 15m
+            memory: 200Mi
