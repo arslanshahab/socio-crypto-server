@@ -1,4 +1,9 @@
 import AWS from "aws-sdk";
+AWS.config.update({
+    accessKeyId: "AKIAXVQVYPRMCYPTATXJ",
+    secretAccessKey: "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",
+    region: "us-west-1",
+});
 
 import { getBase64FileExtension, deleteFactorFromKycData } from "../util/helpers";
 import { KycUser } from "../types";
