@@ -110,12 +110,14 @@ export class Xoxoday {
                 },
             };
             const response = await doFetch(`${this.baseUrl}/v1/oauth/api`, authData.access_token, "POST", payload);
-            const data = await response.json();
-            if (data.error) {
-                console.log(data);
-                throw new Error(data.message);
-            }
-            return data?.data?.getVouchers?.data;
+            const data = await response.text();
+            console.log(data);
+            // if (data.error) {
+            //     console.log(data);
+            //     throw new Error(data.message);
+            // }
+            // return data?.data?.getVouchers?.data;
+            return [];
         } catch (error) {
             console.log(error);
             throw new Error(error.message);
