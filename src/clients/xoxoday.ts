@@ -38,9 +38,10 @@ export class Xoxoday {
 
     public static async refreshAuthData() {
         try {
+            console.log("refreshing xoxoday tokens.....");
             let data: any = await S3Client.getXoxodayAuthData();
+            console.log("fetcing previous xoxoday tokens.....");
             data = JSON.parse(data);
-            console.log(data);
             const payload = {
                 grant_type: "refresh_token",
                 refresh_token: data.refresh_token,
@@ -49,8 +50,10 @@ export class Xoxoday {
             };
             const response = await doFetch(`${this.baseUrl}/v1/oauth/token/user`, null, "POST", payload);
             const authData = await response.json();
+            console.log("fetched new xoxoday tokens.....");
             if (authData.error) throw new Error("Error refreshing access token for xoxoday");
             await S3Client.refreshXoxodayAuthData(authData);
+            console.log("uploaded new xoxoday tokens.....");
             return { success: true };
         } catch (error) {
             throw new Error(error.message);
