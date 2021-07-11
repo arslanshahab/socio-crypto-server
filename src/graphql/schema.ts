@@ -17,6 +17,7 @@ export const typeDefs = gql`
             algorithm: String!
             requirements: JSON
             image: String
+            sharedImage: String
             tagline: String
             suggestedPosts: [String]
             suggestedTags: [String]
@@ -443,6 +444,7 @@ export const typeDefs = gql`
         audited: Boolean
         targetVideo: String
         imagePath: String
+        sharedImagePath: String
         tagline: String
         requirements: JSON
         suggestedPosts: [String]
