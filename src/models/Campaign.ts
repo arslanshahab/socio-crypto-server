@@ -82,6 +82,9 @@ export class Campaign extends BaseEntity {
     @Column({ nullable: true })
     public imagePath: string;
 
+    @Column({ nullable: true })
+    public sharedImagePath: string;
+
     @Column({ type: "jsonb", nullable: true })
     public requirements: CampaignRequirementSpecs;
 

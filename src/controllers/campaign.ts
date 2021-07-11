@@ -78,6 +78,7 @@ export const createNewCampaign = async (
         company: string;
         algorithm: string;
         image: string;
+        sharedImage: string;
         tagline: string;
         requirements: CampaignRequirementSpecs;
         suggestedPosts: string[];
@@ -100,6 +101,7 @@ export const createNewCampaign = async (
         algorithm,
         targetVideo,
         image,
+        sharedImage,
         tagline,
         requirements,
         suggestedPosts,
@@ -155,6 +157,10 @@ export const createNewCampaign = async (
     await campaign.save();
     if (image) {
         campaign.imagePath = await S3Client.setCampaignImage("banner", campaign.id, image);
+        await campaign.save();
+    }
+    if (sharedImage) {
+        campaign.sharedImagePath = await S3Client.setCampaignImage("sharedImage", campaign.id, image);
         await campaign.save();
     }
     if (type === "raffle") {
