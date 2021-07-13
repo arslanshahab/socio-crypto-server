@@ -59,6 +59,9 @@ spec:
                 - name: stripe-webhook-secret
                   mountPath: "/var/secrets/stripe-webhook-secret"
                   readOnly: true
+                - name: xoxoday
+                  mountPath: "/var/secrets/xoxoday"
+                  readOnly: true
               resources:
                 requests:
                   memory: "128Mi"
@@ -98,6 +101,9 @@ spec:
             - name: stripe-webhook-secret
               secret:
                 secretName: stripe-webhook-secret
+            - name: xoxoday
+              secret:
+                secretName: xoxoday
 ---
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -160,6 +166,9 @@ spec:
                 - name: stripe-webhook-secret
                   mountPath: "/var/secrets/stripe-webhook-secret"
                   readOnly: true
+                - name: xoxoday
+                  mountPath: "/var/secrets/xoxoday"
+                  readOnly: true
               resources:
                 requests:
                   memory: "128Mi"
@@ -199,6 +208,9 @@ spec:
             - name: stripe-webhook-secret
               secret:
                 secretName: stripe-webhook-secret
+            - name: xoxoday
+              secret:
+                secretName: xoxoday
 ---
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -264,6 +276,9 @@ spec:
                 - name: stripe-webhook-secret
                   mountPath: "/var/secrets/stripe-webhook-secret"
                   readOnly: true
+                - name: xoxoday
+                  mountPath: "/var/secrets/xoxoday"
+                  readOnly: true
               resources:
                 requests:
                   memory: "128Mi"
@@ -303,6 +318,9 @@ spec:
             - name: stripe-webhook-secret
               secret:
                 secretName: stripe-webhook-secret
+            - name: xoxoday
+              secret:
+                secretName: xoxoday
 ---
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -368,6 +386,9 @@ spec:
                 - name: stripe-webhook-secret
                   mountPath: "/var/secrets/stripe-webhook-secret"
                   readOnly: true
+                - name: xoxoday
+                  mountPath: "/var/secrets/xoxoday"
+                  readOnly: true
               resources:
                 requests:
                   memory: "128Mi"
@@ -407,3 +428,6 @@ spec:
             - name: stripe-webhook-secret
               secret:
                 secretName: stripe-webhook-secret
+            - name: xoxoday
+              secret:
+                secretName: xoxoday

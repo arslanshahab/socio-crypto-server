@@ -2,7 +2,11 @@ import AWS from "aws-sdk";
 import { getBase64FileExtension, deleteFactorFromKycData } from "../util/helpers";
 import { KycUser } from "../types";
 
-const { BUCKET_NAME = "rm-raiinmaker-staging", KYC_BUCKET_NAME = "rm-raiinmaker-kyc-staging" } = process.env;
+const {
+    BUCKET_NAME = "rm-raiinmaker-staging",
+    KYC_BUCKET_NAME = "rm-raiinmaker-kyc-staging",
+    RM_SECRETS = "rm-secrets-staging",
+} = process.env;
 
 export class S3Client {
     public static client = new AWS.S3({ region: "us-west-2" });
@@ -219,5 +223,28 @@ export class S3Client {
             Body: Buffer.from(image.replace(/^data:image\/\w+;base64,/, ""), "base64"),
         };
         return await this.client.putObject(params).promise();
+    }
+
+    public static async refreshXoxodayAuthData(authData: string) {
+        const params: AWS.S3.PutObjectRequest = {
+            Bucket: RM_SECRETS,
+            Key: "xoxoday/authData",
+            Body: JSON.stringify(authData),
+        };
+        try {
+            return await this.client.putObject(params).promise();
+        } catch (e) {
+            throw e;
+        }
+    }
+
+    public static async getXoxodayAuthData() {
+        const params: AWS.S3.GetObjectRequest = { Bucket: RM_SECRETS, Key: "xoxoday/authData" };
+        try {
+            return (await this.client.getObject(params).promise()).Body?.toString();
+        } catch (e) {
+            if (e.code && e.code === "NotFound") return null;
+            throw e;
+        }
     }
 }

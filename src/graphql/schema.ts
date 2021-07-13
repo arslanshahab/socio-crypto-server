@@ -17,6 +17,7 @@ export const typeDefs = gql`
             algorithm: String!
             requirements: JSON
             image: String
+            sharedImage: String
             tagline: String
             suggestedPosts: [String]
             suggestedTags: [String]
@@ -97,6 +98,7 @@ export const typeDefs = gql`
         addCryptoToWallet(contractAddress: String!): WalletCurrency
         deleteCryptoFromWallet(id: String!): String
         removePaymentMethod(paymentMethodId: String): Boolean
+        placeStoreOrder(cart: [JSON], email: String): JSON
     }
 
     type Query {
@@ -112,6 +114,7 @@ export const typeDefs = gql`
             pendingAudit: Boolean
         ): PaginatedCampaignResults
         getUserParticipationKeywords: [String]
+        getStoreVouchers(country: String, page: Int): [StoreVoucher]
         getCampaign(id: String): Campaign
         getParticipant(id: String): Participant
         getParticipantPosts(id: String): [String]
@@ -155,6 +158,36 @@ export const typeDefs = gql`
         getTokenInUSD(symbol: String!): Float
         getTokenIdBySymbol(symbol: String!): String
         checkCoinGecko(symbol: String): Boolean
+    }
+
+    type StoreVoucher {
+        productId: String
+        name: String
+        imageUrl: String
+        countryName: String
+        countryCode: String
+        currencyCode: String
+        exchangeRate: String
+        valueDenominations: [String]
+    }
+
+    type StoreOrder {
+        poNumber: String
+        productId: String
+        quantity: Int
+        denomination: Int
+        cartId: String
+        coiinPrice: String
+        name: String
+        imageUrl: String
+        countryName: String
+        countryCode: String
+        currencyCode: String
+        exchangeRate: String
+    }
+
+    type OrderConfirmation {
+        orderId: String
     }
 
     type Org {
@@ -337,6 +370,7 @@ export const typeDefs = gql`
         interests: [String]
         values: [String]
         notificationSettings: NotificationSettings
+        orders: [JSON]
     }
 
     type PublicUser {
@@ -410,6 +444,7 @@ export const typeDefs = gql`
         audited: Boolean
         targetVideo: String
         imagePath: String
+        sharedImagePath: String
         tagline: String
         requirements: JSON
         suggestedPosts: [String]

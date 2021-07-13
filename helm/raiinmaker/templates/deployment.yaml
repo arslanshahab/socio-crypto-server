@@ -100,6 +100,9 @@ spec:
             - name: stripe-webhook-secret
               mountPath: "/var/secrets/stripe-webhook-secret"
               readOnly: true
+            - name: xoxoday
+              mountPath: "/var/secrets/xoxoday"
+              readOnly: true
           resources:
             {{- toYaml .Values.server.resources | nindent 12 }}
       volumes:
@@ -133,6 +136,9 @@ spec:
         - name: stripe-webhook-secret
           secret:
             secretName: stripe-webhook-secret
+        - name: xoxoday
+          secret:
+            secretName: xoxoday
 ---
 apiVersion: apps/v1
 kind: Deployment

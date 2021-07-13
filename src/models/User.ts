@@ -9,6 +9,7 @@ import {
     UpdateDateColumn,
 } from "typeorm";
 import { Participant } from "./Participant";
+import { XoxodayOrder } from "./XoxodayOrder";
 import { Wallet } from "./Wallet";
 import { SocialLink } from "./SocialLink";
 import { SocialPost } from "./SocialPost";
@@ -112,6 +113,9 @@ export class User extends BaseEntity {
 
     @OneToMany((_type) => Admin, (admin) => admin.user)
     public admins: Admin[];
+
+    @OneToMany((_type) => XoxodayOrder, (order) => order.user)
+    public orders: XoxodayOrder[];
 
     public asV1() {
         let returnedUser: any = { ...this };
