@@ -160,7 +160,6 @@ export const createNewCampaign = async (
     let raffleImageSignedURL = "";
     if (image) {
         campaignImageSignedURL = await S3Client.generateCampaignSignedURL(`campaign/${campaign.id}/${image}`);
-        console.log(campaignImageSignedURL);
         await campaign.save();
     }
     if (sharedMedia) {
@@ -370,7 +369,6 @@ export const listCampaigns = async (
         approved,
         pendingAudit
     );
-    console.log(results);
     return { results: results.map((result) => result.asV1()), total };
 };
 
@@ -386,7 +384,6 @@ export const adminListPendingCampaigns = async (
 };
 
 export const deleteCampaign = async (parent: any, args: { id: string }, context: { user: any }) => {
-    console.log("inside");
     const { role, company } = checkPermissions({ hasRole: ["admin", "manager"] }, context);
     const where: { [key: string]: string } = { id: args.id };
     if (role === "manager") where["company"] = company;
@@ -488,7 +485,6 @@ export const generateCampaignAuditReport = async (
     const { company } = checkPermissions({ hasRole: ["admin", "manager"] }, context);
     const { campaignId } = args;
     const campaign = await Campaign.findCampaignById(campaignId, company);
-    console.log(campaign?.escrow);
     if (!campaign) throw new Error("Campaign not found");
     const { currentTotal } = await getCurrentCampaignTier(null, { campaign });
     const bigNumTotal = new BN(campaign.type !== "coiin" ? 0 : currentTotal);
