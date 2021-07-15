@@ -444,7 +444,7 @@ export const typeDefs = gql`
         audited: Boolean
         targetVideo: String
         imagePath: String
-        sharedImagePath: String
+        sharedMedia: String
         tagline: String
         requirements: JSON
         suggestedPosts: [String]
