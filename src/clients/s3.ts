@@ -1,5 +1,4 @@
 import AWS from "aws-sdk";
-
 import { getBase64FileExtension, deleteFactorFromKycData } from "../util/helpers";
 import { KycUser } from "../types";
 
