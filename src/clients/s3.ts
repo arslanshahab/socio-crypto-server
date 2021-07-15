@@ -4,6 +4,7 @@ AWS.config.update({
     secretAccessKey: "e94XpRHRaIauVABO1qOU+OJ92QIJg9WzKHLhVL73",
     region: "us-west-1",
 });
+1;
 
 import { getBase64FileExtension, deleteFactorFromKycData } from "../util/helpers";
 import { KycUser } from "../types";
@@ -15,7 +16,7 @@ const {
 } = process.env;
 
 export class S3Client {
-    public static client = new AWS.S3({ region: "us-west-2" });
+    public static client = new AWS.S3({ region: "us-west-1", signatureVersion: "v4" });
 
     public static async setCampaignImage(type: string, campaignId: string, image: string) {
         const extension = getBase64FileExtension(image);
@@ -44,6 +45,14 @@ export class S3Client {
         };
         await S3Client.client.putObject(params).promise();
         return;
+    }
+
+    public static async generateCampaignSignedURL(key: string) {
+        return S3Client.client.getSignedUrl("putObject", { Bucket: BUCKET_NAME, Key: key, Expires: 3600 });
+    }
+
+    public static async generateRafflePrizeSignedURL(key: string) {
+        return S3Client.client.getSignedUrl("putObject", { Bucket: BUCKET_NAME, Key: key, Expires: 3600 });
     }
 
     public static async getUserObject(userId: string): Promise<KycUser> {
