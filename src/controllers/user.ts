@@ -116,9 +116,7 @@ export const me = async (
     } else if (args.openCampaigns !== null && args.openCampaigns === false) {
         user.campaigns = user.campaigns.filter((p) => !p.campaign.isOpen());
     }
-    const data = user.asV1();
-    console.log(data);
-    return data;
+    return user.asV1();
 };
 
 export const list = async (parent: any, args: { skip: number; take: number }, context: { user: any }) => {
