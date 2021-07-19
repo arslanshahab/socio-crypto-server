@@ -355,6 +355,7 @@ export const typeDefs = gql`
         id: String
         email: String
         username: String
+        profilePicture
         campaigns: [Participant]
         wallet: Wallet
         hasRecoveryCodeSet: Boolean
