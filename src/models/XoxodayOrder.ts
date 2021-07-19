@@ -50,6 +50,7 @@ export class XoxodayOrder extends BaseEntity {
     public asV1(): XoxodayOrder {
         return {
             ...this,
+            user: this.user.asV1(),
         };
     }
 
