@@ -28,6 +28,9 @@ export class Profile extends BaseEntity {
     @Column({ nullable: true })
     public email: string;
 
+    @Column({ nullable: true })
+    public profilePicture: string;
+
     @Column({ type: "text", nullable: true })
     public ageRange: string | null;
 

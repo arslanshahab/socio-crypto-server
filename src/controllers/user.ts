@@ -116,7 +116,9 @@ export const me = async (
     } else if (args.openCampaigns !== null && args.openCampaigns === false) {
         user.campaigns = user.campaigns.filter((p) => !p.campaign.isOpen());
     }
-    return user.asV1();
+    const data = user.asV1();
+    console.log(data);
+    return data;
 };
 
 export const list = async (parent: any, args: { skip: number; take: number }, context: { user: any }) => {
@@ -319,6 +321,8 @@ export const uploadProfilePicture = async (parent: any, args: { image: string },
     const { image } = args;
     const user = await User.findOne({ where: { identityId: id } });
     if (!user) throw new Error("user not found");
-    await S3Client.uploadProfilePicture(user.id, image);
+    const filename = await S3Client.uploadProfilePicture("profilePicture", user.id, image);
+    user.profile.profilePicture = filename;
+    user.profile.save();
     return true;
 };

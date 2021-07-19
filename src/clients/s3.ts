@@ -212,17 +212,19 @@ export class S3Client {
         return await this.client.putObject(params).promise();
     }
 
-    public static async uploadProfilePicture(userId: string, image: string) {
+    public static async uploadProfilePicture(type: string, userId: string, image: string) {
         const extension = getBase64FileExtension(image);
+        const filename = `${type}.${extension.split("/")[1]}`;
         const params: AWS.S3.PutObjectRequest = {
             Bucket: BUCKET_NAME,
-            Key: `profile/${userId}`,
+            Key: `profile/${userId}/${filename}`,
             ContentEncoding: "base64",
             ContentType: extension,
             CacheControl: "no-cache",
             Body: Buffer.from(image.replace(/^data:image\/\w+;base64,/, ""), "base64"),
         };
-        return await this.client.putObject(params).promise();
+        await this.client.putObject(params).promise();
+        return filename;
     }
 
     public static async refreshXoxodayAuthData(authData: string) {
