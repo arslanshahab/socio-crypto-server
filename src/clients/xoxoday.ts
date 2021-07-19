@@ -138,12 +138,17 @@ export class Xoxoday {
                 promiseArray.push(doFetch(`${this.baseUrl}/v1/oauth/api`, authData.access_token, "POST", payload));
             });
             const responseArray = await Promise.all(promiseArray);
-            const statusList: Array<any> = await Promise.all(responseArray.map((item) => item.json()));
-            const data = statusList[0];
-            if (!data || data.error) {
-                console.log(data);
-                throw new Error(data.message);
+            // check is any of the prder failed!
+            for (let response of responseArray) {
+                if (response.status !== 200) {
+                    const data = response.json();
+                    if (!data || data.error) {
+                        console.log(data);
+                        throw new Error(data.message);
+                    }
+                }
             }
+            const statusList: Array<any> = await Promise.all(responseArray.map((item) => item.json()));
             return statusList.map((item, index) => {
                 return { ...item.data.placeOrder.data, ...orders[index] };
             });

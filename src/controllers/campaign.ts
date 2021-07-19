@@ -160,7 +160,7 @@ export const createNewCampaign = async (
         await campaign.save();
     }
     if (sharedImage) {
-        campaign.sharedImagePath = await S3Client.setCampaignImage("sharedImage", campaign.id, sharedImage);
+        campaign.sharedMedia = await S3Client.setCampaignImage("sharedImage", campaign.id, sharedImage);
         await campaign.save();
     }
     if (type === "raffle") {

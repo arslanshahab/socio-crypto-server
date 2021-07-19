@@ -140,6 +140,9 @@ export class User extends BaseEntity {
             if (this.campaigns && this.campaigns.length > 0) {
                 returnedUser.campaigns = this.campaigns.map((participant) => participant.asV1());
             }
+            if (this.orders && this.orders.length > 0) {
+                returnedUser.orders = this.orders.map((order) => order.asV1());
+            }
         } catch (e) {
             console.log(e);
         }
@@ -200,6 +203,7 @@ export class User extends BaseEntity {
         if (graphqlQuery) {
             const fieldNodes = graphqlQuery.selectionSet?.selections.filter((node) => node.kind === "Field") || [];
             const loadParticipants = fieldNodes.find((node: FieldNode) => node.name.value === "campaigns") as FieldNode;
+            const loadOrders = fieldNodes.find((node: FieldNode) => node.name.value === "orders") as FieldNode;
             const loadSocialLinks = fieldNodes.find(
                 (node: FieldNode) => node.name.value === "socialLinks"
             ) as FieldNode;
@@ -287,6 +291,7 @@ export class User extends BaseEntity {
                 query = query.leftJoinAndSelect("user.notificationSettings", "settings", 'settings."userId" = user.id');
             if (loadAddresses)
                 query = query.leftJoinAndSelect("user.addresses", "address", 'address."userId" = user.id');
+            if (loadOrders) query = query.leftJoinAndSelect("user.orders", "orders", 'orders."userId" = user.id');
         }
         query = query.leftJoinAndSelect("user.profile", "profile", 'profile."userId" = user.id');
         query = query.where("user.identityId = :id", { id });
