@@ -17,14 +17,15 @@ export const typeDefs = gql`
             algorithm: String!
             requirements: JSON
             image: String
-            sharedImage: String
+            sharedMedia: String
             tagline: String
             suggestedPosts: [String]
             suggestedTags: [String]
             keywords: [String]
             type: String
             rafflePrize: JSON
-        ): Campaign
+        ): CampaignCreationResponse
+        newCampaignImages(id: String, image: String, sharedMedia: String, sharedMediaFormat: String): Campaign
         updateCampaign(
             id: String!
             name: String
@@ -103,6 +104,11 @@ export const typeDefs = gql`
 
     type Query {
         getCurrentCampaignTier(campaignId: String!): CurrentTier
+        getCampaignSignedUrls(
+            id: String
+            campaignImageFileName: String
+            sharedMediaFileName: String
+        ): CampaignCreationResponse
         usernameExists(username: String!): UserExistence
         listCampaigns(
             open: Boolean
@@ -158,6 +164,13 @@ export const typeDefs = gql`
         getTokenInUSD(symbol: String!): Float
         getTokenIdBySymbol(symbol: String!): String
         checkCoinGecko(symbol: String): Boolean
+    }
+
+    type CampaignCreationResponse {
+        campaignId: String
+        campaignImageSignedURL: String
+        sharedMediaSignedURL: String
+        raffleImageSignedURL: String
     }
 
     type StoreVoucher {
@@ -445,6 +458,7 @@ export const typeDefs = gql`
         targetVideo: String
         imagePath: String
         sharedMedia: String
+        sharedMediaFormat: String
         tagline: String
         requirements: JSON
         suggestedPosts: [String]
