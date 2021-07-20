@@ -85,6 +85,9 @@ export class Campaign extends BaseEntity {
     @Column({ nullable: true })
     public sharedMedia: string;
 
+    @Column({ nullable: true })
+    public sharedMediaFormat: string;
+
     @Column({ type: "jsonb", nullable: true })
     public requirements: CampaignRequirementSpecs;
 
