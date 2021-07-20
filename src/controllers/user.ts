@@ -319,6 +319,8 @@ export const uploadProfilePicture = async (parent: any, args: { image: string },
     const { image } = args;
     const user = await User.findOne({ where: { identityId: id } });
     if (!user) throw new Error("user not found");
-    await S3Client.uploadProfilePicture(user.id, image);
+    const filename = await S3Client.uploadProfilePicture("profilePicture", user.id, image);
+    user.profile.profilePicture = filename;
+    user.profile.save();
     return true;
 };

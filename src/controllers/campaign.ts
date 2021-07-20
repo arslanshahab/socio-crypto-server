@@ -160,11 +160,9 @@ export const createNewCampaign = async (
     let raffleImageSignedURL = "";
     if (image) {
         campaignImageSignedURL = await S3Client.generateCampaignSignedURL(`campaign/${campaign.id}/${image}`);
-        await campaign.save();
     }
     if (sharedMedia) {
         sharedMediaSignedURL = await S3Client.generateCampaignSignedURL(`campaign/${campaign.id}/${sharedMedia}`);
-        await campaign.save();
     }
     if (type === "raffle") {
         const prize = RafflePrize.newFromCampaignCreate(campaign, rafflePrize);
