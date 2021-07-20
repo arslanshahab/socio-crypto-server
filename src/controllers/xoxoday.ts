@@ -17,15 +17,15 @@ export const initXoxoday = asyncHandler(async (req: Request, res: Response) => {
     }
 });
 
-export const refreshTokens = asyncHandler(async (req: Request, res: Response) => {
-    try {
-        console.log("starting xoxoday tokens refresh.....");
-        const data = await Xoxoday.refreshAuthData();
-        res.status(200).json(data);
-    } catch (error) {
-        res.status(403).json(error.message);
-    }
-});
+// export const refreshTokens = asyncHandler(async (req: Request, res: Response) => {
+//     try {
+//         console.log("starting xoxoday tokens refresh.....");
+//         const data = await Xoxoday.refreshAuthData();
+//         res.status(200).json(data);
+//     } catch (error) {
+//         res.status(403).json(error.message);
+//     }
+// });
 
 export const getXoxodayFilters = asyncHandler(async (req: Request, res: Response) => {
     try {
