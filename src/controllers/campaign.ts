@@ -199,7 +199,7 @@ export const saveCampaignImages = async (
     if (!campaign) throw new Error("campaign not found");
     if (image) campaign.imagePath = image;
     if (sharedMedia) campaign.sharedMedia = sharedMedia;
-    if (sharedMediaFormat) campaign.sharedMedia = sharedMediaFormat;
+    if (sharedMediaFormat) campaign.sharedMediaFormat = sharedMediaFormat;
     await campaign.save();
     return campaign.asV1();
 };
