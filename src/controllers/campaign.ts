@@ -340,6 +340,8 @@ export const adminUpdateCampaignStatus = async (
             break;
     }
     await campaign.save();
+    const deviceTokens = await User.getAllDeviceTokens("campaignCreate");
+    if (deviceTokens.length > 0) await Firebase.sendCampaignCreatedNotifications(deviceTokens, campaign);
     return true;
 };
 
