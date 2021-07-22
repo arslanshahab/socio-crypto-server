@@ -67,10 +67,10 @@ export const removeSocialLink = async (parent: any, args: { type: string }, cont
 
 export const postToSocial = async (
     parent: any,
-    args: { type: string; text: string; photo: string; video: string; participantId: string },
+    args: { type: string; text: string; photo: string; gif: string; video: string; participantId: string },
     context: { user: any }
 ) => {
-    const { type, text, photo, video, participantId } = args;
+    const { type, text, photo, gif, video, participantId } = args;
     if (!allowedSocialLinks.includes(type)) throw new Error("the type must exist as a predefined type");
     const { id } = context.user;
     const user = await User.findOneOrFail({ where: { identityId: id }, relations: ["socialLinks"] });
@@ -89,6 +89,8 @@ export const postToSocial = async (
         postId = await client.post(socialLink.asClientCredentials(), text, video, "video");
     } else if (photo) {
         postId = await client.post(socialLink.asClientCredentials(), text, photo, "photo");
+    } else if (gif) {
+        postId = await client.post(socialLink.asClientCredentials(), text, photo, "gif");
     } else {
         postId = await client.post(socialLink.asClientCredentials(), text);
     }

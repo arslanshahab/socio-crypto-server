@@ -17,14 +17,15 @@ export const typeDefs = gql`
             algorithm: String!
             requirements: JSON
             image: String
-            sharedImage: String
+            sharedMedia: String
             tagline: String
             suggestedPosts: [String]
             suggestedTags: [String]
             keywords: [String]
             type: String
             rafflePrize: JSON
-        ): Campaign
+        ): CampaignCreationResponse
+        newCampaignImages(id: String, image: String, sharedMedia: String, sharedMediaFormat: String): Campaign
         updateCampaign(
             id: String!
             name: String
@@ -48,7 +49,7 @@ export const typeDefs = gql`
         promoteUserPermissions(userId: String, email: String, company: String, role: String): User
         registerSocialLink(type: String!, apiKey: String!, apiSecret: String!): Boolean
         removeSocialLink(type: String!): Boolean
-        postToSocial(type: String!, text: String!, photo: String, video: String, participantId: String!): String
+        postToSocial(type: String!, text: String!, photo: String, gif: String, video: String, participantId: String!): String
         setDevice(deviceToken: String!): Boolean
         registerFactorLink(factor: JSON): User
         updateUsername(username: String!): User
@@ -103,6 +104,11 @@ export const typeDefs = gql`
 
     type Query {
         getCurrentCampaignTier(campaignId: String!): CurrentTier
+        getCampaignSignedUrls(
+            id: String
+            campaignImageFileName: String
+            sharedMediaFileName: String
+        ): CampaignCreationResponse
         usernameExists(username: String!): UserExistence
         listCampaigns(
             open: Boolean
@@ -158,6 +164,13 @@ export const typeDefs = gql`
         getTokenInUSD(symbol: String!): Float
         getTokenIdBySymbol(symbol: String!): String
         checkCoinGecko(symbol: String): Boolean
+    }
+
+    type CampaignCreationResponse {
+        campaignId: String
+        campaignImageSignedURL: String
+        sharedMediaSignedURL: String
+        raffleImageSignedURL: String
     }
 
     type StoreVoucher {
@@ -355,6 +368,7 @@ export const typeDefs = gql`
         id: String
         email: String
         username: String
+        profilePicture: String
         campaigns: [Participant]
         wallet: Wallet
         hasRecoveryCodeSet: Boolean
@@ -444,7 +458,8 @@ export const typeDefs = gql`
         audited: Boolean
         targetVideo: String
         imagePath: String
-        sharedImagePath: String
+        sharedMedia: String
+        sharedMediaFormat: String
         tagline: String
         requirements: JSON
         suggestedPosts: [String]

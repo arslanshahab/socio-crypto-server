@@ -22,7 +22,7 @@ import { stripeWebhook } from "./controllers/stripe";
 import { ApolloServer } from "apollo-server-express";
 import { typeDefs } from "./graphql/schema";
 import { ApolloServerPlugin } from "apollo-server-plugin-base";
-import { initXoxoday, refreshTokens, getXoxodayFilters } from "./controllers/xoxoday";
+import { initXoxoday, getXoxodayFilters } from "./controllers/xoxoday";
 
 const { NODE_ENV = "development" } = process.env;
 
@@ -66,7 +66,7 @@ export class Application {
         this.app.use(cookieParser());
         this.app.use(cors(corsSettings));
         this.app.post("/v1/payments", bodyParser.raw({ type: "application/json" }), stripeWebhook);
-        this.app.use(bodyParser.json({ limit: "30mb" }));
+        this.app.use(bodyParser.json({ limit: "550mb" }));
         this.app.use(bodyParser.urlencoded({ extended: true }));
         this.app.set("port", process.env.PORT || 8080);
         const requestPlugin: ApolloServerPlugin = {
@@ -117,7 +117,6 @@ export class Application {
         this.app.put("/v1/password", updateUserPassword);
         this.app.post("/v1/payouts", paypalWebhook);
         this.app.post("/v1/xoxoday", initXoxoday);
-        this.app.post("/v1/xoxoday/refresh", refreshTokens);
         this.app.get("/v1/xoxoday/filters", getXoxodayFilters);
         this.app.use(
             "/v1/dragonfactor/login",

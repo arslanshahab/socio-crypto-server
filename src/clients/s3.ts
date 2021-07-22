@@ -9,7 +9,7 @@ const {
 } = process.env;
 
 export class S3Client {
-    public static client = new AWS.S3({ region: "us-west-2" });
+    public static client = new AWS.S3({ region: "us-west-1", signatureVersion: "v4" });
 
     public static async setCampaignImage(type: string, campaignId: string, image: string) {
         const extension = getBase64FileExtension(image);
@@ -38,6 +38,14 @@ export class S3Client {
         };
         await S3Client.client.putObject(params).promise();
         return;
+    }
+
+    public static async generateCampaignSignedURL(key: string) {
+        return S3Client.client.getSignedUrl("putObject", { Bucket: BUCKET_NAME, Key: key, Expires: 3600 });
+    }
+
+    public static async generateRafflePrizeSignedURL(key: string) {
+        return S3Client.client.getSignedUrl("putObject", { Bucket: BUCKET_NAME, Key: key, Expires: 3600 });
     }
 
     public static async getUserObject(userId: string): Promise<KycUser> {
@@ -212,17 +220,19 @@ export class S3Client {
         return await this.client.putObject(params).promise();
     }
 
-    public static async uploadProfilePicture(userId: string, image: string) {
+    public static async uploadProfilePicture(type: string, userId: string, image: string) {
         const extension = getBase64FileExtension(image);
+        const filename = `${type}.${extension.split("/")[1]}`;
         const params: AWS.S3.PutObjectRequest = {
             Bucket: BUCKET_NAME,
-            Key: `profile/${userId}`,
+            Key: `profile/${userId}/${filename}`,
             ContentEncoding: "base64",
             ContentType: extension,
             CacheControl: "no-cache",
             Body: Buffer.from(image.replace(/^data:image\/\w+;base64,/, ""), "base64"),
         };
-        return await this.client.putObject(params).promise();
+        await this.client.putObject(params).promise();
+        return filename;
     }
 
     public static async refreshXoxodayAuthData(authData: string) {

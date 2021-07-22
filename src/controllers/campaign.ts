@@ -78,7 +78,7 @@ export const createNewCampaign = async (
         company: string;
         algorithm: string;
         image: string;
-        sharedImage: string;
+        sharedMedia: string;
         tagline: string;
         requirements: CampaignRequirementSpecs;
         suggestedPosts: string[];
@@ -101,7 +101,7 @@ export const createNewCampaign = async (
         algorithm,
         targetVideo,
         image,
-        sharedImage,
+        sharedMedia,
         tagline,
         requirements,
         suggestedPosts,
@@ -155,23 +155,96 @@ export const createNewCampaign = async (
         cryptoCurrency
     );
     await campaign.save();
+    let campaignImageSignedURL = "";
+    let sharedMediaSignedURL = "";
+    let raffleImageSignedURL = "";
     if (image) {
-        campaign.imagePath = await S3Client.setCampaignImage("banner", campaign.id, image);
-        await campaign.save();
+        campaignImageSignedURL = await S3Client.generateCampaignSignedURL(`campaign/${campaign.id}/${image}`);
     }
-    if (sharedImage) {
-        campaign.sharedImagePath = await S3Client.setCampaignImage("sharedImage", campaign.id, sharedImage);
-        await campaign.save();
+    if (sharedMedia) {
+        sharedMediaSignedURL = await S3Client.generateCampaignSignedURL(`campaign/${campaign.id}/${sharedMedia}`);
     }
     if (type === "raffle") {
         const prize = RafflePrize.newFromCampaignCreate(campaign, rafflePrize);
         await prize.save();
-        if (rafflePrize.image && rafflePrize.image !== "")
-            await S3Client.setCampaignRafflePrizeImage(campaign.id, prize.id, rafflePrize.image);
+        if (rafflePrize.image && rafflePrize.image !== "") {
+            raffleImageSignedURL = await S3Client.generateCampaignSignedURL(`rafflePrize/${campaign.id}/${prize.id}`);
+        }
     }
     const deviceTokens = await User.getAllDeviceTokens("campaignCreate");
     if (deviceTokens.length > 0) await Firebase.sendCampaignCreatedNotifications(deviceTokens, campaign);
+    return {
+        campaignId: campaign.id,
+        campaignImageSignedURL: campaignImageSignedURL,
+        sharedMediaSignedURL: sharedMediaSignedURL,
+        raffleImageSignedURL: raffleImageSignedURL,
+    };
+};
+
+export const saveCampaignImages = async (
+    parent: any,
+    args: {
+        id: string;
+        image: string;
+        sharedMedia: string;
+        sharedMediaFormat: string;
+    },
+    context: { user: any }
+) => {
+    const { role, company } = checkPermissions({ hasRole: ["admin", "manager"] }, context);
+    const { id, image, sharedMedia, sharedMediaFormat } = args;
+    const where: { [key: string]: string } = { id };
+    if (role === "manager") where["company"] = company;
+    const campaign = await Campaign.findOne({ where });
+    if (!campaign) throw new Error("campaign not found");
+    if (image) campaign.imagePath = image;
+    if (sharedMedia) campaign.sharedMedia = sharedMedia;
+    if (sharedMediaFormat) campaign.sharedMediaFormat = sharedMediaFormat;
+    await campaign.save();
     return campaign.asV1();
+};
+
+export const generateCampaignSignedUrls = async (
+    parent: any,
+    args: {
+        id: string;
+        campaignImageFileName: string;
+        sharedMediaFileName: string;
+    },
+    context: { user: any }
+) => {
+    const { role, company } = checkPermissions({ hasRole: ["admin", "manager"] }, context);
+    const { id, campaignImageFileName, sharedMediaFileName } = args;
+    const where: { [key: string]: string } = { id };
+    if (role === "manager") where["company"] = company;
+    const campaign = await Campaign.findOne({ where, relations: ["prize"] });
+    if (!campaign) throw new Error("campaign not found");
+    let campaignImageSignedURL = "";
+    let sharedMediaSignedURL = "";
+    let raffleImageSignedURL = "";
+    if (campaignImageFileName) {
+        campaignImageSignedURL = await S3Client.generateCampaignSignedURL(
+            `campaign/${campaign.id}/${campaignImageFileName}`
+        );
+        await campaign.save();
+    }
+    if (sharedMediaFileName) {
+        sharedMediaSignedURL = await S3Client.generateCampaignSignedURL(
+            `campaign/${campaign.id}/${sharedMediaFileName}`
+        );
+        await campaign.save();
+    }
+    if (campaign.prize && campaign.prize.image) {
+        raffleImageSignedURL = await S3Client.generateCampaignSignedURL(
+            `rafflePrize/${campaign.id}/${campaign.prize.id}`
+        );
+    }
+    return {
+        campaignId: campaign.id,
+        campaignImageSignedURL: campaignImageSignedURL,
+        sharedMediaSignedURL: sharedMediaSignedURL,
+        raffleImageSignedURL: raffleImageSignedURL,
+    };
 };
 
 export const updateCampaign = async (
@@ -267,6 +340,8 @@ export const adminUpdateCampaignStatus = async (
             break;
     }
     await campaign.save();
+    const deviceTokens = await User.getAllDeviceTokens("campaignCreate");
+    if (deviceTokens.length > 0) await Firebase.sendCampaignCreatedNotifications(deviceTokens, campaign);
     return true;
 };
 
@@ -309,7 +384,6 @@ export const adminListPendingCampaigns = async (
 };
 
 export const deleteCampaign = async (parent: any, args: { id: string }, context: { user: any }) => {
-    console.log("inside");
     const { role, company } = checkPermissions({ hasRole: ["admin", "manager"] }, context);
     const where: { [key: string]: string } = { id: args.id };
     if (role === "manager") where["company"] = company;
@@ -411,7 +485,6 @@ export const generateCampaignAuditReport = async (
     const { company } = checkPermissions({ hasRole: ["admin", "manager"] }, context);
     const { campaignId } = args;
     const campaign = await Campaign.findCampaignById(campaignId, company);
-    console.log(campaign?.escrow);
     if (!campaign) throw new Error("Campaign not found");
     const { currentTotal } = await getCurrentCampaignTier(null, { campaign });
     const bigNumTotal = new BN(campaign.type !== "coiin" ? 0 : currentTotal);

@@ -17,15 +17,15 @@ export const initXoxoday = asyncHandler(async (req: Request, res: Response) => {
     }
 });
 
-export const refreshTokens = asyncHandler(async (req: Request, res: Response) => {
-    try {
-        console.log("starting xoxoday tokens refresh.....");
-        const data = await Xoxoday.refreshAuthData();
-        res.status(200).json(data);
-    } catch (error) {
-        res.status(403).json(error.message);
-    }
-});
+// export const refreshTokens = asyncHandler(async (req: Request, res: Response) => {
+//     try {
+//         console.log("starting xoxoday tokens refresh.....");
+//         const data = await Xoxoday.refreshAuthData();
+//         res.status(200).json(data);
+//     } catch (error) {
+//         res.status(403).json(error.message);
+//     }
+// });
 
 export const getXoxodayFilters = asyncHandler(async (req: Request, res: Response) => {
     try {
@@ -58,6 +58,7 @@ export const placeOrder = async (parent: any, args: { cart: Array<any>; email: s
         const { id } = context.user;
         const user = await User.findOne({
             where: { identityId: id },
+            relations: ["wallet", "wallet.currency"],
         });
         if (!user) throw new Error("No user found");
         if (!email) throw new Error("No email provided");
@@ -65,6 +66,12 @@ export const placeOrder = async (parent: any, args: { cart: Array<any>; email: s
         const ordersData = await prepareOrderList(cart, email);
         const orderStatusList = await Xoxoday.placeOrder(ordersData);
         const orderEntitiesList = await prepareOrderEntities(cart, orderStatusList);
+        const totalCoiinSpent = cart.reduce((a, b) => a + (b.coiinPrice || 0), 0);
+        let coiinBalance = user.wallet.currency.find((item) => item.type.toLowerCase() === "coiin");
+        if (coiinBalance) {
+            coiinBalance.balance = coiinBalance.balance.minus(totalCoiinSpent);
+            coiinBalance.save();
+        }
         XoxodayOrderModel.saveOrderList(orderEntitiesList, user);
         return { success: true };
     } catch (error) {
