@@ -96,7 +96,7 @@ export const postToSocial = async (
         postId = await client.post(socialLink.asClientCredentials(), text, photo, "photo");
     } else if (gif) {
         console.log("gif----------");
-        postId = await client.post(socialLink.asClientCredentials(), text, photo, "gif");
+        postId = await client.post(socialLink.asClientCredentials(), text, gif, "gif");
     } else {
         console.log("default-----------");
         postId = await client.post(socialLink.asClientCredentials(), text);
