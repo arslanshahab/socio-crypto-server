@@ -15,6 +15,13 @@ export class TwitterClient {
         });
     }
 
+    public static postGif = async (client: Twitter, gif: string): Promise<string> => {
+        logger.info("posting gif to twitter");
+        const options = { media_category: "tweet_gif", media_data: gif };
+        const response = await client.post("/media/upload", options);
+        return response.media_id_string;
+    };
+
     public static postImage = async (client: Twitter, photo: string): Promise<string> => {
         logger.info("posting image to twitter");
         const options = { media_category: "tweet_image", media_data: photo };
@@ -65,7 +72,7 @@ export class TwitterClient {
         credentials: SocialClientCredentials,
         text: string,
         data?: string,
-        mediaType?: "photo" | "video"
+        mediaType?: "photo" | "video" | "gif"
     ): Promise<string> => {
         logger.debug(`posting tweet to twitter with text: ${text}`);
         const options: { [key: string]: string } = { status: text };
@@ -74,8 +81,8 @@ export class TwitterClient {
             options["media_ids"] =
                 mediaType === "photo"
                     ? await TwitterClient.postImage(client, data)
-                    : await TwitterClient.postVideo(client, data);
-        logger.info("posting to twitter with image/video");
+                    : mediaType === "gif" ? await TwitterClient.postGif(client, data): await TwitterClient.postVideo(client, data);
+        logger.info("posting to twitter with gif/image/video");
         const response = await client.post("/statuses/update", options);
         logger.info(`Response printed with ${JSON.stringify(response)}`);
         return response.id_str;
