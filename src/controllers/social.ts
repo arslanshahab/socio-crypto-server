@@ -71,6 +71,9 @@ export const postToSocial = async (
     context: { user: any }
 ) => {
     const { type, text, photo, gif, video, participantId } = args;
+    console.log("photo data-----------", photo);
+    console.log("gif data-----------", gif);
+    console.log("video data-----------", video);
     if (!allowedSocialLinks.includes(type)) throw new Error("the type must exist as a predefined type");
     const { id } = context.user;
     const user = await User.findOneOrFail({ where: { identityId: id }, relations: ["socialLinks"] });
@@ -86,12 +89,16 @@ export const postToSocial = async (
     const client = getSocialClient(type);
     let postId: string;
     if (video) {
+        console.log("video---------");
         postId = await client.post(socialLink.asClientCredentials(), text, video, "video");
     } else if (photo) {
+        console.log("image---------");
         postId = await client.post(socialLink.asClientCredentials(), text, photo, "photo");
     } else if (gif) {
+        console.log("gif----------");
         postId = await client.post(socialLink.asClientCredentials(), text, photo, "gif");
     } else {
+        console.log("default-----------");
         postId = await client.post(socialLink.asClientCredentials(), text);
     }
     logger.info(`Posted to twitter with ID: ${postId}`);
