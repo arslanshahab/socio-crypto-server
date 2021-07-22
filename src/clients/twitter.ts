@@ -74,18 +74,25 @@ export class TwitterClient {
         data?: string,
         mediaType?: "photo" | "video" | "gif"
     ): Promise<string> => {
-        logger.debug(`posting tweet to twitter with text: ${text}`);
-        const options: { [key: string]: string } = { status: text };
-        const client = TwitterClient.getClient(credentials);
-        if (data)
-            options["media_ids"] =
-                mediaType === "photo"
-                    ? await TwitterClient.postImage(client, data)
-                    : mediaType === "gif" ? await TwitterClient.postGif(client, data): await TwitterClient.postVideo(client, data);
-        logger.info("posting to twitter with gif/image/video");
-        const response = await client.post("/statuses/update", options);
-        logger.info(`Response printed with ${JSON.stringify(response)}`);
-        return response.id_str;
+        try {
+            logger.debug(`posting tweet to twitter with text: ${text}`);
+            const options: { [key: string]: string } = { status: text };
+            const client = TwitterClient.getClient(credentials);
+            if (data)
+                options["media_ids"] =
+                    mediaType === "photo"
+                        ? await TwitterClient.postImage(client, data)
+                        : mediaType === "gif"
+                        ? await TwitterClient.postGif(client, data)
+                        : await TwitterClient.postVideo(client, data);
+            logger.info("posting to twitter with gif/image/video");
+            const response = await client.post("/statuses/update", options);
+            logger.info(`Response printed with ${JSON.stringify(response)}`);
+            return response.id_str;
+        } catch (error) {
+            console.log(error);
+            return error.message;
+        }
     };
 
     public static getTotalFollowers = async (credentials: SocialClientCredentials, id: string, cached = true) => {

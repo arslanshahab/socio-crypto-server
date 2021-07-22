@@ -66,7 +66,7 @@ export class Application {
         this.app.use(cookieParser());
         this.app.use(cors(corsSettings));
         this.app.post("/v1/payments", bodyParser.raw({ type: "application/json" }), stripeWebhook);
-        this.app.use(bodyParser.json({ limit: "30mb" }));
+        this.app.use(bodyParser.json({ limit: "550mb" }));
         this.app.use(bodyParser.urlencoded({ extended: true }));
         this.app.set("port", process.env.PORT || 8080);
         const requestPlugin: ApolloServerPlugin = {
