@@ -85,7 +85,7 @@ export class TwitterClient {
                         : mediaType === "gif"
                         ? await TwitterClient.postGif(client, data)
                         : await TwitterClient.postVideo(client, data);
-            logger.info("posting to twitter with gif/image/video");
+            logger.info(`posting to twitter with mediaType:  ${mediaType}`);
             const response = await client.post("/statuses/update", options);
             logger.info(`Response printed with ${JSON.stringify(response)}`);
             return response.id_str;
