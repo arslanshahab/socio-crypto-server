@@ -91,6 +91,7 @@ export const postToSocial = async (
     const campaign = await Campaign.findOne({ where: { id: participant.campaign.id }, relations: ["org"] });
     if (!campaign) throw new Error("campaign not found");
     const client = getSocialClient(socialType);
+    console.log(`client initialized`);
     let postId: string;
     console.log(`media type received is: ${mediaType}`);
     console.log(`media file received is: ${media}`);
