@@ -77,6 +77,7 @@ export const postToSocial = async (
     context: { user: any }
 ) => {
     const { socialType, text, mediaType, media, participantId } = args;
+    console.log(`posting to social`);
     if (!allowedSocialLinks.includes(socialType)) throw new Error("the type must exist as a predefined type");
     const { id } = context.user;
     const user = await User.findOneOrFail({ where: { identityId: id }, relations: ["socialLinks"] });
@@ -91,14 +92,14 @@ export const postToSocial = async (
     if (!campaign) throw new Error("campaign not found");
     const client = getSocialClient(socialType);
     let postId: string;
-    logger.debug(`media type received is: ${mediaType}`);
-    logger.debug(`media file received is: ${media}`);
+    console.log(`media type received is: ${mediaType}`);
+    console.log(`media file received is: ${media}`);
     if (mediaType && media) {
         postId = await client.post(socialLink.asClientCredentials(), text, media, mediaType);
     } else {
         postId = await client.post(socialLink.asClientCredentials(), text);
     }
-    logger.info(`Posted to twitter with ID: ${postId}`);
+    console.log(`Posted to twitter with ID: ${postId}`);
     await HourlyCampaignMetric.upsert(campaign, campaign.org, "post");
     await participant.campaign.save();
     const socialPost = await SocialPost.newSocialPost(
