@@ -17,21 +17,21 @@ export class TwitterClient {
     }
 
     public static postGif = async (client: Twitter, gif: string): Promise<string> => {
-        logger.info("posting gif to twitter");
+        console.log("posting gif to twitter");
         const options = { media_category: "tweet_gif", media_data: gif, media_type: getBase64FileExtension(gif) };
         const response = await client.post("/media/upload", options);
         return response.media_id_string;
     };
 
     public static postImage = async (client: Twitter, photo: string): Promise<string> => {
-        logger.info("posting image to twitter");
+        console.log("posting image to twitter");
         const options = { media_category: "tweet_image", media_data: photo, media_type: getBase64FileExtension(photo) };
         const response = await client.post("/media/upload", options);
         return response.media_id_string;
     };
 
     public static checkUploadStatus = async (client: Twitter, mediaId: string) => {
-        logger.info("checking media upload status");
+        console.log("checking media upload status");
         const options = { command: "STATUS", media_id: mediaId };
         const response = await client.get("media/upload", options);
         console.log(`get status response for media: ${mediaId} ${JSON.stringify(response)}`);
@@ -39,7 +39,7 @@ export class TwitterClient {
     };
 
     public static postVideo = async (client: Twitter, video: string): Promise<string> => {
-        logger.info("posting video to twitter");
+        console.log("posting video to twitter");
         const [mimeType, videoData, videoSize] = extractVideoData(video);
         const options = {
             command: "INIT",
@@ -49,7 +49,7 @@ export class TwitterClient {
         };
         const initResponse = await client.post("media/upload", options);
         const mediaId = initResponse.media_id_string;
-        logger.info(`video posted with response: ${JSON.stringify(initResponse)}`);
+        console.log(`video posted with response: ${JSON.stringify(initResponse)}`);
         const chunks = chunkVideo(videoData);
         for (let i = 0; i < chunks.length; i++) {
             const appendOptions = { command: "APPEND", media_id: mediaId, segment_index: i, media_data: chunks[i] };
