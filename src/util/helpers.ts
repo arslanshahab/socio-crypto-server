@@ -4,9 +4,9 @@ import { FactorGeneration, KycUser } from "../types";
 import { Factor } from "../models/Factor";
 import { SupportedCountryType } from "../types";
 
-export const getBase64FileExtension = (image: string) => {
-    if (image === "") throw new Error("invalid image uploaded");
-    return image.split(":")[1].split(";")[0];
+export const getBase64FileExtension = (fileString: string) => {
+    if (fileString === "") throw new Error("invalid fileString uploaded");
+    return fileString.split(":")[1].split(";")[0];
 };
 
 export const asyncHandler = (fn: any) => (req: Request, res: Response, next: NextFunction) => {

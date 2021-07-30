@@ -67,14 +67,17 @@ export const removeSocialLink = async (parent: any, args: { type: string }, cont
 
 export const postToSocial = async (
     parent: any,
-    args: { type: string; text: string; photo: string; gif: string; video: string; participantId: string },
+    args: {
+        socialType: "twitter" | "facebook";
+        text: string;
+        mediaType: "video" | "photo" | "gif";
+        media: string;
+        participantId: string;
+    },
     context: { user: any }
 ) => {
-    const { type, text, photo, gif, video, participantId } = args;
-    console.log("photo data-----------", photo);
-    console.log("gif data-----------", gif);
-    console.log("video data-----------", video);
-    if (!allowedSocialLinks.includes(type)) throw new Error("the type must exist as a predefined type");
+    const { socialType, text, mediaType, media, participantId } = args;
+    if (!allowedSocialLinks.includes(socialType)) throw new Error("the type must exist as a predefined type");
     const { id } = context.user;
     const user = await User.findOneOrFail({ where: { identityId: id }, relations: ["socialLinks"] });
     const participant = await Participant.findOneOrFail({
@@ -82,29 +85,29 @@ export const postToSocial = async (
         relations: ["campaign"],
     });
     if (!participant.campaign.isOpen()) throw new Error("campaign is closed");
-    const socialLink = user.socialLinks.find((link) => link.type === type);
-    if (!socialLink) throw new Error(`you have not linked ${type} as a social platform`);
+    const socialLink = user.socialLinks.find((link) => link.type === socialType);
+    if (!socialLink) throw new Error(`you have not linked ${socialType} as a social platform`);
     const campaign = await Campaign.findOne({ where: { id: participant.campaign.id }, relations: ["org"] });
     if (!campaign) throw new Error("campaign not found");
-    const client = getSocialClient(type);
+    const client = getSocialClient(socialType);
     let postId: string;
-    if (video) {
-        console.log("video---------");
-        postId = await client.post(socialLink.asClientCredentials(), text, video, "video");
-    } else if (photo) {
-        console.log("image---------");
-        postId = await client.post(socialLink.asClientCredentials(), text, photo, "photo");
-    } else if (gif) {
-        console.log("gif----------");
-        postId = await client.post(socialLink.asClientCredentials(), text, gif, "gif");
+    logger.debug(`media type received is: ${mediaType}`);
+    logger.debug(`media file received is: ${media}`);
+    if (mediaType && media) {
+        postId = await client.post(socialLink.asClientCredentials(), text, media, mediaType);
     } else {
-        console.log("default-----------");
         postId = await client.post(socialLink.asClientCredentials(), text);
     }
     logger.info(`Posted to twitter with ID: ${postId}`);
     await HourlyCampaignMetric.upsert(campaign, campaign.org, "post");
     await participant.campaign.save();
-    const socialPost = await SocialPost.newSocialPost(postId, type, participant.id, user, participant.campaign).save();
+    const socialPost = await SocialPost.newSocialPost(
+        postId,
+        socialType,
+        participant.id,
+        user,
+        participant.campaign
+    ).save();
     return socialPost.id;
 };
 

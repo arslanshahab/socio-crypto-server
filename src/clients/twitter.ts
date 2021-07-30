@@ -4,6 +4,7 @@ import { Secrets } from "../util/secrets";
 import { SocialClientCredentials } from "../types";
 import { getRedis } from "./redis";
 import { extractVideoData, chunkVideo, sleep } from "../controllers/helpers";
+import { getBase64FileExtension } from "../util/helpers";
 
 export class TwitterClient {
     public static getClient(userCredentials: SocialClientCredentials): Twitter {
@@ -17,14 +18,14 @@ export class TwitterClient {
 
     public static postGif = async (client: Twitter, gif: string): Promise<string> => {
         logger.info("posting gif to twitter");
-        const options = { media_category: "tweet_gif", media_data: gif };
+        const options = { media_category: "tweet_gif", media_data: gif, media_type: getBase64FileExtension(gif) };
         const response = await client.post("/media/upload", options);
         return response.media_id_string;
     };
 
     public static postImage = async (client: Twitter, photo: string): Promise<string> => {
         logger.info("posting image to twitter");
-        const options = { media_category: "tweet_image", media_data: photo };
+        const options = { media_category: "tweet_image", media_data: photo, media_type: getBase64FileExtension(photo) };
         const response = await client.post("/media/upload", options);
         return response.media_id_string;
     };
@@ -85,7 +86,7 @@ export class TwitterClient {
                         : mediaType === "gif"
                         ? await TwitterClient.postGif(client, data)
                         : await TwitterClient.postVideo(client, data);
-            logger.info("posting to twitter with gif/image/video");
+            logger.info(`posting to twitter with mediaType:  ${mediaType}`);
             const response = await client.post("/statuses/update", options);
             logger.info(`Response printed with ${JSON.stringify(response)}`);
             return response.id_str;
