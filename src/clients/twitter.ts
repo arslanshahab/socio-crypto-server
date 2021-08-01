@@ -4,7 +4,7 @@ import { Secrets } from "../util/secrets";
 import { SocialClientCredentials } from "../types";
 import { getRedis } from "./redis";
 import { extractVideoData, chunkVideo, sleep } from "../controllers/helpers";
-import { getBase64FileExtension } from "../util/helpers";
+// import { getBase64FileExtension } from "../util/helpers";
 
 export class TwitterClient {
     public static getClient(userCredentials: SocialClientCredentials): Twitter {
@@ -16,16 +16,9 @@ export class TwitterClient {
         });
     }
 
-    public static postGif = async (client: Twitter, gif: string): Promise<string> => {
-        console.log("posting gif to twitter");
-        const options = { media_category: "tweet_gif", media_data: gif, media_type: getBase64FileExtension(gif) };
-        const response = await client.post("/media/upload", options);
-        return response.media_id_string;
-    };
-
-    public static postImage = async (client: Twitter, photo: string): Promise<string> => {
+    public static postImage = async (client: Twitter, photo: string, format: string | undefined): Promise<string> => {
         console.log("posting image to twitter");
-        const options = { media_category: "tweet_image", media_data: photo, media_type: getBase64FileExtension(photo) };
+        const options = { media_category: "tweet_image", media_data: photo, media_type: format };
         const response = await client.post("/media/upload", options);
         return response.media_id_string;
     };
@@ -38,19 +31,24 @@ export class TwitterClient {
         return response.processing_info.state;
     };
 
-    public static postVideo = async (client: Twitter, video: string): Promise<string> => {
-        console.log("posting video to twitter");
-        const [mimeType, videoData, videoSize] = extractVideoData(video);
+    public static postChunkedMedia = async (
+        client: Twitter,
+        media: string,
+        mediaType: "video" | "gif" | undefined,
+        format: string | undefined
+    ): Promise<string> => {
+        console.log(`posting ${mediaType} to twitter`);
+        const [mediaData, mediaSize] = extractVideoData(media);
         const options = {
             command: "INIT",
-            media_type: mimeType,
-            total_bytes: videoSize,
-            media_category: "tweet_video",
+            media_type: format,
+            total_bytes: mediaSize,
+            media_category: mediaType === "video" ? "tweet_video" : "tweet_gif",
         };
         const initResponse = await client.post("media/upload", options);
         const mediaId = initResponse.media_id_string;
-        console.log(`video posted with response: ${JSON.stringify(initResponse)}`);
-        const chunks = chunkVideo(videoData);
+        console.log(`${mediaType} posted with response: ${JSON.stringify(initResponse)}`);
+        const chunks = chunkVideo(mediaData);
         for (let i = 0; i < chunks.length; i++) {
             const appendOptions = { command: "APPEND", media_id: mediaId, segment_index: i, media_data: chunks[i] };
             const appendResponse = await client.post("media/upload", appendOptions);
@@ -73,19 +71,19 @@ export class TwitterClient {
         credentials: SocialClientCredentials,
         text: string,
         data?: string,
-        mediaType?: "photo" | "video" | "gif"
+        mediaType?: "photo" | "video" | "gif",
+        mediaFormat?: string
     ): Promise<string> => {
         try {
             logger.debug(`posting tweet to twitter with text: ${text}`);
             const options: { [key: string]: string } = { status: text };
             const client = TwitterClient.getClient(credentials);
-            if (data)
+            if (data && mediaType && mediaFormat) {
                 options["media_ids"] =
                     mediaType === "photo"
-                        ? await TwitterClient.postImage(client, data)
-                        : mediaType === "gif"
-                        ? await TwitterClient.postGif(client, data)
-                        : await TwitterClient.postVideo(client, data);
+                        ? await TwitterClient.postImage(client, data, mediaFormat)
+                        : await TwitterClient.postChunkedMedia(client, data, mediaType, mediaFormat);
+            }
             logger.info(`posting to twitter with mediaType:  ${mediaType}`);
             const response = await client.post("/statuses/update", options);
             logger.info(`Response printed with ${JSON.stringify(response)}`);
