@@ -1,7 +1,6 @@
 import { decrypt, encrypt } from "../util/crypto";
 import { SocialLink } from "../models/SocialLink";
 import { TwitterClient } from "../clients/twitter";
-import logger from "../util/logger";
 import { Participant } from "../models/Participant";
 import { SocialPost } from "../models/SocialPost";
 import { calculateParticipantSocialScore } from "./helpers";
@@ -71,12 +70,14 @@ export const postToSocial = async (
         socialType: "twitter" | "facebook";
         text: string;
         mediaType: "video" | "photo" | "gif";
+        mediaFormat: string;
         media: string;
         participantId: string;
     },
     context: { user: any }
 ) => {
-    const { socialType, text, mediaType, media, participantId } = args;
+    console.log("endpoint called......");
+    const { socialType, text, mediaType, mediaFormat, media, participantId } = args;
     console.log(`posting to social`);
     if (!allowedSocialLinks.includes(socialType)) throw new Error("the type must exist as a predefined type");
     const { id } = context.user;
@@ -94,9 +95,10 @@ export const postToSocial = async (
     console.log(`client initialized`);
     let postId: string;
     console.log(`media type received is: ${mediaType}`);
+    console.log(`media format received is: ${mediaFormat}`);
     console.log(`media file received is: ${media}`);
-    if (mediaType && media) {
-        postId = await client.post(socialLink.asClientCredentials(), text, media, mediaType);
+    if (mediaType && mediaFormat && media) {
+        postId = await client.post(socialLink.asClientCredentials(), text, media, mediaType, mediaFormat);
     } else {
         postId = await client.post(socialLink.asClientCredentials(), text);
     }
