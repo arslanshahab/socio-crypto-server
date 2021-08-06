@@ -67,11 +67,7 @@ export const placeOrder = async (parent: any, args: { cart: Array<any>; email: s
         const orderStatusList = await Xoxoday.placeOrder(ordersData);
         const orderEntitiesList = await prepareOrderEntities(cart, orderStatusList);
         const totalCoiinSpent = cart.reduce((a, b) => a + (b.coiinPrice || 0), 0);
-        let coiinBalance = user.wallet.currency.find((item) => item.type.toLowerCase() === "coiin");
-        if (coiinBalance) {
-            coiinBalance.balance = coiinBalance.balance.minus(totalCoiinSpent);
-            coiinBalance.save();
-        }
+        await user.updateCoiinBalance("subtract", totalCoiinSpent);
         XoxodayOrderModel.saveOrderList(orderEntitiesList, user);
         return { success: true };
     } catch (error) {

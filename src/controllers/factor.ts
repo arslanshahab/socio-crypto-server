@@ -15,6 +15,8 @@ import { S3Client } from "../clients/s3";
 import { Profile } from "../models/Profile";
 import { NotificationSettings } from "../models/NotificationSettings";
 import { WalletCurrency } from "../models/WalletCurrency";
+import { getWeek, getYear } from "date-fns";
+import { WeeklyReward } from "../models/WeeklyReward";
 
 const { NODE_ENV } = process.env;
 
@@ -82,6 +84,7 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
         where: { identityId },
         relations: ["factorLinks"],
     });
+
     let emailAddress: string;
     if (!user) {
         user = new User();
@@ -144,6 +147,9 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
             }
         }
     }
+    user.lastLogin = new Date();
+    user.save();
+    await rewardUserForLogin(user.id);
     const jwtPayload: { [key: string]: string } = { id: identityId };
     if (
         (emailAddress! && ["raiinmaker.com", "dragonchain.com"].includes(emailAddress!)) ||
@@ -164,6 +170,23 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
         company: jwtPayload.company,
     });
 });
+
+const rewardUserForLogin = async (userId: string): Promise<any> => {
+    const user = await User.findOne({
+        where: { id: userId },
+        relations: ["wallet", "wallet.currency"],
+    });
+    if (user) {
+        const weekKey = `${getWeek(user.lastLogin)}-${getYear(user.lastLogin)}`;
+        const thisWeeksReward = await WeeklyReward.findOne({
+            where: { user: user, rewardType: "login", week: weekKey },
+        });
+        if (!thisWeeksReward) {
+            await user.updateCoiinBalance("add", 2);
+            await WeeklyReward.addReward({ type: "login", amount: "2", week: weekKey }, user);
+        }
+    }
+};
 
 export const recover = asyncHandler(async (req: AuthRequest, res: Response) => {
     const { identityId, code, message } = req.user;

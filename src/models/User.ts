@@ -47,6 +47,9 @@ export class User extends BaseEntity {
     @UpdateDateColumn()
     public updatedAt: Date;
 
+    @UpdateDateColumn()
+    public lastLogin: Date;
+
     @OneToMany(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         (_type) => Participant,
@@ -147,6 +150,15 @@ export class User extends BaseEntity {
             console.log(e);
         }
         return returnedUser;
+    }
+
+    public async updateCoiinBalance(operation: "add" | "subtract", amount: number): Promise<any> {
+        const coiinBalance = this.wallet.currency.find((item) => item.type.toLowerCase() === "coiin");
+        if (coiinBalance) {
+            coiinBalance.balance =
+                operation === "add" ? coiinBalance.balance.plus(amount) : coiinBalance.balance.minus(amount);
+            return coiinBalance.save();
+        }
     }
 
     public static async getUsersForDailyMetricsCron(): Promise<User[]> {
