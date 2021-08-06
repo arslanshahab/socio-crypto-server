@@ -6,8 +6,11 @@ import {
     UpdateDateColumn,
     ManyToOne,
     Column,
+    OneToOne,
+    JoinColumn,
 } from "typeorm";
 import { User } from "./User";
+import { Participant } from "./Participant";
 
 @Entity()
 export class WeeklyReward extends BaseEntity {
@@ -23,8 +26,12 @@ export class WeeklyReward extends BaseEntity {
     @Column({ nullable: false })
     public rewardType: string;
 
-    @ManyToOne((_type) => User, (user) => user.orders)
+    @ManyToOne((_type) => User, (user) => user.weeklyRewards)
     public user: User;
+
+    @OneToOne((_type) => Participant, (participant) => participant.reward)
+    @JoinColumn()
+    public participant: Participant;
 
     @CreateDateColumn()
     public createdAt: Date;
@@ -39,12 +46,13 @@ export class WeeklyReward extends BaseEntity {
         };
     }
 
-    public static async addReward(data: any, user: User): Promise<WeeklyReward> {
+    public static async addReward(data: any): Promise<WeeklyReward> {
         let reward = new WeeklyReward();
-        reward.coiinAmount = data.amount;
+        reward.coiinAmount = data.amount.toString();
         reward.week = data.week;
         reward.rewardType = data.type;
-        reward.user = user;
+        reward.user = data.user;
+        reward.participant = data.participant;
         return await WeeklyReward.save(reward);
     }
 }

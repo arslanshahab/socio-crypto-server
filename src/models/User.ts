@@ -23,6 +23,7 @@ import { DailyParticipantMetric } from "./DailyParticipantMetric";
 import { NotificationSettings } from "./NotificationSettings";
 import { Admin } from "./Admin";
 import { ExternalAddress } from "./ExternalAddress";
+import { WeeklyReward } from "./WeeklyReward";
 
 @Entity()
 export class User extends BaseEntity {
@@ -120,6 +121,9 @@ export class User extends BaseEntity {
     @OneToMany((_type) => XoxodayOrder, (order) => order.user)
     public orders: XoxodayOrder[];
 
+    @OneToMany((_type) => WeeklyReward, (rewards) => rewards.user)
+    public weeklyRewards: WeeklyReward[];
+
     public asV1() {
         let returnedUser: any = { ...this };
         if (this.profile) {
@@ -153,8 +157,12 @@ export class User extends BaseEntity {
     }
 
     public async updateCoiinBalance(operation: "add" | "subtract", amount: number): Promise<any> {
-        if (this.wallet && this.wallet.currency) {
-            const coiinBalance = this.wallet.currency.find((item) => item.type.toLowerCase() === "coiin");
+        let user: User | undefined = this;
+        if (!user.wallet || !user.wallet.currency) {
+            user = await User.findOne({ where: { id: this.id }, relations: ["wallet", "wallet.currency"] });
+        }
+        if (user) {
+            const coiinBalance = user.wallet.currency.find((item) => item.type.toLowerCase() === "coiin");
             if (coiinBalance) {
                 coiinBalance.balance =
                     operation === "add" ? coiinBalance.balance.plus(amount) : coiinBalance.balance.minus(amount);

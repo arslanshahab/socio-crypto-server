@@ -82,7 +82,7 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
     const { identityId, factors } = req.user;
     let user = await User.findOne({
         where: { identityId },
-        relations: ["factorLinks", "wallet", "wallet.currency"],
+        relations: ["factorLinks"],
     });
 
     let emailAddress: string;
@@ -172,13 +172,20 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
 });
 
 const rewardUserForLogin = async (user: User): Promise<any> => {
+    const coiinReward = 2;
     const weekKey = `${getWeek(user.lastLogin)}-${getYear(user.lastLogin)}`;
     const thisWeeksReward = await WeeklyReward.findOne({
         where: { user: user, rewardType: "login", week: weekKey },
     });
     if (!thisWeeksReward) {
-        await user.updateCoiinBalance("add", 2);
-        await WeeklyReward.addReward({ type: "login", amount: "2", week: weekKey }, user);
+        await user.updateCoiinBalance("add", coiinReward);
+        await WeeklyReward.addReward({
+            type: "login",
+            amount: coiinReward,
+            week: weekKey,
+            user: user,
+            participant: null,
+        });
     }
 };
 
