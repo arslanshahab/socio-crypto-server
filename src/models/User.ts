@@ -153,11 +153,13 @@ export class User extends BaseEntity {
     }
 
     public async updateCoiinBalance(operation: "add" | "subtract", amount: number): Promise<any> {
-        const coiinBalance = this.wallet.currency.find((item) => item.type.toLowerCase() === "coiin");
-        if (coiinBalance) {
-            coiinBalance.balance =
-                operation === "add" ? coiinBalance.balance.plus(amount) : coiinBalance.balance.minus(amount);
-            return coiinBalance.save();
+        if (this.wallet && this.wallet.currency) {
+            const coiinBalance = this.wallet.currency.find((item) => item.type.toLowerCase() === "coiin");
+            if (coiinBalance) {
+                coiinBalance.balance =
+                    operation === "add" ? coiinBalance.balance.plus(amount) : coiinBalance.balance.minus(amount);
+                return coiinBalance.save();
+            }
         }
     }
 

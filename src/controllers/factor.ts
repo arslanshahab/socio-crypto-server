@@ -82,7 +82,7 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
     const { identityId, factors } = req.user;
     let user = await User.findOne({
         where: { identityId },
-        relations: ["factorLinks"],
+        relations: ["factorLinks", "wallet", "wallet.currency"],
     });
 
     let emailAddress: string;
@@ -149,7 +149,7 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
     }
     user.lastLogin = new Date();
     user.save();
-    await rewardUserForLogin(user.id);
+    await rewardUserForLogin(user);
     const jwtPayload: { [key: string]: string } = { id: identityId };
     if (
         (emailAddress! && ["raiinmaker.com", "dragonchain.com"].includes(emailAddress!)) ||
@@ -171,20 +171,14 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
     });
 });
 
-const rewardUserForLogin = async (userId: string): Promise<any> => {
-    const user = await User.findOne({
-        where: { id: userId },
-        relations: ["wallet", "wallet.currency"],
+const rewardUserForLogin = async (user: User): Promise<any> => {
+    const weekKey = `${getWeek(user.lastLogin)}-${getYear(user.lastLogin)}`;
+    const thisWeeksReward = await WeeklyReward.findOne({
+        where: { user: user, rewardType: "login", week: weekKey },
     });
-    if (user) {
-        const weekKey = `${getWeek(user.lastLogin)}-${getYear(user.lastLogin)}`;
-        const thisWeeksReward = await WeeklyReward.findOne({
-            where: { user: user, rewardType: "login", week: weekKey },
-        });
-        if (!thisWeeksReward) {
-            await user.updateCoiinBalance("add", 2);
-            await WeeklyReward.addReward({ type: "login", amount: "2", week: weekKey }, user);
-        }
+    if (!thisWeeksReward) {
+        await user.updateCoiinBalance("add", 2);
+        await WeeklyReward.addReward({ type: "login", amount: "2", week: weekKey }, user);
     }
 };
 
