@@ -171,6 +171,17 @@ export const typeDefs = gql`
         getTokenInUSD(symbol: String!): Float
         getTokenIdBySymbol(symbol: String!): String
         checkCoinGecko(symbol: String): Boolean
+        getWeeklyRewards: WeeklyRewardResponse
+    }
+
+    type WeeklyRewardResponse {
+        loginRewardRedeemed: Boolean
+        loginReward: Int
+        nextLoginReward: String
+        participationReward: Int
+        participationId: String
+        nextParticipationReward: String
+        participationRewardRedeemed: Boolean
     }
 
     type CampaignCreationResponse {
