@@ -14,10 +14,8 @@ interface RewardResponse {
     loginRedemptionDate: string;
 }
 
-export const getWeeklyRewards = async (parent: any, context: { user: any }) => {
+export const getWeeklyRewards = async (parent: any, args: any, context: any) => {
     try {
-        console.log(context);
-        console.log(context.user);
         const { id } = context.user;
         const user = await User.findOne({
             where: { identityId: id },
@@ -26,7 +24,9 @@ export const getWeeklyRewards = async (parent: any, context: { user: any }) => {
         if (!user) throw new Error("user not found");
         const weekKey = `${getWeek(user.lastLogin)}-${getYear(user.lastLogin)}`;
         const rewards = user.weeklyRewards.filter((item) => item.week === weekKey);
-        return await prepareWeeklyRewardResponse(user, rewards);
+        const data = await prepareWeeklyRewardResponse(user, rewards);
+        console.log(data);
+        return data;
     } catch (e) {
         console.log(e);
         return null;
