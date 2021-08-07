@@ -16,6 +16,8 @@ interface RewardResponse {
 
 export const getWeeklyRewards = async (parent: any, context: { user: any }) => {
     try {
+        console.log(context);
+        console.log(context.user);
         const { id } = context.user;
         const user = await User.findOne({
             where: { identityId: id },
