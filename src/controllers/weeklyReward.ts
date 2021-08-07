@@ -1,4 +1,4 @@
-import { endOfISOWeek, getWeek, getYear, addDays } from "date-fns";
+import { endOfISOWeek, getWeek, getYear, addDays, startOfDay } from "date-fns";
 import { User } from "../models/User";
 import { WeeklyReward } from "../models/WeeklyReward";
 
@@ -10,6 +10,8 @@ interface RewardResponse {
     participationId: string;
     nextParticipationReward: string;
     participationRewardRedeemed: boolean;
+    participationRedemptionDate: string;
+    loginRedemptionDate: string;
 }
 
 export const getWeeklyRewards = async (parent: any, context: { user: any }) => {
@@ -32,7 +34,7 @@ export const getWeeklyRewards = async (parent: any, context: { user: any }) => {
 const prepareWeeklyRewardResponse = async (user: User, data: WeeklyReward[]): Promise<RewardResponse> => {
     const loginReward = data.find((item) => item.rewardType === "login");
     const participationReward = data.find((item) => item.rewardType === "campaign-participation");
-    const nextReward = addDays(endOfISOWeek(user.lastLogin), 1);
+    const nextReward = startOfDay(addDays(endOfISOWeek(user.lastLogin), 1));
     return {
         loginRewardRedeemed: loginReward ? true : false,
         loginReward: loginReward ? parseInt(loginReward.coiinAmount) : 0,
@@ -41,5 +43,7 @@ const prepareWeeklyRewardResponse = async (user: User, data: WeeklyReward[]): Pr
         participationId: participationReward ? participationReward.participant.id : "",
         nextParticipationReward: nextReward.toString(),
         participationRewardRedeemed: participationReward ? true : false,
+        participationRedemptionDate: participationReward ? participationReward.createdAt.toString() : "",
+        loginRedemptionDate: loginReward ? loginReward.createdAt.toString() : "",
     };
 };
