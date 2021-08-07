@@ -182,6 +182,8 @@ export const typeDefs = gql`
         participationId: String
         nextParticipationReward: String
         participationRewardRedeemed: Boolean
+        participationRedemptionDate: String
+        loginRedemptionDate: String
     }
 
     type CampaignCreationResponse {
