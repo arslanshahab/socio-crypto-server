@@ -13,6 +13,7 @@ import * as fundingController from "../controllers/fundingWallet";
 import * as stripeController from "../controllers/stripe";
 import * as cryptoController from "../controllers/crypto";
 import * as xoxodayController from "../controllers/xoxoday";
+import * as weeklyReward from "../controllers/weeklyReward";
 
 export const resolvers = {
     Query: {
@@ -46,6 +47,7 @@ export const resolvers = {
         getUserParticipationKeywords: userController.getUserParticipationKeywords,
         getStoreVouchers: xoxodayController.getVouchers,
         getCampaignSignedUrls: campaignController.generateCampaignSignedUrls,
+        getWeeklyRewards: weeklyReward.getWeeklyRewards,
     },
     Mutation: {
         generateFactorsFromKyc: factorController.generateFactors,

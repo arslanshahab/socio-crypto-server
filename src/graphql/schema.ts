@@ -49,7 +49,14 @@ export const typeDefs = gql`
         promoteUserPermissions(userId: String, email: String, company: String, role: String): User
         registerSocialLink(type: String!, apiKey: String!, apiSecret: String!): Boolean
         removeSocialLink(type: String!): Boolean
-        postToSocial(type: String!, text: String!, photo: String, gif: String, video: String, participantId: String!): String
+        postToSocial(
+            socialType: String!
+            text: String!
+            mediaType: String
+            mediaFormat: String
+            media: String
+            participantId: String!
+        ): String
         setDevice(deviceToken: String!): Boolean
         registerFactorLink(factor: JSON): User
         updateUsername(username: String!): User
@@ -164,6 +171,19 @@ export const typeDefs = gql`
         getTokenInUSD(symbol: String!): Float
         getTokenIdBySymbol(symbol: String!): String
         checkCoinGecko(symbol: String): Boolean
+        getWeeklyRewards: WeeklyRewardResponse
+    }
+
+    type WeeklyRewardResponse {
+        loginRewardRedeemed: Boolean
+        loginReward: Int
+        nextLoginReward: String
+        participationReward: Int
+        participationId: String
+        nextParticipationReward: String
+        participationRewardRedeemed: Boolean
+        participationRedemptionDate: String
+        loginRedemptionDate: String
     }
 
     type CampaignCreationResponse {

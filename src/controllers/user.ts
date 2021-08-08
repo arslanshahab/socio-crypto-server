@@ -13,30 +13,60 @@ import { groupDailyMetricsByUser } from "./helpers";
 import { HourlyCampaignMetric } from "../models/HourlyCampaignMetric";
 import { serverBaseUrl } from "../config";
 import { In } from "typeorm";
+import { getWeek, getYear } from "date-fns";
+import { WeeklyReward } from "../models/WeeklyReward";
 
 export const participate = async (parent: any, args: { campaignId: string; email: string }, context: { user: any }) => {
-    const { id } = context.user;
-    const user = await User.findOne({
-        where: { identityId: id },
-        relations: ["campaigns", "wallet"],
+    try {
+        const { id } = context.user;
+        const user = await User.findOne({
+            where: { identityId: id },
+            relations: ["campaigns", "wallet"],
+        });
+
+        if (!user) throw new Error("user not found");
+        const campaign = await Campaign.findOne({
+            where: { id: args.campaignId },
+            relations: ["org"],
+        });
+        if (!campaign) throw new Error("campaign not found");
+
+        if (campaign.type === "raffle" && !args.email) throw new Error("raffle campaigns require an email");
+        if (!campaign.isOpen()) throw new Error("campaign is not open for participation");
+
+        if (await Participant.findOne({ where: { campaign, user } }))
+            throw new Error("user already participating in this campaign");
+
+        const participant = Participant.newParticipant(user, campaign, args.email);
+        await participant.save();
+        const url = `${serverBaseUrl}/v1/referral/${participant.id}`;
+        participant.link = await TinyUrl.shorten(url);
+        await HourlyCampaignMetric.upsert(campaign, campaign.org, "participate");
+        await participant.save();
+        await rewardUserForParticipation(user, participant);
+        return participant.asV1();
+    } catch (e) {
+        console.log(e);
+        return null;
+    }
+};
+
+const rewardUserForParticipation = async (user: User, participant: Participant): Promise<any> => {
+    const coiinReward = 10;
+    const weekKey = `${getWeek(user.lastLogin)}-${getYear(user.lastLogin)}`;
+    const participationReward = await WeeklyReward.findOne({
+        where: { user: user, rewardType: "campaign-participation", week: weekKey },
     });
-    if (!user) throw new Error("user not found");
-    const campaign = await Campaign.findOne({
-        where: { id: args.campaignId },
-        relations: ["org"],
-    });
-    if (!campaign) throw new Error("campaign not found");
-    if (campaign.type === "raffle" && !args.email) throw new Error("raffle campaigns require an email");
-    if (!campaign.isOpen()) throw new Error("campaign is not open for participation");
-    if (await Participant.findOne({ where: { campaign, user } }))
-        throw new Error("user already participating in this campaign");
-    const participant = Participant.newParticipant(user, campaign, args.email);
-    await participant.save();
-    const url = `${serverBaseUrl}/v1/referral/${participant.id}`;
-    participant.link = await TinyUrl.shorten(url);
-    await HourlyCampaignMetric.upsert(campaign, campaign.org, "participate");
-    await participant.save();
-    return participant.asV1();
+    if (!participationReward) {
+        await user.updateCoiinBalance("add", coiinReward);
+        await WeeklyReward.addReward({
+            type: "campaign-participation",
+            amount: coiinReward,
+            week: weekKey,
+            participant: participant,
+            user: user,
+        });
+    }
 };
 
 export const promotePermissions = async (

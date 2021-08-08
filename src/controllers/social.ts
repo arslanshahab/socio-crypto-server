@@ -1,7 +1,6 @@
 import { decrypt, encrypt } from "../util/crypto";
 import { SocialLink } from "../models/SocialLink";
 import { TwitterClient } from "../clients/twitter";
-import logger from "../util/logger";
 import { Participant } from "../models/Participant";
 import { SocialPost } from "../models/SocialPost";
 import { calculateParticipantSocialScore } from "./helpers";
@@ -67,11 +66,20 @@ export const removeSocialLink = async (parent: any, args: { type: string }, cont
 
 export const postToSocial = async (
     parent: any,
-    args: { type: string; text: string; photo: string; gif: string; video: string; participantId: string },
+    args: {
+        socialType: "twitter" | "facebook";
+        text: string;
+        mediaType: "video" | "photo" | "gif";
+        mediaFormat: string;
+        media: string;
+        participantId: string;
+    },
     context: { user: any }
 ) => {
-    const { type, text, photo, gif, video, participantId } = args;
-    if (!allowedSocialLinks.includes(type)) throw new Error("the type must exist as a predefined type");
+    console.log("endpoint called......");
+    const { socialType, text, mediaType, mediaFormat, media, participantId } = args;
+    console.log(`posting to social`);
+    if (!allowedSocialLinks.includes(socialType)) throw new Error("the type must exist as a predefined type");
     const { id } = context.user;
     const user = await User.findOneOrFail({ where: { identityId: id }, relations: ["socialLinks"] });
     const participant = await Participant.findOneOrFail({
@@ -79,25 +87,31 @@ export const postToSocial = async (
         relations: ["campaign"],
     });
     if (!participant.campaign.isOpen()) throw new Error("campaign is closed");
-    const socialLink = user.socialLinks.find((link) => link.type === type);
-    if (!socialLink) throw new Error(`you have not linked ${type} as a social platform`);
+    const socialLink = user.socialLinks.find((link) => link.type === socialType);
+    if (!socialLink) throw new Error(`you have not linked ${socialType} as a social platform`);
     const campaign = await Campaign.findOne({ where: { id: participant.campaign.id }, relations: ["org"] });
     if (!campaign) throw new Error("campaign not found");
-    const client = getSocialClient(type);
+    const client = getSocialClient(socialType);
+    console.log(`client initialized`);
     let postId: string;
-    if (video) {
-        postId = await client.post(socialLink.asClientCredentials(), text, video, "video");
-    } else if (photo) {
-        postId = await client.post(socialLink.asClientCredentials(), text, photo, "photo");
-    } else if (gif) {
-        postId = await client.post(socialLink.asClientCredentials(), text, photo, "gif");
+    console.log(`media type received is: ${mediaType}`);
+    console.log(`media format received is: ${mediaFormat}`);
+    console.log(`media file received is: ${media}`);
+    if (mediaType && mediaFormat && media) {
+        postId = await client.post(socialLink.asClientCredentials(), text, media, mediaType, mediaFormat);
     } else {
         postId = await client.post(socialLink.asClientCredentials(), text);
     }
-    logger.info(`Posted to twitter with ID: ${postId}`);
+    console.log(`Posted to twitter with ID: ${postId}`);
     await HourlyCampaignMetric.upsert(campaign, campaign.org, "post");
     await participant.campaign.save();
-    const socialPost = await SocialPost.newSocialPost(postId, type, participant.id, user, participant.campaign).save();
+    const socialPost = await SocialPost.newSocialPost(
+        postId,
+        socialType,
+        participant.id,
+        user,
+        participant.campaign
+    ).save();
     return socialPost.id;
 };
 

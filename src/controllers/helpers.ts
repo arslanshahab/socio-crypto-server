@@ -314,10 +314,9 @@ export const getRank = (userId: string, metrics: DailyParticipantMetric[]) => {
 };
 
 export const extractVideoData = (video: string): any[] => {
-    const mimeType = video.split(":")[1].split(";")[0];
     const image = video.split(",")[1];
     const bytes = Buffer.from(image, "base64");
-    return [mimeType, image, bytes.length];
+    return [image, bytes.length];
 };
 
 export const chunkVideo = (video: string, chunkSize: number = 5000000): string[] => {
