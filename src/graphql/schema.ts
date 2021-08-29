@@ -116,6 +116,7 @@ export const typeDefs = gql`
             campaignImageFileName: String
             sharedMediaFileName: String
         ): CampaignCreationResponse
+        getDepositAddressForCurrency(currency: String): JSON
         usernameExists(username: String!): UserExistence
         listCampaigns(
             open: Boolean

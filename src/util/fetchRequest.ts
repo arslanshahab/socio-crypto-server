@@ -1,19 +1,31 @@
-import fetch, { RequestInfo } from "node-fetch";
+import fetch from "node-fetch";
 
-export const doFetch = async (url: RequestInfo, token: any, method: string, payload: any) => {
+export interface RequestData {
+    url: string;
+    authToken?: string;
+    xAPIToken?: string;
+    method: "POST" | "GET" | "PUT" | "DELETE";
+    payload?: any;
+    query?: any;
+}
+
+export const doFetch = async (requestData: RequestData) => {
     let options = {
-        method: method,
+        method: requestData.method,
         headers: {
             "Content-Type": "application/json",
-            ...(token && { Authorization: "Bearer " + token }),
+            ...(requestData.authToken && { Authorization: "Bearer " + requestData.authToken }),
+            ...(requestData.xAPIToken && { "x-api-key": requestData.xAPIToken }),
         },
     };
-    if (method === "GET") {
-        url = payload.query ? `${url}?${new URLSearchParams(payload.query)}` : url;
+    let url = "";
+    if (requestData.method === "GET") {
+        url = requestData.query.query
+            ? `${requestData.url}?${new URLSearchParams(requestData.query)}`
+            : requestData.url;
     } else {
         // @ts-ignore
-        options = { ...options, body: JSON.stringify(payload) };
+        options = { ...options, ...(requestData.payload && { body: JSON.stringify(payload) }) };
     }
-    // @ts-ignore
     return fetch(url, options);
 };
