@@ -48,6 +48,7 @@ export const resolvers = {
         getUserParticipationKeywords: userController.getUserParticipationKeywords,
         getStoreVouchers: xoxodayController.getVouchers,
         getCampaignSignedUrls: campaignController.generateCampaignSignedUrls,
+        getWeeklyRewards: weeklyReward.getWeeklyRewards,
     },
     Mutation: {
         generateFactorsFromKyc: factorController.generateFactors,
