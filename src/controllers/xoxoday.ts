@@ -64,8 +64,8 @@ export const placeOrder = async (parent: any, args: { cart: Array<any>; email: s
         if (!email) throw new Error("No email provided");
         if (!cart || !cart.length) throw new Error("Please provide some items to place an order.");
         const totalCoiinSpent = cart.reduce((a, b) => a + (b.coiinPrice || 0), 0);
-        const userBalance = user.wallet.currency.find((item) => item.type.toLowerCase() === "coiin");
-        if (!userBalance || userBalance < totalCoiinSpent) {
+        const userCoiins = user.wallet.currency.find((item) => item.type.toLowerCase() === "coiin");
+        if (!userCoiins || userCoiins.balance.isZero() || userCoiins.balance.isLessThan(totalCoiinSpent)) {
             throw new Error("Not enough coiin balance to proceed with this transaction");
         }
         const ordersData = await prepareOrderList(cart, email);
