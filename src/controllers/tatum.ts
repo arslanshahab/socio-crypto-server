@@ -1,3 +1,4 @@
+import { TatumAccount } from "../models/TatumAccount";
 import { TatumClient } from "../clients/tatumClient";
 import { Admin } from "../models/Admin";
 
@@ -21,7 +22,8 @@ export const getDepositAddress = async (parent: any, args: { currency: string },
         const { currency } = args;
         const fromTatum = TatumClient.isCurrencySupported(currency.toUpperCase());
         const { id } = context.user;
-        if (TatumClient.isCurrencySupported(currency.toUpperCase())) {
+        if (fromTatum) {
+            let tatumAccount = await findOrCreateLedgeAccount(currency);
             const admin = Admin.findOne({ where: { firebaseId: id }, relations: ["org"] });
             return admin;
         } else {
@@ -34,6 +36,15 @@ export const getDepositAddress = async (parent: any, args: { currency: string },
     } catch (error) {
         return error;
     }
+};
+
+const findOrCreateLedgeAccount = async (currency: string) => {
+    let tatumAccount = await TatumAccount.findOne({ where: { currency: currency } });
+    if (!tatumAccount) {
+        tatumAccount = await TatumClient.createLedgerAccount(currency);
+        TatumAccount.addAccount(tatumAccount);
+    }
+    return tatumAccount;
 };
 
 // const prepareDespositAddressResponse = (data: any): DepositAddressData => {

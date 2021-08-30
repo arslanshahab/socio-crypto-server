@@ -272,4 +272,14 @@ export class S3Client {
             throw e;
         }
     }
+
+    public static async getTatumXPubKey() {
+        const params: AWS.S3.GetObjectRequest = { Bucket: RM_SECRETS, Key: "tatum/xpubKey" };
+        try {
+            return (await this.client.getObject(params).promise()).Body?.toString();
+        } catch (e) {
+            if (e.code && e.code === "NotFound") return null;
+            throw e;
+        }
+    }
 }

@@ -18,14 +18,12 @@ export const doFetch = async (requestData: RequestData) => {
             ...(requestData.xAPIToken && { "x-api-key": requestData.xAPIToken }),
         },
     };
-    let url = "";
-    if (requestData.method === "GET") {
-        url = requestData.query.query
-            ? `${requestData.url}?${new URLSearchParams(requestData.query)}`
-            : requestData.url;
-    } else {
-        // @ts-ignore
-        options = { ...options, ...(requestData.payload && { body: JSON.stringify(payload) }) };
+    let url = requestData.url;
+    if (requestData.query) {
+        url = `${requestData.url}?${new URLSearchParams(requestData.query)}`;
+    }
+    if (requestData.method !== "GET") {
+        options = { ...options, ...(requestData.payload && { body: JSON.stringify(requestData.payload) }) };
     }
     return fetch(url, options);
 };

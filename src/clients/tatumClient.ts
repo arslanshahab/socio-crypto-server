@@ -2,7 +2,7 @@ import { doFetch, RequestData } from "../util/fetchRequest";
 import { S3Client } from "./s3";
 
 export class TatumClient {
-    public static baseUrl = "api-eu1.tatum.io";
+    public static baseUrl = "https://api-eu1.tatum.io";
     public static currencies = ["BTC"];
 
     public static async createLedgerAccount(currency: string) {
@@ -16,7 +16,12 @@ export class TatumClient {
                     payload: { currency: currency.toUpperCase(), accountingCurrency: "USD" },
                 };
                 const response = await doFetch(requestData);
-                return await response.json();
+                const data = await response.json();
+                if (response.status === 200) {
+                    return data;
+                }
+                console.log(data);
+                throw new Error("Error creating ledger account");
             }
             throw new Error("Error fetching API Token");
         } catch (error) {
