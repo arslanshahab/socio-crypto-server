@@ -79,7 +79,7 @@ export const resolvers = {
         updateNotificationSettings: userController.updateNotificationSettings,
         removeEthereumAddress: externalWallet.remove,
         uploadProfilePicture: userController.uploadProfilePicture,
-        // placeStoreOrder: xoxodayController.placeOrder,
+        placeStoreOrder: xoxodayController.placeOrder,
     },
 };
 
