@@ -172,6 +172,18 @@ const ifUserCanRedeem = async (user: User, totalCoiinSpent: number) => {
     if (accountAgeInDays < 28) {
         throw new Error("Your account needs to be 4 weeks old before you can redeem anything!");
     }
+    const twitterAccount = user.socialLinks.find((item) => item.type === "twitter");
+    if (!twitterAccount) {
+        throw new Error("You need to link your twitter account before you redeem!");
+    }
+    const socialClient = getSocialClient("twitter");
+    const twitterFollowers = await socialClient.getTotalFollowers(
+        twitterAccount.asClientCredentials(),
+        twitterAccount.id
+    );
+    if (twitterFollowers < 20) {
+        throw new Error("You need to have atleast 20 followers on twitter before you redeem!");
+    }
     const participationWithInfluence = user.campaigns.find((item) =>
         item.participationScore.isGreaterThanOrEqualTo(20)
     );
