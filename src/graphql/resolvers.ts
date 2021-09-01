@@ -48,6 +48,7 @@ export const resolvers = {
         getStoreVouchers: xoxodayController.getVouchers,
         getCampaignSignedUrls: campaignController.generateCampaignSignedUrls,
         getWeeklyRewards: weeklyReward.getWeeklyRewards,
+        getRedemptionRequirements: xoxodayController.redemptionRequirements,
     },
     Mutation: {
         generateFactorsFromKyc: factorController.generateFactors,
@@ -135,7 +136,6 @@ export const publicResolvers = {
         usernameExists: userController.usernameExists,
         campaignGet: campaignController.publicGet,
         accountExists: userController.accountExists,
-        getStoreVouchers: xoxodayController.getVouchers,
     },
     Mutation: {
         trackAction: participantController.trackAction,
