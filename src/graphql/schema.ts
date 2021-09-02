@@ -173,6 +173,20 @@ export const typeDefs = gql`
         getTokenIdBySymbol(symbol: String!): String
         checkCoinGecko(symbol: String): Boolean
         getWeeklyRewards: WeeklyRewardResponse
+        getRedemptionRequirements: RedemptionRequirements
+    }
+
+    type RedemptionRequirements {
+        accountAgeReached: Boolean
+        accountAge: Int
+        accountAgeRequirement: Int
+        twitterLinked: Boolean
+        twitterfollowers: Int
+        twitterfollowersRequirement: Int
+        participation: Boolean
+        participationScore: Int
+        participationScoreRequirement: Int
+        orderLimitForTwentyFourHoursReached: Boolean
     }
 
     type WeeklyRewardResponse {

@@ -25,7 +25,6 @@ export const getWeeklyRewards = async (parent: any, args: any, context: any) => 
         const weekKey = `${getWeek(user.lastLogin)}-${getYear(user.lastLogin)}`;
         const rewards = user.weeklyRewards.filter((item) => item.week === weekKey);
         const data = await prepareWeeklyRewardResponse(user, rewards);
-        console.log(data);
         return data;
     } catch (e) {
         console.log(e);

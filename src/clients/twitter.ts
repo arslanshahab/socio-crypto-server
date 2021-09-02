@@ -49,11 +49,12 @@ export class TwitterClient {
         const mediaId = initResponse.media_id_string;
         console.log(`${mediaType} posted with response: ${JSON.stringify(initResponse)}`);
         const chunks = chunkVideo(mediaData);
+        const promiseArray: Array<Promise<any>> = [];
         for (let i = 0; i < chunks.length; i++) {
             const appendOptions = { command: "APPEND", media_id: mediaId, segment_index: i, media_data: chunks[i] };
-            const appendResponse = await client.post("media/upload", appendOptions);
-            console.log(`append response: ${JSON.stringify(appendResponse)}`);
+            promiseArray.push(client.post("media/upload", appendOptions));
         }
+        await Promise.all(promiseArray);
         const finalizeOptions = { command: "FINALIZE", media_id: mediaId };
         const finalizeResponse = await client.post("media/upload", finalizeOptions);
         console.log(`finalize response: ${JSON.stringify(finalizeResponse)}`);

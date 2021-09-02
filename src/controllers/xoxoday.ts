@@ -6,6 +6,8 @@ import { XoxodayOrder, XoxodayVoucher } from "src/types";
 import { getExchangeRate } from "../util/forex";
 import { XoxodayOrder as XoxodayOrderModel } from "../models/XoxodayOrder";
 import { User } from "../models/User";
+import { differenceInDays, differenceInHours } from "date-fns";
+import { getSocialClient } from "./social";
 
 export const initXoxoday = asyncHandler(async (req: Request, res: Response) => {
     try {
@@ -58,26 +60,61 @@ export const placeOrder = async (parent: any, args: { cart: Array<any>; email: s
         const { id } = context.user;
         const user = await User.findOne({
             where: { identityId: id },
-            relations: ["wallet", "wallet.currency"],
+            relations: ["wallet", "wallet.currency", "campaigns", "orders"],
         });
         if (!user) throw new Error("No user found");
         if (!email) throw new Error("No email provided");
         if (!cart || !cart.length) throw new Error("Please provide some items to place an order.");
         const totalCoiinSpent = cart.reduce((a, b) => a + (b.coiinPrice || 0), 0);
-        const userCoiins = user.wallet.currency.find((item) => item.type.toLowerCase() === "coiin");
-        if (
-            !userCoiins ||
-            userCoiins.balance.isLessThanOrEqualTo(0) ||
-            userCoiins.balance.isLessThan(totalCoiinSpent)
-        ) {
-            throw new Error("Not enough coiin balance to proceed with this transaction");
-        }
+        await ifUserCanRedeem(user, totalCoiinSpent);
         const ordersData = await prepareOrderList(cart, email);
         const orderStatusList = await Xoxoday.placeOrder(ordersData);
         const orderEntitiesList = await prepareOrderEntities(cart, orderStatusList);
         await user.updateCoiinBalance("subtract", totalCoiinSpent);
         XoxodayOrderModel.saveOrderList(orderEntitiesList, user);
         return { success: true };
+    } catch (error) {
+        console.log(error);
+        return error;
+    }
+};
+
+export const redemptionRequirements = async (parent: any, args: {}, context: { user: any }) => {
+    try {
+        const { id } = context.user;
+        const user = await User.findOne({
+            where: { identityId: id },
+            relations: ["campaigns", "orders", "socialLinks"],
+        });
+        if (!user) throw new Error("No user found");
+        const accountAgeInDays = differenceInDays(new Date(), new Date(user.createdAt));
+        const participationWithInfluence = user.campaigns.sort(
+            (a, b) => parseFloat(b.participationScore.toString()) - parseFloat(a.participationScore.toString())
+        )[0];
+        const recentOrder = user.orders.sort(
+            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        )[0];
+        const twitterAccount = user.socialLinks.find((item) => item.type === "twitter");
+        const socialClient = getSocialClient("twitter");
+        const twitterFollowers = await socialClient.getTotalFollowers(
+            twitterAccount?.asClientCredentials(),
+            twitterAccount?.id
+        );
+        return {
+            accountAgeReached: accountAgeInDays >= 28,
+            accountAge: accountAgeInDays,
+            accountAgeRequirement: 28,
+            twitterLinked: twitterAccount ? true : false,
+            twitterfollowers: twitterFollowers,
+            twitterfollowersRequirement: 20,
+            participation: participationWithInfluence ? true : false,
+            participationScore: participationWithInfluence
+                ? participationWithInfluence.participationScore.toString()
+                : 0,
+            participationScoreRequirement: 20,
+            orderLimitForTwentyFourHoursReached:
+                recentOrder && differenceInHours(new Date(), new Date(recentOrder.createdAt)) < 24 ? true : false,
+        };
     } catch (error) {
         console.log(error);
         return error;
@@ -128,4 +165,41 @@ const prepareOrderEntities = async (cart: Array<any>, statusList: Array<any>): P
             ...item,
         };
     });
+};
+
+const ifUserCanRedeem = async (user: User, totalCoiinSpent: number) => {
+    const accountAgeInDays = differenceInDays(new Date(), new Date(user.createdAt));
+    if (accountAgeInDays < 28) {
+        throw new Error("Your account needs to be 4 weeks old before you can redeem anything!");
+    }
+    const twitterAccount = user.socialLinks.find((item) => item.type === "twitter");
+    if (!twitterAccount) {
+        throw new Error("You need to link your twitter account before you redeem!");
+    }
+    const socialClient = getSocialClient("twitter");
+    const twitterFollowers = await socialClient.getTotalFollowers(
+        twitterAccount.asClientCredentials(),
+        twitterAccount.id
+    );
+    if (twitterFollowers < 20) {
+        throw new Error("You need to have atleast 20 followers on twitter before you redeem!");
+    }
+    const participationWithInfluence = user.campaigns.find((item) =>
+        item.participationScore.isGreaterThanOrEqualTo(20)
+    );
+    if (!participationWithInfluence) {
+        throw new Error(
+            "You need to have an influence of atleast 20 in any of your participations before you redeem anything!"
+        );
+    }
+    const recentOrder = user.orders.sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )[0];
+    if (recentOrder && differenceInHours(new Date(), new Date(recentOrder.createdAt)) < 24) {
+        throw new Error("You need to wait for few hours before you can redeem again!");
+    }
+    const userCoiins = user.wallet.currency.find((item) => item.type.toLowerCase() === "coiin");
+    if (!userCoiins || userCoiins.balance.isLessThanOrEqualTo(0) || userCoiins.balance.isLessThan(totalCoiinSpent)) {
+        throw new Error("Not enough coiin balance to proceed with this transaction!");
+    }
 };
