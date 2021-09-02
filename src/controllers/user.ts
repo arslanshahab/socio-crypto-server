@@ -13,8 +13,7 @@ import { groupDailyMetricsByUser } from "./helpers";
 import { HourlyCampaignMetric } from "../models/HourlyCampaignMetric";
 import { serverBaseUrl } from "../config";
 import { In } from "typeorm";
-import { getWeek, getYear } from "date-fns";
-import { WeeklyReward } from "../models/WeeklyReward";
+import { rewardUserForParticipation } from "./weeklyReward";
 
 export const participate = async (parent: any, args: { campaignId: string; email: string }, context: { user: any }) => {
     try {
@@ -48,24 +47,6 @@ export const participate = async (parent: any, args: { campaignId: string; email
     } catch (e) {
         console.log(e);
         return null;
-    }
-};
-
-const rewardUserForParticipation = async (user: User, participant: Participant): Promise<any> => {
-    const coiinReward = 10;
-    const weekKey = `${getWeek(user.lastLogin)}-${getYear(user.lastLogin)}`;
-    const participationReward = await WeeklyReward.findOne({
-        where: { user: user, rewardType: "campaign-participation", week: weekKey },
-    });
-    if (!participationReward) {
-        await user.updateCoiinBalance("add", coiinReward);
-        await WeeklyReward.addReward({
-            type: "campaign-participation",
-            amount: coiinReward,
-            week: weekKey,
-            participant: participant,
-            user: user,
-        });
     }
 };
 
