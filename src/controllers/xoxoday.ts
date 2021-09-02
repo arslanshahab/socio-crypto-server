@@ -7,6 +7,7 @@ import { getExchangeRate } from "../util/forex";
 import { XoxodayOrder as XoxodayOrderModel } from "../models/XoxodayOrder";
 import { User } from "../models/User";
 import { differenceInDays, differenceInHours } from "date-fns";
+import { getSocialClient } from "./social";
 
 export const initXoxoday = asyncHandler(async (req: Request, res: Response) => {
     try {
@@ -78,6 +79,48 @@ export const placeOrder = async (parent: any, args: { cart: Array<any>; email: s
     }
 };
 
+export const redemptionRequirements = async (parent: any, args: {}, context: { user: any }) => {
+    try {
+        const { id } = context.user;
+        const user = await User.findOne({
+            where: { identityId: id },
+            relations: ["campaigns", "orders", "socialLinks"],
+        });
+        if (!user) throw new Error("No user found");
+        const accountAgeInDays = differenceInDays(new Date(), new Date(user.createdAt));
+        const participationWithInfluence = user.campaigns.sort(
+            (a, b) => parseFloat(b.participationScore.toString()) - parseFloat(a.participationScore.toString())
+        )[0];
+        const recentOrder = user.orders.sort(
+            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        )[0];
+        const twitterAccount = user.socialLinks.find((item) => item.type === "twitter");
+        const socialClient = getSocialClient("twitter");
+        const twitterFollowers = await socialClient.getTotalFollowers(
+            twitterAccount?.asClientCredentials(),
+            twitterAccount?.id
+        );
+        return {
+            accountAgeReached: accountAgeInDays >= 28,
+            accountAge: accountAgeInDays,
+            accountAgeRequirement: 28,
+            twitterLinked: twitterAccount ? true : false,
+            twitterfollowers: twitterFollowers,
+            twitterfollowersRequirement: 20,
+            participation: participationWithInfluence ? true : false,
+            participationScore: participationWithInfluence
+                ? participationWithInfluence.participationScore.toString()
+                : 0,
+            participationScoreRequirement: 20,
+            orderLimitForTwentyFourHoursReached:
+                recentOrder && differenceInHours(new Date(), new Date(recentOrder.createdAt)) < 24 ? true : false,
+        };
+    } catch (error) {
+        console.log(error);
+        return error;
+    }
+};
+
 // helper methods are defined here related to this controller
 const prepareVouchersList = async (list: Array<any>): Promise<Array<XoxodayVoucher>> => {
     let exchangeRate = "0";
@@ -128,6 +171,18 @@ const ifUserCanRedeem = async (user: User, totalCoiinSpent: number) => {
     const accountAgeInDays = differenceInDays(new Date(), new Date(user.createdAt));
     if (accountAgeInDays < 28) {
         throw new Error("Your account needs to be 4 weeks old before you can redeem anything!");
+    }
+    const twitterAccount = user.socialLinks.find((item) => item.type === "twitter");
+    if (!twitterAccount) {
+        throw new Error("You need to link your twitter account before you redeem!");
+    }
+    const socialClient = getSocialClient("twitter");
+    const twitterFollowers = await socialClient.getTotalFollowers(
+        twitterAccount.asClientCredentials(),
+        twitterAccount.id
+    );
+    if (twitterFollowers < 20) {
+        throw new Error("You need to have atleast 20 followers on twitter before you redeem!");
     }
     const participationWithInfluence = user.campaigns.find((item) =>
         item.participationScore.isGreaterThanOrEqualTo(20)
