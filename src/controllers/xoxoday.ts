@@ -88,7 +88,8 @@ export const redemptionRequirements = async (parent: any, args: {}, context: { u
         });
         if (!user) throw new Error("No user found");
         const accountAgeInDays = differenceInDays(new Date(), new Date(user.createdAt));
-        const participationWithInfluence = user.campaigns.sort(
+        const participations = user.campaigns.filter((item) => item.participationScore);
+        const participationWithInfluence = participations.sort(
             (a, b) => parseFloat(b.participationScore.toString()) - parseFloat(a.participationScore.toString())
         )[0];
         const recentOrder = user.orders.sort(
@@ -184,7 +185,8 @@ const ifUserCanRedeem = async (user: User, totalCoiinSpent: number) => {
     if (twitterFollowers < 20) {
         throw new Error("You need to have atleast 20 followers on twitter before you redeem!");
     }
-    const participationWithInfluence = user.campaigns.find((item) =>
+    const participations = user.campaigns.filter((item) => item.participationScore);
+    const participationWithInfluence = participations.find((item) =>
         item.participationScore.isGreaterThanOrEqualTo(20)
     );
     if (!participationWithInfluence) {
