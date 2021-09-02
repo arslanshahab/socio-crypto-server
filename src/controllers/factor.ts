@@ -15,8 +15,7 @@ import { S3Client } from "../clients/s3";
 import { Profile } from "../models/Profile";
 import { NotificationSettings } from "../models/NotificationSettings";
 import { WalletCurrency } from "../models/WalletCurrency";
-import { getWeek, getYear } from "date-fns";
-import { WeeklyReward } from "../models/WeeklyReward";
+import { rewardUserForLogin } from "./weeklyReward";
 
 const { NODE_ENV } = process.env;
 
@@ -170,24 +169,6 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
         company: jwtPayload.company,
     });
 });
-
-const rewardUserForLogin = async (user: User): Promise<any> => {
-    const coiinReward = 2;
-    const weekKey = `${getWeek(user.lastLogin)}-${getYear(user.lastLogin)}`;
-    const thisWeeksReward = await WeeklyReward.findOne({
-        where: { user: user, rewardType: "login", week: weekKey },
-    });
-    if (!thisWeeksReward) {
-        await user.updateCoiinBalance("add", coiinReward);
-        await WeeklyReward.addReward({
-            type: "login",
-            amount: coiinReward,
-            week: weekKey,
-            user: user,
-            participant: null,
-        });
-    }
-};
 
 export const recover = asyncHandler(async (req: AuthRequest, res: Response) => {
     const { identityId, code, message } = req.user;
