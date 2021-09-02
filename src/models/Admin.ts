@@ -4,11 +4,13 @@ import {
     CreateDateColumn,
     Entity,
     ManyToOne,
+    OneToMany,
     PrimaryGeneratedColumn,
     UpdateDateColumn,
 } from "typeorm";
 import { User } from "./User";
 import { Org } from "./Org";
+import { DepositAddress } from "./DepositAddress";
 
 @Entity()
 export class Admin extends BaseEntity {
@@ -26,6 +28,9 @@ export class Admin extends BaseEntity {
 
     @ManyToOne((_type) => Org, (org) => org.admins)
     public org: Org;
+
+    @OneToMany((_type) => DepositAddress, (depositAddress) => depositAddress.admin)
+    public depositAddress: DepositAddress[];
 
     @CreateDateColumn()
     public createdAt: Date;

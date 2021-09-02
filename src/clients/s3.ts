@@ -273,10 +273,24 @@ export class S3Client {
         }
     }
 
-    public static async getTatumXPubKey() {
-        const params: AWS.S3.GetObjectRequest = { Bucket: RM_SECRETS, Key: "tatum/xpubKey" };
+    public static async uploadTatumWalletData(currency: string, data: any) {
+        const params: AWS.S3.PutObjectRequest = {
+            Bucket: RM_SECRETS,
+            Key: `tatum/${currency.toUpperCase()}Wallet`,
+            Body: JSON.stringify(data),
+        };
         try {
-            return (await this.client.getObject(params).promise()).Body?.toString();
+            return await this.client.putObject(params).promise();
+        } catch (e) {
+            throw e;
+        }
+    }
+
+    public static async getTatumWalletData(currency: string) {
+        const params: AWS.S3.GetObjectRequest = { Bucket: RM_SECRETS, Key: `tatum/${currency.toUpperCase()}Wallet` };
+        try {
+            let data: any = (await this.client.getObject(params).promise()).Body?.toString();
+            return JSON.parse(data);
         } catch (e) {
             if (e.code && e.code === "NotFound") return null;
             throw e;

@@ -52,6 +52,8 @@ data:
         RATE_LIMIT_MAX: "50"
         RATE_LIMIT_WINDOW: "1m"
         REWARD_REDEMPTION_EMAIL_RECIPIENT: alex@dragonchain.com
+        TATUM_RETRY_DELAY: 1000
+        TATUM_RETRIES: 5
 
 postgresql:
     existingSecret: "raiinmaker"
