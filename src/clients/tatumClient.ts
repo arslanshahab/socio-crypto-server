@@ -1,5 +1,12 @@
 import { S3Client } from "./s3";
-import { generateWallet, createAccount, generateDepositAddress, Currency, Fiat } from "@tatumio/tatum";
+import {
+    generateWallet,
+    createAccount,
+    generateDepositAddress,
+    getTransactionsByAccount,
+    Currency,
+    Fiat,
+} from "@tatumio/tatum";
 
 export class TatumClient {
     public static currencies = ["BTC"];
@@ -45,22 +52,16 @@ export class TatumClient {
         }
     }
 
-    // public static async getAccountTransactions(accountId: string, destAccount: string, offset: number) {
-    //     try {
-    //         const token = await S3Client.getTatumAPIKey();
-    //         if (token) {
-    //             const requestData: RequestData = {
-    //                 method: "POST",
-    //                 url: `${this.baseUrl}/v3/ledger/transaction/account?pageSize=50&offset=${offset}`,
-    //                 xAPIToken: token,
-    //                 payload: { id: accountId, counterAccount: destAccount },
-    //             };
-    //             const response = await doFetch(requestData);
-    //             return await response.json();
-    //         }
-    //         throw new Error("Error fetching API Token");
-    //     } catch (error) {
-    //         throw new Error(error.message);
-    //     }
-    // }
+    public static async getAccountTransactions(accountId: string, destAccount: string, offset: number) {
+        try {
+            const token = await S3Client.getTatumAPIKey();
+            process.env["TATUM_API_KEY"] = token as string;
+            return await getTransactionsByAccount({
+                id: accountId,
+                counterAccount: destAccount,
+            });
+        } catch (error) {
+            throw new Error(error.message);
+        }
+    }
 }
