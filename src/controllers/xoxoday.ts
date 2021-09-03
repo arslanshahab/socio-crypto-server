@@ -89,9 +89,11 @@ export const redemptionRequirements = async (parent: any, args: {}, context: { u
         if (!user) throw new Error("No user found");
         const accountAgeInDays = differenceInDays(new Date(), new Date(user.createdAt));
         const participations = user.campaigns.filter((item) => item.participationScore);
-        const participationWithInfluence = participations.sort(
-            (a, b) => parseFloat(b.participationScore.toString()) - parseFloat(a.participationScore.toString())
-        )[0];
+        console.log(participations);
+        const maxParticipationValue = Math.max(
+            ...participations.map((item) => (item.participationScore ? item.participationScore.toNumber() : 0)),
+            0
+        );
         const recentOrder = user.orders.sort(
             (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         )[0];
@@ -108,10 +110,8 @@ export const redemptionRequirements = async (parent: any, args: {}, context: { u
             twitterLinked: twitterAccount ? true : false,
             twitterfollowers: twitterFollowers,
             twitterfollowersRequirement: 20,
-            participation: participationWithInfluence ? true : false,
-            participationScore: participationWithInfluence
-                ? participationWithInfluence.participationScore.toString()
-                : 0,
+            participation: participations.length ? true : false,
+            participationScore: maxParticipationValue,
             participationScoreRequirement: 20,
             orderLimitForTwentyFourHoursReached:
                 recentOrder && differenceInHours(new Date(), new Date(recentOrder.createdAt)) < 24 ? true : false,
