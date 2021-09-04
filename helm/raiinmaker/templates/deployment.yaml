@@ -103,6 +103,9 @@ spec:
             - name: xoxoday
               mountPath: "/var/secrets/xoxoday"
               readOnly: true
+            - name: tatum-secrets
+              mountPath: "/var/secrets/tatum-secrets"
+              readOnly: true
           resources:
             {{- toYaml .Values.server.resources | nindent 12 }}
       volumes:
@@ -139,6 +142,9 @@ spec:
         - name: xoxoday
           secret:
             secretName: xoxoday
+        - name: tatum-secrets
+          secret:
+            secretName: tatum-secrets
 ---
 apiVersion: apps/v1
 kind: Deployment

@@ -389,6 +389,9 @@ spec:
                 - name: xoxoday
                   mountPath: "/var/secrets/xoxoday"
                   readOnly: true
+                - name: tatum-secrets
+                  mountPath: "/var/secrets/tatum-secrets"
+                  readOnly: true
               resources:
                 requests:
                   memory: "128Mi"
@@ -431,3 +434,6 @@ spec:
             - name: xoxoday
               secret:
                 secretName: xoxoday
+            - name: tatum-secrets
+              secret:
+                secretName: tatum-secrets
