@@ -88,10 +88,8 @@ export const redemptionRequirements = async (parent: any, args: {}, context: { u
         });
         if (!user) throw new Error("No user found");
         const accountAgeInDays = differenceInDays(new Date(), new Date(user.createdAt));
-        const participations = user.campaigns.filter((item) => item.participationScore);
-        console.log(participations);
         const maxParticipationValue = Math.max(
-            ...participations.map((item) => (item.participationScore ? item.participationScore.toNumber() : 0)),
+            ...user.campaigns.map((item) => (item.participationScore ? item.participationScore.toNumber() : 0)),
             0
         );
         const recentOrder = user.orders.sort(
@@ -99,10 +97,9 @@ export const redemptionRequirements = async (parent: any, args: {}, context: { u
         )[0];
         const twitterAccount = user.socialLinks.find((item) => item.type === "twitter");
         const socialClient = getSocialClient("twitter");
-        const twitterFollowers = await socialClient.getTotalFollowers(
-            twitterAccount?.asClientCredentials(),
-            twitterAccount?.id
-        );
+        const twitterFollowers = twitterAccount
+            ? await socialClient.getTotalFollowers(twitterAccount.asClientCredentials(), twitterAccount.id)
+            : 0;
         return {
             accountAgeReached: accountAgeInDays >= 28,
             accountAge: accountAgeInDays,
@@ -110,7 +107,7 @@ export const redemptionRequirements = async (parent: any, args: {}, context: { u
             twitterLinked: twitterAccount ? true : false,
             twitterfollowers: twitterFollowers,
             twitterfollowersRequirement: 20,
-            participation: participations.length ? true : false,
+            participation: user.campaigns.length ? true : false,
             participationScore: maxParticipationValue,
             participationScoreRequirement: 20,
             orderLimitForTwentyFourHoursReached:

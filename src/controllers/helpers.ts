@@ -319,15 +319,14 @@ export const extractVideoData = (video: string): any[] => {
     return [image, bytes.length];
 };
 
-export const chunkVideo = (video: string, chunkSize: number = 5000000): string[] => {
+export const chunkVideo = (video: string, chunkSize: number = 1024 * 1024): string[] => {
     const chunks = [];
-    let currentChunk = "";
-    for (let i = 0; i < video.length; i++) {
-        currentChunk += video[i];
-        if (currentChunk.length === chunkSize || i === video.length - 1) {
-            chunks.push(currentChunk);
-            currentChunk = "";
-        }
+    let currentChunk = video.substring(0, chunkSize);
+    let start = chunkSize;
+    while (currentChunk) {
+        chunks.push(currentChunk);
+        currentChunk = video.substring(start, start + chunkSize);
+        start = start + chunkSize;
     }
     return chunks;
 };
