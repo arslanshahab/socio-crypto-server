@@ -9,7 +9,6 @@ import express from "express";
 export const authenticate = async ({ req }: { req: express.Request }) => {
     const bearerToken = req.headers.authorization;
     if (!bearerToken) throw new AuthenticationError("unauthorized");
-    console.log(bearerToken);
     try {
         if (process.env.NODE_ENV === "test" && bearerToken === "Bearer raiinmaker") {
             const company = req.get("company") || "raiinmaker";
