@@ -9,7 +9,7 @@ import { FacebookClient } from "../clients/facebook";
 import { HourlyCampaignMetric } from "../models/HourlyCampaignMetric";
 import { Campaign } from "../models/Campaign";
 import fetch from "node-fetch";
-import { getRedis } from "src/clients/redis";
+import { getRedis } from "../clients/redis";
 export const allowedSocialLinks = ["twitter", "facebook"];
 
 const assetUrl =
@@ -83,56 +83,67 @@ export const postToSocial = async (
     },
     context: { user: any }
 ) => {
-    console.log(`posting to social`);
-    const startTime = new Date().getTime();
-    let { socialType, text, mediaType, mediaFormat, media, participantId, defaultMedia } = args;
-    if (!allowedSocialLinks.includes(socialType)) throw new Error("the type must exist as a predefined type");
-    const { id } = context.user;
-    const user = await User.findOneOrFail({ where: { identityId: id }, relations: ["socialLinks"] });
-    const participant = await Participant.findOneOrFail({
-        where: { id: participantId, user },
-        relations: ["campaign"],
-    });
-    if (!participant.campaign.isOpen()) throw new Error("campaign is closed");
-    const socialLink = user.socialLinks.find((link) => link.type === socialType);
-    if (!socialLink) throw new Error(`you have not linked ${socialType} as a social platform`);
-    const campaign = await Campaign.findOne({ where: { id: participant.campaign.id }, relations: ["org"] });
-    if (!campaign) throw new Error("campaign not found");
-    const client = getSocialClient(socialType);
-    if (defaultMedia) {
-        const cacheKey = `${campaign.id}-defaultMedia`;
-        const cachedMedia = await getRedis().get(cacheKey);
-        if (cachedMedia) {
-            media = cachedMedia;
-        } else {
-            const mediaUrl = `${assetUrl}/campaign/${campaign.id}/${campaign.sharedMedia}`;
-            const downloaded = await downloadMedia(mediaUrl, mediaFormat);
-            await getRedis().set(cacheKey, media);
-            const cachedMediaExpiry = (new Date(campaign.endDate).getTime() - new Date().getTime()) / 1000;
-            await getRedis().expire(cacheKey, cachedMediaExpiry);
-            media = downloaded;
+    try {
+        console.log(`posting to social`);
+        const startTime = new Date().getTime();
+        let { socialType, text, mediaType, mediaFormat, media, participantId, defaultMedia } = args;
+        if (!allowedSocialLinks.includes(socialType)) throw new Error("the type must exist as a predefined type");
+        const { id } = context.user;
+        const user = await User.findOneOrFail({ where: { identityId: id }, relations: ["socialLinks"] });
+        const participant = await Participant.findOneOrFail({
+            where: { id: participantId, user },
+            relations: ["campaign"],
+        });
+        if (!participant.campaign.isOpen()) throw new Error("campaign is closed");
+        const socialLink = user.socialLinks.find((link) => link.type === socialType);
+        if (!socialLink) throw new Error(`you have not linked ${socialType} as a social platform`);
+        const campaign = await Campaign.findOne({ where: { id: participant.campaign.id }, relations: ["org"] });
+        if (!campaign) throw new Error("campaign not found");
+        const client = getSocialClient(socialType);
+        if (defaultMedia) {
+            const cacheKey = `${campaign.id}-defaultMedia`;
+            const cachedMedia = await getRedis().get(cacheKey);
+            if (cachedMedia) {
+                media = cachedMedia;
+            } else {
+                const mediaUrl = `${assetUrl}/campaign/${campaign.id}/${campaign.sharedMedia}`;
+                const downloaded = await downloadMedia(mediaUrl, mediaFormat);
+                await getRedis().set(cacheKey, media);
+                await getRedis().expire(cacheKey, 86400);
+                media = downloaded;
+            }
         }
+        let postId: string;
+        if (mediaType && mediaFormat && media) {
+            postId = await client.post(
+                participant,
+                socialLink.asClientCredentials(),
+                text,
+                media,
+                mediaType,
+                mediaFormat
+            );
+        } else {
+            postId = await client.post(participant, socialLink.asClientCredentials(), text);
+        }
+        console.log(`Posted to twitter with ID: ${postId}`);
+        await HourlyCampaignMetric.upsert(campaign, campaign.org, "post");
+        await participant.campaign.save();
+        const socialPost = await SocialPost.newSocialPost(
+            postId,
+            socialType,
+            participant.id,
+            user,
+            participant.campaign
+        ).save();
+        const endTime = new Date().getTime();
+        const timeTaken = (endTime - startTime) / 1000;
+        console.log("number of seconds taken for this upload", timeTaken);
+        return socialPost.id;
+    } catch (error) {
+        console.log(error);
+        return error.message;
     }
-    let postId: string;
-    if (mediaType && mediaFormat && media) {
-        postId = await client.post(participant, socialLink.asClientCredentials(), text, media, mediaType, mediaFormat);
-    } else {
-        postId = await client.post(participant, socialLink.asClientCredentials(), text);
-    }
-    console.log(`Posted to twitter with ID: ${postId}`);
-    await HourlyCampaignMetric.upsert(campaign, campaign.org, "post");
-    await participant.campaign.save();
-    const socialPost = await SocialPost.newSocialPost(
-        postId,
-        socialType,
-        participant.id,
-        user,
-        participant.campaign
-    ).save();
-    const endTime = new Date().getTime();
-    const timeTaken = (endTime - startTime) / 1000;
-    console.log("number of seconds taken for this upload", timeTaken);
-    return socialPost.id;
 };
 
 export const getTotalFollowers = async (parent: any, args: any, context: { user: any }) => {
