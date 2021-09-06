@@ -4,7 +4,7 @@ import { Secrets } from "../util/secrets";
 import { SocialClientCredentials } from "../types";
 import { getRedis } from "./redis";
 import { extractVideoData, chunkVideo, sleep } from "../controllers/helpers";
-// import { getBase64FileExtension } from "../util/helpers";
+import { Participant } from "../models/Participant";
 
 export class TwitterClient {
     public static getClient(userCredentials: SocialClientCredentials): Twitter {
@@ -24,10 +24,8 @@ export class TwitterClient {
     };
 
     public static checkUploadStatus = async (client: Twitter, mediaId: string) => {
-        console.log("checking media upload status");
         const options = { command: "STATUS", media_id: mediaId };
         const response = await client.get("media/upload", options);
-        console.log(`get status response for media: ${mediaId} ${JSON.stringify(response)}`);
         return response.processing_info.state;
     };
 
@@ -47,17 +45,25 @@ export class TwitterClient {
         };
         const initResponse = await client.post("media/upload", options);
         const mediaId = initResponse.media_id_string;
-        console.log(`${mediaType} posted with response: ${JSON.stringify(initResponse)}`);
         const chunks = chunkVideo(mediaData);
-        const promiseArray: Array<Promise<any>> = [];
+        const promiseArray: Promise<any>[] = [];
+
         for (let i = 0; i < chunks.length; i++) {
             const appendOptions = { command: "APPEND", media_id: mediaId, segment_index: i, media_data: chunks[i] };
             promiseArray.push(client.post("media/upload", appendOptions));
         }
-        await Promise.all(promiseArray);
+        console.log("media chunks-----", promiseArray.length);
+
+        // make parallell requests to reduce time.
+        let count = 0;
+        while (promiseArray.length) {
+            const requests = promiseArray.splice(0, 5);
+            console.log("posting chunk number--", count);
+            await Promise.all(requests);
+            count++;
+        }
         const finalizeOptions = { command: "FINALIZE", media_id: mediaId };
         const finalizeResponse = await client.post("media/upload", finalizeOptions);
-        console.log(`finalize response: ${JSON.stringify(finalizeResponse)}`);
         if (finalizeResponse.processing_info && finalizeResponse.processing_info.state === "pending") {
             let statusResponse = await TwitterClient.checkUploadStatus(client, mediaId);
             while (statusResponse !== "failed" && statusResponse !== "succeeded") {
@@ -69,6 +75,7 @@ export class TwitterClient {
     };
 
     public static post = async (
+        participant: Participant,
         credentials: SocialClientCredentials,
         text: string,
         data?: string,
@@ -85,9 +92,7 @@ export class TwitterClient {
                         ? await TwitterClient.postImage(client, data, mediaFormat)
                         : await TwitterClient.postChunkedMedia(client, data, mediaType, mediaFormat);
             }
-            logger.info(`posting to twitter with mediaType:  ${mediaType}`);
             const response = await client.post("/statuses/update", options);
-            logger.info(`Response printed with ${JSON.stringify(response)}`);
             return response.id_str;
         } catch (error) {
             console.log(error);
