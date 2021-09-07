@@ -3,7 +3,7 @@ import logger from "../util/logger";
 import { Secrets } from "../util/secrets";
 import { SocialClientCredentials } from "../types";
 import { getRedis } from "./redis";
-import { extractVideoData, chunkVideo } from "../controllers/helpers";
+import { extractVideoData } from "../controllers/helpers";
 import { Participant } from "../models/Participant";
 
 export class TwitterClient {
@@ -47,12 +47,21 @@ export class TwitterClient {
         const initResponse = await client.post("media/upload", options);
         console.log(`upload initiated....`);
         const mediaId = initResponse.media_id_string;
-        const chunks = chunkVideo(mediaData);
         const promiseArray: Promise<any>[] = [];
-
-        for (let i = 0; i < chunks.length; i++) {
-            const appendOptions = { command: "APPEND", media_id: mediaId, segment_index: i, media_data: chunks[i] };
+        const chunkSize = 1024 * 1024;
+        let start = 0;
+        let index = 0;
+        while (start <= mediaSize) {
+            const currentChunk = mediaData.substring(start, chunkSize);
+            const appendOptions = {
+                command: "APPEND",
+                media_id: mediaId,
+                segment_index: index,
+                media_data: currentChunk,
+            };
             promiseArray.push(client.post("media/upload", appendOptions));
+            start += chunkSize;
+            index++;
         }
         console.log("media chunks-----", promiseArray.length);
         while (promiseArray.length) {
