@@ -3,7 +3,7 @@ import logger from "../util/logger";
 import { Secrets } from "../util/secrets";
 import { SocialClientCredentials } from "../types";
 import { getRedis } from "./redis";
-import { extractVideoData, chunkVideo, sleep } from "../controllers/helpers";
+import { extractVideoData, chunkVideo } from "../controllers/helpers";
 import { Participant } from "../models/Participant";
 
 export class TwitterClient {
@@ -55,24 +55,20 @@ export class TwitterClient {
             promiseArray.push(client.post("media/upload", appendOptions));
         }
         console.log("media chunks-----", promiseArray.length);
-
-        // make parallell requests to reduce time.
-        let count = 0;
         while (promiseArray.length) {
             const requests = promiseArray.splice(0, 5);
-            console.log("posting chunk number--", count);
+            console.log("posting chunk....");
             await Promise.all(requests);
-            count++;
         }
         const finalizeOptions = { command: "FINALIZE", media_id: mediaId };
-        const finalizeResponse = await client.post("media/upload", finalizeOptions);
-        if (finalizeResponse.processing_info && finalizeResponse.processing_info.state === "pending") {
-            let statusResponse = await TwitterClient.checkUploadStatus(client, mediaId);
-            while (statusResponse !== "failed" && statusResponse !== "succeeded") {
-                await sleep(Number(finalizeResponse.processing_info.check_after_secs) * 1000);
-                statusResponse = await TwitterClient.checkUploadStatus(client, mediaId);
-            }
-        }
+        await client.post("media/upload", finalizeOptions);
+        // if (finalizeResponse.processing_info && finalizeResponse.processing_info.state === "pending") {
+        //     let statusResponse = await TwitterClient.checkUploadStatus(client, mediaId);
+        //     while (statusResponse !== "failed" && statusResponse !== "succeeded") {
+        //         await sleep(Number(finalizeResponse.processing_info.check_after_secs) * 1000);
+        //         statusResponse = await TwitterClient.checkUploadStatus(client, mediaId);
+        //     }
+        // }
         return mediaId;
     };
 
