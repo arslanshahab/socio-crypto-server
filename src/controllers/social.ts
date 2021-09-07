@@ -9,7 +9,6 @@ import { FacebookClient } from "../clients/facebook";
 import { HourlyCampaignMetric } from "../models/HourlyCampaignMetric";
 import { Campaign } from "../models/Campaign";
 import fetch from "node-fetch";
-import { getRedis } from "../clients/redis";
 export const allowedSocialLinks = ["twitter", "facebook"];
 
 const assetUrl =
@@ -101,22 +100,13 @@ export const postToSocial = async (
         if (!campaign) throw new Error("campaign not found");
         const client = getSocialClient(socialType);
         if (defaultMedia) {
-            const cacheKey = `${campaign.id}-defaultMedia`;
-            const cachedMedia = await getRedis().get(cacheKey);
-            if (cachedMedia) {
-                media = cachedMedia;
-                console.log("passing cached media...");
-            } else {
-                console.log("downloading media...");
-                const mediaUrl = `${assetUrl}/campaign/${campaign.id}/${campaign.sharedMedia}`;
-                const downloaded = await downloadMedia(mediaUrl, mediaFormat);
-                await getRedis().set(cacheKey, media);
-                await getRedis().expire(cacheKey, 86400);
-                media = downloaded;
-            }
+            console.log("downloading media...");
+            const mediaUrl = `${assetUrl}/campaign/${campaign.id}/${campaign.sharedMedia}`;
+            const downloaded = await downloadMedia(mediaUrl, mediaFormat);
+            media = downloaded;
         }
         let postId: string;
-        if (mediaType && mediaFormat && media) {
+        if (mediaType && mediaFormat) {
             postId = await client.post(
                 participant,
                 socialLink.asClientCredentials(),
