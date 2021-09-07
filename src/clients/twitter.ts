@@ -37,7 +37,7 @@ export class TwitterClient {
     ): Promise<string> => {
         console.log(`posting ${mediaType} to twitter`);
         const [mediaData, mediaSize] = extractVideoData(media);
-        console.log(`extracted video size....`);
+        console.log(`extracted media size....`);
         const options = {
             command: "INIT",
             media_type: format,
