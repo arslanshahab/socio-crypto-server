@@ -37,6 +37,7 @@ export class TwitterClient {
     ): Promise<string> => {
         console.log(`posting ${mediaType} to twitter`);
         const [mediaData, mediaSize] = extractVideoData(media);
+        console.log(`extracted video size....`);
         const options = {
             command: "INIT",
             media_type: format,
@@ -44,6 +45,7 @@ export class TwitterClient {
             media_category: mediaType === "video" ? "tweet_video" : "tweet_gif",
         };
         const initResponse = await client.post("media/upload", options);
+        console.log(`upload initiated....`);
         const mediaId = initResponse.media_id_string;
         const chunks = chunkVideo(mediaData);
         const promiseArray: Promise<any>[] = [];
