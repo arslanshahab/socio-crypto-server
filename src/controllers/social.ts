@@ -105,7 +105,9 @@ export const postToSocial = async (
             const cachedMedia = await getRedis().get(cacheKey);
             if (cachedMedia) {
                 media = cachedMedia;
+                console.log("passing cached media...");
             } else {
+                console.log("downloading media...");
                 const mediaUrl = `${assetUrl}/campaign/${campaign.id}/${campaign.sharedMedia}`;
                 const downloaded = await downloadMedia(mediaUrl, mediaFormat);
                 await getRedis().set(cacheKey, media);
