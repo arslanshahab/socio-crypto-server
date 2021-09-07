@@ -321,11 +321,12 @@ export const extractVideoData = (video: string): any[] => {
 
 export const chunkVideo = (video: string, chunkSize: number = 1024 * 1024): string[] => {
     const chunks = [];
-    let start = 0;
-    while (start <= video.length) {
-        const currentChunk = video.slice(start, start + chunkSize);
+    let currentChunk = video.substring(0, chunkSize);
+    let start = chunkSize;
+    while (currentChunk) {
         chunks.push(currentChunk);
-        start += chunkSize;
+        currentChunk = video.substring(start, start + chunkSize);
+        start = start + chunkSize;
     }
     return chunks;
 };
