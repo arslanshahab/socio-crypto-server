@@ -3,7 +3,7 @@ import logger from "../util/logger";
 import { Secrets } from "../util/secrets";
 import { SocialClientCredentials } from "../types";
 import { getRedis } from "./redis";
-import { extractVideoData, chunkVideo } from "../controllers/helpers";
+import { extractVideoData, chunkVideo, sleep } from "../controllers/helpers";
 import { Participant } from "../models/Participant";
 
 export class TwitterClient {
@@ -46,8 +46,8 @@ export class TwitterClient {
                 media_category: mediaType === "video" ? "tweet_video" : "tweet_gif",
             };
             const initResponse = await client.post("media/upload", options);
-            console.log(`upload initiated....`);
             const mediaId = initResponse.media_id_string;
+            console.log("upload initiated with media ID -----", mediaId);
             const chunks = chunkVideo(mediaData);
             const promiseArray: Promise<any>[] = [];
 
@@ -61,16 +61,17 @@ export class TwitterClient {
                 const requests = promiseArray.splice(0, 5);
                 console.log("posting chunk -----", count);
                 await Promise.all(requests);
+                count++;
             }
             const finalizeOptions = { command: "FINALIZE", media_id: mediaId };
-            await client.post("media/upload", finalizeOptions);
-            // if (finalizeResponse.processing_info && finalizeResponse.processing_info.state === "pending") {
-            //     let statusResponse = await TwitterClient.checkUploadStatus(client, mediaId);
-            //     while (statusResponse !== "failed" && statusResponse !== "succeeded") {
-            //         await sleep(Number(finalizeResponse.processing_info.check_after_secs) * 1000);
-            //         statusResponse = await TwitterClient.checkUploadStatus(client, mediaId);
-            //     }
-            // }
+            const finalizeResponse = await client.post("media/upload", finalizeOptions);
+            if (finalizeResponse.processing_info && finalizeResponse.processing_info.state === "pending") {
+                let statusResponse = await TwitterClient.checkUploadStatus(client, mediaId);
+                while (statusResponse !== "failed" && statusResponse !== "succeeded") {
+                    await sleep(Number(finalizeResponse.processing_info.check_after_secs) * 1000);
+                    statusResponse = await TwitterClient.checkUploadStatus(client, mediaId);
+                }
+            }
             return mediaId;
         } catch (error) {
             console.log(error);
