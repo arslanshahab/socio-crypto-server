@@ -1,4 +1,4 @@
-import { endOfISOWeek, getWeek, getYear, addDays, startOfDay } from "date-fns";
+import { endOfISOWeek, getWeek, getYear, addDays, startOfDay, differenceInHours } from "date-fns";
 import { User } from "../models/User";
 import { WeeklyReward } from "../models/WeeklyReward";
 import { Participant } from "../models/Participant";
@@ -36,19 +36,22 @@ export const getWeeklyRewards = async (parent: any, args: any, context: any) => 
 };
 
 export const rewardUserForLogin = async (user: User): Promise<any> => {
-    const weekKey = `${getWeek(user.lastLogin)}-${getYear(user.lastLogin)}`;
-    const thisWeeksReward = await WeeklyReward.findOne({
-        where: { user: user, rewardType: "login", week: weekKey },
-    });
-    if (!thisWeeksReward) {
-        await user.updateCoiinBalance("add", loginCoiinReward);
-        await WeeklyReward.addReward({
-            type: "login",
-            amount: loginCoiinReward,
-            week: weekKey,
-            user: user,
-            participant: null,
+    const accountAgeInHours = differenceInHours(new Date(), new Date(user.createdAt));
+    if (accountAgeInHours > 24) {
+        const weekKey = `${getWeek(user.lastLogin)}-${getYear(user.lastLogin)}`;
+        const thisWeeksReward = await WeeklyReward.findOne({
+            where: { user: user, rewardType: "login", week: weekKey },
         });
+        if (!thisWeeksReward) {
+            await user.updateCoiinBalance("add", loginCoiinReward);
+            await WeeklyReward.addReward({
+                type: "login",
+                amount: loginCoiinReward,
+                week: weekKey,
+                user: user,
+                participant: null,
+            });
+        }
     }
 };
 
