@@ -46,7 +46,7 @@ export const resolvers = {
         checkCoinGecko: cryptoController.coinGeckoCheck,
         getUserParticipationKeywords: userController.getUserParticipationKeywords,
         getStoreVouchers: xoxodayController.getVouchers,
-        getCampaignSignedUrls: campaignController.generateCampaignSignedUrls,
+        // getCampaignSignedUrls: campaignController.generateCampaignSignedUrls,
         getWeeklyRewards: weeklyReward.getWeeklyRewards,
         getRedemptionRequirements: xoxodayController.redemptionRequirements,
     },
@@ -105,7 +105,7 @@ export const adminResolvers = {
         listPendingCampaigns: campaignController.adminListPendingCampaigns,
         listSupportedCrypto: cryptoController.listSupportedCrypto,
         checkCoinGecko: cryptoController.coinGeckoCheck,
-        getCampaignSignedUrls: campaignController.generateCampaignSignedUrls,
+        // getCampaignSignedUrls: campaignController.generateCampaignSignedUrls,
     },
     Mutation: {
         newOrg: orgController.newOrg,
