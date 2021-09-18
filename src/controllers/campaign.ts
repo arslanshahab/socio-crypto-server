@@ -77,7 +77,7 @@ export const createNewCampaign = async (
         description: string;
         company: string;
         algorithm: string;
-        image: string;
+        imagePath: string;
         sharedMedia: string;
         tagline: string;
         requirements: CampaignRequirementSpecs;
@@ -87,6 +87,8 @@ export const createNewCampaign = async (
         type: string;
         rafflePrize: RafflePrizeStructure;
         cryptoId: string;
+        campaignType: string;
+        socialMediaType: "twitter" | "tiktok" | "instagram" | "omni-channels";
     },
     context: { user: any }
 ) => {
@@ -100,7 +102,7 @@ export const createNewCampaign = async (
         description,
         algorithm,
         targetVideo,
-        image,
+        imagePath,
         sharedMedia,
         tagline,
         requirements,
@@ -110,6 +112,8 @@ export const createNewCampaign = async (
         type = "crypto",
         rafflePrize,
         cryptoId,
+        campaignType,
+        socialMediaType,
     } = args;
     validator.validateAlgorithmCreateSchema(JSON.parse(algorithm));
     if (!!requirements) validator.validateCampaignRequirementsSchema(requirements);
@@ -150,6 +154,8 @@ export const createNewCampaign = async (
         suggestedTags,
         keywords,
         type,
+        campaignType,
+        socialMediaType,
         targetVideo,
         org,
         cryptoCurrency
@@ -158,8 +164,8 @@ export const createNewCampaign = async (
     let campaignImageSignedURL = "";
     let sharedMediaSignedURL = "";
     let raffleImageSignedURL = "";
-    if (image) {
-        campaignImageSignedURL = await S3Client.generateCampaignSignedURL(`campaign/${campaign.id}/${image}`);
+    if (imagePath) {
+        campaignImageSignedURL = await S3Client.generateCampaignSignedURL(`campaign/${campaign.id}/${imagePath}`);
     }
     if (sharedMedia) {
         sharedMediaSignedURL = await S3Client.generateCampaignSignedURL(`campaign/${campaign.id}/${sharedMedia}`);
@@ -185,67 +191,67 @@ export const saveCampaignImages = async (
     parent: any,
     args: {
         id: string;
-        image: string;
+        imagePath: string;
         sharedMedia: string;
         sharedMediaFormat: string;
     },
     context: { user: any }
 ) => {
     const { role, company } = checkPermissions({ hasRole: ["admin", "manager"] }, context);
-    const { id, image, sharedMedia, sharedMediaFormat } = args;
+    const { id, imagePath, sharedMedia, sharedMediaFormat } = args;
     const where: { [key: string]: string } = { id };
     if (role === "manager") where["company"] = company;
     const campaign = await Campaign.findOne({ where });
     if (!campaign) throw new Error("campaign not found");
-    if (image) campaign.imagePath = image;
+    if (imagePath) campaign.imagePath = imagePath;
     if (sharedMedia) campaign.sharedMedia = sharedMedia;
     if (sharedMediaFormat) campaign.sharedMediaFormat = sharedMediaFormat;
     await campaign.save();
     return campaign.asV1();
 };
 
-export const generateCampaignSignedUrls = async (
-    parent: any,
-    args: {
-        id: string;
-        campaignImageFileName: string;
-        sharedMediaFileName: string;
-    },
-    context: { user: any }
-) => {
-    const { role, company } = checkPermissions({ hasRole: ["admin", "manager"] }, context);
-    const { id, campaignImageFileName, sharedMediaFileName } = args;
-    const where: { [key: string]: string } = { id };
-    if (role === "manager") where["company"] = company;
-    const campaign = await Campaign.findOne({ where, relations: ["prize"] });
-    if (!campaign) throw new Error("campaign not found");
-    let campaignImageSignedURL = "";
-    let sharedMediaSignedURL = "";
-    let raffleImageSignedURL = "";
-    if (campaignImageFileName) {
-        campaignImageSignedURL = await S3Client.generateCampaignSignedURL(
-            `campaign/${campaign.id}/${campaignImageFileName}`
-        );
-        await campaign.save();
-    }
-    if (sharedMediaFileName) {
-        sharedMediaSignedURL = await S3Client.generateCampaignSignedURL(
-            `campaign/${campaign.id}/${sharedMediaFileName}`
-        );
-        await campaign.save();
-    }
-    if (campaign.prize && campaign.prize.image) {
-        raffleImageSignedURL = await S3Client.generateCampaignSignedURL(
-            `rafflePrize/${campaign.id}/${campaign.prize.id}`
-        );
-    }
-    return {
-        campaignId: campaign.id,
-        campaignImageSignedURL: campaignImageSignedURL,
-        sharedMediaSignedURL: sharedMediaSignedURL,
-        raffleImageSignedURL: raffleImageSignedURL,
-    };
-};
+// export const generateCampaignSignedUrls = async (
+//     parent: any,
+//     args: {
+//         id: string;
+//         campaignImageFileName: string;
+//         sharedMediaFileName: string;
+//     },
+//     context: { user: any }
+// ) => {
+//     const { role, company } = checkPermissions({ hasRole: ["admin", "manager"] }, context);
+//     const { id, campaignImageFileName, sharedMediaFileName } = args;
+//     const where: { [key: string]: string } = { id };
+//     if (role === "manager") where["company"] = company;
+//     const campaign = await Campaign.findOne({ where, relations: ["prize"] });
+//     if (!campaign) throw new Error("campaign not found");
+//     let campaignImageSignedURL = "";
+//     let sharedMediaSignedURL = "";
+//     let raffleImageSignedURL = "";
+//     if (campaignImageFileName) {
+//         campaignImageSignedURL = await S3Client.generateCampaignSignedURL(
+//             `campaign/${campaign.id}/${campaignImageFileName}`
+//         );
+//         await campaign.save();
+//     }
+//     if (sharedMediaFileName) {
+//         sharedMediaSignedURL = await S3Client.generateCampaignSignedURL(
+//             `campaign/${campaign.id}/${sharedMediaFileName}`
+//         );
+//         await campaign.save();
+//     }
+//     if (campaign.prize && campaign.prize.image) {
+//         raffleImageSignedURL = await S3Client.generateCampaignSignedURL(
+//             `rafflePrize/${campaign.id}/${campaign.prize.id}`
+//         );
+//     }
+//     return {
+//         campaignId: campaign.id,
+//         campaignImageSignedURL: campaignImageSignedURL,
+//         sharedMediaSignedURL: sharedMediaSignedURL,
+//         raffleImageSignedURL: raffleImageSignedURL,
+//     };
+// };
 
 export const updateCampaign = async (
     parent: any,
@@ -261,7 +267,7 @@ export const updateCampaign = async (
         algorithm: string;
         suggestedPosts: string[];
         suggestedTags: string[];
-        image: string;
+        imagePath: string;
     },
     context: { user: any }
 ) => {
@@ -278,7 +284,6 @@ export const updateCampaign = async (
         targetVideo,
         suggestedPosts,
         suggestedTags,
-        image,
     } = args;
     const where: { [key: string]: string } = { id };
     if (role === "manager") where["company"] = company;
@@ -297,7 +302,6 @@ export const updateCampaign = async (
     if (targetVideo) campaign.targetVideo = targetVideo;
     if (suggestedPosts) campaign.suggestedPosts = suggestedPosts;
     if (suggestedTags) campaign.suggestedTags = suggestedTags;
-    if (image) campaign.imagePath = await S3Client.setCampaignImage("banner", campaign.id, image);
     await campaign.save();
     return campaign.asV1();
 };

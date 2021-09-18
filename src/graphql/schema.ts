@@ -16,8 +16,10 @@ export const typeDefs = gql`
             company: String
             algorithm: String!
             requirements: JSON
-            image: String
+            imagePath: String
             sharedMedia: String
+            campaignType: String
+            socialMediaType: String
             tagline: String
             suggestedPosts: [String]
             suggestedTags: [String]
@@ -25,7 +27,7 @@ export const typeDefs = gql`
             type: String
             rafflePrize: JSON
         ): CampaignCreationResponse
-        newCampaignImages(id: String, image: String, sharedMedia: String, sharedMediaFormat: String): Campaign
+        newCampaignImages(id: String, imagePath: String, sharedMedia: String, sharedMediaFormat: String): Campaign
         updateCampaign(
             id: String!
             name: String
@@ -35,7 +37,7 @@ export const typeDefs = gql`
             beginDate: String
             endDate: String
             description: String
-            image: String
+            imagePath: String
             requirements: JSON
             suggestedPosts: [String]
             suggestedTags: [String]
@@ -493,6 +495,8 @@ export const typeDefs = gql`
         audited: Boolean
         targetVideo: String
         imagePath: String
+        campaignType: String
+        socialMediaType: String
         sharedMedia: String
         sharedMediaFormat: String
         tagline: String

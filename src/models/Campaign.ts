@@ -80,6 +80,12 @@ export class Campaign extends BaseEntity {
     public targetVideo: string;
 
     @Column({ nullable: true })
+    public campaignType: string;
+
+    @Column({ nullable: true })
+    public socialMediaType: "twitter" | "tiktok" | "instagram" | "omni-channels";
+
+    @Column({ nullable: true })
     public imagePath: string;
 
     @Column({ nullable: true })
@@ -394,6 +400,8 @@ export class Campaign extends BaseEntity {
         suggestedTags: string[],
         keywords: string[],
         type: string,
+        campaignType: string,
+        socialMediaType: "twitter" | "tiktok" | "instagram" | "omni-channels",
         targetVideo?: string,
         org?: Org,
         crypto?: CryptoCurrency
@@ -410,6 +418,8 @@ export class Campaign extends BaseEntity {
         campaign.algorithm = JSON.parse(algorithm);
         campaign.totalParticipationScore = new BN(0);
         campaign.type = type;
+        campaign.campaignType = campaignType;
+        campaign.socialMediaType = socialMediaType;
         if (targetVideo) campaign.targetVideo = targetVideo;
         if (description) campaign.description = description;
         if (tagline) campaign.tagline = tagline;
