@@ -62,6 +62,9 @@ export class Campaign extends BaseEntity {
     @Column({ default: "", nullable: true })
     public description: string;
 
+    @Column({ default: "", nullable: true })
+    public instructions: string;
+
     @Column({ nullable: false, default: "raiinmaker" })
     public company: string;
 
@@ -405,6 +408,7 @@ export class Campaign extends BaseEntity {
         coiinTotal: number,
         target: string,
         description: string,
+        instructions: string,
         company: string,
         algorithm: string,
         tagline: string,
@@ -437,6 +441,7 @@ export class Campaign extends BaseEntity {
         campaign.socialMediaType = socialMediaType;
         if (targetVideo) campaign.targetVideo = targetVideo;
         if (description) campaign.description = description;
+        if (instructions) campaign.instructions = instructions;
         if (tagline) campaign.tagline = tagline;
         if (requirements) campaign.requirements = requirements;
         if (suggestedPosts) campaign.suggestedPosts = suggestedPosts;

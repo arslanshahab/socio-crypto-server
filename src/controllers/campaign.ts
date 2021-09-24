@@ -78,6 +78,7 @@ export const createNewCampaign = async (
         coiinTotal: number;
         target: string;
         description: string;
+        instructions: string;
         company: string;
         algorithm: string;
         imagePath: string;
@@ -104,6 +105,7 @@ export const createNewCampaign = async (
         coiinTotal,
         target,
         description,
+        instructions,
         algorithm,
         targetVideo,
         imagePath,
@@ -151,6 +153,7 @@ export const createNewCampaign = async (
         coiinTotal,
         target,
         description,
+        instructions,
         campaignCompany,
         algorithm,
         tagline,
@@ -324,9 +327,6 @@ export const listCampaigns = async (
         pendingAudit
     );
     const data = results.map((result) => result.asV1());
-    console.log(data[0]);
-    console.log(data[0].campaignMedia);
-    console.log(data[0].campaignTemplates);
     return { results: data, total };
 };
 
