@@ -17,17 +17,17 @@ export const typeDefs = gql`
             algorithm: String!
             requirements: JSON
             imagePath: String
-            sharedMedia: String
             campaignType: String
-            socialMediaType: String
+            socialMediaType: [String]
             tagline: String
             suggestedPosts: [String]
             suggestedTags: [String]
             keywords: [String]
             type: String
             rafflePrize: JSON
+            campaignMedia: JSON
+            campaignTemplates: JSON
         ): CampaignCreationResponse
-        newCampaignImages(id: String, imagePath: String, sharedMedia: String, sharedMediaFormat: String): Campaign
         updateCampaign(
             id: String!
             name: String
@@ -114,11 +114,6 @@ export const typeDefs = gql`
 
     type Query {
         getCurrentCampaignTier(campaignId: String!): CurrentTier
-        getCampaignSignedUrls(
-            id: String
-            campaignImageFileName: String
-            sharedMediaFileName: String
-        ): CampaignCreationResponse
         usernameExists(username: String!): UserExistence
         listCampaigns(
             open: Boolean
@@ -206,8 +201,14 @@ export const typeDefs = gql`
     type CampaignCreationResponse {
         campaignId: String
         campaignImageSignedURL: String
-        sharedMediaSignedURL: String
         raffleImageSignedURL: String
+        mediaUrls: [CampaignMediaSignedUrls]
+    }
+
+    type CampaignMediaSignedUrls {
+        name: String
+        channel: String
+        signedUrl: String
     }
 
     type StoreVoucher {
@@ -496,9 +497,7 @@ export const typeDefs = gql`
         targetVideo: String
         imagePath: String
         campaignType: String
-        socialMediaType: String
-        sharedMedia: String
-        sharedMediaFormat: String
+        socialMediaType: [String]
         tagline: String
         requirements: JSON
         suggestedPosts: [String]
@@ -510,6 +509,26 @@ export const typeDefs = gql`
         prize: RafflePrize
         org: Org
         crypto: CryptoCurrency
+        campaignMedia: [CampaignMedia]
+        campaignTemplates: [CampaignTemplate]
+    }
+
+    type CampaignMedia {
+        id: String!
+        channel: String!
+        isDefault: Boolean!
+        media: String!
+        mediaFormat: String!
+        createdAt: String!
+        updatedAt: String!
+    }
+
+    type CampaignTemplate {
+        id: String!
+        channel: String!
+        post: String!
+        createdAt: String!
+        updatedAt: String!
     }
 
     type CryptoCurrency {

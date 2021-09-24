@@ -101,7 +101,7 @@ export const postToSocial = async (
         const client = getSocialClient(socialType);
         if (defaultMedia) {
             console.log("downloading media -----");
-            const mediaUrl = `${assetUrl}/campaign/${campaign.id}/${campaign.sharedMedia}`;
+            const mediaUrl = `${assetUrl}/campaign/${campaign.id}/${campaign.imagePath}`;
             const downloaded = await downloadMedia(mediaUrl, mediaFormat);
             media = downloaded;
         }

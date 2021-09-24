@@ -1,4 +1,4 @@
-import { CampaignAuditReport, CampaignStatus, DateTrunc } from "../types";
+import { CampaignAuditReport, CampaignChannelMedia, CampaignStatus, DateTrunc } from "../types";
 import { Campaign } from "../models/Campaign";
 import { checkPermissions } from "../middleware/authentication";
 import { Participant } from "../models/Participant";
@@ -33,6 +33,9 @@ import { Escrow } from "../models/Escrow";
 import { WalletCurrency } from "../models/WalletCurrency";
 import { CryptoCurrency } from "../models/CryptoCurrency";
 import { getTokenPriceInUsd } from "../clients/ethereum";
+import { CampaignChannelTemplate } from "../types.d";
+import { CampaignMedia } from "../models/CampaignMedia";
+import { CampaignTemplate } from "../models/CampaignTemplate";
 
 const validator = new Validator();
 
@@ -78,7 +81,6 @@ export const createNewCampaign = async (
         company: string;
         algorithm: string;
         imagePath: string;
-        sharedMedia: string;
         tagline: string;
         requirements: CampaignRequirementSpecs;
         suggestedPosts: string[];
@@ -88,7 +90,9 @@ export const createNewCampaign = async (
         rafflePrize: RafflePrizeStructure;
         cryptoId: string;
         campaignType: string;
-        socialMediaType: "twitter" | "tiktok" | "instagram" | "omni-channels";
+        socialMediaType: string[];
+        campaignMedia: CampaignChannelMedia[];
+        campaignTemplates: CampaignChannelTemplate[];
     },
     context: { user: any }
 ) => {
@@ -103,7 +107,6 @@ export const createNewCampaign = async (
         algorithm,
         targetVideo,
         imagePath,
-        sharedMedia,
         tagline,
         requirements,
         suggestedPosts,
@@ -114,6 +117,8 @@ export const createNewCampaign = async (
         cryptoId,
         campaignType,
         socialMediaType,
+        campaignMedia,
+        campaignTemplates,
     } = args;
     validator.validateAlgorithmCreateSchema(JSON.parse(algorithm));
     if (!!requirements) validator.validateCampaignRequirementsSchema(requirements);
@@ -154,6 +159,7 @@ export const createNewCampaign = async (
         suggestedTags,
         keywords,
         type,
+        imagePath,
         campaignType,
         socialMediaType,
         targetVideo,
@@ -161,14 +167,13 @@ export const createNewCampaign = async (
         cryptoCurrency
     );
     await campaign.save();
+    await CampaignMedia.saveMedias(campaignMedia, campaign);
+    await CampaignTemplate.saveTemplates(campaignTemplates, campaign);
     let campaignImageSignedURL = "";
-    let sharedMediaSignedURL = "";
     let raffleImageSignedURL = "";
+    let mediaUrls: any = [];
     if (imagePath) {
         campaignImageSignedURL = await S3Client.generateCampaignSignedURL(`campaign/${campaign.id}/${imagePath}`);
-    }
-    if (sharedMedia) {
-        sharedMediaSignedURL = await S3Client.generateCampaignSignedURL(`campaign/${campaign.id}/${sharedMedia}`);
     }
     if (type === "raffle") {
         const prize = RafflePrize.newFromCampaignCreate(campaign, rafflePrize);
@@ -177,81 +182,26 @@ export const createNewCampaign = async (
             raffleImageSignedURL = await S3Client.generateCampaignSignedURL(`rafflePrize/${campaign.id}/${prize.id}`);
         }
     }
+    if (campaignMedia.length) {
+        campaignMedia.forEach(async (item) => {
+            if (item.media && item.mediaFormat) {
+                let urlObject = { name: "", channel: "", signedUrl: "" };
+                urlObject.signedUrl = await S3Client.generateCampaignSignedURL(`campaign/${campaign.id}/${item.media}`);
+                urlObject.name = item.media;
+                urlObject.channel = item.channel;
+                mediaUrls.push(urlObject);
+            }
+        });
+    }
     const deviceTokens = await User.getAllDeviceTokens("campaignCreate");
     if (deviceTokens.length > 0) await Firebase.sendCampaignCreatedNotifications(deviceTokens, campaign);
     return {
         campaignId: campaign.id,
         campaignImageSignedURL: campaignImageSignedURL,
-        sharedMediaSignedURL: sharedMediaSignedURL,
         raffleImageSignedURL: raffleImageSignedURL,
+        mediaUrls: mediaUrls,
     };
 };
-
-export const saveCampaignImages = async (
-    parent: any,
-    args: {
-        id: string;
-        imagePath: string;
-        sharedMedia: string;
-        sharedMediaFormat: string;
-    },
-    context: { user: any }
-) => {
-    const { role, company } = checkPermissions({ hasRole: ["admin", "manager"] }, context);
-    const { id, imagePath, sharedMedia, sharedMediaFormat } = args;
-    const where: { [key: string]: string } = { id };
-    if (role === "manager") where["company"] = company;
-    const campaign = await Campaign.findOne({ where });
-    if (!campaign) throw new Error("campaign not found");
-    if (imagePath) campaign.imagePath = imagePath;
-    if (sharedMedia) campaign.sharedMedia = sharedMedia;
-    if (sharedMediaFormat) campaign.sharedMediaFormat = sharedMediaFormat;
-    await campaign.save();
-    return campaign.asV1();
-};
-
-// export const generateCampaignSignedUrls = async (
-//     parent: any,
-//     args: {
-//         id: string;
-//         campaignImageFileName: string;
-//         sharedMediaFileName: string;
-//     },
-//     context: { user: any }
-// ) => {
-//     const { role, company } = checkPermissions({ hasRole: ["admin", "manager"] }, context);
-//     const { id, campaignImageFileName, sharedMediaFileName } = args;
-//     const where: { [key: string]: string } = { id };
-//     if (role === "manager") where["company"] = company;
-//     const campaign = await Campaign.findOne({ where, relations: ["prize"] });
-//     if (!campaign) throw new Error("campaign not found");
-//     let campaignImageSignedURL = "";
-//     let sharedMediaSignedURL = "";
-//     let raffleImageSignedURL = "";
-//     if (campaignImageFileName) {
-//         campaignImageSignedURL = await S3Client.generateCampaignSignedURL(
-//             `campaign/${campaign.id}/${campaignImageFileName}`
-//         );
-//         await campaign.save();
-//     }
-//     if (sharedMediaFileName) {
-//         sharedMediaSignedURL = await S3Client.generateCampaignSignedURL(
-//             `campaign/${campaign.id}/${sharedMediaFileName}`
-//         );
-//         await campaign.save();
-//     }
-//     if (campaign.prize && campaign.prize.image) {
-//         raffleImageSignedURL = await S3Client.generateCampaignSignedURL(
-//             `rafflePrize/${campaign.id}/${campaign.prize.id}`
-//         );
-//     }
-//     return {
-//         campaignId: campaign.id,
-//         campaignImageSignedURL: campaignImageSignedURL,
-//         sharedMediaSignedURL: sharedMediaSignedURL,
-//         raffleImageSignedURL: raffleImageSignedURL,
-//     };
-// };
 
 export const updateCampaign = async (
     parent: any,
@@ -373,7 +323,11 @@ export const listCampaigns = async (
         approved,
         pendingAudit
     );
-    return { results: results.map((result) => result.asV1()), total };
+    const data = results.map((result) => result.asV1());
+    console.log(data[0]);
+    console.log(data[0].campaignMedia);
+    console.log(data[0].campaignTemplates);
+    return { results: data, total };
 };
 
 export const adminListPendingCampaigns = async (

@@ -91,6 +91,18 @@ export interface AlgorithmSpecs {
     tiers: Tiers;
 }
 
+export interface CampaignChannelTemplate {
+    channel: string;
+    post: string;
+}
+
+export interface CampaignChannelMedia {
+    channel: string;
+    media: string;
+    mediaFormat: string;
+    isDefault: boolean;
+}
+
 export interface CampaignRequirementSpecs {
     version: number;
     city: string;
