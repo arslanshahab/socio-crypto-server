@@ -25,6 +25,8 @@ import { HourlyCampaignMetric } from "./HourlyCampaignMetric";
 import { RafflePrize } from "./RafflePrize";
 import { Escrow } from "./Escrow";
 import { CryptoCurrency } from "./CryptoCurrency";
+import { CampaignMedia } from "./CampaignMedia";
+import { CampaignTemplate } from "./CampaignTemplate";
 
 @Entity()
 export class Campaign extends BaseEntity {
@@ -82,17 +84,16 @@ export class Campaign extends BaseEntity {
     @Column({ nullable: true })
     public campaignType: string;
 
-    @Column({ nullable: true })
-    public socialMediaType: "twitter" | "tiktok" | "instagram" | "omni-channels";
+    @Column({
+        type: "text",
+        nullable: false,
+        default: "[]",
+        transformer: StringifiedArrayTransformer,
+    })
+    public socialMediaType: string[];
 
     @Column({ nullable: true })
     public imagePath: string;
-
-    @Column({ nullable: true })
-    public sharedMedia: string;
-
-    @Column({ nullable: true })
-    public sharedMediaFormat: string;
 
     @Column({ type: "jsonb", nullable: true })
     public requirements: CampaignRequirementSpecs;
@@ -130,6 +131,12 @@ export class Campaign extends BaseEntity {
         (participant) => participant.campaign
     )
     public participants: Participant[];
+
+    @OneToMany((_type) => CampaignMedia, (campaignMedia) => campaignMedia.campaign)
+    public campaignMedia: CampaignMedia[];
+
+    @OneToMany((_type) => CampaignTemplate, (campaignTemplate) => campaignTemplate.campaign)
+    public campaignTemplates: CampaignTemplate[];
 
     @OneToMany((_type) => SocialPost, (post) => post.campaign)
     public posts: SocialPost[];
@@ -238,6 +245,12 @@ export class Campaign extends BaseEntity {
             .leftJoinAndSelect("campaign.participants", "participant", 'participant."campaignId" = campaign.id')
             .leftJoinAndSelect("participant.user", "user", 'user.id = participant."userId"')
             .leftJoinAndSelect("campaign.crypto", "crypto", 'campaign."cryptoId" = crypto.id')
+            .leftJoinAndSelect("campaign.campaignMedia", "campaign_media", 'campaign_media."campaignId" = campaign.id')
+            .leftJoinAndSelect(
+                "campaign.campaignTemplates",
+                "campaign_template",
+                'campaign_template."campaignId" = campaign.id'
+            )
             .skip(skip)
             .take(take)
             .getManyAndCount();
@@ -400,8 +413,9 @@ export class Campaign extends BaseEntity {
         suggestedTags: string[],
         keywords: string[],
         type: string,
+        imagePath: string,
         campaignType: string,
-        socialMediaType: "twitter" | "tiktok" | "instagram" | "omni-channels",
+        socialMediaType: string[],
         targetVideo?: string,
         org?: Org,
         crypto?: CryptoCurrency
@@ -418,6 +432,7 @@ export class Campaign extends BaseEntity {
         campaign.algorithm = JSON.parse(algorithm);
         campaign.totalParticipationScore = new BN(0);
         campaign.type = type;
+        campaign.imagePath = imagePath;
         campaign.campaignType = campaignType;
         campaign.socialMediaType = socialMediaType;
         if (targetVideo) campaign.targetVideo = targetVideo;
