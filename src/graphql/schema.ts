@@ -12,6 +12,7 @@ export const typeDefs = gql`
             beginDate: String!
             endDate: String!
             description: String
+            instructions: String
             cryptoId: String
             company: String
             algorithm: String!
@@ -491,6 +492,7 @@ export const typeDefs = gql`
         totalParticipationScore: Float
         target: String
         description: String
+        instructions: String
         company: String
         algorithm: JSON
         audited: Boolean
