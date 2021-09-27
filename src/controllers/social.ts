@@ -100,7 +100,7 @@ export const postToSocial = async (
         if (!socialLink) throw new Error(`you have not linked ${socialType} as a social platform`);
         const campaign = await Campaign.findOne({
             where: { id: participant.campaign.id },
-            relations: ["org", "campaign.campaignMedia"],
+            relations: ["org", "campaignMedia"],
         });
         if (!campaign) throw new Error("campaign not found");
         const client = getSocialClient(socialType);

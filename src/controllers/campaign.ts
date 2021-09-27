@@ -369,7 +369,7 @@ export const get = async (parent: any, args: { id: string }) => {
     const where: { [key: string]: string } = { id };
     const campaign = await Campaign.findOne({
         where,
-        relations: ["participants", "prize"],
+        relations: ["participants", "prize", "campaignMedia", "campaignTemplates"],
     });
     if (!campaign) throw new Error("campaign not found");
     campaign.participants.sort((a, b) => {
