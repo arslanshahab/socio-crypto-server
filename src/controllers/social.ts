@@ -9,6 +9,7 @@ import { FacebookClient } from "../clients/facebook";
 import { HourlyCampaignMetric } from "../models/HourlyCampaignMetric";
 import { Campaign } from "../models/Campaign";
 import fetch from "node-fetch";
+import { CampaignMedia } from "../models/CampaignMedia";
 export const allowedSocialLinks = ["twitter", "facebook"];
 
 const assetUrl =
@@ -79,13 +80,14 @@ export const postToSocial = async (
         media: string;
         participantId: string;
         defaultMedia: boolean;
+        mediaId: string;
     },
     context: { user: any }
 ) => {
     try {
         console.log(`posting to social`);
         const startTime = new Date().getTime();
-        let { socialType, text, mediaType, mediaFormat, media, participantId, defaultMedia } = args;
+        let { socialType, text, mediaType, mediaFormat, media, participantId, defaultMedia, mediaId } = args;
         if (!allowedSocialLinks.includes(socialType)) throw new Error("the type must exist as a predefined type");
         const { id } = context.user;
         const user = await User.findOneOrFail({ where: { identityId: id }, relations: ["socialLinks"] });
@@ -96,14 +98,23 @@ export const postToSocial = async (
         if (!participant.campaign.isOpen()) throw new Error("campaign is closed");
         const socialLink = user.socialLinks.find((link) => link.type === socialType);
         if (!socialLink) throw new Error(`you have not linked ${socialType} as a social platform`);
-        const campaign = await Campaign.findOne({ where: { id: participant.campaign.id }, relations: ["org"] });
+        const campaign = await Campaign.findOne({
+            where: { id: participant.campaign.id },
+            relations: ["org", "campaign.campaignMedia"],
+        });
         if (!campaign) throw new Error("campaign not found");
         const client = getSocialClient(socialType);
         if (defaultMedia) {
             console.log("downloading media -----");
-            const mediaUrl = `${assetUrl}/campaign/${campaign.id}/${campaign.imagePath}`;
-            const downloaded = await downloadMedia(mediaUrl, mediaFormat);
-            media = downloaded;
+            const selectedMedia = await CampaignMedia.findOne({ id: mediaId });
+            if (selectedMedia) {
+                const mediaUrl = `${assetUrl}/campaign/${campaign.id}/${selectedMedia.media}`;
+                const downloaded = await downloadMedia(mediaUrl, selectedMedia.mediaFormat);
+                media = downloaded;
+                mediaFormat = selectedMedia.mediaFormat;
+            } else {
+                throw new Error(`Provided mediaId doesn't exist`);
+            }
         }
         let postId: string;
         if (mediaType && mediaFormat) {
