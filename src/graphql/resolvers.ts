@@ -85,6 +85,7 @@ export const resolvers = {
 
 export const adminResolvers = {
     Query: {
+        getCampaign: campaignController.get,
         getHourlyCampaignMetrics: campaignController.adminGetHourlyCampaignMetrics,
         getHourlyPlatformMetrics: campaignController.adminGetHourlyPlatformMetrics,
         getTotalPlatformMetrics: campaignController.adminGetPlatformMetrics,
