@@ -105,9 +105,11 @@ export const postToSocial = async (
         if (!campaign) throw new Error("campaign not found");
         const client = getSocialClient(socialType);
         if (defaultMedia) {
-            console.log("downloading media -----");
+            console.log(`downloading media with mediaID ----- ${mediaId}`);
             const selectedMedia = await CampaignMedia.findOne({ where: { id: mediaId } });
-            if (selectedMedia?.media) {
+            console.log(`media found -----`);
+            console.log(selectedMedia);
+            if (selectedMedia) {
                 const mediaUrl = `${assetUrl}/campaign/${campaign.id}/${selectedMedia.media}`;
                 const downloaded = await downloadMedia(mediaUrl, selectedMedia.mediaFormat);
                 media = downloaded;
