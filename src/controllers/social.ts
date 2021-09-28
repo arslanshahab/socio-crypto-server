@@ -106,8 +106,8 @@ export const postToSocial = async (
         const client = getSocialClient(socialType);
         if (defaultMedia) {
             console.log("downloading media -----");
-            const selectedMedia = await CampaignMedia.findOne({ id: mediaId });
-            if (selectedMedia) {
+            const selectedMedia = await CampaignMedia.findOne({ where: { id: mediaId } });
+            if (selectedMedia?.media) {
                 const mediaUrl = `${assetUrl}/campaign/${campaign.id}/${selectedMedia.media}`;
                 const downloaded = await downloadMedia(mediaUrl, selectedMedia.mediaFormat);
                 media = downloaded;
