@@ -208,5 +208,5 @@ export const getParticipantSocialMetrics = async (parent: any, args: { id: strin
 const downloadMedia = async (url: string, format: string): Promise<string> => {
     return await fetch(url)
         .then((r) => r.buffer())
-        .then((buf) => `data:${format};base64,` + buf.toString("base64"));
+        .then((buf) => buf.toString("base64"));
 };
