@@ -19,6 +19,9 @@ export class TwitterClient {
     public static postImage = async (client: Twitter, photo: string, format: string | undefined): Promise<string> => {
         console.log("posting image to twitter");
         const options = { media_category: "tweet_image", media_data: photo, media_type: format };
+        console.log(`client------ ${client}`);
+        console.log(`format------ ${format}`);
+        console.log(`media------ ${photo}`);
         const response = await client.post("/media/upload", options);
         return response.media_id_string;
     };

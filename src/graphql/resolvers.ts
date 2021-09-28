@@ -127,6 +127,7 @@ export const adminResolvers = {
         registerNewCrypto: cryptoController.registerNewCrypto,
         addCryptoToWallet: cryptoController.addCryptoToWallet,
         deleteCryptoFromWallet: cryptoController.deleteCryptoFromWallet,
+        // updateCampaign: campaignController.updateCampaign,
     },
 };
 
