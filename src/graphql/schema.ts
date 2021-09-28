@@ -60,6 +60,7 @@ export const typeDefs = gql`
             media: String
             participantId: String!
             defaultMedia: Boolean
+            mediaId: String
         ): String
         setDevice(deviceToken: String!): Boolean
         registerFactorLink(factor: JSON): User
