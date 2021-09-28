@@ -20,6 +20,7 @@ export class TwitterClient {
         console.log("posting image to twitter");
         const options = { media_category: "tweet_image", media_data: photo, media_type: format };
         const response = await client.post("/media/upload", options);
+        console.log(response);
         return response.media_id_string;
     };
 
