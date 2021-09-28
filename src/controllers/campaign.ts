@@ -206,58 +206,84 @@ export const createNewCampaign = async (
     };
 };
 
-export const updateCampaign = async (
-    parent: any,
-    args: {
-        id: string;
-        name: string;
-        beginDate: string;
-        targetVideo: string;
-        endDate: string;
-        coiinTotal: number;
-        target: string;
-        description: string;
-        algorithm: string;
-        suggestedPosts: string[];
-        suggestedTags: string[];
-        imagePath: string;
-    },
-    context: { user: any }
-) => {
-    const { role, company } = checkPermissions({ hasRole: ["admin", "manager"] }, context);
-    const {
-        id,
-        name,
-        beginDate,
-        endDate,
-        coiinTotal,
-        target,
-        description,
-        algorithm,
-        targetVideo,
-        suggestedPosts,
-        suggestedTags,
-    } = args;
-    const where: { [key: string]: string } = { id };
-    if (role === "manager") where["company"] = company;
-    const campaign = await Campaign.findOne({ where });
-    if (!campaign) throw new Error("campaign not found");
-    if (name) campaign.name = name;
-    if (beginDate) campaign.beginDate = new Date(beginDate);
-    if (endDate) campaign.endDate = new Date(endDate);
-    if (coiinTotal) campaign.coiinTotal = new BN(coiinTotal);
-    if (target) campaign.target = target;
-    if (description) campaign.description = description;
-    if (algorithm) {
-        validator.validateAlgorithmCreateSchema(JSON.parse(algorithm));
-        campaign.algorithm = JSON.parse(algorithm);
-    }
-    if (targetVideo) campaign.targetVideo = targetVideo;
-    if (suggestedPosts) campaign.suggestedPosts = suggestedPosts;
-    if (suggestedTags) campaign.suggestedTags = suggestedTags;
-    await campaign.save();
-    return campaign.asV1();
-};
+// export const updateCampaign = async (
+//     parent: any,
+//     args: {
+//         id: string;
+//         name: string;
+//         targetVideo?: string;
+//         beginDate: string;
+//         endDate: string;
+//         coiinTotal: number;
+//         target: string;
+//         description: string;
+//         instructions: string;
+//         company: string;
+//         algorithm: string;
+//         imagePath: string;
+//         tagline: string;
+//         requirements: CampaignRequirementSpecs;
+//         suggestedPosts: string[];
+//         suggestedTags: string[];
+//         keywords: string[];
+//         type: string;
+//         rafflePrize: RafflePrizeStructure;
+//         cryptoId: string;
+//         campaignType: string;
+//         socialMediaType: string[];
+//         campaignMedia: CampaignChannelMedia[];
+//         campaignTemplates: CampaignChannelTemplate[];
+//     },
+//     context: { user: any }
+// ) => {
+//     const { role, company } = checkPermissions({ hasRole: ["admin", "manager"] }, context);
+//     const {
+//         id,
+//         name,
+//         beginDate,
+//         endDate,
+//         coiinTotal,
+//         target,
+//         description,
+//         instructions,
+//         algorithm,
+//         targetVideo,
+//         imagePath,
+//         tagline,
+//         requirements,
+//         suggestedPosts,
+//         suggestedTags,
+//         keywords,
+//         type = "crypto",
+//         rafflePrize,
+//         cryptoId,
+//         campaignType,
+//         socialMediaType,
+//         campaignMedia,
+//         campaignTemplates,
+//     } = args;
+//     const where: { [key: string]: string } = { id };
+//     if (role === "manager") where["company"] = company;
+//     const campaign = await Campaign.findOne({ where });
+//     validator.validateAlgorithmCreateSchema(JSON.parse(algorithm));
+//     if (!!requirements) validator.validateCampaignRequirementsSchema(requirements);
+//     if (!campaign) throw new Error("campaign not found");
+//     if (name) campaign.name = name;
+//     if (beginDate) campaign.beginDate = new Date(beginDate);
+//     if (endDate) campaign.endDate = new Date(endDate);
+//     if (coiinTotal) campaign.coiinTotal = new BN(coiinTotal);
+//     if (target) campaign.target = target;
+//     if (description) campaign.description = description;
+//     if (algorithm) {
+//         validator.validateAlgorithmCreateSchema(JSON.parse(algorithm));
+//         campaign.algorithm = JSON.parse(algorithm);
+//     }
+//     if (targetVideo) campaign.targetVideo = targetVideo;
+//     if (suggestedPosts) campaign.suggestedPosts = suggestedPosts;
+//     if (suggestedTags) campaign.suggestedTags = suggestedTags;
+//     await campaign.save();
+//     return campaign.asV1();
+// };
 
 export const adminUpdateCampaignStatus = async (
     parent: any,

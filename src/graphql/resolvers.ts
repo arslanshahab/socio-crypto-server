@@ -57,7 +57,7 @@ export const resolvers = {
         participate: userController.participate,
         removeParticipation: userController.removeParticipation,
         newCampaign: campaignController.createNewCampaign,
-        updateCampaign: campaignController.updateCampaign,
+        // updateCampaign: campaignController.updateCampaign,
         deleteCampaign: campaignController.deleteCampaign,
         promoteUserPermissions: userController.promotePermissions,
         removeSocialLink: socialController.removeSocialLink,
