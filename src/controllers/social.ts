@@ -110,7 +110,7 @@ export const postToSocial = async (
             console.log(`media found ----- ${selectedMedia}`);
             if (selectedMedia) {
                 const mediaUrl = `${assetUrl}/campaign/${campaign.id}/${selectedMedia.media}`;
-                const downloaded = await downloadMedia(mediaUrl, selectedMedia.mediaFormat);
+                const downloaded = await downloadMedia(mediaType, mediaUrl, selectedMedia.mediaFormat);
                 media = downloaded;
                 mediaFormat = selectedMedia.mediaFormat;
             } else {
@@ -205,8 +205,10 @@ export const getParticipantSocialMetrics = async (parent: any, args: { id: strin
     };
 };
 
-const downloadMedia = async (url: string, format: string): Promise<string> => {
+const downloadMedia = async (mediaType: string, url: string, format: string): Promise<string> => {
     return await fetch(url)
         .then((r) => r.buffer())
-        .then((buf) => buf.toString("base64"));
+        .then((buf) =>
+            mediaType === "photo" ? buf.toString("base64") : `data:${format};base64,` + buf.toString("base64")
+        );
 };
