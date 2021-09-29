@@ -92,11 +92,13 @@ export interface AlgorithmSpecs {
 }
 
 export interface CampaignChannelTemplate {
+    id?: string;
     channel: string;
     post: string;
 }
 
 export interface CampaignChannelMedia {
+    id?: string;
     channel: string;
     media: string;
     mediaFormat: string;

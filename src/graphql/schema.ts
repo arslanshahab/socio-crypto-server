@@ -30,19 +30,31 @@ export const typeDefs = gql`
             campaignTemplates: JSON
         ): CampaignCreationResponse
         updateCampaign(
-            id: String!
-            name: String
-            coiinTotal: Float
-            target: String
+            id: String
+            name: String!
+            coiinTotal: Float!
+            target: String!
             targetVideo: String
-            beginDate: String
-            endDate: String
+            beginDate: String!
+            endDate: String!
             description: String
-            imagePath: String
+            instructions: String
+            cryptoId: String
+            company: String
+            algorithm: String!
             requirements: JSON
+            imagePath: String
+            campaignType: String
+            socialMediaType: [String]
+            tagline: String
             suggestedPosts: [String]
             suggestedTags: [String]
-        ): Campaign
+            keywords: [String]
+            type: String
+            rafflePrize: JSON
+            campaignMedia: JSON
+            campaignTemplates: JSON
+        ): CampaignCreationResponse
         generateCampaignAuditReport(campaignId: String!): AuditReport
         payoutCampaignRewards(campaignId: String!, rejected: [String]!): Boolean
         deleteCampaign(id: String!): Campaign

@@ -36,7 +36,15 @@ export class CampaignTemplate extends BaseEntity {
         };
     }
 
-    public static async saveTemplates(list: any, campaign: Campaign): Promise<CampaignTemplate[]> {
+    public static async saveTemplate(data: any, campaign: Campaign): Promise<CampaignTemplate> {
+        let template = new CampaignTemplate();
+        template.post = data.post;
+        template.channel = data.channel;
+        template.campaign = campaign;
+        return await CampaignTemplate.save(template);
+    }
+
+    public static async saveMultipleTemplates(list: any, campaign: Campaign): Promise<CampaignTemplate[]> {
         let templates: CampaignTemplate[] = [];
         list.forEach((item: any) => {
             let template = new CampaignTemplate();
