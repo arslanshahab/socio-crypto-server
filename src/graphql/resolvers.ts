@@ -57,7 +57,7 @@ export const resolvers = {
         participate: userController.participate,
         removeParticipation: userController.removeParticipation,
         newCampaign: campaignController.createNewCampaign,
-        // updateCampaign: campaignController.updateCampaign,
+        updateCampaign: campaignController.updateCampaign,
         deleteCampaign: campaignController.deleteCampaign,
         promoteUserPermissions: userController.promotePermissions,
         removeSocialLink: socialController.removeSocialLink,
@@ -105,7 +105,6 @@ export const adminResolvers = {
         listPendingCampaigns: campaignController.adminListPendingCampaigns,
         listSupportedCrypto: cryptoController.listSupportedCrypto,
         checkCoinGecko: cryptoController.coinGeckoCheck,
-        // getCampaignSignedUrls: campaignController.generateCampaignSignedUrls,
     },
     Mutation: {
         newOrg: orgController.newOrg,
@@ -127,7 +126,7 @@ export const adminResolvers = {
         registerNewCrypto: cryptoController.registerNewCrypto,
         addCryptoToWallet: cryptoController.addCryptoToWallet,
         deleteCryptoFromWallet: cryptoController.deleteCryptoFromWallet,
-        // updateCampaign: campaignController.updateCampaign,
+        updateCampaign: campaignController.updateCampaign,
     },
 };
 

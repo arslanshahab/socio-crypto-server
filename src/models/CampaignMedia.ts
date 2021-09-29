@@ -42,16 +42,26 @@ export class CampaignMedia extends BaseEntity {
         };
     }
 
-    public static async saveMedias(list: any, campaign: Campaign): Promise<CampaignMedia[]> {
+    public static async saveMedia(data: any, campaign: Campaign): Promise<CampaignMedia> {
+        let media = new CampaignMedia();
+        media.channel = data.channel;
+        media.media = data.media;
+        media.mediaFormat = data.mediaFormat;
+        media.isDefault = data.isDefault;
+        media.campaign = campaign;
+        return await CampaignMedia.save(media);
+    }
+
+    public static async saveMultipleMedias(list: any, campaign: Campaign): Promise<CampaignMedia[]> {
         let templates: CampaignMedia[] = [];
         list.forEach((item: any) => {
-            let order = new CampaignMedia();
-            order.channel = item.channel;
-            order.media = item.media;
-            order.mediaFormat = item.mediaFormat;
-            order.isDefault = item.isDefault;
-            order.campaign = campaign;
-            templates.push(order);
+            let media = new CampaignMedia();
+            media.channel = item.channel;
+            media.media = item.media;
+            media.mediaFormat = item.mediaFormat;
+            media.isDefault = item.isDefault;
+            media.campaign = campaign;
+            templates.push(media);
         });
         return await CampaignMedia.save(templates);
     }
