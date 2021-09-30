@@ -42,14 +42,14 @@ export class User extends BaseEntity {
     @OneToMany((_type) => SocialPost, (posts) => posts.user)
     posts: SocialPost[];
 
+    @Column({nullable: true})
+    public lastLogin: Date;
+
     @CreateDateColumn()
     public createdAt: Date;
 
     @UpdateDateColumn()
     public updatedAt: Date;
-
-    @UpdateDateColumn()
-    public lastLogin: Date;
 
     @OneToMany(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars

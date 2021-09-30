@@ -12,34 +12,49 @@ export const typeDefs = gql`
             beginDate: String!
             endDate: String!
             description: String
+            instructions: String
             cryptoId: String
             company: String
             algorithm: String!
             requirements: JSON
-            image: String
-            sharedMedia: String
+            imagePath: String
+            campaignType: String
+            socialMediaType: [String]
             tagline: String
             suggestedPosts: [String]
             suggestedTags: [String]
             keywords: [String]
             type: String
             rafflePrize: JSON
+            campaignMedia: JSON
+            campaignTemplates: JSON
         ): CampaignCreationResponse
-        newCampaignImages(id: String, image: String, sharedMedia: String, sharedMediaFormat: String): Campaign
         updateCampaign(
-            id: String!
-            name: String
-            coiinTotal: Float
-            target: String
+            id: String
+            name: String!
+            coiinTotal: Float!
+            target: String!
             targetVideo: String
-            beginDate: String
-            endDate: String
+            beginDate: String!
+            endDate: String!
             description: String
-            image: String
+            instructions: String
+            cryptoId: String
+            company: String
+            algorithm: String!
             requirements: JSON
+            imagePath: String
+            campaignType: String
+            socialMediaType: [String]
+            tagline: String
             suggestedPosts: [String]
             suggestedTags: [String]
-        ): Campaign
+            keywords: [String]
+            type: String
+            rafflePrize: JSON
+            campaignMedia: JSON
+            campaignTemplates: JSON
+        ): CampaignCreationResponse
         generateCampaignAuditReport(campaignId: String!): AuditReport
         payoutCampaignRewards(campaignId: String!, rejected: [String]!): Boolean
         deleteCampaign(id: String!): Campaign
@@ -56,6 +71,8 @@ export const typeDefs = gql`
             mediaFormat: String
             media: String
             participantId: String!
+            defaultMedia: Boolean
+            mediaId: String
         ): String
         setDevice(deviceToken: String!): Boolean
         registerFactorLink(factor: JSON): User
@@ -111,11 +128,6 @@ export const typeDefs = gql`
 
     type Query {
         getCurrentCampaignTier(campaignId: String!): CurrentTier
-        getCampaignSignedUrls(
-            id: String
-            campaignImageFileName: String
-            sharedMediaFileName: String
-        ): CampaignCreationResponse
         getDepositAddressForCurrency(currency: String): JSON
         usernameExists(username: String!): UserExistence
         listCampaigns(
@@ -204,8 +216,14 @@ export const typeDefs = gql`
     type CampaignCreationResponse {
         campaignId: String
         campaignImageSignedURL: String
-        sharedMediaSignedURL: String
         raffleImageSignedURL: String
+        mediaUrls: [CampaignMediaSignedUrls]
+    }
+
+    type CampaignMediaSignedUrls {
+        name: String
+        channel: String
+        signedUrl: String
     }
 
     type StoreVoucher {
@@ -488,13 +506,14 @@ export const typeDefs = gql`
         totalParticipationScore: Float
         target: String
         description: String
+        instructions: String
         company: String
         algorithm: JSON
         audited: Boolean
         targetVideo: String
         imagePath: String
-        sharedMedia: String
-        sharedMediaFormat: String
+        campaignType: String
+        socialMediaType: [String]
         tagline: String
         requirements: JSON
         suggestedPosts: [String]
@@ -506,6 +525,26 @@ export const typeDefs = gql`
         prize: RafflePrize
         org: Org
         crypto: CryptoCurrency
+        campaignMedia: [CampaignMedia]
+        campaignTemplates: [CampaignTemplate]
+    }
+
+    type CampaignMedia {
+        id: String!
+        channel: String!
+        isDefault: Boolean!
+        media: String!
+        mediaFormat: String!
+        createdAt: String!
+        updatedAt: String!
+    }
+
+    type CampaignTemplate {
+        id: String!
+        channel: String!
+        post: String!
+        createdAt: String!
+        updatedAt: String!
     }
 
     type CryptoCurrency {

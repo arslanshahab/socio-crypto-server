@@ -46,7 +46,11 @@ export class S3Client {
     }
 
     public static async generateCampaignSignedURL(key: string) {
-        return S3Client.client.getSignedUrl("putObject", { Bucket: BUCKET_NAME, Key: key, Expires: 3600 });
+        return S3Client.client.getSignedUrl("putObject", {
+            Bucket: BUCKET_NAME || "rm-raiinmaker-staging",
+            Key: key,
+            Expires: 3600,
+        });
     }
 
     public static async generateRafflePrizeSignedURL(key: string) {
