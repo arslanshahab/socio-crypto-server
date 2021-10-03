@@ -89,6 +89,7 @@ export class TwitterClient {
         mediaFormat?: string
     ): Promise<string> => {
         try {
+            text = text.replace("@", "#");
             logger.debug(`posting tweet to twitter with text: ${text}`);
             const options: { [key: string]: string } = { status: text };
             const client = TwitterClient.getClient(credentials);
