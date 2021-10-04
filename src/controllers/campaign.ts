@@ -369,7 +369,9 @@ export const listCampaigns = async (
         approved,
         pendingAudit
     );
-    return { results: results.map((result) => result.asV1()), total };
+    const data = results.map((result) => result.asV1());
+    console.log(data);
+    return { results: data, total };
 };
 
 export const adminListPendingCampaigns = async (
