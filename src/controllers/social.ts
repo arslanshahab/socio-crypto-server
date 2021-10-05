@@ -9,6 +9,7 @@ import { FacebookClient } from "../clients/facebook";
 import { HourlyCampaignMetric } from "../models/HourlyCampaignMetric";
 import { Campaign } from "../models/Campaign";
 import fetch from "node-fetch";
+import { CampaignMedia } from "../models/CampaignMedia";
 export const allowedSocialLinks = ["twitter", "facebook"];
 
 const assetUrl =
@@ -79,13 +80,14 @@ export const postToSocial = async (
         media: string;
         participantId: string;
         defaultMedia: boolean;
+        mediaId: string;
     },
     context: { user: any }
 ) => {
     try {
         console.log(`posting to social`);
         const startTime = new Date().getTime();
-        let { socialType, text, mediaType, mediaFormat, media, participantId, defaultMedia } = args;
+        let { socialType, text, mediaType, mediaFormat, media, participantId, defaultMedia, mediaId } = args;
         if (!allowedSocialLinks.includes(socialType)) throw new Error("the type must exist as a predefined type");
         const { id } = context.user;
         const user = await User.findOneOrFail({ where: { identityId: id }, relations: ["socialLinks"] });
@@ -96,14 +98,24 @@ export const postToSocial = async (
         if (!participant.campaign.isOpen()) throw new Error("campaign is closed");
         const socialLink = user.socialLinks.find((link) => link.type === socialType);
         if (!socialLink) throw new Error(`you have not linked ${socialType} as a social platform`);
-        const campaign = await Campaign.findOne({ where: { id: participant.campaign.id }, relations: ["org"] });
+        const campaign = await Campaign.findOne({
+            where: { id: participant.campaign.id },
+            relations: ["org", "campaignMedia"],
+        });
         if (!campaign) throw new Error("campaign not found");
         const client = getSocialClient(socialType);
         if (defaultMedia) {
-            console.log("downloading media -----");
-            const mediaUrl = `${assetUrl}/campaign/${campaign.id}/${campaign.sharedMedia}`;
-            const downloaded = await downloadMedia(mediaUrl, mediaFormat);
-            media = downloaded;
+            console.log(`downloading media with mediaID ----- ${mediaId}`);
+            const selectedMedia = await CampaignMedia.findOne({ where: { id: mediaId } });
+            console.log(`media found ----- ${selectedMedia}`);
+            if (selectedMedia) {
+                const mediaUrl = `${assetUrl}/campaign/${campaign.id}/${selectedMedia.media}`;
+                const downloaded = await downloadMedia(mediaType, mediaUrl, selectedMedia.mediaFormat);
+                media = downloaded;
+                mediaFormat = selectedMedia.mediaFormat;
+            } else {
+                throw new Error(`Provided mediaId doesn't exist`);
+            }
         }
         let postId: string;
         if (mediaType && mediaFormat) {
@@ -193,8 +205,10 @@ export const getParticipantSocialMetrics = async (parent: any, args: { id: strin
     };
 };
 
-const downloadMedia = async (url: string, format: string): Promise<string> => {
+const downloadMedia = async (mediaType: string, url: string, format: string): Promise<string> => {
     return await fetch(url)
         .then((r) => r.buffer())
-        .then((buf) => `data:image/${format};base64,` + buf.toString("base64"));
+        .then((buf) =>
+            mediaType === "photo" ? buf.toString("base64") : `data:${format};base64,` + buf.toString("base64")
+        );
 };

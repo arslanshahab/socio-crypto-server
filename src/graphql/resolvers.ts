@@ -46,7 +46,6 @@ export const resolvers = {
         checkCoinGecko: cryptoController.coinGeckoCheck,
         getUserParticipationKeywords: userController.getUserParticipationKeywords,
         getStoreVouchers: xoxodayController.getVouchers,
-        getCampaignSignedUrls: campaignController.generateCampaignSignedUrls,
         getWeeklyRewards: weeklyReward.getWeeklyRewards,
         getRedemptionRequirements: xoxodayController.redemptionRequirements,
     },
@@ -86,6 +85,7 @@ export const resolvers = {
 
 export const adminResolvers = {
     Query: {
+        getCampaign: campaignController.get,
         getHourlyCampaignMetrics: campaignController.adminGetHourlyCampaignMetrics,
         getHourlyPlatformMetrics: campaignController.adminGetHourlyPlatformMetrics,
         getTotalPlatformMetrics: campaignController.adminGetPlatformMetrics,
@@ -105,13 +105,11 @@ export const adminResolvers = {
         listPendingCampaigns: campaignController.adminListPendingCampaigns,
         listSupportedCrypto: cryptoController.listSupportedCrypto,
         checkCoinGecko: cryptoController.coinGeckoCheck,
-        getCampaignSignedUrls: campaignController.generateCampaignSignedUrls,
     },
     Mutation: {
         newOrg: orgController.newOrg,
         generateCampaignAuditReport: campaignController.generateCampaignAuditReport,
         newCampaign: campaignController.createNewCampaign,
-        newCampaignImages: campaignController.saveCampaignImages,
         payoutCampaignRewards: campaignController.payoutCampaignRewards,
         deleteCampaign: campaignController.deleteCampaign,
         updateWithdrawStatus: withdrawController.update,
@@ -128,6 +126,7 @@ export const adminResolvers = {
         registerNewCrypto: cryptoController.registerNewCrypto,
         addCryptoToWallet: cryptoController.addCryptoToWallet,
         deleteCryptoFromWallet: cryptoController.deleteCryptoFromWallet,
+        updateCampaign: campaignController.updateCampaign,
     },
 };
 

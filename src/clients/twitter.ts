@@ -20,6 +20,7 @@ export class TwitterClient {
         console.log("posting image to twitter");
         const options = { media_category: "tweet_image", media_data: photo, media_type: format };
         const response = await client.post("/media/upload", options);
+        console.log(response);
         return response.media_id_string;
     };
 
@@ -88,6 +89,7 @@ export class TwitterClient {
         mediaFormat?: string
     ): Promise<string> => {
         try {
+            text = text.replace("@", "#");
             logger.debug(`posting tweet to twitter with text: ${text}`);
             const options: { [key: string]: string } = { status: text };
             const client = TwitterClient.getClient(credentials);
