@@ -3,8 +3,8 @@ import { getBase64FileExtension, deleteFactorFromKycData } from "../util/helpers
 import { KycUser } from "../types";
 
 AWS.config.update({
-    accessKeyId: "AKIAXVQVYPRMCYPTATXJ",
-    secretAccessKey: "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",
+    accessKeyId: "AKIAXVQVYPRMDO5IO3FE",
+    secretAccessKey: "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",
 });
 
 const {
@@ -277,10 +277,10 @@ export class S3Client {
         }
     }
 
-    public static async uploadTatumWalletData(currency: string, data: any) {
+    public static async uploadTatumWalletKeys(data: any) {
         const params: AWS.S3.PutObjectRequest = {
             Bucket: RM_SECRETS,
-            Key: `tatum/${currency.toUpperCase()}Wallet`,
+            Key: `tatum/walletKeys`,
             Body: JSON.stringify(data),
         };
         try {
@@ -290,8 +290,8 @@ export class S3Client {
         }
     }
 
-    public static async getTatumWalletData(currency: string) {
-        const params: AWS.S3.GetObjectRequest = { Bucket: RM_SECRETS, Key: `tatum/${currency.toUpperCase()}Wallet` };
+    public static async getTatumWalletKeys() {
+        const params: AWS.S3.GetObjectRequest = { Bucket: RM_SECRETS, Key: `tatum/walletKeys` };
         try {
             let data: any = (await this.client.getObject(params).promise()).Body?.toString();
             return JSON.parse(data);

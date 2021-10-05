@@ -7,7 +7,7 @@ import {
     PrimaryGeneratedColumn,
     UpdateDateColumn,
 } from "typeorm";
-import { Admin } from "./Admin";
+import { Org } from "./Org";
 
 @Entity()
 export class DepositAddress extends BaseEntity {
@@ -20,8 +20,8 @@ export class DepositAddress extends BaseEntity {
     @Column({ nullable: false })
     public address: string;
 
-    @ManyToOne((_type) => Admin, (admin) => admin.depositAddress)
-    public admin: Admin;
+    @ManyToOne((_type) => Org, (org) => org.depositAddress)
+    public org: Org;
 
     @CreateDateColumn()
     public createdAt: Date;
@@ -36,11 +36,11 @@ export class DepositAddress extends BaseEntity {
         return returnValue;
     }
 
-    public static async addNewAddress(data: any, admin: Admin): Promise<DepositAddress> {
+    public static async addNewAddress(data: any, org: Org): Promise<DepositAddress> {
         let address = new DepositAddress();
         address.address = data.address;
         address.currency = data.currency;
-        address.admin = admin;
+        address.org = org;
         return await DepositAddress.save(address);
     }
 }

@@ -15,43 +15,58 @@ import { DepositAddress } from "../models/DepositAddress";
 //     }
 // });
 
+export const getSupportedCurrencies = async (parent: any, args: any, context: { user: any }) => {
+    try {
+        const { id } = context.user;
+        const admin = await Admin.findOne({ where: { firebaseId: id } });
+        if (!admin) throw new Error("Admi not found!");
+        const supportedCurrencies = [...TatumClient.getAllCurrencies()];
+        supportedCurrencies.unshift("COIIN");
+        return supportedCurrencies;
+    } catch (error) {
+        console.log("ERROR----", error);
+        return error;
+    }
+};
+
 export const getDepositAddress = async (parent: any, args: { currency: string }, context: { user: any }) => {
     try {
-        const { currency } = args;
+        let { currency } = args;
+        if (!currency) throw new Error("Currency not supported");
+        currency = currency.toUpperCase();
+        const fromTatum = TatumClient.isCurrencySupported(currency);
+        console.log(`currency--- ${currency}, fromTatum---- ${fromTatum}`);
         const { id } = context.user;
-        const admin = await Admin.findOne({ where: { firebaseId: id }, relations: ["depositAddress"] });
+        const admin = await Admin.findOne({ where: { firebaseId: id }, relations: ["org", "org.depositAddress"] });
         if (!admin) throw new Error("Admi not found!");
-        const fromTatum = TatumClient.isCurrencySupported(currency.toUpperCase());
         let address: string | undefined = "";
         if (fromTatum) {
-            let depositAddress = admin.depositAddress.find(
-                (item) => item.currency.toLowerCase() === currency.toLowerCase()
-            );
+            let depositAddress = admin.org.depositAddress.find((item) => item.currency === currency);
             if (!depositAddress) {
                 let tatumAccount = await findOrCreateLedgerAccount(currency);
                 const newDepositAddress = await TatumClient.createNewDepositAddress(tatumAccount.accountId);
-                depositAddress = await DepositAddress.addNewAddress(newDepositAddress, admin);
+                depositAddress = await DepositAddress.addNewAddress(newDepositAddress, admin.org);
             }
             address = depositAddress.address;
         } else {
             address = process.env.ETHEREUM_DEPOSIT_ADDRESS;
         }
-        console.log(address);
         return {
-            currency: currency.toUpperCase(),
-            address: address,
+            currency: currency,
+            address,
             fromTatum,
         };
     } catch (error) {
-        console.log(error);
+        console.log("ERROR----", error);
         return error;
     }
 };
 
 const findOrCreateLedgerAccount = async (currency: string): Promise<TatumAccount> => {
     try {
-        let tatumAccount = await TatumAccount.findOne({ where: { currency: currency.toUpperCase() } });
-        if (!tatumAccount?.accountId) {
+        currency = currency;
+        let tatumAccount = await TatumAccount.findOne({ where: { currency: currency } });
+        if (!tatumAccount) {
             const newTatumAccount = await TatumClient.createLedgerAccount(currency);
             tatumAccount = await TatumAccount.addAccount(newTatumAccount);
         }
