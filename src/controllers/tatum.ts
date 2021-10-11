@@ -7,10 +7,7 @@ import { DepositAddress } from "../models/DepositAddress";
 
 export const initWallet = asyncHandler(async (req: Request, res: Response) => {
     try {
-        const { currency, key } = req.body;
-        if (key !== "raiinmaker") {
-            res.status(401).json("Unaothorized action!");
-        }
+        const { currency } = req.body;
         const wallet = await TatumClient.createWallet(currency);
         res.status(200).json(wallet);
     } catch (error) {
