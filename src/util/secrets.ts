@@ -88,7 +88,6 @@ export class Secrets {
             process.env.XOXODAY_CLIENT_ID || (await readFilePromise("/var/secrets/xoxoday/clientId", "utf8"));
         Secrets.xoxodayClientSecret =
             process.env.XOXODAY_CLIENT_SECRET || (await readFilePromise("/var/secrets/xoxoday/clientSecret", "utf8"));
-        Secrets.tatumApiKey =
-            process.env.TATUM_API_KEY || (await readFilePromise("/var/secrets/tatum-secrets/apiKey", "utf8"));
+        Secrets.tatumApiKey = process.env.TATUM_API_KEY || (await readFilePromise("/var/secrets/tatum/apiKey", "utf8"));
     }
 }
