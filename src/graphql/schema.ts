@@ -128,6 +128,8 @@ export const typeDefs = gql`
 
     type Query {
         getCurrentCampaignTier(campaignId: String!): CurrentTier
+        getDepositAddressForCurrency(currency: String): DepostAddressObject
+        getSupportedCurrencies: [String]
         usernameExists(username: String!): UserExistence
         listCampaigns(
             open: Boolean
@@ -185,6 +187,12 @@ export const typeDefs = gql`
         checkCoinGecko(symbol: String): Boolean
         getWeeklyRewards: WeeklyRewardResponse
         getRedemptionRequirements: RedemptionRequirements
+    }
+
+    type DepostAddressObject {
+        currency: String
+        address: String
+        fromTatum: Boolean
     }
 
     type RedemptionRequirements {

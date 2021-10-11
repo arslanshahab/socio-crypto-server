@@ -14,6 +14,7 @@ import { Admin } from "./Admin";
 import { HourlyCampaignMetric } from "./HourlyCampaignMetric";
 import { CampaignStatus } from "../types";
 import { Wallet } from "./Wallet";
+import { DepositAddress } from "./DepositAddress";
 
 @Entity()
 export class Org extends BaseEntity {
@@ -40,6 +41,9 @@ export class Org extends BaseEntity {
 
     @OneToOne((_type) => Wallet, (wallet) => wallet.org)
     public wallet: Wallet;
+
+    @OneToMany((_type) => DepositAddress, (depositAddress) => depositAddress.org)
+    public depositAddress: DepositAddress[];
 
     @CreateDateColumn()
     public createdAt: Date;

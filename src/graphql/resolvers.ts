@@ -14,6 +14,7 @@ import * as stripeController from "../controllers/stripe";
 import * as cryptoController from "../controllers/crypto";
 import * as xoxodayController from "../controllers/xoxoday";
 import * as weeklyReward from "../controllers/weeklyReward";
+import * as tatumController from "../controllers/tatum";
 
 export const resolvers = {
     Query: {
@@ -105,6 +106,8 @@ export const adminResolvers = {
         listPendingCampaigns: campaignController.adminListPendingCampaigns,
         listSupportedCrypto: cryptoController.listSupportedCrypto,
         checkCoinGecko: cryptoController.coinGeckoCheck,
+        getDepositAddressForCurrency: tatumController.getDepositAddress,
+        getSupportedCurrencies: tatumController.getSupportedCurrencies,
     },
     Mutation: {
         newOrg: orgController.newOrg,
