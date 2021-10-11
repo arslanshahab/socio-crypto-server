@@ -26,6 +26,7 @@ export class Secrets {
     public static xoxodayClientID: string;
     public static xoxodayClientSecret: string;
     public static xoxodayURL: string;
+    public static tatumApiKey: string;
 
     public static async initialize() {
         Secrets.firebaseProjectId =
@@ -87,5 +88,6 @@ export class Secrets {
             process.env.XOXODAY_CLIENT_ID || (await readFilePromise("/var/secrets/xoxoday/clientId", "utf8"));
         Secrets.xoxodayClientSecret =
             process.env.XOXODAY_CLIENT_SECRET || (await readFilePromise("/var/secrets/xoxoday/clientSecret", "utf8"));
+        Secrets.tatumApiKey = process.env.TATUM_API_KEY || (await readFilePromise("/var/secrets/tatum/apiKey", "utf8"));
     }
 }

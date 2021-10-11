@@ -2,6 +2,11 @@ import AWS from "aws-sdk";
 import { getBase64FileExtension, deleteFactorFromKycData } from "../util/helpers";
 import { KycUser } from "../types";
 
+AWS.config.update({
+    accessKeyId: "AKIAXVQVYPRMDO5IO3FE",
+    secretAccessKey: "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",
+});
+
 const {
     BUCKET_NAME = "rm-raiinmaker-staging",
     KYC_BUCKET_NAME = "rm-raiinmaker-kyc-staging",
@@ -254,6 +259,16 @@ export class S3Client {
 
     public static async getXoxodayAuthData() {
         const params: AWS.S3.GetObjectRequest = { Bucket: RM_SECRETS, Key: "xoxoday/authData" };
+        try {
+            return (await this.client.getObject(params).promise()).Body?.toString();
+        } catch (e) {
+            if (e.code && e.code === "NotFound") return null;
+            throw e;
+        }
+    }
+
+    public static async getTatumAPIKey() {
+        const params: AWS.S3.GetObjectRequest = { Bucket: RM_SECRETS, Key: "tatum/apiKey" };
         try {
             return (await this.client.getObject(params).promise()).Body?.toString();
         } catch (e) {

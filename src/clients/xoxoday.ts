@@ -1,6 +1,6 @@
 import { Secrets } from "../util/secrets";
 import { S3Client } from "./s3";
-import { doFetch } from "../util/fetchRequest";
+import { doFetch, RequestData } from "../util/fetchRequest";
 import { XoxodayOrder } from "src/types";
 
 const { NODE_ENV = "development" } = process.env;
@@ -39,7 +39,12 @@ export class Xoxoday {
                 client_id: Secrets.xoxodayClientID,
                 client_secret: Secrets.xoxodayClientSecret,
             };
-            const response = await doFetch(`${this.baseUrl}/v1/oauth/token/user`, null, "POST", payload);
+            const requestData: RequestData = {
+                method: "POST",
+                url: `${this.baseUrl}/v1/oauth/token/user`,
+                payload: payload,
+            };
+            const response = await doFetch(requestData);
             const authData = await response.json();
             if (authData.error) throw new Error("Error fetching access token for xoxoday");
             const augmentedAuthData = this.adjustTokenExpiry(authData);
@@ -58,7 +63,12 @@ export class Xoxoday {
                 client_id: Secrets.xoxodayClientID,
                 client_secret: Secrets.xoxodayClientSecret,
             };
-            const response = await doFetch(`${this.baseUrl}/v1/oauth/token/user`, null, "POST", payload);
+            const requestData: RequestData = {
+                method: "POST",
+                url: `${this.baseUrl}/v1/oauth/token/user`,
+                payload: payload,
+            };
+            const response = await doFetch(requestData);
             const authData = await response.json();
             if (authData.error) throw new Error("Error refreshing access token for xoxoday");
             const augmentedAuthData = this.adjustTokenExpiry(authData);
@@ -83,7 +93,13 @@ export class Xoxoday {
                     },
                 },
             };
-            const response = await doFetch(`${this.baseUrl}/v1/oauth/api`, authData.access_token, "POST", payload);
+            const requestData: RequestData = {
+                method: "POST",
+                url: `${this.baseUrl}/v1/oauth/api`,
+                payload: payload,
+                authToken: authData.access_token,
+            };
+            const response = await doFetch(requestData);
             const filters = await response.json();
             if (response.status !== 200) {
                 if (!filters || filters.error) {
@@ -122,7 +138,13 @@ export class Xoxoday {
                     },
                 },
             };
-            const response = await doFetch(`${this.baseUrl}/v1/oauth/api`, authData.access_token, "POST", payload);
+            const requestData: RequestData = {
+                method: "POST",
+                url: `${this.baseUrl}/v1/oauth/api`,
+                payload: payload,
+                authToken: authData.access_token,
+            };
+            const response = await doFetch(requestData);
             const vouchers = await response.json();
             if (response.status !== 200) {
                 if (!vouchers || vouchers.error) {
@@ -149,7 +171,13 @@ export class Xoxoday {
                         data: order,
                     },
                 };
-                promiseArray.push(doFetch(`${this.baseUrl}/v1/oauth/api`, authData.access_token, "POST", payload));
+                const requestData: RequestData = {
+                    method: "POST",
+                    url: `${this.baseUrl}/v1/oauth/api`,
+                    payload: payload,
+                    authToken: authData.access_token,
+                };
+                promiseArray.push(doFetch(requestData));
             });
             const responseArray = await Promise.all(promiseArray);
             for (let response of responseArray) {
