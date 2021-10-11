@@ -1,4 +1,3 @@
-import { S3Client } from "./s3";
 import { Secrets } from "../util/secrets";
 import {
     generateWallet,
@@ -41,32 +40,6 @@ export class TatumClient {
         { currency: "UNI", key: "xpub" },
     ];
 
-    private static async fetchWalletKeys(currency: string) {
-        try {
-            currency = currency.toUpperCase();
-            let walletKeys = await S3Client.getTatumWalletKeys();
-            const foundCurrency = this.currencies.find((item) => item.currency === currency);
-            if (!foundCurrency) throw new Error("currency not found!");
-            if (!walletKeys[foundCurrency.currency]) {
-                const newWalletKeys = await this.createWallet(currency);
-                walletKeys[currency] = newWalletKeys;
-                await S3Client.uploadTatumWalletKeys(walletKeys);
-            }
-            return walletKeys[foundCurrency.currency];
-        } catch (error) {
-            if (error.code === "NoSuchKey") {
-                let walletKeys: any = {};
-                const newWalletKeys = await this.createWallet(currency);
-                walletKeys[currency] = newWalletKeys;
-                await S3Client.uploadTatumWalletKeys(walletKeys);
-                return newWalletKeys;
-            } else {
-                console.log(error);
-                throw new Error(error.message);
-            }
-        }
-    }
-
     public static getAllCurrencies(): string[] {
         return this.currencies.map((item) => item.currency);
     }
@@ -79,26 +52,20 @@ export class TatumClient {
     public static async createWallet(currency: string) {
         try {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
-            const walletData: any = await generateWallet(currency as Currency, false);
-            const currencyData = this.currencies.find((item) => item.currency === currency);
-            if (currencyData) {
-                walletData.xpub = walletData[currencyData.key];
-            }
-            return walletData;
+            return await generateWallet(currency as Currency, false);
         } catch (error) {
             console.log(error);
-            throw new Error(error.message);
+            throw new Error(error.data ? error.data.message : error.message);
         }
     }
 
     public static async createLedgerAccount(currency: string) {
         try {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
-            const walletData = await this.fetchWalletKeys(currency);
             return await createAccount({
                 currency: currency.toUpperCase(),
                 accountingCurrency: "USD" as Fiat,
-                xpub: walletData.xpub,
+                xpub: "",
             });
         } catch (error) {
             console.log(error);

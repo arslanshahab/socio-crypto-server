@@ -276,28 +276,4 @@ export class S3Client {
             throw e;
         }
     }
-
-    public static async uploadTatumWalletKeys(data: any) {
-        const params: AWS.S3.PutObjectRequest = {
-            Bucket: RM_SECRETS,
-            Key: `tatum/walletKeys`,
-            Body: JSON.stringify(data),
-        };
-        try {
-            return await this.client.putObject(params).promise();
-        } catch (e) {
-            throw e;
-        }
-    }
-
-    public static async getTatumWalletKeys() {
-        const params: AWS.S3.GetObjectRequest = { Bucket: RM_SECRETS, Key: `tatum/walletKeys` };
-        try {
-            let data: any = (await this.client.getObject(params).promise()).Body?.toString();
-            return JSON.parse(data);
-        } catch (e) {
-            if (e.code && e.code === "NotFound") return null;
-            throw e;
-        }
-    }
 }

@@ -1,19 +1,19 @@
 import { TatumAccount } from "../models/TatumAccount";
 import { TatumClient } from "../clients/tatumClient";
 import { Admin } from "../models/Admin";
-// import { asyncHandler } from "../util/helpers";
-// import { Request, Response } from "express";
+import { asyncHandler } from "../util/helpers";
+import { Request, Response } from "express";
 import { DepositAddress } from "../models/DepositAddress";
 
-// export const initWallet = asyncHandler(async (req: Request, res: Response) => {
-//     try {
-//         const { currency } = req.body;
-//         const wallet = await TatumClient.createWallet(currency);
-//         res.status(200).json(wallet);
-//     } catch (error) {
-//         res.status(403).json(error.message);
-//     }
-// });
+export const initWallet = asyncHandler(async (req: Request, res: Response) => {
+    try {
+        const { currency } = req.body;
+        const wallet = await TatumClient.createWallet(currency);
+        res.status(200).json(wallet);
+    } catch (error) {
+        res.status(403).json(error.message);
+    }
+});
 
 export const getSupportedCurrencies = async (parent: any, args: any, context: { user: any }) => {
     try {
