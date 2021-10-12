@@ -35,7 +35,6 @@ export const getDepositAddress = async (parent: any, args: { currency: string },
         if (!currency) throw new Error("Currency not supported");
         currency = currency.toUpperCase();
         const fromTatum = TatumClient.isCurrencySupported(currency);
-        console.log(`currency--- ${currency}, fromTatum---- ${fromTatum}`);
         const { id } = context.user;
         const admin = await Admin.findOne({ where: { firebaseId: id }, relations: ["org", "org.depositAddress"] });
         if (!admin) throw new Error("Admi not found!");
