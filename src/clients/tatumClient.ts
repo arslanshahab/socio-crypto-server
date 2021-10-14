@@ -11,6 +11,7 @@ import {
     offchainStoreWithdrawal,
     getWithdrawals,
     offchainCompleteWithdrawal,
+    AccountBalance,
 } from "@tatumio/tatum";
 import { TatumWallet } from "../models/TatumWallet";
 import { generateRandomId } from "../util/helpers";
@@ -74,6 +75,20 @@ export class TatumClient {
         try {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
             return await getAccountBalance(accountId);
+        } catch (error) {
+            console.log(error);
+            throw new Error(error.message);
+        }
+    }
+
+    public static async getBalanceOfAccountList(accounts: string[]) {
+        try {
+            process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
+            const promiseArray: Promise<AccountBalance>[] = [];
+            for (let index = 0; index < accounts.length; index++) {
+                promiseArray.push(getAccountBalance(accounts[index]));
+            }
+            return await Promise.all(promiseArray);
         } catch (error) {
             console.log(error);
             throw new Error(error.message);

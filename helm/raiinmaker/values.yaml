@@ -49,6 +49,7 @@ data:
         BUCKET_NAME: "rm-raiinmaker-staging"
         KYC_BUCKET_NAME: "rm-raiinmaker-kyc-staging"
         RM_SECRETS: "rm-secrets-staging"
+        TATUM_WALLETS: "tatum-wallets-stage"
         RATE_LIMIT_MAX: "50"
         RATE_LIMIT_WINDOW: "1m"
         REWARD_REDEMPTION_EMAIL_RECIPIENT: alex@dragonchain.com

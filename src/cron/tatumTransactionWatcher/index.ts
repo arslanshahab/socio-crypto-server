@@ -6,8 +6,7 @@ import logger from "../../util/logger";
 import { TatumAccount } from "../../models/TatumAccount";
 import { TransactionType } from "@tatumio/tatum";
 import { S3Client } from "../../clients/s3";
-import { DepositAddress } from "../../models/DepositAddress";
-import { Transfer } from "../../models/Transfer";
+// import { Transfer } from "../../models/Transfer";
 
 if (process.env.LOAD_ENV) {
     dotenv.config();
@@ -49,26 +48,26 @@ const app = new Application();
                 console.log(`Account:${account.accountId}---Currency:${account.currency}`, transactionList);
                 if (transactionList.length === 0 || transactionList.length < pageSize) run = false;
                 for (let transactionIndex = 0; transactionIndex < transactionList.length; transactionIndex++) {
-                    const transaction = transactionList[transactionIndex];
-                    const depositAddress = await DepositAddress.findOne({
-                        where: { address: transaction.address },
-                        relations: ["org", "org.wallet", "org.wallet.currency"],
-                    });
-                    if (!depositAddress) continue;
-                    await depositAddress.org.updateOrCreateBalance(
-                        transaction.currency,
-                        "add",
-                        parseFloat(transaction.amount)
-                    );
-                    await Transfer.addTatumDeposit({
-                        amount: transaction.amount,
-                        txId: transaction.txId,
-                        currency: transaction.currency,
-                        org: depositAddress.org,
-                        wallet: depositAddress.org.wallet,
-                    });
-                    const newDepositAddress = await TatumClient.generateDepositAddress(account.accountId);
-                    await depositAddress.org.updateOrCreateDepositAddress(newDepositAddress);
+                    // const transaction = transactionList[transactionIndex];
+                    // const depositAddress = await DepositAddress.findOne({
+                    //     where: { address: transaction.address },
+                    //     relations: ["org", "org.wallet", "org.wallet.currency"],
+                    // });
+                    // if (!depositAddress) continue;
+                    // await depositAddress.org.updateOrCreateBalance(
+                    //     transaction.currency,
+                    //     "add",
+                    //     parseFloat(transaction.amount)
+                    // );
+                    // await Transfer.addTatumDeposit({
+                    //     amount: transaction.amount,
+                    //     txId: transaction.txId,
+                    //     currency: transaction.currency,
+                    //     org: depositAddress.org,
+                    //     wallet: depositAddress.org.wallet,
+                    // });
+                    // const newDepositAddress = await TatumClient.generateDepositAddress(account.accountId);
+                    // await depositAddress.org.updateOrCreateDepositAddress(newDepositAddress);
                 }
                 offset++;
             }

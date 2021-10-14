@@ -16,6 +16,7 @@ data:
         BUCKET_NAME: "rm-raiinmaker-production"
         KYC_BUCKET_NAME: "rm-raiinmaker-kyc-production"
         RM_SECRETS: "rm-secrets"
+        TATUM_WALLETS: "tatum-wallets-prod"
         RATE_LIMIT_MAX: "3"
         RATE_LIMIT_WINDOW: "1m"
         REWARD_REDEMPTION_EMAIL_RECIPIENT: jonel@raiinmaker.com
