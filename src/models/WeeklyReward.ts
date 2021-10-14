@@ -6,11 +6,8 @@ import {
     UpdateDateColumn,
     ManyToOne,
     Column,
-    OneToOne,
-    JoinColumn,
 } from "typeorm";
 import { User } from "./User";
-import { Participant } from "./Participant";
 
 @Entity()
 export class WeeklyReward extends BaseEntity {
@@ -28,10 +25,6 @@ export class WeeklyReward extends BaseEntity {
 
     @ManyToOne((_type) => User, (user) => user.weeklyRewards)
     public user: User;
-
-    @OneToOne((_type) => Participant, (participant) => participant.reward)
-    @JoinColumn()
-    public participant: Participant;
 
     @CreateDateColumn()
     public createdAt: Date;
@@ -52,7 +45,6 @@ export class WeeklyReward extends BaseEntity {
         reward.week = data.week;
         reward.rewardType = data.type;
         reward.user = data.user;
-        reward.participant = data.participant;
         return await WeeklyReward.save(reward);
     }
 }

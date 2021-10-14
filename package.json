@@ -29,7 +29,9 @@
         "migration:generate": "yarn clean && yarn build && yarn typeorm:cli migration:generate",
         "metrics:generate": "NODE_ENV=script ts-node scripts/metrics/index.ts",
         "admin:generate": "NODE_ENV=script ts-node scripts/admin/index.ts",
-        "cron:watcher:run": "AWS_PROFILE=raiinmaker LOAD_ENV=true ts-node ./src/cron/coiinWatcher/index.ts"
+        "cron:watcher:run": "AWS_PROFILE=raiinmaker LOAD_ENV=true ts-node ./src/cron/coiinWatcher/index.ts",
+        "cron:tatumWithdrawWatcher:run": "AWS_PROFILE=raiinmaker LOAD_ENV=true ts-node ./src/cron/tatumWithdrawWatcher/index.ts",
+        "cron:tatumTransactionWatcher:run": "AWS_PROFILE=raiinmaker LOAD_ENV=true ts-node ./src/cron/tatumTransactionWatcher/index.ts"
     },
     "dependencies": {
         "@myfii-dev/dragonfactor-auth": "^0.0.12",

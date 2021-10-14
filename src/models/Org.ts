@@ -15,6 +15,8 @@ import { HourlyCampaignMetric } from "./HourlyCampaignMetric";
 import { CampaignStatus } from "../types";
 import { Wallet } from "./Wallet";
 import { DepositAddress } from "./DepositAddress";
+import { WalletCurrency } from "./WalletCurrency";
+import { Address } from "@tatumio/tatum";
 
 @Entity()
 export class Org extends BaseEntity {
@@ -94,5 +96,38 @@ export class Org extends BaseEntity {
 
     public static async listOrgs(skip: number, take: number) {
         return await this.createQueryBuilder("org").skip(skip).take(take).getMany();
+    }
+
+    public async updateOrCreateBalance(symbol: string, operation: "add" | "subtract", amount: number): Promise<any> {
+        let org: Org | undefined = this;
+        if (!org.wallet || !org.wallet.currency) {
+            org = await Org.findOne({ where: { id: this.id }, relations: ["wallet", "wallet.currency"] });
+        }
+        if (org) {
+            let assetBalance = org.wallet.currency.find((item) => item.type === symbol);
+            if (assetBalance) {
+                assetBalance.balance =
+                    operation === "add" ? assetBalance.balance.plus(amount) : assetBalance.balance.minus(amount);
+                return assetBalance.save();
+            } else {
+                return await WalletCurrency.addNewWalletCurrency(symbol, org.wallet, amount);
+            }
+        }
+    }
+
+    public async updateOrCreateDepositAddress(data: Address): Promise<any> {
+        let org: Org | undefined = this;
+        if (!org.wallet || !org.wallet.currency) {
+            org = await Org.findOne({ where: { id: this.id }, relations: ["depositAddress"] });
+        }
+        if (org) {
+            let foundDepositAddress = org.depositAddress.find((item) => item.currency === data.currency);
+            if (foundDepositAddress) {
+                foundDepositAddress.address = data.address;
+                return foundDepositAddress.save();
+            } else {
+                return await DepositAddress.addNewAddress(data, org);
+            }
+        }
     }
 }

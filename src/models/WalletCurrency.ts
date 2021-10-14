@@ -55,4 +55,12 @@ export class WalletCurrency extends BaseEntity {
         if (wallet) currency.wallet = wallet;
         return currency;
     }
+
+    public static async addNewWalletCurrency(type: string, wallet?: Wallet, balance?: number) {
+        const currency = new WalletCurrency();
+        currency.type = type;
+        if (wallet) currency.wallet = wallet;
+        if (balance) currency.balance = new BigNumber(balance);
+        return currency.save();
+    }
 }

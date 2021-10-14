@@ -1,3 +1,4 @@
+import { Address } from "@tatumio/tatum";
 import {
     BaseEntity,
     Column,
@@ -32,11 +33,12 @@ export class DepositAddress extends BaseEntity {
     public asV1() {
         const returnValue: DepositAddress = {
             ...this,
+            org: this.org.asV1(),
         };
         return returnValue;
     }
 
-    public static async addNewAddress(data: any, org: Org): Promise<DepositAddress> {
+    public static async addNewAddress(data: Address, org: Org): Promise<DepositAddress> {
         let address = new DepositAddress();
         address.address = data.address;
         address.currency = data.currency;
