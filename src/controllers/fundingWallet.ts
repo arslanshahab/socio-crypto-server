@@ -1,6 +1,7 @@
 import { Admin } from "../models/Admin";
 import { concat } from "lodash";
 import { TatumClient } from "../clients/tatumClient";
+import { formatFloat } from "../util/helpers";
 
 export const get = async (parent: any, args: any, context: { user: any }) => {
     const { id } = context.user;
@@ -13,14 +14,19 @@ export const get = async (parent: any, args: any, context: { user: any }) => {
     if (!org) throw Error("org not found");
     const wallet = org.wallet.asV1();
     const currencies = wallet.currency.map((item) => ({
-        balance: parseFloat(item.balance.toString()),
+        balance: formatFloat(item.balance.toString(), 8),
         type: item.type,
     }));
     const tatumAccountIds = org.tatumAccount.map((item) => item.accountId);
-    const tatumAccountBalances = await TatumClient.getBalanceOfAccountList(tatumAccountIds);
-    console.log(tatumAccountBalances);
-    const balances = org.tatumAccount.map((item) => ({ balance: parseFloat("0"), type: item.currency }));
-    const all = concat(currencies, balances);
+    const tatumAccountBalances = await TatumClient.getBalanceForAccountList(tatumAccountIds);
+    const tatumCurrencies = org.tatumAccount.map((currencyItem) => {
+        const balance = tatumAccountBalances.find((balanceItem) => currencyItem.accountId === balanceItem.accountId);
+        return {
+            balance: formatFloat(balance.availableBalance, 8),
+            type: currencyItem.currency,
+        };
+    });
+    const all = concat(currencies, tatumCurrencies);
     return {
         ...wallet,
         currency: all,
