@@ -1,11 +1,34 @@
 import { Admin } from "../models/Admin";
-import { Org } from "../models/Org";
+import { concat } from "lodash";
+import { TatumClient } from "../clients/tatumClient";
+import { formatFloat } from "../util/helpers";
 
 export const get = async (parent: any, args: any, context: { user: any }) => {
     const { id } = context.user;
-    const admin = await Admin.findOne({ where: { firebaseId: id } });
-    if (!admin) throw new Error("user not found");
-    const org = await Org.getByAdminId(admin.id);
+    const admin = await Admin.findOne({
+        where: { firebaseId: id },
+        relations: ["org", "org.wallet", "org.tatumAccount"],
+    });
+    if (!admin) throw new Error("Admin not found");
+    const org = admin.org;
     if (!org) throw Error("org not found");
-    return org.wallet.asV1();
+    const wallet = org.wallet.asV1();
+    const currencies = wallet.currency.map((item) => ({
+        balance: formatFloat(item.balance.toString(), 8),
+        type: item.type,
+    }));
+    const tatumAccountIds = org.tatumAccount.map((item) => item.accountId);
+    const tatumAccountBalances = await TatumClient.getBalanceForAccountList(tatumAccountIds);
+    const tatumCurrencies = org.tatumAccount.map((currencyItem) => {
+        const balance = tatumAccountBalances.find((balanceItem) => currencyItem.accountId === balanceItem.accountId);
+        return {
+            balance: formatFloat(balance.availableBalance, 8),
+            type: currencyItem.currency,
+        };
+    });
+    const all = concat(currencies, tatumCurrencies);
+    return {
+        ...wallet,
+        currency: all,
+    };
 };

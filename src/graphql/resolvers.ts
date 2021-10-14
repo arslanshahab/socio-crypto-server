@@ -81,6 +81,7 @@ export const resolvers = {
         removeEthereumAddress: externalWallet.remove,
         uploadProfilePicture: userController.uploadProfilePicture,
         placeStoreOrder: xoxodayController.placeOrder,
+        withdrawFunds: tatumController.withdrawFunds,
     },
 };
 

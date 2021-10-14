@@ -249,4 +249,16 @@ export class Transfer extends BaseEntity {
         transfer.rafflePrize = prize;
         return transfer;
     }
+
+    public static async addTatumDeposit(data: any) {
+        const transfer = new Transfer();
+        transfer.action = "deposit";
+        transfer.status = "SUCCEEDED";
+        if (data.amount) transfer.amount = new BN(data.amount);
+        if (data.txId) transfer.transactionHash = data.txId;
+        if (data.currency) transfer.currency = data.currency;
+        if (data.wallet) transfer.wallet = data.wallet;
+        if (data.org) transfer.org = data.org;
+        return transfer.save();
+    }
 }

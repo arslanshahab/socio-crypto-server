@@ -1,4 +1,13 @@
-import { PrimaryGeneratedColumn, Entity, BaseEntity, CreateDateColumn, UpdateDateColumn, Column } from "typeorm";
+import {
+    PrimaryGeneratedColumn,
+    Entity,
+    BaseEntity,
+    CreateDateColumn,
+    UpdateDateColumn,
+    Column,
+    ManyToOne,
+} from "typeorm";
+import { Org } from "./Org";
 
 @Entity()
 export class TatumAccount extends BaseEntity {
@@ -13,6 +22,12 @@ export class TatumAccount extends BaseEntity {
 
     @Column({ nullable: false })
     public accountingCurrency: string;
+
+    @Column({ nullable: false })
+    public address: string;
+
+    @ManyToOne((_type) => Org, (org) => org.tatumAccount)
+    public org: Org;
 
     @CreateDateColumn()
     public createdAt: Date;
@@ -31,6 +46,8 @@ export class TatumAccount extends BaseEntity {
         account.accountId = data.id;
         account.currency = data.currency;
         account.accountingCurrency = data.accountingCurrency;
+        account.address = data.address;
+        account.org = data.org;
         return await TatumAccount.save(account);
     }
 }

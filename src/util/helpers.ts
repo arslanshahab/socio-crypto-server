@@ -4,6 +4,16 @@ import { FactorGeneration, KycUser } from "../types";
 import { Factor } from "../models/Factor";
 import { SupportedCountryType } from "../types";
 
+export const formatFloat = (val: any, decimals: number): string => {
+    if (!val) {
+        return "0";
+    }
+    if (typeof val === "string") {
+        val = parseFloat(val);
+    }
+    return val.toFixed(decimals);
+};
+
 export const getBase64FileExtension = (fileString: string) => {
     if (fileString === "") throw new Error("invalid fileString uploaded");
     return fileString.split(":")[1].split(";")[0];

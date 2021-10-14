@@ -81,7 +81,7 @@ const prepareWeeklyRewardResponse = async (user: User, data: WeeklyReward[]): Pr
         loginReward: loginReward ? parseInt(loginReward.coiinAmount) : 0,
         nextLoginReward: nextReward.toString(),
         participationReward: participationReward ? parseInt(participationReward.coiinAmount) : 0,
-        participationId: participationReward ? participationReward.participant.id : "",
+        participationId: "",
         nextParticipationReward: nextReward.toString(),
         participationRewardRedeemed: participationReward ? true : false,
         participationRedemptionDate: participationReward ? participationReward.createdAt.toString() : "",

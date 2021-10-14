@@ -23,7 +23,7 @@ import { ApolloServer } from "apollo-server-express";
 import { typeDefs } from "./graphql/schema";
 import { ApolloServerPlugin } from "apollo-server-plugin-base";
 import { initXoxoday, getXoxodayFilters } from "./controllers/xoxoday";
-import { initWallet } from "./controllers/tatum";
+import { initWallet, saveWallet } from "./controllers/tatum";
 
 const { NODE_ENV = "development" } = process.env;
 
@@ -119,6 +119,7 @@ export class Application {
         this.app.post("/v1/payouts", paypalWebhook);
         this.app.post("/v1/xoxoday", initXoxoday);
         this.app.post("/v1/tatum/initWallet", initWallet);
+        this.app.post("/v1/tatum/saveWallet", saveWallet);
         this.app.get("/v1/xoxoday/filters", getXoxodayFilters);
         this.app.use(
             "/v1/dragonfactor/login",
