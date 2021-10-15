@@ -4,7 +4,6 @@ import { Admin } from "../models/Admin";
 import { asyncHandler } from "../util/helpers";
 import { Request, Response } from "express";
 import { TatumWallet } from "../models/TatumWallet";
-import { Secrets } from "../util/secrets";
 import { User } from "../models/User";
 import { Org } from "../models/Org";
 import { S3Client } from "../clients/s3";
@@ -22,7 +21,7 @@ export const initWallet = asyncHandler(async (req: Request, res: Response) => {
 export const saveWallet = asyncHandler(async (req: Request, res: Response) => {
     try {
         let { mnemonic, secret, privateKey, xpub, address, enabled, currency, token } = req.body;
-        if (!token || token !== Secrets.raiinmakerApiToken) throw new Error("Invalid Token");
+        if (!token || token !== process.env.RAIINMAKER_DEV_TOKEN) throw new Error("Invalid Token");
         currency = currency.toUpperCase();
         const foundWallet = await TatumWallet.findOne({ where: { currency: currency } });
         if (foundWallet) throw new Error(`Wallet already exists for currency: ${currency}`);
