@@ -106,6 +106,9 @@ spec:
             - name: tatum
               mountPath: "/var/secrets/tatum"
               readOnly: true
+            - name: tatum
+              mountPath: "/var/secrets/raiinmaker-tokens"
+              readOnly: true
           resources:
             {{- toYaml .Values.server.resources | nindent 12 }}
       volumes:
@@ -145,6 +148,9 @@ spec:
         - name: tatum
           secret:
             secretName: tatum
+        - name: raiinmaker-tokens
+          secret:
+            secretName: raiinmaker-tokens
 ---
 apiVersion: apps/v1
 kind: Deployment
