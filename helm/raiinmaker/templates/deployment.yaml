@@ -148,9 +148,6 @@ spec:
         - name: tatum
           secret:
             secretName: tatum
-        - name: rm-tokens
-          secret:
-            secretName: rm-tokens
 ---
 apiVersion: apps/v1
 kind: Deployment
