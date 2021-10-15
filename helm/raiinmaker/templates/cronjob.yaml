@@ -66,7 +66,7 @@ spec:
                   mountPath: "/var/secrets/tatum"
                   readOnly: true
                 - name: tatum
-                  mountPath: "/var/secrets/raiinmaker-tokens"
+                  mountPath: "/var/secrets/rm-tokens"
                   readOnly: true
               resources:
                 requests:
@@ -113,9 +113,9 @@ spec:
             - name: tatum
               secret:
                 secretName: tatum
-            - name: raiinmaker-tokens
+            - name: rm-tokens
               secret:
-                secretName: raiinmaker-tokens
+                secretName: rm-tokens
 ---
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -185,7 +185,7 @@ spec:
                   mountPath: "/var/secrets/tatum"
                   readOnly: true
                 - name: tatum
-                  mountPath: "/var/secrets/raiinmaker-tokens"
+                  mountPath: "/var/secrets/rm-tokens"
                   readOnly: true
               resources:
                 requests:
@@ -232,9 +232,9 @@ spec:
             - name: tatum
               secret:
                 secretName: tatum
-            - name: raiinmaker-tokens
+            - name: rm-tokens
               secret:
-                secretName: raiinmaker-tokens
+                secretName: rm-tokens
 ---
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -307,7 +307,7 @@ spec:
                   mountPath: "/var/secrets/tatum"
                   readOnly: true
                 - name: tatum
-                  mountPath: "/var/secrets/raiinmaker-tokens"
+                  mountPath: "/var/secrets/rm-tokens"
                   readOnly: true
               resources:
                 requests:
@@ -354,9 +354,9 @@ spec:
             - name: tatum
               secret:
                 secretName: tatum
-            - name: raiinmaker-tokens
+            - name: rm-tokens
               secret:
-                secretName: raiinmaker-tokens
+                secretName: rm-tokens
 ---
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -429,7 +429,7 @@ spec:
                   mountPath: "/var/secrets/tatum"
                   readOnly: true
                 - name: tatum
-                  mountPath: "/var/secrets/raiinmaker-tokens"
+                  mountPath: "/var/secrets/rm-tokens"
                   readOnly: true
               resources:
                 requests:
@@ -476,6 +476,6 @@ spec:
             - name: tatum
               secret:
                 secretName: tatum
-            - name: raiinmaker-tokens
+            - name: rm-tokens
               secret:
-                secretName: raiinmaker-tokens
+                secretName: rm-tokens
