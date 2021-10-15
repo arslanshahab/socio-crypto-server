@@ -56,6 +56,7 @@ data:
         TATUM_RETRY_DELAY: "1000"
         TATUM_RETRIES: "5"
         ETHEREUM_DEPOSIT_ADDRESS: "0x275EE6238D103fDBE49d4cF6358575aA914F8654"
+        RAIINMAKER_DEV_TOKEN: "0dfdd4-e5a5a3-c657fc-36415b-116af1"
 
 postgresql:
     existingSecret: "raiinmaker"
