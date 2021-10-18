@@ -34,7 +34,7 @@ export class TatumWallet extends BaseEntity {
 
     public static async addTatumWallet(data: any): Promise<TatumWallet> {
         let account = new TatumWallet();
-        account.enabled = data.enabled || false;
+        account.enabled = true;
         account.currency = data.currency || "";
         account.xpub = data.xpub || "";
         account.address = data.address || "";
