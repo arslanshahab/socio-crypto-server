@@ -24,6 +24,7 @@ import { NotificationSettings } from "./NotificationSettings";
 import { Admin } from "./Admin";
 import { ExternalAddress } from "./ExternalAddress";
 import { WeeklyReward } from "./WeeklyReward";
+import { TatumAccount } from "./TatumAccount";
 
 @Entity()
 export class User extends BaseEntity {
@@ -42,7 +43,7 @@ export class User extends BaseEntity {
     @OneToMany((_type) => SocialPost, (posts) => posts.user)
     posts: SocialPost[];
 
-    @Column({nullable: true})
+    @Column({ nullable: true })
     public lastLogin: Date;
 
     @CreateDateColumn()
@@ -57,6 +58,9 @@ export class User extends BaseEntity {
         (participant) => participant.user
     )
     campaigns: Participant[];
+
+    @OneToMany((_type) => TatumAccount, (account) => account.user)
+    public tatumAccounts: TatumAccount[];
 
     @OneToOne(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars

@@ -19,8 +19,7 @@ export class TatumClient {
     public static async getAllCurrencies(): Promise<string[]> {
         try {
             const wallets = await TatumWallet.find({ where: { enabled: true } });
-            const currencies = wallets.map((item) => item.currency);
-            return currencies;
+            return wallets.map((item) => item.currency);
         } catch (error) {
             console.log(error);
             throw new Error(error.message);

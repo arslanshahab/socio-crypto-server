@@ -8,6 +8,13 @@ import {
     ManyToOne,
 } from "typeorm";
 import { Org } from "./Org";
+import { Account, Address } from "@tatumio/tatum";
+import { User } from "./User";
+
+interface NewAccountParams {
+    org?: Org;
+    user?: User;
+}
 
 @Entity()
 export class TatumAccount extends BaseEntity {
@@ -21,13 +28,22 @@ export class TatumAccount extends BaseEntity {
     public currency: string;
 
     @Column({ nullable: false })
-    public accountingCurrency: string;
-
-    @Column({ nullable: false })
     public address: string;
 
-    @ManyToOne((_type) => Org, (org) => org.tatumAccount)
+    @Column({ nullable: true })
+    public memo: string;
+
+    @Column({ nullable: true })
+    public message: string;
+
+    @Column({ nullable: true })
+    public destinationTag: number;
+
+    @ManyToOne((_type) => Org, (org) => org.tatumAccounts)
     public org: Org;
+
+    @ManyToOne((_type) => User, (user) => user.tatumAccounts)
+    public user: User;
 
     @CreateDateColumn()
     public createdAt: Date;
@@ -41,13 +57,16 @@ export class TatumAccount extends BaseEntity {
         };
     }
 
-    public static async addAccount(data: any): Promise<TatumAccount> {
+    public static async addAccount(data: NewAccountParams & Account & Address): Promise<TatumAccount> {
+        console.log(data);
         let account = new TatumAccount();
         account.accountId = data.id;
         account.currency = data.currency;
-        account.accountingCurrency = data.accountingCurrency;
         account.address = data.address;
-        account.org = data.org;
+        if (data.memo) account.memo = data.memo;
+        if (data.message) account.message = data.message;
+        if (data.destinationTag) account.destinationTag = data.destinationTag;
+        if (data.org) account.org = data.org;
         return await TatumAccount.save(account);
     }
 }
