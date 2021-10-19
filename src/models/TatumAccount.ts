@@ -10,17 +10,6 @@ import {
 import { Org } from "./Org";
 import { User } from "./User";
 
-interface NewAccountParams {
-    org?: Org;
-    user?: User;
-    id: string;
-    currency: string;
-    address: string;
-    memo: string;
-    message: string;
-    destinationTag: number;
-}
-
 @Entity()
 export class TatumAccount extends BaseEntity {
     @PrimaryGeneratedColumn("uuid")
@@ -62,7 +51,7 @@ export class TatumAccount extends BaseEntity {
         };
     }
 
-    public static async addAccount(data: NewAccountParams): Promise<TatumAccount> {
+    public static async addAccount(data: any): Promise<TatumAccount> {
         console.log(data);
         let account = new TatumAccount();
         account.accountId = data.id;
