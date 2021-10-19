@@ -44,7 +44,7 @@ export class Org extends BaseEntity {
     public wallet: Wallet;
 
     @OneToMany((_type) => TatumAccount, (account) => account.org)
-    public tatumAccount: TatumAccount[];
+    public tatumAccounts: TatumAccount[];
 
     @CreateDateColumn()
     public createdAt: Date;

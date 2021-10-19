@@ -194,6 +194,9 @@ export const typeDefs = gql`
         currency: String
         address: String
         fromTatum: Boolean
+        memo: String
+        message: String
+        destinationTag: String
     }
 
     type RedemptionRequirements {
