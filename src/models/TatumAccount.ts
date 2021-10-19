@@ -8,12 +8,17 @@ import {
     ManyToOne,
 } from "typeorm";
 import { Org } from "./Org";
-import { Account, Address } from "@tatumio/tatum";
 import { User } from "./User";
 
 interface NewAccountParams {
     org?: Org;
     user?: User;
+    id: string;
+    currency: string;
+    address: string;
+    memo: string;
+    message: string;
+    destinationTag: number;
 }
 
 @Entity()
@@ -57,7 +62,7 @@ export class TatumAccount extends BaseEntity {
         };
     }
 
-    public static async addAccount(data: NewAccountParams & Account & Address): Promise<TatumAccount> {
+    public static async addAccount(data: NewAccountParams): Promise<TatumAccount> {
         console.log(data);
         let account = new TatumAccount();
         account.accountId = data.id;
