@@ -13,7 +13,6 @@ export const get = async (parent: any, args: any, context: { user: any }) => {
     const org = admin.org;
     if (!org) throw Error("org not found");
     const wallet = org.wallet.asV1();
-    console.log(wallet);
     const currencies = wallet.currency.map((item) => ({
         balance: formatFloat(item.balance.toString(), 8),
         type: item.type,
