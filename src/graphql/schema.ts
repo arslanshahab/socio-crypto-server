@@ -13,7 +13,7 @@ export const typeDefs = gql`
             endDate: String!
             description: String
             instructions: String
-            cryptoId: String
+            symbol: String
             company: String
             algorithm: String!
             requirements: JSON
@@ -39,7 +39,7 @@ export const typeDefs = gql`
             endDate: String!
             description: String
             instructions: String
-            cryptoId: String
+            symbol: String
             company: String
             algorithm: String!
             requirements: JSON
