@@ -89,7 +89,7 @@ export const createNewCampaign = async (
         keywords: string[];
         type: string;
         rafflePrize: RafflePrizeStructure;
-        cryptoId: string;
+        symbol: string;
         campaignType: string;
         socialMediaType: string[];
         campaignMedia: CampaignChannelMedia[];
@@ -116,7 +116,7 @@ export const createNewCampaign = async (
         keywords,
         type = "crypto",
         rafflePrize,
-        cryptoId,
+        symbol,
         campaignType,
         socialMediaType,
         campaignMedia,
@@ -138,7 +138,7 @@ export const createNewCampaign = async (
     let cryptoCurrency;
     if (type === "crypto") {
         const walletCurrency = await WalletCurrency.findOne({
-            where: { wallet: org.wallet, id: cryptoId },
+            where: { wallet: org.wallet, type: symbol.toLowerCase() },
         });
         if (!walletCurrency) throw new Error("currency not found in wallet");
         cryptoCurrency = await CryptoCurrency.findOne({
@@ -228,7 +228,7 @@ export const updateCampaign = async (
         keywords: string[];
         type: string;
         rafflePrize: RafflePrizeStructure;
-        cryptoId: string;
+        symbol: string;
         campaignType: string;
         socialMediaType: string[];
         campaignMedia: CampaignChannelMedia[];
@@ -242,7 +242,6 @@ export const updateCampaign = async (
         name,
         beginDate,
         endDate,
-        coiinTotal,
         target,
         description,
         instructions,
@@ -273,7 +272,7 @@ export const updateCampaign = async (
     let raffleImageSignedURL = "";
     let mediaUrls: any = [];
     if (name) campaign.name = name;
-    if (coiinTotal) campaign.coiinTotal = new BN(coiinTotal);
+    // if (coiinTotal) campaign.coiinTotal = new BN(coiinTotal);
     if (target) campaign.target = target;
     if (beginDate) campaign.beginDate = new Date(beginDate);
     if (endDate) campaign.endDate = new Date(endDate);

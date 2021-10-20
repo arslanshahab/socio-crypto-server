@@ -197,7 +197,6 @@ export class Campaign extends BaseEntity {
     }
 
     public asV1() {
-        console.log({ ...this });
         const returnedCampaign: Campaign = {
             ...this,
             totalParticipationScore: parseFloat(
