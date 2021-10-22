@@ -5,8 +5,8 @@ import { asyncHandler } from "../util/helpers";
 import { Request, Response } from "express";
 import { TatumWallet } from "../models/TatumWallet";
 import { User } from "../models/User";
-import { Org } from "../models/Org";
 import { S3Client } from "../clients/s3";
+import { findOrCreateLedgerAccount } from "./controllerHelpers";
 // import { TransactionType } from "@tatumio/tatum";
 
 export const initWallet = asyncHandler(async (req: Request, res: Response) => {
@@ -156,23 +156,5 @@ export const withdrawFunds = async (
     } catch (error) {
         console.log("ERROR----", error);
         return error;
-    }
-};
-
-const findOrCreateLedgerAccount = async (currency: string, org: Org): Promise<TatumAccount> => {
-    try {
-        let tatumAccount = org.tatumAccounts.find((item) => item.currency === currency);
-        if (!tatumAccount) {
-            const newTatumAccount = await TatumClient.createLedgerAccount(currency);
-            const newDepositAddress = await TatumClient.generateDepositAddress(newTatumAccount.id);
-            tatumAccount = await TatumAccount.addAccount({
-                ...newTatumAccount,
-                ...newDepositAddress,
-                org: org,
-            });
-        }
-        return tatumAccount;
-    } catch (error) {
-        throw new Error(error.message);
     }
 };

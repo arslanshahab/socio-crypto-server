@@ -30,12 +30,11 @@ import { RafflePrize } from "../models/RafflePrize";
 import { SesClient } from "../clients/ses";
 import { decrypt } from "../util/crypto";
 import { Escrow } from "../models/Escrow";
-import { WalletCurrency } from "../models/WalletCurrency";
-import { CryptoCurrency } from "../models/CryptoCurrency";
 import { getTokenPriceInUsd } from "../clients/ethereum";
 import { CampaignChannelTemplate } from "../types.d";
 import { CampaignMedia } from "../models/CampaignMedia";
 import { CampaignTemplate } from "../models/CampaignTemplate";
+import { isSupportedCurrency } from "./controllerHelpers";
 
 const validator = new Validator();
 
@@ -89,7 +88,7 @@ export const createNewCampaign = async (
         keywords: string[];
         type: string;
         rafflePrize: RafflePrizeStructure;
-        symbol: string;
+        currency: string;
         campaignType: string;
         socialMediaType: string[];
         campaignMedia: CampaignChannelMedia[];
@@ -116,7 +115,7 @@ export const createNewCampaign = async (
         keywords,
         type = "crypto",
         rafflePrize,
-        symbol,
+        currency,
         campaignType,
         socialMediaType,
         campaignMedia,
@@ -132,19 +131,14 @@ export const createNewCampaign = async (
     const campaignCompany = role === "admin" ? args.company : company;
     const org = await Org.findOne({
         where: { name: company },
-        relations: ["wallet"],
+        relations: ["wallet", "wallet.currency", "tatumAccounts"],
     });
     if (!org) throw new Error("org not found");
-    let cryptoCurrency;
     if (type === "crypto") {
-        const walletCurrency = await WalletCurrency.findOne({
-            where: { wallet: org.wallet, type: symbol.toLowerCase() },
-        });
-        if (!walletCurrency) throw new Error("currency not found in wallet");
-        cryptoCurrency = await CryptoCurrency.findOne({
-            where: { type: walletCurrency.type.toLowerCase() },
-        });
-        if (!cryptoCurrency) throw new Error("this currency is not supported");
+        const isCurrencySupported = await isSupportedCurrency(currency);
+        if (!isCurrencySupported) throw new Error("this currency is not supported");
+        const isWalletAvailable = await org.isCurrencyAdded(currency);
+        if (!isWalletAvailable) throw new Error("currency not found in wallet");
     }
     const campaign = Campaign.newCampaign(
         name,
@@ -155,6 +149,7 @@ export const createNewCampaign = async (
         description,
         instructions,
         campaignCompany,
+        currency,
         algorithm,
         tagline,
         requirements,
@@ -166,8 +161,7 @@ export const createNewCampaign = async (
         campaignType,
         socialMediaType,
         targetVideo,
-        org,
-        cryptoCurrency
+        org
     );
     await campaign.save();
     await CampaignMedia.saveMultipleMedias(campaignMedia, campaign);
@@ -233,10 +227,11 @@ export const updateCampaign = async (
         socialMediaType: string[];
         campaignMedia: CampaignChannelMedia[];
         campaignTemplates: CampaignChannelTemplate[];
+        currency: string;
     },
     context: { user: any }
 ) => {
-    checkPermissions({ hasRole: ["admin", "manager"] }, context);
+    const { role, company } = checkPermissions({ hasRole: ["admin", "manager"] }, context);
     const {
         id,
         name,
@@ -259,6 +254,7 @@ export const updateCampaign = async (
         socialMediaType,
         campaignMedia,
         campaignTemplates,
+        currency,
     } = args;
     validator.validateAlgorithmCreateSchema(JSON.parse(algorithm));
     if (!!requirements) validator.validateCampaignRequirementsSchema(requirements);
@@ -266,13 +262,24 @@ export const updateCampaign = async (
         if (!rafflePrize) throw new Error("must specify prize for raffle");
         validator.validateRafflePrizeSchema(rafflePrize);
     }
+    if (role === "admin" && !args.company) throw new Error("administrators need to specify a company in args");
+    const org = await Org.findOne({
+        where: { name: company },
+        relations: ["wallet", "wallet.currency", "tatumAccounts"],
+    });
+    if (!org) throw new Error("org not found");
+    if (type === "crypto") {
+        const isCurrencySupported = await isSupportedCurrency(currency);
+        if (!isCurrencySupported) throw new Error("this currency is not supported");
+        const isWalletAvailable = await org.isCurrencyAdded(currency);
+        if (!isWalletAvailable) throw new Error("currency not found in wallet");
+    }
     const campaign = await Campaign.findOne({ where: { id: id } });
     if (!campaign) throw new Error("campaign not found");
     let campaignImageSignedURL = "";
     let raffleImageSignedURL = "";
     let mediaUrls: any = [];
     if (name) campaign.name = name;
-    // if (coiinTotal) campaign.coiinTotal = new BN(coiinTotal);
     if (target) campaign.target = target;
     if (beginDate) campaign.beginDate = new Date(beginDate);
     if (endDate) campaign.endDate = new Date(endDate);
@@ -348,29 +355,23 @@ export const adminUpdateCampaignStatus = async (
     const { status, campaignId } = args;
     const campaign = await Campaign.findOne({
         where: { id: campaignId },
-        relations: ["org", "org.wallet", "crypto"],
+        relations: ["org", "org.wallet", "org.wallet.currency"],
     });
     if (!campaign) throw new Error("campaign not found");
+    if (!campaign.org) throw new Error("No organization found for campaign");
     switch (status) {
         case "APPROVED":
-            if (campaign.type == "raffle") {
+            if (campaign.type === "raffle") {
                 campaign.status = "APPROVED";
-                await campaign.save();
-                return true;
+                break;
             }
-            const walletCurrency = await WalletCurrency.getFundingWalletCurrency(
-                campaign.crypto.type,
-                campaign.org.wallet
-            );
-            if (walletCurrency.balance.lt(campaign.coiinTotal)) {
+            const walletBalance = await campaign.org.getAvailableBalance(campaign.currency);
+            if (walletBalance < campaign.coiinTotal.toNumber()) {
                 campaign.status = "INSUFFICIENT_FUNDS";
-            } else {
-                campaign.status = "APPROVED";
-                const escrow = Escrow.newCampaignEscrow(campaign, campaign.org.wallet);
-                walletCurrency.balance = walletCurrency.balance.minus(campaign.coiinTotal);
-                await walletCurrency.save();
-                await escrow.save();
+                break;
             }
+            campaign.status = "APPROVED";
+            await campaign.blockCampaignAmount(campaign.currency);
             break;
         case "DENIED":
             campaign.status = "DENIED";

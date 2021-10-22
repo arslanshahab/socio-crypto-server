@@ -13,7 +13,7 @@ export const typeDefs = gql`
             endDate: String!
             description: String
             instructions: String
-            symbol: String
+            currency: String
             company: String
             algorithm: String!
             requirements: JSON
@@ -39,7 +39,7 @@ export const typeDefs = gql`
             endDate: String!
             description: String
             instructions: String
-            symbol: String
+            currency: String
             company: String
             algorithm: String!
             requirements: JSON
@@ -514,6 +514,7 @@ export const typeDefs = gql`
         endDate: String
         coiinTotal: Float
         status: String
+        currency: String
         totalParticipationScore: Float
         target: String
         description: String

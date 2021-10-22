@@ -11,9 +11,14 @@ import {
     offchainStoreWithdrawal,
     getWithdrawals,
     offchainCompleteWithdrawal,
+    blockAmount,
+    deleteBlockedAmount,
+    getBlockedAmountsByAccountId,
 } from "@tatumio/tatum";
 import { TatumWallet } from "../models/TatumWallet";
 import { generateRandomId } from "../util/helpers";
+export const CAMPAIGN_CREATION_AMOUNT = "CAMPAIGN AMOUNT";
+export const CAMPAIGN_CREATION_FEE = "CAMPAIGN AMOUNT";
 
 export class TatumClient {
     public static async getAllCurrencies(): Promise<string[]> {
@@ -27,7 +32,7 @@ export class TatumClient {
     }
 
     public static async isCurrencySupported(currency: string): Promise<boolean> {
-        const foundCurrency = await TatumWallet.findOne({ where: { currency: currency, enabled: true } });
+        const foundCurrency = await TatumWallet.findOne({ where: { currency: currency.toUpperCase(), enabled: true } });
         return Boolean(foundCurrency);
     }
 
@@ -91,6 +96,40 @@ export class TatumClient {
                 response[responseIndex]["accountId"] = accounts[responseIndex];
             }
             return response;
+        } catch (error) {
+            console.log(error);
+            throw new Error(error.message);
+        }
+    }
+
+    public static async blockAccountBalance(accountId: string, amount: string, type: string) {
+        try {
+            process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
+            return await blockAmount(accountId, {
+                amount,
+                type,
+                description: "",
+            });
+        } catch (error) {
+            console.log(error);
+            throw new Error(error.message);
+        }
+    }
+
+    public static async unblockAccountBalance(blockageId: string) {
+        try {
+            process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
+            return await deleteBlockedAmount(blockageId);
+        } catch (error) {
+            console.log(error);
+            throw new Error(error.message);
+        }
+    }
+
+    public static async getBlockedBalanceForAccount(accountId: string, pageSize: number, offset: number) {
+        try {
+            process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
+            return await getBlockedAmountsByAccountId(accountId, pageSize, offset);
         } catch (error) {
             console.log(error);
             throw new Error(error.message);

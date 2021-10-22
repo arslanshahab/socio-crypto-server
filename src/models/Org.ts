@@ -14,8 +14,8 @@ import { Admin } from "./Admin";
 import { HourlyCampaignMetric } from "./HourlyCampaignMetric";
 import { CampaignStatus } from "../types";
 import { Wallet } from "./Wallet";
-import { WalletCurrency } from "./WalletCurrency";
 import { TatumAccount } from "../models/TatumAccount";
+import { TatumClient } from "../clients/tatumClient";
 
 @Entity()
 export class Org extends BaseEntity {
@@ -97,20 +97,53 @@ export class Org extends BaseEntity {
         return await this.createQueryBuilder("org").skip(skip).take(take).getMany();
     }
 
-    public async updateOrCreateBalance(symbol: string, operation: "add" | "subtract", amount: number): Promise<any> {
+    public async isCurrencyAdded(currency: string): Promise<boolean> {
+        let org: Org | undefined = this;
+        if (!org.wallet || !org.wallet.currency || !org.tatumAccounts) {
+            org = await Org.findOne({
+                where: { id: this.id },
+                relations: ["wallet", "wallet.currency", "tatumAccounts"],
+            });
+        }
+        if (org) {
+            const walletCurrency = org.wallet.currency.find((item) => item.type === currency.toLowerCase());
+            if (walletCurrency) return true;
+            const tatumAccount = org.tatumAccounts.find((item) => item.currency === currency.toUpperCase());
+            return Boolean(tatumAccount);
+        }
+        return false;
+    }
+
+    public async updateBalance(currency: string, operation: "add" | "subtract", amount: number): Promise<any> {
         let org: Org | undefined = this;
         if (!org.wallet || !org.wallet.currency) {
             org = await Org.findOne({ where: { id: this.id }, relations: ["wallet", "wallet.currency"] });
         }
         if (org) {
-            let assetBalance = org.wallet.currency.find((item) => item.type === symbol);
+            let assetBalance = org.wallet.currency.find((item) => item.type === currency.toLowerCase());
             if (assetBalance) {
                 assetBalance.balance =
                     operation === "add" ? assetBalance.balance.plus(amount) : assetBalance.balance.minus(amount);
                 return assetBalance.save();
-            } else {
-                return await WalletCurrency.addNewWalletCurrency(symbol, org.wallet, operation === "add" ? amount : 0);
             }
         }
+    }
+
+    public async getAvailableBalance(currency: string): Promise<number> {
+        let org: Org | undefined = this;
+        if (!org.wallet || !org.wallet.currency || !org.tatumAccounts) {
+            org = await Org.findOne({
+                where: { id: this.id },
+                relations: ["wallet", "wallet.currency", "tatumAccounts"],
+            });
+        }
+        if (org) {
+            const walletCurrency = org.wallet.currency.find((item) => item.type === currency.toLowerCase());
+            if (walletCurrency) return walletCurrency.balance.toNumber();
+            const tatumAccount = org.tatumAccounts.find((item) => item.currency === currency.toUpperCase());
+            const tatumBalance = await TatumClient.getAccountBalance(tatumAccount?.accountId || "");
+            return parseFloat(tatumBalance.availableBalance);
+        }
+        return 0;
     }
 }

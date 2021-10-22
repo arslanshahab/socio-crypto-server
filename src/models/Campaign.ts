@@ -27,6 +27,7 @@ import { Escrow } from "./Escrow";
 import { CryptoCurrency } from "./CryptoCurrency";
 import { CampaignMedia } from "./CampaignMedia";
 import { CampaignTemplate } from "./CampaignTemplate";
+import { TatumClient, CAMPAIGN_CREATION_AMOUNT } from "../clients/tatumClient";
 
 @Entity()
 export class Campaign extends BaseEntity {
@@ -44,6 +45,9 @@ export class Campaign extends BaseEntity {
 
     @Column({ nullable: false, default: "DEFAULT" })
     public status: CampaignStatus;
+
+    @Column({ nullable: false })
+    public currency: string;
 
     @Column({ type: "varchar", transformer: BigNumberEntityTransformer })
     public coiinTotal: BigNumber;
@@ -180,6 +184,7 @@ export class Campaign extends BaseEntity {
             return true;
         return false;
     }
+
     public static parseAlgorithm(algorithmEntity: AlgorithmSpecs) {
         const algorithm: { [key: string]: any } = algorithmEntity;
         for (const key in algorithm["pointValues"]) {
@@ -410,6 +415,7 @@ export class Campaign extends BaseEntity {
         description: string,
         instructions: string,
         company: string,
+        currency: string,
         algorithm: string,
         tagline: string,
         requirements: CampaignRequirementSpecs,
@@ -421,8 +427,7 @@ export class Campaign extends BaseEntity {
         campaignType: string,
         socialMediaType: string[],
         targetVideo?: string,
-        org?: Org,
-        crypto?: CryptoCurrency
+        org?: Org
     ): Campaign {
         const campaign = new Campaign();
         if (org) campaign.org = org;
@@ -431,6 +436,7 @@ export class Campaign extends BaseEntity {
         campaign.target = target;
         campaign.company = company;
         campaign.status = "PENDING";
+        campaign.currency = currency.toUpperCase();
         campaign.beginDate = new Date(beginDate);
         campaign.endDate = new Date(endDate);
         campaign.algorithm = JSON.parse(algorithm);
@@ -447,7 +453,35 @@ export class Campaign extends BaseEntity {
         if (suggestedPosts) campaign.suggestedPosts = suggestedPosts;
         if (suggestedTags) campaign.suggestedTags = suggestedTags;
         if (keywords) campaign.keywords = keywords;
-        if (crypto) campaign.crypto = crypto;
         return campaign;
+    }
+
+    public async blockCampaignAmount(currency: string): Promise<boolean> {
+        let campaign: Campaign | undefined = this;
+        if (!campaign.org || !campaign.org.wallet || !campaign.org.wallet.currency || !campaign.org.tatumAccounts) {
+            campaign = await Campaign.findOne({
+                where: { id: this.id },
+                relations: ["org", "org.wallet", "org.wallet.currency", "org.tatumAccounts"],
+            });
+        }
+        if (campaign) {
+            const walletCurrency = campaign.org.wallet.currency.find((item) => item.type === currency.toLowerCase());
+            if (walletCurrency) {
+                const escrow = Escrow.newCampaignEscrow(campaign, campaign.org.wallet);
+                await campaign.org.updateBalance(currency, "subtract", campaign.coiinTotal.toNumber());
+                await escrow.save();
+                return true;
+            }
+            const tatumAccount = campaign.org.tatumAccounts.find((item) => item.currency === currency);
+            if (tatumAccount) {
+                const blockageKey = `${CAMPAIGN_CREATION_AMOUNT}:${campaign.id}`;
+                await TatumClient.blockAccountBalance(
+                    tatumAccount.accountId,
+                    campaign.coiinTotal.toString(),
+                    blockageKey
+                );
+            }
+        }
+        return false;
     }
 }
