@@ -23,7 +23,14 @@ import { ApolloServer } from "apollo-server-express";
 import { typeDefs } from "./graphql/schema";
 import { ApolloServerPlugin } from "apollo-server-plugin-base";
 import { initXoxoday, getXoxodayFilters } from "./controllers/xoxoday";
-import { initWallet, saveWallet, getAccountTransactions, getAccountBalance } from "./controllers/tatum";
+import {
+    initWallet,
+    saveWallet,
+    getAccountTransactions,
+    getAccountBalance,
+    unblockAccountBalance,
+    listBlockedAmounts,
+} from "./controllers/tatum";
 
 const { NODE_ENV = "development" } = process.env;
 
@@ -121,6 +128,8 @@ export class Application {
         this.app.post("/v1/tatum/initWallet", initWallet);
         this.app.post("/v1/tatum/saveWallet", saveWallet);
         this.app.post("/v1/tatum/transactions", getAccountTransactions);
+        this.app.post("/v1/tatum/unblock", unblockAccountBalance);
+        this.app.post("/v1/tatum/blockedAmount/list", listBlockedAmounts);
         this.app.post("/v1/tatum/balance", getAccountBalance);
         this.app.get("/v1/xoxoday/filters", getXoxodayFilters);
         this.app.use(

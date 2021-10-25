@@ -371,7 +371,10 @@ export const adminUpdateCampaignStatus = async (
                 break;
             }
             campaign.status = "APPROVED";
-            await campaign.blockCampaignAmount(campaign.currency);
+            const blockageId = await campaign.blockCampaignAmount();
+            if (campaign.currency.toLowerCase() !== "coiin") {
+                campaign.tatumBlockageId = blockageId;
+            }
             break;
         case "DENIED":
             campaign.status = "DENIED";
@@ -591,10 +594,13 @@ export const payoutCampaignRewards = async (
             relations: ["participants", "prize", "org", "org.wallet", "escrow"],
         });
         let deviceIds;
-        switch (campaign.type) {
+        switch (campaign.type.toLowerCase()) {
             case "crypto":
-            case "coiin":
-                deviceIds = await payoutCoiinCampaignRewards(transactionalEntityManager, campaign, rejected);
+                if (campaign.currency.toLowerCase() === "coiin") {
+                    deviceIds = await payoutCoiinCampaignRewards(transactionalEntityManager, campaign, rejected);
+                } else {
+                    deviceIds = await payoutCryptoCampaignRewards(transactionalEntityManager, campaign, rejected);
+                }
                 break;
             case "raffle":
                 deviceIds = await payoutRaffleCampaignRewards(transactionalEntityManager, campaign, rejected);
@@ -631,6 +637,17 @@ const payoutRaffleCampaignRewards = async (entityManager: EntityManager, campaig
     await SesClient.sendRafflePrizeRedemptionEmail(winner.user.id, decrypt(winner.email), campaign);
     await Dragonchain.ledgerRaffleCampaignAudit({ [winner.user.id]: campaign.prize.displayName }, [], campaign.id);
     return { [winner.user.id]: winner.user.profile.deviceToken };
+};
+
+const payoutCryptoCampaignRewards = async (campaign: Campaign, rejected: string[]) => {
+    const { currentTotal } = await getCurrentCampaignTier(null, { campaign });
+    const bigNumTotal = new BN(currentTotal);
+    const participants = await Participant.find({
+        where: { campaign },
+        relations: ["user", "user.tatumAccounts"],
+    });
+    let totalFee = new BN(0);
+    let totalPayout = new BN(0);
 };
 
 const payoutCoiinCampaignRewards = async (entityManager: EntityManager, campaign: Campaign, rejected: string[]) => {

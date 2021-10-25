@@ -17,8 +17,8 @@ import {
 } from "@tatumio/tatum";
 import { TatumWallet } from "../models/TatumWallet";
 import { generateRandomId } from "../util/helpers";
-export const CAMPAIGN_CREATION_AMOUNT = "CAMPAIGN AMOUNT";
-export const CAMPAIGN_CREATION_FEE = "CAMPAIGN AMOUNT";
+export const CAMPAIGN_CREATION_AMOUNT = "CAMPAIGN-AMOUNT";
+export const CAMPAIGN_CREATION_FEE = "CAMPAIGN-FEE";
 
 export class TatumClient {
     public static async getAllCurrencies(): Promise<string[]> {
@@ -108,7 +108,7 @@ export class TatumClient {
             return await blockAmount(accountId, {
                 amount,
                 type,
-                description: "",
+                description: type,
             });
         } catch (error) {
             console.log(error);

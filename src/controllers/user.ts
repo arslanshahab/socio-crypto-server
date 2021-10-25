@@ -14,13 +14,14 @@ import { HourlyCampaignMetric } from "../models/HourlyCampaignMetric";
 import { serverBaseUrl } from "../config";
 import { In } from "typeorm";
 import { rewardUserForParticipation } from "./weeklyReward";
+import { findOrCreateLedgerAccount } from "./controllerHelpers";
 
 export const participate = async (parent: any, args: { campaignId: string; email: string }, context: { user: any }) => {
     try {
         const { id } = context.user;
         const user = await User.findOne({
             where: { identityId: id },
-            relations: ["campaigns", "wallet"],
+            relations: ["campaigns", "wallet", "tatumAccounts"],
         });
 
         if (!user) throw new Error("user not found");
@@ -36,8 +37,8 @@ export const participate = async (parent: any, args: { campaignId: string; email
         if (await Participant.findOne({ where: { campaign, user } }))
             throw new Error("user already participating in this campaign");
 
+        await findOrCreateLedgerAccount(campaign.currency, user);
         const participant = Participant.newParticipant(user, campaign, args.email);
-        await participant.save();
         const url = `${serverBaseUrl}/v1/referral/${participant.id}`;
         participant.link = await TinyUrl.shorten(url);
         await HourlyCampaignMetric.upsert(campaign, campaign.org, "participate");

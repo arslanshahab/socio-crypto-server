@@ -48,6 +48,8 @@ export class TatumAccount extends BaseEntity {
     public asV1(): TatumAccount {
         return {
             ...this,
+            user: this.user ? this.user.asV1() : null,
+            org: this.org ? this.org.asV1() : null,
         };
     }
 
@@ -61,6 +63,7 @@ export class TatumAccount extends BaseEntity {
         if (data.message) account.message = data.message;
         if (data.destinationTag) account.destinationTag = data.destinationTag;
         if (data.org) account.org = data.org;
+        if (data.user) account.user = data.user;
         return await TatumAccount.save(account);
     }
 }

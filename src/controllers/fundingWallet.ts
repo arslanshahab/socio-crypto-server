@@ -22,7 +22,10 @@ export const get = async (parent: any, args: any, context: { user: any }) => {
             type: currencyItem.currency,
         };
     });
-    allCurrencies.unshift({ type: coiinCurrency?.type || "", balance: coiinCurrency?.balance.toString() || "" });
+    allCurrencies.unshift({
+        type: coiinCurrency?.type?.toUpperCase() || "",
+        balance: coiinCurrency?.balance?.toString() || "",
+    });
     return {
         ...wallet,
         currency: allCurrencies,
