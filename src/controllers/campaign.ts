@@ -35,6 +35,8 @@ import { CampaignChannelTemplate } from "../types.d";
 import { CampaignMedia } from "../models/CampaignMedia";
 import { CampaignTemplate } from "../models/CampaignTemplate";
 import { isSupportedCurrency } from "./controllerHelpers";
+import { TatumAccount } from "../models/TatumAccount";
+import { CAMPAIGN_FEE, CAMPAIGN_REWARD, TatumClient } from "../clients/tatumClient";
 
 const validator = new Validator();
 
@@ -591,7 +593,7 @@ export const payoutCampaignRewards = async (
         const { campaignId, rejected } = args;
         const campaign = await Campaign.findOneOrFail({
             where: { id: campaignId, company },
-            relations: ["participants", "prize", "org", "org.wallet", "escrow"],
+            relations: ["participants", "prize", "org", "org.wallet", "org.tatumAccounts", "escrow"],
         });
         let deviceIds;
         switch (campaign.type.toLowerCase()) {
@@ -640,14 +642,59 @@ const payoutRaffleCampaignRewards = async (entityManager: EntityManager, campaig
 };
 
 const payoutCryptoCampaignRewards = async (campaign: Campaign, rejected: string[]) => {
-    // const { currentTotal } = await getCurrentCampaignTier(null, { campaign });
-    // const bigNumTotal = new BN(currentTotal);
-    // const participants = await Participant.find({
-    //     where: { campaign },
-    //     relations: ["user", "user.tatumAccounts"],
-    // });
-    // let totalFee = new BN(0);
-    // let totalPayout = new BN(0);
+    const usersRewards: { [key: string]: BigNumber } = {};
+    const userDeviceIds: { [key: string]: string } = {};
+    const { currentTotal } = await getCurrentCampaignTier(null, { campaign });
+    const bigNumTotal = new BN(currentTotal);
+    const participants = await Participant.find({
+        where: { campaign },
+        relations: ["user", "user.tatumAccounts"],
+    });
+    let raiinmakerCampaignFee = new BN(0);
+    const raiinmakerAccount = await TatumAccount.findOne({
+        where: { org: await Org.findOne({ where: { name: "raiinmaker" } }), currency: campaign.currency },
+    });
+    const campaignAccount = campaign.org.tatumAccounts.find((item) => item.currency === campaign.currency);
+    for (let index = 0; index < participants.length; index++) {
+        const participant = await Participant.findOne({
+            where: { id: participants[index].id },
+            relations: ["user", "user.tatumAcounts"],
+        });
+        if (participant) {
+            userDeviceIds[participant.user.id] = participant.user.profile.deviceToken;
+            const participantShare = await calculateParticipantPayout(bigNumTotal, campaign, participant);
+            raiinmakerCampaignFee.plus(participantShare.multipliedBy(FEE_RATE));
+            participantShare.minus(participantShare.multipliedBy(FEE_RATE));
+            usersRewards[participant.user.id] = participantShare;
+        }
+    }
+    raiinmakerCampaignFee.plus(campaign.coiinTotal.multipliedBy(FEE_RATE));
+    if (campaignAccount && raiinmakerAccount) {
+        await TatumClient.unblockAccountBalance(campaign.tatumBlockageId);
+        let promiseArray = [];
+        for (let index = 0; index < participants.length; index++) {
+            const userAccount = participants[index].user.tatumAccounts.find(
+                (item) => item.currency === campaign.currency
+            );
+            if (userAccount) {
+                promiseArray.push(
+                    TatumClient.transferFunds(
+                        campaignAccount.accountId,
+                        userAccount.accountId,
+                        usersRewards[participants[index].user.id].toString(),
+                        `${CAMPAIGN_REWARD}:${campaign.id}`
+                    )
+                );
+            }
+        }
+        // transfer campaign fee to raiinmaker tatum account
+        await TatumClient.transferFunds(
+            campaignAccount.accountId,
+            raiinmakerAccount.accountId,
+            raiinmakerCampaignFee.toString(),
+            `${CAMPAIGN_FEE}:${campaign.id}`
+        );
+    }
 };
 
 const payoutCoiinCampaignRewards = async (entityManager: EntityManager, campaign: Campaign, rejected: string[]) => {

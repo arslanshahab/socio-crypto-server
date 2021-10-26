@@ -14,11 +14,13 @@ import {
     blockAmount,
     deleteBlockedAmount,
     getBlockedAmountsByAccountId,
+    storeTransaction,
 } from "@tatumio/tatum";
 import { TatumWallet } from "../models/TatumWallet";
 import { generateRandomId } from "../util/helpers";
 export const CAMPAIGN_CREATION_AMOUNT = "CAMPAIGN-AMOUNT";
-export const CAMPAIGN_CREATION_FEE = "CAMPAIGN-FEE";
+export const CAMPAIGN_FEE = "CAMPAIGN-FEE";
+export const CAMPAIGN_REWARD = "CAMPAIGN-REWARD";
 
 export class TatumClient {
     public static async getAllCurrencies(): Promise<string[]> {
@@ -96,6 +98,21 @@ export class TatumClient {
                 response[responseIndex]["accountId"] = accounts[responseIndex];
             }
             return response;
+        } catch (error) {
+            console.log(error);
+            throw new Error(error.message);
+        }
+    }
+
+    public static async transferFunds(
+        senderAccountId: string,
+        recipientAccountId: string,
+        amount: string,
+        recipientNote: string
+    ) {
+        try {
+            process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
+            return await storeTransaction({ senderAccountId, recipientAccountId, amount, recipientNote });
         } catch (error) {
             console.log(error);
             throw new Error(error.message);

@@ -89,7 +89,7 @@ export const trackAction = async (
 export const getParticipant = async (parent: any, args: { id: string }) => {
     const { id } = args;
     const where: { [key: string]: string } = { id };
-    const participant = await Participant.findOne({ where, relations: ["user"] });
+    const participant = await Participant.findOne({ where, relations: ["user", "user.tatumAccounts"] });
     if (!participant) throw new Error("participant not found");
     return participant.asV1();
 };

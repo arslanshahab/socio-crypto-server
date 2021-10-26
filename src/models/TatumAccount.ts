@@ -54,7 +54,6 @@ export class TatumAccount extends BaseEntity {
     }
 
     public static async addAccount(data: any): Promise<TatumAccount> {
-        console.log(data);
         let account = new TatumAccount();
         account.accountId = data.id;
         account.currency = data.currency;
