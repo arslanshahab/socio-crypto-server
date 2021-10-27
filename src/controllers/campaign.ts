@@ -694,6 +694,7 @@ const payoutCryptoCampaignRewards = async (campaign: Campaign, rejected: string[
             raiinmakerCampaignFee.toString(),
             `${CAMPAIGN_FEE}:${campaign.id}`
         );
+        await Promise.all(promiseArray);
     }
 };
 
