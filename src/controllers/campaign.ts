@@ -671,7 +671,9 @@ const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
                 const feeFromParticipant = participantShare.multipliedBy(FEE_RATE);
                 raiinmakerFee = raiinmakerFee.plus(feeFromParticipant);
                 participantShare = participantShare.minus(feeFromParticipant);
-                usersRewards[userData.id] = participantShare;
+                if (participantShare.isGreaterThan(0)) {
+                    usersRewards[userData.id] = participantShare;
+                }
             }
         }
         if (campaignAccount && raiinmakerAccount) {
