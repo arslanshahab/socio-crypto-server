@@ -52,11 +52,7 @@ export class User extends BaseEntity {
     @UpdateDateColumn()
     public updatedAt: Date;
 
-    @OneToMany(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => Participant,
-        (participant) => participant.user
-    )
+    @OneToMany((_type) => Participant, (participant) => participant.user)
     campaigns: Participant[];
 
     @OneToMany((_type) => TatumAccount, (account) => account.user)

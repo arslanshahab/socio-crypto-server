@@ -173,7 +173,7 @@ export class Org extends BaseEntity {
                 if (walletCurrency) return walletCurrency.balance.toNumber();
                 const tatumAccount = org.tatumAccounts.find((item) => item.currency === currency.toUpperCase());
                 const tatumBalance = await TatumClient.getAccountBalance(tatumAccount?.accountId || "");
-                return parseFloat(tatumBalance.availableBalance);
+                return parseFloat(tatumBalance.availableBalance || "0");
             }
             return 0;
         } catch (error) {

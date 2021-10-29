@@ -102,6 +102,17 @@ export const unblockAccountBalance = asyncHandler(async (req: Request, res: Resp
     }
 });
 
+export const blockAccountBalance = asyncHandler(async (req: Request, res: Response) => {
+    try {
+        const { id, amount, blockageKey, token } = req.body;
+        if (!token || token !== process.env.RAIINMAKER_DEV_TOKEN) throw new Error("Invalid Token");
+        const blockedAmount = await TatumClient.blockAccountBalance(id, amount, blockageKey);
+        res.status(200).json(blockedAmount);
+    } catch (error) {
+        res.status(200).json(error.message);
+    }
+});
+
 export const getSupportedCurrencies = async (parent: any, args: any, context: { user: any }) => {
     try {
         const { id } = context.user;

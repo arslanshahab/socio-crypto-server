@@ -601,7 +601,7 @@ export const payoutCampaignRewards = async (
                 if (campaign.currency.toLowerCase() === "coiin") {
                     deviceIds = await payoutCoiinCampaignRewards(transactionalEntityManager, campaign, rejected);
                 } else {
-                    deviceIds = await payoutCryptoCampaignRewards(campaign, rejected);
+                    deviceIds = await payoutCryptoCampaignRewards(campaign);
                 }
                 break;
             case "raffle":
@@ -641,60 +641,82 @@ const payoutRaffleCampaignRewards = async (entityManager: EntityManager, campaig
     return { [winner.user.id]: winner.user.profile.deviceToken };
 };
 
-const payoutCryptoCampaignRewards = async (campaign: Campaign, rejected: string[]) => {
-    const usersRewards: { [key: string]: BigNumber } = {};
-    const userDeviceIds: { [key: string]: string } = {};
-    const { currentTotal } = await getCurrentCampaignTier(null, { campaign });
-    const bigNumTotal = new BN(currentTotal);
-    const participants = await Participant.find({
-        where: { campaign },
-        relations: ["user", "user.tatumAccounts"],
-    });
-    let raiinmakerCampaignFee = new BN(0);
-    const raiinmakerAccount = await TatumAccount.findOne({
-        where: { org: await Org.findOne({ where: { name: "raiinmaker" } }), currency: campaign.currency },
-    });
-    const campaignAccount = campaign.org.tatumAccounts.find((item) => item.currency === campaign.currency);
-    for (let index = 0; index < participants.length; index++) {
-        const participant = await Participant.findOne({
-            where: { id: participants[index].id },
-            relations: ["user", "user.tatumAcounts"],
+const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
+    try {
+        const usersRewards: { [key: string]: BigNumber } = {};
+        const userDeviceIds: { [key: string]: string } = {};
+        const { currentTotal } = await getCurrentCampaignTier(null, { campaign });
+        let totalRewardAmount = new BN(currentTotal);
+        const participants = await Participant.find({
+            where: { campaign },
+            relations: ["user"],
         });
-        if (participant) {
-            userDeviceIds[participant.user.id] = participant.user.profile.deviceToken;
-            const participantShare = await calculateParticipantPayout(bigNumTotal, campaign, participant);
-            raiinmakerCampaignFee.plus(participantShare.multipliedBy(FEE_RATE));
-            participantShare.minus(participantShare.multipliedBy(FEE_RATE));
-            usersRewards[participant.user.id] = participantShare;
-        }
-    }
-    raiinmakerCampaignFee.plus(campaign.coiinTotal.multipliedBy(FEE_RATE));
-    if (campaignAccount && raiinmakerAccount) {
-        await TatumClient.unblockAccountBalance(campaign.tatumBlockageId);
-        let promiseArray = [];
+        let raiinmakerFee = new BN(0);
+        const campaignFee = totalRewardAmount.multipliedBy(FEE_RATE);
+        raiinmakerFee = raiinmakerFee.plus(campaignFee);
+        totalRewardAmount = totalRewardAmount.minus(campaignFee);
+        const raiinmakerAccount = await TatumAccount.findOne({
+            where: { org: await Org.findOne({ where: { name: "raiinmaker" } }), currency: campaign.currency },
+        });
+        const campaignAccount = campaign.org.tatumAccounts.find((item) => item.currency === campaign.currency);
         for (let index = 0; index < participants.length; index++) {
-            const userAccount = participants[index].user.tatumAccounts.find(
-                (item) => item.currency === campaign.currency
-            );
-            if (userAccount) {
-                promiseArray.push(
-                    TatumClient.transferFunds(
-                        campaignAccount.accountId,
-                        userAccount.accountId,
-                        usersRewards[participants[index].user.id].toString(),
-                        `${CAMPAIGN_REWARD}:${campaign.id}`
-                    )
-                );
+            const participant = participants[index];
+            const userData = await User.findOne({
+                where: { id: participant.user.id },
+                relations: ["profile"],
+            });
+            if (userData) {
+                userDeviceIds[userData.id] = userData.profile.deviceToken;
+                let participantShare = await calculateParticipantPayout(totalRewardAmount, campaign, participant);
+                const feeFromParticipant = participantShare.multipliedBy(FEE_RATE);
+                raiinmakerFee = raiinmakerFee.plus(feeFromParticipant);
+                participantShare = participantShare.minus(feeFromParticipant);
+                usersRewards[userData.id] = participantShare;
             }
         }
-        // transfer campaign fee to raiinmaker tatum account
-        await TatumClient.transferFunds(
-            campaignAccount.accountId,
-            raiinmakerAccount.accountId,
-            raiinmakerCampaignFee.toString(),
-            `${CAMPAIGN_FEE}:${campaign.id}`
-        );
-        await Promise.all(promiseArray);
+        if (campaignAccount && raiinmakerAccount) {
+            let promiseArray = [];
+            // unblock campaign funds so they can be used to distribute rewards
+            await TatumClient.unblockAccountBalance(campaign.tatumBlockageId);
+            for (let index = 0; index < participants.length; index++) {
+                const userData = await User.findOne({
+                    where: { id: participants[index].user.id },
+                    relations: ["tatumAccounts"],
+                });
+                if (userData?.tatumAccounts) {
+                    const userAccount = userData.tatumAccounts.find((item) => item.currency === campaign.currency);
+                    if (userAccount) {
+                        promiseArray.push(
+                            TatumClient.transferFunds(
+                                campaignAccount.accountId,
+                                userAccount.accountId,
+                                usersRewards[userData.id].toString(),
+                                `${CAMPAIGN_REWARD}:${campaign.id}`
+                            )
+                        );
+                    }
+                } else {
+                    throw new Error(`Tatum Accounts not found for user --- ${userData?.id}`);
+                }
+            }
+
+            // transfer campaign fee to raiinmaker tatum account
+            if (campaign.org.name !== "raiinmaker") {
+                await TatumClient.transferFunds(
+                    campaignAccount.accountId,
+                    raiinmakerAccount.accountId,
+                    raiinmakerFee.toString(),
+                    `${CAMPAIGN_FEE}:${campaign.id}`
+                );
+            }
+            await Promise.all(promiseArray);
+            campaign.audited = true;
+            await campaign.save();
+            return userDeviceIds;
+        }
+        throw new Error("There was an error auditing crypto campaign");
+    } catch (error) {
+        throw new Error(error.message);
     }
 };
 
