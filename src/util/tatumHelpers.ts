@@ -1,0 +1,79 @@
+import {
+    sendBitcoinOffchainTransaction,
+    sendEthOffchainTransaction,
+    sendLitecoinOffchainTransaction,
+    sendBitcoinCashOffchainTransaction,
+    sendAdaOffchainTransaction,
+    sendDogecoinOffchainTransaction,
+    sendXrpOffchainTransaction,
+    sendXlmOffchainTransaction,
+    sendBscOffchainTransaction,
+    sendCeloOffchainTransaction,
+    sendEgldOffchainTransaction,
+    sendTronOffchainTransaction,
+} from "@tatumio/tatum";
+
+export const performWithdraw = async (currency: string, body: any) => {
+    switch (currency.toUpperCase()) {
+        case "BTC":
+            return await sendBitcoinOffchainTransaction(false, body);
+        case "ETH":
+            return await sendEthOffchainTransaction(false, body);
+        case "XRP":
+            return await sendXrpOffchainTransaction(false, body);
+        case "XLM":
+            return await sendXlmOffchainTransaction(false, body);
+        case "BCH":
+            return await sendBitcoinCashOffchainTransaction(false, body);
+        case "LTC":
+            return await sendLitecoinOffchainTransaction(false, body);
+        case "FLOW":
+            throw new Error(`withdraws for FLOW are not supported at this moment. Be patient, we are working on it!`);
+        case "CELO":
+            return await sendCeloOffchainTransaction(false, body);
+        case "EGLD":
+            return await sendEgldOffchainTransaction(false, body);
+        case "TRON":
+            return await sendTronOffchainTransaction(false, body);
+        case "ADA":
+            return await sendAdaOffchainTransaction(false, body);
+        case "QTUM":
+            throw new Error(`withdraws for QTUM are not supported at this moment. Be patient, we are working on it!`);
+        case "BNB":
+            return await sendBscOffchainTransaction(false, body);
+        case "BSC":
+            return await sendBscOffchainTransaction(false, body);
+        case "DOGE":
+            return await sendDogecoinOffchainTransaction(false, body);
+        case "VET":
+            throw new Error(`withdraws for VET are not supported at this moment. Be patient, we are working on it!`);
+        case "ONE":
+            throw new Error(`withdraws for ONE are not supported at this moment. Be patient, we are working on it!`);
+        case "NEO":
+            throw new Error(`withdraws for NEO are not supported at this moment. Be patient, we are working on it!`);
+        case "BAT":
+            return await sendEthOffchainTransaction(false, body);
+        case "USDT":
+            return await sendEthOffchainTransaction(false, body);
+        case "WBTC":
+            return await sendEthOffchainTransaction(false, body);
+        case "USDC":
+            return await sendEthOffchainTransaction(false, body);
+        case "TUSD":
+            return await sendEthOffchainTransaction(false, body);
+        case "MKR":
+            return await sendEthOffchainTransaction(false, body);
+        case "LINK":
+            return await sendEthOffchainTransaction(false, body);
+        case "PAX":
+            return await sendEthOffchainTransaction(false, body);
+        case "PAXG":
+            return await sendEthOffchainTransaction(false, body);
+        case "UNI":
+            return await sendEthOffchainTransaction(false, body);
+        default:
+            throw new Error(
+                `withdraws for ${currency} are not supported at this moment. Be patient, we are working on it!`
+            );
+    }
+};

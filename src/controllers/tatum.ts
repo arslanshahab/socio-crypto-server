@@ -1,5 +1,4 @@
-import { TatumAccount } from "../models/TatumAccount";
-import { TatumClient } from "../clients/tatumClient";
+import { TatumClient, USER_WITHDRAW, RAIINMAKER_WITHDRAW, WithdrawDetails } from "../clients/tatumClient";
 import { Admin } from "../models/Admin";
 import { asyncHandler } from "../util/helpers";
 import { Request, Response } from "express";
@@ -113,6 +112,17 @@ export const blockAccountBalance = asyncHandler(async (req: Request, res: Respon
     }
 });
 
+export const getAllWithdrawls = asyncHandler(async (req: Request, res: Response) => {
+    try {
+        const { currency, status, pageSize, offset, token } = req.body;
+        if (!token || token !== process.env.RAIINMAKER_DEV_TOKEN) throw new Error("Invalid Token");
+        const list = await TatumClient.listWithdrawls(status, currency, pageSize, offset);
+        res.status(200).json(list);
+    } catch (error) {
+        res.status(200).json(error.message);
+    }
+});
+
 export const getSupportedCurrencies = async (parent: any, args: any, context: { user: any }) => {
     try {
         const { id } = context.user;
@@ -171,23 +181,35 @@ export const withdrawFunds = async (
         const { id } = context.user;
         const user = await User.findOne({
             where: { identityId: id },
-            relations: ["wallet", "wallet.currency"],
+            relations: ["tatumAccounts"],
         });
         if (!user) throw new Error("User not found");
         let { currency, address, amount } = args;
         currency = currency.toUpperCase();
-        const assetBalance = user.wallet.currency.find((item) => item.type === currency);
-        if (!assetBalance) throw new Error(`No such currency:${currency} in user wallet`);
-        if (assetBalance.balance.isLessThan(amount)) throw new Error(`Not enough funds in user account`);
-        const tatumAccount = await TatumAccount.findOne({ where: { currency: currency } });
-        if (!tatumAccount) throw new Error(`No account found for currency: ${currency}`);
-        await TatumClient.createWithdrawRequest(tatumAccount.accountId, address, amount);
+        if (!(await TatumClient.isCurrencySupported(currency)))
+            throw new Error(`currency ${currency} is not supported`);
+        const userAccount = user.tatumAccounts.find((item) => item.currency === currency);
+        if (!userAccount) throw new Error(`No such currency:${currency} in user wallet`);
+        const userAccountBalance = await TatumClient.getAccountBalance(userAccount.accountId);
+        if (parseFloat(userAccountBalance.availableBalance) < amount)
+            throw new Error(`Not enough funds in user account`);
+        let payload: WithdrawDetails = {
+            senderAccountId: userAccount.accountId,
+            paymentId: `${USER_WITHDRAW}:${user.id}`,
+            senderNote: RAIINMAKER_WITHDRAW,
+            address,
+            amount: amount.toString(),
+        };
+        await TatumClient.withdrawFundsToBlockchain(currency, payload);
         return {
             success: true,
-            message: "Withdraw request created",
+            message: "Withdraw completed successfully",
         };
     } catch (error) {
         console.log("ERROR----", error);
-        return error;
+        return {
+            success: false,
+            message: "There was an error performing your withdraw",
+        };
     }
 };

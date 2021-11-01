@@ -8,19 +8,30 @@ import {
     getAccountBalance,
     getTransactionsByAccount,
     TransactionFilter,
-    offchainStoreWithdrawal,
-    getWithdrawals,
-    offchainCompleteWithdrawal,
     blockAmount,
     deleteBlockedAmount,
     getBlockedAmountsByAccountId,
     storeTransaction,
+    getWithdrawals,
 } from "@tatumio/tatum";
 import { TatumWallet } from "../models/TatumWallet";
-import { generateRandomId } from "../util/helpers";
+import { S3Client } from "./s3";
+import { performWithdraw } from "../util/tatumHelpers";
+
 export const CAMPAIGN_CREATION_AMOUNT = "CAMPAIGN-AMOUNT";
 export const CAMPAIGN_FEE = "CAMPAIGN-FEE";
 export const CAMPAIGN_REWARD = "CAMPAIGN-REWARD";
+export const USER_WITHDRAW = "USER-WITHDRAW";
+export const RAIINMAKER_WITHDRAW = "RAIINMAKER-WITHDRAW";
+
+export interface WithdrawDetails {
+    senderAccountId: string;
+    address: string;
+    amount: string;
+    paymentId: string;
+    senderNote: string;
+    fee?: string;
+}
 
 export class TatumClient {
     public static async getAllCurrencies(): Promise<string[]> {
@@ -163,36 +174,22 @@ export class TatumClient {
         }
     }
 
-    public static async createWithdrawRequest(accountId: string, address: string, amount: number) {
+    public static async withdrawFundsToBlockchain(currency: string, data: WithdrawDetails) {
         try {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
-            return await offchainStoreWithdrawal({
-                senderAccountId: accountId,
-                address: address,
-                amount: amount,
-                paymentId: generateRandomId(),
-                senderNote: "Withdraw from Raiinmaker",
-            });
+            const walletKeys = await S3Client.getTatumWalletKeys(currency);
+            const body = { ...walletKeys, ...data };
+            return await performWithdraw(currency, body);
         } catch (error) {
             console.log(error);
             throw new Error(error.message);
         }
     }
 
-    public static async getPendingWithdrawRequests(pageSize: number, offset: number) {
+    public static async listWithdrawls(status: string, currency: string, pageSize = 50, offset = 0) {
         try {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
-            return await getWithdrawals("InProgress", "", pageSize, offset);
-        } catch (error) {
-            console.log(error);
-            throw new Error(error.message);
-        }
-    }
-
-    public static async completeWithdraw(id: string, txId: string) {
-        try {
-            process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
-            return await offchainCompleteWithdrawal(id, txId);
+            return await getWithdrawals(status, currency, pageSize, offset);
         } catch (error) {
             console.log(error);
             throw new Error(error.message);

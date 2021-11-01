@@ -124,7 +124,7 @@ export const typeDefs = gql`
         deleteCryptoFromWallet(id: String!): String
         removePaymentMethod(paymentMethodId: String): Boolean
         placeStoreOrder(cart: [JSON], email: String): JSON
-        withdrawFunds(currency: String, address: String, amount: Float): JSON
+        withdrawFunds(currency: String, address: String, amount: Float): WithdrawFundsResponse
     }
 
     type Query {
@@ -197,6 +197,11 @@ export const typeDefs = gql`
         memo: String
         message: String
         destinationTag: String
+    }
+
+    type WithdrawFundsResponse {
+        success: Boolean
+        message: String
     }
 
     type RedemptionRequirements {
