@@ -16,6 +16,7 @@ import { In } from "typeorm";
 import { rewardUserForParticipation } from "./weeklyReward";
 import { findOrCreateLedgerAccount } from "./controllerHelpers";
 import { TatumClient } from "../clients/tatumClient";
+import { formatFloat } from "../util/helpers";
 
 export const participate = async (parent: any, args: { campaignId: string; email: string }, context: { user: any }) => {
     try {
@@ -338,4 +339,29 @@ export const uploadProfilePicture = async (parent: any, args: { image: string },
     user.profile.profilePicture = filename;
     user.profile.save();
     return true;
+};
+
+export const getWalletBalances = async (parent: any, args: any, context: { user: any }) => {
+    const { id } = context.user;
+    const user = await User.findOne({
+        where: { identityId: id },
+        relations: ["tatumAccounts", "wallet", "wallet.currency"],
+    });
+    if (!user) throw new Error("user not found");
+    const wallet = user.wallet.asV1();
+    const coiinCurrency = wallet.currency.find((item) => item.type.toLowerCase() === "coiin");
+    const tatumAccountIds = user.tatumAccounts.map((item) => item.accountId);
+    const tatumAccountBalances = await TatumClient.getBalanceForAccountList(tatumAccountIds);
+    let allCurrencies = user.tatumAccounts.map((currencyItem) => {
+        const balance = tatumAccountBalances.find((balanceItem) => currencyItem.accountId === balanceItem.accountId);
+        return {
+            balance: formatFloat(balance.availableBalance, 8),
+            type: currencyItem.currency,
+        };
+    });
+    allCurrencies.unshift({
+        type: coiinCurrency?.type?.toUpperCase() || "",
+        balance: coiinCurrency?.balance?.toString() || "",
+    });
+    return allCurrencies;
 };

@@ -198,7 +198,7 @@ export const withdrawFunds = async (
             paymentId: `${USER_WITHDRAW}:${user.id}`,
             senderNote: RAIINMAKER_WITHDRAW,
             address,
-            amount: amount.toString(),
+            amount: getWithdrawableAmount(amount),
         };
         await TatumClient.withdrawFundsToBlockchain(currency, payload);
         return {
@@ -212,4 +212,8 @@ export const withdrawFunds = async (
             message: "There was an error performing your withdraw",
         };
     }
+};
+
+const getWithdrawableAmount = (amount: number): string => {
+    return (amount * 0.9).toString();
 };

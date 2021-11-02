@@ -188,6 +188,7 @@ export const typeDefs = gql`
         checkCoinGecko(symbol: String): Boolean
         getWeeklyRewards: WeeklyRewardResponse
         getRedemptionRequirements: RedemptionRequirements
+        getUserBalances(userId: String): [UserBalance]
     }
 
     type DepostAddressObject {
@@ -197,6 +198,11 @@ export const typeDefs = gql`
         memo: String
         message: String
         destinationTag: String
+    }
+
+    type UserBalance {
+        currency: String
+        balance: String
     }
 
     type WithdrawFundsResponse {
