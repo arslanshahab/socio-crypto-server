@@ -667,10 +667,7 @@ const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
             });
             if (userData) {
                 userDeviceIds[userData.id] = userData.profile.deviceToken;
-                let participantShare = await calculateParticipantPayout(totalRewardAmount, campaign, participant);
-                const feeFromParticipant = participantShare.multipliedBy(FEE_RATE);
-                raiinmakerFee = raiinmakerFee.plus(feeFromParticipant);
-                participantShare = participantShare.minus(feeFromParticipant);
+                const participantShare = await calculateParticipantPayout(totalRewardAmount, campaign, participant);
                 if (participantShare.isGreaterThan(0)) {
                     usersRewards[userData.id] = participantShare;
                 }
