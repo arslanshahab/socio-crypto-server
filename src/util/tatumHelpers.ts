@@ -91,7 +91,6 @@ export const performWithdraw = async (currency: string, body: any) => {
 
 const sendTokenOffchainTransaction = async (currency: string, data: any) => {
     const endpoint = withdrawEndpoints[currency];
-    console.log(endpoint);
     if (!endpoint) {
         throw new Error(
             `withdraws for ${currency} are not supported at this moment. Be patient, we are working on it!`

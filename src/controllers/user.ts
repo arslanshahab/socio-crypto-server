@@ -23,7 +23,7 @@ export const participate = async (parent: any, args: { campaignId: string; email
         const { id } = context.user;
         const user = await User.findOne({
             where: { identityId: id },
-            relations: ["campaigns", "wallet", "tatumAccounts"],
+            relations: ["campaigns", "wallet"],
         });
 
         if (!user) throw new Error("user not found");

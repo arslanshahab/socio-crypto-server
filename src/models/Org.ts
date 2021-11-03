@@ -14,8 +14,9 @@ import { Admin } from "./Admin";
 import { HourlyCampaignMetric } from "./HourlyCampaignMetric";
 import { CampaignStatus } from "../types";
 import { Wallet } from "./Wallet";
-import { TatumAccount } from "../models/TatumAccount";
 import { TatumClient } from "../clients/tatumClient";
+import { WalletCurrency } from "./WalletCurrency";
+import { TatumAccount } from "./TatumAccount";
 
 @Entity()
 export class Org extends BaseEntity {
@@ -97,26 +98,6 @@ export class Org extends BaseEntity {
         return await this.createQueryBuilder("org").skip(skip).take(take).getMany();
     }
 
-    public async findOrCreateLedgerAccount(currency: string): Promise<TatumAccount> {
-        try {
-            let org: Org | undefined = this;
-            let tatumAccount = org.tatumAccounts.find((item) => item.currency === currency);
-            if (!tatumAccount) {
-                const newTatumAccount = await TatumClient.createLedgerAccount(currency);
-                const newDepositAddress = await TatumClient.generateDepositAddress(newTatumAccount.id);
-                tatumAccount = await TatumAccount.addAccount({
-                    ...newTatumAccount,
-                    ...newDepositAddress,
-                    org,
-                });
-            }
-            return tatumAccount;
-        } catch (error) {
-            console.log(error);
-            throw new Error(error.message);
-        }
-    }
-
     public async isCurrencyAdded(currency: string): Promise<boolean> {
         try {
             let org: Org | undefined = this;
@@ -162,20 +143,15 @@ export class Org extends BaseEntity {
     public async getAvailableBalance(currency: string): Promise<number> {
         try {
             let org: Org | undefined = this;
-            if (!org.wallet || !org.wallet.currency || !org.tatumAccounts) {
-                org = await Org.findOne({
-                    where: { id: this.id },
-                    relations: ["wallet", "wallet.currency", "tatumAccounts"],
-                });
-            }
-            if (org) {
-                const walletCurrency = org.wallet.currency.find((item) => item.type === currency.toLowerCase());
-                if (walletCurrency) return walletCurrency.balance.toNumber();
-                const tatumAccount = org.tatumAccounts.find((item) => item.currency === currency.toUpperCase());
-                const tatumBalance = await TatumClient.getAccountBalance(tatumAccount?.accountId || "");
-                return parseFloat(tatumBalance.availableBalance || "0");
-            }
-            return 0;
+            if (!org) throw new Error("org not found");
+            const walletCurrency = await WalletCurrency.findOne({
+                where: { wallet: await Wallet.findOne({ where: { org: org } }), type: currency.toLowerCase() },
+            });
+            if (walletCurrency) return walletCurrency.balance.toNumber();
+            const tatumAccount = await TatumAccount.findOne({ where: { org: org, currency: currency } });
+            if (!tatumAccount) throw new Error("Tatum account not found for org");
+            const tatumBalance = await TatumClient.getAccountBalance(tatumAccount.accountId);
+            return parseFloat(tatumBalance.availableBalance || "0");
         } catch (error) {
             console.log(error.message);
             throw new Error(error.message);

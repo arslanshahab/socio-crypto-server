@@ -28,6 +28,9 @@ import { CryptoCurrency } from "./CryptoCurrency";
 import { CampaignMedia } from "./CampaignMedia";
 import { CampaignTemplate } from "./CampaignTemplate";
 import { TatumClient, CAMPAIGN_CREATION_AMOUNT } from "../clients/tatumClient";
+import { WalletCurrency } from "./WalletCurrency";
+import { Wallet } from "./Wallet";
+import { TatumAccount } from "./TatumAccount";
 
 @Entity()
 export class Campaign extends BaseEntity {
@@ -462,33 +465,31 @@ export class Campaign extends BaseEntity {
     public async blockCampaignAmount(): Promise<string> {
         try {
             let campaign: Campaign | undefined = this;
-            if (!campaign.org || !campaign.org.wallet || !campaign.org.wallet.currency || !campaign.org.tatumAccounts) {
-                campaign = await Campaign.findOne({
-                    where: { id: this.id },
-                    relations: ["org", "org.wallet", "org.wallet.currency", "org.tatumAccounts"],
-                });
-            }
             if (!campaign) throw new Error("campaign now found");
-            const walletCurrency = campaign.org.wallet.currency.find(
-                (item) => item.type === campaign?.currency.toLowerCase()
-            );
+            if (!campaign.org) throw new Error("org not found for campaign");
+            const walletCurrency = await WalletCurrency.findOne({
+                where: {
+                    wallet: await Wallet.findOne({ where: { org: campaign.org } }),
+                    type: campaign.currency.toLowerCase(),
+                },
+            });
             if (walletCurrency) {
                 const escrow = Escrow.newCampaignEscrow(campaign, campaign.org.wallet);
                 await campaign.org.updateBalance(campaign.currency, "subtract", campaign.coiinTotal.toNumber());
                 await escrow.save();
                 return escrow.id;
             }
-            const tatumAccount = campaign.org.tatumAccounts.find((item) => item.currency === campaign?.currency);
-            if (tatumAccount) {
-                const blockageKey = `${CAMPAIGN_CREATION_AMOUNT}:${campaign.id}`;
-                const blockedAmount = await TatumClient.blockAccountBalance(
-                    tatumAccount.accountId,
-                    campaign.coiinTotal.toString(),
-                    blockageKey
-                );
-                return blockedAmount.id;
-            }
-            return "";
+            const tatumAccount = await TatumAccount.findOne({
+                where: { org: campaign.org, currency: campaign.currency },
+            });
+            if (!tatumAccount) throw new Error("Tatum account not found for campaign");
+            const blockageKey = `${CAMPAIGN_CREATION_AMOUNT}:${campaign.id}`;
+            const blockedAmount = await TatumClient.blockAccountBalance(
+                tatumAccount.accountId,
+                campaign.coiinTotal.toString(),
+                blockageKey
+            );
+            return blockedAmount.id;
         } catch (error) {
             console.log(error);
             throw new Error(error.message);

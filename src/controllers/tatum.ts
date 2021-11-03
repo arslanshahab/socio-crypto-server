@@ -140,7 +140,7 @@ export const getSupportedCurrencies = async (parent: any, args: any, context: { 
 export const getDepositAddress = async (parent: any, args: { currency: string }, context: { user: any }) => {
     try {
         const { id } = context.user;
-        const admin = await Admin.findOne({ where: { firebaseId: id }, relations: ["org", "org.tatumAccounts"] });
+        const admin = await Admin.findOne({ where: { firebaseId: id }, relations: ["org"] });
         if (!admin) throw new Error("Admin not found!");
         let { currency } = args;
         currency = currency.toUpperCase();
