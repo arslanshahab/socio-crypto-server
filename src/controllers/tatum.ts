@@ -7,6 +7,7 @@ import { User } from "../models/User";
 import { S3Client } from "../clients/s3";
 import { findOrCreateLedgerAccount } from "./controllerHelpers";
 // import { TransactionType } from "@tatumio/tatum";
+import { TatumAccount } from "../models/TatumAccount";
 
 export const initWallet = asyncHandler(async (req: Request, res: Response) => {
     try {
@@ -181,14 +182,13 @@ export const withdrawFunds = async (
         const { id } = context.user;
         const user = await User.findOne({
             where: { identityId: id },
-            relations: ["tatumAccounts"],
         });
         if (!user) throw new Error("User not found");
         let { currency, address, amount } = args;
         currency = currency.toUpperCase();
         if (!(await TatumClient.isCurrencySupported(currency)))
             throw new Error(`currency ${currency} is not supported`);
-        const userAccount = user.tatumAccounts.find((item) => item.currency === currency);
+        const userAccount = await TatumAccount.findOne({ where: { user: user, currency: currency } });
         if (!userAccount) throw new Error(`No such currency:${currency} in user wallet`);
         const userAccountBalance = await TatumClient.getAccountBalance(userAccount.accountId);
         if (parseFloat(userAccountBalance.availableBalance) < amount)

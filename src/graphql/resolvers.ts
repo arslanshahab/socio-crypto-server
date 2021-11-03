@@ -140,7 +140,6 @@ export const publicResolvers = {
         usernameExists: userController.usernameExists,
         campaignGet: campaignController.publicGet,
         accountExists: userController.accountExists,
-        getUserBalances: userController.getWalletBalances,
     },
     Mutation: {
         trackAction: participantController.trackAction,
