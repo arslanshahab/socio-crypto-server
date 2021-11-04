@@ -681,6 +681,7 @@ const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
         await TatumClient.unblockAccountBalance(campaign.tatumBlockageId);
 
         let promiseArray = [];
+        const transferDetails = [];
         for (let index = 0; index < participants.length; index++) {
             const participant = participants[index];
             const userAccount = await TatumAccount.findOne({
@@ -695,6 +696,12 @@ const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
                     `${CAMPAIGN_REWARD}:${campaign.id}`
                 )
             );
+            transferDetails.push({
+                campaignAccount,
+                userAccount,
+                campaign,
+                amount: usersRewards[participant.user.id],
+            });
         }
 
         // transfer campaign fee to raiinmaker tatum account
@@ -706,7 +713,14 @@ const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
                 `${CAMPAIGN_FEE}:${campaign.id}`
             );
         }
-        await Promise.all(promiseArray);
+        const responses = await Promise.allSettled(promiseArray);
+        const transferRecords = [];
+        for (let index = 0; index < responses.length; index++) {
+            const resp = responses[index];
+            const transferData = transferDetails[index];
+            if (resp.status === "fulfilled") {
+            }
+        }
         campaign.audited = true;
         await campaign.save();
         return userDeviceIds;
