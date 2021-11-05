@@ -20,6 +20,7 @@ import { formatFloat } from "../util/helpers";
 import { WalletCurrency } from "../models/WalletCurrency";
 import { Wallet } from "../models/Wallet";
 import { TatumAccount } from "../models/TatumAccount";
+import { flatten } from "lodash";
 
 export const participate = async (parent: any, args: { campaignId: string; email: string }, context: { user: any }) => {
     try {
@@ -261,7 +262,7 @@ export const getUserParticipationKeywords = async (parent: any, args: { id: stri
     participations.forEach((item) => {
         keywordsArray.push(item.campaign.keywords);
     });
-    return [...new Set(keywordsArray.flat())];
+    return [...new Set(flatten(keywordsArray))];
 };
 
 export const getPreviousDayMetrics = async (_parent: any, args: any, context: { user: any }) => {

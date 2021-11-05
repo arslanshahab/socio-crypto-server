@@ -717,10 +717,20 @@ const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
         const transferRecords = [];
         for (let index = 0; index < responses.length; index++) {
             const resp = responses[index];
-            const transferData = transferDetails[index];
             if (resp.status === "fulfilled") {
+                const transferData = transferDetails[index];
+                const newTransfer = new Transfer();
+                newTransfer.currency = transferData.campaign.currency;
+                newTransfer.campaign = transferData.campaign;
+                newTransfer.amount = transferData.amount;
+                newTransfer.action = "deposit";
+                newTransfer.ethAddress = transferData.userAccount.accountId;
+                newTransfer.user = transferData.userAccount.user;
+                newTransfer.status = "SUCCEEDED";
+                transferRecords.push(newTransfer);
             }
         }
+        await Transfer.save(transferRecords);
         campaign.audited = true;
         await campaign.save();
         return userDeviceIds;

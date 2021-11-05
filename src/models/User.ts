@@ -25,6 +25,7 @@ import { Admin } from "./Admin";
 import { ExternalAddress } from "./ExternalAddress";
 import { WeeklyReward } from "./WeeklyReward";
 import { TatumAccount } from "./TatumAccount";
+import { Transfer } from "./Transfer";
 
 @Entity()
 export class User extends BaseEntity {
@@ -64,6 +65,14 @@ export class User extends BaseEntity {
         (wallet) => wallet.user
     )
     public wallet: Wallet;
+
+    @OneToMany(
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        (_type) => Transfer,
+        (transfer) => transfer.user,
+        { eager: true }
+    )
+    public transfers: Transfer[];
 
     @OneToMany(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars

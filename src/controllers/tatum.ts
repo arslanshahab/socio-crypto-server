@@ -8,6 +8,8 @@ import { S3Client } from "../clients/s3";
 import { findOrCreateLedgerAccount } from "./controllerHelpers";
 // import { TransactionType } from "@tatumio/tatum";
 import { TatumAccount } from "../models/TatumAccount";
+import { Transfer } from "../models/Transfer";
+import { BigNumber } from "bignumber.js";
 
 export const initWallet = asyncHandler(async (req: Request, res: Response) => {
     try {
@@ -201,6 +203,14 @@ export const withdrawFunds = async (
             amount: getWithdrawableAmount(amount),
         };
         await TatumClient.withdrawFundsToBlockchain(currency, payload);
+        const newTransfer = new Transfer();
+        newTransfer.currency = currency;
+        newTransfer.amount = new BigNumber(getWithdrawableAmount(amount));
+        newTransfer.action = "withdraw";
+        newTransfer.ethAddress = address;
+        newTransfer.user = user;
+        newTransfer.status = "SUCCEEDED";
+        newTransfer.save();
         return {
             success: true,
             message: "Withdraw completed successfully",
