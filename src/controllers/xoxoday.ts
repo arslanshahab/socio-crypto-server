@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import { Xoxoday } from "../clients/xoxoday";
 import { generateRandomId, supportedCountries } from "../util/helpers";
 import { XoxodayOrder, XoxodayVoucher } from "src/types";
-import { getExchangeRate } from "../util/forex";
+import { getExchangeRateForCurrency } from "../util/exchangeRate";
 import { XoxodayOrder as XoxodayOrderModel } from "../models/XoxodayOrder";
 import { User } from "../models/User";
 import { differenceInDays, differenceInHours } from "date-fns";
@@ -124,7 +124,7 @@ const prepareVouchersList = async (list: Array<any>): Promise<Array<XoxodayVouch
     let exchangeRate = "0";
     const currency = list.length ? list[0].currencyCode : "USD";
     if (list.length) {
-        exchangeRate = await getExchangeRate(currency);
+        exchangeRate = await getExchangeRateForCurrency(currency);
     }
     return list.map((item) => {
         return {

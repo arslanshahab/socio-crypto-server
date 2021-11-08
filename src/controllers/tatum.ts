@@ -225,5 +225,5 @@ export const withdrawFunds = async (
 };
 
 const getWithdrawableAmount = (amount: number): string => {
-    return (amount * 0.9).toString();
+    return (amount * 0.95).toString();
 };

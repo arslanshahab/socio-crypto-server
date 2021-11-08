@@ -2,7 +2,7 @@ import { getRedis } from "../clients/redis";
 import { doFetch, RequestData } from "./fetchRequest";
 getRedis;
 
-export const getExchangeRate = async (symbol: string) => {
+export const getExchangeRateForCurrency = async (symbol: string) => {
     const cacheKey = "exchangeRatesForStore";
     let cachedResponse = await getRedis().get(cacheKey);
     if (cachedResponse) {

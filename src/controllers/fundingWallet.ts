@@ -1,6 +1,5 @@
 import { Admin } from "../models/Admin";
 import { TatumClient } from "../clients/tatumClient";
-import { formatFloat } from "../util/helpers";
 import { WalletCurrency } from "../models/WalletCurrency";
 import { Wallet } from "../models/Wallet";
 import { TatumAccount } from "../models/TatumAccount";
@@ -24,7 +23,7 @@ export const get = async (parent: any, args: any, context: { user: any }) => {
     let allCurrencies = tatumAccounts.map((currencyItem) => {
         const balance = tatumAccountBalances.find((balanceItem) => currencyItem.accountId === balanceItem.accountId);
         return {
-            balance: formatFloat(balance.availableBalance, 8),
+            balance: balance.availableBalance,
             type: currencyItem.currency,
         };
     });

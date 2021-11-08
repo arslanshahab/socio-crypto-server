@@ -12,7 +12,7 @@ export const isSupportedCurrency = async (currency: string): Promise<boolean> =>
 
 export const findOrCreateLedgerAccount = async (currency: string, model: any): Promise<TatumAccount> => {
     try {
-        if (model! instanceof User || model! instanceof Org) throw new Error("provided arguments are not correct");
+        if (!(model instanceof User) && !(model instanceof Org)) throw new Error("provided arguments are not correct");
         let tatumAccount = await TatumAccount.findOne({
             where: {
                 ...(model instanceof User && { user: model }),
