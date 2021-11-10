@@ -27,7 +27,7 @@ export const RAIINMAKER_WITHDRAW = "RAIINMAKER-WITHDRAW";
 export interface WithdrawDetails {
     senderAccountId: string;
     address: string;
-    amount: string;
+    amount: number;
     paymentId: string;
     senderNote: string;
     fee?: string;

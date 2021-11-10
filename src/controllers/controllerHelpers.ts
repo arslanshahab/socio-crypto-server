@@ -3,6 +3,7 @@ import { TatumClient } from "../clients/tatumClient";
 import { TatumAccount } from "../models/TatumAccount";
 import { Org } from "../models/Org";
 import { User } from "../models/User";
+import { getExchangeRateForCrypto } from "../util/exchangeRate";
 
 export const isSupportedCurrency = async (currency: string): Promise<boolean> => {
     const crypto = await CryptoCurrency.findOne({ where: { type: currency.toLowerCase() } });
@@ -35,4 +36,14 @@ export const findOrCreateLedgerAccount = async (currency: string, model: any): P
         console.log(error);
         throw new Error(error.message);
     }
+};
+
+export const getWithdrawableAmount = (amount: number): number => {
+    return amount * 0.95;
+};
+
+export const getMinWithdrawableAmount = async (currency: string) => {
+    const minLimit = process.env.MIN_WITHDRAW_LIMIT ? parseFloat(process.env.MIN_WITHDRAW_LIMIT) : 250;
+    const marketRate = await getExchangeRateForCrypto(currency);
+    return (1 / marketRate) * minLimit;
 };

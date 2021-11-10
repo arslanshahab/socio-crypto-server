@@ -14,9 +14,8 @@ import { HourlyCampaignMetric } from "../models/HourlyCampaignMetric";
 import { serverBaseUrl } from "../config";
 import { In } from "typeorm";
 import { rewardUserForParticipation } from "./weeklyReward";
-import { findOrCreateLedgerAccount } from "./controllerHelpers";
+import { findOrCreateLedgerAccount, getMinWithdrawableAmount } from "./controllerHelpers";
 import { TatumClient } from "../clients/tatumClient";
-import { formatFloat } from "../util/helpers";
 import { WalletCurrency } from "../models/WalletCurrency";
 import { Wallet } from "../models/Wallet";
 import { TatumAccount } from "../models/TatumAccount";
@@ -357,18 +356,23 @@ export const getWalletBalances = async (parent: any, args: any, context: { user:
     const tatumAccounts = await TatumAccount.find({ where: { user: user } });
     const tatumAccountIds = tatumAccounts.map((item) => item.accountId);
     const tatumAccountBalances = await TatumClient.getBalanceForAccountList(tatumAccountIds);
-    let allCurrencies = tatumAccounts.map((currencyItem) => {
+    let allCurrencies = tatumAccounts.map(async (currencyItem) => {
         const balance = tatumAccountBalances.find((balanceItem) => currencyItem.accountId === balanceItem.accountId);
+        const minWithdrawAmount = await getMinWithdrawableAmount(currencyItem.currency.toLowerCase());
         return {
-            balance: formatFloat(balance.availableBalance, 8),
-            type: currencyItem.currency,
+            balance: balance.availableBalance,
+            currency: currencyItem.currency,
+            minWithdrawAmount,
         };
     });
     if (coiinCurrency) {
-        allCurrencies.unshift({
-            type: coiinCurrency.type.toUpperCase() || "",
-            balance: coiinCurrency.balance.toString() || "",
-        });
+        allCurrencies.unshift(
+            Promise.resolve({
+                currency: coiinCurrency.type.toUpperCase() || "",
+                balance: coiinCurrency.balance.toNumber() || 0,
+                minWithdrawAmount: coiinCurrency.balance.toNumber(),
+            })
+        );
     }
     return allCurrencies;
 };

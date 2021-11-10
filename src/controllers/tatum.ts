@@ -5,8 +5,7 @@ import { Request, Response } from "express";
 import { TatumWallet } from "../models/TatumWallet";
 import { User } from "../models/User";
 import { S3Client } from "../clients/s3";
-import { findOrCreateLedgerAccount } from "./controllerHelpers";
-// import { TransactionType } from "@tatumio/tatum";
+import { findOrCreateLedgerAccount, getMinWithdrawableAmount, getWithdrawableAmount } from "./controllerHelpers";
 import { TatumAccount } from "../models/TatumAccount";
 import { Transfer } from "../models/Transfer";
 import { BigNumber } from "bignumber.js";
@@ -195,6 +194,9 @@ export const withdrawFunds = async (
         const userAccountBalance = await TatumClient.getAccountBalance(userAccount.accountId);
         if (parseFloat(userAccountBalance.availableBalance) < amount)
             throw new Error(`Not enough funds in user account`);
+        const minWithdrawAmount = await getMinWithdrawableAmount(userAccount.currency.toLowerCase());
+        if (amount < minWithdrawAmount)
+            throw new Error(`Unable to process withdraw, min amount required is ${minWithdrawAmount}`);
         let payload: WithdrawDetails = {
             senderAccountId: userAccount.accountId,
             paymentId: `${USER_WITHDRAW}:${user.id}`,
@@ -222,8 +224,4 @@ export const withdrawFunds = async (
             message: "There was an error performing your withdraw",
         };
     }
-};
-
-const getWithdrawableAmount = (amount: number): string => {
-    return (amount * 0.95).toString();
 };
