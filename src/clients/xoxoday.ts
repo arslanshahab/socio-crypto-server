@@ -24,8 +24,10 @@ export class Xoxoday {
     private static async fetchAuthDataAndCheckExpiry() {
         let authData: any = await S3Client.getXoxodayAuthData();
         authData = JSON.parse(authData);
+        console.log("old------", authData);
         if (authData.expires_in <= new Date().getTime()) {
             authData = await this.refreshAuthData(authData.refresh_token);
+            console.log("new------", authData);
         }
         return authData;
     }
@@ -70,7 +72,10 @@ export class Xoxoday {
             };
             const response = await doFetch(requestData);
             const authData = await response.json();
-            if (authData.error) throw new Error("Error refreshing access token for xoxoday");
+            if (authData.error) {
+                console.log(authData);
+                throw new Error("Error refreshing access token for xoxoday");
+            }
             const augmentedAuthData = this.adjustTokenExpiry(authData);
             await S3Client.refreshXoxodayAuthData(augmentedAuthData);
             return augmentedAuthData;
