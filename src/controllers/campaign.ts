@@ -160,6 +160,7 @@ export const createNewCampaign = async (
         keywords,
         type,
         imagePath,
+        currency,
         campaignType,
         socialMediaType,
         targetVideo,
@@ -224,7 +225,6 @@ export const updateCampaign = async (
         keywords: string[];
         type: string;
         rafflePrize: RafflePrizeStructure;
-        symbol: string;
         campaignType: string;
         socialMediaType: string[];
         campaignMedia: CampaignChannelMedia[];
