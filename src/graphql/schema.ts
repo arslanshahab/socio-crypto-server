@@ -204,6 +204,8 @@ export const typeDefs = gql`
         currency: String
         balance: Float
         minWithdrawAmount: Float
+        usdBalance: String
+        imageUrl: String
     }
 
     type WithdrawFundsResponse {

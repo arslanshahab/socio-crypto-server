@@ -57,7 +57,8 @@ data:
         TATUM_RETRIES: "5"
         ETHEREUM_DEPOSIT_ADDRESS: "0x275EE6238D103fDBE49d4cF6358575aA914F8654"
         RAIINMAKER_DEV_TOKEN: "0dfdd4-e5a5a3-c657fc-36415b-116af1"
-        MIN_WITHDRAW_LIMIT: "250"
+        MIN_WITHDRAW_LIMIT: "100"
+        COIIN_VALUE: "0.5"
 
 postgresql:
     existingSecret: "raiinmaker"

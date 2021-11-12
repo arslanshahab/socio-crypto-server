@@ -14,7 +14,12 @@ import { HourlyCampaignMetric } from "../models/HourlyCampaignMetric";
 import { serverBaseUrl } from "../config";
 import { In } from "typeorm";
 import { rewardUserForParticipation } from "./weeklyReward";
-import { findOrCreateLedgerAccount, getMinWithdrawableAmount } from "./controllerHelpers";
+import {
+    findOrCreateLedgerAccount,
+    getCryotoAssesImageUrl,
+    getMinWithdrawableAmount,
+    getUSDValueForCurrency,
+} from "./controllerHelpers";
 import { TatumClient } from "../clients/tatumClient";
 import { WalletCurrency } from "../models/WalletCurrency";
 import { Wallet } from "../models/Wallet";
@@ -363,6 +368,8 @@ export const getWalletBalances = async (parent: any, args: any, context: { user:
             balance: balance.availableBalance,
             currency: currencyItem.currency,
             minWithdrawAmount,
+            usdBalance: getUSDValueForCurrency(currencyItem.currency.toLowerCase(), balance.availableBalance),
+            imageUrl: getCryotoAssesImageUrl(currencyItem.currency),
         };
     });
     if (coiinCurrency) {
@@ -371,6 +378,8 @@ export const getWalletBalances = async (parent: any, args: any, context: { user:
                 currency: coiinCurrency.type.toUpperCase() || "",
                 balance: coiinCurrency.balance.toNumber() || 0,
                 minWithdrawAmount: coiinCurrency.balance.toNumber(),
+                usdBalance: getUSDValueForCurrency(coiinCurrency.type.toLowerCase(), coiinCurrency.balance.toNumber()),
+                imageUrl: getCryotoAssesImageUrl(coiinCurrency.type.toUpperCase()),
             })
         );
     }
