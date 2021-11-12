@@ -89,7 +89,7 @@ export const createNewCampaign = async (
         keywords: string[];
         type: string;
         rafflePrize: RafflePrizeStructure;
-        symbol: string;
+        currency: string;
         campaignType: string;
         socialMediaType: string[];
         campaignMedia: CampaignChannelMedia[];
@@ -116,7 +116,7 @@ export const createNewCampaign = async (
         keywords,
         type = "crypto",
         rafflePrize,
-        symbol,
+        currency,
         campaignType,
         socialMediaType,
         campaignMedia,
@@ -138,7 +138,7 @@ export const createNewCampaign = async (
     let cryptoCurrency;
     if (type === "crypto") {
         const walletCurrency = await WalletCurrency.findOne({
-            where: { wallet: org.wallet, type: symbol.toLowerCase() },
+            where: { wallet: org.wallet, type: currency.toLowerCase() },
         });
         if (!walletCurrency) throw new Error("currency not found in wallet");
         cryptoCurrency = await CryptoCurrency.findOne({
@@ -163,6 +163,7 @@ export const createNewCampaign = async (
         keywords,
         type,
         imagePath,
+        currency,
         campaignType,
         socialMediaType,
         targetVideo,
@@ -228,7 +229,7 @@ export const updateCampaign = async (
         keywords: string[];
         type: string;
         rafflePrize: RafflePrizeStructure;
-        symbol: string;
+        currency: string;
         campaignType: string;
         socialMediaType: string[];
         campaignMedia: CampaignChannelMedia[];
@@ -248,6 +249,7 @@ export const updateCampaign = async (
         algorithm,
         targetVideo,
         imagePath,
+        currency,
         tagline,
         requirements,
         suggestedPosts,
@@ -287,6 +289,7 @@ export const updateCampaign = async (
     if (suggestedPosts) campaign.suggestedPosts = suggestedPosts;
     if (suggestedTags) campaign.suggestedTags = suggestedTags;
     if (keywords) campaign.keywords = keywords;
+    if (currency) campaign.currency = currency;
     if (imagePath && campaign.imagePath !== imagePath) {
         campaign.imagePath = imagePath;
         campaignImageSignedURL = await S3Client.generateCampaignSignedURL(`campaign/${campaign.id}/${imagePath}`);

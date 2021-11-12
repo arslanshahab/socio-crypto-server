@@ -13,7 +13,7 @@ export const typeDefs = gql`
             endDate: String!
             description: String
             instructions: String
-            symbol: String
+            currency: String
             company: String
             algorithm: String!
             requirements: JSON
@@ -39,7 +39,7 @@ export const typeDefs = gql`
             endDate: String!
             description: String
             instructions: String
-            symbol: String
+            currency: String
             company: String
             algorithm: String!
             requirements: JSON
@@ -524,6 +524,7 @@ export const typeDefs = gql`
         targetVideo: String
         imagePath: String
         campaignType: String
+        currency: String
         socialMediaType: [String]
         tagline: String
         requirements: JSON
