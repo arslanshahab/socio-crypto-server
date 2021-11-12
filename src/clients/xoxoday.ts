@@ -24,10 +24,8 @@ export class Xoxoday {
     private static async fetchAuthDataAndCheckExpiry() {
         let authData: any = await S3Client.getXoxodayAuthData();
         authData = JSON.parse(authData);
-        console.log("old------", authData);
         if (authData.expires_in <= new Date().getTime()) {
             authData = await this.refreshAuthData(authData.refresh_token);
-            console.log("new------", authData);
         }
         return authData;
     }
@@ -73,7 +71,7 @@ export class Xoxoday {
             const response = await doFetch(requestData);
             const authData = await response.json();
             if (authData.error) {
-                console.log(authData);
+                console.log(authData.error);
                 throw new Error("Error refreshing access token for xoxoday");
             }
             const augmentedAuthData = this.adjustTokenExpiry(authData);
@@ -108,7 +106,7 @@ export class Xoxoday {
             const filters = await response.json();
             if (response.status !== 200) {
                 if (!filters || filters.error) {
-                    console.log(filters);
+                    console.log(filters.error);
                     throw new Error(filters.message);
                 }
             }
@@ -153,7 +151,7 @@ export class Xoxoday {
             const vouchers = await response.json();
             if (response.status !== 200) {
                 if (!vouchers || vouchers.error) {
-                    console.log(vouchers);
+                    console.log(vouchers.error);
                     throw new Error(vouchers.message);
                 }
             }
@@ -189,7 +187,7 @@ export class Xoxoday {
                 if (response.status !== 200) {
                     const data = await response.json();
                     if (!data || data.error) {
-                        console.log(data);
+                        console.log(data.error);
                         throw new Error(data.message);
                     }
                 }

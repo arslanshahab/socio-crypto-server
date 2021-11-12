@@ -160,7 +160,6 @@ export const createNewCampaign = async (
         keywords,
         type,
         imagePath,
-        currency,
         campaignType,
         socialMediaType,
         targetVideo,

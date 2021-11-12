@@ -359,8 +359,7 @@ export const getWalletBalances = async (parent: any, args: any, context: { user:
         where: { wallet: await Wallet.findOne({ where: { user: user } }), type: "coiin" },
     });
     const tatumAccounts = await TatumAccount.find({ where: { user: user } });
-    const tatumAccountIds = tatumAccounts.map((item) => item.accountId);
-    const tatumAccountBalances = await TatumClient.getBalanceForAccountList(tatumAccountIds);
+    const tatumAccountBalances = await TatumClient.getBalanceForAccountList(tatumAccounts);
     let allCurrencies = tatumAccounts.map(async (currencyItem) => {
         const balance = tatumAccountBalances.find((balanceItem) => currencyItem.accountId === balanceItem.accountId);
         const minWithdrawAmount = await getMinWithdrawableAmount(currencyItem.currency.toLowerCase());

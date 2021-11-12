@@ -17,6 +17,7 @@ import {
 import { TatumWallet } from "../models/TatumWallet";
 import { S3Client } from "./s3";
 import { performWithdraw } from "../util/tatumHelpers";
+import { TatumAccount } from "../models/TatumAccount";
 
 export const CAMPAIGN_CREATION_AMOUNT = "CAMPAIGN-AMOUNT";
 export const CAMPAIGN_FEE = "CAMPAIGN-FEE";
@@ -97,12 +98,12 @@ export class TatumClient {
         }
     }
 
-    public static async getBalanceForAccountList(accounts: string[]) {
+    public static async getBalanceForAccountList(accounts: TatumAccount[]) {
         try {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
             const promiseArray: Promise<any>[] = [];
             for (let index = 0; index < accounts.length; index++) {
-                promiseArray.push(getAccountBalance(accounts[index]));
+                promiseArray.push(getAccountBalance(accounts[index].accountId));
             }
             const response = await Promise.all(promiseArray);
             for (let responseIndex = 0; responseIndex < accounts.length; responseIndex++) {

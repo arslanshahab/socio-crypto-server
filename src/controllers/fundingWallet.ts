@@ -18,8 +18,7 @@ export const get = async (parent: any, args: any, context: { user: any }) => {
         where: { wallet: wallet, type: "coiin" },
     });
     const tatumAccounts = await TatumAccount.find({ where: { org: org } });
-    const tatumAccountIds = tatumAccounts.map((item) => item.accountId);
-    const tatumAccountBalances = await TatumClient.getBalanceForAccountList(tatumAccountIds);
+    const tatumAccountBalances = await TatumClient.getBalanceForAccountList(tatumAccounts);
     let allCurrencies = tatumAccounts.map((currencyItem) => {
         const balance = tatumAccountBalances.find((balanceItem) => currencyItem.accountId === balanceItem.accountId);
         return {

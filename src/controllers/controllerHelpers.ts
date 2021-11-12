@@ -14,13 +14,11 @@ export const isSupportedCurrency = async (currency: string): Promise<boolean> =>
     return await TatumClient.isCurrencySupported(currency);
 };
 
-export const findOrCreateLedgerAccount = async (currency: string, model: any): Promise<TatumAccount> => {
+export const findOrCreateLedgerAccount = async (currency: string, model: User | Org): Promise<TatumAccount> => {
     try {
-        if (!(model instanceof User) && !(model instanceof Org)) throw new Error("provided arguments are not correct");
         let tatumAccount = await TatumAccount.findOne({
             where: {
-                ...(model instanceof User && { user: model }),
-                ...(model instanceof Org && { org: model }),
+                ...(model instanceof User ? { user: model } : { org: model }),
                 currency: currency,
             },
         });
@@ -30,8 +28,7 @@ export const findOrCreateLedgerAccount = async (currency: string, model: any): P
             tatumAccount = await TatumAccount.addAccount({
                 ...newTatumAccount,
                 ...newDepositAddress,
-                ...(model instanceof User && { user: model }),
-                ...(model instanceof Org && { org: model }),
+                ...(model instanceof User ? { user: model } : { org: model }),
             });
         }
         return tatumAccount;
