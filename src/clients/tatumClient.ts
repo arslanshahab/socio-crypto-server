@@ -16,7 +16,7 @@ import {
 } from "@tatumio/tatum";
 import { TatumWallet } from "../models/TatumWallet";
 import { S3Client } from "./s3";
-import { performWithdraw } from "../util/tatumHelpers";
+import { performWithdraw } from "../util/tatumHelper";
 import { Currency } from "../models/Currency";
 
 export const CAMPAIGN_CREATION_AMOUNT = "CAMPAIGN-AMOUNT";
@@ -28,7 +28,7 @@ export const RAIINMAKER_WITHDRAW = "RAIINMAKER-WITHDRAW";
 export interface WithdrawDetails {
     senderAccountId: string;
     address: string;
-    amount: number;
+    amount: string;
     paymentId: string;
     senderNote: string;
     fee?: string;

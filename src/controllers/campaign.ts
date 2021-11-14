@@ -648,7 +648,7 @@ const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
         let totalRewardAmount = new BN(currentTotal);
         const participants = await Participant.find({
             where: { campaign },
-            relations: ["user", "user.wallet"],
+            relations: ["user"],
         });
         let raiinmakerFee = new BN(0);
         const campaignFee = totalRewardAmount.multipliedBy(FEE_RATE);
@@ -687,7 +687,7 @@ const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
         for (let index = 0; index < participants.length; index++) {
             const participant = participants[index];
             const userAccount = await Currency.findOne({
-                where: { wallet: participant.user.wallet, symbol: campaign.symbol },
+                where: { wallet: await Wallet.findOne({ where: { user: participant.user } }), symbol: campaign.symbol },
             });
             if (!userAccount) throw new Error(`currency not found for user ${participant.user.id}`);
             promiseArray.push(
@@ -722,13 +722,15 @@ const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
             const resp = responses[index];
             if (resp.status === "fulfilled") {
                 const transferData = transferDetails[index];
+                const wallet = await Wallet.findOne({ where: { user: transferData.participant.user } });
+                if (!wallet) throw new Error("wallet not found for user.");
                 const newTransfer = new Transfer();
                 newTransfer.currency = transferData.campaign.symbol;
                 newTransfer.campaign = transferData.campaign;
                 newTransfer.amount = transferData.amount;
                 newTransfer.action = "deposit";
                 newTransfer.ethAddress = transferData.userAccount.tatumId;
-                newTransfer.wallet = transferData.participant.user.wallet;
+                newTransfer.wallet = wallet;
                 newTransfer.status = "SUCCEEDED";
                 transferRecords.push(newTransfer);
             }

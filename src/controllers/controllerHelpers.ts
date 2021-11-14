@@ -32,8 +32,8 @@ export const findOrCreateCurrency = async (symbol: string, wallet: Wallet): Prom
     }
 };
 
-export const getWithdrawableAmount = (amount: number): number => {
-    return amount * 0.95;
+export const getWithdrawableAmount = (amount: number): string => {
+    return (amount * 0.95).toFixed(8);
 };
 
 export const getMinWithdrawableAmount = async (symbol: string) => {

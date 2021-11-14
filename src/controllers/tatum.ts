@@ -75,7 +75,6 @@ export const getAccountBalance = asyncHandler(async (req: Request, res: Response
         const { accountId, token } = req.body;
         if (!token || token !== process.env.RAIINMAKER_DEV_TOKEN) throw new Error("Invalid Token");
         const balance = await TatumClient.getAccountBalance(accountId);
-        console.log(balance);
         res.status(200).json(balance);
     } catch (error) {
         res.status(200).json(error.message);
