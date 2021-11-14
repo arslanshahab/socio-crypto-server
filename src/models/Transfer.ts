@@ -17,7 +17,6 @@ import { TransferStatus } from "../types";
 import { Org } from "./Org";
 import { RafflePrize } from "./RafflePrize";
 import { performCurrencyTransfer } from "../controllers/helpers";
-import { User } from "./User";
 
 @Entity()
 export class Transfer extends BaseEntity {
@@ -67,9 +66,6 @@ export class Transfer extends BaseEntity {
 
     @ManyToOne((_type) => Wallet, (wallet) => wallet.transfers)
     public wallet: Wallet;
-
-    @ManyToOne((_type) => User, (user) => user.transfers)
-    public user: User;
 
     @ManyToOne((_type) => Campaign, (campaign) => campaign.payouts)
     public campaign: Campaign;
@@ -175,7 +171,7 @@ export class Transfer extends BaseEntity {
         transfer.amount = amount;
         transfer.wallet = wallet;
         transfer.currency =
-            campaign.type == "crypto" ? (campaign.crypto ? campaign.crypto.type : campaign.currency) : campaign.type;
+            campaign.type == "crypto" ? (campaign.crypto ? campaign.crypto.type : campaign.symbol) : campaign.type;
         return transfer;
     }
 

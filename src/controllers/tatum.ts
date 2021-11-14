@@ -5,8 +5,8 @@ import { Request, Response } from "express";
 import { TatumWallet } from "../models/TatumWallet";
 import { User } from "../models/User";
 import { S3Client } from "../clients/s3";
-import { findOrCreateLedgerAccount, getMinWithdrawableAmount, getWithdrawableAmount } from "./controllerHelpers";
-import { TatumAccount } from "../models/TatumAccount";
+import { findOrCreateCurrency, getMinWithdrawableAmount, getWithdrawableAmount } from "./controllerHelpers";
+import { Currency } from "../models/Currency";
 import { Transfer } from "../models/Transfer";
 import { BigNumber } from "bignumber.js";
 
@@ -74,8 +74,9 @@ export const getAccountBalance = asyncHandler(async (req: Request, res: Response
     try {
         const { accountId, token } = req.body;
         if (!token || token !== process.env.RAIINMAKER_DEV_TOKEN) throw new Error("Invalid Token");
-        const transactions = await TatumClient.getAccountBalance(accountId);
-        res.status(200).json(transactions);
+        const balance = await TatumClient.getAccountBalance(accountId);
+        console.log(balance);
+        res.status(200).json(balance);
     } catch (error) {
         res.status(200).json(error.message);
     }
@@ -125,6 +126,17 @@ export const getAllWithdrawls = asyncHandler(async (req: Request, res: Response)
     }
 });
 
+export const transferBalance = asyncHandler(async (req: Request, res: Response) => {
+    try {
+        const { toAccount, fromAccount, amount, note, token } = req.body;
+        if (!token || token !== process.env.RAIINMAKER_DEV_TOKEN) throw new Error("Invalid Token");
+        const data = await TatumClient.transferFunds(fromAccount, toAccount, amount, note);
+        res.status(200).json(data);
+    } catch (error) {
+        res.status(200).json(error.message);
+    }
+});
+
 export const getSupportedCurrencies = async (parent: any, args: any, context: { user: any }) => {
     try {
         const { id } = context.user;
@@ -139,18 +151,18 @@ export const getSupportedCurrencies = async (parent: any, args: any, context: { 
     }
 };
 
-export const getDepositAddress = async (parent: any, args: { currency: string }, context: { user: any }) => {
+export const getDepositAddress = async (parent: any, args: { symbol: string }, context: { user: any }) => {
     try {
         const { id } = context.user;
-        const admin = await Admin.findOne({ where: { firebaseId: id }, relations: ["org"] });
+        const admin = await Admin.findOne({ where: { firebaseId: id }, relations: ["org", "org.wallet"] });
         if (!admin) throw new Error("Admin not found!");
-        let { currency } = args;
-        currency = currency.toUpperCase();
-        if (!currency) throw new Error("Currency not supported");
-        const fromTatum = await TatumClient.isCurrencySupported(currency);
+        let { symbol } = args;
+        symbol = symbol.toUpperCase();
+        if (!symbol) throw new Error("Currency not supported");
+        const fromTatum = await TatumClient.isCurrencySupported(symbol);
         if (!fromTatum) {
             return {
-                currency: currency,
+                symbol,
                 address: process.env.ETHEREUM_DEPOSIT_ADDRESS,
                 fromTatum,
                 destinationTag: "",
@@ -158,14 +170,14 @@ export const getDepositAddress = async (parent: any, args: { currency: string },
                 message: "",
             };
         } else {
-            const tatumAccount = await findOrCreateLedgerAccount(currency, admin.org);
+            const ledgerAccount = await findOrCreateCurrency(symbol, admin.org.wallet);
             return {
-                currency: currency,
-                address: tatumAccount.address,
+                symbol,
+                address: ledgerAccount.depositAddress,
                 fromTatum,
-                destinationTag: tatumAccount.destinationTag,
-                memo: tatumAccount.memo,
-                message: tatumAccount.message,
+                destinationTag: ledgerAccount.destinationTag,
+                memo: ledgerAccount.memo,
+                message: ledgerAccount.message,
             };
         }
     } catch (error) {
@@ -176,41 +188,41 @@ export const getDepositAddress = async (parent: any, args: { currency: string },
 
 export const withdrawFunds = async (
     parent: any,
-    args: { currency: string; address: string; amount: number },
+    args: { symbol: string; address: string; amount: number },
     context: { user: any }
 ) => {
     try {
         const { id } = context.user;
         const user = await User.findOne({
             where: { identityId: id },
+            relations: ["wallet"],
         });
         if (!user) throw new Error("User not found");
-        let { currency, address, amount } = args;
-        currency = currency.toUpperCase();
-        if (!(await TatumClient.isCurrencySupported(currency)))
-            throw new Error(`currency ${currency} is not supported`);
-        const userAccount = await TatumAccount.findOne({ where: { user: user, currency: currency } });
-        if (!userAccount) throw new Error(`No such currency:${currency} in user wallet`);
-        const userAccountBalance = await TatumClient.getAccountBalance(userAccount.accountId);
+        let { symbol, address, amount } = args;
+        symbol = symbol.toUpperCase();
+        if (!(await TatumClient.isCurrencySupported(symbol))) throw new Error(`currency ${symbol} is not supported`);
+        const userCurrency = await Currency.findOne({ where: { wallet: user.wallet, symbol } });
+        if (!userCurrency) throw new Error(`No such currency:${symbol} in user wallet`);
+        const userAccountBalance = await TatumClient.getAccountBalance(userCurrency.tatumId);
         if (parseFloat(userAccountBalance.availableBalance) < amount)
             throw new Error(`Not enough funds in user account`);
-        const minWithdrawAmount = await getMinWithdrawableAmount(userAccount.currency.toLowerCase());
+        const minWithdrawAmount = await getMinWithdrawableAmount(userCurrency.symbol.toLowerCase());
         if (amount < minWithdrawAmount)
             throw new Error(`Unable to process withdraw, min amount required is ${minWithdrawAmount}`);
         let payload: WithdrawDetails = {
-            senderAccountId: userAccount.accountId,
+            senderAccountId: userCurrency.tatumId,
             paymentId: `${USER_WITHDRAW}:${user.id}`,
             senderNote: RAIINMAKER_WITHDRAW,
             address,
             amount: getWithdrawableAmount(amount),
         };
-        await TatumClient.withdrawFundsToBlockchain(currency, payload);
+        await TatumClient.withdrawFundsToBlockchain(symbol, payload);
         const newTransfer = new Transfer();
-        newTransfer.currency = currency;
+        newTransfer.currency = symbol;
         newTransfer.amount = new BigNumber(getWithdrawableAmount(amount));
         newTransfer.action = "withdraw";
         newTransfer.ethAddress = address;
-        newTransfer.user = user;
+        newTransfer.wallet = user.wallet;
         newTransfer.status = "SUCCEEDED";
         newTransfer.save();
         return {

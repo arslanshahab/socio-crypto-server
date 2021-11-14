@@ -1,0 +1,61 @@
+import {
+    PrimaryGeneratedColumn,
+    Entity,
+    BaseEntity,
+    CreateDateColumn,
+    UpdateDateColumn,
+    Column,
+    ManyToOne,
+} from "typeorm";
+import { Wallet } from "./Wallet";
+
+@Entity()
+export class Currency extends BaseEntity {
+    @PrimaryGeneratedColumn("uuid")
+    public id: string;
+
+    @Column({ nullable: false })
+    public tatumId: string; // this is the tatum account Id
+
+    @Column({ nullable: false })
+    public symbol: string;
+
+    @Column({ nullable: false })
+    public depositAddress: string;
+
+    @Column({ nullable: true })
+    public memo: string;
+
+    @Column({ nullable: true })
+    public message: string;
+
+    @Column({ nullable: true })
+    public destinationTag: number;
+
+    @ManyToOne((_type) => Wallet, (wallet) => wallet.currency)
+    public wallet: Currency;
+
+    @CreateDateColumn()
+    public createdAt: Date;
+
+    @UpdateDateColumn()
+    public updatedAt: Date;
+
+    public asV1(): Currency {
+        return {
+            ...this,
+        };
+    }
+
+    public static async addAccount(data: any): Promise<Currency> {
+        let account = new Currency();
+        account.tatumId = data.id;
+        account.symbol = data.currency;
+        account.depositAddress = data.address;
+        account.wallet = data.wallet;
+        if (data.memo) account.memo = data.memo;
+        if (data.message) account.message = data.message;
+        if (data.destinationTag) account.destinationTag = data.destinationTag;
+        return await Currency.save(account);
+    }
+}

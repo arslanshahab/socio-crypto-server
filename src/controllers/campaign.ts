@@ -35,7 +35,7 @@ import { CampaignChannelTemplate } from "../types.d";
 import { CampaignMedia } from "../models/CampaignMedia";
 import { CampaignTemplate } from "../models/CampaignTemplate";
 import { isSupportedCurrency } from "./controllerHelpers";
-import { TatumAccount } from "../models/TatumAccount";
+import { Currency } from "../models/Currency";
 import { CAMPAIGN_FEE, CAMPAIGN_REWARD, TatumClient } from "../clients/tatumClient";
 
 const validator = new Validator();
@@ -90,7 +90,7 @@ export const createNewCampaign = async (
         keywords: string[];
         type: string;
         rafflePrize: RafflePrizeStructure;
-        currency: string;
+        symbol: string;
         campaignType: string;
         socialMediaType: string[];
         campaignMedia: CampaignChannelMedia[];
@@ -117,7 +117,7 @@ export const createNewCampaign = async (
         keywords,
         type = "crypto",
         rafflePrize,
-        currency,
+        symbol,
         campaignType,
         socialMediaType,
         campaignMedia,
@@ -133,13 +133,13 @@ export const createNewCampaign = async (
     const campaignCompany = role === "admin" ? args.company : company;
     const org = await Org.findOne({
         where: { name: company },
-        relations: ["wallet", "wallet.currency", "tatumAccounts"],
+        relations: ["wallet", "wallet.walletCurrency"],
     });
     if (!org) throw new Error("org not found");
     if (type === "crypto") {
-        const isCurrencySupported = await isSupportedCurrency(currency);
+        const isCurrencySupported = await isSupportedCurrency(symbol);
         if (!isCurrencySupported) throw new Error("this currency is not supported");
-        const isWalletAvailable = await org.isCurrencyAdded(currency);
+        const isWalletAvailable = await org.isCurrencyAdded(symbol);
         if (!isWalletAvailable) throw new Error("currency not found in wallet");
     }
     const campaign = Campaign.newCampaign(
@@ -151,7 +151,7 @@ export const createNewCampaign = async (
         description,
         instructions,
         campaignCompany,
-        currency,
+        symbol,
         algorithm,
         tagline,
         requirements,
@@ -228,7 +228,7 @@ export const updateCampaign = async (
         socialMediaType: string[];
         campaignMedia: CampaignChannelMedia[];
         campaignTemplates: CampaignChannelTemplate[];
-        currency: string;
+        symbol: string;
     },
     context: { user: any }
 ) => {
@@ -255,7 +255,7 @@ export const updateCampaign = async (
         socialMediaType,
         campaignMedia,
         campaignTemplates,
-        currency,
+        symbol,
     } = args;
     validator.validateAlgorithmCreateSchema(JSON.parse(algorithm));
     if (!!requirements) validator.validateCampaignRequirementsSchema(requirements);
@@ -266,13 +266,13 @@ export const updateCampaign = async (
     if (role === "admin" && !args.company) throw new Error("administrators need to specify a company in args");
     const org = await Org.findOne({
         where: { name: company },
-        relations: ["wallet", "wallet.currency", "tatumAccounts"],
+        relations: ["wallet", "wallet.walletCurrency"],
     });
     if (!org) throw new Error("org not found");
     if (type === "crypto") {
-        const isCurrencySupported = await isSupportedCurrency(currency);
+        const isCurrencySupported = await isSupportedCurrency(symbol);
         if (!isCurrencySupported) throw new Error("this currency is not supported");
-        const isWalletAvailable = await org.isCurrencyAdded(currency);
+        const isWalletAvailable = await org.isCurrencyAdded(symbol);
         if (!isWalletAvailable) throw new Error("currency not found in wallet");
     }
     const campaign = await Campaign.findOne({ where: { id: id } });
@@ -366,14 +366,14 @@ export const adminUpdateCampaignStatus = async (
                 campaign.status = "APPROVED";
                 break;
             }
-            const walletBalance = await campaign.org.getAvailableBalance(campaign.currency);
+            const walletBalance = await campaign.org.getAvailableBalance(campaign.symbol);
             if (walletBalance < campaign.coiinTotal.toNumber()) {
                 campaign.status = "INSUFFICIENT_FUNDS";
                 break;
             }
             campaign.status = "APPROVED";
             const blockageId = await campaign.blockCampaignAmount();
-            if (campaign.currency.toLowerCase() !== "coiin") {
+            if (campaign.symbol.toLowerCase() !== "coiin") {
                 campaign.tatumBlockageId = blockageId;
             }
             break;
@@ -597,7 +597,7 @@ export const payoutCampaignRewards = async (
         let deviceIds;
         switch (campaign.type.toLowerCase()) {
             case "crypto":
-                if (campaign.currency.toLowerCase() === "coiin") {
+                if (campaign.symbol.toLowerCase() === "coiin") {
                     deviceIds = await payoutCoiinCampaignRewards(transactionalEntityManager, campaign, rejected);
                 } else {
                     deviceIds = await payoutCryptoCampaignRewards(campaign);
@@ -648,20 +648,23 @@ const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
         let totalRewardAmount = new BN(currentTotal);
         const participants = await Participant.find({
             where: { campaign },
-            relations: ["user"],
+            relations: ["user", "user.wallet"],
         });
         let raiinmakerFee = new BN(0);
         const campaignFee = totalRewardAmount.multipliedBy(FEE_RATE);
         raiinmakerFee = raiinmakerFee.plus(campaignFee);
         totalRewardAmount = totalRewardAmount.minus(campaignFee);
-        const raiinmakerAccount = await TatumAccount.findOne({
-            where: { org: await Org.findOne({ where: { name: "raiinmaker" } }), currency: campaign.currency },
+        const raiinmakerAccount = await Currency.findOne({
+            where: {
+                wallet: await Wallet.findOne({ where: { org: await Org.findOne({ where: { name: "raiinmaker" } }) } }),
+                symbol: campaign.symbol,
+            },
         });
-        if (!raiinmakerAccount) throw new Error("Tatum account not found for raiinmaker");
-        const campaignAccount = await TatumAccount.findOne({
-            where: { org: campaign.org, currency: campaign.currency },
+        if (!raiinmakerAccount) throw new Error("currency not found for raiinmaker");
+        const campaignAccount = await Currency.findOne({
+            where: { wallet: campaign.org.wallet, symbol: campaign.symbol },
         });
-        if (!campaignAccount) throw new Error("Tatum account not found for campaign");
+        if (!campaignAccount) throw new Error("currency not found for campaign");
         for (let index = 0; index < participants.length; index++) {
             const participant = participants[index];
             const userData = await User.findOne({
@@ -683,14 +686,14 @@ const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
         const transferDetails = [];
         for (let index = 0; index < participants.length; index++) {
             const participant = participants[index];
-            const userAccount = await TatumAccount.findOne({
-                where: { user: participant.user, currency: campaign.currency },
+            const userAccount = await Currency.findOne({
+                where: { wallet: participant.user.wallet, symbol: campaign.symbol },
             });
-            if (!userAccount) throw new Error(`Tatum account not found for user ${participant.user.id}`);
+            if (!userAccount) throw new Error(`currency not found for user ${participant.user.id}`);
             promiseArray.push(
                 TatumClient.transferFunds(
-                    campaignAccount.accountId,
-                    userAccount.accountId,
+                    campaignAccount.tatumId,
+                    userAccount.tatumId,
                     usersRewards[participant.user.id].toString(),
                     `${CAMPAIGN_REWARD}:${campaign.id}`
                 )
@@ -699,6 +702,7 @@ const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
                 campaignAccount,
                 userAccount,
                 campaign,
+                participant,
                 amount: usersRewards[participant.user.id],
             });
         }
@@ -706,8 +710,8 @@ const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
         // transfer campaign fee to raiinmaker tatum account
         if (campaign.org.name !== "raiinmaker") {
             await TatumClient.transferFunds(
-                campaignAccount.accountId,
-                raiinmakerAccount.accountId,
+                campaignAccount.tatumId,
+                raiinmakerAccount.tatumId,
                 raiinmakerFee.toString(),
                 `${CAMPAIGN_FEE}:${campaign.id}`
             );
@@ -719,12 +723,12 @@ const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
             if (resp.status === "fulfilled") {
                 const transferData = transferDetails[index];
                 const newTransfer = new Transfer();
-                newTransfer.currency = transferData.campaign.currency;
+                newTransfer.currency = transferData.campaign.symbol;
                 newTransfer.campaign = transferData.campaign;
                 newTransfer.amount = transferData.amount;
                 newTransfer.action = "deposit";
-                newTransfer.ethAddress = transferData.userAccount.accountId;
-                newTransfer.user = transferData.userAccount.user;
+                newTransfer.ethAddress = transferData.userAccount.tatumId;
+                newTransfer.wallet = transferData.participant.user.wallet;
                 newTransfer.status = "SUCCEEDED";
                 transferRecords.push(newTransfer);
             }

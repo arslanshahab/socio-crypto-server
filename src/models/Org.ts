@@ -16,7 +16,7 @@ import { CampaignStatus } from "../types";
 import { Wallet } from "./Wallet";
 import { TatumClient } from "../clients/tatumClient";
 import { WalletCurrency } from "./WalletCurrency";
-import { TatumAccount } from "./TatumAccount";
+import { Currency } from "./Currency";
 
 @Entity()
 export class Org extends BaseEntity {
@@ -43,9 +43,6 @@ export class Org extends BaseEntity {
 
     @OneToOne((_type) => Wallet, (wallet) => wallet.org)
     public wallet: Wallet;
-
-    @OneToMany((_type) => TatumAccount, (account) => account.org)
-    public tatumAccounts: TatumAccount[];
 
     @CreateDateColumn()
     public createdAt: Date;
@@ -75,7 +72,7 @@ export class Org extends BaseEntity {
     public static async listOrgCampaignsByWalletIdAndStatus(walletId: string, status: CampaignStatus) {
         return await this.createQueryBuilder("org")
             .leftJoinAndSelect("org.wallet", "wallet", 'wallet."orgId" = org.id')
-            .leftJoinAndSelect("wallet.currency", "currency", 'currency."walletId" = currency.id')
+            .leftJoinAndSelect("wallet.walletCurrency", "walletCurrency", 'walletCurrency."walletId" = wallet.id')
             .leftJoinAndSelect("org.campaigns", "campaign", 'campaign."orgId" = org.id')
             .leftJoinAndSelect("campaign.crypto", "crypto", 'campaign."cryptoId" = crypto.id')
             .where("campaign.status = :status", { status })
@@ -88,7 +85,7 @@ export class Org extends BaseEntity {
             .leftJoinAndSelect("org.wallet", "wallet", 'wallet."orgId" = org.id')
             .leftJoinAndSelect("wallet.transfers", "transfer", 'transfer."walletId" = wallet.id')
             .leftJoinAndSelect("wallet.addresses", "address", 'address."walletId" = wallet.id')
-            .leftJoinAndSelect("wallet.currency", "currency", 'currency."walletId" = wallet.id')
+            .leftJoinAndSelect("wallet.walletCurrency", "walletCurrency", 'walletCurrency."walletId" = wallet.id')
             .leftJoin("org.admins", "admin", 'admin."orgId" = org.id')
             .where("admin.id = :id", { id })
             .getOne();
@@ -98,20 +95,20 @@ export class Org extends BaseEntity {
         return await this.createQueryBuilder("org").skip(skip).take(take).getMany();
     }
 
-    public async isCurrencyAdded(currency: string): Promise<boolean> {
+    public async isCurrencyAdded(symbol: string): Promise<boolean> {
         try {
             let org: Org | undefined = this;
-            if (!org.wallet || !org.wallet.currency || !org.tatumAccounts) {
+            if (!org.wallet) {
                 org = await Org.findOne({
                     where: { id: this.id },
-                    relations: ["wallet", "wallet.currency", "tatumAccounts"],
+                    relations: ["wallet"],
                 });
             }
             if (org) {
-                const walletCurrency = org.wallet.currency.find((item) => item.type === currency.toLowerCase());
+                const walletCurrency = org.wallet.walletCurrency.find((item) => item.type === symbol.toLowerCase());
                 if (walletCurrency) return true;
-                const tatumAccount = org.tatumAccounts.find((item) => item.currency === currency.toUpperCase());
-                return Boolean(tatumAccount);
+                const currency = await Currency.findOne({ where: { symbol, wallet: org.wallet } });
+                if (currency) return true;
             }
             return false;
         } catch (error) {
@@ -123,11 +120,11 @@ export class Org extends BaseEntity {
     public async updateBalance(currency: string, operation: "add" | "subtract", amount: number): Promise<any> {
         try {
             let org: Org | undefined = this;
-            if (!org.wallet || !org.wallet.currency) {
-                org = await Org.findOne({ where: { id: this.id }, relations: ["wallet", "wallet.currency"] });
+            if (!org.wallet || !org.wallet.walletCurrency) {
+                org = await Org.findOne({ where: { id: this.id }, relations: ["wallet", "wallet.walletCurrency"] });
             }
             if (org) {
-                let assetBalance = org.wallet.currency.find((item) => item.type === currency.toLowerCase());
+                let assetBalance = org.wallet.walletCurrency.find((item) => item.type === currency.toLowerCase());
                 if (assetBalance) {
                     assetBalance.balance =
                         operation === "add" ? assetBalance.balance.plus(amount) : assetBalance.balance.minus(amount);
@@ -140,17 +137,18 @@ export class Org extends BaseEntity {
         }
     }
 
-    public async getAvailableBalance(currency: string): Promise<number> {
+    public async getAvailableBalance(symbol: string): Promise<number> {
         try {
             let org: Org | undefined = this;
             if (!org) throw new Error("org not found");
+            const wallet = await Wallet.findOne({ where: { org: org } });
             const walletCurrency = await WalletCurrency.findOne({
-                where: { wallet: await Wallet.findOne({ where: { org: org } }), type: currency.toLowerCase() },
+                where: { wallet, type: symbol.toLowerCase() },
             });
             if (walletCurrency) return walletCurrency.balance.toNumber();
-            const tatumAccount = await TatumAccount.findOne({ where: { org: org, currency: currency } });
-            if (!tatumAccount) throw new Error("Tatum account not found for org");
-            const tatumBalance = await TatumClient.getAccountBalance(tatumAccount.accountId);
+            const currency = await Currency.findOne({ where: { wallet, symbol } });
+            if (!currency) throw new Error("Tatum account not found for org");
+            const tatumBalance = await TatumClient.getAccountBalance(currency.tatumId);
             return parseFloat(tatumBalance.availableBalance || "0");
         } catch (error) {
             console.log(error.message);

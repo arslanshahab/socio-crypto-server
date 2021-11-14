@@ -108,7 +108,7 @@ export const adminResolvers = {
         listPendingCampaigns: campaignController.adminListPendingCampaigns,
         listSupportedCrypto: cryptoController.listSupportedCrypto,
         checkCoinGecko: cryptoController.coinGeckoCheck,
-        getDepositAddressForCurrency: tatumController.getDepositAddress,
+        getDepositAddressForSymbol: tatumController.getDepositAddress,
         getSupportedCurrencies: tatumController.getSupportedCurrencies,
     },
     Mutation: {

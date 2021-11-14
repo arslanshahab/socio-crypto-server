@@ -3,7 +3,7 @@ import {
     generateWallet,
     createAccount,
     generateDepositAddress,
-    Currency,
+    Currency as TatumCurrency,
     Fiat,
     getAccountBalance,
     getTransactionsByAccount,
@@ -17,7 +17,7 @@ import {
 import { TatumWallet } from "../models/TatumWallet";
 import { S3Client } from "./s3";
 import { performWithdraw } from "../util/tatumHelpers";
-import { TatumAccount } from "../models/TatumAccount";
+import { Currency } from "../models/Currency";
 
 export const CAMPAIGN_CREATION_AMOUNT = "CAMPAIGN-AMOUNT";
 export const CAMPAIGN_FEE = "CAMPAIGN-FEE";
@@ -45,32 +45,32 @@ export class TatumClient {
         }
     }
 
-    public static async isCurrencySupported(currency: string): Promise<boolean> {
-        const foundCurrency = await TatumWallet.findOne({ where: { currency: currency.toUpperCase(), enabled: true } });
+    public static async isCurrencySupported(symbol: string): Promise<boolean> {
+        const foundCurrency = await TatumWallet.findOne({ where: { currency: symbol.toUpperCase(), enabled: true } });
         return Boolean(foundCurrency);
     }
 
     public static async createWallet(currency: string) {
         try {
-            return await generateWallet(currency as Currency, false);
+            return await generateWallet(currency as TatumCurrency, false);
         } catch (error) {
             console.log(error);
             throw new Error(error.data ? error.data.message : error.message);
         }
     }
 
-    public static async createLedgerAccount(currency: string) {
+    public static async createLedgerAccount(symbol: string) {
         try {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
-            const walletData = await TatumWallet.findOne({ where: { currency: currency, enabled: true } });
+            const walletData = await TatumWallet.findOne({ where: { currency: symbol, enabled: true } });
             if (walletData) {
                 return await createAccount({
-                    currency: currency.toUpperCase(),
+                    currency: symbol.toUpperCase(),
                     accountingCurrency: "USD" as Fiat,
                     xpub: walletData.xpub || walletData.address,
                 });
             } else {
-                throw new Error(`No wallet found for currency: ${currency}`);
+                throw new Error(`No wallet found for symbol: ${symbol}`);
             }
         } catch (error) {
             console.log(error);
@@ -98,16 +98,16 @@ export class TatumClient {
         }
     }
 
-    public static async getBalanceForAccountList(accounts: TatumAccount[]) {
+    public static async getBalanceForAccountList(accounts: Currency[]) {
         try {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
             const promiseArray: Promise<any>[] = [];
             for (let index = 0; index < accounts.length; index++) {
-                promiseArray.push(getAccountBalance(accounts[index].accountId));
+                promiseArray.push(getAccountBalance(accounts[index].tatumId));
             }
             const response = await Promise.all(promiseArray);
             for (let responseIndex = 0; responseIndex < accounts.length; responseIndex++) {
-                response[responseIndex]["accountId"] = accounts[responseIndex];
+                response[responseIndex]["tatumId"] = accounts[responseIndex].tatumId;
             }
             return response;
         } catch (error) {

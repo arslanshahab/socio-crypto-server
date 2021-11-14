@@ -2,7 +2,7 @@ import { Admin } from "../models/Admin";
 import { TatumClient } from "../clients/tatumClient";
 import { WalletCurrency } from "../models/WalletCurrency";
 import { Wallet } from "../models/Wallet";
-import { TatumAccount } from "../models/TatumAccount";
+import { Currency } from "../models/Currency";
 
 export const get = async (parent: any, args: any, context: { user: any }) => {
     const { id } = context.user;
@@ -17,13 +17,13 @@ export const get = async (parent: any, args: any, context: { user: any }) => {
     const coiinCurrency = await WalletCurrency.findOne({
         where: { wallet: wallet, type: "coiin" },
     });
-    const tatumAccounts = await TatumAccount.find({ where: { org: org } });
-    const tatumAccountBalances = await TatumClient.getBalanceForAccountList(tatumAccounts);
-    let allCurrencies = tatumAccounts.map((currencyItem) => {
-        const balance = tatumAccountBalances.find((balanceItem) => currencyItem.accountId === balanceItem.accountId);
+    const currencies = await Currency.find({ where: { wallet: wallet } });
+    const balances = await TatumClient.getBalanceForAccountList(currencies);
+    let allCurrencies = currencies.map((currencyItem) => {
+        const balance = balances.find((balanceItem) => currencyItem.tatumId === balanceItem.tatumId);
         return {
             balance: balance.availableBalance,
-            type: currencyItem.currency,
+            type: currencyItem.symbol,
         };
     });
     if (coiinCurrency) {

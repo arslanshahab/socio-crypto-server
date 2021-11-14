@@ -32,6 +32,7 @@ import {
     listBlockedAmounts,
     blockAccountBalance,
     getAllWithdrawls,
+    transferBalance,
 } from "./controllers/tatum";
 
 const { NODE_ENV = "development" } = process.env;
@@ -135,6 +136,7 @@ export class Application {
         this.app.post("/v1/tatum/blockedAmount/list", listBlockedAmounts);
         this.app.post("/v1/tatum/balance", getAccountBalance);
         this.app.post("/v1/tatum/list-withdraws", getAllWithdrawls);
+        this.app.post("/v1/tatum/transfer", transferBalance);
         this.app.get("/v1/xoxoday/filters", getXoxodayFilters);
         this.app.use(
             "/v1/dragonfactor/login",

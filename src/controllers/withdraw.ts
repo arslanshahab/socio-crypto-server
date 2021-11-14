@@ -41,7 +41,7 @@ export const start = async (
             paypalEmail = kycData["paypalEmail"];
         }
     }
-    const currency = wallet.currency.find((currency) => currency.type === normalizedTokenSymbol);
+    const currency = wallet.walletCurrency.find((currency) => currency.type === normalizedTokenSymbol);
     const currencyBalance = currency ? currency.balance : new BN(0);
     const tokenPrice = tokenSymbol === "coiin" ? 0.1 : await getTokenPriceInUsd(normalizedTokenSymbol);
     const withdrawAmountInUsd =

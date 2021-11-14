@@ -13,7 +13,7 @@ export const typeDefs = gql`
             endDate: String!
             description: String
             instructions: String
-            currency: String
+            symbol: String
             company: String
             algorithm: String!
             requirements: JSON
@@ -39,7 +39,7 @@ export const typeDefs = gql`
             endDate: String!
             description: String
             instructions: String
-            currency: String
+            symbol: String
             company: String
             algorithm: String!
             requirements: JSON
@@ -124,12 +124,12 @@ export const typeDefs = gql`
         deleteCryptoFromWallet(id: String!): String
         removePaymentMethod(paymentMethodId: String): Boolean
         placeStoreOrder(cart: [JSON], email: String): JSON
-        withdrawFunds(currency: String, address: String, amount: Float): WithdrawFundsResponse
+        withdrawFunds(symbol: String, address: String, amount: Float): WithdrawFundsResponse
     }
 
     type Query {
         getCurrentCampaignTier(campaignId: String!): CurrentTier
-        getDepositAddressForCurrency(currency: String): DepostAddressObject
+        getDepositAddressForSymbol(symbol: String): DepostAddressObject
         getSupportedCurrencies: [String]
         usernameExists(username: String!): UserExistence
         listCampaigns(
@@ -192,7 +192,7 @@ export const typeDefs = gql`
     }
 
     type DepostAddressObject {
-        currency: String
+        symbol: String
         address: String
         fromTatum: Boolean
         memo: String
@@ -201,7 +201,7 @@ export const typeDefs = gql`
     }
 
     type UserBalance {
-        currency: String
+        symbol: String
         balance: Float
         minWithdrawAmount: Float
         usdBalance: String
@@ -528,7 +528,7 @@ export const typeDefs = gql`
         endDate: String
         coiinTotal: Float
         status: String
-        currency: String
+        symbol: String
         totalParticipationScore: Float
         target: String
         description: String

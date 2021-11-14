@@ -15,7 +15,7 @@ import { serverBaseUrl } from "../config";
 import { In } from "typeorm";
 import { rewardUserForParticipation } from "./weeklyReward";
 import {
-    findOrCreateLedgerAccount,
+    findOrCreateCurrency,
     getCryotoAssesImageUrl,
     getMinWithdrawableAmount,
     getUSDValueForCurrency,
@@ -23,7 +23,7 @@ import {
 import { TatumClient } from "../clients/tatumClient";
 import { WalletCurrency } from "../models/WalletCurrency";
 import { Wallet } from "../models/Wallet";
-import { TatumAccount } from "../models/TatumAccount";
+import { Currency } from "../models/Currency";
 import { flatten } from "lodash";
 
 export const participate = async (parent: any, args: { campaignId: string; email: string }, context: { user: any }) => {
@@ -47,8 +47,8 @@ export const participate = async (parent: any, args: { campaignId: string; email
         if (await Participant.findOne({ where: { campaign, user } }))
             throw new Error("user already participating in this campaign");
 
-        if (await TatumClient.isCurrencySupported(campaign.currency)) {
-            await findOrCreateLedgerAccount(campaign.currency, user);
+        if (await TatumClient.isCurrencySupported(campaign.symbol)) {
+            await findOrCreateCurrency(campaign.symbol, user.wallet);
         }
         const participant = Participant.newParticipant(user, campaign, args.email);
         const url = `${serverBaseUrl}/v1/referral/${participant.id}`;
@@ -353,28 +353,29 @@ export const getWalletBalances = async (parent: any, args: any, context: { user:
     const { id } = context.user;
     const user = await User.findOne({
         where: { identityId: id },
+        relations: ["wallet"],
     });
     if (!user) throw new Error("user not found");
     const coiinCurrency = await WalletCurrency.findOne({
         where: { wallet: await Wallet.findOne({ where: { user: user } }), type: "coiin" },
     });
-    const tatumAccounts = await TatumAccount.find({ where: { user: user } });
-    const tatumAccountBalances = await TatumClient.getBalanceForAccountList(tatumAccounts);
-    let allCurrencies = tatumAccounts.map(async (currencyItem) => {
-        const balance = tatumAccountBalances.find((balanceItem) => currencyItem.accountId === balanceItem.accountId);
-        const minWithdrawAmount = await getMinWithdrawableAmount(currencyItem.currency.toLowerCase());
+    const currencies = await Currency.find({ where: { wallet: user.wallet } });
+    const balances = await TatumClient.getBalanceForAccountList(currencies);
+    let allCurrencies = currencies.map(async (currencyItem) => {
+        const balance = balances.find((balanceItem) => currencyItem.tatumId === balanceItem.tatumId);
+        const minWithdrawAmount = await getMinWithdrawableAmount(currencyItem.symbol.toLowerCase());
         return {
             balance: balance.availableBalance,
-            currency: currencyItem.currency,
+            symbol: currencyItem.symbol,
             minWithdrawAmount,
-            usdBalance: getUSDValueForCurrency(currencyItem.currency.toLowerCase(), balance.availableBalance),
-            imageUrl: getCryotoAssesImageUrl(currencyItem.currency),
+            usdBalance: getUSDValueForCurrency(currencyItem.symbol.toLowerCase(), balance.availableBalance),
+            imageUrl: getCryotoAssesImageUrl(currencyItem.symbol),
         };
     });
     if (coiinCurrency) {
         allCurrencies.unshift(
             Promise.resolve({
-                currency: coiinCurrency.type.toUpperCase() || "",
+                symbol: coiinCurrency.type.toUpperCase() || "",
                 balance: coiinCurrency.balance.toNumber() || 0,
                 minWithdrawAmount: coiinCurrency.balance.toNumber(),
                 usdBalance: getUSDValueForCurrency(coiinCurrency.type.toLowerCase(), coiinCurrency.balance.toNumber()),
