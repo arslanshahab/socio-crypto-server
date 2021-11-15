@@ -24,7 +24,6 @@ import { NotificationSettings } from "./NotificationSettings";
 import { Admin } from "./Admin";
 import { ExternalAddress } from "./ExternalAddress";
 import { WeeklyReward } from "./WeeklyReward";
-import { TatumAccount } from "./TatumAccount";
 
 @Entity()
 export class User extends BaseEntity {
@@ -52,15 +51,8 @@ export class User extends BaseEntity {
     @UpdateDateColumn()
     public updatedAt: Date;
 
-    @OneToMany(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => Participant,
-        (participant) => participant.user
-    )
+    @OneToMany((_type) => Participant, (participant) => participant.user)
     campaigns: Participant[];
-
-    @OneToMany((_type) => TatumAccount, (account) => account.user)
-    public tatumAccounts: TatumAccount[];
 
     @OneToOne(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -162,11 +154,11 @@ export class User extends BaseEntity {
 
     public async updateCoiinBalance(operation: "add" | "subtract", amount: number): Promise<any> {
         let user: User | undefined = this;
-        if (!user.wallet || !user.wallet.currency) {
-            user = await User.findOne({ where: { id: this.id }, relations: ["wallet", "wallet.currency"] });
+        if (!user.wallet || !user.wallet.walletCurrency) {
+            user = await User.findOne({ where: { id: this.id }, relations: ["wallet", "wallet.walletCurrency"] });
         }
         if (user) {
-            const coiinBalance = user.wallet.currency.find((item) => item.type.toLowerCase() === "coiin");
+            const coiinBalance = user.wallet.walletCurrency.find((item) => item.type.toLowerCase() === "coiin");
             if (coiinBalance) {
                 coiinBalance.balance =
                     operation === "add" ? coiinBalance.balance.plus(amount) : coiinBalance.balance.minus(amount);
@@ -304,7 +296,11 @@ export class User extends BaseEntity {
                     }
                 }
                 if (loadCurrencies)
-                    query = query.leftJoinAndSelect("wallet.currency", "currency", 'currency."walletId" = wallet.id');
+                    query = query.leftJoinAndSelect(
+                        "wallet.walletCurrency",
+                        "walletCurrency",
+                        'walletCurrency."walletId" = wallet.id'
+                    );
             }
             if (loadSocialLinks)
                 query = query.leftJoinAndSelect("user.socialLinks", "social", 'social."userId" = user.id');

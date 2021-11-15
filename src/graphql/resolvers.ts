@@ -49,6 +49,7 @@ export const resolvers = {
         getStoreVouchers: xoxodayController.getVouchers,
         getWeeklyRewards: weeklyReward.getWeeklyRewards,
         getRedemptionRequirements: xoxodayController.redemptionRequirements,
+        getUserBalances: userController.getWalletBalances,
     },
     Mutation: {
         generateFactorsFromKyc: factorController.generateFactors,
@@ -107,7 +108,7 @@ export const adminResolvers = {
         listPendingCampaigns: campaignController.adminListPendingCampaigns,
         listSupportedCrypto: cryptoController.listSupportedCrypto,
         checkCoinGecko: cryptoController.coinGeckoCheck,
-        getDepositAddressForCurrency: tatumController.getDepositAddress,
+        getDepositAddressForSymbol: tatumController.getDepositAddress,
         getSupportedCurrencies: tatumController.getSupportedCurrencies,
     },
     Mutation: {

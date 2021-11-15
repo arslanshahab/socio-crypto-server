@@ -1,4 +1,5 @@
 import fetch from "node-fetch";
+import { URLSearchParams } from "url";
 
 export interface RequestData {
     url: string;

@@ -22,7 +22,7 @@ export const getWeeklyRewards = async (parent: any, args: any, context: any) => 
         const { id } = context.user;
         const user = await User.findOne({
             where: { identityId: id },
-            relations: ["weeklyRewards", "weeklyRewards.participant"],
+            relations: ["weeklyRewards"],
         });
         if (!user) throw new Error("user not found");
         const weekKey = `${getWeek(user.lastLogin)}-${getYear(user.lastLogin)}`;

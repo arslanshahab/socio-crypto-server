@@ -14,6 +14,17 @@ import { HourlyCampaignMetric } from "../models/HourlyCampaignMetric";
 import { serverBaseUrl } from "../config";
 import { In } from "typeorm";
 import { rewardUserForParticipation } from "./weeklyReward";
+import {
+    findOrCreateCurrency,
+    getCryotoAssesImageUrl,
+    getMinWithdrawableAmount,
+    getUSDValueForCurrency,
+} from "./controllerHelpers";
+import { TatumClient } from "../clients/tatumClient";
+import { WalletCurrency } from "../models/WalletCurrency";
+import { Wallet } from "../models/Wallet";
+import { Currency } from "../models/Currency";
+import { flatten } from "lodash";
 
 export const participate = async (parent: any, args: { campaignId: string; email: string }, context: { user: any }) => {
     try {
@@ -36,8 +47,10 @@ export const participate = async (parent: any, args: { campaignId: string; email
         if (await Participant.findOne({ where: { campaign, user } }))
             throw new Error("user already participating in this campaign");
 
+        if (await TatumClient.isCurrencySupported(campaign.symbol)) {
+            await findOrCreateCurrency(campaign.symbol, user.wallet);
+        }
         const participant = Participant.newParticipant(user, campaign, args.email);
-        await participant.save();
         const url = `${serverBaseUrl}/v1/referral/${participant.id}`;
         participant.link = await TinyUrl.shorten(url);
         await HourlyCampaignMetric.upsert(campaign, campaign.org, "participate");
@@ -253,7 +266,7 @@ export const getUserParticipationKeywords = async (parent: any, args: { id: stri
     participations.forEach((item) => {
         keywordsArray.push(item.campaign.keywords);
     });
-    return [...new Set(keywordsArray.flat())];
+    return [...new Set(flatten(keywordsArray))];
 };
 
 export const getPreviousDayMetrics = async (_parent: any, args: any, context: { user: any }) => {
@@ -334,4 +347,41 @@ export const uploadProfilePicture = async (parent: any, args: { image: string },
     user.profile.profilePicture = filename;
     user.profile.save();
     return true;
+};
+
+export const getWalletBalances = async (parent: any, args: any, context: { user: any }) => {
+    const { id } = context.user;
+    const user = await User.findOne({
+        where: { identityId: id },
+        relations: ["wallet"],
+    });
+    if (!user) throw new Error("user not found");
+    const coiinCurrency = await WalletCurrency.findOne({
+        where: { wallet: await Wallet.findOne({ where: { user: user } }), type: "coiin" },
+    });
+    const currencies = await Currency.find({ where: { wallet: user.wallet } });
+    const balances = await TatumClient.getBalanceForAccountList(currencies);
+    let allCurrencies = currencies.map(async (currencyItem) => {
+        const balance = balances.find((balanceItem) => currencyItem.tatumId === balanceItem.tatumId);
+        const minWithdrawAmount = await getMinWithdrawableAmount(currencyItem.symbol.toLowerCase());
+        return {
+            balance: balance.availableBalance,
+            symbol: currencyItem.symbol,
+            minWithdrawAmount,
+            usdBalance: getUSDValueForCurrency(currencyItem.symbol.toLowerCase(), balance.availableBalance),
+            imageUrl: getCryotoAssesImageUrl(currencyItem.symbol),
+        };
+    });
+    if (coiinCurrency) {
+        allCurrencies.unshift(
+            Promise.resolve({
+                symbol: coiinCurrency.type.toUpperCase() || "",
+                balance: coiinCurrency.balance.toNumber() || 0,
+                minWithdrawAmount: coiinCurrency.balance.toNumber(),
+                usdBalance: getUSDValueForCurrency(coiinCurrency.type.toLowerCase(), coiinCurrency.balance.toNumber()),
+                imageUrl: getCryotoAssesImageUrl(coiinCurrency.type.toUpperCase()),
+            })
+        );
+    }
+    return allCurrencies;
 };

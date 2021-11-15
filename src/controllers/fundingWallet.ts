@@ -1,34 +1,39 @@
 import { Admin } from "../models/Admin";
-import { concat } from "lodash";
 import { TatumClient } from "../clients/tatumClient";
-import { formatFloat } from "../util/helpers";
+import { WalletCurrency } from "../models/WalletCurrency";
+import { Wallet } from "../models/Wallet";
+import { Currency } from "../models/Currency";
 
 export const get = async (parent: any, args: any, context: { user: any }) => {
     const { id } = context.user;
     const admin = await Admin.findOne({
         where: { firebaseId: id },
-        relations: ["org", "org.wallet", "org.tatumAccounts"],
+        relations: ["org"],
     });
     if (!admin) throw new Error("Admin not found");
     const org = admin.org;
     if (!org) throw Error("org not found");
-    const wallet = org.wallet.asV1();
-    const currencies = wallet.currency.map((item) => ({
-        balance: formatFloat(item.balance.toString(), 8),
-        type: item.type,
-    }));
-    const tatumAccountIds = org.tatumAccounts.map((item) => item.accountId);
-    const tatumAccountBalances = await TatumClient.getBalanceForAccountList(tatumAccountIds);
-    const tatumCurrencies = org.tatumAccounts.map((currencyItem) => {
-        const balance = tatumAccountBalances.find((balanceItem) => currencyItem.accountId === balanceItem.accountId);
+    const wallet = await Wallet.findOne({ where: { org: org } });
+    const coiinCurrency = await WalletCurrency.findOne({
+        where: { wallet: wallet, type: "coiin" },
+    });
+    const currencies = await Currency.find({ where: { wallet: wallet } });
+    const balances = await TatumClient.getBalanceForAccountList(currencies);
+    let allCurrencies = currencies.map((currencyItem) => {
+        const balance = balances.find((balanceItem) => currencyItem.tatumId === balanceItem.tatumId);
         return {
-            balance: formatFloat(balance.availableBalance, 8),
-            type: currencyItem.currency,
+            balance: balance.availableBalance,
+            type: currencyItem.symbol,
         };
     });
-    const all = concat(currencies, tatumCurrencies);
+    if (coiinCurrency) {
+        allCurrencies.unshift({
+            type: coiinCurrency.type.toUpperCase() || "",
+            balance: coiinCurrency.balance.toString() || "",
+        });
+    }
     return {
         ...wallet,
-        currency: all,
+        currency: allCurrencies,
     };
 };

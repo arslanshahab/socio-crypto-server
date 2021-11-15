@@ -22,7 +22,7 @@ export class WalletCurrency extends BaseEntity {
     @Column({ type: "varchar", nullable: false, default: 0, transformer: BigNumberEntityTransformer })
     public balance: BigNumber;
 
-    @ManyToOne((_type) => Wallet, (wallet) => wallet.currency)
+    @ManyToOne((_type) => Wallet, (wallet) => wallet.walletCurrency)
     public wallet: Wallet;
 
     @CreateDateColumn()

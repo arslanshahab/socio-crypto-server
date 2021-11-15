@@ -64,18 +64,10 @@ export class Transfer extends BaseEntity {
     @UpdateDateColumn()
     public updatedAt: Date;
 
-    @ManyToOne(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => Wallet,
-        (wallet) => wallet.transfers
-    )
+    @ManyToOne((_type) => Wallet, (wallet) => wallet.transfers)
     public wallet: Wallet;
 
-    @ManyToOne(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => Campaign,
-        (campaign) => campaign.payouts
-    )
+    @ManyToOne((_type) => Campaign, (campaign) => campaign.payouts)
     public campaign: Campaign;
 
     @ManyToOne((_type) => Org, (org) => org.transfers)
@@ -178,7 +170,8 @@ export class Transfer extends BaseEntity {
         transfer.campaign = campaign;
         transfer.amount = amount;
         transfer.wallet = wallet;
-        transfer.currency = campaign.type == "crypto" ? campaign.crypto.type : campaign.type;
+        transfer.currency =
+            campaign.type == "crypto" ? (campaign.crypto ? campaign.crypto.type : campaign.symbol) : campaign.type;
         return transfer;
     }
 

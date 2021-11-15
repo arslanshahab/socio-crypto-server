@@ -3,17 +3,36 @@ import {
     generateWallet,
     createAccount,
     generateDepositAddress,
-    Currency,
+    Currency as TatumCurrency,
     Fiat,
     getAccountBalance,
     getTransactionsByAccount,
     TransactionFilter,
-    offchainStoreWithdrawal,
+    blockAmount,
+    deleteBlockedAmount,
+    getBlockedAmountsByAccountId,
+    storeTransaction,
     getWithdrawals,
-    offchainCompleteWithdrawal,
 } from "@tatumio/tatum";
 import { TatumWallet } from "../models/TatumWallet";
-import { generateRandomId } from "../util/helpers";
+import { S3Client } from "./s3";
+import { performWithdraw } from "../util/tatumHelper";
+import { Currency } from "../models/Currency";
+
+export const CAMPAIGN_CREATION_AMOUNT = "CAMPAIGN-AMOUNT";
+export const CAMPAIGN_FEE = "CAMPAIGN-FEE";
+export const CAMPAIGN_REWARD = "CAMPAIGN-REWARD";
+export const USER_WITHDRAW = "USER-WITHDRAW";
+export const RAIINMAKER_WITHDRAW = "RAIINMAKER-WITHDRAW";
+
+export interface WithdrawDetails {
+    senderAccountId: string;
+    address: string;
+    amount: string;
+    paymentId: string;
+    senderNote: string;
+    fee?: string;
+}
 
 export class TatumClient {
     public static async getAllCurrencies(): Promise<string[]> {
@@ -26,32 +45,32 @@ export class TatumClient {
         }
     }
 
-    public static async isCurrencySupported(currency: string): Promise<boolean> {
-        const foundCurrency = await TatumWallet.findOne({ where: { currency: currency, enabled: true } });
+    public static async isCurrencySupported(symbol: string): Promise<boolean> {
+        const foundCurrency = await TatumWallet.findOne({ where: { currency: symbol.toUpperCase(), enabled: true } });
         return Boolean(foundCurrency);
     }
 
     public static async createWallet(currency: string) {
         try {
-            return await generateWallet(currency as Currency, false);
+            return await generateWallet(currency as TatumCurrency, false);
         } catch (error) {
             console.log(error);
             throw new Error(error.data ? error.data.message : error.message);
         }
     }
 
-    public static async createLedgerAccount(currency: string) {
+    public static async createLedgerAccount(symbol: string) {
         try {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
-            const walletData = await TatumWallet.findOne({ where: { currency: currency, enabled: true } });
+            const walletData = await TatumWallet.findOne({ where: { currency: symbol, enabled: true } });
             if (walletData) {
                 return await createAccount({
-                    currency: currency.toUpperCase(),
+                    currency: symbol.toUpperCase(),
                     accountingCurrency: "USD" as Fiat,
                     xpub: walletData.xpub || walletData.address,
                 });
             } else {
-                throw new Error(`No wallet found for currency: ${currency}`);
+                throw new Error(`No wallet found for symbol: ${symbol}`);
             }
         } catch (error) {
             console.log(error);
@@ -79,18 +98,67 @@ export class TatumClient {
         }
     }
 
-    public static async getBalanceForAccountList(accounts: string[]) {
+    public static async getBalanceForAccountList(accounts: Currency[]) {
         try {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
             const promiseArray: Promise<any>[] = [];
             for (let index = 0; index < accounts.length; index++) {
-                promiseArray.push(getAccountBalance(accounts[index]));
+                promiseArray.push(getAccountBalance(accounts[index].tatumId));
             }
             const response = await Promise.all(promiseArray);
             for (let responseIndex = 0; responseIndex < accounts.length; responseIndex++) {
-                response[responseIndex]["accountId"] = accounts[responseIndex];
+                response[responseIndex]["tatumId"] = accounts[responseIndex].tatumId;
             }
             return response;
+        } catch (error) {
+            console.log(error);
+            throw new Error(error.message);
+        }
+    }
+
+    public static async transferFunds(
+        senderAccountId: string,
+        recipientAccountId: string,
+        amount: string,
+        recipientNote: string
+    ) {
+        try {
+            process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
+            return await storeTransaction({ senderAccountId, recipientAccountId, amount, recipientNote });
+        } catch (error) {
+            console.log(error);
+            throw new Error(error.message);
+        }
+    }
+
+    public static async blockAccountBalance(accountId: string, amount: string, type: string) {
+        try {
+            process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
+            return await blockAmount(accountId, {
+                amount,
+                type,
+                description: type,
+            });
+        } catch (error) {
+            console.log(error);
+            throw new Error(error.message);
+        }
+    }
+
+    public static async unblockAccountBalance(blockageId: string) {
+        try {
+            process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
+            return await deleteBlockedAmount(blockageId);
+        } catch (error) {
+            console.log(error);
+            throw new Error(error.message);
+        }
+    }
+
+    public static async getBlockedBalanceForAccount(accountId: string, pageSize: number, offset: number) {
+        try {
+            process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
+            return await getBlockedAmountsByAccountId(accountId, pageSize, offset);
         } catch (error) {
             console.log(error);
             throw new Error(error.message);
@@ -107,36 +175,22 @@ export class TatumClient {
         }
     }
 
-    public static async createWithdrawRequest(accountId: string, address: string, amount: number) {
+    public static async withdrawFundsToBlockchain(currency: string, data: WithdrawDetails) {
         try {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
-            return await offchainStoreWithdrawal({
-                senderAccountId: accountId,
-                address: address,
-                amount: amount,
-                paymentId: generateRandomId(),
-                senderNote: "Withdraw from Raiinmaker",
-            });
+            const walletKeys = await S3Client.getTatumWalletKeys(currency);
+            const body = { ...walletKeys, ...data };
+            return await performWithdraw(currency, body);
         } catch (error) {
             console.log(error);
             throw new Error(error.message);
         }
     }
 
-    public static async getPendingWithdrawRequests(pageSize: number, offset: number) {
+    public static async listWithdrawls(status: string, currency: string, pageSize = 50, offset = 0) {
         try {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
-            return await getWithdrawals("InProgress", "", pageSize, offset);
-        } catch (error) {
-            console.log(error);
-            throw new Error(error.message);
-        }
-    }
-
-    public static async completeWithdraw(id: string, txId: string) {
-        try {
-            process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
-            return await offchainCompleteWithdrawal(id, txId);
+            return await getWithdrawals(status, currency, pageSize, offset);
         } catch (error) {
             console.log(error);
             throw new Error(error.message);

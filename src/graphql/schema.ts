@@ -13,7 +13,7 @@ export const typeDefs = gql`
             endDate: String!
             description: String
             instructions: String
-            currency: String
+            symbol: String
             company: String
             algorithm: String!
             requirements: JSON
@@ -39,7 +39,7 @@ export const typeDefs = gql`
             endDate: String!
             description: String
             instructions: String
-            currency: String
+            symbol: String
             company: String
             algorithm: String!
             requirements: JSON
@@ -124,12 +124,12 @@ export const typeDefs = gql`
         deleteCryptoFromWallet(id: String!): String
         removePaymentMethod(paymentMethodId: String): Boolean
         placeStoreOrder(cart: [JSON], email: String): JSON
-        withdrawFunds(currency: String, address: String, amount: Float): JSON
+        withdrawFunds(symbol: String, address: String, amount: Float): WithdrawFundsResponse
     }
 
     type Query {
         getCurrentCampaignTier(campaignId: String!): CurrentTier
-        getDepositAddressForCurrency(currency: String): DepostAddressObject
+        getDepositAddressForSymbol(symbol: String): DepostAddressObject
         getSupportedCurrencies: [String]
         usernameExists(username: String!): UserExistence
         listCampaigns(
@@ -188,15 +188,29 @@ export const typeDefs = gql`
         checkCoinGecko(symbol: String): Boolean
         getWeeklyRewards: WeeklyRewardResponse
         getRedemptionRequirements: RedemptionRequirements
+        getUserBalances(userId: String): [UserBalance]
     }
 
     type DepostAddressObject {
-        currency: String
+        symbol: String
         address: String
         fromTatum: Boolean
         memo: String
         message: String
         destinationTag: String
+    }
+
+    type UserBalance {
+        symbol: String
+        balance: Float
+        minWithdrawAmount: Float
+        usdBalance: String
+        imageUrl: String
+    }
+
+    type WithdrawFundsResponse {
+        success: Boolean
+        message: String
     }
 
     type RedemptionRequirements {
@@ -514,6 +528,7 @@ export const typeDefs = gql`
         endDate: String
         coiinTotal: Float
         status: String
+        symbol: String
         totalParticipationScore: Float
         target: String
         description: String
@@ -524,7 +539,6 @@ export const typeDefs = gql`
         targetVideo: String
         imagePath: String
         campaignType: String
-        currency: String
         socialMediaType: [String]
         tagline: String
         requirements: JSON
