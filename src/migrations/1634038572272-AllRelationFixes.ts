@@ -7,8 +7,6 @@ export class AllRelationFixes1634038572272 implements MigrationInterface {
         await queryRunner.query(
             `CREATE TABLE "tatum_wallet" ("id" uuid NOT NULL DEFAULT gen_random_uuid(), "currency" character varying NOT NULL, "enabled" boolean NOT NULL, "xpub" character varying NOT NULL, "address" character varying NOT NULL, "owner" character varying NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_7ea26f9bf3a0f53ce5802ac46cf" PRIMARY KEY ("id"))`
         );
-        await queryRunner.query(`ALTER TABLE "participant" DROP COLUMN "reward"`);
-        await queryRunner.query(`ALTER TABLE "weekly_reward" DROP COLUMN "participantId"`);
         await queryRunner.query(`ALTER TABLE "campaign_media" ALTER COLUMN "channel" DROP NOT NULL`);
         await queryRunner.query(`ALTER TABLE "campaign_media" ALTER COLUMN "media" DROP NOT NULL`);
         await queryRunner.query(`ALTER TABLE "campaign_media" ALTER COLUMN "mediaFormat" DROP NOT NULL`);
@@ -32,7 +30,6 @@ export class AllRelationFixes1634038572272 implements MigrationInterface {
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`ALTER TABLE "weekly_reward" DROP CONSTRAINT "FK_ba2529b7af668bbc111475272b1"`);
         await queryRunner.query(`ALTER TABLE "campaign_template" DROP CONSTRAINT "FK_19b3f8a418cf4753d5df4291099"`);
         await queryRunner.query(`ALTER TABLE "campaign_media" DROP CONSTRAINT "FK_b845045382e55918752955d23cb"`);
         await queryRunner.query(`ALTER TABLE "weekly_reward" ALTER COLUMN "userId" SET NOT NULL`);
