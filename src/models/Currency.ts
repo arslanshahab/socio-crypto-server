@@ -15,7 +15,7 @@ export class Currency extends BaseEntity {
     public id: string;
 
     @Column({ nullable: false })
-    public tatumId: string; // this is the tatum account Id
+    public tatumId: string; //tatum account Id
 
     @Column({ nullable: false })
     public symbol: string;
