@@ -7,8 +7,6 @@ export class AllRelationFixes1634038572272 implements MigrationInterface {
         await queryRunner.query(
             `CREATE TABLE "tatum_wallet" ("id" uuid NOT NULL DEFAULT gen_random_uuid(), "currency" character varying NOT NULL, "enabled" boolean NOT NULL, "xpub" character varying NOT NULL, "address" character varying NOT NULL, "owner" character varying NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_7ea26f9bf3a0f53ce5802ac46cf" PRIMARY KEY ("id"))`
         );
-        await queryRunner.query(`ALTER TABLE "campaign" DROP COLUMN "sharedMediaFormat"`);
-        await queryRunner.query(`ALTER TABLE "campaign" DROP COLUMN "sharedMedia"`);
         await queryRunner.query(`ALTER TABLE "participant" DROP COLUMN "reward"`);
         await queryRunner.query(`ALTER TABLE "weekly_reward" DROP COLUMN "participantId"`);
         await queryRunner.query(`ALTER TABLE "campaign_media" ALTER COLUMN "channel" DROP NOT NULL`);
@@ -50,8 +48,6 @@ export class AllRelationFixes1634038572272 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "campaign_media" ALTER COLUMN "channel" SET NOT NULL`);
         await queryRunner.query(`ALTER TABLE "weekly_reward" ADD "participantId" uuid`);
         await queryRunner.query(`ALTER TABLE "participant" ADD "reward" uuid`);
-        await queryRunner.query(`ALTER TABLE "campaign" ADD "sharedMedia" character varying`);
-        await queryRunner.query(`ALTER TABLE "campaign" ADD "sharedMediaFormat" character varying`);
         await queryRunner.query(`DROP TABLE "tatum_wallet"`);
     }
 }
