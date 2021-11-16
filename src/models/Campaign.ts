@@ -11,7 +11,7 @@ import {
 } from "typeorm";
 import { DateUtils } from "typeorm/util/DateUtils";
 import { Participant } from "./Participant";
-import { AlgorithmSpecs, CampaignRequirementSpecs, CampaignStatus } from "../types";
+import { AlgorithmSpecs, CampaignAuditStatus, CampaignRequirementSpecs, CampaignStatus } from "../types";
 import { SocialPost } from "./SocialPost";
 import { Transfer } from "./Transfer";
 import { StringifiedArrayTransformer, BigNumberEntityTransformer, AlgorithmTransformer } from "../util/transformers";
@@ -90,6 +90,9 @@ export class Campaign extends BaseEntity {
 
     @Column({ nullable: false, default: false })
     public audited: boolean;
+
+    @Column({ nullable: false, default: "DEFAULT" })
+    public auditStatus: CampaignAuditStatus;
 
     @Column({ nullable: true })
     public targetVideo: string;
