@@ -11,7 +11,7 @@ import {
 } from "typeorm";
 import { DateUtils } from "typeorm/util/DateUtils";
 import { Participant } from "./Participant";
-import { AlgorithmSpecs, CampaignRequirementSpecs, CampaignStatus } from "../types";
+import { AlgorithmSpecs, CampaignAuditStatus, CampaignRequirementSpecs, CampaignStatus } from "../types";
 import { SocialPost } from "./SocialPost";
 import { Transfer } from "./Transfer";
 import { StringifiedArrayTransformer, BigNumberEntityTransformer, AlgorithmTransformer } from "../util/transformers";
@@ -31,6 +31,7 @@ import { TatumClient, CAMPAIGN_CREATION_AMOUNT } from "../clients/tatumClient";
 import { WalletCurrency } from "./WalletCurrency";
 import { Wallet } from "./Wallet";
 import { Currency } from "./Currency";
+import { getCryptoAssestImageUrl } from "../controllers/controllerHelpers";
 
 @Entity()
 export class Campaign extends BaseEntity {
@@ -91,6 +92,9 @@ export class Campaign extends BaseEntity {
     @Column({ nullable: false, default: false })
     public audited: boolean;
 
+    @Column({ nullable: false, default: "DEFAULT" })
+    public auditStatus: CampaignAuditStatus;
+
     @Column({ nullable: true })
     public targetVideo: string;
 
@@ -137,6 +141,7 @@ export class Campaign extends BaseEntity {
 
     @Column({ type: "text", nullable: true })
     public type: string;
+    public symbolImageUrl = "";
 
     @OneToMany(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -223,6 +228,7 @@ export class Campaign extends BaseEntity {
         if (this.posts && this.posts.length > 0) returnedCampaign.posts = this.posts.map((post) => post.asV1());
         if (this.org) returnedCampaign.org = this.org.asV1();
         if (this.crypto) returnedCampaign.crypto = this.crypto.asV1();
+        if (this.symbol) returnedCampaign.symbolImageUrl = getCryptoAssestImageUrl(this.symbol);
         return returnedCampaign;
     }
 

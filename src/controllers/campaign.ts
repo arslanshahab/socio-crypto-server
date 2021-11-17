@@ -633,7 +633,7 @@ const payoutRaffleCampaignRewards = async (entityManager: EntityManager, campaig
         where: { id: campaign.prize.id },
     });
     const transfer = Transfer.newFromRaffleSelection(wallet, campaign, prize);
-    campaign.audited = true;
+    campaign.auditStatus = "AUDITED";
     await entityManager.save([campaign, wallet, transfer]);
     await SesClient.sendRafflePrizeRedemptionEmail(winner.user.id, decrypt(winner.email), campaign);
     await Dragonchain.ledgerRaffleCampaignAudit({ [winner.user.id]: campaign.prize.displayName }, [], campaign.id);
@@ -736,7 +736,7 @@ const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
             }
         }
         await Transfer.save(transferRecords);
-        campaign.audited = true;
+        campaign.auditStatus = "AUDITED";
         await campaign.save();
         return userDeviceIds;
     } catch (error) {
@@ -851,7 +851,7 @@ const payoutCoiinCampaignRewards = async (entityManager: EntityManager, campaign
     } else {
         await escrow.remove();
     }
-    campaign.audited = true;
+    campaign.auditStatus = "AUDITED";
     await entityManager.save(campaign);
     await entityManager.save(participants);
     await entityManager.save(transfers);

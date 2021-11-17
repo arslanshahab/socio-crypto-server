@@ -238,6 +238,8 @@ export type TransferStatus =
 
 export type CampaignStatus = "ACTIVE" | "PENDING" | "INSUFFICIENT_FUNDS" | "CLOSED" | "APPROVED" | "DENIED";
 
+export type CampaignAuditStatus = "DEFAULT" | "AUDITED" | "PENDING";
+
 export interface GraphApiInputParameters {
     fields?: string[] | string;
     metric?: string[] | string;

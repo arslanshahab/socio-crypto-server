@@ -16,7 +16,7 @@ import { In } from "typeorm";
 import { rewardUserForParticipation } from "./weeklyReward";
 import {
     findOrCreateCurrency,
-    getCryotoAssesImageUrl,
+    getCryptoAssestImageUrl,
     getMinWithdrawableAmount,
     getUSDValueForCurrency,
 } from "./controllerHelpers";
@@ -369,7 +369,7 @@ export const getWalletBalances = async (parent: any, args: any, context: { user:
             symbol: currencyItem.symbol,
             minWithdrawAmount,
             usdBalance: getUSDValueForCurrency(currencyItem.symbol.toLowerCase(), balance.availableBalance),
-            imageUrl: getCryotoAssesImageUrl(currencyItem.symbol),
+            imageUrl: getCryptoAssestImageUrl(currencyItem.symbol),
         };
     });
     if (coiinCurrency) {
@@ -379,7 +379,7 @@ export const getWalletBalances = async (parent: any, args: any, context: { user:
                 balance: coiinCurrency.balance.toNumber() || 0,
                 minWithdrawAmount: coiinCurrency.balance.toNumber(),
                 usdBalance: getUSDValueForCurrency(coiinCurrency.type.toLowerCase(), coiinCurrency.balance.toNumber()),
-                imageUrl: getCryotoAssesImageUrl(coiinCurrency.type.toUpperCase()),
+                imageUrl: getCryptoAssestImageUrl(coiinCurrency.type.toUpperCase()),
             })
         );
     }

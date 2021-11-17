@@ -189,6 +189,7 @@ export const typeDefs = gql`
         getWeeklyRewards: WeeklyRewardResponse
         getRedemptionRequirements: RedemptionRequirements
         getUserBalances(userId: String): [UserBalance]
+        getTransferHistory(symbol: String, skip: Int, take: Int): [Transfer]
     }
 
     type DepostAddressObject {
@@ -529,6 +530,7 @@ export const typeDefs = gql`
         coiinTotal: Float
         status: String
         symbol: String
+        symbolImageUrl: String
         totalParticipationScore: Float
         target: String
         description: String

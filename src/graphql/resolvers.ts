@@ -15,6 +15,7 @@ import * as cryptoController from "../controllers/crypto";
 import * as xoxodayController from "../controllers/xoxoday";
 import * as weeklyReward from "../controllers/weeklyReward";
 import * as tatumController from "../controllers/tatum";
+import * as transferController from "../controllers/transfer";
 
 export const resolvers = {
     Query: {
@@ -50,6 +51,7 @@ export const resolvers = {
         getWeeklyRewards: weeklyReward.getWeeklyRewards,
         getRedemptionRequirements: xoxodayController.redemptionRequirements,
         getUserBalances: userController.getWalletBalances,
+        getTransferHistory: transferController.getTransferHistory,
     },
     Mutation: {
         generateFactorsFromKyc: factorController.generateFactors,

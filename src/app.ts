@@ -86,6 +86,12 @@ export class Application {
                     timestamp: new Date().toISOString(),
                     operation: requestContext.request.operationName,
                 });
+
+                return {
+                    async didEncounterErrors(requestContext) {
+                        console.log(requestContext.errors);
+                    },
+                };
             },
         };
         const server = new ApolloServer({

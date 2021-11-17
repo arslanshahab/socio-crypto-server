@@ -50,6 +50,6 @@ export const getUSDValueForCurrency = async (symbol: string, amount: number) => 
     return marketRate * amount;
 };
 
-export const getCryotoAssesImageUrl = (symbol: string): string => {
+export const getCryptoAssestImageUrl = (symbol: string): string => {
     return getImage(symbol).toLowerCase().includes("unknown") ? getImage("ETH") : getImage(symbol);
 };
