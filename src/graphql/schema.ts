@@ -78,7 +78,7 @@ export const typeDefs = gql`
         registerFactorLink(factor: JSON): User
         updateUsername(username: String!): User
         removeFactorLink(factorId: String!): User
-        registerKyc(userKyc: JSON!): KycUser
+        verifyKyc(userKyc: KycApplication): KycUser
         updateKyc(user: JSON!): KycUser
         initiateWithdraw(withdrawAmount: Float!, ethAddress: String, tokenSymbol: String): Transfer
         updateWithdrawStatus(transferIds: [String]!, status: String!): [Transfer]
@@ -190,8 +190,28 @@ export const typeDefs = gql`
         getRedemptionRequirements: RedemptionRequirements
         getUserBalances(userId: String): [UserBalance]
         getTransferHistory(symbol: String, skip: Int, take: Int): [Transfer]
+        downloadKyc(kycId: String!): [Factor]
     }
 
+    input KycApplication {
+        firstName: String!
+        middleName: String!
+        lastName: String!
+        email: String!
+        billingStreetAddress: String!
+        billingCity: String!
+        billingCountry: String!
+        billingZip: Int
+        gender: String!
+        dob: String!
+        phoneNumber: String!
+        documentType: String!
+        documentCountry: String!
+        frontDocumentImage: String!
+        faceImage: String!
+        backDocumentImage: String!
+    }
+    
     type DepostAddressObject {
         symbol: String
         address: String
@@ -488,6 +508,21 @@ export const typeDefs = gql`
         ssn: String
         hasIdProof: Boolean
         hasAddressProof: Boolean
+    }
+
+    type KycResponse {
+        kycId: String
+        state: String
+        factors: [Factor]
+    }
+    
+    type Factor {
+        id: String
+        name: String
+        hashType: String
+        providerId: String
+        signature: String
+        factor: String
     }
 
     type FactorLink {

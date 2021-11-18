@@ -24,6 +24,8 @@ import { NotificationSettings } from "./NotificationSettings";
 import { Admin } from "./Admin";
 import { ExternalAddress } from "./ExternalAddress";
 import { WeeklyReward } from "./WeeklyReward";
+import {KycStatus} from "../types";
+import {VerificationApplication} from "./VerificationApplication";
 
 @Entity()
 export class User extends BaseEntity {
@@ -37,10 +39,10 @@ export class User extends BaseEntity {
     public active: boolean;
 
     @Column({ nullable: true })
-    public kycStatus: string;
+    public kycStatus: KycStatus;
 
     @OneToMany((_type) => SocialPost, (posts) => posts.user)
-    posts: SocialPost[];
+    public posts: SocialPost[];
 
     @Column({ nullable: true })
     public lastLogin: Date;
@@ -74,6 +76,13 @@ export class User extends BaseEntity {
         (link) => link.user
     )
     public socialLinks: SocialLink[];
+
+    @OneToMany(
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        (_type) => VerificationApplication,
+        (verification) => verification.user
+    )
+    public identityVerifications: VerificationApplication[];
 
     @OneToMany(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars

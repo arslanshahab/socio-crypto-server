@@ -308,4 +308,43 @@ export class Firebase {
         };
         await Firebase.client.messaging().send(message);
     }
+
+    public static async sendFactorVerificationUpdate(token: string, status: string) {
+        let title = '';
+        let body = '';
+        switch (status) {
+            case'ACCEPTED':
+                title = "Your KYC has been approved";
+                body = `Please go to your settings page to download the factors`;
+                break;
+            case 'REJECTED':
+                title = "Your KYC was denied"
+                body = "Please resubmit your documents or contact support"
+                break;
+            default:
+                return;
+        }
+        const message: admin.messaging.Message = {
+            notification: {
+                title,
+                body,
+            },
+            apns: {
+                payload: {
+                    aps: {
+                        contentAvailable: true,
+                        sound: "default",
+                        badge: 4,
+                        alert: {
+                            title,
+                            body,
+                        },
+                    },
+                },
+            },
+            data: { title, body, redirection: JSON.stringify({ to: "settings" }) },
+            token,
+        };
+        await Firebase.client.messaging().send(message);
+    }
 }

@@ -240,6 +240,8 @@ export type CampaignStatus = "ACTIVE" | "PENDING" | "INSUFFICIENT_FUNDS" | "CLOS
 
 export type CampaignAuditStatus = "DEFAULT" | "AUDITED" | "PENDING";
 
+export type KycStatus = 'APPROVED'| 'PENDING' | 'REJECTED' | '';
+
 export interface GraphApiInputParameters {
     fields?: string[] | string;
     metric?: string[] | string;
@@ -270,4 +272,39 @@ export interface PaymentIntent extends Stripe.PaymentIntent {
         transferId: string;
         stage: string;
     };
+}
+
+export interface KycApplication {
+    firstName?: string;
+    middleName?: string;
+    lastName?: string;
+    email?: string;
+    billingStreetAddress?: string;
+    billingCity?: string;
+    billingCountry?: string;
+    billingZip?: number;
+    gender?: string;
+    dob?: string;
+    phoneNumber?: string;
+    documentType?: string;
+    documentCountry?: string;
+    frontDocumentImage?: string;
+    faceImage?: string;
+    backDocumentImage?: string;
+}
+
+export interface KycResult {
+    id: string;
+    state: string;
+    factors: Factor[];
+    error?: string;
+}
+
+export interface Factor {
+    id: string;
+    name: string;
+    hashType: string; //'sha256';
+    providerId: string;
+    signature: string;
+    factor: string;
 }
