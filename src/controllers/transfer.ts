@@ -11,11 +11,14 @@ export const getTransferHistory = async (
     if (!symbol) throw new Error("symbol not found");
     const user = await User.findOne({ where: { identityId: id }, relations: ["wallet"] });
     if (!user) throw new Error("user not found");
-    const data = await Transfer.find({
+    const [data, count] = await Transfer.findAndCount({
         where: { currency: symbol.toUpperCase(), wallet: user.wallet },
         skip: skip,
         take: take,
     });
     const results = data.map((item) => item.asV1());
-    return results;
+    return {
+        total: count,
+        results,
+    };
 };

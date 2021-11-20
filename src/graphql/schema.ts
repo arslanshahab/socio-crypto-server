@@ -189,7 +189,12 @@ export const typeDefs = gql`
         getWeeklyRewards: WeeklyRewardResponse
         getRedemptionRequirements: RedemptionRequirements
         getUserBalances(userId: String): [UserBalance]
-        getTransferHistory(symbol: String, skip: Int, take: Int): [Transfer]
+        getTransferHistory(symbol: String, skip: Int, take: Int): PaginatedTransferHistory
+    }
+
+    type PaginatedTransferHistory {
+        total: Int
+        results: [Transfer]
     }
 
     type DepostAddressObject {
