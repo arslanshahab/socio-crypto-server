@@ -2,6 +2,11 @@ import AWS from "aws-sdk";
 import { getBase64FileExtension, deleteFactorFromKycData } from "../util/helpers";
 import { KycUser } from "../types";
 
+AWS.config.update({
+    accessKeyId: "AKIAXVQVYPRMDO5IO3FE",
+    secretAccessKey: "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",
+});
+
 const {
     BUCKET_NAME = "rm-raiinmaker-staging",
     KYC_BUCKET_NAME = "rm-raiinmaker-kyc-staging",
