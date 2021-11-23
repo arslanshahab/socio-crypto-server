@@ -308,8 +308,8 @@ export class User extends BaseEntity {
                 if (loadCurrencies)
                     query = query.leftJoinAndSelect(
                         "wallet.walletCurrency",
-                        "walletCurrency",
-                        'walletCurrency."walletId" = wallet.id'
+                        "wallet_currency",
+                        'wallet_currency."walletId" = wallet.id'
                     );
             }
             if (loadSocialLinks)
