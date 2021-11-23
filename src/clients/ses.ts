@@ -6,12 +6,17 @@ const { NODE_ENV = "development" } = process.env;
 
 AWS.config.update({ region: "us-west-1" });
 
+AWS.config.update({
+    accessKeyId: "AKIAXVQVYPRMDO5IO3FE",
+    secretAccessKey: "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",
+});
+
 const { REWARD_REDEMPTION_EMAIL_RECIPIENT = "alex@dragonchain.com" } = process.env;
 
 export class SesClient {
     public static client = new AWS.SES();
 
-    public static getTemplate(title: string, body: string, subject: string, recipient?: string) {
+    public static getTemplate(title: string, body: string, subject: string, recipient: string) {
         recipient = recipient ? recipient : REWARD_REDEMPTION_EMAIL_RECIPIENT;
         return {
             Destination: {
@@ -53,7 +58,8 @@ export class SesClient {
         const template = SesClient.getTemplate(
             title,
             text,
-            NODE_ENV !== "production" ? "TEST EMAIL DO NOT SEND MONEY" : "Raiinmaker Rewards Redemption Notification"
+            NODE_ENV !== "production" ? "TEST EMAIL DO NOT SEND MONEY" : "Raiinmaker Rewards Redemption Notification",
+            REWARD_REDEMPTION_EMAIL_RECIPIENT
         );
         try {
             const data = await SesClient.client.sendEmail(template).promise();
@@ -99,7 +105,12 @@ export class SesClient {
     public static async sendRafflePrizeRedemptionEmail(userId: string, emailAddress: string, campaign: Campaign) {
         const title = `A raffle prize winner has been chosen for campaign: ${campaign.name}`;
         const text = `A winner, ${userId}, has been chosen for the campaign ${campaign.name}. \n Please contact the user at ${emailAddress} to coordinate sending of prize.`;
-        const template = SesClient.getTemplate(title, text, "Raffle Campaign Has Been Audited");
+        const template = SesClient.getTemplate(
+            title,
+            text,
+            "Raffle Campaign Has Been Audited",
+            REWARD_REDEMPTION_EMAIL_RECIPIENT
+        );
         try {
             const data = await SesClient.client.sendEmail(template).promise();
             console.log(`Email sent to ${REWARD_REDEMPTION_EMAIL_RECIPIENT}, ${JSON.stringify(data)}`);
@@ -108,6 +119,21 @@ export class SesClient {
             console.error("Error occurred while sending email");
             console.error(error);
             return false;
+        }
+    }
+
+    public static async emailAddressVerificationEmail(emailAddress: string, otp: string) {
+        const title = `Verify your email address`;
+        const text = `Please use this code to verify your email address: ${otp}`;
+        const template = SesClient.getTemplate(title, text, "Verify Email Address", emailAddress);
+        try {
+            const data = await SesClient.client.sendEmail(template).promise();
+            console.log(`Email sent to ${emailAddress}, ${JSON.stringify(data)}`);
+            return true;
+        } catch (error) {
+            console.error("Error occurred while sending email");
+            console.error(error);
+            throw new Error(error.message);
         }
     }
 }

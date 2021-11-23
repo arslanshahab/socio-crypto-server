@@ -24,6 +24,7 @@ import { NotificationSettings } from "./NotificationSettings";
 import { Admin } from "./Admin";
 import { ExternalAddress } from "./ExternalAddress";
 import { WeeklyReward } from "./WeeklyReward";
+import { Verification } from "./Verification";
 
 @Entity()
 export class User extends BaseEntity {
@@ -81,6 +82,13 @@ export class User extends BaseEntity {
         (link) => link.user
     )
     public factorLinks: FactorLink[];
+
+    @OneToMany(
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        (_type) => Verification,
+        (verification) => verification.user
+    )
+    public verifications: Verification[];
 
     @OneToMany(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
