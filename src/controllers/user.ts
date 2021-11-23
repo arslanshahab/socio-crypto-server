@@ -135,7 +135,7 @@ export const me = async (
     // const query = info.fieldNodes.find((field) => field.name.value === info.fieldName);
     const user = await User.findOne({
         where: { identityId: id },
-        relations: ["profile", "campaigns", "wallet", "wallet.walletCurrency", "wallet.transfers"],
+        relations: ["profile", "orders", "campaigns", "wallet", "wallet.walletCurrency", "wallet.transfers"],
     });
     console.log(user);
     if (!user) throw new Error("user not found");
