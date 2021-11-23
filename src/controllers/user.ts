@@ -135,11 +135,8 @@ export const me = async (
     info: GraphQLResolveInfo
 ) => {
     const { id } = context.user;
-    // const query = info.fieldNodes.find((field) => field.name.value === info.fieldName);
-    const user = await User.findOne({
-        where: { identityId: id },
-        relations: ["profile", "orders", "campaigns", "wallet", "wallet.walletCurrency", "wallet.transfers"],
-    });
+    const query = info.fieldNodes.find((field) => field.name.value === info.fieldName);
+    const user = await User.getUser(id, query);
     if (!user) throw new Error("user not found");
     if (args.openCampaigns !== null && args.openCampaigns === true) {
         user.campaigns = user.campaigns.filter((p) => p.campaign.isOpen());
@@ -397,7 +394,6 @@ export const startEmailVerification = async (parent: any, args: { email: string 
         const { id } = context.user;
         const { email } = args;
         const user = await User.findOne({ where: { identityId: id }, relations: ["profile"] });
-        console.log(user);
         if (!user) throw new Error("user not found");
         if (!email) throw new Error("email not provided");
         if (user.profile.email === email) throw new Error("email already exists");
