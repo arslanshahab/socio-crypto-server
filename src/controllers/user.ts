@@ -397,6 +397,7 @@ export const startEmailVerification = async (parent: any, args: { email: string 
         const { id } = context.user;
         const { email } = args;
         const user = await User.findOne({ where: { identityId: id }, relations: ["profile"] });
+        console.log(user);
         if (!user) throw new Error("user not found");
         if (!email) throw new Error("email not provided");
         if (user.profile.email === email) throw new Error("email already exists");
@@ -435,7 +436,7 @@ export const completeEmailVerification = async (
         if (user.profile.email === email) throw new Error("email already exists");
         const verificationData = await Verification.findOne({ where: { email, user, verified: false, token } });
         if (!verificationData) throw new Error("invalid token or verfication not initialized");
-        user.profile.email === email;
+        user.profile.email = email;
         await user.profile.save();
         verificationData.verified = true;
         await verificationData.save();
