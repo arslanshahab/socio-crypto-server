@@ -291,7 +291,9 @@ export class User extends BaseEntity {
                 query = query.leftJoinAndSelect("user.wallet", "wallet", 'wallet."userId" = user.id');
                 const subFields = loadWallet.selectionSet?.selections.filter((node) => node.kind === "Field") || [];
                 const loadTransfers = subFields.find((node: FieldNode) => node.name.value === "transfers") as FieldNode;
-                const loadCurrencies = subFields.find((node: FieldNode) => node.name.value === "currency") as FieldNode;
+                const loadCurrencies = subFields.find(
+                    (node: FieldNode) => node.name.value === "walletCurrency"
+                ) as FieldNode;
                 if (loadTransfers) {
                     query = query.leftJoinAndSelect("wallet.transfers", "transfer", 'transfer."walletId" = wallet.id');
                     const transferFields =
@@ -306,8 +308,8 @@ export class User extends BaseEntity {
                 if (loadCurrencies)
                     query = query.leftJoinAndSelect(
                         "wallet.walletCurrency",
-                        "walletCurrency",
-                        'walletCurrency."walletId" = wallet.id'
+                        "wallet_currency",
+                        'wallet_currency."walletId" = wallet.id'
                     );
             }
             if (loadSocialLinks)
