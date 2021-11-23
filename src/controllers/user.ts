@@ -137,7 +137,6 @@ export const me = async (
         where: { identityId: id },
         relations: ["profile", "orders", "campaigns", "wallet", "wallet.walletCurrency", "wallet.transfers"],
     });
-    console.log(user);
     if (!user) throw new Error("user not found");
     if (args.openCampaigns !== null && args.openCampaigns === true) {
         user.campaigns = user.campaigns.filter((p) => p.campaign.isOpen());
