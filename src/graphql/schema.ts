@@ -509,7 +509,7 @@ export const typeDefs = gql`
     type Wallet {
         id: String
         pendingBalance: String
-        currency: [WalletCurrency]
+        walletCurrency: [WalletCurrency]
         transfers: [Transfer]
     }
 
