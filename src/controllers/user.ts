@@ -25,6 +25,9 @@ import { WalletCurrency } from "../models/WalletCurrency";
 import { Wallet } from "../models/Wallet";
 import { Currency } from "../models/Currency";
 import { flatten } from "lodash";
+import { Verification } from "../models/Verification";
+import { generateRandomNonce } from "../util/helpers";
+import { SesClient } from "../clients/ses";
 
 export const participate = async (parent: any, args: { campaignId: string; email: string }, context: { user: any }) => {
     try {
@@ -387,4 +390,64 @@ export const getWalletBalances = async (parent: any, args: any, context: { user:
         );
     }
     return allCurrencies;
+};
+
+export const startEmailVerification = async (parent: any, args: { email: string }, context: { user: any }) => {
+    try {
+        const { id } = context.user;
+        const { email } = args;
+        const user = await User.findOne({ where: { identityId: id }, relations: ["profile"] });
+        console.log(user);
+        if (!user) throw new Error("user not found");
+        if (!email) throw new Error("email not provided");
+        if (user.profile.email === email) throw new Error("email already exists");
+        let verificationData = await Verification.findOne({ where: { email: email, user: user, verified: false } });
+        if (!verificationData) {
+            verificationData = new Verification();
+            verificationData.email = email;
+            verificationData.token = generateRandomNonce();
+            verificationData.user = user;
+            await verificationData.save();
+        }
+        await SesClient.emailAddressVerificationEmail(email, verificationData.token);
+        return {
+            success: true,
+            message: "Email sent to provided email address",
+        };
+    } catch (error) {
+        return {
+            success: false,
+            message: error.message,
+        };
+    }
+};
+
+export const completeEmailVerification = async (
+    parent: any,
+    args: { email: string; token: string },
+    context: { user: any }
+) => {
+    try {
+        const { id } = context.user;
+        const { email, token } = args;
+        const user = await User.findOne({ where: { identityId: id }, relations: ["profile"] });
+        if (!user) throw new Error("user not found");
+        if (!email || !token) throw new Error("email or token missing");
+        if (user.profile.email === email) throw new Error("email already exists");
+        const verificationData = await Verification.findOne({ where: { email, user, verified: false, token } });
+        if (!verificationData) throw new Error("invalid token or verfication not initialized");
+        user.profile.email = email;
+        await user.profile.save();
+        verificationData.verified = true;
+        await verificationData.save();
+        return {
+            success: true,
+            message: "Email address verified",
+        };
+    } catch (error) {
+        return {
+            success: false,
+            message: error.message,
+        };
+    }
 };
