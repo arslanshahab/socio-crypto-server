@@ -13,6 +13,7 @@ export const getTransferHistory = async (
     if (!user) throw new Error("user not found");
     const [data, count] = await Transfer.findAndCount({
         where: { currency: symbol.toUpperCase(), wallet: user.wallet },
+        relations: ["wallet", "campaign"],
         skip: skip,
         take: take,
     });
