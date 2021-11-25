@@ -88,8 +88,8 @@ export class Application {
                 });
 
                 return {
-                    async didEncounterErrors(requestContext) {
-                        console.log(requestContext.errors);
+                    async didEncounterErrors(context) {
+                        console.log(context.errors);
                     },
                 };
             },
