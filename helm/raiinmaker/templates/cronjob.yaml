@@ -621,7 +621,7 @@ spec:
             iam.amazonaws.com/role: {{ .Values.data.IAM_ROLE }}
         spec:
           containers:
-            - name: coiin-watcher
+            - name: campaign-audit
               image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
               imagePullPolicy: {{ .Values.image.pullPolicy }}
               command: ["node"]
