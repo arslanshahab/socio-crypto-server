@@ -268,24 +268,6 @@ export class S3Client {
         }
     }
 
-    public static async setLastCheckedTransactionTime(time: number) {
-        const params: AWS.S3.PutObjectRequest = {
-            Bucket: BUCKET_NAME,
-            Key: "tatum/lastCheckedTime",
-            Body: String(time),
-        };
-        return await this.client.putObject(params).promise();
-    }
-
-    public static async getLastCheckedTransactionTime() {
-        const params: AWS.S3.GetObjectRequest = { Bucket: BUCKET_NAME, Key: "tatum/lastCheckedTime" };
-        try {
-            return (await this.client.getObject(params).promise()).Body?.toString();
-        } catch (e) {
-            throw e;
-        }
-    }
-
     public static async setTatumWalletKeys(currency: string, data: any) {
         const params: AWS.S3.PutObjectRequest = {
             Bucket: TATUM_WALLETS,
@@ -300,6 +282,19 @@ export class S3Client {
         try {
             return JSON.parse((await S3Client.client.getObject(params).promise()).Body!.toString());
         } catch (e) {
+            throw e;
+        }
+    }
+
+    public static async getWhitelistedPrivateKey() {
+        const params: AWS.S3.GetObjectRequest = {
+            Bucket: RM_SECRETS,
+            Key: "rm-minter-whitelisted-address-rinkeby.rtf",
+        };
+        try {
+            return (await this.client.getObject(params).promise()).Body?.toString();
+        } catch (e) {
+            if (e.code && e.code === "NotFound") return null;
             throw e;
         }
     }

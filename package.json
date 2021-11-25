@@ -1,6 +1,6 @@
 {
     "name": "raiinmaker-server",
-    "version": "1.1.1",
+    "version": "1.1.2",
     "main": "index.js",
     "repository": "git@github.com:dragonchain-inc/raiinmaker-server.git",
     "author": "Alex Benedetto <alex061994@gmail.com>",
@@ -30,8 +30,7 @@
         "metrics:generate": "NODE_ENV=script ts-node scripts/metrics/index.ts",
         "admin:generate": "NODE_ENV=script ts-node scripts/admin/index.ts",
         "cron:watcher:run": "AWS_PROFILE=raiinmaker LOAD_ENV=true ts-node ./src/cron/coiinWatcher/index.ts",
-        "cron:tatumWithdrawWatcher:run": "AWS_PROFILE=raiinmaker LOAD_ENV=true ts-node ./src/cron/tatumWithdrawWatcher/index.ts",
-        "cron:tatumTransactionWatcher:run": "AWS_PROFILE=raiinmaker LOAD_ENV=true ts-node ./src/cron/tatumTransactionWatcher/index.ts"
+        "cron:mintingContract:run": "AWS_PROFILE=raiinmaker LOAD_ENV=true ts-node ./src/cron/coiinMinter/index.ts"
     },
     "dependencies": {
         "@myfii-dev/dragonfactor-auth": "^0.0.12",
