@@ -52,6 +52,7 @@ export const resolvers = {
         getRedemptionRequirements: xoxodayController.redemptionRequirements,
         getUserBalances: userController.getWalletBalances,
         getTransferHistory: transferController.getTransferHistory,
+        downloadKyc: kycController.downloadKyc,
     },
     Mutation: {
         generateFactorsFromKyc: factorController.generateFactors,
@@ -70,7 +71,7 @@ export const resolvers = {
         registerFactorLink: factorController.registerFactorLink,
         removeFactorLink: factorController.removeFactorLink,
         updateUsername: userController.updateUsername,
-        registerKyc: kycController.registerKyc,
+        verifyKyc: kycController.verifyKyc,
         updateKyc: kycController.updateKyc,
         initiateWithdraw: withdrawController.start,
         updateWithdrawStatus: withdrawController.update,

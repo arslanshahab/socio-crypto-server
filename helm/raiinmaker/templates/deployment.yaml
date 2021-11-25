@@ -106,8 +106,8 @@ spec:
             - name: tatum
               mountPath: "/var/secrets/tatum"
               readOnly: true
-            - name: tatum
-              mountPath: "/var/secrets/rm-tokens"
+            - name: coiin-minter
+              mountPath: "/var/secrets/coiin-minter"
               readOnly: true
           resources:
             {{- toYaml .Values.server.resources | nindent 12 }}
@@ -148,6 +148,9 @@ spec:
         - name: tatum
           secret:
             secretName: tatum
+        - name: coiin-minter
+          secret:
+            secretName: coiin-minter
 ---
 apiVersion: apps/v1
 kind: Deployment
