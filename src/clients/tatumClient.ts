@@ -35,6 +35,8 @@ export interface WithdrawDetails {
 }
 
 export class TatumClient {
+    public static baseUrl = "https://api-eu1.tatum.io";
+
     public static async getAllCurrencies(): Promise<string[]> {
         try {
             const wallets = await TatumWallet.find({ where: { enabled: true } });
