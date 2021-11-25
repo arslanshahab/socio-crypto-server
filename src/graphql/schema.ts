@@ -124,7 +124,9 @@ export const typeDefs = gql`
         deleteCryptoFromWallet(id: String!): String
         removePaymentMethod(paymentMethodId: String): Boolean
         placeStoreOrder(cart: [JSON], email: String): JSON
-        withdrawFunds(symbol: String, address: String, amount: Float): WithdrawFundsResponse
+        withdrawFunds(symbol: String, address: String, amount: Float): SuccessResponse
+        startEmailVerification(email: String): SuccessResponse
+        completeEmailVerification(email: String, token: String): SuccessResponse
     }
 
     type Query {
@@ -189,7 +191,7 @@ export const typeDefs = gql`
         getWeeklyRewards: WeeklyRewardResponse
         getRedemptionRequirements: RedemptionRequirements
         getUserBalances(userId: String): [UserBalance]
-        getTransferHistory(symbol: String, skip: Int, take: Int): [Transfer]
+        getTransferHistory(symbol: String, skip: Int, take: Int): PaginatedTransferHistory
         downloadKyc(kycId: String!): [Factor]
     }
 
@@ -211,7 +213,12 @@ export const typeDefs = gql`
         faceImage: String!
         backDocumentImage: String!
     }
-    
+
+    type PaginatedTransferHistory {
+        total: Int
+        results: [Transfer]
+    }
+
     type DepostAddressObject {
         symbol: String
         address: String
@@ -229,7 +236,7 @@ export const typeDefs = gql`
         imageUrl: String
     }
 
-    type WithdrawFundsResponse {
+    type SuccessResponse {
         success: Boolean
         message: String
     }
@@ -515,7 +522,7 @@ export const typeDefs = gql`
         state: String
         factors: [Factor]
     }
-    
+
     type Factor {
         id: String
         name: String
@@ -539,7 +546,7 @@ export const typeDefs = gql`
     type Wallet {
         id: String
         pendingBalance: String
-        currency: [WalletCurrency]
+        walletCurrency: [WalletCurrency]
         transfers: [Transfer]
     }
 

@@ -86,6 +86,8 @@ export const resolvers = {
         uploadProfilePicture: userController.uploadProfilePicture,
         placeStoreOrder: xoxodayController.placeOrder,
         withdrawFunds: tatumController.withdrawFunds,
+        startEmailVerification: userController.startEmailVerification,
+        completeEmailVerification: userController.completeEmailVerification,
     },
 };
 

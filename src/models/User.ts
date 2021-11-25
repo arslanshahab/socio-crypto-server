@@ -24,8 +24,9 @@ import { NotificationSettings } from "./NotificationSettings";
 import { Admin } from "./Admin";
 import { ExternalAddress } from "./ExternalAddress";
 import { WeeklyReward } from "./WeeklyReward";
-import {KycStatus} from "../types";
-import {VerificationApplication} from "./VerificationApplication";
+import { KycStatus } from "../types";
+import { VerificationApplication } from "./VerificationApplication";
+import { Verification } from "./Verification";
 
 @Entity()
 export class User extends BaseEntity {
@@ -90,6 +91,13 @@ export class User extends BaseEntity {
         (link) => link.user
     )
     public factorLinks: FactorLink[];
+
+    @OneToMany(
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        (_type) => Verification,
+        (verification) => verification.user
+    )
+    public verifications: Verification[];
 
     @OneToMany(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -292,7 +300,9 @@ export class User extends BaseEntity {
                 query = query.leftJoinAndSelect("user.wallet", "wallet", 'wallet."userId" = user.id');
                 const subFields = loadWallet.selectionSet?.selections.filter((node) => node.kind === "Field") || [];
                 const loadTransfers = subFields.find((node: FieldNode) => node.name.value === "transfers") as FieldNode;
-                const loadCurrencies = subFields.find((node: FieldNode) => node.name.value === "currency") as FieldNode;
+                const loadCurrencies = subFields.find(
+                    (node: FieldNode) => node.name.value === "walletCurrency"
+                ) as FieldNode;
                 if (loadTransfers) {
                     query = query.leftJoinAndSelect("wallet.transfers", "transfer", 'transfer."walletId" = wallet.id');
                     const transferFields =
@@ -307,8 +317,8 @@ export class User extends BaseEntity {
                 if (loadCurrencies)
                     query = query.leftJoinAndSelect(
                         "wallet.walletCurrency",
-                        "walletCurrency",
-                        'walletCurrency."walletId" = wallet.id'
+                        "wallet_currency",
+                        'wallet_currency."walletId" = wallet.id'
                     );
             }
             if (loadSocialLinks)
