@@ -10,8 +10,11 @@ dotenv.config();
 const app = new Application();
 
 (async () => {
+    console.log("starting coiin minter cron job");
     await Secrets.initialize();
+    console.log("secrets initialized...");
     const connection = await app.connectDatabase();
+    console.log("connection established...");
     try {
         const web3 = new Web3();
         const amount = (1050000).toString();
