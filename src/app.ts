@@ -33,7 +33,7 @@ import {
     getAllWithdrawls,
     transferBalance,
 } from "./controllers/tatum";
-import {kycWebhook} from "./controllers/kyc";
+import { kycWebhook } from "./controllers/kyc";
 
 const { NODE_ENV = "development" } = process.env;
 
@@ -79,7 +79,7 @@ export class Application {
         this.app.use(bodyParser.urlencoded({ extended: true }));
         this.app.set("port", process.env.PORT || 8080);
         const requestPlugin: ApolloServerPlugin = {
-            async requestDidStart(requestContext) {
+            requestDidStart(requestContext) {
                 console.log({
                     timestamp: new Date().toISOString(),
                     operation: requestContext.request.operationName,
