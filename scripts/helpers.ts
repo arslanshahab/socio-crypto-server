@@ -1,24 +1,25 @@
 import {adjectives, animals, uniqueNamesGenerator} from "unique-names-generator";
 import {createConnection, getConnectionOptions} from "typeorm";
-import {Campaign} from "../../src/models/Campaign";
-import {BN, generateRandomNumber} from "../../src/util/helpers";
+import {Campaign} from "../src/models/Campaign";
+import {BN, generateRandomNumber} from "../src/util/helpers";
 import {
   getBeginDate,
   getEndDate
-} from "../../test/integration/specHelpers";
-import {Org} from "../../src/models/Org";
-import {HourlyCampaignMetric} from "../../src/models/HourlyCampaignMetric";
-import {Wallet} from "../../src/models/Wallet";
-import {Profile} from "../../src/models/Profile";
-import {User} from "../../src/models/User";
+} from "../test/integration/specHelpers";
+import {Org} from "../src/models/Org";
+import {HourlyCampaignMetric} from "../src/models/HourlyCampaignMetric";
+import {Wallet} from "../src/models/Wallet";
+import {Profile} from "../src/models/Profile";
+import {User} from "../src/models/User";
 import BigNumber from 'bignumber.js';
-import {AlgorithmSpecs, Tiers} from "../../src/types";
-import {SocialPost} from "../../src/models/SocialPost";
+import {AlgorithmSpecs, Tiers} from "../src/types";
+import {SocialPost} from "../src/models/SocialPost";
 import { v4 as uuidv4 } from 'uuid';
-import {Participant} from "../../src/models/Participant";
-import {ParticipantMetrics} from "./generator";
-import {SocialLink} from "../../src/models/SocialLink";
-import {WalletCurrency} from "../../src/models/WalletCurrency";
+import {Participant} from "../src/models/Participant";
+import {ParticipantMetrics} from "./metrics/generator";
+import {SocialLink} from "../src/models/SocialLink";
+import {WalletCurrency} from "../src/models/WalletCurrency";
+
 
 export const generateUniqueName = () => {
   return uniqueNamesGenerator({
@@ -36,7 +37,7 @@ export const getRandomIntWithinRange = (min: number, max: number) => {
   return new BN(Math.floor(Math.random() * (max - min + 1)) + min);
 }
 
-export const connectDatabase = async (modelPath: string = '/../../src/models/*') => {
+export const connectDatabase = async (modelPath: string = '/../src/models/*') => {
   const connectionOptions = await getConnectionOptions();
   Object.assign(connectionOptions, { entities: [__dirname + modelPath] });
   return await createConnection(connectionOptions);

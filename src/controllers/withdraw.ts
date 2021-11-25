@@ -8,12 +8,11 @@ import { performCurrencyAction } from "./helpers";
 import { asyncHandler, BN } from "../util/helpers";
 import { Paypal } from "../clients/paypal";
 import { Response, Request } from "express";
-import { PaypalPayout } from "../types";
-import { v4 as uuidv4 } from "uuid";
-import * as EthWithdraw from "./ethWithdraw";
 import { Firebase } from "../clients/firebase";
 import { WalletCurrency } from "../models/WalletCurrency";
 import { getTokenPriceInUsd } from "../clients/ethereum";
+import {performCoiinTransfer} from "./ethWithdraw";
+import { v4 as uuidv4 } from "uuid";
 
 export const start = async (
     parent: any,
@@ -127,7 +126,7 @@ export const update = async (
                         if (transfer.ethAddress) {
                             let transactionHash;
                             try {
-                                transactionHash = await EthWithdraw.performCoiinTransfer(
+                                transactionHash = await performCoiinTransfer(
                                     transfer.ethAddress,
                                     transfer.amount,
                                     transfer.currency
@@ -308,25 +307,6 @@ export const paypalWebhook = asyncHandler(async (req: Request, res: Response) =>
 
     res.status(200).json({ success: true });
 });
-
-export const makePayouts = async (payouts: { value: string; receiver: string; payoutId: string }[]) => {
-    const payload: PaypalPayout[] = [];
-    payouts.map((payout) => {
-        const item: PaypalPayout = {
-            recipient_type: "EMAIL",
-            amount: {
-                value: payout.value,
-                currency: "USD",
-            },
-            note: "Thanks for making it Raiin!",
-            sender_item_id: payout.payoutId,
-            receiver: payout.receiver,
-        };
-        payload.push(item);
-    });
-    const response = await Paypal.submitPayouts(payload);
-    return response.batch_header;
-};
 
 export const getWalletWithPendingBalance = async (
     _parent: any,

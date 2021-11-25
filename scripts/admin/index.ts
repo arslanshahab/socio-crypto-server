@@ -1,8 +1,8 @@
 import {Secrets} from "../../src/util/secrets";
 import {Firebase} from "../../src/clients/firebase";
 import {Connection} from "typeorm";
-import {connectDatabase} from "../metrics/helpers";
-import {addAccountToOrg, addAddress, addCurrencyToOrgWallet, addSupportedCurrency, createNewOrg, patchRaysAccount} from "./actions";
+import {addAccountToOrg, addAddress, addCurrencyToOrgWallet, addSupportedCurrency, createNewOrg} from "./actions";
+import {connectDatabase} from "../helpers";
 
 const ACTION = process.env.ACTION || 'patchAccount';
 let dbConn: Connection
@@ -41,9 +41,6 @@ const getDatabase = async () => {
       case 'addAddress':
         console.log('ADDING EXTERNAL ADDRESS')
         await addAddress();
-        break
-      case 'patchAccount':
-        await patchRaysAccount();
         break
       default:
         throw new Error('invalid action');

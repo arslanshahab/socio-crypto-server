@@ -82,6 +82,15 @@ export class S3Client {
         return;
     }
 
+    public static async deleteKycData(kycId: string) {
+        const params: AWS.S3.DeleteObjectRequest = { Bucket: KYC_BUCKET_NAME, Key: kycId };
+        try {
+            return await this.client.deleteObject(params).promise();
+        } catch (_) {
+            return null;
+        }
+    }
+
     public static async uploadKycImage(userId: string, type: string, image: string) {
         const params: AWS.S3.PutObjectRequest = {
             Bucket: KYC_BUCKET_NAME,
@@ -101,6 +110,16 @@ export class S3Client {
         try {
             const responseString = (await this.client.getObject(params).promise()).Body?.toString();
             return responseString;
+        } catch (e) {
+            if (e.code && e.code === "NotFound") return;
+            throw e;
+        }
+    }
+
+    public static async getKycFactors(kycId: string): Promise<string | undefined> {
+        const params: AWS.S3.GetObjectRequest = { Bucket: KYC_BUCKET_NAME, Key: kycId };
+        try {
+            return JSON.parse((await S3Client.client.getObject(params).promise()).Body!.toString());
         } catch (e) {
             if (e.code && e.code === "NotFound") return;
             throw e;

@@ -25,6 +25,8 @@ import { WalletCurrency } from "../models/WalletCurrency";
 import { Wallet } from "../models/Wallet";
 import { Currency } from "../models/Currency";
 import { flatten } from "lodash";
+import { asyncHandler } from "../util/helpers";
+import { Request, Response } from "express";
 import { Verification } from "../models/Verification";
 import { generateRandomNonce } from "../util/helpers";
 import { SesClient } from "../clients/ses";
@@ -65,6 +67,14 @@ export const participate = async (parent: any, args: { campaignId: string; email
         return null;
     }
 };
+
+export const insertUser = asyncHandler(async (req: Request, res: Response) => {
+    const user = new User();
+    user.identityId = "banana";
+    user.active = true;
+    await user.save();
+    res.status(200).json({ success: true });
+});
 
 export const promotePermissions = async (
     parent: any,
