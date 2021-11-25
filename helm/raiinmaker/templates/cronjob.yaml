@@ -483,9 +483,9 @@ spec:
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: coiin-minter
+  name: coiin-minter-job
   labels:
-    app.kubernetes.io/name: coiin-minter
+    app.kubernetes.io/name: coiin-minter-job
     helm.sh/chart: {{ include "raiinmaker.chart" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
@@ -499,7 +499,7 @@ spec:
             iam.amazonaws.com/role: {{ .Values.data.IAM_ROLE }}
         spec:
           containers:
-            - name: coiin-minter
+            - name: coiin-minter-job
               image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
               imagePullPolicy: {{ .Values.image.pullPolicy }}
               command: ["node"]
