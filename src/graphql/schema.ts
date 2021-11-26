@@ -192,6 +192,7 @@ export const typeDefs = gql`
         getRedemptionRequirements: RedemptionRequirements
         getUserBalances(userId: String): [UserBalance]
         getTransferHistory(symbol: String, skip: Int, take: Int): PaginatedTransferHistory
+        getParticipantsCompaign: [ParticipantsCompaign]
     }
 
     type PaginatedTransferHistory {
@@ -368,6 +369,10 @@ export const typeDefs = gql`
         participantCount: Int
         discoveryCount: Int
         conversionCount: Int
+    }
+    type ParticipantsCompaign {
+        clickCount: String
+        viewCount: String
     }
 
     type AdminHourlyCampaignMetrics {

@@ -859,3 +859,9 @@ const payoutCoiinCampaignRewards = async (entityManager: EntityManager, campaign
     await Dragonchain.ledgerCoiinCampaignAudit(usersWalletValues, rejected, campaign.id);
     return userDeviceIds;
 };
+
+export const getParticipantsCompaign = async () => {
+    const participants = await Participant.find();
+    console.log(participants);
+    return participants.map((item) => item.asV1());
+};
