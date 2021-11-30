@@ -17,7 +17,7 @@ const app = new Application();
     console.log("connection established...");
     try {
         const web3 = new Web3();
-        const amount = (1050000).toString();
+        const amount = (10050000).toString();
         let mintAmount = web3.utils.toWei(amount);
         console.log("MINT AMOUNT:", mintAmount);
         const privateKey = Secrets.minterPrivateKey;
@@ -36,6 +36,10 @@ const app = new Application();
             params: [encodedParam],
             amount: mintAmount,
             fromPrivateKey: privateKey,
+            fee: {
+                gasLimit: "40000",
+                gasPrice: "10000",
+            },
         };
         const requestData: RequestData = {
             method: "POST",

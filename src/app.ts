@@ -84,7 +84,7 @@ export class Application {
                     timestamp: new Date().toISOString(),
                     operation: requestContext.request.operationName,
                     request: requestContext.request.http?.url,
-                    variables: requestContext.request.variables,
+                    // variables: requestContext.request.variables,
                 });
 
                 return {
