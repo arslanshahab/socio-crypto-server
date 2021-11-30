@@ -57,6 +57,7 @@ export const participate = async (parent: any, args: { campaignId: string; email
         }
         const participant = Participant.newParticipant(user, campaign, args.email);
         const url = `${serverBaseUrl}/v1/referral/${participant.id}`;
+        console.log("participant_link----", url);
         participant.link = await TinyUrl.shorten(url);
         await HourlyCampaignMetric.upsert(campaign, campaign.org, "participate");
         await participant.save();
