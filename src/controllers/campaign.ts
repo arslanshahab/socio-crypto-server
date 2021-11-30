@@ -1,5 +1,6 @@
 import { CampaignAuditReport, CampaignChannelMedia, CampaignStatus, DateTrunc } from "../types";
 import { Campaign } from "../models/Campaign";
+import { Admin } from "../models/Admin";
 import { checkPermissions } from "../middleware/authentication";
 import { Participant } from "../models/Participant";
 import { S3Client } from "../clients/s3";
@@ -45,6 +46,7 @@ export const getCurrentCampaignTier = async (parent: any, args: { campaignId?: s
     let currentTierSummary;
     let currentCampaign;
     let cryptoPriceUsd;
+
     if (campaignId) {
         const where: { [key: string]: string } = { id: campaignId };
         currentCampaign = await Campaign.findOne({ where });
@@ -860,8 +862,38 @@ const payoutCoiinCampaignRewards = async (entityManager: EntityManager, campaign
     return userDeviceIds;
 };
 
-export const getParticipantsCompaign = async () => {
-    const participants = await Participant.find();
-    console.log(participants);
-    return participants.map((item) => item.asV1());
+export const getCampaignAnalytics = async (
+    parent: any,
+    args: { campaignId?: string; campaign?: Campaign },
+    context: { user: any }
+) => {
+    // const { campaignId } = args;
+    checkPermissions({ hasRole: ["admin"] }, context);
+    const admin = await Admin.findOne({ where: { firebaseId: context.user.id }, relations: ["org"] });
+    const campaigns = await Campaign.find({ where: { org: admin?.org }, relations: ["hourlyMetrics"] });
+    // const participants = await Participant.find();
+    // const hourlyMetrics = await HourlyCampaignMetric.find();
+    // console.log(
+    //     "Participants Campaign Details",
+    //     // campaigns.map((x) => ({ id: x.id, name: x.name })),
+    //     campaigns,
+    //     userId
+    // );
+
+    // return campaigns.map((item) => ({
+    //     id: item.id,
+    //     name: item.name,
+    // }));
+    return campaigns.map((item) => item.asV1());
+};
+export const getUserAllCampaign = async (parent: any, args: any, context: { user: any }) => {
+    const userId = context.user.id;
+    checkPermissions({ hasRole: ["admin"] }, context);
+    const admin = await Admin.findOne({ where: { firebaseId: userId }, relations: ["org"] });
+    const campaigns = await Campaign.find({ where: { org: admin?.org } });
+    console.log(
+        "All user Campaign",
+        campaigns.map((x) => ({ id: x.id, name: x.name }))
+    );
+    return campaigns.map((x) => ({ id: x.id, name: x.name }));
 };
