@@ -893,46 +893,73 @@ export const getUserAllCampaign = async (parent: any, args: any, context: { user
     return campaigns.map((x) => ({ id: x.id, name: x.name }));
 };
 export const getUserCampaign = async (parent: any, args: any, context: { user: any }) => {
-    // const userId = context.user.id;
+    const userId = context.user.id;
     const campaignId = args.id;
     checkPermissions({ hasRole: ["admin"] }, context);
-    // const admin = await Admin.findOne({ where: { firebaseId: userId }, relations: ["org"] });
-    // const campaign = await Campaign.findOne({ where: { org: admin?.org }, relations: ["hourlyMetrics"] });
-    let campaignOne = await Campaign.findOne({ where: { id: campaignId }, relations: ["hourlyMetrics"] });
-
-    const clickCount = campaignOne?.hourlyMetrics
-        .map((x) => new BigNumber(x.clickCount).toNumber())
-        .reduce((pre, next) => pre + next);
-
-    const viewCount = campaignOne?.hourlyMetrics
-        .map((x) => new BigNumber(x.viewCount).toNumber())
-        .reduce((pre, next) => pre + next);
-    const shareCount = campaignOne?.hourlyMetrics
-        .map((x) => new BigNumber(x.shareCount).toNumber())
-        .reduce((pre, next) => pre + next);
-    let totalParticipationScore;
-    if (campaignOne) {
-        totalParticipationScore = new BigNumber(campaignOne?.totalParticipationScore).toNumber();
-    }
-    console.log("Sum of view Count", totalParticipationScore);
-
-    // const totalShareCount = shareCount.reduce((pre, next) => pre + next);
-
     let updatedData;
-    if (campaignOne) {
-        updatedData = {
-            id: campaignOne.id,
-            name: campaignOne.name,
-            beginDate: campaignOne.beginDate,
-            endDate: campaignOne.endDate,
-            hourlyMetrics: {
-                clickCount,
-                viewCount,
-                shareCount,
-                totalParticipationScore,
-                rewards: 150,
-            },
-        };
+    //! All Campaign Analytics
+    if (!campaignId || campaignId == "-1") {
+        const admin = await Admin.findOne({ where: { firebaseId: userId }, relations: ["org"] });
+        const campaigns = await Campaign.find({ where: { org: admin?.org }, relations: ["hourlyMetrics"] });
+        const allHourlyMetrics = campaigns?.map((x) => x.hourlyMetrics);
+        const clickCount = allHourlyMetrics.map((ahm) => ahm.map((x) => new BigNumber(x.clickCount).toNumber()));
+        const totalClickCount = clickCount.flat().reduce((pre, next) => pre + next);
+        const viewCount = allHourlyMetrics
+            .flatMap((x) => x.flatMap((y) => new BigNumber(y.viewCount).toNumber()))
+            .reduce((pre, next) => pre + next);
+        const shareCount = allHourlyMetrics
+            .flatMap((x) => x.flatMap((y) => new BigNumber(y.shareCount).toNumber()))
+            .reduce((pre, next) => pre + next);
+        const totalParticipationScore = campaigns
+            .map((x) => new BigNumber(x.totalParticipationScore).toNumber())
+            .reduce((pre, next) => pre + next);
+        if (campaigns) {
+            updatedData = {
+                name: "All",
+                hourlyMetrics: {
+                    clickCount: totalClickCount,
+                    viewCount,
+                    shareCount,
+                    totalParticipationScore,
+                    rewards: 150,
+                },
+            };
+        }
     }
+    //!--------Get Campaign Analytics by Id---------
+    else {
+        let campaignOne = await Campaign.findOne({ where: { id: campaignId }, relations: ["hourlyMetrics"] });
+        const clickCount = campaignOne?.hourlyMetrics
+            .map((x) => new BigNumber(x.clickCount).toNumber())
+            .reduce((pre, next) => pre + next);
+
+        const viewCount = campaignOne?.hourlyMetrics
+            .map((x) => new BigNumber(x.viewCount).toNumber())
+            .reduce((pre, next) => pre + next);
+        const shareCount = campaignOne?.hourlyMetrics
+            .map((x) => new BigNumber(x.shareCount).toNumber())
+            .reduce((pre, next) => pre + next);
+        let totalParticipationScore;
+        if (campaignOne) {
+            totalParticipationScore = new BigNumber(campaignOne?.totalParticipationScore).toNumber();
+        }
+
+        if (campaignOne) {
+            updatedData = {
+                id: campaignOne.id,
+                name: campaignOne.name,
+                beginDate: campaignOne.beginDate,
+                endDate: campaignOne.endDate,
+                hourlyMetrics: {
+                    clickCount,
+                    viewCount,
+                    shareCount,
+                    totalParticipationScore,
+                    rewards: 150,
+                },
+            };
+        }
+    }
+
     return updatedData;
 };
