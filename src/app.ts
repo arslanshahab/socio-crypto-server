@@ -79,12 +79,12 @@ export class Application {
         this.app.use(bodyParser.urlencoded({ extended: true }));
         this.app.set("port", process.env.PORT || 8080);
         const requestPlugin: ApolloServerPlugin = {
-            requestDidStart(requestContext) {
+            async requestDidStart(requestContext) {
                 console.log({
                     timestamp: new Date().toISOString(),
                     operation: requestContext.request.operationName,
                     request: requestContext.request.http?.url,
-                    variables: requestContext.request.variables,
+                    // variables: requestContext.request.variables,
                 });
 
                 return {

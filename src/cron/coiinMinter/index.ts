@@ -10,18 +10,14 @@ dotenv.config();
 const app = new Application();
 
 (async () => {
-    console.log("starting coiin minter cron job");
     await Secrets.initialize();
-    console.log("secrets initialized...");
     const connection = await app.connectDatabase();
-    console.log("connection established...");
     try {
         const web3 = new Web3();
         const amount = (1050000).toString();
         let mintAmount = web3.utils.toWei(amount);
         console.log("MINT AMOUNT:", mintAmount);
         const privateKey = Secrets.minterPrivateKey;
-        console.log("PRIVATE_KEY", privateKey);
         const encodedParam = web3.eth.abi.encodeParameter("uint256", mintAmount);
         const payload = {
             contractAddress: "0x9a016b31B7918d553Fc11056320AE52F1571311C",

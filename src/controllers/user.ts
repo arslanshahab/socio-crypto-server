@@ -56,6 +56,7 @@ export const participate = async (parent: any, args: { campaignId: string; email
             await findOrCreateCurrency(campaign.symbol, user.wallet);
         }
         const participant = Participant.newParticipant(user, campaign, args.email);
+        await participant.save();
         const url = `${serverBaseUrl}/v1/referral/${participant.id}`;
         participant.link = await TinyUrl.shorten(url);
         await HourlyCampaignMetric.upsert(campaign, campaign.org, "participate");
