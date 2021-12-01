@@ -932,15 +932,7 @@ export const getUserCampaign = async (parent: any, args: any, context: { user: a
                 totalParticipationScore,
                 rewards: 150,
             },
-            // hourlyMetrics: campaignOne.hourlyMetrics.map((metric) => {
-            //     return {
-            //         ...metric,
-            //         clickCount: totalClickCount,
-            //         viewCount: new BigNumber(metric.viewCount).toNumber(),
-            //     };
-            // }),
         };
     }
-    console.log(updatedData);
     return updatedData;
 };
