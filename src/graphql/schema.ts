@@ -194,6 +194,7 @@ export const typeDefs = gql`
         getTransferHistory(symbol: String, skip: Int, take: Int): PaginatedTransferHistory
         getCampaignAnalytics(campaignId: String): [ParticipantsCompaign]
         getUserAllCampaign: [UserAllCampaigns]
+        getUserCampaign(id: String): UserCampaign
     }
 
     type PaginatedTransferHistory {
@@ -371,15 +372,29 @@ export const typeDefs = gql`
         discoveryCount: Int
         conversionCount: Int
     }
+    "Participants Compaign"
     type ParticipantsCompaign {
-        clickCount: String
-        viewCount: String
+        id: ID
+        name: String
     }
+    "Get All Campaigns of User"
     type UserAllCampaigns {
         id: ID
         name: String
     }
-
+    "Get Campaign of User by Id"
+    type UserCampaign {
+        id: ID
+        name: String
+        hourlyMetrics: HoulyMetric
+    }
+    type HoulyMetric {
+        clickCount: Int
+        viewCount: Int
+        shareCount: Int
+        totalParticipationScore: Int
+        rewards: Int
+    }
     type AdminHourlyCampaignMetrics {
         interval: String
         postCount: Int

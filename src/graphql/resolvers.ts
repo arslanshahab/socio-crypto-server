@@ -116,6 +116,7 @@ export const adminResolvers = {
         getSupportedCurrencies: tatumController.getSupportedCurrencies,
         getCampaignAnalytics: campaignController.getCampaignAnalytics,
         getUserAllCampaign: campaignController.getUserAllCampaign,
+        getUserCampaign: campaignController.getUserCampaign,
     },
     Mutation: {
         newOrg: orgController.newOrg,

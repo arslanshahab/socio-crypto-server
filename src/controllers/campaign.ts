@@ -873,12 +873,11 @@ export const getCampaignAnalytics = async (
     const campaigns = await Campaign.find({ where: { org: admin?.org }, relations: ["hourlyMetrics"] });
     // const participants = await Participant.find();
     // const hourlyMetrics = await HourlyCampaignMetric.find();
-    // console.log(
-    //     "Participants Campaign Details",
-    //     // campaigns.map((x) => ({ id: x.id, name: x.name })),
-    //     campaigns,
-    //     userId
-    // );
+    console.log(
+        "Participants Campaign Details",
+        // campaigns.map((x) => ({ id: x.id, name: x.name })),
+        campaigns
+    );
 
     // return campaigns.map((item) => ({
     //     id: item.id,
@@ -891,9 +890,57 @@ export const getUserAllCampaign = async (parent: any, args: any, context: { user
     checkPermissions({ hasRole: ["admin"] }, context);
     const admin = await Admin.findOne({ where: { firebaseId: userId }, relations: ["org"] });
     const campaigns = await Campaign.find({ where: { org: admin?.org } });
-    console.log(
-        "All user Campaign",
-        campaigns.map((x) => ({ id: x.id, name: x.name }))
-    );
     return campaigns.map((x) => ({ id: x.id, name: x.name }));
+};
+export const getUserCampaign = async (parent: any, args: any, context: { user: any }) => {
+    // const userId = context.user.id;
+    const campaignId = args.id;
+    checkPermissions({ hasRole: ["admin"] }, context);
+    // const admin = await Admin.findOne({ where: { firebaseId: userId }, relations: ["org"] });
+    // const campaign = await Campaign.findOne({ where: { org: admin?.org }, relations: ["hourlyMetrics"] });
+    let campaignOne = await Campaign.findOne({ where: { id: campaignId }, relations: ["hourlyMetrics"] });
+
+    const clickCount = campaignOne?.hourlyMetrics
+        .map((x) => new BigNumber(x.clickCount).toNumber())
+        .reduce((pre, next) => pre + next);
+
+    const viewCount = campaignOne?.hourlyMetrics
+        .map((x) => new BigNumber(x.viewCount).toNumber())
+        .reduce((pre, next) => pre + next);
+    const shareCount = campaignOne?.hourlyMetrics
+        .map((x) => new BigNumber(x.shareCount).toNumber())
+        .reduce((pre, next) => pre + next);
+    let totalParticipationScore;
+    if (campaignOne) {
+        totalParticipationScore = new BigNumber(campaignOne?.totalParticipationScore).toNumber();
+    }
+    console.log("Sum of view Count", totalParticipationScore);
+
+    // const totalShareCount = shareCount.reduce((pre, next) => pre + next);
+
+    let updatedData;
+    if (campaignOne) {
+        updatedData = {
+            id: campaignOne.id,
+            name: campaignOne.name,
+            beginDate: campaignOne.beginDate,
+            endDate: campaignOne.endDate,
+            hourlyMetrics: {
+                clickCount,
+                viewCount,
+                shareCount,
+                totalParticipationScore,
+                rewards: 150,
+            },
+            // hourlyMetrics: campaignOne.hourlyMetrics.map((metric) => {
+            //     return {
+            //         ...metric,
+            //         clickCount: totalClickCount,
+            //         viewCount: new BigNumber(metric.viewCount).toNumber(),
+            //     };
+            // }),
+        };
+    }
+    console.log(updatedData);
+    return updatedData;
 };
