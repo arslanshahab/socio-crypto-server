@@ -117,6 +117,7 @@ export const adminResolvers = {
         getCampaignAnalytics: campaignController.getCampaignAnalytics,
         getUserAllCampaign: campaignController.getUserAllCampaign,
         getUserCampaign: campaignController.getUserCampaign,
+        getUserCampaignAnalyticsForGraph: campaignController.getUserCampaignAnalyticsForGraph,
     },
     Mutation: {
         newOrg: orgController.newOrg,

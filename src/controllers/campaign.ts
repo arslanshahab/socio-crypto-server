@@ -914,6 +914,8 @@ export const getUserCampaign = async (parent: any, args: any, context: { user: a
         const totalParticipationScore = campaigns
             .map((x) => new BigNumber(x.totalParticipationScore).toNumber())
             .reduce((pre, next) => pre + next);
+        const participationScore = campaigns.map((x) => new BigNumber(x.totalParticipationScore).toNumber());
+
         if (campaigns) {
             updatedData = {
                 name: "All",
@@ -923,44 +925,80 @@ export const getUserCampaign = async (parent: any, args: any, context: { user: a
                     shareCount,
                     totalParticipationScore,
                     rewards: 150,
+                    participationScore,
                 },
             };
         }
     }
     //!--------Get Campaign Analytics by Id---------
     else {
-        let campaignOne = await Campaign.findOne({ where: { id: campaignId }, relations: ["hourlyMetrics"] });
-        const clickCount = campaignOne?.hourlyMetrics
+        let singleCampaign = await Campaign.findOne({ where: { id: campaignId }, relations: ["hourlyMetrics"] });
+        const clickCount = singleCampaign?.hourlyMetrics
             .map((x) => new BigNumber(x.clickCount).toNumber())
-            .reduce((pre, next) => pre + next);
+            .reduce((pre, next) => pre + next, 0);
 
-        const viewCount = campaignOne?.hourlyMetrics
+        const viewCount = singleCampaign?.hourlyMetrics
             .map((x) => new BigNumber(x.viewCount).toNumber())
-            .reduce((pre, next) => pre + next);
-        const shareCount = campaignOne?.hourlyMetrics
+            .reduce((pre, next) => pre + next, 0);
+        const shareCount = singleCampaign?.hourlyMetrics
             .map((x) => new BigNumber(x.shareCount).toNumber())
-            .reduce((pre, next) => pre + next);
+            .reduce((pre, next) => pre + next, 0);
         let totalParticipationScore;
-        if (campaignOne) {
-            totalParticipationScore = new BigNumber(campaignOne?.totalParticipationScore).toNumber();
+        if (singleCampaign) {
+            totalParticipationScore = new BigNumber(singleCampaign?.totalParticipationScore).toNumber();
         }
+        const dailyCampaignsMetrics = await Campaign.find({ where: { id: campaignId }, relations: ["dailyMetrics"] });
+        const participationScore = dailyCampaignsMetrics.flatMap((x) =>
+            x.dailyMetrics.map((y) => new BigNumber(y.participationScore).toNumber())
+        );
+        const currentCampaignTier = await getCurrentCampaignTier(null, { campaign: singleCampaign });
+        const rewardScore = calculateParticipantPayout(
+            currentCampaignTier,
+            singleCampaign!,
+            singleCampaign?.participants?.[0]!
+        );
+        console.log("currentCampaignTier", currentCampaignTier);
+        console.log("rewardScore", rewardScore);
 
-        if (campaignOne) {
+        if (singleCampaign) {
             updatedData = {
-                id: campaignOne.id,
-                name: campaignOne.name,
-                beginDate: campaignOne.beginDate,
-                endDate: campaignOne.endDate,
+                id: singleCampaign.id,
+                name: singleCampaign.name,
+                beginDate: singleCampaign.beginDate,
+                endDate: singleCampaign.endDate,
                 hourlyMetrics: {
                     clickCount,
                     viewCount,
                     shareCount,
                     totalParticipationScore,
                     rewards: 150,
+                    participationScore,
                 },
             };
         }
     }
 
     return updatedData;
+};
+
+//! Get User Camapign Analytics For LineGrpah
+export const getUserCampaignAnalyticsForGraph = async (parent: any, args: any, context: { user: any }) => {
+    console.log(args);
+    const userId = context.user.id;
+    const admin = await Admin.findOne({ where: { firebaseId: userId }, relations: ["org"] });
+    const campaigns = await Campaign.find({ where: { org: admin?.org }, relations: ["dailyMetrics"] });
+    const dailyParticipationScore = campaigns.map((x) =>
+        x.dailyMetrics.map((x) => new BigNumber(x.participationScore).toNumber())
+    );
+    const participationScore = dailyParticipationScore[0];
+    // .map((x) => x.reduce((pre, next) => pre + next, 0));
+    const startDate = campaigns.map((x) => x.beginDate);
+
+    const updated = {
+        participationScore,
+        startDate,
+    };
+    console.log();
+    // return { participationScore, startDate };
+    return updated;
 };

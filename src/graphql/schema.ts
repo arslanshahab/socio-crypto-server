@@ -195,6 +195,7 @@ export const typeDefs = gql`
         getCampaignAnalytics(campaignId: String): [ParticipantsCompaign]
         getUserAllCampaign: [UserAllCampaigns]
         getUserCampaign(id: String): UserCampaign
+        getUserCampaignAnalyticsForGraph: UserCampaignAnalyticsForGraph
     }
 
     type PaginatedTransferHistory {
@@ -394,7 +395,14 @@ export const typeDefs = gql`
         shareCount: Int
         totalParticipationScore: Int
         rewards: Int
+        participationScore: [Int]
     }
+    "Get User Campaign Analytics For Graph Types"
+    type UserCampaignAnalyticsForGraph {
+        participationScore: [Int]
+        startDate: [String]
+    }
+
     type AdminHourlyCampaignMetrics {
         interval: String
         postCount: Int
