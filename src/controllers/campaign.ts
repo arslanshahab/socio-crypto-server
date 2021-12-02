@@ -902,8 +902,9 @@ export const getUserCampaign = async (parent: any, args: any, context: { user: a
         const admin = await Admin.findOne({ where: { firebaseId: userId }, relations: ["org"] });
         const campaigns = await Campaign.find({ where: { org: admin?.org }, relations: ["hourlyMetrics"] });
         const allHourlyMetrics = campaigns?.map((x) => x.hourlyMetrics);
-        const clickCount = allHourlyMetrics.map((ahm) => ahm.map((x) => new BigNumber(x.clickCount).toNumber()));
-        const totalClickCount = clickCount.flat().reduce((pre, next) => pre + next);
+        const clickCount = allHourlyMetrics
+            .flatMap((x) => x.flatMap((y) => new BigNumber(y.clickCount).toNumber()))
+            .reduce((pre, next) => pre + next);
         const viewCount = allHourlyMetrics
             .flatMap((x) => x.flatMap((y) => new BigNumber(y.viewCount).toNumber()))
             .reduce((pre, next) => pre + next);
@@ -917,7 +918,7 @@ export const getUserCampaign = async (parent: any, args: any, context: { user: a
             updatedData = {
                 name: "All",
                 hourlyMetrics: {
-                    clickCount: totalClickCount,
+                    clickCount,
                     viewCount,
                     shareCount,
                     totalParticipationScore,
