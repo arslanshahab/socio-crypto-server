@@ -387,15 +387,21 @@ export const typeDefs = gql`
     type UserCampaign {
         id: ID
         name: String
-        hourlyMetrics: HoulyMetric
+        dailyMetrics: DailyMetric
     }
-    type HoulyMetric {
+    type DailyMetric {
         clickCount: Int
         viewCount: Int
         shareCount: Int
         totalParticipationScore: Int
         rewards: Int
         participationScore: [Int]
+        singleDailyMetric: SingleDailyMetric
+    }
+    type SingleDailyMetric {
+        clickCount: [Int]
+        viewCount: [Int]
+        shareCount: [Int]
     }
     "Get User Campaign Analytics For Graph Types"
     type UserCampaignAnalyticsForGraph {

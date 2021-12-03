@@ -870,7 +870,7 @@ export const getCampaignAnalytics = async (
     // const { campaignId } = args;
     checkPermissions({ hasRole: ["admin"] }, context);
     const admin = await Admin.findOne({ where: { firebaseId: context.user.id }, relations: ["org"] });
-    const campaigns = await Campaign.find({ where: { org: admin?.org }, relations: ["hourlyMetrics"] });
+    const campaigns = await Campaign.find({ where: { org: admin?.org }, relations: ["dailyMetrics"] });
     // const participants = await Participant.find();
     // const hourlyMetrics = await HourlyCampaignMetric.find();
     console.log(
@@ -900,17 +900,21 @@ export const getUserCampaign = async (parent: any, args: any, context: { user: a
     //! All Campaign Analytics
     if (!campaignId || campaignId == "-1") {
         const admin = await Admin.findOne({ where: { firebaseId: userId }, relations: ["org"] });
-        const campaigns = await Campaign.find({ where: { org: admin?.org }, relations: ["hourlyMetrics"] });
-        const allHourlyMetrics = campaigns?.map((x) => x.hourlyMetrics);
-        const clickCount = allHourlyMetrics
-            .flatMap((x) => x.flatMap((y) => new BigNumber(y.clickCount).toNumber()))
-            .reduce((pre, next) => pre + next);
-        const viewCount = allHourlyMetrics
-            .flatMap((x) => x.flatMap((y) => new BigNumber(y.viewCount).toNumber()))
-            .reduce((pre, next) => pre + next);
-        const shareCount = allHourlyMetrics
-            .flatMap((x) => x.flatMap((y) => new BigNumber(y.shareCount).toNumber()))
-            .reduce((pre, next) => pre + next);
+        const campaigns = await Campaign.find({ where: { org: admin?.org }, relations: ["dailyMetrics"] });
+        const dailyMetrics = campaigns?.flatMap((x) => x.dailyMetrics);
+        const clickCount = dailyMetrics
+            .map((x) => new BigNumber(x.clickCount).toNumber())
+            .reduce((pre, next) => pre + next, 0);
+        const viewCount = dailyMetrics
+            .map((x) => new BigNumber(x.viewCount).toNumber())
+            .reduce((pre, next) => pre + next, 0);
+        const shareCount = dailyMetrics
+            .map((x) => new BigNumber(x.shareCount).toNumber())
+            .reduce((pre, next) => pre + next, 0);
+        let allCampaignsClicks;
+        allCampaignsClicks = campaigns?.map((x) => x.dailyMetrics.map((y) => new BigNumber(y.clickCount).toNumber()));
+        allCampaignsClicks = allCampaignsClicks.map((x) => x.reduce((pre, next) => pre + next, 0));
+
         const totalParticipationScore = campaigns
             .map((x) => new BigNumber(x.totalParticipationScore).toNumber())
             .reduce((pre, next) => pre + next);
@@ -918,47 +922,41 @@ export const getUserCampaign = async (parent: any, args: any, context: { user: a
 
         if (campaigns) {
             updatedData = {
-                name: "All",
-                hourlyMetrics: {
+                name: "All Campaigns",
+                dailyMetrics: {
                     clickCount,
                     viewCount,
                     shareCount,
                     totalParticipationScore,
                     rewards: 150,
                     participationScore,
+                    singleDailyMetric: {
+                        clickCount: allCampaignsClicks,
+                    },
                 },
             };
         }
     }
     //!--------Get Campaign Analytics by Id---------
     else {
-        let singleCampaign = await Campaign.findOne({ where: { id: campaignId }, relations: ["hourlyMetrics"] });
-        const clickCount = singleCampaign?.hourlyMetrics
-            .map((x) => new BigNumber(x.clickCount).toNumber())
-            .reduce((pre, next) => pre + next, 0);
+        // let singleCampaign = await Campaign.findOne({ where: { id: campaignId }, relations: ["hourlyMetrics"] });
+        const singleCampaign = await Campaign.findOne({ where: { id: campaignId }, relations: ["dailyMetrics"] });
+        const dailMatrics = singleCampaign?.dailyMetrics;
+        const clickCount = dailMatrics?.map((x) => new BigNumber(x.clickCount).toNumber());
+        const viewCount = dailMatrics?.map((x) => new BigNumber(x.viewCount).toNumber());
+        const shareCount = dailMatrics?.map((x) => new BigNumber(x.shareCount).toNumber());
+        const totalClickCount = clickCount?.reduce((res, next) => res + next, 0);
+        const totalViewsCount = viewCount?.reduce((pre, next) => pre + next, 0);
+        const totalShareCount = shareCount?.reduce((pre, next) => pre + next, 0);
 
-        const viewCount = singleCampaign?.hourlyMetrics
-            .map((x) => new BigNumber(x.viewCount).toNumber())
-            .reduce((pre, next) => pre + next, 0);
-        const shareCount = singleCampaign?.hourlyMetrics
-            .map((x) => new BigNumber(x.shareCount).toNumber())
-            .reduce((pre, next) => pre + next, 0);
-        let totalParticipationScore;
-        if (singleCampaign) {
-            totalParticipationScore = new BigNumber(singleCampaign?.totalParticipationScore).toNumber();
-        }
-        const dailyCampaignsMetrics = await Campaign.find({ where: { id: campaignId }, relations: ["dailyMetrics"] });
-        const participationScore = dailyCampaignsMetrics.flatMap((x) =>
-            x.dailyMetrics.map((y) => new BigNumber(y.participationScore).toNumber())
-        );
-        const currentCampaignTier = await getCurrentCampaignTier(null, { campaign: singleCampaign });
-        const rewardScore = calculateParticipantPayout(
-            currentCampaignTier,
-            singleCampaign!,
-            singleCampaign?.participants?.[0]!
-        );
-        console.log("currentCampaignTier", currentCampaignTier);
-        console.log("rewardScore", rewardScore);
+        const participationScore = dailMatrics?.map((x) => new BigNumber(x.participationScore).toNumber());
+        const totalParticipationScore = participationScore?.reduce((pre, next) => pre + next, 0);
+        // const currentCampaignTier = await getCurrentCampaignTier(null, { campaign: singleCampaign });
+        // const rewardScore = calculateParticipantPayout(
+        //     currentCampaignTier,
+        //     singleCampaign!,
+        //     singleCampaign?.participants?.[0]!
+        // );
 
         if (singleCampaign) {
             updatedData = {
@@ -966,13 +964,18 @@ export const getUserCampaign = async (parent: any, args: any, context: { user: a
                 name: singleCampaign.name,
                 beginDate: singleCampaign.beginDate,
                 endDate: singleCampaign.endDate,
-                hourlyMetrics: {
-                    clickCount,
-                    viewCount,
-                    shareCount,
+                dailyMetrics: {
+                    clickCount: totalClickCount,
+                    viewCount: totalViewsCount,
+                    shareCount: totalShareCount,
                     totalParticipationScore,
                     rewards: 150,
                     participationScore,
+                    singleDailyMetric: {
+                        clickCount,
+                        viewCount,
+                        shareCount,
+                    },
                 },
             };
         }
