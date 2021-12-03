@@ -15,6 +15,7 @@ import * as cryptoController from "../controllers/crypto";
 import * as xoxodayController from "../controllers/xoxoday";
 import * as weeklyReward from "../controllers/weeklyReward";
 import * as tatumController from "../controllers/tatum";
+import * as transferController from "../controllers/transfer";
 
 export const resolvers = {
     Query: {
@@ -49,6 +50,9 @@ export const resolvers = {
         getStoreVouchers: xoxodayController.getVouchers,
         getWeeklyRewards: weeklyReward.getWeeklyRewards,
         getRedemptionRequirements: xoxodayController.redemptionRequirements,
+        getUserBalances: userController.getWalletBalances,
+        getTransferHistory: transferController.getTransferHistory,
+        downloadKyc: kycController.downloadKyc,
     },
     Mutation: {
         generateFactorsFromKyc: factorController.generateFactors,
@@ -67,7 +71,7 @@ export const resolvers = {
         registerFactorLink: factorController.registerFactorLink,
         removeFactorLink: factorController.removeFactorLink,
         updateUsername: userController.updateUsername,
-        registerKyc: kycController.registerKyc,
+        verifyKyc: kycController.verifyKyc,
         updateKyc: kycController.updateKyc,
         initiateWithdraw: withdrawController.start,
         updateWithdrawStatus: withdrawController.update,
@@ -81,6 +85,9 @@ export const resolvers = {
         removeEthereumAddress: externalWallet.remove,
         uploadProfilePicture: userController.uploadProfilePicture,
         placeStoreOrder: xoxodayController.placeOrder,
+        withdrawFunds: tatumController.withdrawFunds,
+        startEmailVerification: userController.startEmailVerification,
+        completeEmailVerification: userController.completeEmailVerification,
     },
 };
 
@@ -106,7 +113,7 @@ export const adminResolvers = {
         listPendingCampaigns: campaignController.adminListPendingCampaigns,
         listSupportedCrypto: cryptoController.listSupportedCrypto,
         checkCoinGecko: cryptoController.coinGeckoCheck,
-        getDepositAddressForCurrency: tatumController.getDepositAddress,
+        getDepositAddressForSymbol: tatumController.getDepositAddress,
         getSupportedCurrencies: tatumController.getSupportedCurrencies,
     },
     Mutation: {

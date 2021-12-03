@@ -14,14 +14,15 @@ import { WalletCurrency } from "./WalletCurrency";
 import { Org } from "./Org";
 import { ExternalAddress } from "./ExternalAddress";
 import { Escrow } from "./Escrow";
+import { Currency } from "./Currency";
 
 @Entity()
 export class Wallet extends BaseEntity {
     @PrimaryGeneratedColumn("uuid")
     public id: string;
 
-    @OneToMany((_type) => WalletCurrency, (currency) => currency.wallet, { eager: true })
-    public currency: WalletCurrency[];
+    @OneToMany((_type) => WalletCurrency, (walletCurrency) => walletCurrency.wallet, { eager: true })
+    public walletCurrency: WalletCurrency[];
 
     @OneToOne(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -45,6 +46,13 @@ export class Wallet extends BaseEntity {
         (address) => address.wallet
     )
     public addresses: ExternalAddress[];
+
+    @OneToMany(
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        (_type) => Currency,
+        (currency) => currency.wallet
+    )
+    public currency: Currency[];
 
     @OneToMany(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -73,7 +81,7 @@ export class Wallet extends BaseEntity {
             pendingBalance: pendingBalance,
             transfers: this.transfers ? this.transfers.map((transfer) => transfer.asV1()) : [],
         };
-        if (this.currency) returnedWallet.currency = this.currency.map((token) => token.asV1());
+        if (this.walletCurrency) returnedWallet.walletCurrency = this.walletCurrency.map((token) => token.asV1());
         return returnedWallet;
     }
 }

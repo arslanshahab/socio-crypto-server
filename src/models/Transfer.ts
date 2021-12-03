@@ -64,18 +64,10 @@ export class Transfer extends BaseEntity {
     @UpdateDateColumn()
     public updatedAt: Date;
 
-    @ManyToOne(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => Wallet,
-        (wallet) => wallet.transfers
-    )
+    @ManyToOne((_type) => Wallet, (wallet) => wallet.transfers)
     public wallet: Wallet;
 
-    @ManyToOne(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => Campaign,
-        (campaign) => campaign.payouts
-    )
+    @ManyToOne((_type) => Campaign, (campaign) => campaign.payouts)
     public campaign: Campaign;
 
     @ManyToOne((_type) => Org, (org) => org.transfers)
@@ -178,7 +170,8 @@ export class Transfer extends BaseEntity {
         transfer.campaign = campaign;
         transfer.amount = amount;
         transfer.wallet = wallet;
-        transfer.currency = campaign.type == "crypto" ? campaign.crypto.type : campaign.type;
+        transfer.currency =
+            campaign.type == "crypto" ? (campaign.crypto ? campaign.crypto.type : campaign.symbol) : campaign.type;
         return transfer;
     }
 
@@ -248,5 +241,17 @@ export class Transfer extends BaseEntity {
         transfer.campaign = campaign;
         transfer.rafflePrize = prize;
         return transfer;
+    }
+
+    public static async addTatumDeposit(data: any) {
+        const transfer = new Transfer();
+        transfer.action = "deposit";
+        transfer.status = "SUCCEEDED";
+        if (data.amount) transfer.amount = new BN(data.amount);
+        if (data.txId) transfer.transactionHash = data.txId;
+        if (data.currency) transfer.currency = data.currency;
+        if (data.wallet) transfer.wallet = data.wallet;
+        if (data.org) transfer.org = data.org;
+        return transfer.save();
     }
 }

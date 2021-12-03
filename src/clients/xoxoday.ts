@@ -70,7 +70,10 @@ export class Xoxoday {
             };
             const response = await doFetch(requestData);
             const authData = await response.json();
-            if (authData.error) throw new Error("Error refreshing access token for xoxoday");
+            if (authData.error) {
+                console.log(authData.error);
+                throw new Error("Error refreshing access token for xoxoday");
+            }
             const augmentedAuthData = this.adjustTokenExpiry(authData);
             await S3Client.refreshXoxodayAuthData(augmentedAuthData);
             return augmentedAuthData;
@@ -97,13 +100,13 @@ export class Xoxoday {
                 method: "POST",
                 url: `${this.baseUrl}/v1/oauth/api`,
                 payload: payload,
-                authToken: authData.access_token,
+                headers: { Authorization: "Bearer " + authData.access_token },
             };
             const response = await doFetch(requestData);
             const filters = await response.json();
             if (response.status !== 200) {
                 if (!filters || filters.error) {
-                    console.log(filters);
+                    console.log(filters.error);
                     throw new Error(filters.message);
                 }
             }
@@ -142,13 +145,13 @@ export class Xoxoday {
                 method: "POST",
                 url: `${this.baseUrl}/v1/oauth/api`,
                 payload: payload,
-                authToken: authData.access_token,
+                headers: { Authorization: "Bearer " + authData.access_token },
             };
             const response = await doFetch(requestData);
             const vouchers = await response.json();
             if (response.status !== 200) {
                 if (!vouchers || vouchers.error) {
-                    console.log(vouchers);
+                    console.log(vouchers.error);
                     throw new Error(vouchers.message);
                 }
             }
@@ -175,7 +178,7 @@ export class Xoxoday {
                     method: "POST",
                     url: `${this.baseUrl}/v1/oauth/api`,
                     payload: payload,
-                    authToken: authData.access_token,
+                    headers: { Authorization: "Bearer " + authData.access_token },
                 };
                 promiseArray.push(doFetch(requestData));
             });
@@ -184,7 +187,7 @@ export class Xoxoday {
                 if (response.status !== 200) {
                     const data = await response.json();
                     if (!data || data.error) {
-                        console.log(data);
+                        console.log(data.error);
                         throw new Error(data.message);
                     }
                 }

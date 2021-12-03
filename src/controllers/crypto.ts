@@ -20,7 +20,7 @@ export const registerNewCrypto = async (
     cryptoCurrency = CryptoCurrency.newCryptoCurrency(name, contractAddress);
     const walletCurrency = WalletCurrency.newWalletCurrency(name, org.wallet);
     await walletCurrency.save();
-    org.wallet.currency.push(walletCurrency);
+    org.wallet.walletCurrency.push(walletCurrency);
     await org.wallet.save();
     await cryptoCurrency.save();
     return walletCurrency.asV1();

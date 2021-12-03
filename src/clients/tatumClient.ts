@@ -3,77 +3,84 @@ import {
     generateWallet,
     createAccount,
     generateDepositAddress,
-    getTransactionsByAccount,
-    Currency,
+    Currency as TatumCurrency,
     Fiat,
+    getAccountBalance,
+    getTransactionsByAccount,
+    TransactionFilter,
+    blockAmount,
+    deleteBlockedAmount,
+    getBlockedAmountsByAccountId,
+    storeTransaction,
+    getWithdrawals,
 } from "@tatumio/tatum";
+import { TatumWallet } from "../models/TatumWallet";
+import { S3Client } from "./s3";
+import { performWithdraw } from "../util/tatumHelper";
+import { Currency } from "../models/Currency";
+
+export const CAMPAIGN_CREATION_AMOUNT = "CAMPAIGN-AMOUNT";
+export const CAMPAIGN_FEE = "CAMPAIGN-FEE";
+export const CAMPAIGN_REWARD = "CAMPAIGN-REWARD";
+export const USER_WITHDRAW = "USER-WITHDRAW";
+export const RAIINMAKER_WITHDRAW = "RAIINMAKER-WITHDRAW";
+
+export interface WithdrawDetails {
+    senderAccountId: string;
+    address: string;
+    amount: string;
+    paymentId: string;
+    senderNote: string;
+    fee?: string;
+}
 
 export class TatumClient {
-    private static currencies = [
-        { currency: "BTC", key: "xpub" },
-        { currency: "ETH", key: "xpub" },
-        { currency: "XRP", key: "address" },
-        { currency: "XLM", key: "address" },
-        { currency: "BCH", key: "xpub" },
-        { currency: "LTC", key: "xpub" },
-        { currency: "FLOW", key: "xpub" },
-        { currency: "CELO", key: "address" },
-        { currency: "EGLD", key: "address" },
-        { currency: "TRON", key: "xpub" },
-        { currency: "ADA", key: "xpub" },
-        { currency: "QTUM", key: "xpub" },
-        { currency: "BNB", key: "address" },
-        { currency: "BSC", key: "address" },
-        { currency: "DOGE", key: "xpub" },
-        { currency: "VET", key: "xpub" },
-        { currency: "ONE", key: "xpub" },
-        { currency: "NEO", key: "xpub" },
-        { currency: "BAT", key: "xpub" },
-        { currency: "USDT", key: "xpub" },
-        { currency: "WBTC", key: "xpub" },
-        { currency: "USDC", key: "xpub" },
-        { currency: "TUSD", key: "xpub" },
-        { currency: "MKR", key: "xpub" },
-        { currency: "LINK", key: "xpub" },
-        { currency: "PAX", key: "xpub" },
-        { currency: "PAXG", key: "xpub" },
-        { currency: "UNI", key: "xpub" },
-    ];
+    public static baseUrl = "https://api-eu1.tatum.io";
 
-    public static getAllCurrencies(): string[] {
-        return this.currencies.map((item) => item.currency);
-    }
-
-    public static isCurrencySupported(currency: string): Boolean {
-        const foundCurrency = this.currencies.find((item) => item.currency === currency.toUpperCase());
-        return foundCurrency ? true : false;
-    }
-
-    public static async createWallet(currency: string) {
+    public static async getAllCurrencies(): Promise<string[]> {
         try {
-            process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
-            return await generateWallet(currency as Currency, false);
-        } catch (error) {
-            console.log(error);
-            throw new Error(error.data ? error.data.message : error.message);
-        }
-    }
-
-    public static async createLedgerAccount(currency: string) {
-        try {
-            process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
-            return await createAccount({
-                currency: currency.toUpperCase(),
-                accountingCurrency: "USD" as Fiat,
-                xpub: "",
-            });
+            const wallets = await TatumWallet.find({ where: { enabled: true } });
+            return wallets.map((item) => item.currency);
         } catch (error) {
             console.log(error);
             throw new Error(error.message);
         }
     }
 
-    public static async createNewDepositAddress(accountId: string) {
+    public static async isCurrencySupported(symbol: string): Promise<boolean> {
+        const foundCurrency = await TatumWallet.findOne({ where: { currency: symbol.toUpperCase(), enabled: true } });
+        return Boolean(foundCurrency);
+    }
+
+    public static async createWallet(currency: string) {
+        try {
+            return await generateWallet(currency as TatumCurrency, false);
+        } catch (error) {
+            console.log(error);
+            throw new Error(error.data ? error.data.message : error.message);
+        }
+    }
+
+    public static async createLedgerAccount(symbol: string) {
+        try {
+            process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
+            const walletData = await TatumWallet.findOne({ where: { currency: symbol, enabled: true } });
+            if (walletData) {
+                return await createAccount({
+                    currency: symbol.toUpperCase(),
+                    accountingCurrency: "USD" as Fiat,
+                    xpub: walletData.xpub || walletData.address,
+                });
+            } else {
+                throw new Error(`No wallet found for symbol: ${symbol}`);
+            }
+        } catch (error) {
+            console.log(error);
+            throw new Error(error.message);
+        }
+    }
+
+    public static async generateDepositAddress(accountId: string) {
         try {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
             return await generateDepositAddress(accountId);
@@ -83,13 +90,109 @@ export class TatumClient {
         }
     }
 
-    public static async getAccountTransactions(accountId: string, destAccount: string, offset: number) {
+    public static async getAccountBalance(accountId: string) {
         try {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
-            return await getTransactionsByAccount({
-                id: accountId,
-                counterAccount: destAccount,
+            return await getAccountBalance(accountId);
+        } catch (error) {
+            console.log(error);
+            throw new Error(error.message);
+        }
+    }
+
+    public static async getBalanceForAccountList(accounts: Currency[]) {
+        try {
+            process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
+            const promiseArray: Promise<any>[] = [];
+            for (let index = 0; index < accounts.length; index++) {
+                promiseArray.push(getAccountBalance(accounts[index].tatumId));
+            }
+            const response = await Promise.all(promiseArray);
+            for (let responseIndex = 0; responseIndex < accounts.length; responseIndex++) {
+                response[responseIndex]["tatumId"] = accounts[responseIndex].tatumId;
+            }
+            return response;
+        } catch (error) {
+            console.log(error);
+            throw new Error(error.message);
+        }
+    }
+
+    public static async transferFunds(
+        senderAccountId: string,
+        recipientAccountId: string,
+        amount: string,
+        recipientNote: string
+    ) {
+        try {
+            process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
+            return await storeTransaction({ senderAccountId, recipientAccountId, amount, recipientNote });
+        } catch (error) {
+            console.log(error);
+            throw new Error(error.message);
+        }
+    }
+
+    public static async blockAccountBalance(accountId: string, amount: string, type: string) {
+        try {
+            process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
+            return await blockAmount(accountId, {
+                amount,
+                type,
+                description: type,
             });
+        } catch (error) {
+            console.log(error);
+            throw new Error(error.message);
+        }
+    }
+
+    public static async unblockAccountBalance(blockageId: string) {
+        try {
+            process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
+            return await deleteBlockedAmount(blockageId);
+        } catch (error) {
+            console.log(error);
+            throw new Error(error.message);
+        }
+    }
+
+    public static async getBlockedBalanceForAccount(accountId: string, pageSize: number, offset: number) {
+        try {
+            process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
+            return await getBlockedAmountsByAccountId(accountId, pageSize, offset);
+        } catch (error) {
+            console.log(error);
+            throw new Error(error.message);
+        }
+    }
+
+    public static async getAccountTransactions(filter: TransactionFilter, pageSize: number, offset: number) {
+        try {
+            process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
+            return await getTransactionsByAccount(filter, pageSize, offset);
+        } catch (error) {
+            console.log(error);
+            throw new Error(error.message);
+        }
+    }
+
+    public static async withdrawFundsToBlockchain(currency: string, data: WithdrawDetails) {
+        try {
+            process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
+            const walletKeys = await S3Client.getTatumWalletKeys(currency);
+            const body = { ...walletKeys, ...data };
+            return await performWithdraw(currency, body);
+        } catch (error) {
+            console.log(error);
+            throw new Error(error.message);
+        }
+    }
+
+    public static async listWithdrawls(status: string, currency: string, pageSize = 50, offset = 0) {
+        try {
+            process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
+            return await getWithdrawals(status, currency, pageSize, offset);
         } catch (error) {
             console.log(error);
             throw new Error(error.message);

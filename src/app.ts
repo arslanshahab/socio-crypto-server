@@ -12,7 +12,6 @@ import { Firebase } from "./clients/firebase";
 import * as FactorController from "./controllers/factor";
 import * as Dragonfactor from "@myfii-dev/dragonfactor-auth";
 import { paypalWebhook } from "./controllers/withdraw";
-// import {Paypal} from "./clients/paypal";
 import { adminResolvers, publicResolvers, resolvers } from "./graphql/resolvers";
 import { sessionLogin, sessionLogout, updateUserPassword } from "./controllers/firebase";
 import { trackClickByLink } from "./controllers/participant";
@@ -23,7 +22,18 @@ import { ApolloServer } from "apollo-server-express";
 import { typeDefs } from "./graphql/schema";
 import { ApolloServerPlugin } from "apollo-server-plugin-base";
 import { initXoxoday, getXoxodayFilters } from "./controllers/xoxoday";
-import { initWallet } from "./controllers/tatum";
+import {
+    initWallet,
+    saveWallet,
+    getAccountTransactions,
+    getAccountBalance,
+    unblockAccountBalance,
+    listBlockedAmounts,
+    blockAccountBalance,
+    getAllWithdrawls,
+    transferBalance,
+} from "./controllers/tatum";
+import { kycWebhook } from "./controllers/kyc";
 
 const { NODE_ENV = "development" } = process.env;
 
@@ -45,8 +55,6 @@ export class Application {
         await Secrets.initialize();
         await Firebase.initialize();
         await Dragonchain.initialize();
-        // await Paypal.initialize();
-        // await Paypal.refreshToken();
         StripeAPI.initialize();
         this.app = express();
         const corsSettings = {
@@ -71,11 +79,19 @@ export class Application {
         this.app.use(bodyParser.urlencoded({ extended: true }));
         this.app.set("port", process.env.PORT || 8080);
         const requestPlugin: ApolloServerPlugin = {
-            requestDidStart(requestContext) {
+            async requestDidStart(requestContext) {
                 console.log({
                     timestamp: new Date().toISOString(),
                     operation: requestContext.request.operationName,
+                    request: requestContext.request.http?.url,
+                    // variables: requestContext.request.variables,
                 });
+
+                return {
+                    async didEncounterErrors(requestContext) {
+                        console.log(requestContext.errors);
+                    },
+                };
             },
         };
         const server = new ApolloServer({
@@ -95,6 +111,9 @@ export class Application {
             plugins: [requestPlugin],
             resolvers: publicResolvers,
         });
+        await server.start();
+        await serverAdmin.start();
+        await serverPublic.start();
         server.applyMiddleware({
             app: this.app,
             path: "/v1/graphql",
@@ -119,7 +138,16 @@ export class Application {
         this.app.post("/v1/payouts", paypalWebhook);
         this.app.post("/v1/xoxoday", initXoxoday);
         this.app.post("/v1/tatum/initWallet", initWallet);
+        this.app.post("/v1/tatum/saveWallet", saveWallet);
+        this.app.post("/v1/tatum/transactions", getAccountTransactions);
+        this.app.post("/v1/tatum/unblock", unblockAccountBalance);
+        this.app.post("/v1/tatum/block", blockAccountBalance);
+        this.app.post("/v1/tatum/blockedAmount/list", listBlockedAmounts);
+        this.app.post("/v1/tatum/balance", getAccountBalance);
+        this.app.post("/v1/tatum/list-withdraws", getAllWithdrawls);
+        this.app.post("/v1/tatum/transfer", transferBalance);
         this.app.get("/v1/xoxoday/filters", getXoxodayFilters);
+        this.app.post("/v1/dragonfactor/webhook", kycWebhook);
         this.app.use(
             "/v1/dragonfactor/login",
             Dragonfactor.expressMiddleware({

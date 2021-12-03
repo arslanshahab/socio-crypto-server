@@ -1,12 +1,12 @@
 import fetch from "node-fetch";
+import { URLSearchParams } from "url";
 
 export interface RequestData {
     url: string;
-    authToken?: string;
-    xAPIToken?: string;
     method: "POST" | "GET" | "PUT" | "DELETE";
     payload?: any;
     query?: any;
+    headers?: any;
 }
 
 export const doFetch = async (requestData: RequestData) => {
@@ -14,8 +14,7 @@ export const doFetch = async (requestData: RequestData) => {
         method: requestData.method,
         headers: {
             "Content-Type": "application/json",
-            ...(requestData.authToken && { Authorization: "Bearer " + requestData.authToken }),
-            ...(requestData.xAPIToken && { "x-api-key": requestData.xAPIToken }),
+            ...(requestData.headers && requestData.headers),
         },
     };
     let url = requestData.url;

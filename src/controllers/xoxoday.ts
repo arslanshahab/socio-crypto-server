@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import { Xoxoday } from "../clients/xoxoday";
 import { generateRandomId, supportedCountries } from "../util/helpers";
 import { XoxodayOrder, XoxodayVoucher } from "src/types";
-import { getExchangeRate } from "../util/forex";
+import { getExchangeRateForCurrency } from "../util/exchangeRate";
 import { XoxodayOrder as XoxodayOrderModel } from "../models/XoxodayOrder";
 import { User } from "../models/User";
 import { differenceInDays, differenceInHours } from "date-fns";
@@ -60,7 +60,7 @@ export const placeOrder = async (parent: any, args: { cart: Array<any>; email: s
         const { id } = context.user;
         const user = await User.findOne({
             where: { identityId: id },
-            relations: ["wallet", "wallet.currency", "campaigns", "orders"],
+            relations: ["wallet", "wallet.walletCurrency", "campaigns", "orders"],
         });
         if (!user) throw new Error("No user found");
         if (!email) throw new Error("No email provided");
@@ -124,7 +124,7 @@ const prepareVouchersList = async (list: Array<any>): Promise<Array<XoxodayVouch
     let exchangeRate = "0";
     const currency = list.length ? list[0].currencyCode : "USD";
     if (list.length) {
-        exchangeRate = await getExchangeRate(currency);
+        exchangeRate = await getExchangeRateForCurrency(currency);
     }
     return list.map((item) => {
         return {
@@ -197,7 +197,7 @@ const ifUserCanRedeem = async (user: User, totalCoiinSpent: number) => {
     if (recentOrder && differenceInHours(new Date(), new Date(recentOrder.createdAt)) < 24) {
         throw new Error("You need to wait for few hours before you can redeem again!");
     }
-    const userCoiins = user.wallet.currency.find((item) => item.type.toLowerCase() === "coiin");
+    const userCoiins = user.wallet.walletCurrency.find((item) => item.type.toLowerCase() === "coiin");
     if (!userCoiins || userCoiins.balance.isLessThanOrEqualTo(0) || userCoiins.balance.isLessThan(totalCoiinSpent)) {
         throw new Error("Not enough coiin balance to proceed with this transaction!");
     }

@@ -14,6 +14,22 @@ import { HourlyCampaignMetric } from "../models/HourlyCampaignMetric";
 import { serverBaseUrl } from "../config";
 import { In } from "typeorm";
 import { rewardUserForParticipation } from "./weeklyReward";
+import {
+    findOrCreateCurrency,
+    getCryptoAssestImageUrl,
+    getMinWithdrawableAmount,
+    getUSDValueForCurrency,
+} from "./controllerHelpers";
+import { TatumClient } from "../clients/tatumClient";
+import { WalletCurrency } from "../models/WalletCurrency";
+import { Wallet } from "../models/Wallet";
+import { Currency } from "../models/Currency";
+import { flatten } from "lodash";
+import { asyncHandler } from "../util/helpers";
+import { Request, Response } from "express";
+import { Verification } from "../models/Verification";
+import { generateRandomNonce } from "../util/helpers";
+import { SesClient } from "../clients/ses";
 
 export const participate = async (parent: any, args: { campaignId: string; email: string }, context: { user: any }) => {
     try {
@@ -36,6 +52,9 @@ export const participate = async (parent: any, args: { campaignId: string; email
         if (await Participant.findOne({ where: { campaign, user } }))
             throw new Error("user already participating in this campaign");
 
+        if (await TatumClient.isCurrencySupported(campaign.symbol)) {
+            await findOrCreateCurrency(campaign.symbol, user.wallet);
+        }
         const participant = Participant.newParticipant(user, campaign, args.email);
         await participant.save();
         const url = `${serverBaseUrl}/v1/referral/${participant.id}`;
@@ -49,6 +68,14 @@ export const participate = async (parent: any, args: { campaignId: string; email
         return null;
     }
 };
+
+export const insertUser = asyncHandler(async (req: Request, res: Response) => {
+    const user = new User();
+    user.identityId = "banana";
+    user.active = true;
+    await user.save();
+    res.status(200).json({ success: true });
+});
 
 export const promotePermissions = async (
     parent: any,
@@ -253,7 +280,7 @@ export const getUserParticipationKeywords = async (parent: any, args: { id: stri
     participations.forEach((item) => {
         keywordsArray.push(item.campaign.keywords);
     });
-    return [...new Set(keywordsArray.flat())];
+    return [...new Set(flatten(keywordsArray))];
 };
 
 export const getPreviousDayMetrics = async (_parent: any, args: any, context: { user: any }) => {
@@ -334,4 +361,100 @@ export const uploadProfilePicture = async (parent: any, args: { image: string },
     user.profile.profilePicture = filename;
     user.profile.save();
     return true;
+};
+
+export const getWalletBalances = async (parent: any, args: any, context: { user: any }) => {
+    const { id } = context.user;
+    const user = await User.findOne({
+        where: { identityId: id },
+        relations: ["wallet"],
+    });
+    if (!user) throw new Error("user not found");
+    const coiinCurrency = await WalletCurrency.findOne({
+        where: { wallet: await Wallet.findOne({ where: { user: user } }), type: "coiin" },
+    });
+    const currencies = await Currency.find({ where: { wallet: user.wallet } });
+    const balances = await TatumClient.getBalanceForAccountList(currencies);
+    let allCurrencies = currencies.map(async (currencyItem) => {
+        const balance = balances.find((balanceItem) => currencyItem.tatumId === balanceItem.tatumId);
+        const minWithdrawAmount = await getMinWithdrawableAmount(currencyItem.symbol.toLowerCase());
+        return {
+            balance: balance.availableBalance,
+            symbol: currencyItem.symbol,
+            minWithdrawAmount,
+            usdBalance: getUSDValueForCurrency(currencyItem.symbol.toLowerCase(), balance.availableBalance),
+            imageUrl: getCryptoAssestImageUrl(currencyItem.symbol),
+        };
+    });
+    if (coiinCurrency) {
+        allCurrencies.unshift(
+            Promise.resolve({
+                symbol: coiinCurrency.type.toUpperCase() || "",
+                balance: coiinCurrency.balance.toNumber() || 0,
+                minWithdrawAmount: coiinCurrency.balance.toNumber(),
+                usdBalance: getUSDValueForCurrency(coiinCurrency.type.toLowerCase(), coiinCurrency.balance.toNumber()),
+                imageUrl: getCryptoAssestImageUrl(coiinCurrency.type.toUpperCase()),
+            })
+        );
+    }
+    return allCurrencies;
+};
+
+export const startEmailVerification = async (parent: any, args: { email: string }, context: { user: any }) => {
+    try {
+        const { id } = context.user;
+        const { email } = args;
+        const user = await User.findOne({ where: { identityId: id }, relations: ["profile"] });
+        if (!user) throw new Error("user not found");
+        if (!email) throw new Error("email not provided");
+        if (user.profile.email === email) throw new Error("email already exists");
+        let verificationData = await Verification.findOne({ where: { email: email, user: user, verified: false } });
+        if (!verificationData) {
+            verificationData = new Verification();
+            verificationData.email = email;
+            verificationData.token = generateRandomNonce();
+            verificationData.user = user;
+            await verificationData.save();
+        }
+        await SesClient.emailAddressVerificationEmail(email, verificationData.token);
+        return {
+            success: true,
+            message: "Email sent to provided email address",
+        };
+    } catch (error) {
+        return {
+            success: false,
+            message: error.message,
+        };
+    }
+};
+
+export const completeEmailVerification = async (
+    parent: any,
+    args: { email: string; token: string },
+    context: { user: any }
+) => {
+    try {
+        const { id } = context.user;
+        const { email, token } = args;
+        const user = await User.findOne({ where: { identityId: id }, relations: ["profile"] });
+        if (!user) throw new Error("user not found");
+        if (!email || !token) throw new Error("email or token missing");
+        if (user.profile.email === email) throw new Error("email already exists");
+        const verificationData = await Verification.findOne({ where: { email, user, verified: false, token } });
+        if (!verificationData) throw new Error("invalid token or verfication not initialized");
+        user.profile.email = email;
+        await user.profile.save();
+        verificationData.verified = true;
+        await verificationData.save();
+        return {
+            success: true,
+            message: "Email address verified",
+        };
+    } catch (error) {
+        return {
+            success: false,
+            message: error.message,
+        };
+    }
 };

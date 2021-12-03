@@ -24,6 +24,9 @@ import { NotificationSettings } from "./NotificationSettings";
 import { Admin } from "./Admin";
 import { ExternalAddress } from "./ExternalAddress";
 import { WeeklyReward } from "./WeeklyReward";
+import { KycStatus } from "../types";
+import { VerificationApplication } from "./VerificationApplication";
+import { Verification } from "./Verification";
 
 @Entity()
 export class User extends BaseEntity {
@@ -37,12 +40,12 @@ export class User extends BaseEntity {
     public active: boolean;
 
     @Column({ nullable: true })
-    public kycStatus: string;
+    public kycStatus: KycStatus;
 
     @OneToMany((_type) => SocialPost, (posts) => posts.user)
-    posts: SocialPost[];
+    public posts: SocialPost[];
 
-    @Column({nullable: true})
+    @Column({ nullable: true })
     public lastLogin: Date;
 
     @CreateDateColumn()
@@ -51,11 +54,7 @@ export class User extends BaseEntity {
     @UpdateDateColumn()
     public updatedAt: Date;
 
-    @OneToMany(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => Participant,
-        (participant) => participant.user
-    )
+    @OneToMany((_type) => Participant, (participant) => participant.user)
     campaigns: Participant[];
 
     @OneToOne(
@@ -81,10 +80,24 @@ export class User extends BaseEntity {
 
     @OneToMany(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        (_type) => VerificationApplication,
+        (verification) => verification.user
+    )
+    public identityVerifications: VerificationApplication[];
+
+    @OneToMany(
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         (_type) => FactorLink,
         (link) => link.user
     )
     public factorLinks: FactorLink[];
+
+    @OneToMany(
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        (_type) => Verification,
+        (verification) => verification.user
+    )
+    public verifications: Verification[];
 
     @OneToMany(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -158,11 +171,11 @@ export class User extends BaseEntity {
 
     public async updateCoiinBalance(operation: "add" | "subtract", amount: number): Promise<any> {
         let user: User | undefined = this;
-        if (!user.wallet || !user.wallet.currency) {
-            user = await User.findOne({ where: { id: this.id }, relations: ["wallet", "wallet.currency"] });
+        if (!user.wallet || !user.wallet.walletCurrency) {
+            user = await User.findOne({ where: { id: this.id }, relations: ["wallet", "wallet.walletCurrency"] });
         }
         if (user) {
-            const coiinBalance = user.wallet.currency.find((item) => item.type.toLowerCase() === "coiin");
+            const coiinBalance = user.wallet.walletCurrency.find((item) => item.type.toLowerCase() === "coiin");
             if (coiinBalance) {
                 coiinBalance.balance =
                     operation === "add" ? coiinBalance.balance.plus(amount) : coiinBalance.balance.minus(amount);
@@ -287,7 +300,9 @@ export class User extends BaseEntity {
                 query = query.leftJoinAndSelect("user.wallet", "wallet", 'wallet."userId" = user.id');
                 const subFields = loadWallet.selectionSet?.selections.filter((node) => node.kind === "Field") || [];
                 const loadTransfers = subFields.find((node: FieldNode) => node.name.value === "transfers") as FieldNode;
-                const loadCurrencies = subFields.find((node: FieldNode) => node.name.value === "currency") as FieldNode;
+                const loadCurrencies = subFields.find(
+                    (node: FieldNode) => node.name.value === "walletCurrency"
+                ) as FieldNode;
                 if (loadTransfers) {
                     query = query.leftJoinAndSelect("wallet.transfers", "transfer", 'transfer."walletId" = wallet.id');
                     const transferFields =
@@ -300,7 +315,11 @@ export class User extends BaseEntity {
                     }
                 }
                 if (loadCurrencies)
-                    query = query.leftJoinAndSelect("wallet.currency", "currency", 'currency."walletId" = wallet.id');
+                    query = query.leftJoinAndSelect(
+                        "wallet.walletCurrency",
+                        "wallet_currency",
+                        'wallet_currency."walletId" = wallet.id'
+                    );
             }
             if (loadSocialLinks)
                 query = query.leftJoinAndSelect("user.socialLinks", "social", 'social."userId" = user.id');

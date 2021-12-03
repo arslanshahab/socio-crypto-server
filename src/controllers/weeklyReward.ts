@@ -20,9 +20,10 @@ const participationCoiinReward = 2;
 export const getWeeklyRewards = async (parent: any, args: any, context: any) => {
     try {
         const { id } = context.user;
+        console.log('identity ID', id)
         const user = await User.findOne({
             where: { identityId: id },
-            relations: ["weeklyRewards", "weeklyRewards.participant"],
+            relations: ["weeklyRewards"],
         });
         if (!user) throw new Error("user not found");
         const weekKey = `${getWeek(user.lastLogin)}-${getYear(user.lastLogin)}`;
@@ -81,7 +82,7 @@ const prepareWeeklyRewardResponse = async (user: User, data: WeeklyReward[]): Pr
         loginReward: loginReward ? parseInt(loginReward.coiinAmount) : 0,
         nextLoginReward: nextReward.toString(),
         participationReward: participationReward ? parseInt(participationReward.coiinAmount) : 0,
-        participationId: participationReward ? participationReward.participant.id : "",
+        participationId: "",
         nextParticipationReward: nextReward.toString(),
         participationRewardRedeemed: participationReward ? true : false,
         participationRedemptionDate: participationReward ? participationReward.createdAt.toString() : "",

@@ -6,7 +6,6 @@ import {
     PrimaryGeneratedColumn,
     CreateDateColumn,
     UpdateDateColumn,
-    OneToOne,
 } from "typeorm";
 import { Campaign } from "./Campaign";
 import { User } from "./User";
@@ -14,7 +13,6 @@ import { BigNumber } from "bignumber.js";
 import { BigNumberEntityTransformer } from "../util/transformers";
 import { BN } from "../util/helpers";
 import { encrypt } from "../util/crypto";
-import { WeeklyReward } from "./WeeklyReward";
 
 @Entity()
 export class Participant extends BaseEntity {
@@ -38,9 +36,6 @@ export class Participant extends BaseEntity {
 
     @Column({ nullable: true })
     public email: string;
-
-    @OneToOne((_type) => WeeklyReward, (reward) => reward.participant)
-    public reward: WeeklyReward;
 
     @ManyToOne(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars

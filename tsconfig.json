@@ -1,37 +1,33 @@
 {
-  "compilerOptions": {
-    "target": "es2019",
-    "outDir": "dist",
-    "moduleResolution": "node",
-    "module": "commonjs",
-    "declaration": false,
-    "esModuleInterop": true,
-    "importHelpers": true,
-    "listFiles": false,
-    "traceResolution": false,
-    "strictNullChecks": true,
-    "forceConsistentCasingInFileNames": true,
-    "noFallthroughCasesInSwitch": true,
-    "noImplicitAny": true,
-    "noImplicitReturns": true,
-    "noImplicitThis": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": false,
-    "allowSyntheticDefaultImports": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "allowUnreachableCode": false,
-    "resolveJsonModule": true,
-    "allowJs": false,
-    "types": [
-      "node",
-      "mocha"
-    ],
-    "baseUrl": "."
-  },
-  "include": ["src/*", "src/**/*"],
-  "exclude": [
-    "node_modules/**"
-  ],
-  "compileOnSave": false
+    "compilerOptions": {
+        "target": "es2019",
+        "outDir": "dist",
+        "moduleResolution": "node",
+        "module": "commonjs",
+        "declaration": false,
+        "esModuleInterop": true,
+        "importHelpers": true,
+        "listFiles": false,
+        "traceResolution": false,
+        "strictNullChecks": true,
+        "forceConsistentCasingInFileNames": true,
+        "noFallthroughCasesInSwitch": true,
+        "noImplicitAny": true,
+        "noImplicitReturns": true,
+        "noImplicitThis": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": false,
+        "allowSyntheticDefaultImports": true,
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        "allowUnreachableCode": false,
+        "resolveJsonModule": true,
+        "allowJs": false,
+        "types": ["node", "mocha"],
+        "baseUrl": ".",
+        "lib": ["ES2020.Promise"]
+    },
+    "include": ["src/*", "src/**/*"],
+    "exclude": ["node_modules/**"],
+    "compileOnSave": false
 }

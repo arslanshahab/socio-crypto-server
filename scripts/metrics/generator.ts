@@ -16,7 +16,7 @@ import {
   incrementHour,
   updateCampaign,
   updateParticipant,
-} from "./helpers";
+} from "../helpers";
 import {Participant} from "../../src/models/Participant";
 import {HourlyCampaignMetric} from "../../src/models/HourlyCampaignMetric";
 import BigNumber from 'bignumber.js';

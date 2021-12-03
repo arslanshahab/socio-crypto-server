@@ -11,7 +11,7 @@ import {
 } from "typeorm";
 import { DateUtils } from "typeorm/util/DateUtils";
 import { Participant } from "./Participant";
-import { AlgorithmSpecs, CampaignRequirementSpecs, CampaignStatus } from "../types";
+import { AlgorithmSpecs, CampaignAuditStatus, CampaignRequirementSpecs, CampaignStatus } from "../types";
 import { SocialPost } from "./SocialPost";
 import { Transfer } from "./Transfer";
 import { StringifiedArrayTransformer, BigNumberEntityTransformer, AlgorithmTransformer } from "../util/transformers";
@@ -27,6 +27,11 @@ import { Escrow } from "./Escrow";
 import { CryptoCurrency } from "./CryptoCurrency";
 import { CampaignMedia } from "./CampaignMedia";
 import { CampaignTemplate } from "./CampaignTemplate";
+import { TatumClient, CAMPAIGN_CREATION_AMOUNT } from "../clients/tatumClient";
+import { WalletCurrency } from "./WalletCurrency";
+import { Wallet } from "./Wallet";
+import { Currency } from "./Currency";
+import { getCryptoAssestImageUrl } from "../controllers/controllerHelpers";
 
 @Entity()
 export class Campaign extends BaseEntity {
@@ -44,6 +49,12 @@ export class Campaign extends BaseEntity {
 
     @Column({ nullable: false, default: "DEFAULT" })
     public status: CampaignStatus;
+
+    @Column({ nullable: false })
+    public symbol: string;
+
+    @Column({ nullable: true })
+    public tatumBlockageId: string;
 
     @Column({ type: "varchar", transformer: BigNumberEntityTransformer })
     public coiinTotal: BigNumber;
@@ -80,6 +91,9 @@ export class Campaign extends BaseEntity {
 
     @Column({ nullable: false, default: false })
     public audited: boolean;
+
+    @Column({ nullable: false, default: "DEFAULT" })
+    public auditStatus: CampaignAuditStatus;
 
     @Column({ nullable: true })
     public targetVideo: string;
@@ -127,6 +141,7 @@ export class Campaign extends BaseEntity {
 
     @Column({ type: "text", nullable: true })
     public type: string;
+    public symbolImageUrl = "";
 
     @OneToMany(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -180,6 +195,7 @@ export class Campaign extends BaseEntity {
             return true;
         return false;
     }
+
     public static parseAlgorithm(algorithmEntity: AlgorithmSpecs) {
         const algorithm: { [key: string]: any } = algorithmEntity;
         for (const key in algorithm["pointValues"]) {
@@ -212,6 +228,7 @@ export class Campaign extends BaseEntity {
         if (this.posts && this.posts.length > 0) returnedCampaign.posts = this.posts.map((post) => post.asV1());
         if (this.org) returnedCampaign.org = this.org.asV1();
         if (this.crypto) returnedCampaign.crypto = this.crypto.asV1();
+        if (this.symbol) returnedCampaign.symbolImageUrl = getCryptoAssestImageUrl(this.symbol);
         return returnedCampaign;
     }
 
@@ -410,6 +427,7 @@ export class Campaign extends BaseEntity {
         description: string,
         instructions: string,
         company: string,
+        symbol: string,
         algorithm: string,
         tagline: string,
         requirements: CampaignRequirementSpecs,
@@ -421,8 +439,7 @@ export class Campaign extends BaseEntity {
         campaignType: string,
         socialMediaType: string[],
         targetVideo?: string,
-        org?: Org,
-        crypto?: CryptoCurrency
+        org?: Org
     ): Campaign {
         const campaign = new Campaign();
         if (org) campaign.org = org;
@@ -431,6 +448,7 @@ export class Campaign extends BaseEntity {
         campaign.target = target;
         campaign.company = company;
         campaign.status = "PENDING";
+        campaign.symbol = symbol.toUpperCase();
         campaign.beginDate = new Date(beginDate);
         campaign.endDate = new Date(endDate);
         campaign.algorithm = JSON.parse(algorithm);
@@ -447,7 +465,41 @@ export class Campaign extends BaseEntity {
         if (suggestedPosts) campaign.suggestedPosts = suggestedPosts;
         if (suggestedTags) campaign.suggestedTags = suggestedTags;
         if (keywords) campaign.keywords = keywords;
-        if (crypto) campaign.crypto = crypto;
         return campaign;
+    }
+
+    public async blockCampaignAmount(): Promise<string> {
+        try {
+            let campaign: Campaign | undefined = this;
+            if (!campaign) throw new Error("campaign now found");
+            if (!campaign.org) throw new Error("org not found for campaign");
+            const wallet = await Wallet.findOne({ where: { org: campaign.org } });
+            const walletCurrency = await WalletCurrency.findOne({
+                where: {
+                    wallet: wallet,
+                    type: campaign.symbol.toLowerCase(),
+                },
+            });
+            if (walletCurrency) {
+                const escrow = Escrow.newCampaignEscrow(campaign, campaign.org.wallet);
+                await campaign.org.updateBalance(campaign.symbol, "subtract", campaign.coiinTotal.toNumber());
+                await escrow.save();
+                return escrow.id;
+            }
+            const currency = await Currency.findOne({
+                where: { wallet: wallet, symbol: campaign.symbol },
+            });
+            if (!currency) throw new Error("currency not found for campaign");
+            const blockageKey = `${CAMPAIGN_CREATION_AMOUNT}:${campaign.id}`;
+            const blockedAmount = await TatumClient.blockAccountBalance(
+                currency.tatumId,
+                campaign.coiinTotal.toString(),
+                blockageKey
+            );
+            return blockedAmount.id;
+        } catch (error) {
+            console.log(error);
+            throw new Error(error.message);
+        }
     }
 }
