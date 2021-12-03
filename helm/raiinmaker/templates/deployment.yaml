@@ -106,9 +106,6 @@ spec:
             - name: tatum
               mountPath: "/var/secrets/tatum"
               readOnly: true
-            - name: coiin-minter
-              mountPath: "/var/secrets/coiin-minter"
-              readOnly: true
           resources:
             {{- toYaml .Values.server.resources | nindent 12 }}
       volumes:
@@ -148,9 +145,6 @@ spec:
         - name: tatum
           secret:
             secretName: tatum
-        - name: coiin-minter
-          secret:
-            secretName: coiin-minter
 ---
 apiVersion: apps/v1
 kind: Deployment

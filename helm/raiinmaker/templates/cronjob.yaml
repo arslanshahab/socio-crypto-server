@@ -65,9 +65,6 @@ spec:
                 - name: tatum
                   mountPath: "/var/secrets/tatum"
                   readOnly: true
-                - name: coiin-minter
-                  mountPath: "/var/secrets/coiin-minter"
-                  readOnly: true
               resources:
                 requests:
                   memory: "128Mi"
@@ -113,9 +110,6 @@ spec:
             - name: tatum
               secret:
                 secretName: tatum
-            - name: coiin-minter
-              secret:
-                secretName: coiin-minter
 ---
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -184,9 +178,6 @@ spec:
                 - name: tatum
                   mountPath: "/var/secrets/tatum"
                   readOnly: true
-                - name: coiin-minter
-                  mountPath: "/var/secrets/coiin-minter"
-                  readOnly: true
               resources:
                 requests:
                   memory: "128Mi"
@@ -232,9 +223,6 @@ spec:
             - name: tatum
               secret:
                 secretName: tatum
-            - name: coiin-minter
-              secret:
-                secretName: coiin-minter
 ---
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -306,9 +294,6 @@ spec:
                 - name: tatum
                   mountPath: "/var/secrets/tatum"
                   readOnly: true
-                - name: coiin-minter
-                  mountPath: "/var/secrets/coiin-minter"
-                  readOnly: true
               resources:
                 requests:
                   memory: "128Mi"
@@ -354,9 +339,6 @@ spec:
             - name: tatum
               secret:
                 secretName: tatum
-            - name: coiin-minter
-              secret:
-                secretName: coiin-minter
 ---
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -428,9 +410,6 @@ spec:
                 - name: tatum
                   mountPath: "/var/secrets/tatum"
                   readOnly: true
-                - name: coiin-minter
-                  mountPath: "/var/secrets/coiin-minter"
-                  readOnly: true
               resources:
                 requests:
                   memory: "128Mi"
@@ -476,9 +455,6 @@ spec:
             - name: tatum
               secret:
                 secretName: tatum
-            - name: coiin-minter
-              secret:
-                secretName: coiin-minter
 ---
 # apiVersion: batch/v1beta1
 # kind: CronJob
