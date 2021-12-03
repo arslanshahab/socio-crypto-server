@@ -19,7 +19,7 @@ import {
     getCryptoAssestImageUrl,
     getMinWithdrawableAmount,
     getUSDValueForCurrency,
-} from "./controllerHelpers";
+} from "../helpers";
 import { TatumClient } from "../clients/tatumClient";
 import { WalletCurrency } from "../models/WalletCurrency";
 import { Wallet } from "../models/Wallet";

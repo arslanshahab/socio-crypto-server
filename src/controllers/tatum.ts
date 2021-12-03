@@ -5,7 +5,7 @@ import { Request, Response } from "express";
 import { TatumWallet } from "../models/TatumWallet";
 import { User } from "../models/User";
 import { S3Client } from "../clients/s3";
-import { findOrCreateCurrency, getWithdrawableAmount } from "./controllerHelpers";
+import { findOrCreateCurrency, getWithdrawableAmount } from "../helpers";
 import { Currency } from "../models/Currency";
 import { Transfer } from "../models/Transfer";
 import { BigNumber } from "bignumber.js";
