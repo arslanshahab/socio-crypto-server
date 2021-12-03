@@ -28,7 +28,7 @@ import { flatten } from "lodash";
 import { asyncHandler } from "../util/helpers";
 import { Request, Response } from "express";
 import { Verification } from "../models/Verification";
-import { generateRandomNonce } from "../util/helpers";
+import { generateRandomNonce, formatFloat } from "../util/helpers";
 import { SesClient } from "../clients/ses";
 
 export const participate = async (parent: any, args: { campaignId: string; email: string }, context: { user: any }) => {
@@ -379,7 +379,7 @@ export const getWalletBalances = async (parent: any, args: any, context: { user:
         const balance = balances.find((balanceItem) => currencyItem.tatumId === balanceItem.tatumId);
         const minWithdrawAmount = await getMinWithdrawableAmount(currencyItem.symbol.toLowerCase());
         return {
-            balance: balance.availableBalance,
+            balance: formatFloat(balance.availableBalance),
             symbol: currencyItem.symbol,
             minWithdrawAmount,
             usdBalance: getUSDValueForCurrency(currencyItem.symbol.toLowerCase(), balance.availableBalance),
@@ -390,7 +390,7 @@ export const getWalletBalances = async (parent: any, args: any, context: { user:
         allCurrencies.unshift(
             Promise.resolve({
                 symbol: coiinCurrency.type.toUpperCase() || "",
-                balance: coiinCurrency.balance.toNumber() || 0,
+                balance: formatFloat(coiinCurrency.balance.toNumber()),
                 minWithdrawAmount: coiinCurrency.balance.toNumber(),
                 usdBalance: getUSDValueForCurrency(coiinCurrency.type.toLowerCase(), coiinCurrency.balance.toNumber()),
                 imageUrl: getCryptoAssestImageUrl(coiinCurrency.type.toUpperCase()),
