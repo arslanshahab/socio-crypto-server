@@ -24,7 +24,12 @@
         "resolveJsonModule": true,
         "allowJs": false,
         "types": ["node", "mocha"],
-        "baseUrl": ".",
+        "baseUrl": "./",
+        "paths": {
+            "controllers": ["controllers/*"],
+            "models": ["models/*"],
+            "clients": ["clients/*"]
+        },
         "lib": ["ES2020.Promise"]
     },
     "include": ["src/*", "src/**/*"],

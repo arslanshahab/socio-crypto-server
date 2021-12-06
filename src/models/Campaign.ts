@@ -31,7 +31,7 @@ import { TatumClient, CAMPAIGN_CREATION_AMOUNT } from "../clients/tatumClient";
 import { WalletCurrency } from "./WalletCurrency";
 import { Wallet } from "./Wallet";
 import { Currency } from "./Currency";
-import { getCryptoAssestImageUrl } from "../controllers/controllerHelpers";
+import { getCryptoAssestImageUrl } from "../helpers";
 
 @Entity()
 export class Campaign extends BaseEntity {
