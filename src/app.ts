@@ -12,7 +12,6 @@ import { Firebase } from "./clients/firebase";
 import * as FactorController from "./controllers/factor";
 import * as Dragonfactor from "@myfii-dev/dragonfactor-auth";
 import { paypalWebhook } from "./controllers/withdraw";
-// import {Paypal} from "./clients/paypal";
 import { adminResolvers, publicResolvers, resolvers } from "./graphql/resolvers";
 import { sessionLogin, sessionLogout, updateUserPassword } from "./controllers/firebase";
 import { trackClickByLink } from "./controllers/participant";
@@ -34,6 +33,7 @@ import {
     getAllWithdrawls,
     transferBalance,
 } from "./controllers/tatum";
+import { kycWebhook } from "./controllers/kyc";
 
 const { NODE_ENV = "development" } = process.env;
 
@@ -55,8 +55,6 @@ export class Application {
         await Secrets.initialize();
         await Firebase.initialize();
         await Dragonchain.initialize();
-        // await Paypal.initialize();
-        // await Paypal.refreshToken();
         StripeAPI.initialize();
         this.app = express();
         const corsSettings = {
@@ -81,10 +79,12 @@ export class Application {
         this.app.use(bodyParser.urlencoded({ extended: true }));
         this.app.set("port", process.env.PORT || 8080);
         const requestPlugin: ApolloServerPlugin = {
-            requestDidStart(requestContext) {
+            async requestDidStart(requestContext) {
                 console.log({
                     timestamp: new Date().toISOString(),
                     operation: requestContext.request.operationName,
+                    request: requestContext.request.http?.url,
+                    // variables: requestContext.request.variables,
                 });
 
                 return {
@@ -111,6 +111,9 @@ export class Application {
             plugins: [requestPlugin],
             resolvers: publicResolvers,
         });
+        await server.start();
+        await serverAdmin.start();
+        await serverPublic.start();
         server.applyMiddleware({
             app: this.app,
             path: "/v1/graphql",
@@ -144,6 +147,7 @@ export class Application {
         this.app.post("/v1/tatum/list-withdraws", getAllWithdrawls);
         this.app.post("/v1/tatum/transfer", transferBalance);
         this.app.get("/v1/xoxoday/filters", getXoxodayFilters);
+        this.app.post("/v1/dragonfactor/webhook", kycWebhook);
         this.app.use(
             "/v1/dragonfactor/login",
             Dragonfactor.expressMiddleware({

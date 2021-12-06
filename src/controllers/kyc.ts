@@ -1,31 +1,44 @@
 import { S3Client } from "../clients/s3";
 import { User } from "../models/User";
-import { Validator } from "../schemas";
 import { checkPermissions } from "../middleware/authentication";
-import { KycUser } from "../types";
+import {KycUser} from "../types";
 import { Firebase } from "../clients/firebase";
+import {asyncHandler} from "../util/helpers";
+import {Request, Response} from "express";
+import {MyfiiProvider} from "../clients/myfiiProvider";
+import {VerificationApplication} from "../models/VerificationApplication";
 
-const validator = new Validator();
-
-export const registerKyc = async (parent: any, args: { userKyc: any }, context: { user: any }) => {
-    validator.validateKycRegistration(args.userKyc);
+export const verifyKyc = async (parent: any, args: any, context: {user: any}) => {
+    console.log('VERIFYING KYC', args);
     const { id } = context.user;
-    const user = await User.findOneOrFail({ where: { identityId: id } });
-    if (args.userKyc["idProof"]) {
-        await S3Client.uploadKycImage(user.id, "idProof", args.userKyc["idProof"]);
-        delete args.userKyc["idProof"];
-        args.userKyc["hasIdProof"] = true;
-    }
-    if (args.userKyc["addressProof"]) {
-        await S3Client.uploadKycImage(user.id, "addressProof", args.userKyc["addressProof"]);
-        delete args.userKyc["addressProof"];
-        args.userKyc["hasAddressProof"] = true;
-    }
-    await S3Client.postUserInfo(user.id, args.userKyc);
-    user.kycStatus = "pending";
-    await user.save();
-    return args.userKyc;
+    const {userKyc} = args;
+    console.log('RECEIVED USER KYC: ', userKyc)
+    const user = await User.findOneOrFail({ where: { identityId: id }, relations: ['profile'] });
+    console.log('USER FOUND: ', user.id);
+    const res = await MyfiiProvider.submitApplication(userKyc);
+    console.log('KYC APP RESPONSE: ', res);
+    const application = await VerificationApplication.newApplication(id, res.state, user);
+    if (res.factors) await S3Client.putObject(id, {factors: res.factors, userId: user.id});
+
+    await application.save();
+    return {kycId: id, state: res.state, factors: res.factors};
 };
+
+export const downloadKyc = async (parent: any, args: {kycId: string}, context: {user: any}) => {
+    const kycFactors = await S3Client.getKycFactors(args.kycId);
+    if (kycFactors) await S3Client.deleteKycData(args.kycId);
+    return kycFactors;
+};
+export const kycWebhook = asyncHandler(async (req: Request, res: Response) => {
+    const {id, state, factors} = req.body;
+    const data = await S3Client.getKycFactors(id) as any;
+    if (!data) throw Error('kyc not found');
+    const user = await User.findOneOrFail({where: {id: data.userId}, relations: ['profile']});
+    if (factors) await S3Client.putObject(id, {factors: factors, userId: user.id});
+    await Firebase.sendFactorVerificationUpdate(user.profile.deviceToken, state);
+
+    res.status(200).json({success: true});
+});
 
 export const getKyc = async (_parent: any, args: any, context: { user: any }) => {
     const { id, role } = context.user;
@@ -63,7 +76,7 @@ export const updateKyc = async (parent: any, args: { user: KycUser }, context: {
         delete args.user.addressProof;
         args.user.hasAddressProof = true;
     }
-    user.kycStatus = "pending";
+    user.kycStatus = 'PENDING';
     await user.save();
     return S3Client.updateUserInfo(user.id, args.user);
 };
@@ -79,10 +92,10 @@ export const updateKycStatus = async (
         where: { id: args.userId },
         relations: ["profile", "notificationSettings"],
     });
-    user.kycStatus = args.status == "approve" ? "approved" : "rejected";
+    user.kycStatus = args.status == "APPROVED" ? "APPROVED" : "REJECTED";
     await user.save();
     if (user.notificationSettings.kyc) {
-        if (user.kycStatus === "approved") await Firebase.sendKycApprovalNotification(user.profile.deviceToken);
+        if (user.kycStatus === "APPROVED") await Firebase.sendKycApprovalNotification(user.profile.deviceToken);
         else await Firebase.sendKycRejectionNotification(user.profile.deviceToken);
     }
     return user.asV1();

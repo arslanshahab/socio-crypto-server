@@ -99,8 +99,8 @@ const sendTokenOffchainTransaction = async (currency: string, data: any) => {
     const requestData: RequestData = {
         method: "POST",
         url: endpoint,
-        xAPIToken: Secrets.tatumApiKey,
         payload: data,
+        headers: { "x-api-key": Secrets.tatumApiKey },
     };
     const response = await doFetch(requestData);
     if (response.status !== 200) {

@@ -1,5 +1,5 @@
 import {Connection} from "typeorm";
-import {connectDatabase} from "./helpers";
+import {connectDatabase} from "../helpers";
 import {Participant} from "../../src/models/Participant";
 import {Campaign} from "../../src/models/Campaign";
 import {Wallet} from "../../src/models/Wallet";

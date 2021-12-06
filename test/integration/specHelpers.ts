@@ -16,7 +16,7 @@ import {Application} from "../../src/app";
 import {Org} from "../../src/models/Org";
 import {SocialPost} from "../../src/models/SocialPost";
 import {SocialLink} from "../../src/models/SocialLink";
-import {getRandomIntWithinRange} from "../../scripts/metrics/helpers";
+import {getRandomIntWithinRange} from "../../scripts/helpers";
 import { RafflePrize } from '../../src/models/RafflePrize';
 import { Admin } from '../../src/models/Admin';
 import { Escrow } from '../../src/models/Escrow';

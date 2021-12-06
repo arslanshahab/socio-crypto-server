@@ -1,5 +1,5 @@
 import { SocialPost } from "../models/SocialPost";
-import { Tiers, AggregateDailyMetrics } from "../types";
+import {Tiers, AggregateDailyMetrics} from "../types";
 import { Participant } from "../models/Participant";
 import { Campaign } from "../models/Campaign";
 import { getConnection } from "typeorm";

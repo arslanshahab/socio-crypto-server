@@ -106,9 +106,6 @@ spec:
             - name: tatum
               mountPath: "/var/secrets/tatum"
               readOnly: true
-            - name: tatum
-              mountPath: "/var/secrets/rm-tokens"
-              readOnly: true
           resources:
             {{- toYaml .Values.server.resources | nindent 12 }}
       volumes:

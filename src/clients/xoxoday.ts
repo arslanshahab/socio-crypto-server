@@ -100,7 +100,7 @@ export class Xoxoday {
                 method: "POST",
                 url: `${this.baseUrl}/v1/oauth/api`,
                 payload: payload,
-                authToken: authData.access_token,
+                headers: { Authorization: "Bearer " + authData.access_token },
             };
             const response = await doFetch(requestData);
             const filters = await response.json();
@@ -145,7 +145,7 @@ export class Xoxoday {
                 method: "POST",
                 url: `${this.baseUrl}/v1/oauth/api`,
                 payload: payload,
-                authToken: authData.access_token,
+                headers: { Authorization: "Bearer " + authData.access_token },
             };
             const response = await doFetch(requestData);
             const vouchers = await response.json();
@@ -178,7 +178,7 @@ export class Xoxoday {
                     method: "POST",
                     url: `${this.baseUrl}/v1/oauth/api`,
                     payload: payload,
-                    authToken: authData.access_token,
+                    headers: { Authorization: "Bearer " + authData.access_token },
                 };
                 promiseArray.push(doFetch(requestData));
             });

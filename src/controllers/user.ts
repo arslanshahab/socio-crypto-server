@@ -25,8 +25,10 @@ import { WalletCurrency } from "../models/WalletCurrency";
 import { Wallet } from "../models/Wallet";
 import { Currency } from "../models/Currency";
 import { flatten } from "lodash";
+import { asyncHandler } from "../util/helpers";
+import { Request, Response } from "express";
 import { Verification } from "../models/Verification";
-import { generateRandomNonce } from "../util/helpers";
+import { generateRandomNonce, formatFloat } from "../util/helpers";
 import { SesClient } from "../clients/ses";
 
 export const participate = async (parent: any, args: { campaignId: string; email: string }, context: { user: any }) => {
@@ -54,6 +56,7 @@ export const participate = async (parent: any, args: { campaignId: string; email
             await findOrCreateCurrency(campaign.symbol, user.wallet);
         }
         const participant = Participant.newParticipant(user, campaign, args.email);
+        await participant.save();
         const url = `${serverBaseUrl}/v1/referral/${participant.id}`;
         participant.link = await TinyUrl.shorten(url);
         await HourlyCampaignMetric.upsert(campaign, campaign.org, "participate");
@@ -65,6 +68,14 @@ export const participate = async (parent: any, args: { campaignId: string; email
         return null;
     }
 };
+
+export const insertUser = asyncHandler(async (req: Request, res: Response) => {
+    const user = new User();
+    user.identityId = "banana";
+    user.active = true;
+    await user.save();
+    res.status(200).json({ success: true });
+});
 
 export const promotePermissions = async (
     parent: any,
@@ -368,7 +379,7 @@ export const getWalletBalances = async (parent: any, args: any, context: { user:
         const balance = balances.find((balanceItem) => currencyItem.tatumId === balanceItem.tatumId);
         const minWithdrawAmount = await getMinWithdrawableAmount(currencyItem.symbol.toLowerCase());
         return {
-            balance: balance.availableBalance,
+            balance: formatFloat(balance.availableBalance),
             symbol: currencyItem.symbol,
             minWithdrawAmount,
             usdBalance: getUSDValueForCurrency(currencyItem.symbol.toLowerCase(), balance.availableBalance),
@@ -379,7 +390,7 @@ export const getWalletBalances = async (parent: any, args: any, context: { user:
         allCurrencies.unshift(
             Promise.resolve({
                 symbol: coiinCurrency.type.toUpperCase() || "",
-                balance: coiinCurrency.balance.toNumber() || 0,
+                balance: formatFloat(coiinCurrency.balance.toNumber()),
                 minWithdrawAmount: coiinCurrency.balance.toNumber(),
                 usdBalance: getUSDValueForCurrency(coiinCurrency.type.toLowerCase(), coiinCurrency.balance.toNumber()),
                 imageUrl: getCryptoAssestImageUrl(coiinCurrency.type.toUpperCase()),

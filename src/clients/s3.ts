@@ -82,6 +82,15 @@ export class S3Client {
         return;
     }
 
+    public static async deleteKycData(kycId: string) {
+        const params: AWS.S3.DeleteObjectRequest = { Bucket: KYC_BUCKET_NAME, Key: kycId };
+        try {
+            return await this.client.deleteObject(params).promise();
+        } catch (_) {
+            return null;
+        }
+    }
+
     public static async uploadKycImage(userId: string, type: string, image: string) {
         const params: AWS.S3.PutObjectRequest = {
             Bucket: KYC_BUCKET_NAME,
@@ -101,6 +110,16 @@ export class S3Client {
         try {
             const responseString = (await this.client.getObject(params).promise()).Body?.toString();
             return responseString;
+        } catch (e) {
+            if (e.code && e.code === "NotFound") return;
+            throw e;
+        }
+    }
+
+    public static async getKycFactors(kycId: string): Promise<string | undefined> {
+        const params: AWS.S3.GetObjectRequest = { Bucket: KYC_BUCKET_NAME, Key: kycId };
+        try {
+            return JSON.parse((await S3Client.client.getObject(params).promise()).Body!.toString());
         } catch (e) {
             if (e.code && e.code === "NotFound") return;
             throw e;
@@ -268,24 +287,6 @@ export class S3Client {
         }
     }
 
-    public static async setLastCheckedTransactionTime(time: number) {
-        const params: AWS.S3.PutObjectRequest = {
-            Bucket: BUCKET_NAME,
-            Key: "tatum/lastCheckedTime",
-            Body: String(time),
-        };
-        return await this.client.putObject(params).promise();
-    }
-
-    public static async getLastCheckedTransactionTime() {
-        const params: AWS.S3.GetObjectRequest = { Bucket: BUCKET_NAME, Key: "tatum/lastCheckedTime" };
-        try {
-            return (await this.client.getObject(params).promise()).Body?.toString();
-        } catch (e) {
-            throw e;
-        }
-    }
-
     public static async setTatumWalletKeys(currency: string, data: any) {
         const params: AWS.S3.PutObjectRequest = {
             Bucket: TATUM_WALLETS,
@@ -300,6 +301,19 @@ export class S3Client {
         try {
             return JSON.parse((await S3Client.client.getObject(params).promise()).Body!.toString());
         } catch (e) {
+            throw e;
+        }
+    }
+
+    public static async getWhitelistedPrivateKey() {
+        const params: AWS.S3.GetObjectRequest = {
+            Bucket: RM_SECRETS,
+            Key: "rm-minter-whitelisted-address-rinkeby.rtf",
+        };
+        try {
+            return (await this.client.getObject(params).promise()).Body?.toString();
+        } catch (e) {
+            if (e.code && e.code === "NotFound") return null;
             throw e;
         }
     }
