@@ -42,8 +42,8 @@ export class TatumClient {
             const wallets = await TatumWallet.find({ where: { enabled: true } });
             return wallets.map((item) => item.currency);
         } catch (error) {
-            console.log(error);
-            throw new Error(error.message);
+            console.log(error?.response?.data || error.message);
+            throw new Error(error?.response?.data?.message || error.message);
         }
     }
 
@@ -56,8 +56,8 @@ export class TatumClient {
         try {
             return await generateWallet(currency as TatumCurrency, false);
         } catch (error) {
-            console.log(error);
-            throw new Error(error.data ? error.data.message : error.message);
+            console.log(error?.response?.data || error.message);
+            throw new Error(error?.response?.data?.message || error.message);
         }
     }
 
@@ -75,8 +75,8 @@ export class TatumClient {
                 throw new Error(`No wallet found for symbol: ${symbol}`);
             }
         } catch (error) {
-            console.log(error);
-            throw new Error(error.message);
+            console.log(error?.response?.data || error.message);
+            throw new Error(error?.response?.data?.message || error.message);
         }
     }
 
@@ -85,8 +85,8 @@ export class TatumClient {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
             return await generateDepositAddress(accountId);
         } catch (error) {
-            console.log(error);
-            throw new Error(error.message);
+            console.log(error?.response?.data || error.message);
+            throw new Error(error?.response?.data?.message || error.message);
         }
     }
 
@@ -95,8 +95,8 @@ export class TatumClient {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
             return await getAccountBalance(accountId);
         } catch (error) {
-            console.log(error);
-            throw new Error(error.message);
+            console.log(error?.response?.data || error.message);
+            throw new Error(error?.response?.data?.message || error.message);
         }
     }
 
@@ -113,8 +113,8 @@ export class TatumClient {
             }
             return response;
         } catch (error) {
-            console.log(error);
-            throw new Error(error.message);
+            console.log(error?.response?.data || error.message);
+            throw new Error(error?.response?.data?.message || error.message);
         }
     }
 
@@ -128,8 +128,8 @@ export class TatumClient {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
             return await storeTransaction({ senderAccountId, recipientAccountId, amount, recipientNote });
         } catch (error) {
-            console.log(error);
-            throw new Error(error.message);
+            console.log(error?.response?.data || error.message);
+            throw new Error(error?.response?.data?.message || error.message);
         }
     }
 
@@ -142,8 +142,8 @@ export class TatumClient {
                 description: type,
             });
         } catch (error) {
-            console.log(error);
-            throw new Error(error.message);
+            console.log(error?.response?.data || error.message);
+            throw new Error(error?.response?.data?.message || error.message);
         }
     }
 
@@ -152,8 +152,8 @@ export class TatumClient {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
             return await deleteBlockedAmount(blockageId);
         } catch (error) {
-            console.log(error);
-            throw new Error(error.message);
+            console.log(error?.response?.data || error.message);
+            throw new Error(error?.response?.data?.message || error.message);
         }
     }
 
@@ -162,8 +162,8 @@ export class TatumClient {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
             return await getBlockedAmountsByAccountId(accountId, pageSize, offset);
         } catch (error) {
-            console.log(error);
-            throw new Error(error.message);
+            console.log(error?.response?.data || error.message);
+            throw new Error(error?.response?.data?.message || error.message);
         }
     }
 
@@ -172,8 +172,8 @@ export class TatumClient {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
             return await getTransactionsByAccount(filter, pageSize, offset);
         } catch (error) {
-            console.log(error);
-            throw new Error(error.message);
+            console.log(error?.response?.data || error.message);
+            throw new Error(error?.response?.data?.message || error.message);
         }
     }
 
@@ -184,8 +184,8 @@ export class TatumClient {
             const body = { ...walletKeys, ...data };
             return await performWithdraw(currency, body);
         } catch (error) {
-            console.log(error);
-            throw new Error(error.message);
+            console.log(error?.response?.data || error.message);
+            throw new Error(error?.response?.data?.message || error.message);
         }
     }
 
@@ -194,8 +194,8 @@ export class TatumClient {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
             return await getWithdrawals(status, currency, pageSize, offset);
         } catch (error) {
-            console.log(error);
-            throw new Error(error.message);
+            console.log(error?.response?.data || error.message);
+            throw new Error(error?.response?.data?.message || error.message);
         }
     }
 }

@@ -1,23 +1,23 @@
 import { EntityManager } from "typeorm";
-import { Campaign } from "src/models/Campaign";
-import { Participant } from "src/models/Participant";
-import { calculateParticipantPayout, calculateRaffleWinner, performCurrencyTransfer } from "src/controllers/helpers";
-import { Wallet } from "src/models/Wallet";
-import { RafflePrize } from "src/models/RafflePrize";
-import { Transfer } from "src/models/Transfer";
-import { SesClient } from "src/clients/ses";
-import { Dragonchain } from "src/clients/dragonchain";
-import { decrypt } from "src/util/crypto";
-import { getCurrentCampaignTier } from "src/controllers/campaign";
-import { BN } from "src/util/helpers";
+import { Campaign } from "../../models/Campaign";
+import { Participant } from "../../models/Participant";
+import { calculateParticipantPayout, calculateRaffleWinner, performCurrencyTransfer } from "../../controllers/helpers";
+import { Wallet } from "../../models/Wallet";
+import { RafflePrize } from "../../models/RafflePrize";
+import { Transfer } from "../../models/Transfer";
+import { SesClient } from "../../clients/ses";
+import { Dragonchain } from "../../clients/dragonchain";
+import { decrypt } from "../../util/crypto";
+import { getCurrentCampaignTier } from "../../controllers/campaign";
+import { BN } from "../../util/helpers";
 import { BigNumber } from "bignumber.js";
-import { FEE_RATE } from "src/util/constants";
-import { Currency } from "src/models/Currency";
-import { Org } from "src/models/Org";
-import { User } from "src/models/User";
-import { TatumClient, CAMPAIGN_REWARD, CAMPAIGN_FEE } from "src/clients/tatumClient";
-import { Escrow } from "src/models/Escrow";
-import { getParticipant } from "src/controllers/participant";
+import { FEE_RATE } from "../../util/constants";
+import { Currency } from "../../models/Currency";
+import { Org } from "../../models/Org";
+import { User } from "../../models/User";
+import { TatumClient, CAMPAIGN_REWARD, CAMPAIGN_FEE } from "../../clients/tatumClient";
+import { Escrow } from "../../models/Escrow";
+import { getParticipant } from "../../controllers/participant";
 import { In } from "typeorm";
 
 export const payoutRaffleCampaignRewards = async (
@@ -89,7 +89,7 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
             }
         }
 
-        // unblock campaign funds so they can be used to distribute rewards
+        if (!campaign.tatumBlockageId) throw new Error(`no blockage Id found for campaign--- ${campaign.id}`);
         await TatumClient.unblockAccountBalance(campaign.tatumBlockageId);
 
         let promiseArray = [];

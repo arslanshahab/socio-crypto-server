@@ -28,7 +28,8 @@ const app = new Application();
             let deviceIds;
             switch (campaign.type.toLowerCase()) {
                 case "crypto":
-                    const symbol = campaign.crypto.type || campaign.symbol;
+                    const symbol = campaign?.crypto?.type || campaign?.symbol;
+                    if (!symbol) throw new Error("campaign symbol not defined");
                     if (symbol.toLowerCase() === "coiin") {
                         deviceIds = await payoutCoiinCampaignRewards(entityManager, campaign, []);
                     } else {
@@ -44,7 +45,7 @@ const app = new Application();
             if (deviceIds) await Firebase.sendCampaignCompleteNotifications(Object.values(deviceIds), campaign.name);
         }
     } catch (error) {
-        logger.error(`An error occurred: ${error.message || JSON.stringify(error)}`);
+        logger.error(`ERROR---: ${error.message || JSON.stringify(error)}`);
     }
     await connection.close();
     process.exit(0);
