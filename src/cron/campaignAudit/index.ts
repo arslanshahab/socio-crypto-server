@@ -22,9 +22,9 @@ const app = new Application();
             relations: ["participants", "prize", "org", "org.wallet", "escrow", "crypto"],
         });
         const entityManager = new EntityManager(connection);
+        console.log(`TOTAL CAMPAIGNS TO BE AUDITED--- ${campaigns.length}`);
         for (let index = 0; index < campaigns.length; index++) {
             const campaign = campaigns[index];
-            console.log(campaign.id, campaign.name);
             let deviceIds;
             switch (campaign.type.toLowerCase()) {
                 case "crypto":
