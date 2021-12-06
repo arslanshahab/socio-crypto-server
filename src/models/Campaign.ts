@@ -259,7 +259,7 @@ export class Campaign extends BaseEntity {
         let query = this.createQueryBuilder("campaign").where(where);
         if (company) query = query.andWhere(`"company"=:company`, { company });
         if (approved) query = query.andWhere('"status"=:status', { status: "APPROVED" });
-        if (pendingAudit) query = query.andWhere('"audited"=:audited', { audited: false });
+        if (pendingAudit) query = query.andWhere('"auditStatus"=:audited', { audited: "DEFAULT" });
         if (sort) query = query.orderBy("campaign.endDate", "DESC");
         return await query
             .leftJoinAndSelect("campaign.participants", "participant", 'participant."campaignId" = campaign.id')

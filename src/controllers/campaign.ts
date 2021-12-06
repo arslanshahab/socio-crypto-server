@@ -590,6 +590,7 @@ export const payoutCampaignRewards = async (
     const { company } = checkPermissions({ hasRole: ["admin", "manager"] }, context);
     return getConnection().transaction(async (transactionalEntityManager) => {
         const { campaignId, rejected } = args;
+        console.log("Audit Id", campaignId);
         const campaign = await Campaign.findOneOrFail({
             where: { id: campaignId, company },
             relations: ["participants", "prize", "org", "org.wallet", "escrow"],
