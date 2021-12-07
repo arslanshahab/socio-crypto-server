@@ -4,14 +4,14 @@ import { FactorGeneration, KycUser } from "../types";
 import { Factor } from "../models/Factor";
 import { SupportedCountryType } from "../types";
 
-export const formatFloat = (val: any, decimals: number): string => {
+export const formatFloat = (val?: string | number | null): string => {
     if (!val) {
         return "0";
     }
     if (typeof val === "string") {
         val = parseFloat(val);
     }
-    return val.toFixed(decimals);
+    return val >= 1 ? val.toFixed(2) : val.toFixed(8);
 };
 
 export const getBase64FileExtension = (fileString: string) => {

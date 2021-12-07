@@ -6,7 +6,7 @@ import { DailyParticipantMetric } from "../../models/DailyParticipantMetric";
 import { Participant } from "../../models/Participant";
 import { BN } from "../../util/helpers";
 import * as campaignController from "../../controllers/campaign";
-import { getTokenPriceInUsd } from "src/clients/ethereum";
+import { getTokenPriceInUsd } from "../../clients/ethereum";
 
 /**
  * {

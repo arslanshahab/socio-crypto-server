@@ -27,8 +27,7 @@ cron:
         daily: "0 0 * * *" # At minute 0 every day
         coiinWatcher: "*/5 * * * *" # At every 5 minutes
         qualityScore: "0 * * * *" # At minute 0 every hour
-        coiinMinter: "*/30 * * * *" # At every 30 minutes
-        campaignAudit: "*/15 * * * *" # At every 15 minutes
+        campaignAudit: "*/15 * * * *" # At every 30 minutes
 
 # up server replica count
 replicaCount: 2
@@ -54,7 +53,7 @@ data:
         TATUM_WALLETS: "tatum-wallets-stage"
         RATE_LIMIT_MAX: "50"
         RATE_LIMIT_WINDOW: "1m"
-        REWARD_REDEMPTION_EMAIL_RECIPIENT: alex@dragonchain.com
+        REWARD_REDEMPTION_EMAIL_RECIPIENT: "ray@raiinmaker.com"
         TATUM_RETRY_DELAY: "1000"
         TATUM_RETRIES: "5"
         ETHEREUM_DEPOSIT_ADDRESS: "0x275EE6238D103fDBE49d4cF6358575aA914F8654"

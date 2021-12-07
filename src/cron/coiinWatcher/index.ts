@@ -98,7 +98,7 @@ const app = new Application();
         logger.info(`setting latest block as ${currentBlock}`);
         if (!process.env.LAST_BLOCK) await S3Client.setLastCheckedBillingBlock(currentBlock);
     } catch (error) {
-        logger.error(`An error occurred: ${error.message || JSON.stringify(error)}`);
+        logger.error(`ERROR---: ${error.message || JSON.stringify(error)}`);
     }
     await connection.close();
     process.exit(0);
