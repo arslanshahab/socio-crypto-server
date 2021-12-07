@@ -81,5 +81,12 @@ export const listEmployees = async (parent: any, args: { skip: number; take: num
     const org = await Org.findOne({ where: { name: company } });
     if (!org) throw new Error("org not found");
     const admins = await Admin.listAdminsByOrg(org.id, skip, take);
-    return admins.map((admin) => admin.asV1());
+    const orgName = org?.name;
+    const adminsDetails = admins.map((admin) => {
+        return {
+            name: admin.name,
+            createdAt: admin.createdAt,
+        };
+    });
+    return { adminsDetails, orgName };
 };
