@@ -142,6 +142,10 @@ export const createNewCampaign = async (
         const isWalletAvailable = await org.isCurrencyAdded(symbol);
         if (!isWalletAvailable) throw new Error("currency not found in wallet");
     }
+    //!-----------
+    // const admin = await Admin.findOne({ where: { firebaseId: context.user.id }, relations: ["org"] });
+    // const campaigns = await Campaign.find({ where: { org: admin?.org } });
+    //!-----------
     const campaign = Campaign.newCampaign(
         name,
         beginDate,
