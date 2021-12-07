@@ -1,3 +1,5 @@
+FROM ubuntu:18.04
+RUN apt-get install libudev-dev libusb-dev usbutils
 FROM node:14.15.0 AS base
 WORKDIR /app
 
