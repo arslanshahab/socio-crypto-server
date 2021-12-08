@@ -3,7 +3,7 @@ import { Campaign } from "../models/Campaign";
 import { checkPermissions } from "../middleware/authentication";
 import { Participant } from "../models/Participant";
 import { S3Client } from "../clients/s3";
-import { EntityManager, getConnection, In } from "typeorm";
+import { EntityManager, getConnection, ILike, In } from "typeorm";
 import { User } from "../models/User";
 import { Wallet } from "../models/Wallet";
 import { SocialPost } from "../models/SocialPost";
@@ -142,10 +142,12 @@ export const createNewCampaign = async (
         const isWalletAvailable = await org.isCurrencyAdded(symbol);
         if (!isWalletAvailable) throw new Error("currency not found in wallet");
     }
-    //!-----------
-    // const admin = await Admin.findOne({ where: { firebaseId: context.user.id }, relations: ["org"] });
-    // const campaigns = await Campaign.find({ where: { org: admin?.org } });
-    //!-----------
+    const findCampaignName = await Campaign.findOne({ name: ILike(name) });
+    if (findCampaignName) {
+        return new Error(
+            "The campaign already exists with this name, please change your campaign name and submit it again."
+        );
+    }
     const campaign = Campaign.newCampaign(
         name,
         beginDate,
