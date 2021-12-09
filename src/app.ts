@@ -132,6 +132,7 @@ export class Application {
         this.app.get("/v1/health", (_req: express.Request, res: express.Response) =>
             res.send("I am alive and well, thank you!")
         );
+
         this.app.post("/v1/login", sessionLogin);
         this.app.post("/v1/logout", sessionLogout);
         this.app.put("/v1/password", updateUserPassword);
