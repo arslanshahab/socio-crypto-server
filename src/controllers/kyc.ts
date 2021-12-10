@@ -5,20 +5,26 @@ import { KycUser } from "../types";
 import { Firebase } from "../clients/firebase";
 import { asyncHandler } from "../util/helpers";
 import { Request, Response } from "express";
-import { MyfiiProvider } from "../clients/myfiiProvider";
 import { VerificationApplication } from "../models/VerificationApplication";
+import { Validator } from "../schemas";
+import { AcuantClient } from "../clients/acuant";
+
+const validator = new Validator();
 
 export const verifyKyc = async (parent: any, args: any, context: { user: any }) => {
     const { id } = context.user;
-    const { userKyc } = args;
     const user = await User.findOneOrFail({ where: { identityId: id }, relations: ["profile"] });
-    const res = await MyfiiProvider.submitApplication(userKyc);
+    if (!user) throw new Error("user not found");
+    const { userKyc } = args;
+    validator.validateKycRegistration(userKyc);
+    const res = await AcuantClient.submitApplication(userKyc);
     console.log("KYC APP RESPONSE: ", res);
-    const application = await VerificationApplication.newApplication(id, res.state, user);
-    if (res.factors) await S3Client.putObject(id, { factors: res.factors, userId: user.id });
-
+    console.log(res.ednaScoreCard);
+    const application = await VerificationApplication.newApplication(res.mtid, "murad", user);
+    // if (res.factors) await S3Client.putObject(id, { factors: res.factors, userId: user.id });
     await application.save();
-    return { kycId: id, state: res.state, factors: res.factors };
+    // return { kycId: id, state: res.state, factors: res.factors };
+    return { kycId: res.mtid };
 };
 
 export const downloadKyc = async (parent: any, args: { kycId: string }, context: { user: any }) => {

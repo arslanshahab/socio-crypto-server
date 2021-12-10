@@ -1,5 +1,6 @@
-import fetch, { RequestInit } from "node-fetch";
 import { Secrets } from "../util/secrets";
+import { RequestData, doFetch } from "../util/fetchRequest";
+import { KycApplication } from "../types.d";
 const { NODE_ENV = "staging" } = process.env;
 
 export interface Etr {
@@ -47,90 +48,69 @@ const validateImageSizeInMB = (title: string, img: string, maxSizeMB = 5) => {
 };
 
 export class AcuantClient {
-    public static url: string =
+    public static baseUrl: string =
         NODE_ENV === "production" ? "https://identitymind.com" : "https://staging.identitymind.com";
-    private static authorization: string;
 
-    public static initialize() {
-        AcuantClient.authorization = `Basic ${Buffer.from(
-            `${Secrets.acuantApiUser}:${Secrets.acuantApiKey}`,
-            "utf8"
-        ).toString("base64")}`;
-    }
-
-    public static getOptions(method: string, body?: any): RequestInit {
-        const options: RequestInit = {
-            method,
-            headers: {
-                "Content-Type": "application/json",
-                authorization: AcuantClient.authorization,
-            },
-        };
-        console.log(JSON.stringify(options));
-        if (body) options.body = JSON.stringify(body);
-        return options;
-    }
-
-    public static async submitApplication(vars: any): Promise<string> {
-        const body: { [key: string]: any } = {
-            man: `${vars.firstName}-${vars.middleName}-${vars.lastName}`,
-            tea: vars.email,
-            bfn: vars.firstName,
-            bmn: vars.middleName,
-            bln: vars.lastName,
-            bsn: vars.billingStreetAddress,
-            bco: vars.billingCountry,
-            bz: vars.billingZip,
-            bc: vars.billingCity,
-            bgd: vars.gender,
-            dob: vars.dob,
-            pm: vars.phoneNumber,
-            docType: vars.documentType,
-            docCountry: vars.documentCountry,
-            scanData: vars.frontDocumentImage,
-            faceImages: [vars.faceImage],
-        };
-        if (["DL"].includes(vars.documentType)) body.backsideImageData = vars.backDocumentImage;
-        validateImageSizeInMB("frontDocumentImage", body.scanData);
-        validateImageSizeInMB("selfie", body.faceImages[0]);
-        if (body.backsideImageData) validateImageSizeInMB("backDocumentImage", body.backsideImageData);
-        return (await AcuantClient.post("im/account/consumer", body)).mtid;
+    public static async submitApplication(vars: KycApplication): Promise<AcuantApplication> {
+        try {
+            const body: { [key: string]: any } = {
+                man: `${vars.firstName}-${vars.middleName}-${vars.lastName}`,
+                tea: vars.email,
+                bfn: vars.firstName,
+                bmn: vars.middleName,
+                bln: vars.lastName,
+                bsn: vars.billingStreetAddress,
+                bco: vars.billingCountry,
+                bz: vars.billingZip,
+                bc: vars.billingCity,
+                bgd: vars.gender,
+                dob: vars.dob,
+                pm: vars.phoneNumber,
+                docType: vars.documentType,
+                docCountry: vars.documentCountry,
+                scanData: vars.frontDocumentImage,
+                faceImages: [vars.faceImage],
+            };
+            if (vars.documentType && ["DL"].includes(vars.documentType))
+                body.backsideImageData = vars.backDocumentImage;
+            validateImageSizeInMB("frontDocumentImage", body.scanData);
+            validateImageSizeInMB("selfie", body.faceImages[0]);
+            if (body.backsideImageData) validateImageSizeInMB("backDocumentImage", body.backsideImageData);
+            return await this.makeRequest("im/account/consumer", "POST", body);
+        } catch (error) {
+            console.log(error);
+            throw new Error(error?.message || "Error verify user kyc");
+        }
     }
 
     public static async getApplication(id: string): Promise<AcuantApplication> {
-        return await this.get(`im/account/consumer/${id}`);
+        return await this.makeRequest(`im/account/consumer/v2/${id}`, "GET");
     }
 
-    private static async get(path: string) {
-        const options = AcuantClient.getOptions("GET");
-        return await AcuantClient.makeRequest(path, options);
-    }
-
-    private static async post(path: string, body: any) {
-        const options = AcuantClient.getOptions("POST", body);
-        return await AcuantClient.makeRequest(path, options);
-    }
-
-    public static async makeRequest(path: string, options: RequestInit) {
-        console.log(`Acuant ${options.method} -> ${AcuantClient.url}${path}`);
-        const res = await fetch(`${AcuantClient.url}/${path}`, options);
-        const responseText = await res.text();
-        const statusCode = res.status;
-        console.log(`Acuant ${options.method} <- [${statusCode}] ${responseText}`);
-        if (!res.ok) {
-            let parsedResponseText;
-            try {
-                parsedResponseText = JSON.parse(responseText);
-            } catch (e) {
-                throw new Error(responseText);
-            }
-            const { error } = parsedResponseText;
-            throw new Error(error || "acuant service returned a non 2xx response");
+    private static async makeRequest(
+        path: string,
+        method: RequestData["method"],
+        payload?: RequestData["payload"],
+        query?: RequestData["query"]
+    ) {
+        const url = `${AcuantClient.baseUrl}/${path}`;
+        const requestData: RequestData = {
+            method,
+            url,
+            payload,
+            query,
+            headers: {
+                authorization: `Basic ${Buffer.from(
+                    `${Secrets.acuantApiUser}:${Secrets.acuantApiKey}`,
+                    "utf8"
+                ).toString("base64")}`,
+            },
+        };
+        const response = await doFetch(requestData);
+        if (response.status !== 200) {
+            const error = await response.json();
+            throw new Error(error?.error_message || "There was an error from acuant");
         }
-        try {
-            return JSON.parse(responseText);
-        } catch (e) {
-            return responseText;
-        }
+        return await response.json();
     }
 }
