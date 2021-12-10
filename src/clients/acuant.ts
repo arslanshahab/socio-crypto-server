@@ -1,7 +1,12 @@
 import { Secrets } from "../util/secrets";
 import { RequestData, doFetch } from "../util/fetchRequest";
 import { KycApplication } from "../types.d";
-const { NODE_ENV = "staging" } = process.env;
+
+const acuantUrls: { [key: string]: string } = {
+    development: "https://sandbox.identitymind.com",
+    staging: "https://staging.identitymind.com",
+    production: "https://identitymind.com",
+};
 
 export interface Etr {
     test: string;
@@ -48,8 +53,7 @@ const validateImageSizeInMB = (title: string, img: string, maxSizeMB = 5) => {
 };
 
 export class AcuantClient {
-    public static baseUrl: string =
-        NODE_ENV === "production" ? "https://identitymind.com" : "https://staging.identitymind.com";
+    public static baseUrl: string = acuantUrls[process.env.NODE_ENV || "development"];
 
     public static async submitApplication(vars: KycApplication): Promise<AcuantApplication> {
         try {
