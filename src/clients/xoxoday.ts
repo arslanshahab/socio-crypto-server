@@ -16,12 +16,12 @@ export class Xoxoday {
         NODE_ENV === "production" ? "https://accounts.xoxoday.com/chef" : " https://stagingaccount.xoxoday.com/chef";
     public static redirectURI = "https://raiinmaker.com/";
 
-    private static adjustTokenExpiry(authData: any) {
+    public static adjustTokenExpiry(authData: any) {
         const expiry = new Date().getTime() + authData.expires_in * 1000;
         return { ...authData, expires_in: expiry };
     }
 
-    private static async fetchAuthDataAndCheckExpiry() {
+    public static async fetchAuthDataAndCheckExpiry() {
         let authData: any = await S3Client.getXoxodayAuthData();
         authData = JSON.parse(authData);
         if (authData.expires_in <= new Date().getTime()) {

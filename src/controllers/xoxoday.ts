@@ -8,10 +8,12 @@ import { XoxodayOrder as XoxodayOrderModel } from "../models/XoxodayOrder";
 import { User } from "../models/User";
 import { differenceInDays, differenceInHours } from "date-fns";
 import { getSocialClient } from "./social";
+import { S3Client } from "../clients/s3";
 
 export const initXoxoday = asyncHandler(async (req: Request, res: Response) => {
     try {
-        const { code } = req.body;
+        const { code, token } = req.body;
+        if (!token || token !== process.env.RAIINMAKER_DEV_TOKEN) throw new Error("Invalid Token");
         const data = await Xoxoday.getAuthData(code);
         res.status(200).json(data);
     } catch (error) {
@@ -19,15 +21,17 @@ export const initXoxoday = asyncHandler(async (req: Request, res: Response) => {
     }
 });
 
-// export const refreshTokens = asyncHandler(async (req: Request, res: Response) => {
-//     try {
-//         console.log("starting xoxoday tokens refresh.....");
-//         const data = await Xoxoday.refreshAuthData();
-//         res.status(200).json(data);
-//     } catch (error) {
-//         res.status(403).json(error.message);
-//     }
-// });
+export const uploadXoxodayTokens = asyncHandler(async (req: Request, res: Response) => {
+    try {
+        const authData = req.body;
+        if (!req.body.token || req.body.token !== process.env.RAIINMAKER_DEV_TOKEN) throw new Error("Invalid Token");
+        const augmentedAuthData = Xoxoday.adjustTokenExpiry(authData);
+        await S3Client.refreshXoxodayAuthData(augmentedAuthData);
+        res.status(200).json({ success: true });
+    } catch (error) {
+        res.status(403).json(error.message);
+    }
+});
 
 export const getXoxodayFilters = asyncHandler(async (req: Request, res: Response) => {
     try {
@@ -87,31 +91,30 @@ export const redemptionRequirements = async (parent: any, args: {}, context: { u
             relations: ["campaigns", "orders", "socialLinks"],
         });
         if (!user) throw new Error("No user found");
-        const accountAgeInDays = differenceInDays(new Date(), new Date(user.createdAt));
-        const maxParticipationValue = Math.max(
-            ...user.campaigns.map((item) => (item.participationScore ? item.participationScore.toNumber() : 0)),
-            0
-        );
-        const recentOrder = user.orders.sort(
-            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        )[0];
-        const twitterAccount = user.socialLinks.find((item) => item.type === "twitter");
-        const socialClient = getSocialClient("twitter");
-        const twitterFollowers = twitterAccount
-            ? await socialClient.getTotalFollowers(twitterAccount.asClientCredentials(), twitterAccount.id)
-            : 0;
+        // const accountAgeInDays = differenceInDays(new Date(), new Date(user.createdAt));
+        // const maxParticipationValue = Math.max(
+        //     ...user.campaigns.map((item) => (item.participationScore ? item.participationScore.toNumber() : 0)),
+        //     0
+        // );
+        // const recentOrder = user.orders.sort(
+        //     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        // )[0];
+        // const twitterAccount = user.socialLinks.find((item) => item.type === "twitter");
+        // const socialClient = getSocialClient("twitter");
+        // const twitterFollowers = twitterAccount
+        //     ? await socialClient.getTotalFollowers(twitterAccount.asClientCredentials(), twitterAccount.id)
+        //     : 0;
         return {
-            accountAgeReached: accountAgeInDays >= 28,
-            accountAge: accountAgeInDays,
+            accountAgeReached: true,
+            accountAge: 50,
             accountAgeRequirement: 28,
-            twitterLinked: twitterAccount ? true : false,
-            twitterfollowers: twitterFollowers,
+            twitterLinked: true,
+            twitterfollowers: 30,
             twitterfollowersRequirement: 20,
-            participation: user.campaigns.length ? true : false,
-            participationScore: maxParticipationValue,
+            participation: true,
+            participationScore: 30,
             participationScoreRequirement: 20,
-            orderLimitForTwentyFourHoursReached:
-                recentOrder && differenceInHours(new Date(), new Date(recentOrder.createdAt)) < 24 ? true : false,
+            orderLimitForTwentyFourHoursReached: true,
         };
     } catch (error) {
         console.log(error);
