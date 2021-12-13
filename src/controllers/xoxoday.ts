@@ -91,30 +91,31 @@ export const redemptionRequirements = async (parent: any, args: {}, context: { u
             relations: ["campaigns", "orders", "socialLinks"],
         });
         if (!user) throw new Error("No user found");
-        // const accountAgeInDays = differenceInDays(new Date(), new Date(user.createdAt));
-        // const maxParticipationValue = Math.max(
-        //     ...user.campaigns.map((item) => (item.participationScore ? item.participationScore.toNumber() : 0)),
-        //     0
-        // );
-        // const recentOrder = user.orders.sort(
-        //     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        // )[0];
-        // const twitterAccount = user.socialLinks.find((item) => item.type === "twitter");
-        // const socialClient = getSocialClient("twitter");
-        // const twitterFollowers = twitterAccount
-        //     ? await socialClient.getTotalFollowers(twitterAccount.asClientCredentials(), twitterAccount.id)
-        //     : 0;
+        const accountAgeInDays = differenceInDays(new Date(), new Date(user.createdAt));
+        const maxParticipationValue = Math.max(
+            ...user.campaigns.map((item) => (item.participationScore ? item.participationScore.toNumber() : 0)),
+            0
+        );
+        const recentOrder = user.orders.sort(
+            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        )[0];
+        const twitterAccount = user.socialLinks.find((item) => item.type === "twitter");
+        const socialClient = getSocialClient("twitter");
+        const twitterFollowers = twitterAccount
+            ? await socialClient.getTotalFollowers(twitterAccount.asClientCredentials(), twitterAccount.id)
+            : 0;
         return {
-            accountAgeReached: true,
-            accountAge: 50,
+            accountAgeReached: accountAgeInDays >= 28,
+            accountAge: accountAgeInDays,
             accountAgeRequirement: 28,
-            twitterLinked: true,
-            twitterfollowers: 30,
+            twitterLinked: twitterAccount ? true : false,
+            twitterfollowers: twitterFollowers,
             twitterfollowersRequirement: 20,
-            participation: true,
-            participationScore: 30,
+            participation: user.campaigns.length ? true : false,
+            participationScore: maxParticipationValue,
             participationScoreRequirement: 20,
-            orderLimitForTwentyFourHoursReached: true,
+            orderLimitForTwentyFourHoursReached:
+                recentOrder && differenceInHours(new Date(), new Date(recentOrder.createdAt)) < 24 ? true : false,
         };
     } catch (error) {
         console.log(error);
