@@ -310,11 +310,10 @@ export const typeDefs = gql`
     }
 
     type Org {
-        id: String
         name: String
-        stripeId: String
         createdAt: String
-        updatedAt: String
+        campaignCount: Int
+        adminCount: Int
     }
 
     type PaymentMethod {

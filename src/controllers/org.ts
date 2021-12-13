@@ -45,8 +45,14 @@ export const getHourlyOrgMetrics = async (parent: any, args: any, context: { use
 export const listOrgs = async (parent: any, args: { skip: number; take: number }, context: { user: any }) => {
     if (context.user.company !== "raiinmaker") throw new Error("forbidden");
     const { skip = 0, take = 10 } = args;
-    const orgs = await Org.listOrgs(skip, take);
-    return orgs.map((org) => org.asV1());
+    const orgs = await Org.find({ skip, take, relations: ["admins", "campaigns"] });
+    const results = orgs.map((org) => ({
+        name: org.name,
+        createdAt: org.createdAt,
+        campaignCount: org.campaigns.length,
+        adminCount: org.admins.length,
+    }));
+    return results;
 };
 
 export const newUser = async (
