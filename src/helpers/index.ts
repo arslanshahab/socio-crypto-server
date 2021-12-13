@@ -6,7 +6,13 @@ import { getExchangeRateForCrypto } from "../util/exchangeRate";
 // @ts-ignore
 import getImage from "cryptoicons-cdn";
 import { Wallet } from "../models/Wallet";
+import { AcuantClient, AcuantApplication, Etr } from "../clients/acuant";
+import { AcuantApplicationExtractedDetails } from "src/types";
+import { VerificationApplication } from "../models/VerificationApplication";
+import { S3Client } from "../clients/s3";
+import { User } from "../models/User";
 
+// general helper functions start here
 export const isSupportedCurrency = async (symbol: string): Promise<boolean> => {
     const crypto = await CryptoCurrency.findOne({ where: { type: symbol.toLowerCase() } });
     if (crypto) return true;
@@ -53,3 +59,107 @@ export const getUSDValueForCurrency = async (symbol: string, amount: number) => 
 export const getCryptoAssestImageUrl = (symbol: string): string => {
     return getImage(symbol).toLowerCase().includes("unknown") ? getImage("ETH") : getImage(symbol);
 };
+//general helper functions end here
+
+// KYC helpers start here
+const generateAgeFactor = (dobEtr: Etr) => {
+    if (!dobEtr || dobEtr.test !== "dv:15") return null;
+    const dob = new Date(dobEtr.details.toString());
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const m = today.getMonth() - dob.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+    return age;
+};
+
+const generateNameFactor = (nameEtr: Etr) => {
+    if (!nameEtr || nameEtr.test !== "dv:13") null;
+    return nameEtr.details;
+};
+
+const generateDocumentValidityFactor = (docValidityEtr: Etr, docExpirationEtr: Etr, docTypeEtr: Etr) => {
+    if (!docExpirationEtr || docExpirationEtr.test !== "dv:17") return;
+    if (!docValidityEtr || docValidityEtr.test !== "dv:11") return;
+    if (!docTypeEtr || docTypeEtr.test !== "dv:19") return;
+    if (docValidityEtr.details !== "false") return;
+    return {
+        isDocumentValid: true,
+        documentDetails: docTypeEtr.details,
+        documentExpiry: new Date(docExpirationEtr.details),
+    };
+};
+
+const generateAddressFactor = (addressEtr: Etr) => {
+    if (!addressEtr || addressEtr.test !== "dv:14") return null;
+    return addressEtr.details;
+};
+
+export const generateFactorsFromKYC = (kycDocument: any): AcuantApplicationExtractedDetails => {
+    let resultingFactors: AcuantApplicationExtractedDetails = {
+        age: 0,
+        fullName: "",
+        address: "",
+        isDocumentValid: false,
+        documentDetails: "",
+        documentExpiry: null,
+    };
+    const validData = kycDocument.ednaScoreCard.etr.reduce((accum: { [key: string]: Etr }, current: any) => {
+        if (!current["condition"]) {
+            accum[current["test"]] = current;
+        }
+        return accum;
+    }, {});
+    resultingFactors.age = generateAgeFactor(validData["dv:15"]);
+    resultingFactors.fullName = generateNameFactor(validData["dv:13"]);
+
+    const doc = generateDocumentValidityFactor(validData["dv:11"], validData["dv:17"], validData["dv:19"]);
+    if (doc) {
+        resultingFactors = { ...resultingFactors, ...doc };
+    }
+
+    resultingFactors.address = generateAddressFactor(validData["dv:14"]);
+    return resultingFactors;
+};
+
+export const getApplicationStatus = (kycApplication: AcuantApplication): VerificationApplication["status"] => {
+    const resultCode = kycApplication.ednaScoreCard.er.reportedRule.resultCode;
+    const statusCode = kycApplication.state;
+    if (statusCode === "A") {
+        return "APPROVED";
+    } else if (statusCode === "R") {
+        if (resultCode === "MANUAL_REVIEW") {
+            return "PENDING";
+        } else {
+            return "REJECTED";
+        }
+    } else {
+        return "PENDING";
+    }
+};
+
+export const findKycApplication = async (user: User) => {
+    const recordedApplication = await VerificationApplication.findOne({ where: { user } });
+    let kycApplication;
+    if (recordedApplication) {
+        if (recordedApplication.status === "APPROVED") {
+            kycApplication = await S3Client.getAcuantKyc(user.id);
+            const factors = generateFactorsFromKYC(kycApplication);
+            return { kycId: recordedApplication.applicationId, status: "APPROVED", factors: factors };
+        }
+        if (recordedApplication.status === "PENDING") {
+            kycApplication = await AcuantClient.getApplication(recordedApplication.applicationId);
+            const status = getApplicationStatus(kycApplication);
+            if (status === "APPROVED") {
+                await S3Client.uploadAcuantKyc(user.id, kycApplication);
+                const factors = generateFactorsFromKYC(kycApplication);
+                recordedApplication.status = status;
+                await recordedApplication.save();
+                return { kycId: recordedApplication.applicationId, status: "APPROVED", factors: factors };
+            }
+            if (status === "PENDING") return { kycId: recordedApplication.applicationId, status: "PENDING" };
+            if (status === "REJECTED") return { kycId: recordedApplication.applicationId, status: "REJECTED" };
+        }
+    }
+    return null;
+};
+// Kyc herlpers end here

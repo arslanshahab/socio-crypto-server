@@ -8,6 +8,7 @@ import { Request, Response } from "express";
 import { VerificationApplication } from "../models/VerificationApplication";
 import { Validator } from "../schemas";
 import { AcuantClient } from "../clients/acuant";
+import { findKycApplication, getApplicationStatus } from "../helpers";
 
 const validator = new Validator();
 
@@ -15,16 +16,17 @@ export const verifyKyc = async (parent: any, args: any, context: { user: any }) 
     const { id } = context.user;
     const user = await User.findOneOrFail({ where: { identityId: id }, relations: ["profile"] });
     if (!user) throw new Error("user not found");
+    const currentKycApplication = await findKycApplication(user);
+    if (currentKycApplication) return currentKycApplication;
     const { userKyc } = args;
     validator.validateKycRegistration(userKyc);
-    const res = await AcuantClient.submitApplication(userKyc);
-    console.log("KYC APP RESPONSE: ", res);
-    console.log(res.ednaScoreCard);
-    const application = await VerificationApplication.newApplication(res.mtid, "murad", user);
-    // if (res.factors) await S3Client.putObject(id, { factors: res.factors, userId: user.id });
-    await application.save();
-    // return { kycId: id, state: res.state, factors: res.factors };
-    return { kycId: res.mtid };
+    const newAcuantApplication = await AcuantClient.submitApplication(userKyc);
+    const verificationApplication = await VerificationApplication.newApplication(
+        newAcuantApplication.mtid,
+        getApplicationStatus(newAcuantApplication),
+        user
+    );
+    return { kycId: verificationApplication.applicationId, status: verificationApplication.status };
 };
 
 export const downloadKyc = async (parent: any, args: { kycId: string }, context: { user: any }) => {
@@ -32,25 +34,24 @@ export const downloadKyc = async (parent: any, args: { kycId: string }, context:
     if (kycFactors) await S3Client.deleteKycData(args.kycId);
     return kycFactors;
 };
-export const kycWebhook = asyncHandler(async (req: Request, res: Response) => {
-    const { id, state, factors } = req.body;
-    const data = (await S3Client.getKycFactors(id)) as any;
-    if (!data) throw Error("kyc not found");
-    const user = await User.findOneOrFail({ where: { id: data.userId }, relations: ["profile"] });
-    if (factors) await S3Client.putObject(id, { factors: factors, userId: user.id });
-    await Firebase.sendFactorVerificationUpdate(user.profile.deviceToken, state);
 
+export const kycWebhook = asyncHandler(async (req: Request, res: Response) => {
+    console.log("Query---", req.query);
+    console.log("BODY---", req.body);
+    // const { id, state, factors } = req.body;
+    // const data = (await S3Client.getKycFactors(id)) as any;
+    // if (!data) throw Error("kyc not found");
+    // const user = await User.findOneOrFail({ where: { id: data.userId }, relations: ["profile"] });
+    // if (factors) await S3Client.uploadAcuantKyc(id, { factors: factors, userId: user.id });
+    // await Firebase.sendFactorVerificationUpdate(user.profile.deviceToken, state);
     res.status(200).json({ success: true });
 });
 
 export const getKyc = async (_parent: any, args: any, context: { user: any }) => {
-    const { id, role } = context.user;
+    const { id } = context.user;
     const user = await User.findOneOrFail({ where: { identityId: id } });
-    const response = await S3Client.getUserObject(user.id);
-    if (role !== "admin") return response;
-    if (response.hasAddressProof) response.addressProof = await S3Client.getKycImage(user.id, "addressProof");
-    if (response.hasIdProof) response.idProof = await S3Client.getKycImage(user.id, "idProof");
-    return response;
+    if (!user) throw new Error("user not found");
+    return await findKycApplication(user);
 };
 
 export const adminGetKycByUser = async (parent: any, args: { userId: string }, context: { user: any }) => {

@@ -75,7 +75,7 @@ export class S3Client {
         try {
             let userObject = await S3Client.getUserObject(userId);
             userObject = deleteFactorFromKycData(userObject, elementKey);
-            await S3Client.putObject(userId, userObject);
+            await S3Client.uploadKyc(userId, userObject);
         } catch (error) {
             console.log("kyc not found, but not throwing");
         }
@@ -170,13 +170,21 @@ export class S3Client {
         return userObject;
     }
 
-    public static async putObject(userId: string, userObject: any) {
+    public static async uploadKyc(userId: string, userObject: any) {
         const params: AWS.S3.PutObjectRequest = {
             Bucket: KYC_BUCKET_NAME,
             Key: `kyc/${userId}`,
             Body: JSON.stringify(userObject),
         };
         await this.client.putObject(params).promise();
+    }
+
+    public static async getKyc(userId: string) {
+        const params: AWS.S3.PutObjectRequest = {
+            Bucket: KYC_BUCKET_NAME,
+            Key: `kyc/${userId}`,
+        };
+        return JSON.parse((await this.client.getObject(params).promise()).Body!.toString());
     }
 
     public static async deleteUserInfoIfExists(userId: string) {
@@ -316,5 +324,22 @@ export class S3Client {
             if (e.code && e.code === "NotFound") return null;
             throw e;
         }
+    }
+
+    public static async uploadAcuantKyc(userId: string, userObject: any) {
+        const params: AWS.S3.PutObjectRequest = {
+            Bucket: KYC_BUCKET_NAME,
+            Key: `acuant/${userId}`,
+            Body: JSON.stringify(userObject),
+        };
+        await this.client.putObject(params).promise();
+    }
+
+    public static async getAcuantKyc(userId: string) {
+        const params: AWS.S3.PutObjectRequest = {
+            Bucket: KYC_BUCKET_NAME,
+            Key: `acuant/${userId}`,
+        };
+        return JSON.parse((await this.client.getObject(params).promise()).Body!.toString());
     }
 }

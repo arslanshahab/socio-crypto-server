@@ -197,6 +197,7 @@ export const typeDefs = gql`
 
     type KycApplicationResponse {
         kycId: String
+        status: String
     }
 
     input KycApplication {

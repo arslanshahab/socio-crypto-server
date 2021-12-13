@@ -1,8 +1,6 @@
-import {BaseEntity, Column, Entity, ManyToOne, OneToMany, PrimaryColumn} from "typeorm";
-import {User} from "./User";
-import {FactorLink} from "./FactorLink";
-import {Factor} from "../types";
-
+import { BaseEntity, Column, Entity, ManyToOne, OneToMany, PrimaryColumn } from "typeorm";
+import { User } from "./User";
+import { FactorLink } from "./FactorLink";
 
 @Entity()
 export class VerificationApplication extends BaseEntity {
@@ -10,25 +8,19 @@ export class VerificationApplication extends BaseEntity {
     public applicationId: string;
 
     @Column()
-    public status: string;
+    public status: "APPROVED" | "REJECTED" | "PENDING";
 
-    @ManyToOne(
-        _type => User,
-        user => user.identityVerifications
-    )
+    @ManyToOne((_type) => User, (user) => user.identityVerifications)
     public user: User;
 
-    @OneToMany(
-        _type => FactorLink,
-        factor => factor.verification
-    )
+    @OneToMany((_type) => FactorLink, (factor) => factor.verification)
     public factors: FactorLink[];
 
-    public static newApplication(id: string, status: string, user: User, factors?: Factor[]) {
+    public static async newApplication(id: string, status: VerificationApplication["status"], user: User) {
         const app = new VerificationApplication();
         app.applicationId = id;
         app.status = status;
         app.user = user;
-        return app;
+        return await app.save();
     }
 }

@@ -240,7 +240,7 @@ export type CampaignStatus = "ACTIVE" | "PENDING" | "INSUFFICIENT_FUNDS" | "CLOS
 
 export type CampaignAuditStatus = "DEFAULT" | "AUDITED" | "PENDING";
 
-export type KycStatus = 'APPROVED'| 'PENDING' | 'REJECTED' | '';
+export type KycStatus = "APPROVED" | "PENDING" | "REJECTED" | "";
 
 export interface GraphApiInputParameters {
     fields?: string[] | string;
@@ -307,4 +307,13 @@ export interface Factor {
     providerId: string;
     signature: string;
     factor: string;
+}
+
+interface AcuantApplicationExtractedDetails {
+    age: number | null;
+    fullName: string | null;
+    address: string | null;
+    isDocumentValid: boolean | null;
+    documentDetails: string | null;
+    documentExpiry: Date | null;
 }

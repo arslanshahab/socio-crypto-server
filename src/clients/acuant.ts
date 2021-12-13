@@ -3,7 +3,7 @@ import { RequestData, doFetch } from "../util/fetchRequest";
 import { KycApplication } from "../types.d";
 
 const acuantUrls: { [key: string]: string } = {
-    development: "https://sandbox.identitymind.com",
+    // development: "https://sandbox.identitymind.com",
     staging: "https://staging.identitymind.com",
     production: "https://identitymind.com",
 };
@@ -53,7 +53,8 @@ const validateImageSizeInMB = (title: string, img: string, maxSizeMB = 5) => {
 };
 
 export class AcuantClient {
-    public static baseUrl: string = acuantUrls[process.env.NODE_ENV || "development"];
+    public static baseUrl: string =
+        process.env.NODE_ENV === "production" ? acuantUrls["production"] : acuantUrls["staging"];
 
     public static async submitApplication(vars: KycApplication): Promise<AcuantApplication> {
         try {
@@ -97,7 +98,8 @@ export class AcuantClient {
         payload?: RequestData["payload"],
         query?: RequestData["query"]
     ) {
-        const url = `${AcuantClient.baseUrl}/${path}`;
+        console.log(this.baseUrl);
+        const url = `${this.baseUrl}/${path}`;
         const requestData: RequestData = {
             method,
             url,
