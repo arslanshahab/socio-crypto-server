@@ -148,6 +148,7 @@ export const findKycApplication = async (user: User) => {
         }
         if (recordedApplication.status === "PENDING") {
             kycApplication = await AcuantClient.getApplication(recordedApplication.applicationId);
+            console.log("KYC APP", kycApplication);
             const status = getApplicationStatus(kycApplication);
             if (status === "APPROVED") {
                 await S3Client.uploadAcuantKyc(user.id, kycApplication);
