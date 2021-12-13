@@ -115,10 +115,8 @@ export const adminResolvers = {
         checkCoinGecko: cryptoController.coinGeckoCheck,
         getDepositAddressForSymbol: tatumController.getDepositAddress,
         getSupportedCurrencies: tatumController.getSupportedCurrencies,
-        getCampaignAnalytics: campaignController.getCampaignAnalytics,
         getUserAllCampaign: campaignController.getUserAllCampaign,
         getUserCampaign: campaignController.getUserCampaign,
-        getUserCampaignAnalyticsForGraph: campaignController.getUserCampaignAnalyticsForGraph,
     },
     Mutation: {
         newOrg: orgController.newOrg,

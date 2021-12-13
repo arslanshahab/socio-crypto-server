@@ -7,7 +7,7 @@
     "license": "MIT",
     "scripts": {
         "dev": "nodemon",
-        "start": "PORT=4000 AWS_PROFILE=raiinmaker TS_NODE_FILES=true NODE_ENV=development ts-node src/index.ts",
+        "start": "set PORT=4000 && set AWS_PROFILE=raiinmaker && set TS_NODE_FILES=true && set NODE_ENV=development && ts-node src/index.ts",
         "build": "tsc",
         "clean": "rm -rf dist/",
         "test": "yarn test:integration:ci",

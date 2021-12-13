@@ -862,29 +862,6 @@ const payoutCoiinCampaignRewards = async (entityManager: EntityManager, campaign
     return userDeviceIds;
 };
 
-export const getCampaignAnalytics = async (
-    parent: any,
-    args: { campaignId?: string; campaign?: Campaign },
-    context: { user: any }
-) => {
-    // const { campaignId } = args;
-    checkPermissions({ hasRole: ["admin"] }, context);
-    const admin = await Admin.findOne({ where: { firebaseId: context.user.id }, relations: ["org"] });
-    const campaigns = await Campaign.find({ where: { org: admin?.org }, relations: ["dailyMetrics"] });
-    // const participants = await Participant.find();
-    // const hourlyMetrics = await HourlyCampaignMetric.find();
-    console.log(
-        "Participants Campaign Details",
-        // campaigns.map((x) => ({ id: x.id, name: x.name })),
-        campaigns
-    );
-
-    // return campaigns.map((item) => ({
-    //     id: item.id,
-    //     name: item.name,
-    // }));
-    return campaigns.map((item) => item.asV1());
-};
 export const getUserAllCampaign = async (parent: any, args: any, context: { user: any }) => {
     const userId = context.user.id;
     checkPermissions({ hasRole: ["admin"] }, context);
@@ -893,10 +870,11 @@ export const getUserAllCampaign = async (parent: any, args: any, context: { user
     return campaigns.map((x) => ({ id: x.id, name: x.name }));
 };
 export const getUserCampaign = async (parent: any, args: any, context: { user: any }) => {
+    checkPermissions({ hasRole: ["admin"] }, context);
     const userId = context.user.id;
     const campaignId = args.id;
-    checkPermissions({ hasRole: ["admin"] }, context);
     let updatedData;
+
     //! All Campaign Analytics
     if (!campaignId || campaignId == "-1") {
         const admin = await Admin.findOne({ where: { firebaseId: userId }, relations: ["org"] });
@@ -939,7 +917,6 @@ export const getUserCampaign = async (parent: any, args: any, context: { user: a
     }
     //!--------Get Campaign Analytics by Id---------
     else {
-        // let singleCampaign = await Campaign.findOne({ where: { id: campaignId }, relations: ["hourlyMetrics"] });
         const singleCampaign = await Campaign.findOne({ where: { id: campaignId }, relations: ["dailyMetrics"] });
         const dailMatrics = singleCampaign?.dailyMetrics;
         const clickCount = dailMatrics?.map((x) => new BigNumber(x.clickCount).toNumber());
@@ -982,26 +959,4 @@ export const getUserCampaign = async (parent: any, args: any, context: { user: a
     }
 
     return updatedData;
-};
-
-//! Get User Camapign Analytics For LineGrpah
-export const getUserCampaignAnalyticsForGraph = async (parent: any, args: any, context: { user: any }) => {
-    console.log(args);
-    const userId = context.user.id;
-    const admin = await Admin.findOne({ where: { firebaseId: userId }, relations: ["org"] });
-    const campaigns = await Campaign.find({ where: { org: admin?.org }, relations: ["dailyMetrics"] });
-    const dailyParticipationScore = campaigns.map((x) =>
-        x.dailyMetrics.map((x) => new BigNumber(x.participationScore).toNumber())
-    );
-    const participationScore = dailyParticipationScore[0];
-    // .map((x) => x.reduce((pre, next) => pre + next, 0));
-    const startDate = campaigns.map((x) => x.beginDate);
-
-    const updated = {
-        participationScore,
-        startDate,
-    };
-    console.log();
-    // return { participationScore, startDate };
-    return updated;
 };

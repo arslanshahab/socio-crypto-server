@@ -192,10 +192,8 @@ export const typeDefs = gql`
         getRedemptionRequirements: RedemptionRequirements
         getUserBalances(userId: String): [UserBalance]
         getTransferHistory(symbol: String, skip: Int, take: Int): PaginatedTransferHistory
-        getCampaignAnalytics(campaignId: String): [ParticipantsCompaign]
         getUserAllCampaign: [UserAllCampaigns]
         getUserCampaign(id: String): UserCampaign
-        getUserCampaignAnalyticsForGraph: UserCampaignAnalyticsForGraph
         downloadKyc(kycId: String!): [Factor]
     }
 
@@ -314,11 +312,10 @@ export const typeDefs = gql`
     }
 
     type Org {
-        id: String
         name: String
-        stripeId: String
         createdAt: String
-        updatedAt: String
+        campaignCount: Int
+        adminCount: Int
     }
 
     type PaymentMethod {
@@ -393,11 +390,7 @@ export const typeDefs = gql`
         discoveryCount: Int
         conversionCount: Int
     }
-    "Participants Compaign"
-    type ParticipantsCompaign {
-        id: ID
-        name: String
-    }
+
     "Get All Campaigns of User"
     type UserAllCampaigns {
         id: ID
@@ -422,11 +415,6 @@ export const typeDefs = gql`
         clickCount: [Int]
         viewCount: [Int]
         shareCount: [Int]
-    }
-    "Get User Campaign Analytics For Graph Types"
-    type UserCampaignAnalyticsForGraph {
-        participationScore: [Int]
-        startDate: [String]
     }
 
     type AdminHourlyCampaignMetrics {
