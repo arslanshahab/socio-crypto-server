@@ -21,7 +21,7 @@ import { stripeWebhook } from "./controllers/stripe";
 import { ApolloServer } from "apollo-server-express";
 import { typeDefs } from "./graphql/schema";
 import { ApolloServerPlugin } from "apollo-server-plugin-base";
-import { initXoxoday, getXoxodayFilters } from "./controllers/xoxoday";
+import { initXoxoday, getXoxodayFilters, uploadXoxodayTokens } from "./controllers/xoxoday";
 import {
     initWallet,
     saveWallet,
@@ -137,6 +137,7 @@ export class Application {
         this.app.put("/v1/password", updateUserPassword);
         this.app.post("/v1/payouts", paypalWebhook);
         this.app.post("/v1/xoxoday", initXoxoday);
+        this.app.post("/v1/xoxoday/tokens", uploadXoxodayTokens);
         this.app.post("/v1/tatum/initWallet", initWallet);
         this.app.post("/v1/tatum/saveWallet", saveWallet);
         this.app.post("/v1/tatum/transactions", getAccountTransactions);
