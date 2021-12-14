@@ -65,7 +65,7 @@ spec:
                 - name: tatum
                   mountPath: "/var/secrets/tatum"
                   readOnly: true
-                - name: tatum
+                - name: acuant
                   mountPath: "/var/secrets/acuant"
                   readOnly: true
               resources:
@@ -184,7 +184,7 @@ spec:
                 - name: tatum
                   mountPath: "/var/secrets/tatum"
                   readOnly: true
-                - name: tatum
+                - name: acuant
                   mountPath: "/var/secrets/acuant"
                   readOnly: true
               resources:
@@ -306,7 +306,7 @@ spec:
                 - name: tatum
                   mountPath: "/var/secrets/tatum"
                   readOnly: true
-                - name: tatum
+                - name: acuant
                   mountPath: "/var/secrets/acuant"
                   readOnly: true
               resources:
@@ -428,7 +428,7 @@ spec:
                 - name: tatum
                   mountPath: "/var/secrets/tatum"
                   readOnly: true
-                - name: tatum
+                - name: acuant
                   mountPath: "/var/secrets/acuant"
                   readOnly: true
               resources:
@@ -550,7 +550,7 @@ spec:
                 - name: tatum
                   mountPath: "/var/secrets/tatum"
                   readOnly: true
-                - name: tatum
+                - name: acuant
                   mountPath: "/var/secrets/acuant"
                   readOnly: true
               resources:
