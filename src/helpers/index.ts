@@ -163,8 +163,6 @@ export const findKycApplication = async (user: User) => {
             return { kycId: recordedApplication.applicationId, status: status };
         }
     }
-    if (recordedApplication.status === "REJECTED") {
-        return { kycId: recordedApplication.applicationId, status: recordedApplication.status };
-    }
+    return { kycId: recordedApplication.applicationId, status: recordedApplication.status };
 };
 // Kyc herlpers end here
