@@ -7,7 +7,7 @@ import { getExchangeRateForCrypto } from "../util/exchangeRate";
 import getImage from "cryptoicons-cdn";
 import { Wallet } from "../models/Wallet";
 import { AcuantClient, AcuantApplication, Etr } from "../clients/acuant";
-import { AcuantApplicationExtractedDetails } from "src/types";
+import { AcuantApplicationExtractedDetails, KycStatus } from "src/types";
 import { VerificationApplication } from "../models/VerificationApplication";
 import { S3Client } from "../clients/s3";
 import { User } from "../models/User";
@@ -121,7 +121,7 @@ export const generateFactorsFromKYC = (kycDocument: any): AcuantApplicationExtra
     return resultingFactors;
 };
 
-export const getApplicationStatus = (kycApplication: AcuantApplication): VerificationApplication["status"] => {
+export const getApplicationStatus = (kycApplication: AcuantApplication): KycStatus => {
     const resultCode = kycApplication.ednaScoreCard.er.reportedRule.resultCode;
     const statusCode = kycApplication.state;
     if (statusCode === "A") {

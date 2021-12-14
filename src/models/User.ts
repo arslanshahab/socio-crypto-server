@@ -24,6 +24,7 @@ import { NotificationSettings } from "./NotificationSettings";
 import { Admin } from "./Admin";
 import { ExternalAddress } from "./ExternalAddress";
 import { WeeklyReward } from "./WeeklyReward";
+import { KycStatus } from "../types";
 import { VerificationApplication } from "./VerificationApplication";
 import { Verification } from "./Verification";
 
@@ -39,7 +40,7 @@ export class User extends BaseEntity {
     public active: boolean;
 
     @Column({ nullable: true, default: "" })
-    public kycStatus: VerificationApplication["status"];
+    public kycStatus: KycStatus;
 
     @OneToMany((_type) => SocialPost, (posts) => posts.user)
     public posts: SocialPost[];
@@ -181,6 +182,14 @@ export class User extends BaseEntity {
                 return coiinBalance.save();
             }
         }
+    }
+
+    public async updateKycStatus(status: KycStatus) {
+        if (this.kycStatus !== status && this.kycStatus !== "APPROVED") {
+            this.kycStatus = status;
+            return await this.save();
+        }
+        return this;
     }
 
     public static async getUsersForDailyMetricsCron(): Promise<User[]> {
@@ -336,13 +345,5 @@ export class User extends BaseEntity {
         query = query.leftJoinAndSelect("user.profile", "profile", 'profile."userId" = user.id');
         query = query.where("user.identityId = :id", { id });
         return query.getOne();
-    }
-
-    public async updateKycStatus(status: VerificationApplication["status"]) {
-        if (this.kycStatus !== status && this.kycStatus !== "APPROVED") {
-            this.kycStatus = status;
-            return await this.save();
-        }
-        return this;
     }
 }
