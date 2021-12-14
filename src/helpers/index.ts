@@ -7,7 +7,7 @@ import { getExchangeRateForCrypto } from "../util/exchangeRate";
 import getImage from "cryptoicons-cdn";
 import { Wallet } from "../models/Wallet";
 import { AcuantClient, AcuantApplication, Etr } from "../clients/acuant";
-import { AcuantApplicationExtractedDetails } from "src/types";
+import { AcuantApplicationExtractedDetails, KycStatus } from "src/types";
 import { VerificationApplication } from "../models/VerificationApplication";
 import { S3Client } from "../clients/s3";
 import { User } from "../models/User";
@@ -121,7 +121,7 @@ export const generateFactorsFromKYC = (kycDocument: any): AcuantApplicationExtra
     return resultingFactors;
 };
 
-export const getApplicationStatus = (kycApplication: AcuantApplication): VerificationApplication["status"] => {
+export const getApplicationStatus = (kycApplication: AcuantApplication): KycStatus => {
     const resultCode = kycApplication.ednaScoreCard.er.reportedRule.resultCode;
     const statusCode = kycApplication.state;
     if (statusCode === "A") {
@@ -139,28 +139,30 @@ export const getApplicationStatus = (kycApplication: AcuantApplication): Verific
 
 export const findKycApplication = async (user: User) => {
     const recordedApplication = await VerificationApplication.findOne({ where: { user } });
+    if (!recordedApplication) return null;
     let kycApplication;
-    if (recordedApplication) {
-        if (recordedApplication.status === "APPROVED") {
-            kycApplication = await S3Client.getAcuantKyc(user.id);
+    if (recordedApplication.status === "APPROVED") {
+        kycApplication = await S3Client.getAcuantKyc(user.id);
+        const factors = generateFactorsFromKYC(kycApplication);
+        return { kycId: recordedApplication.applicationId, status: recordedApplication.status, factors: factors };
+    }
+    if (recordedApplication.status === "PENDING") {
+        kycApplication = await AcuantClient.getApplication(recordedApplication.applicationId);
+        const status = getApplicationStatus(kycApplication);
+        if (status === "APPROVED") {
+            await S3Client.uploadAcuantKyc(user.id, kycApplication);
             const factors = generateFactorsFromKYC(kycApplication);
-            return { kycId: recordedApplication.applicationId, status: "APPROVED", factors: factors };
+            await recordedApplication.updateStatus(status);
+            await user.updateKycStatus(status);
+            return { kycId: recordedApplication.applicationId, status: status, factors: factors };
         }
-        if (recordedApplication.status === "PENDING") {
-            kycApplication = await AcuantClient.getApplication(recordedApplication.applicationId);
-            console.log("KYC APP", kycApplication);
-            const status = getApplicationStatus(kycApplication);
-            if (status === "APPROVED") {
-                await S3Client.uploadAcuantKyc(user.id, kycApplication);
-                const factors = generateFactorsFromKYC(kycApplication);
-                recordedApplication.status = status;
-                await recordedApplication.save();
-                return { kycId: recordedApplication.applicationId, status: "APPROVED", factors: factors };
-            }
-            if (status === "PENDING") return { kycId: recordedApplication.applicationId, status: "PENDING" };
-            if (status === "REJECTED") return { kycId: recordedApplication.applicationId, status: "REJECTED" };
+        if (status === "PENDING") return { kycId: recordedApplication.applicationId, status: status };
+        if (status === "REJECTED") {
+            await recordedApplication.updateStatus(status);
+            await user.updateKycStatus(status);
+            return { kycId: recordedApplication.applicationId, status: status };
         }
     }
-    return null;
+    return { kycId: recordedApplication.applicationId, status: recordedApplication.status };
 };
 // Kyc herlpers end here

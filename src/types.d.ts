@@ -237,9 +237,7 @@ export type TransferStatus =
     | "REJECTED";
 
 export type CampaignStatus = "ACTIVE" | "PENDING" | "INSUFFICIENT_FUNDS" | "CLOSED" | "APPROVED" | "DENIED";
-
 export type CampaignAuditStatus = "DEFAULT" | "AUDITED" | "PENDING";
-
 export type KycStatus = "APPROVED" | "PENDING" | "REJECTED" | "";
 
 export interface GraphApiInputParameters {
