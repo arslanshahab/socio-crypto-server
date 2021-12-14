@@ -149,8 +149,8 @@ spec:
           secret:
             secretName: tatum
         - name: acuant
-            secret:
-              secretName: acuant
+          secret:
+            secretName: acuant
 ---
 apiVersion: apps/v1
 kind: Deployment
