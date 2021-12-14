@@ -8,7 +8,7 @@ export class VerificationApplication extends BaseEntity {
     public applicationId: string;
 
     @Column()
-    public status: "APPROVED" | "REJECTED" | "PENDING";
+    public status: "APPROVED" | "REJECTED" | "PENDING" | "";
 
     @ManyToOne((_type) => User, (user) => user.identityVerifications)
     public user: User;
@@ -22,5 +22,13 @@ export class VerificationApplication extends BaseEntity {
         app.status = status;
         app.user = user;
         return await app.save();
+    }
+
+    public async updateStatus(newStatus: VerificationApplication["status"]) {
+        if (this.status !== newStatus && this.status !== "APPROVED") {
+            this.status = newStatus;
+            return await this.save();
+        }
+        return this;
     }
 }

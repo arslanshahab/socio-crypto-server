@@ -17,6 +17,7 @@ export const verifyKyc = async (parent: any, args: any, context: { user: any }) 
     const { id } = context.user;
     const user = await User.findOneOrFail({ where: { identityId: id }, relations: ["profile"] });
     if (!user) throw new Error("user not found");
+    if (user.kycStatus === "APPROVED") throw new Error("user is already kyc verified");
     const currentKycApplication = await findKycApplication(user);
     if (currentKycApplication) return currentKycApplication;
     const { userKyc } = args;
@@ -27,6 +28,7 @@ export const verifyKyc = async (parent: any, args: any, context: { user: any }) 
         getApplicationStatus(newAcuantApplication),
         user
     );
+    await user.updateKycStatus(verificationApplication.status);
     return { kycId: verificationApplication.applicationId, status: verificationApplication.status };
 };
 

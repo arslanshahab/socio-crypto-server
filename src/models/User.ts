@@ -24,7 +24,6 @@ import { NotificationSettings } from "./NotificationSettings";
 import { Admin } from "./Admin";
 import { ExternalAddress } from "./ExternalAddress";
 import { WeeklyReward } from "./WeeklyReward";
-import { KycStatus } from "../types";
 import { VerificationApplication } from "./VerificationApplication";
 import { Verification } from "./Verification";
 
@@ -39,8 +38,8 @@ export class User extends BaseEntity {
     @Column({ default: true })
     public active: boolean;
 
-    @Column({ nullable: true })
-    public kycStatus: KycStatus;
+    @Column({ nullable: true, default: "" })
+    public kycStatus: VerificationApplication["status"];
 
     @OneToMany((_type) => SocialPost, (posts) => posts.user)
     public posts: SocialPost[];
@@ -337,5 +336,13 @@ export class User extends BaseEntity {
         query = query.leftJoinAndSelect("user.profile", "profile", 'profile."userId" = user.id');
         query = query.where("user.identityId = :id", { id });
         return query.getOne();
+    }
+
+    public async updateKycStatus(status: VerificationApplication["status"]) {
+        if (this.kycStatus !== status && this.kycStatus !== "APPROVED") {
+            this.kycStatus = status;
+            return await this.save();
+        }
+        return this;
     }
 }
