@@ -28,6 +28,8 @@ export class Secrets {
     public static xoxodayURL: string;
     public static tatumApiKey: string;
     public static minterPrivateKey: string;
+    public static acuantApiUser: string;
+    public static acuantApiKey: string;
 
     public static async initialize() {
         Secrets.firebaseProjectId =
@@ -90,8 +92,12 @@ export class Secrets {
         Secrets.xoxodayClientSecret =
             process.env.XOXODAY_CLIENT_SECRET || (await readFilePromise("/var/secrets/xoxoday/clientSecret", "utf8"));
         Secrets.tatumApiKey = process.env.TATUM_API_KEY || (await readFilePromise("/var/secrets/tatum/apiKey", "utf8"));
-        // Secrets.minterPrivateKey =
-        //     process.env.WHITELISTED_MINTER_PRIVATE_KEY ||
-        //     (await readFilePromise("/var/secrets/coiin-minter/privateKey", "utf8"));
+        Secrets.minterPrivateKey =
+            process.env.WHITELISTED_MINTER_PRIVATE_KEY ||
+            (await readFilePromise("/var/secrets/coiin-minter/privateKey", "utf8"));
+        Secrets.acuantApiUser =
+            process.env.ACUANT_API_USER || (await readFilePromise("/var/secrets/acuant/apiUser", "utf8"));
+        Secrets.acuantApiKey =
+            process.env.ACUANT_API_KEY || (await readFilePromise("/var/secrets/acuant/apiKey", "utf8"));
     }
 }

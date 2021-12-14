@@ -324,7 +324,7 @@
     uuid "^3.3.2"
     websocket-stream "^5.5.0"
   optionalDependencies:
-    "@ledgerhq/hw-transport-node-hid" "6.11.2"
+    "@ledgerhq/hw-transport-node-hid" "^5.10.0"
 
 "@celo-tools/celo-ethers-wrapper@0.0.5":
   version "0.0.5"
@@ -430,7 +430,7 @@
   integrity sha512-amDVVV4demxQdcvL8xEZNrPDDXve3d1sO3/1Tk5UglG2S2RTW3nnmC2UccKYUROEaQaH6YAyZwYhzyTKQilz4g==
   dependencies:
     "@ledgerhq/hw-transport" "^5.19.1"
-    "@ledgerhq/hw-transport-node-hid" "6.11.2"
+    "@ledgerhq/hw-transport-node-hid" "^5.19.1"
     bip32-path "^0.4.2"
     flow-copy-source "^2.0.9"
     flow-typed "^3.2.1"
@@ -1325,7 +1325,7 @@
   integrity sha512-gu6aJ/BHuRlpU7kgVpy2vcYk6atjB4iauP2ymF7Gk0ez0Y/6VSMVSJvubeEQN+IV60+OBK0JgeIZG7OiHaw8ow==
 
 "@ledgerhq/hw-transport-node-hid-noevents@6.11.2":
-  version "6.11.2"
+  version "5.51.1"
   resolved "https://registry.yarnpkg.com/@ledgerhq/hw-transport-node-hid-noevents/-/hw-transport-node-hid-noevents-5.51.1.tgz#71f37f812e448178ad0bcc2258982150d211c1ab"
   integrity sha512-9wFf1L8ZQplF7XOY2sQGEeOhpmBRzrn+4X43kghZ7FBDoltrcK+s/D7S+7ffg3j2OySyP6vIIIgloXylao5Scg==
   dependencies:
@@ -1335,15 +1335,15 @@
     "@ledgerhq/logs" "^5.50.0"
     node-hid "2.1.1"
 
-"@ledgerhq/hw-transport-node-hid@6.11.2", "@ledgerhq/hw-transport-node-hid@6.11.2":
-  version "6.11.2"
+"@ledgerhq/hw-transport-node-hid@6.11.2":
+  version "5.51.1"
   resolved "https://registry.yarnpkg.com/@ledgerhq/hw-transport-node-hid/-/hw-transport-node-hid-5.51.1.tgz#fe8eb81e18929663540698c80905952cdbe542d5"
   integrity sha512-Y2eVCCdhVs2Lfr7N2x2cNb+ogcZ24ZATO4QxaQ7LogjiPwYmzmvuXFn8zFjMSrKUCn9CtbptXcuiu0NkGsjWlw==
   dependencies:
     "@ledgerhq/devices" "^5.51.1"
     "@ledgerhq/errors" "^5.50.0"
     "@ledgerhq/hw-transport" "^5.51.1"
-    "@ledgerhq/hw-transport-node-hid-noevents" "6.11.2"
+    "@ledgerhq/hw-transport-node-hid-noevents" "^5.51.1"
     "@ledgerhq/logs" "^5.50.0"
     lodash "^4.17.21"
     node-hid "2.1.1"
@@ -1853,10 +1853,10 @@
   dependencies:
     "@tatumio/bitcoincash-ops" "2.0.0"
 
-"@tatumio/tatum@^1.29.29":
-  version "1.29.29"
-  resolved "https://registry.yarnpkg.com/@tatumio/tatum/-/tatum-1.29.29.tgz#107b259bb55c3da5cc9620e3c70b5f76d152033f"
-  integrity sha512-JVu8TpRhvqYYz/0HltETOJtinERi4iTVpHyhQVVrNoQPh53j3CzebSFpr8g+QNq1k0AGMe/t03RwVYWiilJGIw==
+"@tatumio/tatum@^1.29.31":
+  version "1.29.31"
+  resolved "https://registry.yarnpkg.com/@tatumio/tatum/-/tatum-1.29.31.tgz#9dcbfd6b29ce1674d1ae68d0a851b2f81e02184f"
+  integrity sha512-ukUhLsuQhNN9pUxLHzLlhNG9YaCLWm0gTDs5eJX/jo8BQUs/1PRbxaafbSte1x6M9cmwakTLThIIcZpIK92cig==
   dependencies:
     "@binance-chain/javascript-sdk" "^4.1.1"
     "@celo-tools/celo-ethers-wrapper" "0.0.5"

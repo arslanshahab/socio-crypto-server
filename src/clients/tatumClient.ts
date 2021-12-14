@@ -35,7 +35,7 @@ export interface WithdrawDetails {
 }
 
 export class TatumClient {
-    public static baseUrl = "https://api-eu1.tatum.io";
+    public static baseUrl = "https://api-eu1.tatum.io/v3";
 
     public static async getAllCurrencies(): Promise<string[]> {
         try {

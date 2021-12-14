@@ -140,10 +140,10 @@ export class User extends BaseEntity {
     public asV1() {
         let returnedUser: any = { ...this };
         if (this.profile) {
-            delete this.profile.id;
+            const { id, ...values } = this.profile;
             returnedUser = {
                 ...returnedUser,
-                ...this.profile,
+                ...values,
                 hasRecoveryCodeSet: this.profile.recoveryCode !== null && this.profile.recoveryCode !== "",
             };
         }

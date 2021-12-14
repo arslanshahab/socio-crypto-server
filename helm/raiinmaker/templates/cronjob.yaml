@@ -65,6 +65,9 @@ spec:
                 - name: tatum
                   mountPath: "/var/secrets/tatum"
                   readOnly: true
+                - name: tatum
+                  mountPath: "/var/secrets/acuant"
+                  readOnly: true
               resources:
                 requests:
                   memory: "128Mi"
@@ -110,6 +113,9 @@ spec:
             - name: tatum
               secret:
                 secretName: tatum
+            - name: acuant
+              secret:
+                secretName: acuant
 ---
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -178,6 +184,9 @@ spec:
                 - name: tatum
                   mountPath: "/var/secrets/tatum"
                   readOnly: true
+                - name: tatum
+                  mountPath: "/var/secrets/acuant"
+                  readOnly: true
               resources:
                 requests:
                   memory: "128Mi"
@@ -223,6 +232,9 @@ spec:
             - name: tatum
               secret:
                 secretName: tatum
+            - name: acuant
+              secret:
+                secretName: acuant
 ---
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -294,6 +306,9 @@ spec:
                 - name: tatum
                   mountPath: "/var/secrets/tatum"
                   readOnly: true
+                - name: tatum
+                  mountPath: "/var/secrets/acuant"
+                  readOnly: true
               resources:
                 requests:
                   memory: "128Mi"
@@ -339,6 +354,9 @@ spec:
             - name: tatum
               secret:
                 secretName: tatum
+            - name: acuant
+              secret:
+                secretName: acuant
 ---
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -410,6 +428,9 @@ spec:
                 - name: tatum
                   mountPath: "/var/secrets/tatum"
                   readOnly: true
+                - name: tatum
+                  mountPath: "/var/secrets/acuant"
+                  readOnly: true
               resources:
                 requests:
                   memory: "128Mi"
@@ -455,6 +476,9 @@ spec:
             - name: tatum
               secret:
                 secretName: tatum
+            - name: acuant
+              secret:
+                secretName: acuant
 ---
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -526,6 +550,9 @@ spec:
                 - name: tatum
                   mountPath: "/var/secrets/tatum"
                   readOnly: true
+                - name: tatum
+                  mountPath: "/var/secrets/acuant"
+                  readOnly: true
               resources:
                 requests:
                   memory: "128Mi"
@@ -571,3 +598,6 @@ spec:
             - name: tatum
               secret:
                 secretName: tatum
+            - name: acuant
+              secret:
+                secretName: acuant
