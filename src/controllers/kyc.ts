@@ -9,6 +9,7 @@ import { VerificationApplication } from "../models/VerificationApplication";
 import { Validator } from "../schemas";
 import { AcuantClient } from "../clients/acuant";
 import { findKycApplication, getApplicationStatus } from "../helpers";
+import { generateFactorsFromKYC } from "../helpers/index";
 
 const validator = new Validator();
 
@@ -29,10 +30,20 @@ export const verifyKyc = async (parent: any, args: any, context: { user: any }) 
     return { kycId: verificationApplication.applicationId, status: verificationApplication.status };
 };
 
-export const downloadKyc = async (parent: any, args: { kycId: string }, context: { user: any }) => {
-    const kycFactors = await S3Client.getKycFactors(args.kycId);
-    if (kycFactors) await S3Client.deleteKycData(args.kycId);
-    return kycFactors;
+export const downloadKyc = async (parent: any, args: any, context: { user: any }) => {
+    const { id } = context.user;
+    const user = await User.findOneOrFail({ where: { identityId: id }, relations: ["profile"] });
+    if (!user) throw new Error("user not found");
+    const kycApplication = await VerificationApplication.findOne({ where: { user } });
+    if (!kycApplication) throw new Error("kyc data not found for user");
+    if (kycApplication.status === "PENDING")
+        return { kycId: kycApplication.applicationId, status: kycApplication.status };
+    if (kycApplication.status === "REJECTED")
+        return { kycId: kycApplication.applicationId, status: kycApplication.status };
+    const kycFactors = await S3Client.getAcuantKyc(user.id);
+    if (kycFactors) await S3Client.deleteAcuantKyc(user.id);
+    await VerificationApplication.remove(kycApplication);
+    return generateFactorsFromKYC(kycFactors);
 };
 
 export const kycWebhook = asyncHandler(async (req: Request, res: Response) => {
