@@ -9,6 +9,7 @@ import { findOrCreateCurrency, getWithdrawableAmount } from "../helpers";
 import { Currency } from "../models/Currency";
 import { Transfer } from "../models/Transfer";
 import { BigNumber } from "bignumber.js";
+import { ApolloError } from "apollo-server-express";
 
 export const initWallet = asyncHandler(async (req: Request, res: Response) => {
     try {
@@ -146,7 +147,7 @@ export const getSupportedCurrencies = async (parent: any, args: any, context: { 
         return supportedCurrencies;
     } catch (error) {
         console.log("ERROR----", error);
-        return error;
+        throw new ApolloError(error.message);
     }
 };
 
@@ -181,7 +182,7 @@ export const getDepositAddress = async (parent: any, args: { symbol: string }, c
         }
     } catch (error) {
         console.log("ERROR----", error);
-        return error;
+        throw new ApolloError(error.message);
     }
 };
 
@@ -230,9 +231,6 @@ export const withdrawFunds = async (
         };
     } catch (error) {
         console.log("ERROR----", error);
-        return {
-            success: false,
-            message: "There was an error performing your withdraw",
-        };
+        throw new ApolloError(error.message);
     }
 };

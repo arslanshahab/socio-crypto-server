@@ -98,7 +98,6 @@ export class AcuantClient {
         payload?: RequestData["payload"],
         query?: RequestData["query"]
     ) {
-        console.log(this.baseUrl);
         const url = `${this.baseUrl}/${path}`;
         const requestData: RequestData = {
             method,

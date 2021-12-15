@@ -10,42 +10,51 @@ import { Validator } from "../schemas";
 import { AcuantApplication, AcuantClient } from "../clients/acuant";
 import { findKycApplication, getApplicationStatus } from "../helpers";
 import { generateFactorsFromKYC } from "../helpers/index";
+import { ApolloError } from "apollo-server-express";
 
 const validator = new Validator();
 
 export const verifyKyc = async (parent: any, args: any, context: { user: any }) => {
-    const { id } = context.user;
-    const user = await User.findOneOrFail({ where: { identityId: id }, relations: ["profile"] });
-    if (!user) throw new Error("user not found");
-    if (user.kycStatus === "APPROVED") throw new Error("user is already kyc verified");
-    const currentKycApplication = await findKycApplication(user);
-    if (currentKycApplication) return currentKycApplication;
-    const { userKyc } = args;
-    validator.validateKycRegistration(userKyc);
-    const newAcuantApplication = await AcuantClient.submitApplication(userKyc);
-    const verificationApplication = await VerificationApplication.newApplication(
-        newAcuantApplication.mtid,
-        getApplicationStatus(newAcuantApplication),
-        user
-    );
-    await user.updateKycStatus(verificationApplication.status);
-    return { kycId: verificationApplication.applicationId, status: verificationApplication.status };
+    try {
+        const { id } = context.user;
+        const user = await User.findOneOrFail({ where: { identityId: id }, relations: ["profile"] });
+        if (!user) throw new Error("user not found");
+        if (user.kycStatus === "APPROVED") throw new Error("user is already kyc verified");
+        const currentKycApplication = await findKycApplication(user);
+        if (currentKycApplication) return currentKycApplication;
+        const { userKyc } = args;
+        validator.validateKycRegistration(userKyc);
+        const newAcuantApplication = await AcuantClient.submitApplication(userKyc);
+        const verificationApplication = await VerificationApplication.newApplication(
+            newAcuantApplication.mtid,
+            getApplicationStatus(newAcuantApplication),
+            user
+        );
+        await user.updateKycStatus(verificationApplication.status);
+        return { kycId: verificationApplication.applicationId, status: verificationApplication.status };
+    } catch (error) {
+        throw new ApolloError(error.message);
+    }
 };
 
 export const downloadKyc = async (parent: any, args: any, context: { user: any }) => {
-    const { id } = context.user;
-    const user = await User.findOneOrFail({ where: { identityId: id }, relations: ["profile"] });
-    if (!user) throw new Error("user not found");
-    const kycApplication = await VerificationApplication.findOne({ where: { user } });
-    if (!kycApplication) throw new Error("kyc data not found for user");
-    if (kycApplication.status === "PENDING")
-        return { kycId: kycApplication.applicationId, status: kycApplication.status };
-    if (kycApplication.status === "REJECTED")
-        return { kycId: kycApplication.applicationId, status: kycApplication.status };
-    const kyc = await S3Client.getAcuantKyc(user.id);
-    if (kyc) await S3Client.deleteAcuantKyc(user.id);
-    await VerificationApplication.remove(kycApplication);
-    return generateFactorsFromKYC(kyc);
+    try {
+        const { id } = context.user;
+        const user = await User.findOneOrFail({ where: { identityId: id }, relations: ["profile"] });
+        if (!user) throw new Error("user not found");
+        const kycApplication = await VerificationApplication.findOne({ where: { user } });
+        if (!kycApplication) throw new Error("kyc data not found for user");
+        if (kycApplication.status === "PENDING")
+            return { kycId: kycApplication.applicationId, status: kycApplication.status };
+        if (kycApplication.status === "REJECTED")
+            return { kycId: kycApplication.applicationId, status: kycApplication.status };
+        const kyc = await S3Client.getAcuantKyc(user.id);
+        if (kyc) await S3Client.deleteAcuantKyc(user.id);
+        await VerificationApplication.remove(kycApplication);
+        return generateFactorsFromKYC(kyc);
+    } catch (error) {
+        throw new ApolloError(error.message);
+    }
 };
 
 export const kycWebhook = asyncHandler(async (req: Request, res: Response) => {
@@ -70,12 +79,16 @@ export const kycWebhook = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const getKyc = async (_parent: any, args: any, context: { user: any }) => {
-    const { id } = context.user;
-    const user = await User.findOneOrFail({ where: { identityId: id } });
-    if (!user) throw new Error("user not found");
-    const application = await findKycApplication(user);
-    if (!application) throw new Error("kyc application not found");
-    return application;
+    try {
+        const { id } = context.user;
+        const user = await User.findOneOrFail({ where: { identityId: id } });
+        if (!user) throw new Error("user not found");
+        const application = await findKycApplication(user);
+        if (!application) throw new Error("kyc application not found");
+        return application;
+    } catch (error) {
+        throw new ApolloError(error.message);
+    }
 };
 
 export const adminGetKycByUser = async (parent: any, args: { userId: string }, context: { user: any }) => {
