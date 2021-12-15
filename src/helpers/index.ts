@@ -122,16 +122,13 @@ export const generateFactorsFromKYC = (kycDocument: any): AcuantApplicationExtra
 };
 
 export const getApplicationStatus = (kycApplication: AcuantApplication): KycStatus => {
-    const resultCode = kycApplication.ednaScoreCard.er.reportedRule.resultCode;
     const statusCode = kycApplication.state;
     if (statusCode === "A") {
         return "APPROVED";
     } else if (statusCode === "R") {
-        if (resultCode === "MANUAL_REVIEW") {
-            return "PENDING";
-        } else {
-            return "REJECTED";
-        }
+        return "PENDING";
+    } else if (statusCode === "D") {
+        return "REJECTED";
     } else {
         return "PENDING";
     }
@@ -158,8 +155,8 @@ export const findKycApplication = async (user: User) => {
         }
         if (status === "PENDING") return { kycId: recordedApplication.applicationId, status: status };
         if (status === "REJECTED") {
-            await recordedApplication.updateStatus(status);
-            await user.updateKycStatus(status);
+            await VerificationApplication.remove(recordedApplication);
+            await user.updateKycStatus("");
             return { kycId: recordedApplication.applicationId, status: status };
         }
     }
