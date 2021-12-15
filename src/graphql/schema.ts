@@ -196,8 +196,8 @@ export const typeDefs = gql`
     }
 
     type KycApplicationResponse {
-        kycId: String!
-        status: String!
+        kycId: String
+        status: String
         factors: FactorData
     }
 
