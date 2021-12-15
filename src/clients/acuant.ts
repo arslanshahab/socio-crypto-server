@@ -83,8 +83,7 @@ export class AcuantClient {
             if (body.backsideImageData) validateImageSizeInMB("backDocumentImage", body.backsideImageData);
             return await this.makeRequest("im/account/consumer", "POST", body);
         } catch (error) {
-            console.log(error);
-            throw new Error(error?.message || "Error verify user kyc");
+            throw new Error(error?.message);
         }
     }
 
