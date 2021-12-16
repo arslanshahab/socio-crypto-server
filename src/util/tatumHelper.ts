@@ -14,15 +14,7 @@ import {
 } from "@tatumio/tatum";
 import { doFetch, RequestData } from "./fetchRequest";
 import { Secrets } from "./secrets";
-
-const withdrawEndpoints: { [key: string]: string } = {
-    BNB: "https://api-eu1.tatum.io/v3/offchain/bnb/transfer",
-    FLOW: "https://api-eu1.tatum.io/v3/offchain/flow/transfer",
-    QTUM: "https://api-eu1.tatum.io/v3/offchain/qtum/transfer",
-    VET: "https://api-eu1.tatum.io/v3/offchain/vet/transfer",
-    ONE: "https://api-eu1.tatum.io/v3/offchain/one/transfer",
-    NEO: "https://api-eu1.tatum.io/v3/offchain/neo/transfer",
-};
+import { TatumClient } from "../clients/tatumClient";
 
 export const performWithdraw = async (currency: string, body: any) => {
     switch (currency.toUpperCase()) {
@@ -90,12 +82,7 @@ export const performWithdraw = async (currency: string, body: any) => {
 };
 
 const sendTokenOffchainTransaction = async (currency: string, data: any) => {
-    const endpoint = withdrawEndpoints[currency];
-    if (!endpoint) {
-        throw new Error(
-            `withdraws for ${currency} are not supported at this moment. Be patient, we are working on it!`
-        );
-    }
+    const endpoint = `${TatumClient.baseUrl}/offchain/${currency.toLowerCase()}/transfer`;
     const requestData: RequestData = {
         method: "POST",
         url: endpoint,

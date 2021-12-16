@@ -39,7 +39,7 @@ export class User extends BaseEntity {
     @Column({ default: true })
     public active: boolean;
 
-    @Column({ nullable: true })
+    @Column({ nullable: true, default: "" })
     public kycStatus: KycStatus;
 
     @OneToMany((_type) => SocialPost, (posts) => posts.user)
@@ -140,10 +140,10 @@ export class User extends BaseEntity {
     public asV1() {
         let returnedUser: any = { ...this };
         if (this.profile) {
-            delete this.profile.id;
+            const { id, ...values } = this.profile;
             returnedUser = {
                 ...returnedUser,
-                ...this.profile,
+                ...values,
                 hasRecoveryCodeSet: this.profile.recoveryCode !== null && this.profile.recoveryCode !== "",
             };
         }
@@ -182,6 +182,14 @@ export class User extends BaseEntity {
                 return coiinBalance.save();
             }
         }
+    }
+
+    public async updateKycStatus(status: KycStatus) {
+        if (this.kycStatus !== status && this.kycStatus !== "APPROVED") {
+            this.kycStatus = status;
+            return await this.save();
+        }
+        return this;
     }
 
     public static async getUsersForDailyMetricsCron(): Promise<User[]> {

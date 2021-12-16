@@ -78,7 +78,7 @@ export const typeDefs = gql`
         registerFactorLink(factor: JSON): User
         updateUsername(username: String!): User
         removeFactorLink(factorId: String!): User
-        verifyKyc(userKyc: KycApplication): KycUser
+        verifyKyc(userKyc: KycApplication): KycApplicationResponse
         updateKyc(user: JSON!): KycUser
         initiateWithdraw(withdrawAmount: Float!, ethAddress: String, tokenSymbol: String): Transfer
         updateWithdrawStatus(transferIds: [String]!, status: String!): [Transfer]
@@ -157,7 +157,7 @@ export const typeDefs = gql`
         helloWorld: String
         isLastFactor: Boolean
         me(openCampaigns: Boolean): User
-        getKyc: KycUser
+        getKyc: KycApplicationResponse
         getWalletWithPendingBalance(tokenSymbol: String): Wallet
         getWithdrawals(status: String): [AdminWithdrawal]
         accountExists(id: String!): UserExistence
@@ -192,7 +192,21 @@ export const typeDefs = gql`
         getRedemptionRequirements: RedemptionRequirements
         getUserBalances(userId: String): [UserBalance]
         getTransferHistory(symbol: String, skip: Int, take: Int): PaginatedTransferHistory
-        downloadKyc(kycId: String!): [Factor]
+        downloadKyc: KycApplicationResponse
+    }
+
+    type KycApplicationResponse {
+        kycId: String
+        status: String
+        factors: FactorData
+    }
+
+    type FactorData {
+        fullName: String
+        email: String
+        address: String
+        isDocumentValid: Boolean
+        documentDetails: JSON
     }
 
     input KycApplication {

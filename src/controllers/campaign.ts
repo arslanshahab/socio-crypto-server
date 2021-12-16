@@ -3,40 +3,25 @@ import { Campaign } from "../models/Campaign";
 import { checkPermissions } from "../middleware/authentication";
 import { Participant } from "../models/Participant";
 import { S3Client } from "../clients/s3";
-import { EntityManager, getConnection, In } from "typeorm";
+import { In } from "typeorm";
 import { User } from "../models/User";
-import { Wallet } from "../models/Wallet";
 import { SocialPost } from "../models/SocialPost";
-import { getParticipant } from "./participant";
 import { Firebase } from "../clients/firebase";
-import { Dragonchain } from "../clients/dragonchain";
-import {
-    calculateParticipantPayout,
-    calculateParticipantSocialScore,
-    calculateRaffleWinner,
-    calculateTier,
-    FEE_RATE,
-    performCurrencyTransfer,
-} from "./helpers";
+import { calculateParticipantPayout, calculateParticipantSocialScore, calculateTier } from "./helpers";
 import { Transfer } from "../models/Transfer";
 import { BN } from "../util/helpers";
-import { BigNumber } from "bignumber.js";
 import { Validator } from "../schemas";
 import { CampaignRequirementSpecs, RafflePrizeStructure } from "../types";
 import { Org } from "../models/Org";
 import { HourlyCampaignMetric } from "../models/HourlyCampaignMetric";
 import { DailyParticipantMetric } from "../models/DailyParticipantMetric";
 import { RafflePrize } from "../models/RafflePrize";
-import { SesClient } from "../clients/ses";
-import { decrypt } from "../util/crypto";
 import { Escrow } from "../models/Escrow";
 import { getTokenPriceInUsd } from "../clients/ethereum";
 import { CampaignChannelTemplate } from "../types.d";
 import { CampaignMedia } from "../models/CampaignMedia";
 import { CampaignTemplate } from "../models/CampaignTemplate";
-import { isSupportedCurrency } from "./controllerHelpers";
-import { Currency } from "../models/Currency";
-import { CAMPAIGN_FEE, CAMPAIGN_REWARD, TatumClient } from "../clients/tatumClient";
+import { isSupportedCurrency } from "../helpers";
 
 const validator = new Validator();
 
@@ -582,280 +567,17 @@ export const generateCampaignAuditReport = async (
     return auditReport;
 };
 
-export const payoutCampaignRewards = async (
-    parent: any,
-    args: { campaignId: string; rejected: string[] },
-    context: { user: any }
-) => {
+export const payoutCampaignRewards = async (parent: any, args: { campaignId: string }, context: { user: any }) => {
     const { company } = checkPermissions({ hasRole: ["admin", "manager"] }, context);
-    return getConnection().transaction(async (transactionalEntityManager) => {
-        const { campaignId, rejected } = args;
-        const campaign = await Campaign.findOneOrFail({
-            where: { id: campaignId, company },
-            relations: ["participants", "prize", "org", "org.wallet", "escrow"],
-        });
-        let deviceIds;
-        switch (campaign.type.toLowerCase()) {
-            case "crypto":
-                if (campaign.symbol.toLowerCase() === "coiin") {
-                    deviceIds = await payoutCoiinCampaignRewards(transactionalEntityManager, campaign, rejected);
-                } else {
-                    deviceIds = await payoutCryptoCampaignRewards(campaign);
-                }
-                break;
-            case "raffle":
-                deviceIds = await payoutRaffleCampaignRewards(transactionalEntityManager, campaign, rejected);
-                break;
-            default:
-                throw new Error("campaign type is invalid");
-        }
-        if (deviceIds) await Firebase.sendCampaignCompleteNotifications(Object.values(deviceIds), campaign.name);
-        return true;
+    const { campaignId } = args;
+    const campaign = await Campaign.findOneOrFail({
+        where: { id: campaignId, company },
     });
-};
-
-const payoutRaffleCampaignRewards = async (entityManager: EntityManager, campaign: Campaign, rejected: string[]) => {
-    if (!campaign.prize) throw new Error("no campaign prize");
-    if (campaign.participants.length === 0) throw new Error("no participants on campaign for audit");
-    let totalParticipationScore = new BN(0).plus(campaign.totalParticipationScore);
-    const clonedParticipants =
-        rejected.length > 0
-            ? campaign.participants.reduce((accum: Participant[], current: Participant) => {
-                  if (rejected.indexOf(current.id) > -1)
-                      totalParticipationScore = totalParticipationScore.minus(current.participationScore);
-                  else accum.push(current);
-                  return accum;
-              }, [])
-            : campaign.participants;
-    const winner = calculateRaffleWinner(totalParticipationScore, clonedParticipants);
-    const wallet = await Wallet.findOneOrFail({ where: { user: winner.user } });
-    const prize = await RafflePrize.findOneOrFail({
-        where: { id: campaign.prize.id },
-    });
-    const transfer = Transfer.newFromRaffleSelection(wallet, campaign, prize);
-    campaign.auditStatus = "AUDITED";
-    await entityManager.save([campaign, wallet, transfer]);
-    await SesClient.sendRafflePrizeRedemptionEmail(winner.user.id, decrypt(winner.email), campaign);
-    await Dragonchain.ledgerRaffleCampaignAudit({ [winner.user.id]: campaign.prize.displayName }, [], campaign.id);
-    return { [winner.user.id]: winner.user.profile.deviceToken };
-};
-
-const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
-    try {
-        const usersRewards: { [key: string]: BigNumber } = {};
-        const userDeviceIds: { [key: string]: string } = {};
-        const { currentTotal } = await getCurrentCampaignTier(null, { campaign });
-        let totalRewardAmount = new BN(currentTotal);
-        const participants = await Participant.find({
-            where: { campaign },
-            relations: ["user"],
-        });
-        let raiinmakerFee = new BN(0);
-        const campaignFee = totalRewardAmount.multipliedBy(FEE_RATE);
-        raiinmakerFee = raiinmakerFee.plus(campaignFee);
-        totalRewardAmount = totalRewardAmount.minus(campaignFee);
-        const raiinmakerAccount = await Currency.findOne({
-            where: {
-                wallet: await Wallet.findOne({ where: { org: await Org.findOne({ where: { name: "raiinmaker" } }) } }),
-                symbol: campaign.symbol,
-            },
-        });
-        if (!raiinmakerAccount) throw new Error("currency not found for raiinmaker");
-        const campaignAccount = await Currency.findOne({
-            where: { wallet: campaign.org.wallet, symbol: campaign.symbol },
-        });
-        if (!campaignAccount) throw new Error("currency not found for campaign");
-        for (let index = 0; index < participants.length; index++) {
-            const participant = participants[index];
-            const userData = await User.findOne({
-                where: { id: participant.user.id },
-                relations: ["profile"],
-            });
-            if (!userData) throw new Error("User not found");
-            userDeviceIds[userData.id] = userData.profile.deviceToken;
-            const participantShare = await calculateParticipantPayout(totalRewardAmount, campaign, participant);
-            if (participantShare.isGreaterThan(0)) {
-                usersRewards[userData.id] = participantShare;
-            }
-        }
-
-        // unblock campaign funds so they can be used to distribute rewards
-        await TatumClient.unblockAccountBalance(campaign.tatumBlockageId);
-
-        let promiseArray = [];
-        const transferDetails = [];
-        for (let index = 0; index < participants.length; index++) {
-            const participant = participants[index];
-            const userAccount = await Currency.findOne({
-                where: { wallet: await Wallet.findOne({ where: { user: participant.user } }), symbol: campaign.symbol },
-            });
-            if (!userAccount) throw new Error(`currency not found for user ${participant.user.id}`);
-            promiseArray.push(
-                TatumClient.transferFunds(
-                    campaignAccount.tatumId,
-                    userAccount.tatumId,
-                    usersRewards[participant.user.id].toString(),
-                    `${CAMPAIGN_REWARD}:${campaign.id}`
-                )
-            );
-            transferDetails.push({
-                campaignAccount,
-                userAccount,
-                campaign,
-                participant,
-                amount: usersRewards[participant.user.id],
-            });
-        }
-
-        // transfer campaign fee to raiinmaker tatum account
-        if (campaign.org.name !== "raiinmaker") {
-            await TatumClient.transferFunds(
-                campaignAccount.tatumId,
-                raiinmakerAccount.tatumId,
-                raiinmakerFee.toString(),
-                `${CAMPAIGN_FEE}:${campaign.id}`
-            );
-        }
-        const responses = await Promise.allSettled(promiseArray);
-        const transferRecords = [];
-        for (let index = 0; index < responses.length; index++) {
-            const resp = responses[index];
-            if (resp.status === "fulfilled") {
-                const transferData = transferDetails[index];
-                const wallet = await Wallet.findOne({ where: { user: transferData.participant.user } });
-                if (!wallet) throw new Error("wallet not found for user.");
-                const newTransfer = new Transfer();
-                newTransfer.currency = transferData.campaign.symbol;
-                newTransfer.campaign = transferData.campaign;
-                newTransfer.amount = transferData.amount;
-                newTransfer.action = "deposit";
-                newTransfer.ethAddress = transferData.userAccount.tatumId;
-                newTransfer.wallet = wallet;
-                newTransfer.status = "SUCCEEDED";
-                transferRecords.push(newTransfer);
-            }
-        }
-        await Transfer.save(transferRecords);
-        campaign.auditStatus = "AUDITED";
-        await campaign.save();
-        return userDeviceIds;
-    } catch (error) {
-        throw new Error(error.message);
-    }
-};
-
-const payoutCoiinCampaignRewards = async (entityManager: EntityManager, campaign: Campaign, rejected: string[]) => {
-    const usersWalletValues: { [key: string]: BigNumber } = {};
-    const userDeviceIds: { [key: string]: string } = {};
-    const transfers: Transfer[] = [];
-    const { currentTotal } = await getCurrentCampaignTier(null, { campaign });
-    const bigNumTotal = new BN(currentTotal);
-    const participants = await Participant.find({
-        where: { campaign },
-        relations: ["user"],
-    });
-    let escrow = await Escrow.findOne({
-        where: { campaign },
-        relations: ["wallet"],
-    });
-    if (!escrow) throw new Error("escrow not found");
-    let totalFee = new BN(0);
-    let totalPayout = new BN(0);
-    const users =
-        participants.length > 0
-            ? await User.find({
-                  where: { id: In(participants.map((p) => p.user.id)) },
-                  relations: ["wallet"],
-              })
-            : [];
-    const wallets =
-        users.length > 0
-            ? await Wallet.find({
-                  where: { id: In(users.map((u) => u.wallet.id)) },
-                  relations: ["user"],
-              })
-            : [];
-    if (rejected.length > 0) {
-        const newParticipationCount = participants.length - rejected.length;
-        let totalRejectedPayout = new BN(0);
-        for (const id of rejected) {
-            const participant = await getParticipant(null, { id });
-            const totalParticipantPayout = await calculateParticipantPayout(bigNumTotal, campaign, participant);
-            totalRejectedPayout = totalRejectedPayout.plus(totalParticipantPayout);
-        }
-        const addedPayoutToEachParticipant = totalRejectedPayout.div(new BN(newParticipationCount));
-        for (const participant of participants) {
-            if (!rejected.includes(participant.id)) {
-                const subtotal = await calculateParticipantPayout(bigNumTotal, campaign, participant);
-                const totalParticipantPayout = subtotal.plus(addedPayoutToEachParticipant);
-                if (participant.user.profile.deviceToken)
-                    userDeviceIds[participant.user.id] = participant.user.profile.deviceToken;
-                if (!usersWalletValues[participant.user.id])
-                    usersWalletValues[participant.user.id] = totalParticipantPayout;
-                else
-                    usersWalletValues[participant.user.id] =
-                        usersWalletValues[participant.user.id].plus(totalParticipantPayout);
-            }
-        }
-    } else {
-        for (const participant of participants) {
-            const totalParticipantPayout = await calculateParticipantPayout(bigNumTotal, campaign, participant);
-            if (participant.user.profile.deviceToken)
-                userDeviceIds[participant.user.id] = participant.user.profile.deviceToken;
-            if (!usersWalletValues[participant.user.id])
-                usersWalletValues[participant.user.id] = totalParticipantPayout;
-            else
-                usersWalletValues[participant.user.id] =
-                    usersWalletValues[participant.user.id].plus(totalParticipantPayout);
-        }
-    }
-    for (const userId in usersWalletValues) {
-        const currentWallet = wallets.find((w) => w.user.id === userId);
-        if (currentWallet) {
-            const allottedPayment = usersWalletValues[userId];
-            if (new BN(allottedPayment).isGreaterThan(0)) {
-                const fee = new BN(allottedPayment).times(FEE_RATE);
-                const payout = new BN(allottedPayment).minus(fee);
-                totalFee = totalFee.plus(fee);
-                totalPayout = totalPayout.plus(allottedPayment);
-                await performCurrencyTransfer(
-                    escrow.id,
-                    currentWallet.id,
-                    campaign.crypto.type,
-                    payout.toString(),
-                    true
-                );
-                const transfer = Transfer.newFromCampaignPayout(currentWallet, campaign, payout);
-                transfers.push(transfer);
-            }
-        }
-    }
-    if (new BN(totalFee).isGreaterThan(0)) await Transfer.transferCampaignPayoutFee(campaign, totalFee);
-    const payoutTransfer = Transfer.newFromWalletPayout(escrow.wallet, campaign, totalPayout);
-    transfers.push(payoutTransfer);
-    escrow = await Escrow.findOneOrFail({
-        where: { campaign },
-        relations: ["wallet"],
-    });
-    if (escrow.amount.gt(0)) {
-        await performCurrencyTransfer(
-            escrow.id,
-            escrow.wallet.id,
-            campaign.crypto.type,
-            escrow.amount.toString(),
-            true
-        );
-        const transfer = Transfer.newFromCampaignPayoutRefund(escrow.wallet, campaign, escrow.amount);
-        await transfer.save();
-        await escrow.remove();
-    } else {
-        await escrow.remove();
-    }
-    campaign.auditStatus = "AUDITED";
-    await entityManager.save(campaign);
-    await entityManager.save(participants);
-    await entityManager.save(transfers);
-
-    await Dragonchain.ledgerCoiinCampaignAudit(usersWalletValues, rejected, campaign.id);
-    return userDeviceIds;
+    if (!campaign) throw new Error("Campaign not found");
+    campaign.auditStatus = "PENDING";
+    await campaign.save();
+    return {
+        success: true,
+        message: "Campaign has been submitted for auditting",
+    };
 };
