@@ -127,6 +127,7 @@ export const typeDefs = gql`
         withdrawFunds(symbol: String, address: String, amount: Float): SuccessResponse
         startEmailVerification(email: String): SuccessResponse
         completeEmailVerification(email: String, token: String): SuccessResponse
+        registerUser(email: String, token: String, username: String, password: String): JSON
     }
 
     type Query {

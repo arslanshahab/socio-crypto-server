@@ -36,6 +36,9 @@ export class User extends BaseEntity {
     @Column({ nullable: false })
     public identityId: string;
 
+    // @Column({ nullable: true })
+    // public firebaseId: string;
+
     @Column({ default: true })
     public active: boolean;
 

@@ -31,4 +31,18 @@ export class Verification extends BaseEntity {
 
     @UpdateDateColumn()
     public updatedAt: Date;
+
+    public static createVerification = async (email: string, token: string, user?: User, verified?: boolean) => {
+        const verificationData = new Verification();
+        verificationData.email = email;
+        verificationData.token = token;
+        if (verified) verificationData.verified = verified;
+        if (user) verificationData.user = user;
+        return await verificationData.save();
+    };
+
+    public updateVerificationStatus = async (status: boolean) => {
+        this.verified = status;
+        return await this.save();
+    };
 }

@@ -95,6 +95,10 @@ export class Firebase {
         return Firebase.client.auth().setCustomUserClaims(uid, { company: orgName, role, tempPass });
     }
 
+    // public static async loginWithEmailAndPassword(email: string, password: string) {
+    //     return Firebase.client.auth().signInWithEmailAndPassword(email, password);
+    // }
+
     public static async createSessionCookie(token: string, expiresIn: number) {
         return Firebase.client.auth().createSessionCookie(token, { expiresIn });
     }
