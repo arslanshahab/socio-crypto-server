@@ -148,5 +148,6 @@ export const publicResolvers = {
     },
     Mutation: {
         trackAction: participantController.trackAction,
+        postToTiktok: socialController.postToTiktok,
     },
 };

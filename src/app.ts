@@ -34,7 +34,9 @@ import {
     transferBalance,
 } from "./controllers/tatum";
 import { kycWebhook } from "./controllers/kyc";
-
+import FormData from "form-data";
+import fs from "fs";
+import axios from "axios";
 const { NODE_ENV = "development" } = process.env;
 
 export class Application {
@@ -71,7 +73,10 @@ export class Application {
             exposedHeaders: ["x-auth-token"],
             credentials: true,
         };
-        if (NODE_ENV !== "production") corsSettings.origin.push("http://localhost:3000");
+        if (NODE_ENV !== "production") {
+            corsSettings.origin.push("http://localhost:3000");
+            // corsSettings.origin.push("https://studio.apollographql.com");
+        }
         this.app.use(cookieParser());
         this.app.use(cors(corsSettings));
         this.app.post("/v1/payments", bodyParser.raw({ type: "application/json" }), stripeWebhook);
@@ -168,6 +173,20 @@ export class Application {
         );
         this.app.use("/v1/referral/:participantId", trackClickByLink);
         this.app.use(errorHandler);
+
+        // testing tiktok video upload
+
+        this.app.post("/v1/tiktok/upload", async (req, res) => {
+            const openId = "a509c4e1-a862-43e3-9a3f-0f91b1389adc";
+            const accessToken = "act.b0d0e16756accacfcb25b274766fe4c8EOG84BmzVyh2LaNBnzOd8fm2Hbpq";
+            const url = `https://open-api.tiktok.com/share/video/upload?open_id=${openId}&access_token=${accessToken}`;
+            const data = new FormData();
+            data.append("video", fs.createReadStream("uploads/example.mp4"));
+            const result = await axios.post(url, data, {
+                headers: data.getHeaders(),
+            });
+            res.send(result.data);
+        });
     }
 
     public async startServer() {

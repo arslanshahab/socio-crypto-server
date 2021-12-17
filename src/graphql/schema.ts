@@ -74,6 +74,9 @@ export const typeDefs = gql`
             defaultMedia: Boolean
             mediaId: String
         ): String
+        postToTiktok(
+            video: String
+        ): String
         setDevice(deviceToken: String!): Boolean
         registerFactorLink(factor: JSON): User
         updateUsername(username: String!): User
