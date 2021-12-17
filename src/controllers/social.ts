@@ -142,7 +142,7 @@ export const postToSocial = async (
         console.log("number of seconds taken for this upload", timeTaken);
         return socialPost.id;
     } catch (error) {
-        console.log(error);
+        console.log(error.response.data);
         return error.message;
     }
 };
