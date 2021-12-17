@@ -8,6 +8,7 @@ import express from "express";
 
 export const authenticate = async ({ req }: { req: express.Request }) => {
     const bearerToken = req.headers.authorization;
+    console.log(bearerToken);
     if (!bearerToken) throw new AuthenticationError("unauthorized");
     try {
         if (

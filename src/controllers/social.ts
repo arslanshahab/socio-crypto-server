@@ -10,27 +10,28 @@ import { HourlyCampaignMetric } from "../models/HourlyCampaignMetric";
 import { Campaign } from "../models/Campaign";
 import fetch from "node-fetch";
 import { CampaignMedia } from "../models/CampaignMedia";
-export const allowedSocialLinks = ["twitter", "facebook"];
+import { ApolloError } from "apollo-server-express";
+import { TikTokClient } from "../clients/tiktok";
+
+export const allowedSocialLinks = ["twitter", "facebook", "tiktok"];
 
 const assetUrl =
     process.env.NODE_ENV === "production"
         ? "https://raiinmaker-media.api.raiinmaker.com"
         : "https://raiinmaker-media-staging.api.raiinmaker.com";
 
-export const getSocialClient = (type: string, accessToken?: string) => {
-    let client: any;
+export const getSocialClient = (type: string, accessToken?: string): any => {
     switch (type) {
         case "twitter":
-            client = TwitterClient;
-            break;
+            return TwitterClient;
+        case "tiktok":
+            return TikTokClient;
         case "facebook":
             if (!accessToken) throw new Error("access token required");
-            client = FacebookClient.getClient(accessToken);
-            break;
+            return FacebookClient.getClient(accessToken);
         default:
             throw new Error("no client for this social link type");
     }
-    return client;
 };
 
 export const registerSocialLink = async (
@@ -73,7 +74,7 @@ export const removeSocialLink = async (parent: any, args: { type: string }, cont
 export const postToSocial = async (
     parent: any,
     args: {
-        socialType: "twitter" | "facebook";
+        socialType: "twitter" | "facebook" | "tiktok";
         text: string;
         mediaType: "video" | "photo" | "gif";
         mediaFormat: string;
@@ -88,7 +89,7 @@ export const postToSocial = async (
         console.log(`posting to social`);
         const startTime = new Date().getTime();
         let { socialType, text, mediaType, mediaFormat, media, participantId, defaultMedia, mediaId } = args;
-        if (!allowedSocialLinks.includes(socialType)) throw new Error("the type must exist as a predefined type");
+        if (!allowedSocialLinks.includes(socialType)) throw new ApolloError(`posting to ${socialType} is not allowed`);
         const { id } = context.user;
         const user = await User.findOneOrFail({ where: { identityId: id }, relations: ["socialLinks"] });
         const participant = await Participant.findOneOrFail({
@@ -97,7 +98,7 @@ export const postToSocial = async (
         });
         if (!participant.campaign.isOpen()) throw new Error("campaign is closed");
         const socialLink = user.socialLinks.find((link) => link.type === socialType);
-        if (!socialLink) throw new Error(`you have not linked ${socialType} as a social platform`);
+        // if (!socialLink) throw new Error(`you have not linked ${socialType} as a social platform`);
         const campaign = await Campaign.findOne({
             where: { id: participant.campaign.id },
             relations: ["org", "campaignMedia"],
@@ -107,28 +108,24 @@ export const postToSocial = async (
         if (defaultMedia) {
             console.log(`downloading media with mediaID ----- ${mediaId}`);
             const selectedMedia = await CampaignMedia.findOne({ where: { id: mediaId } });
-            console.log(`media found ----- ${selectedMedia}`);
-            if (selectedMedia) {
-                const mediaUrl = `${assetUrl}/campaign/${campaign.id}/${selectedMedia.media}`;
-                const downloaded = await downloadMedia(mediaType, mediaUrl, selectedMedia.mediaFormat);
-                media = downloaded;
-                mediaFormat = selectedMedia.mediaFormat;
-            } else {
-                throw new Error(`Provided mediaId doesn't exist`);
-            }
+            if (!selectedMedia) throw new Error(`Provided mediaId doesn't exist`);
+            const mediaUrl = `${assetUrl}/campaign/${campaign.id}/${selectedMedia.media}`;
+            const downloaded = await downloadMedia(mediaType, mediaUrl, selectedMedia.mediaFormat);
+            media = downloaded;
+            mediaFormat = selectedMedia.mediaFormat;
         }
         let postId: string;
         if (mediaType && mediaFormat) {
             postId = await client.post(
                 participant,
-                socialLink.asClientCredentials(),
+                socialLink?.asClientCredentials(),
                 text,
                 media,
                 mediaType,
                 mediaFormat
             );
         } else {
-            postId = await client.post(participant, socialLink.asClientCredentials(), text);
+            postId = await client.post(participant, socialLink?.asClientCredentials(), text);
         }
         console.log(`Posted to twitter with ID: ${postId}`);
         await HourlyCampaignMetric.upsert(campaign, campaign.org, "post");
