@@ -3,8 +3,9 @@ import { RequestData, doFetch } from "../util/fetchRequest";
 import { KycApplication } from "../types.d";
 
 const acuantUrls: { [key: string]: string } = {
+    // development: "https://sandbox.identitymind.com",
     staging: "https://staging.identitymind.com",
-    production: "https://identitymind.com",
+    production: "https://edna.identitymind.com",
 };
 
 export interface Etr {
@@ -105,14 +106,11 @@ export class AcuantClient {
             },
         };
         const response = await doFetch(requestData);
-        console.log(response);
         if (response.status !== 200) {
             const error = await response.json();
             console.log("ACUANT_CLIENT_ERROR", error);
             throw new Error(error?.error_message || "There was an error from acuant");
         }
-        const data = await response.json();
-        console.log(data);
-        return data;
+        return await response.json();
     }
 }
