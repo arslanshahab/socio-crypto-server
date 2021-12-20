@@ -25,6 +25,7 @@ export const verifyKyc = async (parent: any, args: any, context: { user: any }) 
         const { userKyc } = args;
         validator.validateKycRegistration(userKyc);
         const newAcuantApplication = await AcuantClient.submitApplication(userKyc);
+        console.log(newAcuantApplication);
         const verificationApplication = await VerificationApplication.newApplication(
             newAcuantApplication.mtid,
             getApplicationStatus(newAcuantApplication),
@@ -33,6 +34,7 @@ export const verifyKyc = async (parent: any, args: any, context: { user: any }) 
         await user.updateKycStatus(verificationApplication.status);
         return { kycId: verificationApplication.applicationId, status: verificationApplication.status };
     } catch (error) {
+        console.log("KYC_ERROR", error);
         throw new ApolloError(error.message);
     }
 };

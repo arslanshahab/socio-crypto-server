@@ -64,7 +64,7 @@ export const placeOrder = async (parent: any, args: { cart: Array<any>; email: s
         const { id } = context.user;
         const user = await User.findOne({
             where: { identityId: id },
-            relations: ["wallet", "wallet.walletCurrency", "campaigns", "orders"],
+            relations: ["wallet", "wallet.walletCurrency", "campaigns", "orders", "socialLinks"],
         });
         if (!user) throw new Error("No user found");
         if (!email) throw new Error("No email provided");
