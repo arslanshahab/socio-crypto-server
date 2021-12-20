@@ -1,6 +1,7 @@
 import { Secrets } from "../util/secrets";
 import { RequestData, doFetch } from "../util/fetchRequest";
 import { KycApplication } from "../types.d";
+import { ApolloError } from "apollo-server-express";
 
 const acuantUrls: { [key: string]: string } = {
     // development: "https://sandbox.identitymind.com",
@@ -83,12 +84,18 @@ export class AcuantClient {
             if (body.backsideImageData) validateImageSizeInMB("backDocumentImage", body.backsideImageData);
             return await this.makeRequest("im/account/consumer", "POST", body);
         } catch (error) {
-            throw new Error(error?.message);
+            console.log(error);
+            throw new ApolloError(error?.message);
         }
     }
 
     public static async getApplication(id: string): Promise<AcuantApplication> {
-        return await this.makeRequest(`im/account/consumer/v2/${id}`, "GET");
+        try {
+            return await this.makeRequest(`im/account/consumer/v2/${id}`, "GET");
+        } catch (error) {
+            console.log(error);
+            throw new ApolloError(error?.message);
+        }
     }
 
     private static async makeRequest(
