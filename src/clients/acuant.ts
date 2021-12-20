@@ -3,7 +3,6 @@ import { RequestData, doFetch } from "../util/fetchRequest";
 import { KycApplication } from "../types.d";
 
 const acuantUrls: { [key: string]: string } = {
-    // development: "https://sandbox.identitymind.com",
     staging: "https://staging.identitymind.com",
     production: "https://identitymind.com",
 };
