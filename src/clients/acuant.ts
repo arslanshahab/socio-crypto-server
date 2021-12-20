@@ -84,7 +84,6 @@ export class AcuantClient {
             if (body.backsideImageData) validateImageSizeInMB("backDocumentImage", body.backsideImageData);
             return await this.makeRequest("im/account/consumer", "POST", body);
         } catch (error) {
-            console.log(error);
             throw new ApolloError(error?.message);
         }
     }
@@ -93,7 +92,6 @@ export class AcuantClient {
         try {
             return await this.makeRequest(`im/account/consumer/v2/${id}`, "GET");
         } catch (error) {
-            console.log(error);
             throw new ApolloError(error?.message);
         }
     }
@@ -120,6 +118,7 @@ export class AcuantClient {
         const response = await doFetch(requestData);
         if (response.status !== 200) {
             const error = await response.json();
+            console.log("ACUANT_CLIENT_ERROR", error);
             throw new Error(error?.error_message || "There was an error from acuant");
         }
         return await response.json();
