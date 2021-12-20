@@ -95,10 +95,10 @@ export const promotePermissions = async (
     const user = await User.findOne({ where });
     if (!user) throw new Error("user not found");
     if (role === "manager") {
-        await Firebase.client.auth().setCustomUserClaims(user.id, { role: "manager", company });
+        await Firebase.adminClient.auth().setCustomUserClaims(user.id, { role: "manager", company });
     } else {
         if (!args.role) throw new Error("administrators must specify a role to promote user to");
-        await Firebase.client.auth().setCustomUserClaims(user.id, {
+        await Firebase.adminClient.auth().setCustomUserClaims(user.id, {
             role: args.role,
             company: args.company || company,
         });

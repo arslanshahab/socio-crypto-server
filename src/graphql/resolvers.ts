@@ -149,6 +149,7 @@ export const publicResolvers = {
     Mutation: {
         trackAction: participantController.trackAction,
         startEmailVerification: authenticationController.startEmailVerification,
+        completeEmailVerification: userController.completeEmailVerification,
         registerUser: authenticationController.registerUser,
     },
 };

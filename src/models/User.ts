@@ -27,17 +27,18 @@ import { WeeklyReward } from "./WeeklyReward";
 import { KycStatus } from "../types";
 import { VerificationApplication } from "./VerificationApplication";
 import { Verification } from "./Verification";
+import { WalletCurrency } from "./WalletCurrency";
 
 @Entity()
 export class User extends BaseEntity {
     @PrimaryGeneratedColumn("uuid")
     public id: string;
 
-    @Column({ nullable: false })
+    @Column({ nullable: true })
     public identityId: string;
 
-    // @Column({ nullable: true })
-    // public firebaseId: string;
+    @Column({ nullable: true })
+    public firebaseId: string;
 
     @Column({ default: true })
     public active: boolean;
@@ -139,6 +140,28 @@ export class User extends BaseEntity {
 
     @OneToMany((_type) => WeeklyReward, (rewards) => rewards.user)
     public weeklyRewards: WeeklyReward[];
+
+    public static async initNewUser(): Promise<User> {
+        const user = new User();
+        const wallet = new Wallet();
+        const coiinWallet = new WalletCurrency();
+        coiinWallet.type = "coiin";
+        coiinWallet.balance = new BN(0);
+        const profile = new Profile();
+        const notificationSettings = new NotificationSettings();
+        await user.save();
+        wallet.user = user;
+        await wallet.save();
+        coiinWallet.wallet = wallet;
+        await coiinWallet.save();
+        profile.user = user;
+        await profile.save();
+        notificationSettings.user = user;
+        await notificationSettings.save();
+        user.profile = profile;
+        user.notificationSettings = notificationSettings;
+        return user;
+    }
 
     public asV1() {
         let returnedUser: any = { ...this };

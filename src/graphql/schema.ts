@@ -127,7 +127,7 @@ export const typeDefs = gql`
         withdrawFunds(symbol: String, address: String, amount: Float): SuccessResponse
         startEmailVerification(email: String): SuccessResponse
         completeEmailVerification(email: String, token: String): SuccessResponse
-        registerUser(email: String, token: String, username: String, password: String): JSON
+        registerUser(email: String!, username: String!, password: String!): RegisterationResponse
     }
 
     type Query {
@@ -194,6 +194,10 @@ export const typeDefs = gql`
         getUserBalances(userId: String): [UserBalance]
         getTransferHistory(symbol: String, skip: Int, take: Int): PaginatedTransferHistory
         downloadKyc: KycApplicationResponse
+    }
+
+    type RegisterationResponse {
+        token: String!
     }
 
     type KycApplicationResponse {

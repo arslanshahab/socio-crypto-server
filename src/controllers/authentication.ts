@@ -6,7 +6,7 @@ import { Like } from "typeorm";
 import { ApolloError } from "apollo-server-express";
 import { Verification } from "../models/Verification";
 import { SesClient } from "../clients/ses";
-// import { User } from "../models/User";
+import { User } from "../models/User";
 
 const isSecure = process.env.NODE_ENV === "production";
 
@@ -14,7 +14,7 @@ export const adminLogin = asyncHandler(async (req: Request, res: Response) => {
     const { idToken } = req.body;
     let sessionCookie;
     const decodedToken = await Firebase.verifyToken(idToken);
-    const user = await Firebase.client.auth().getUser(decodedToken.uid);
+    const user = await Firebase.getUserById(decodedToken.uid);
     if (!user.customClaims) return res.status(401).json({ code: "UNAUTHORIZED", message: "unauthorized" });
     if (user.customClaims.tempPass === true) return res.status(200).json({ resetPass: true });
     const expiresIn = 60 * 60 * 24 * 5 * 1000;
@@ -49,38 +49,51 @@ export const updateUserPassword = asyncHandler(async (req: Request, res: Respons
     const { idToken, password } = req.body;
     const decodedToken = await Firebase.verifyToken(idToken);
     if (!decodedToken) return res.status(401).json({ code: "UNAUTHORIZED", message: "unauthorized" });
-    const user = await Firebase.client.auth().getUser(decodedToken.uid);
+    const user = await Firebase.getUserById(decodedToken.uid);
     if (!user.customClaims) return res.status(401).json({ code: "UNAUTHORIZED", message: "unauthorized" });
     await Firebase.updateUserPassword(user.uid, password);
     await Firebase.setCustomUserClaims(user.uid, user.customClaims.company, user.customClaims.role, false);
     return res.status(200).json({ success: true });
 });
 
-export const registerUser = async (
-    parent: any,
-    args: { email: string; username: string; password: string; code: string },
-    context: { user: any }
-) => {
-    const { email, password, username, code } = args;
-    if (!code || !email || !password || !username) throw new ApolloError("Missing parameters", "400");
-    const verification = await Verification.findOne({ where: { token: code, email } });
-    if (!verification) throw new ApolloError("verification not initialized", "400");
-    if (verification?.verified) throw new ApolloError("email already verified", "400");
-    const firebaseUser = await Firebase.createNewUser(email, password);
-    // const user = new User();
-    // user.firebaseId = firebaseUser.uid;
-    // user.profile.email = email;
-    // user.profile.username = username;
-    // await user.save();
-    // await user.profile.save();
-    return firebaseUser;
+export const registerUser = async (parent: any, args: { email: string; username: string; password: string }) => {
+    try {
+        const { email, password, username } = args;
+        if (!email || !password || !username) throw new Error("Missing parameters");
+        if (await Profile.findOne({ where: { email: Like(email) } })) throw new Error("email already exists");
+        const verification = await Verification.findOne({ where: { email, verified: true } });
+        if (!verification) throw new Error("email not verified");
+        const firebaseUser = await Firebase.createNewUser(email, password);
+        const user = await User.initNewUser();
+        user.firebaseId = firebaseUser.uid;
+        user.profile.email = email;
+        user.profile.username = username;
+        await user.save();
+        await user.profile.save();
+        const loggedInUser = await Firebase.loginUser(email, password);
+        return { token: loggedInUser.idToken };
+    } catch (error) {
+        throw new ApolloError(error.message);
+    }
 };
 
-export const startEmailVerification = async (parent: any, args: { email: string }, context: { user: any }) => {
+export const loginUser = async (parent: any, args: { email: string; password: string }) => {
+    try {
+        const { email, password } = args;
+        if (!email || !password) throw new Error("Missing parameters");
+        if (!(await Profile.findOne({ where: { email: Like(email) } }))) throw new Error("email is not valid");
+        const loggedInUser = await Firebase.loginUser(email, password);
+        return { token: loggedInUser.idToken };
+    } catch (error) {
+        throw new ApolloError(error.message);
+    }
+};
+
+export const startEmailVerification = async (parent: any, args: { email: string }) => {
     try {
         const { email } = args;
         if (!email) throw new Error("email not provided");
-        if (await Profile.findOne({ where: { email: Like(email) } })) throw new ApolloError("email already exists");
+        if (await Profile.findOne({ where: { email: Like(email) } })) throw new Error("email already exists");
         let verificationData = await Verification.findOne({ where: { email: email, verified: false } });
         if (!verificationData) {
             verificationData = await Verification.createVerification(email, generateRandomNonce());
@@ -95,15 +108,11 @@ export const startEmailVerification = async (parent: any, args: { email: string 
     }
 };
 
-export const completeEmailVerification = async (
-    parent: any,
-    args: { email: string; token: string },
-    context: { user: any }
-) => {
+export const completeEmailVerification = async (parent: any, args: { email: string; token: string }) => {
     try {
         const { email, token } = args;
         if (!email || !token) throw new Error("email or token missing");
-        if (await Profile.findOne({ where: { email: Like(email) } })) throw new ApolloError("email already exists");
+        if (await Profile.findOne({ where: { email: Like(email) } })) throw new Error("email already exists");
         const verificationData = await Verification.findOne({ where: { email, verified: false, token } });
         if (!verificationData) throw new Error("invalid token or verfication not initialized");
         await verificationData.updateVerificationStatus(true);
