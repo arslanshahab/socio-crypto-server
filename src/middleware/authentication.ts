@@ -15,8 +15,8 @@ export const authenticate = async ({ req }: { req: express.Request }) => {
         const firebaseUser = await Firebase.getUserById(decodedToken.uid);
         const user = {
             id: decodedToken.uid,
-            email: decodedToken.email,
             method: "firebase",
+            ...decodedToken,
             ...(firebaseUser.customClaims && {
                 role: firebaseUser.customClaims.role,
                 company: firebaseUser.customClaims.company,

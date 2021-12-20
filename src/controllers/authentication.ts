@@ -89,6 +89,14 @@ export const loginUser = async (parent: any, args: { email: string; password: st
     }
 };
 
+export const logoutUser = async (parent: any, args: any, context: { user: any }) => {
+    try {
+        return await Firebase.revokeRefreshToken(context.user.sub);
+    } catch (error) {
+        throw new ApolloError(error.message);
+    }
+};
+
 export const startEmailVerification = async (parent: any, args: { email: string }) => {
     try {
         const { email } = args;
