@@ -1,10 +1,8 @@
 import { Secrets } from "../util/secrets";
 import { RequestData, doFetch } from "../util/fetchRequest";
 import { KycApplication } from "../types.d";
-import { ApolloError } from "apollo-server-express";
 
 const acuantUrls: { [key: string]: string } = {
-    // development: "https://sandbox.identitymind.com",
     staging: "https://staging.identitymind.com",
     production: "https://identitymind.com",
 };
@@ -58,42 +56,33 @@ export class AcuantClient {
         process.env.NODE_ENV === "production" ? acuantUrls["production"] : acuantUrls["staging"];
 
     public static async submitApplication(vars: KycApplication): Promise<AcuantApplication> {
-        try {
-            const body: { [key: string]: any } = {
-                man: `${vars.firstName}-${vars.middleName}-${vars.lastName}`,
-                tea: vars.email,
-                bfn: vars.firstName,
-                bmn: vars.middleName,
-                bln: vars.lastName,
-                bsn: vars.billingStreetAddress,
-                bco: vars.billingCountry,
-                bz: vars.billingZip,
-                bc: vars.billingCity,
-                bgd: vars.gender,
-                dob: vars.dob,
-                pm: vars.phoneNumber,
-                docType: vars.documentType,
-                docCountry: vars.documentCountry,
-                scanData: vars.frontDocumentImage,
-                faceImages: [vars.faceImage],
-            };
-            if (vars.documentType && ["DL"].includes(vars.documentType))
-                body.backsideImageData = vars.backDocumentImage;
-            validateImageSizeInMB("frontDocumentImage", body.scanData);
-            validateImageSizeInMB("selfie", body.faceImages[0]);
-            if (body.backsideImageData) validateImageSizeInMB("backDocumentImage", body.backsideImageData);
-            return await this.makeRequest("im/account/consumer", "POST", body);
-        } catch (error) {
-            throw new ApolloError(error?.message);
-        }
+        const body: { [key: string]: any } = {
+            man: `${vars.firstName}-${vars.middleName}-${vars.lastName}`,
+            tea: vars.email,
+            bfn: vars.firstName,
+            bmn: vars.middleName,
+            bln: vars.lastName,
+            bsn: vars.billingStreetAddress,
+            bco: vars.billingCountry,
+            bz: vars.billingZip,
+            bc: vars.billingCity,
+            bgd: vars.gender,
+            dob: vars.dob,
+            pm: vars.phoneNumber,
+            docType: vars.documentType,
+            docCountry: vars.documentCountry,
+            scanData: vars.frontDocumentImage,
+            faceImages: [vars.faceImage],
+        };
+        if (vars.documentType && ["DL"].includes(vars.documentType)) body.backsideImageData = vars.backDocumentImage;
+        validateImageSizeInMB("frontDocumentImage", body.scanData);
+        validateImageSizeInMB("selfie", body.faceImages[0]);
+        if (body.backsideImageData) validateImageSizeInMB("backDocumentImage", body.backsideImageData);
+        return await this.makeRequest("im/account/consumer", "POST", body);
     }
 
     public static async getApplication(id: string): Promise<AcuantApplication> {
-        try {
-            return await this.makeRequest(`im/account/consumer/v2/${id}`, "GET");
-        } catch (error) {
-            throw new ApolloError(error?.message);
-        }
+        return await this.makeRequest(`im/account/consumer/v2/${id}`, "GET");
     }
 
     private static async makeRequest(
@@ -116,11 +105,14 @@ export class AcuantClient {
             },
         };
         const response = await doFetch(requestData);
+        console.log(response);
         if (response.status !== 200) {
             const error = await response.json();
             console.log("ACUANT_CLIENT_ERROR", error);
             throw new Error(error?.error_message || "There was an error from acuant");
         }
-        return await response.json();
+        const data = await response.json();
+        console.log(data);
+        return data;
     }
 }
