@@ -33,6 +33,7 @@ export const verifyKyc = async (parent: any, args: any, context: { user: any }) 
         await user.updateKycStatus(verificationApplication.status);
         return { kycId: verificationApplication.applicationId, status: verificationApplication.status };
     } catch (error) {
+        console.log(error);
         throw new ApolloError(error.message);
     }
 };
