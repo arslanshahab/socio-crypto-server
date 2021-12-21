@@ -15,7 +15,7 @@ export class Verification extends BaseEntity {
     @Column({ nullable: false })
     public token: string;
 
-    @Column({ nullable: false })
+    @Column({ nullable: false, default: "" })
     public type: VerificationType;
 
     @CreateDateColumn()

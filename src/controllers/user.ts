@@ -413,7 +413,6 @@ export const startEmailVerification = async (parent: any, args: { email: string 
             verificationData = new Verification();
             verificationData.email = email;
             verificationData.token = generateRandomNonce();
-            verificationData.user = user;
             await verificationData.save();
         }
         await SesClient.emailAddressVerificationEmail(email, verificationData.token);
