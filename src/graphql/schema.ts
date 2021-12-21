@@ -125,9 +125,10 @@ export const typeDefs = gql`
         removePaymentMethod(paymentMethodId: String): Boolean
         placeStoreOrder(cart: [JSON], email: String): JSON
         withdrawFunds(symbol: String, address: String, amount: Float): SuccessResponse
-        startEmailVerification(email: String): SuccessResponse
-        completeEmailVerification(email: String, token: String): SuccessResponse
+        startVerification(email: String!, type: VerificationType!): SuccessResponse
+        completeVerification(email: String!, token: String!, type: VerificationType!, password: String): SuccessResponse
         registerUser(email: String!, username: String!, password: String!): RegisterationResponse
+        changeUserPassword(password: String!): SuccessResponse
     }
 
     type Query {
@@ -194,6 +195,11 @@ export const typeDefs = gql`
         getUserBalances(userId: String): [UserBalance]
         getTransferHistory(symbol: String, skip: Int, take: Int): PaginatedTransferHistory
         downloadKyc: KycApplicationResponse
+    }
+
+    enum VerificationType {
+        EMAIL
+        PASSWORD
     }
 
     type RegisterationResponse {

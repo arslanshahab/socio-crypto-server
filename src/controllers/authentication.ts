@@ -7,6 +7,7 @@ import { ApolloError } from "apollo-server-express";
 import { Verification } from "../models/Verification";
 import { SesClient } from "../clients/ses";
 import { User } from "../models/User";
+import { VerificationType } from "src/types";
 
 const isSecure = process.env.NODE_ENV === "production";
 
@@ -97,37 +98,54 @@ export const logoutUser = async (parent: any, args: any, context: { user: any })
     }
 };
 
-export const startEmailVerification = async (parent: any, args: { email: string }) => {
+export const changeUserPassword = async (
+    parent: any,
+    args: { email: string; password: string },
+    context: { user: any }
+) => {
     try {
-        const { email } = args;
-        if (!email) throw new Error("email not provided");
-        if (await Profile.findOne({ where: { email: Like(email) } })) throw new Error("email already exists");
-        let verificationData = await Verification.findOne({ where: { email: email, verified: false } });
-        if (!verificationData) {
-            verificationData = await Verification.createVerification(email, generateRandomNonce());
-        }
-        await SesClient.emailAddressVerificationEmail(email, verificationData.token);
-        return {
-            success: true,
-            message: "Email sent to provided email address",
-        };
+        const { password } = args;
+        if (!password) throw new ApolloError("password is required");
+        if (!(await User.findOne({ where: { firebaseId: context.user.id } }))) throw new ApolloError("user not found");
+        await Firebase.updateUserPassword(context.user.id, password);
+        return { success: true };
     } catch (error) {
         throw new ApolloError(error.message);
     }
 };
 
-export const completeEmailVerification = async (parent: any, args: { email: string; token: string }) => {
+export const startVerification = async (parent: any, args: { email: string; type: VerificationType }) => {
     try {
-        const { email, token } = args;
+        const { email, type } = args;
+        if (!email || !type) throw new Error("missing parameters");
+        if (type === "EMAIL" && (await Profile.findOne({ where: { email: Like(email) } })))
+            throw new Error("email already exists");
+        let verificationData = await Verification.findOne({ where: { email, type, verified: false } });
+        if (!verificationData) {
+            verificationData = await Verification.createVerification(email, generateRandomNonce(), type);
+        }
+        await SesClient.emailAddressVerificationEmail(email, verificationData.token);
+        return { success: true };
+    } catch (error) {
+        throw new ApolloError(error.message);
+    }
+};
+
+export const completeVerification = async (
+    parent: any,
+    args: { email: string; token: string; type: VerificationType; password?: string }
+) => {
+    try {
+        const { email, token, password, type } = args;
         if (!email || !token) throw new Error("email or token missing");
-        if (await Profile.findOne({ where: { email: Like(email) } })) throw new Error("email already exists");
-        const verificationData = await Verification.findOne({ where: { email, verified: false, token } });
+        const verificationData = await Verification.findOne({ where: { email, token, type, verified: false } });
         if (!verificationData) throw new Error("invalid token or verfication not initialized");
         await verificationData.updateVerificationStatus(true);
-        return {
-            success: true,
-            message: "Email address verified",
-        };
+        if (type === "PASSWORD" && password) {
+            const userData = await Firebase.getUserByEmail(email);
+            await Firebase.updateUserPassword(userData.uid, password);
+        }
+        return { success: true };
     } catch (error) {
         throw new ApolloError(error.message);
     }

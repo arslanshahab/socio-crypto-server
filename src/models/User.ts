@@ -26,7 +26,6 @@ import { ExternalAddress } from "./ExternalAddress";
 import { WeeklyReward } from "./WeeklyReward";
 import { KycStatus } from "../types";
 import { VerificationApplication } from "./VerificationApplication";
-import { Verification } from "./Verification";
 import { WalletCurrency } from "./WalletCurrency";
 
 @Entity()
@@ -61,75 +60,31 @@ export class User extends BaseEntity {
     @OneToMany((_type) => Participant, (participant) => participant.user)
     campaigns: Participant[];
 
-    @OneToOne(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => Wallet,
-        (wallet) => wallet.user
-    )
+    @OneToOne((_type) => Wallet, (wallet) => wallet.user)
     public wallet: Wallet;
 
-    @OneToMany(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => ExternalAddress,
-        (address) => address.user
-    )
+    @OneToMany((_type) => ExternalAddress, (address) => address.user)
     public addresses: ExternalAddress[];
 
-    @OneToMany(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => SocialLink,
-        (link) => link.user
-    )
+    @OneToMany((_type) => SocialLink, (link) => link.user)
     public socialLinks: SocialLink[];
 
-    @OneToMany(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => VerificationApplication,
-        (verification) => verification.user
-    )
+    @OneToMany((_type) => VerificationApplication, (verification) => verification.user)
     public identityVerifications: VerificationApplication[];
 
-    @OneToMany(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => FactorLink,
-        (link) => link.user
-    )
+    @OneToMany((_type) => FactorLink, (link) => link.user)
     public factorLinks: FactorLink[];
 
-    @OneToMany(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => Verification,
-        (verification) => verification.user
-    )
-    public verifications: Verification[];
-
-    @OneToMany(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => TwentyFourHourMetric,
-        (metrics) => metrics.user
-    )
+    @OneToMany((_type) => TwentyFourHourMetric, (metrics) => metrics.user)
     public twentyFourHourMetrics: TwentyFourHourMetric[];
 
-    @OneToOne(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => Profile,
-        (profile) => profile.user,
-        { eager: true }
-    )
+    @OneToOne((_type) => Profile, (profile) => profile.user, { eager: true })
     public profile: Profile;
 
-    @OneToOne(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => NotificationSettings,
-        (notifications) => notifications.user
-    )
+    @OneToOne((_type) => NotificationSettings, (notifications) => notifications.user)
     public notificationSettings: NotificationSettings;
 
-    @OneToMany(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => DailyParticipantMetric,
-        (metric) => metric.user
-    )
+    @OneToMany((_type) => DailyParticipantMetric, (metric) => metric.user)
     public dailyMetrics: DailyParticipantMetric[];
 
     @OneToMany((_type) => Admin, (admin) => admin.user)

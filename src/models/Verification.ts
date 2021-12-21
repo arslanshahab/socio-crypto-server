@@ -1,13 +1,5 @@
-import {
-    BaseEntity,
-    Entity,
-    PrimaryGeneratedColumn,
-    Column,
-    ManyToOne,
-    CreateDateColumn,
-    UpdateDateColumn,
-} from "typeorm";
-import { User } from "./User";
+import { VerificationType } from "src/types";
+import { BaseEntity, Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from "typeorm";
 
 @Entity()
 export class Verification extends BaseEntity {
@@ -23,8 +15,8 @@ export class Verification extends BaseEntity {
     @Column({ nullable: false })
     public token: string;
 
-    @ManyToOne((_type) => User, (user) => user.verifications)
-    public user: User;
+    @Column({ nullable: false })
+    public type: VerificationType;
 
     @CreateDateColumn()
     public createdAt: Date;
@@ -32,12 +24,17 @@ export class Verification extends BaseEntity {
     @UpdateDateColumn()
     public updatedAt: Date;
 
-    public static createVerification = async (email: string, token: string, user?: User, verified?: boolean) => {
+    public static createVerification = async (
+        email: string,
+        token: string,
+        type: VerificationType,
+        verified?: boolean
+    ) => {
         const verificationData = new Verification();
         verificationData.email = email;
         verificationData.token = token;
+        verificationData.type = type;
         if (verified) verificationData.verified = verified;
-        if (user) verificationData.user = user;
         return await verificationData.save();
     };
 

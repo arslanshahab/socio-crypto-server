@@ -86,8 +86,7 @@ export const resolvers = {
         uploadProfilePicture: userController.uploadProfilePicture,
         placeStoreOrder: xoxodayController.placeOrder,
         withdrawFunds: tatumController.withdrawFunds,
-        startEmailVerification: userController.startEmailVerification,
-        completeEmailVerification: userController.completeEmailVerification,
+        changeUserPassword: authenticationController.changeUserPassword,
     },
 };
 
@@ -148,8 +147,8 @@ export const publicResolvers = {
     },
     Mutation: {
         trackAction: participantController.trackAction,
-        startEmailVerification: authenticationController.startEmailVerification,
-        completeEmailVerification: userController.completeEmailVerification,
+        startVerification: authenticationController.startVerification,
+        completeVerification: authenticationController.completeVerification,
         registerUser: authenticationController.registerUser,
     },
 };
