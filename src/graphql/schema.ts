@@ -127,14 +127,16 @@ export const typeDefs = gql`
         withdrawFunds(symbol: String, address: String, amount: Float): SuccessResponse
         startVerification(email: String!, type: VerificationType!): SuccessResponse
         completeVerification(email: String!, code: String!): SuccessResponse
-        loginUser(email: String!, password: String!): RegisterationResponse
-        registerUser(
-            email: String!
-            username: String!
-            password: String!
-            verificationToken: String!
-        ): RegisterationResponse
+        loginUser(email: String!, password: String!): SuccessResponse
+        registerUser(email: String!, username: String!, password: String!, verificationToken: String!): SuccessResponse
         resetUserPassword(password: String!, verificationToken: String): SuccessResponse
+        recoverUserAccountStep1(username: String!, code: Int!): SuccessResponse
+        recoverUserAccountStep2(
+            email: String!
+            password: String!
+            userId: String!
+            verificationToken: String!
+        ): SuccessResponse
     }
 
     type Query {
@@ -208,10 +210,6 @@ export const typeDefs = gql`
         PASSWORD
     }
 
-    type RegisterationResponse {
-        token: String!
-    }
-
     type KycApplicationResponse {
         kycId: String
         status: String
@@ -268,8 +266,10 @@ export const typeDefs = gql`
     }
 
     type SuccessResponse {
-        success: Boolean!
+        success: Boolean
         verificationToken: String
+        userId: String
+        token: String
     }
 
     type RedemptionRequirements {

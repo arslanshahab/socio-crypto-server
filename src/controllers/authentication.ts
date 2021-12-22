@@ -2,13 +2,14 @@ import { Firebase } from "../clients/firebase";
 import { asyncHandler, generateRandomNonce } from "../util/helpers";
 import { Request, Response } from "express";
 import { Like } from "typeorm";
-import { ApolloError } from "apollo-server-express";
+import { ApolloError, AuthenticationError } from "apollo-server-express";
 import { Verification } from "../models/Verification";
 import { SesClient } from "../clients/ses";
 import { User } from "../models/User";
 import { VerificationType } from "src/types";
 import { createSessionToken, createPasswordHash } from "../helpers";
-import { encrypt, decrypt } from "../util/crypto";
+import { encrypt, decrypt, sha256Hash } from "../util/crypto";
+import { Profile } from "../models/Profile";
 
 const isSecure = process.env.NODE_ENV === "production";
 
@@ -108,6 +109,45 @@ export const resetUserPassword = async (parent: any, args: { verificationToken: 
         user.password = createPasswordHash(verificationData.email, password);
         await user.save();
         return { success: true };
+    } catch (error) {
+        throw new ApolloError(error.message);
+    }
+};
+
+export const recoverUserAccountStep1 = async (parent: any, args: { username: string; code: number }) => {
+    try {
+        const { username, code } = args;
+        const profile = await Profile.findOne({
+            where: { username, recoveryCode: sha256Hash(code.toString()) },
+        });
+        if (!profile) throw new AuthenticationError("invalid username or code");
+        const user = await User.findOne({ where: { id: profile.user } });
+        if (!user) throw new ApolloError("User not found");
+        if (!user.email) {
+            return { userId: user.id };
+        } else {
+            return { token: createSessionToken({ email: user.email, userId: user.id }) };
+        }
+    } catch (error) {
+        throw new ApolloError(error.message);
+    }
+};
+
+export const recoverUserAccountStep2 = async (
+    parent: any,
+    args: { email: string; password: string; userId: string; verificationToken: string }
+) => {
+    try {
+        const { email, password, userId, verificationToken } = args;
+        const user = await User.findOne({ where: { id: userId } });
+        if (!user) throw new ApolloError("invalid userId.");
+        const verificationData = await Verification.findOne({ where: { id: decrypt(verificationToken) } });
+        if (!verificationData || !verificationData.verified) throw new Error("email not verified");
+        if (user.email) throw new ApolloError("User has already registered.");
+        user.email = email;
+        user.password = createPasswordHash(email, password);
+        await user.save();
+        return { token: createSessionToken({ email, userId }) };
     } catch (error) {
         throw new ApolloError(error.message);
     }
