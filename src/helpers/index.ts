@@ -11,6 +11,14 @@ import { AcuantApplicationExtractedDetails, KycStatus } from "src/types";
 import { VerificationApplication } from "../models/VerificationApplication";
 import { S3Client } from "../clients/s3";
 import { User } from "../models/User";
+import crypto from "crypto";
+import { Secrets } from "../util/secrets";
+import jwt from "jsonwebtoken";
+
+interface JWTPayload {
+    email: string;
+    userId: string;
+}
 
 // general helper functions start here
 export const isSupportedCurrency = async (symbol: string): Promise<boolean> => {
@@ -163,3 +171,18 @@ export const findKycApplication = async (user: User) => {
     return { kycId: recordedApplication.applicationId, status: recordedApplication.status };
 };
 // Kyc herlpers end here
+
+// authentication helpers here
+export const createPasswordHash = (salt: string, data: string) => {
+    salt = `${salt.toLowerCase()}-${Secrets.encryptionKey}`;
+    return crypto.createHmac("sha512", salt).update(data).digest("base64");
+};
+
+export const createSessionToken = (payload: JWTPayload): string => {
+    const expiresIn = 60 * 60 * 24 * 7 * 1000;
+    return jwt.sign(payload, Secrets.encryptionKey, { expiresIn });
+};
+
+export const verifySessionToken = (token: string): JWTPayload => {
+    return jwt.verify(token, Secrets.encryptionKey) as JWTPayload;
+};

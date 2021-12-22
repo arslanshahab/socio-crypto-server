@@ -5,7 +5,7 @@ import bodyParser from "body-parser";
 import { Connection, getConnectionOptions, createConnection } from "typeorm";
 import logger from "./util/logger";
 import { Secrets } from "./util/secrets";
-import { authenticate } from "./middleware/authentication";
+import { authenticateAdmin, authenticateUser } from "./middleware/authentication";
 import { errorHandler } from "./middleware/errorHandler";
 import { Dragonchain } from "./clients/dragonchain";
 import { Firebase } from "./clients/firebase";
@@ -98,13 +98,13 @@ export class Application {
             typeDefs,
             resolvers,
             plugins: [requestPlugin],
-            context: authenticate,
+            context: authenticateUser,
         });
         const serverAdmin = new ApolloServer({
             typeDefs,
             resolvers: adminResolvers,
             plugins: [requestPlugin],
-            context: authenticate,
+            context: authenticateAdmin,
         });
         const serverPublic = new ApolloServer({
             typeDefs,

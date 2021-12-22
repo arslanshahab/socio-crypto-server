@@ -86,7 +86,7 @@ export const resolvers = {
         uploadProfilePicture: userController.uploadProfilePicture,
         placeStoreOrder: xoxodayController.placeOrder,
         withdrawFunds: tatumController.withdrawFunds,
-        changeUserPassword: authenticationController.changeUserPassword,
+        resetUserPassword: authenticationController.resetUserPassword,
     },
 };
 
@@ -150,5 +150,6 @@ export const publicResolvers = {
         startVerification: authenticationController.startVerification,
         completeVerification: authenticationController.completeVerification,
         registerUser: authenticationController.registerUser,
+        loginUser: authenticationController.loginUser,
     },
 };

@@ -126,9 +126,15 @@ export const typeDefs = gql`
         placeStoreOrder(cart: [JSON], email: String): JSON
         withdrawFunds(symbol: String, address: String, amount: Float): SuccessResponse
         startVerification(email: String!, type: VerificationType!): SuccessResponse
-        completeVerification(email: String!, token: String!, type: VerificationType!, password: String): SuccessResponse
-        registerUser(email: String!, username: String!, password: String!): RegisterationResponse
-        changeUserPassword(password: String!): SuccessResponse
+        completeVerification(email: String!, code: String!): SuccessResponse
+        loginUser(email: String!, password: String!): RegisterationResponse
+        registerUser(
+            email: String!
+            username: String!
+            password: String!
+            verificationToken: String!
+        ): RegisterationResponse
+        resetUserPassword(password: String!, verificationToken: String): SuccessResponse
     }
 
     type Query {
@@ -262,8 +268,8 @@ export const typeDefs = gql`
     }
 
     type SuccessResponse {
-        success: Boolean
-        message: String
+        success: Boolean!
+        verificationToken: String
     }
 
     type RedemptionRequirements {

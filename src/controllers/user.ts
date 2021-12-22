@@ -412,10 +412,10 @@ export const startEmailVerification = async (parent: any, args: { email: string 
         if (!verificationData) {
             verificationData = new Verification();
             verificationData.email = email;
-            verificationData.token = generateRandomNonce();
+            verificationData.code = generateRandomNonce();
             await verificationData.save();
         }
-        await SesClient.emailAddressVerificationEmail(email, verificationData.token);
+        await SesClient.emailAddressVerificationEmail(email, verificationData.code);
         return {
             success: true,
             message: "Email sent to provided email address",

@@ -7,6 +7,7 @@ import {
     OneToOne,
     CreateDateColumn,
     UpdateDateColumn,
+    BeforeInsert,
 } from "typeorm";
 import { Participant } from "./Participant";
 import { XoxodayOrder } from "./XoxodayOrder";
@@ -36,8 +37,11 @@ export class User extends BaseEntity {
     @Column({ nullable: true })
     public identityId: string;
 
-    @Column({ nullable: true })
-    public firebaseId: string;
+    @Column({ nullable: false, default: "" })
+    public email: string;
+
+    @Column({ nullable: false, default: "" })
+    public password: string;
 
     @Column({ default: true })
     public active: boolean;
@@ -96,26 +100,34 @@ export class User extends BaseEntity {
     @OneToMany((_type) => WeeklyReward, (rewards) => rewards.user)
     public weeklyRewards: WeeklyReward[];
 
-    public static async initNewUser(): Promise<User> {
+    @BeforeInsert()
+    prepreModel() {
+        this.email = this.email.toLowerCase();
+    }
+
+    public static async initNewUser(email: string, password: string, username: string): Promise<User> {
         const user = new User();
         const wallet = new Wallet();
         const coiinWallet = new WalletCurrency();
-        coiinWallet.type = "coiin";
-        coiinWallet.balance = new BN(0);
         const profile = new Profile();
         const notificationSettings = new NotificationSettings();
+        user.email = email;
+        user.password = password;
+        coiinWallet.type = "coiin";
+        coiinWallet.balance = new BN(0);
         await user.save();
         wallet.user = user;
         await wallet.save();
         coiinWallet.wallet = wallet;
         await coiinWallet.save();
+        profile.username = username;
         profile.user = user;
         await profile.save();
         notificationSettings.user = user;
         await notificationSettings.save();
         user.profile = profile;
         user.notificationSettings = notificationSettings;
-        return user;
+        return await user.save();
     }
 
     public asV1() {

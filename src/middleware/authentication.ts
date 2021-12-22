@@ -1,16 +1,16 @@
 import { Firebase } from "../clients/firebase";
 import { AuthenticationError } from "apollo-server-express";
 import express from "express";
+import { verifySessionToken } from "../helpers";
 
-export const authenticate = async ({ req }: { req: express.Request }) => {
+export const authenticateAdmin = async ({ req }: { req: express.Request }) => {
     try {
-        const isAdminUrl = req.baseUrl.includes("admin");
-        const token = isAdminUrl ? req.cookies.session || "" : req.headers.authorization || "";
+        const token = req.cookies.session || "";
         if (!token) throw new AuthenticationError("No token provided or session not initialized");
         if (process.env.NODE_ENV === "development" && token === "Bearer raiinmaker") {
             return { user: { id: "banana", company: "raiinmaker", role: "admin" } };
         }
-        const decodedToken = isAdminUrl ? await Firebase.verifySessionCookie(token) : await Firebase.verifyToken(token);
+        const decodedToken = await Firebase.verifySessionCookie(token);
         if (!decodedToken) throw new AuthenticationError("invalid token");
         const firebaseUser = await Firebase.getUserById(decodedToken.uid);
         const user = {
@@ -26,6 +26,18 @@ export const authenticate = async ({ req }: { req: express.Request }) => {
         return { user };
     } catch (error) {
         throw new AuthenticationError("Unauthorized", error.message);
+    }
+};
+
+export const authenticateUser = async ({ req }: { req: express.Request }) => {
+    try {
+        const token = req.headers.authorization || "";
+        if (!token) throw new AuthenticationError("No token provided");
+        const user = verifySessionToken(token);
+        if (!user) throw new AuthenticationError("Unauthorized");
+        return { user };
+    } catch (error) {
+        throw new AuthenticationError("Unauthorized");
     }
 };
 
