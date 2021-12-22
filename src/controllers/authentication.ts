@@ -8,6 +8,7 @@ import { SesClient } from "../clients/ses";
 import { User } from "../models/User";
 import { VerificationType } from "src/types";
 import { createSessionToken, createPasswordHash } from "../helpers";
+import { encrypt, decrypt } from "../util/crypto";
 
 const isSecure = process.env.NODE_ENV === "production";
 
@@ -65,11 +66,12 @@ export const registerUser = async (
         const { email, password, username, verificationToken } = args;
         if (!email || !password || !username || !verificationToken) throw new Error("Missing parameters");
         if (await User.findOne({ where: { email: Like(email) } })) throw new Error("email already exists");
-        const verificationData = await Verification.findOne({ where: { id: verificationToken } });
+        const verificationData = await Verification.findOne({ where: { id: decrypt(verificationToken) } });
         if (!verificationData || !verificationData.verified) throw new Error("email not verified");
         const user = await User.initNewUser(email, createPasswordHash(email, password), username);
         return { token: createSessionToken({ email: user.email, userId: user.id }) };
     } catch (error) {
+        console.log(error);
         throw new ApolloError(error.message);
     }
 };
@@ -99,7 +101,7 @@ export const resetUserPassword = async (parent: any, args: { verificationToken: 
     try {
         const { password, verificationToken } = args;
         if (!verificationToken || !password) throw new ApolloError("Missing parameters");
-        const verificationData = await Verification.findOne({ where: { id: verificationToken } });
+        const verificationData = await Verification.findOne({ where: { id: decrypt(verificationToken) } });
         if (!verificationData || !verificationData.verified) throw new Error("email not verified");
         const user = await User.findOne({ where: { email: verificationData.email } });
         if (!user) throw new ApolloError("User not found.");
@@ -136,7 +138,7 @@ export const completeVerification = async (parent: any, args: { email: string; c
         const verificationData = await Verification.findOne({ where: { email, code, verified: false } });
         if (!verificationData) throw new Error("invalid code or verfication not initialized");
         await verificationData.updateVerificationStatus(true);
-        return { success: true, verificationToken: verificationData.id };
+        return { success: true, verificationToken: encrypt(verificationData.id) };
     } catch (error) {
         throw new ApolloError(error.message);
     }
