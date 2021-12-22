@@ -114,11 +114,11 @@ export const resetUserPassword = async (parent: any, args: { verificationToken: 
     }
 };
 
-export const recoverUserAccountStep1 = async (parent: any, args: { username: string; code: number }) => {
+export const recoverUserAccountStep1 = async (parent: any, args: { username: string; code: string }) => {
     try {
         const { username, code } = args;
         const profile = await Profile.findOne({
-            where: { username, recoveryCode: sha256Hash(code.toString()) },
+            where: { username, recoveryCode: sha256Hash(code) },
         });
         if (!profile) throw new AuthenticationError("invalid username or code");
         const user = await User.findOne({ where: { id: profile.user } });
