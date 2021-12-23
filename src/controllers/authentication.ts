@@ -9,7 +9,7 @@ import { VerificationType } from "src/types";
 import { createSessionToken, createPasswordHash } from "../helpers";
 import { encrypt, decrypt, sha256Hash } from "../util/crypto";
 import { Profile } from "../models/Profile";
-import { throwFormattedError } from "../util/errorCodes";
+import { FormattedError } from "../util/errors";
 
 const isSecure = process.env.NODE_ENV === "production";
 
@@ -72,7 +72,7 @@ export const registerUser = async (
         const user = await User.initNewUser(email, createPasswordHash(email, password), username);
         return { token: createSessionToken({ email: user.email, id: user.id }) };
     } catch (error) {
-        return throwFormattedError(error);
+        throw new FormattedError(error);
     }
 };
 
@@ -85,7 +85,7 @@ export const loginUser = async (parent: any, args: { email: string; password: st
         if (user.password !== createPasswordHash(email, password)) throw new Error("ERROR:5");
         return { token: createSessionToken({ email: user.email, id: user.id }) };
     } catch (error) {
-        return throwFormattedError(error);
+        throw new FormattedError(error);
     }
 };
 
@@ -101,7 +101,7 @@ export const resetUserPassword = async (parent: any, args: { verificationToken: 
         await user.save();
         return { success: true };
     } catch (error) {
-        return throwFormattedError(error);
+        throw new FormattedError(error);
     }
 };
 
@@ -120,7 +120,7 @@ export const recoverUserAccountStep1 = async (parent: any, args: { username: str
             return { token: createSessionToken({ email: user.email, id: user.id }) };
         }
     } catch (error) {
-        return throwFormattedError(error);
+        throw new FormattedError(error);
     }
 };
 
@@ -140,7 +140,7 @@ export const recoverUserAccountStep2 = async (
         await user.save();
         return { token: createSessionToken({ email, id: userId }) };
     } catch (error) {
-        return throwFormattedError(error);
+        throw new FormattedError(error);
     }
 };
 
@@ -158,7 +158,7 @@ export const startVerification = async (parent: any, args: { email: string; type
         await SesClient.emailAddressVerificationEmail(email, verificationData.code);
         return { success: true };
     } catch (error) {
-        return throwFormattedError(error);
+        throw new FormattedError(error);
     }
 };
 
@@ -171,6 +171,6 @@ export const completeVerification = async (parent: any, args: { email: string; c
         await verificationData.updateVerificationStatus(true);
         return { success: true, verificationToken: encrypt(verificationData.id) };
     } catch (error) {
-        return throwFormattedError(error);
+        throw new FormattedError(error);
     }
 };
