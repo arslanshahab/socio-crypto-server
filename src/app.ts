@@ -90,9 +90,8 @@ export class Application {
                 return {
                     async didEncounterErrors(requestContext) {
                         requestContext.errors.forEach((error) => {
-                            console.log(`${error?.extensions?.code || "ERROR"}: ${error?.message || ""}`);
+                            console.log(`ERROR-${error?.extensions?.code || "ERROR"}: ${error?.message || ""}`);
                         });
-                        // console.log(requestContext.errors);
                     },
                 };
             },
