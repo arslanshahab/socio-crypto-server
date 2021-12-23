@@ -33,7 +33,6 @@ export class FormattedError extends ApolloError {
     public message: string;
 
     public constructor(error: any) {
-        console.log(error);
         let code = "0";
         if (error.message && error.message.includes("ERROR")) {
             code = error.message.split(":")[1];
