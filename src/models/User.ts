@@ -131,7 +131,7 @@ export class User extends BaseEntity {
     }
 
     public asV1() {
-        let returnedUser: any = { ...this };
+        let { password, ...returnedUser }: any = { ...this };
         if (this.profile) {
             const { id, ...values } = this.profile;
             returnedUser = {

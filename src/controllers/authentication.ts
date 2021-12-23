@@ -70,7 +70,7 @@ export const registerUser = async (
         const verificationData = await Verification.findOne({ where: { id: decrypt(verificationToken) } });
         if (!verificationData || !verificationData.verified) throw new Error("email not verified");
         const user = await User.initNewUser(email, createPasswordHash(email, password), username);
-        return { token: createSessionToken({ email: user.email, userId: user.id }) };
+        return { token: createSessionToken({ email: user.email, id: user.id }) };
     } catch (error) {
         console.log(error);
         throw new ApolloError(error.message);
@@ -84,7 +84,7 @@ export const loginUser = async (parent: any, args: { email: string; password: st
         const user = await User.findOne({ where: { email: Like(email) } });
         if (!user) throw new ApolloError("email doesn't exist.");
         if (user.password !== createPasswordHash(email, password)) throw new ApolloError("wrong password.");
-        return { token: createSessionToken({ email: user.email, userId: user.id }) };
+        return { token: createSessionToken({ email: user.email, id: user.id }) };
     } catch (error) {
         throw new ApolloError(error.message);
     }
@@ -126,7 +126,7 @@ export const recoverUserAccountStep1 = async (parent: any, args: { username: str
         if (!user.email) {
             return { userId: user.id };
         } else {
-            return { token: createSessionToken({ email: user.email, userId: user.id }) };
+            return { token: createSessionToken({ email: user.email, id: user.id }) };
         }
     } catch (error) {
         throw new ApolloError(error.message);
@@ -147,7 +147,7 @@ export const recoverUserAccountStep2 = async (
         user.email = email;
         user.password = createPasswordHash(email, password);
         await user.save();
-        return { token: createSessionToken({ email, userId }) };
+        return { token: createSessionToken({ email, id: userId }) };
     } catch (error) {
         throw new ApolloError(error.message);
     }

@@ -7,18 +7,13 @@ import { getExchangeRateForCrypto } from "../util/exchangeRate";
 import getImage from "cryptoicons-cdn";
 import { Wallet } from "../models/Wallet";
 import { AcuantClient, AcuantApplication, Etr } from "../clients/acuant";
-import { AcuantApplicationExtractedDetails, KycStatus } from "src/types";
+import { AcuantApplicationExtractedDetails, JWTPayload, KycStatus } from "src/types";
 import { VerificationApplication } from "../models/VerificationApplication";
 import { S3Client } from "../clients/s3";
 import { User } from "../models/User";
 import crypto from "crypto";
 import { Secrets } from "../util/secrets";
 import jwt from "jsonwebtoken";
-
-interface JWTPayload {
-    email: string;
-    userId: string;
-}
 
 // general helper functions start here
 export const isSupportedCurrency = async (symbol: string): Promise<boolean> => {

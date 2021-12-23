@@ -233,10 +233,11 @@ export class Campaign extends BaseEntity {
     }
 
     public static async getAllParticipatingCampaignIdsByUser(user: User): Promise<string[]> {
-        const u = await User.findOneOrFail({
+        const u = await User.findOne({
             where: { id: user.id },
             relations: ["campaigns", "campaigns.campaign"],
         });
+        if (!u) throw new Error("User not found.");
         return u.campaigns.length > 0 ? u.campaigns.map((participant: Participant) => participant.campaign.id) : [];
     }
 

@@ -2,6 +2,11 @@ import express, { Request } from "express";
 import { BigNumber } from "bignumber.js";
 import { Stripe } from "stripe";
 
+interface JWTPayload {
+    email: string;
+    id: string;
+}
+
 export interface XoxodayVoucher {
     productId: string;
     name: string;

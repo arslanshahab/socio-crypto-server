@@ -31,7 +31,7 @@ export const registerFactorLink = async (
     });
     const { id } = context.user;
     const user = await User.findOneOrFail({
-        where: { identityId: id },
+        where: { id },
         relations: ["factorLinks"],
     });
     for (let i = 0; i < factors.length; i++) {
@@ -54,7 +54,7 @@ export const registerFactorLink = async (
 export const removeFactorLink = async (parent: any, args: { factorId: string }, context: { user: any }) => {
     const { id } = context.user;
     const user = await User.findOneOrFail({
-        where: { identityId: id },
+        where: { id },
         relations: ["factorLinks"],
     });
     const factorLink = user.factorLinks.find((link: FactorLink) => link.factorId === args.factorId);
@@ -62,7 +62,7 @@ export const removeFactorLink = async (parent: any, args: { factorId: string }, 
     await factorLink.remove();
     if (factorLink.type === "myfii-kyc") {
         await S3Client.deleteKycElement(user.id, factorLink.name);
-        user.kycStatus = '';
+        user.kycStatus = "";
         await user.save();
     }
     return user.asV1();
@@ -71,7 +71,7 @@ export const removeFactorLink = async (parent: any, args: { factorId: string }, 
 export const isLastFactor = async (_parent: any, args: any, context: { user: any }) => {
     const { id } = context.user;
     const user = await User.findOneOrFail({
-        where: { identityId: id },
+        where: { id },
         relations: ["factorLinks"],
     });
     return user.factorLinks.length === 1;
@@ -201,7 +201,7 @@ export const recover = asyncHandler(async (req: AuthRequest, res: Response) => {
     await S3Client.deleteKycImage(user.id, "addressProof");
     await Dragonchain.ledgerAccountRecoveryAttempt(user.id, identityId, message, code, true);
     user.identityId = identityId;
-    user.kycStatus = '';
+    user.kycStatus = "";
     await user.save();
     return res.status(200).json({ success: true });
 });
@@ -210,10 +210,9 @@ export const generateFactors = async (parent: any, args: { factors: FactorGenera
     const { id } = context.user;
     const { factors } = args;
     if (!factors) throw new Error("must provide factor association IDs");
-    const user = await User.findOne({ where: { identityId: id } });
+    const user = await User.findOne({ where: { id } });
     if (!user) throw new Error("user not found");
-    if (user.kycStatus !== "APPROVED")
-        throw new Error("you can only generate factors with an approved KYC");
+    if (user.kycStatus !== "APPROVED") throw new Error("you can only generate factors with an approved KYC");
     const kycData = await S3Client.getUserObject(user.id);
     return createFactorsFromKycData(kycData, factors);
 };
