@@ -174,8 +174,7 @@ export const createPasswordHash = (salt: string, data: string) => {
 };
 
 export const createSessionToken = (payload: JWTPayload): string => {
-    const expiresIn = 60 * 60 * 24 * 7 * 1000;
-    return jwt.sign(payload, Secrets.encryptionKey, { expiresIn });
+    return jwt.sign(payload, Secrets.encryptionKey, { expiresIn: "7d" });
 };
 
 export const verifySessionToken = (token: string): JWTPayload => {

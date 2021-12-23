@@ -67,7 +67,7 @@ export const registerUser = async (
         const { email, password, username, verificationToken } = args;
         if (!email || !password || !username || !verificationToken) throw new Error("ERROR:1");
         if (await User.findOne({ where: { email: ILike(email) } })) throw new Error("ERROR:2");
-        // if (await Profile.findOne({ where: { username: ILike(username) } })) throw new Error("ERROR:9");
+        if (await Profile.findOne({ where: { username: ILike(username) } })) throw new Error("ERROR:9");
         const verificationData = await Verification.findOne({ where: { id: decrypt(verificationToken) } });
         if (!verificationData || !verificationData.verified) throw new Error("ERROR:3");
         const user = await User.initNewUser(email, createPasswordHash(email, password), username);
