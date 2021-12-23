@@ -109,7 +109,7 @@ export const recoverUserAccountStep1 = async (parent: any, args: { username: str
     try {
         const { username, code } = args;
         if (!username || !code) throw new Error("ERROR:1");
-        const profile = await Profile.findOne({ where: { username } });
+        const profile = await Profile.findOne({ where: { username: ILike(username) }, relations: ["user"] });
         if (!profile) throw new Error("ERROR:7");
         if (profile.recoveryCode !== sha256Hash(code)) throw new Error("ERROR:8");
         const user = await User.findOne({ where: { id: profile.user } });
