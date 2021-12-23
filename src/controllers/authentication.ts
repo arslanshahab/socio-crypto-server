@@ -87,6 +87,7 @@ export const loginUser = async (parent: any, args: { email: string; password: st
         if (user.password !== createPasswordHash(email, password)) throw new Error("ERROR:5");
         return { token: createSessionToken({ email: user.email, id: user.id }) };
     } catch (error) {
+        console.log(error);
         throw new FormattedError(error);
     }
 };
@@ -143,6 +144,7 @@ export const recoverUserAccountStep2 = async (
         await user.save();
         return { token: createSessionToken({ email, id: userId }) };
     } catch (error) {
+        console.log(error);
         throw new FormattedError(error);
     }
 };
@@ -161,6 +163,7 @@ export const startVerification = async (parent: any, args: { email: string; type
         await SesClient.emailAddressVerificationEmail(email, verificationData.code);
         return { success: true };
     } catch (error) {
+        console.log(error);
         throw new FormattedError(error);
     }
 };
@@ -174,6 +177,7 @@ export const completeVerification = async (parent: any, args: { email: string; c
         await verificationData.updateVerificationStatus(true);
         return { success: true, verificationToken: encrypt(verificationData.id) };
     } catch (error) {
+        console.log(error);
         throw new FormattedError(error);
     }
 };
