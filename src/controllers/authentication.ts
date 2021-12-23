@@ -120,6 +120,7 @@ export const recoverUserAccountStep1 = async (parent: any, args: { username: str
             return { token: createSessionToken({ email: user.email, id: user.id }) };
         }
     } catch (error) {
+        console.log(error);
         throw new FormattedError(error);
     }
 };
