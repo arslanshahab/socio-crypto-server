@@ -1,8 +1,7 @@
 import { Firebase } from "../clients/firebase";
 import { asyncHandler, generateRandomNonce } from "../util/helpers";
 import { Request, Response } from "express";
-import { Like } from "typeorm";
-import { ApolloError, AuthenticationError } from "apollo-server-express";
+import { ILike } from "typeorm";
 import { Verification } from "../models/Verification";
 import { SesClient } from "../clients/ses";
 import { User } from "../models/User";
@@ -10,6 +9,7 @@ import { VerificationType } from "src/types";
 import { createSessionToken, createPasswordHash } from "../helpers";
 import { encrypt, decrypt, sha256Hash } from "../util/crypto";
 import { Profile } from "../models/Profile";
+import { throwFormattedError } from "../util/errorCodes";
 
 const isSecure = process.env.NODE_ENV === "production";
 
@@ -65,71 +65,62 @@ export const registerUser = async (
 ) => {
     try {
         const { email, password, username, verificationToken } = args;
-        if (!email || !password || !username || !verificationToken) throw new Error("Missing parameters");
-        if (await User.findOne({ where: { email: Like(email) } })) throw new Error("email already exists");
+        if (!email || !password || !username || !verificationToken) throw new Error("ERROR:1");
+        if (await User.findOne({ where: { email: ILike(email) } })) throw new Error("ERROR:2");
         const verificationData = await Verification.findOne({ where: { id: decrypt(verificationToken) } });
-        if (!verificationData || !verificationData.verified) throw new Error("email not verified");
+        if (!verificationData || !verificationData.verified) throw new Error("ERROR:3");
         const user = await User.initNewUser(email, createPasswordHash(email, password), username);
         return { token: createSessionToken({ email: user.email, id: user.id }) };
     } catch (error) {
-        console.log(error);
-        throw new ApolloError(error.message);
+        return throwFormattedError(error);
     }
 };
 
 export const loginUser = async (parent: any, args: { email: string; password: string }) => {
     try {
         const { email, password } = args;
-        if (!email || !password) throw new Error("Missing parameters.");
-        const user = await User.findOne({ where: { email: Like(email) } });
-        if (!user) throw new ApolloError("email doesn't exist.");
-        if (user.password !== createPasswordHash(email, password)) throw new ApolloError("wrong password.");
+        if (!email || !password) throw new Error("ERROR:1");
+        const user = await User.findOne({ where: { email: ILike(email) } });
+        if (!user) throw new Error("ERROR:1");
+        if (user.password !== createPasswordHash(email, password)) throw new Error("ERROR:5");
         return { token: createSessionToken({ email: user.email, id: user.id }) };
     } catch (error) {
-        throw new ApolloError(error.message);
-    }
-};
-
-export const logoutUser = async (parent: any, args: any, context: { user: any }) => {
-    try {
-        return await Firebase.revokeRefreshToken(context.user.sub);
-    } catch (error) {
-        throw new ApolloError(error.message);
+        return throwFormattedError(error);
     }
 };
 
 export const resetUserPassword = async (parent: any, args: { verificationToken: string; password: string }) => {
     try {
         const { password, verificationToken } = args;
-        if (!verificationToken || !password) throw new ApolloError("Missing parameters");
+        if (!verificationToken || !password) throw new Error("ERROR:1");
         const verificationData = await Verification.findOne({ where: { id: decrypt(verificationToken) } });
-        if (!verificationData || !verificationData.verified) throw new Error("email not verified");
+        if (!verificationData || !verificationData.verified) throw new Error("ERROR:3");
         const user = await User.findOne({ where: { email: verificationData.email } });
-        if (!user) throw new ApolloError("User not found.");
+        if (!user) throw new Error("ERROR:6");
         user.password = createPasswordHash(verificationData.email, password);
         await user.save();
         return { success: true };
     } catch (error) {
-        throw new ApolloError(error.message);
+        return throwFormattedError(error);
     }
 };
 
 export const recoverUserAccountStep1 = async (parent: any, args: { username: string; code: string }) => {
     try {
         const { username, code } = args;
-        const profile = await Profile.findOne({
-            where: { username, recoveryCode: sha256Hash(code) },
-        });
-        if (!profile) throw new AuthenticationError("invalid username or code");
+        if (!username || !code) throw new Error("ERROR:1");
+        const profile = await Profile.findOne({ where: { username } });
+        if (!profile) throw new Error("ERROR:7");
+        if (profile.recoveryCode !== sha256Hash(code)) throw new Error("ERROR:8");
         const user = await User.findOne({ where: { id: profile.user } });
-        if (!user) throw new ApolloError("User not found");
+        if (!user) throw new Error("ERROR:6");
         if (!user.email) {
             return { userId: user.id };
         } else {
             return { token: createSessionToken({ email: user.email, id: user.id }) };
         }
     } catch (error) {
-        throw new ApolloError(error.message);
+        return throwFormattedError(error);
     }
 };
 
@@ -140,26 +131,26 @@ export const recoverUserAccountStep2 = async (
     try {
         const { email, password, userId, verificationToken } = args;
         const user = await User.findOne({ where: { id: userId } });
-        if (!user) throw new ApolloError("invalid userId.");
+        if (!user) throw new Error("ERROR:6");
         const verificationData = await Verification.findOne({ where: { id: decrypt(verificationToken) } });
-        if (!verificationData || !verificationData.verified) throw new Error("email not verified");
-        if (user.email) throw new ApolloError("User has already registered.");
+        if (!verificationData || !verificationData.verified) throw new Error("ERROR:3");
+        if (user.email) throw new Error("ERROR:2");
         user.email = email;
         user.password = createPasswordHash(email, password);
         await user.save();
         return { token: createSessionToken({ email, id: userId }) };
     } catch (error) {
-        throw new ApolloError(error.message);
+        return throwFormattedError(error);
     }
 };
 
 export const startVerification = async (parent: any, args: { email: string; type: VerificationType }) => {
     try {
         const { email, type } = args;
-        if (!email || !type) throw new Error("missing parameters");
-        const userWithEmail = await User.findOne({ where: { email: Like(email) } });
-        if (type === "EMAIL" && userWithEmail) throw new Error("email already exists");
-        if (type === "PASSWORD" && !userWithEmail) throw new Error("email doesn't exist");
+        if (!email || !type) throw new Error("ERROR:1");
+        const userWithEmail = await User.findOne({ where: { email: ILike(email) } });
+        if (type === "EMAIL" && userWithEmail) throw new Error("ERROR:2");
+        if (type === "PASSWORD" && !userWithEmail) throw new Error("ERROR:4");
         let verificationData = await Verification.findOne({ where: { email, verified: false } });
         if (!verificationData) {
             verificationData = await Verification.createVerification(email, generateRandomNonce());
@@ -167,19 +158,19 @@ export const startVerification = async (parent: any, args: { email: string; type
         await SesClient.emailAddressVerificationEmail(email, verificationData.code);
         return { success: true };
     } catch (error) {
-        throw new ApolloError(error.message);
+        return throwFormattedError(error);
     }
 };
 
 export const completeVerification = async (parent: any, args: { email: string; code: string }) => {
     try {
         const { email, code } = args;
-        if (!email || !code) throw new Error("email or code missing");
+        if (!email || !code) throw new Error("ERROR:!");
         const verificationData = await Verification.findOne({ where: { email, code, verified: false } });
-        if (!verificationData) throw new Error("invalid code or verfication not initialized");
+        if (!verificationData) throw new Error("ERROR:8");
         await verificationData.updateVerificationStatus(true);
         return { success: true, verificationToken: encrypt(verificationData.id) };
     } catch (error) {
-        throw new ApolloError(error.message);
+        return throwFormattedError(error);
     }
 };
