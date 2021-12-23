@@ -239,7 +239,7 @@ export const removeProfileInterests = async (
     const { id } = context.user;
     const { interest, value, ageRange, city, state, country } = args;
     const user = await User.findOne({
-        where: { identityId: id },
+        where: { id },
         relations: ["profile"],
     });
     if (!user) throw new Error("user not found");
