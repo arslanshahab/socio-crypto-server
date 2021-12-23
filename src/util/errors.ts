@@ -26,6 +26,7 @@ const errorCodes: { [key: string]: ErrorObject } = {
     6: { code: "401", message: "No user found against provided parameters" },
     7: { code: "401", message: "Provided username doesn't exist in our records" },
     8: { code: "401", message: "Provided code is not correct" },
+    9: { code: "401", message: "A user has already registered with this username" },
 };
 
 export class FormattedError extends ApolloError {

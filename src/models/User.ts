@@ -137,6 +137,7 @@ export class User extends BaseEntity {
             returnedUser = {
                 ...returnedUser,
                 ...values,
+                email: returnedUser.email,
                 hasRecoveryCodeSet: this.profile.recoveryCode !== null && this.profile.recoveryCode !== "",
             };
         }
@@ -336,7 +337,7 @@ export class User extends BaseEntity {
             if (loadOrders) query = query.leftJoinAndSelect("user.orders", "orders", 'orders."userId" = user.id');
         }
         query = query.leftJoinAndSelect("user.profile", "profile", 'profile."userId" = user.id');
-        query = query.where("user.identityId = :id", { id });
+        query = query.where("user.id = :id", { id });
         return query.getOne();
     }
 }
