@@ -29,6 +29,7 @@ export class FormattedError extends ApolloError {
 }
 
 export const SESSION_EXPIRED = "SESION_EXPIRED";
+export const INVALID_TOKEN = "INVALID_TOKEN";
 export const SOMETHING_WENT_WRONG = "SOMETHING_WENT_WRONG";
 export const MISSING_PARAMS = "MISSING_PARAMS";
 export const EMAIL_EXISTS = "EMAIL_EXISTS";
@@ -56,5 +57,6 @@ const errorMap: { [key: string]: string } = {
     INCORRECT_CODE: "Provided code is not correct.",
     USERNAME_EXISTS: "A user has already registered with this username.",
     SESION_EXPIRED: "Session expired, please login again.",
+    INVALID_TOKEN: "Provided token is not valid",
     INCORRECT_CODE_OR_EMAIL: "Invalid code or verification not initialized",
 };
