@@ -19,7 +19,7 @@ export class Verification extends BaseEntity {
     @Column({ nullable: false, default: false })
     public verified: boolean;
 
-    @Column({ nullable: false })
+    @Column({ nullable: false, default: "" })
     public code: string;
 
     @CreateDateColumn()
