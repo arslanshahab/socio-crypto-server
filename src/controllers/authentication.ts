@@ -1,5 +1,5 @@
 import { Firebase } from "../clients/firebase";
-import { asyncHandler, generateRandomNonce } from "../util/helpers";
+import { asyncHandler } from "../util/helpers";
 import { Request, Response } from "express";
 import { ILike } from "typeorm";
 import { Verification } from "../models/Verification";
@@ -161,14 +161,24 @@ export const startVerification = async (parent: any, args: { email: string; type
     try {
         const { email, type } = args;
         if (!email || !type) throw new Error(MISSING_PARAMS);
-        const userWithEmail = await User.findOne({ where: { email: ILike(email) } });
+        let userWithEmail = await User.findOne({ where: { email: ILike(email) } });
+        if (!userWithEmail) {
+            const profile = await Profile.findOne({ where: { email }, relations: ["user"] });
+            if (profile) {
+                userWithEmail = profile.user;
+                userWithEmail.email = profile.email;
+                await userWithEmail.save();
+                profile.email = "";
+                await profile.save();
+            }
+        }
         if (type === "EMAIL" && userWithEmail) throw new Error(EMAIL_EXISTS);
         if (type === "PASSWORD" && !userWithEmail) throw new Error(EMAIL_NOT_EXISTS);
         let verificationData = await Verification.findOne({ where: { email, verified: false } });
         if (!verificationData) {
-            verificationData = await Verification.createVerification(email, generateRandomNonce());
+            verificationData = await Verification.createVerification(email);
         }
-        await SesClient.emailAddressVerificationEmail(email, verificationData.code);
+        await SesClient.emailAddressVerificationEmail(email, verificationData.getDecryptedCode());
         return { success: true };
     } catch (error) {
         console.log(error);
