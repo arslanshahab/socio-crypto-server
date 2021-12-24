@@ -28,7 +28,7 @@ import { flatten } from "lodash";
 import { asyncHandler } from "../util/helpers";
 import { Request, Response } from "express";
 import { Verification } from "../models/Verification";
-import { generateRandomNonce, formatFloat } from "../util/helpers";
+import { formatFloat } from "../util/helpers";
 import { SesClient } from "../clients/ses";
 
 export const participate = async (parent: any, args: { campaignId: string; email: string }, context: { user: any }) => {
@@ -412,12 +412,9 @@ export const startEmailVerification = async (parent: any, args: { email: string 
         if (user.profile.email === email) throw new Error("email already exists");
         let verificationData = await Verification.findOne({ where: { email: email, user: user, verified: false } });
         if (!verificationData) {
-            verificationData = new Verification();
-            verificationData.email = email;
-            verificationData.code = generateRandomNonce();
-            await verificationData.save();
+            verificationData = await Verification.createVerification(email);
         }
-        await SesClient.emailAddressVerificationEmail(email, verificationData.code);
+        await SesClient.emailAddressVerificationEmail(email, verificationData.getDecryptedCode());
         return {
             success: true,
             message: "Email sent to provided email address",

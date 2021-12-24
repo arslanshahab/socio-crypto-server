@@ -7,7 +7,8 @@ import {
     UpdateDateColumn,
     BeforeInsert,
 } from "typeorm";
-
+import { decrypt, encrypt } from "../util/crypto";
+import { generateRandomNonce } from "../util/helpers";
 @Entity()
 export class Verification extends BaseEntity {
     @PrimaryGeneratedColumn("uuid")
@@ -33,16 +34,19 @@ export class Verification extends BaseEntity {
         this.email = this.email.toLowerCase();
     }
 
-    public static createVerification = async (email: string, code: string, verified?: boolean) => {
+    public static createVerification = async (email: string) => {
         const verificationData = new Verification();
         verificationData.email = email;
-        verificationData.code = code;
-        if (verified) verificationData.verified = verified;
+        verificationData.code = encrypt(generateRandomNonce());
         return await verificationData.save();
     };
 
     public updateVerificationStatus = async (status: boolean) => {
         this.verified = status;
         return await this.save();
+    };
+
+    public getDecryptedCode = () => {
+        return decrypt(this.code);
     };
 }
