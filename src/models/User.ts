@@ -37,10 +37,10 @@ export class User extends BaseEntity {
     @Column({ nullable: true })
     public identityId: string;
 
-    @Column({ nullable: false, default: "" })
+    @Column({ nullable: false })
     public email: string;
 
-    @Column({ nullable: false, default: "" })
+    @Column({ nullable: false })
     public password: string;
 
     @Column({ default: true })
