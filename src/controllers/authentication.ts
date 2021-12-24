@@ -190,7 +190,7 @@ export const completeVerification = async (parent: any, args: { email: string; c
     try {
         const { email, code } = args;
         if (!email || !code) throw new Error(MISSING_PARAMS);
-        const verificationData = await Verification.findOne({ where: { email, code, verified: false } });
+        const verificationData = await Verification.findOne({ where: { email, code: encrypt(code), verified: false } });
         if (!verificationData) throw new Error(INCORRECT_CODE_OR_EMAIL);
         await verificationData.updateVerificationStatus(true);
         return { success: true, verificationToken: encrypt(verificationData.id) };
