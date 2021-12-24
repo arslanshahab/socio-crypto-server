@@ -9,7 +9,19 @@ import { VerificationType } from "src/types";
 import { createSessionToken, createPasswordHash } from "../helpers";
 import { encrypt, decrypt, sha256Hash } from "../util/crypto";
 import { Profile } from "../models/Profile";
-import { FormattedError } from "../util/errors";
+import {
+    FormattedError,
+    MISSING_PARAMS,
+    USERNAME_EXISTS,
+    EMAIL_EXISTS,
+    EMAIL_NOT_VERIFIED,
+    INCORRECT_PASSWORD,
+    EMAIL_NOT_EXISTS,
+    USERNAME_NOT_EXISTS,
+    INCORRECT_CODE,
+    USER_NOT_FOUND,
+    INCORRECT_CODE_OR_EMAIL,
+} from "../util/errors";
 
 const isSecure = process.env.NODE_ENV === "production";
 
@@ -65,11 +77,11 @@ export const registerUser = async (
 ) => {
     try {
         const { email, password, username, verificationToken } = args;
-        if (!email || !password || !username || !verificationToken) throw new Error("ERROR:1");
-        if (await User.findOne({ where: { email: ILike(email) } })) throw new Error("ERROR:2");
-        if (await Profile.findOne({ where: { username: ILike(username) } })) throw new Error("ERROR:9");
+        if (!email || !password || !username || !verificationToken) throw new Error(MISSING_PARAMS);
+        if (await User.findOne({ where: { email: ILike(email) } })) throw new Error(EMAIL_EXISTS);
+        if (await Profile.findOne({ where: { username: ILike(username) } })) throw new Error(USERNAME_EXISTS);
         const verificationData = await Verification.findOne({ where: { id: decrypt(verificationToken) } });
-        if (!verificationData || !verificationData.verified) throw new Error("ERROR:3");
+        if (!verificationData || !verificationData.verified) throw new Error(EMAIL_NOT_VERIFIED);
         const user = await User.initNewUser(email, createPasswordHash(email, password), username);
         return { token: createSessionToken({ email: user.email, id: user.id }) };
     } catch (error) {
@@ -80,10 +92,10 @@ export const registerUser = async (
 export const loginUser = async (parent: any, args: { email: string; password: string }) => {
     try {
         const { email, password } = args;
-        if (!email || !password) throw new Error("ERROR:1");
+        if (!email || !password) throw new Error(MISSING_PARAMS);
         const user = await User.findOne({ where: { email: ILike(email) } });
-        if (!user) throw new Error("ERROR:1");
-        if (user.password !== createPasswordHash(email, password)) throw new Error("ERROR:5");
+        if (!user) throw new Error(EMAIL_NOT_EXISTS);
+        if (user.password !== createPasswordHash(email, password)) throw new Error(INCORRECT_PASSWORD);
         return { token: createSessionToken({ email: user.email, id: user.id }) };
     } catch (error) {
         throw new FormattedError(error);
@@ -93,11 +105,11 @@ export const loginUser = async (parent: any, args: { email: string; password: st
 export const resetUserPassword = async (parent: any, args: { verificationToken: string; password: string }) => {
     try {
         const { password, verificationToken } = args;
-        if (!verificationToken || !password) throw new Error("ERROR:1");
+        if (!verificationToken || !password) throw new Error(MISSING_PARAMS);
         const verificationData = await Verification.findOne({ where: { id: decrypt(verificationToken) } });
-        if (!verificationData || !verificationData.verified) throw new Error("ERROR:3");
+        if (!verificationData || !verificationData.verified) throw new Error(EMAIL_NOT_VERIFIED);
         const user = await User.findOne({ where: { email: verificationData.email } });
-        if (!user) throw new Error("ERROR:6");
+        if (!user) throw new Error(USER_NOT_FOUND);
         user.password = createPasswordHash(verificationData.email, password);
         await user.save();
         return { success: true };
@@ -109,12 +121,12 @@ export const resetUserPassword = async (parent: any, args: { verificationToken: 
 export const recoverUserAccountStep1 = async (parent: any, args: { username: string; code: string }) => {
     try {
         const { username, code } = args;
-        if (!username || !code) throw new Error("ERROR:1");
+        if (!username || !code) throw new Error(MISSING_PARAMS);
         const profile = await Profile.findOne({ where: { username: ILike(username) }, relations: ["user"] });
-        if (!profile) throw new Error("ERROR:7");
-        if (profile.recoveryCode !== sha256Hash(code)) throw new Error("ERROR:8");
+        if (!profile) throw new Error(USERNAME_NOT_EXISTS);
+        if (profile.recoveryCode !== sha256Hash(code)) throw new Error(INCORRECT_CODE);
         const user = profile.user;
-        if (!user) throw new Error("ERROR:6");
+        if (!user) throw new Error(USER_NOT_FOUND);
         if (!user.email) {
             return { userId: user.id };
         } else {
@@ -132,10 +144,10 @@ export const recoverUserAccountStep2 = async (
     try {
         const { email, password, userId, verificationToken } = args;
         const user = await User.findOne({ where: { id: userId } });
-        if (!user) throw new Error("ERROR:6");
+        if (!user) throw new Error(USER_NOT_FOUND);
         const verificationData = await Verification.findOne({ where: { id: decrypt(verificationToken) } });
-        if (!verificationData || !verificationData.verified) throw new Error("ERROR:3");
-        if (user.email) throw new Error("ERROR:2");
+        if (!verificationData || !verificationData.verified) throw new Error(EMAIL_NOT_VERIFIED);
+        if (user.email) throw new Error(EMAIL_EXISTS);
         user.email = email;
         user.password = createPasswordHash(email, password);
         await user.save();
@@ -148,10 +160,10 @@ export const recoverUserAccountStep2 = async (
 export const startVerification = async (parent: any, args: { email: string; type: VerificationType }) => {
     try {
         const { email, type } = args;
-        if (!email || !type) throw new Error("ERROR:1");
+        if (!email || !type) throw new Error(MISSING_PARAMS);
         const userWithEmail = await User.findOne({ where: { email: ILike(email) } });
-        if (type === "EMAIL" && userWithEmail) throw new Error("ERROR:2");
-        if (type === "PASSWORD" && !userWithEmail) throw new Error("ERROR:4");
+        if (type === "EMAIL" && userWithEmail) throw new Error(EMAIL_EXISTS);
+        if (type === "PASSWORD" && !userWithEmail) throw new Error(EMAIL_NOT_EXISTS);
         let verificationData = await Verification.findOne({ where: { email, verified: false } });
         if (!verificationData) {
             verificationData = await Verification.createVerification(email, generateRandomNonce());
@@ -167,9 +179,9 @@ export const startVerification = async (parent: any, args: { email: string; type
 export const completeVerification = async (parent: any, args: { email: string; code: string }) => {
     try {
         const { email, code } = args;
-        if (!email || !code) throw new Error("ERROR:!");
+        if (!email || !code) throw new Error(MISSING_PARAMS);
         const verificationData = await Verification.findOne({ where: { email, code, verified: false } });
-        if (!verificationData) throw new Error("ERROR:8");
+        if (!verificationData) throw new Error(INCORRECT_CODE_OR_EMAIL);
         await verificationData.updateVerificationStatus(true);
         return { success: true, verificationToken: encrypt(verificationData.id) };
     } catch (error) {

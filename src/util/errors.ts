@@ -1,4 +1,5 @@
 import { ApolloError } from "apollo-server-express";
+import { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
 
 export class FailureByDesign extends Error {
     public code: string;
@@ -11,35 +12,49 @@ export class FailureByDesign extends Error {
     }
 }
 
-interface ErrorObject {
-    code: string;
-    message: string;
-}
-
-const errorCodes: { [key: string]: ErrorObject } = {
-    0: { code: "500", message: "Something went wrong your request. please try again!" },
-    1: { code: "400", message: "Missing required parameters." },
-    2: { code: "401", message: "A user has already registered with this email." },
-    3: { code: "401", message: "Provided email isn't verfied by our system." },
-    4: { code: "401", message: "Provided email doesn't exist in our records." },
-    5: { code: "401", message: "Password is not correct, please try again." },
-    6: { code: "401", message: "No user found against provided parameters." },
-    7: { code: "401", message: "Provided username doesn't exist in our records." },
-    8: { code: "401", message: "Provided code is not correct." },
-    9: { code: "401", message: "A user has already registered with this username." },
-};
-
 export class FormattedError extends ApolloError {
     public code: string;
     public message: string;
 
     public constructor(error: any) {
-        let code = "0";
-        if (error.message && error.message.includes("ERROR")) code = error.message.split(":")[1];
-        if (!error.message || !error.message.includes("ERROR")) console.log(error);
-        let errorData = errorCodes[code] || errorCodes["0"];
-        super(errorData.message, errorData.code);
-        this.code = errorData.code;
-        this.message = errorData.message;
+        let code = SOMETHING_WENT_WRONG;
+        if (error.name === TokenExpiredError.name || error.name === JsonWebTokenError.name) code = SESSION_EXPIRED;
+        if (error.name === Error.name) code = errorMap[error.message] ? error.message : SOMETHING_WENT_WRONG;
+        if (code === SOMETHING_WENT_WRONG) console.log(error);
+        let errorMessage = errorMap[code];
+        super(errorMessage, code);
+        this.code = code;
+        this.message = errorMessage;
     }
 }
+
+export const SESSION_EXPIRED = "SESION_EXPIRED";
+export const SOMETHING_WENT_WRONG = "SOMETHING_WENT_WRONG";
+export const MISSING_PARAMS = "MISSING_PARAMS";
+export const EMAIL_EXISTS = "EMAIL_EXISTS";
+export const USERNAME_EXISTS = "USERNAME_EXISTS";
+export const USERNAME_NOT_EXISTS = "USERNAME_NOT_EXISTS";
+export const EMAIL_NOT_EXISTS = "EMAIL_NOT_EXISTS";
+export const EMAIL_NOT_VERIFIED = "EMAIL_NOT_VERIFIED";
+export const INCORRECT_PASSWORD = "INCORRECT_PASSWORD";
+export const INCORRECT_CODE = "INCORRECT_CODE";
+export const USER_NOT_FOUND = "USER_NOT_FOUND";
+export const INCORRECT_CODE_OR_EMAIL = "INCORRECT_CODE_OR_EMAIL";
+export const NO_TOKEN_PROVIDED = "NO_TOKEN_PROVIDED";
+
+const errorMap: { [key: string]: string } = {
+    SOMETHING_WENT_WRONG: "Something went wrong with your request. please try again!",
+    NO_TOKEN_PROVIDED: "Access token is missing.",
+    MISSING_PARAMS: "Missing required parameters.",
+    EMAIL_EXISTS: "A user has already registered with this email.",
+    USER_EMAIL_EXISTS: "User has already attached his email address.",
+    EMAIL_NOT_VERIFIED: "Provided email isn't verfied by our system.",
+    EMAIL_NOT_EXISTS: "Provided email doesn't exist in our records.",
+    INCORRECT_PASSWORD: "Password is not correct, please try again.",
+    USER_NOT_FOUND: "No user found against provided parameters.",
+    USERNAME_NOT_EXISTS: "Provided username doesn't exist in our records.",
+    INCORRECT_CODE: "Provided code is not correct.",
+    USERNAME_EXISTS: "A user has already registered with this username.",
+    SESION_EXPIRED: "Session expired, please login again.",
+    INCORRECT_CODE_OR_EMAIL: "Invalid code or verification not initialized",
+};
