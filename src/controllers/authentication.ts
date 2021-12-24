@@ -82,7 +82,7 @@ export const registerUser = async (
         if (await Profile.findOne({ where: { username: ILike(username) } })) throw new Error(USERNAME_EXISTS);
         const verificationData = await Verification.findOne({ where: { id: decrypt(verificationToken) } });
         if (!verificationData || !verificationData.verified) throw new Error(EMAIL_NOT_VERIFIED);
-        const user = await User.initNewUser(email, createPasswordHash(email, password), username);
+        const user = await User.initNewUser(email, createPasswordHash({ email, password }), username);
         return { token: createSessionToken({ email: user.email, id: user.id }) };
     } catch (error) {
         throw new FormattedError(error);
@@ -95,7 +95,7 @@ export const loginUser = async (parent: any, args: { email: string; password: st
         if (!email || !password) throw new Error(MISSING_PARAMS);
         const user = await User.findOne({ where: { email: ILike(email) } });
         if (!user) throw new Error(EMAIL_NOT_EXISTS);
-        if (user.password !== createPasswordHash(email, password)) throw new Error(INCORRECT_PASSWORD);
+        if (user.password !== createPasswordHash({ email, password })) throw new Error(INCORRECT_PASSWORD);
         return { token: createSessionToken({ email: user.email, id: user.id }) };
     } catch (error) {
         throw new FormattedError(error);
@@ -110,7 +110,7 @@ export const resetUserPassword = async (parent: any, args: { verificationToken: 
         if (!verificationData || !verificationData.verified) throw new Error(EMAIL_NOT_VERIFIED);
         const user = await User.findOne({ where: { email: verificationData.email } });
         if (!user) throw new Error(USER_NOT_FOUND);
-        user.password = createPasswordHash(verificationData.email, password);
+        user.password = createPasswordHash({ email: verificationData.email, password });
         await user.save();
         return { success: true };
     } catch (error) {
@@ -149,7 +149,7 @@ export const recoverUserAccountStep2 = async (
         if (!verificationData || !verificationData.verified) throw new Error(EMAIL_NOT_VERIFIED);
         if (user.email) throw new Error(EMAIL_EXISTS);
         user.email = email;
-        user.password = createPasswordHash(email, password);
+        user.password = createPasswordHash({ email, password });
         await user.save();
         return { token: createSessionToken({ email, id: userId }) };
     } catch (error) {

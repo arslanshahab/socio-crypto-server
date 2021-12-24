@@ -168,9 +168,9 @@ export const findKycApplication = async (user: User) => {
 // Kyc herlpers end here
 
 // authentication helpers here
-export const createPasswordHash = (salt: string, data: string) => {
-    salt = `${salt.toLowerCase()}-${Secrets.encryptionKey}`;
-    return crypto.createHmac("sha512", salt).update(data).digest("base64");
+export const createPasswordHash = (data: { email: string; password: string }) => {
+    const salt = `${data.email.toLowerCase()}-${Secrets.encryptionKey}`;
+    return crypto.createHmac("sha512", salt).update(data.password).digest("base64");
 };
 
 export const createSessionToken = (payload: JWTPayload): string => {
