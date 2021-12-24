@@ -21,7 +21,7 @@ export const getWeeklyRewards = async (parent: any, args: any, context: any) => 
     try {
         const { id } = context.user;
         const user = await User.findOne({
-            where: { identityId: id },
+            where: { id },
             relations: ["weeklyRewards"],
         });
         if (!user) throw new Error("user not found");

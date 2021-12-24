@@ -35,7 +35,7 @@ export const participate = async (parent: any, args: { campaignId: string; email
     try {
         const { id } = context.user;
         const user = await User.findOne({
-            where: { identityId: id },
+            where: { id },
             relations: ["campaigns", "wallet"],
         });
 
@@ -95,10 +95,10 @@ export const promotePermissions = async (
     const user = await User.findOne({ where });
     if (!user) throw new Error("user not found");
     if (role === "manager") {
-        await Firebase.client.auth().setCustomUserClaims(user.id, { role: "manager", company });
+        await Firebase.adminClient.auth().setCustomUserClaims(user.id, { role: "manager", company });
     } else {
         if (!args.role) throw new Error("administrators must specify a role to promote user to");
-        await Firebase.client.auth().setCustomUserClaims(user.id, {
+        await Firebase.adminClient.auth().setCustomUserClaims(user.id, {
             role: args.role,
             company: args.company || company,
         });
@@ -109,7 +109,7 @@ export const promotePermissions = async (
 export const removeParticipation = async (parent: any, args: { campaignId: string }, context: { user: any }) => {
     const { id } = context.user;
     const user = await User.findOne({
-        where: { identityId: id },
+        where: { id },
         relations: ["campaigns", "wallet"],
     });
     if (!user) throw new Error("user not found");
@@ -135,7 +135,7 @@ export const usernameExists = async (parent: any, args: { username: string }) =>
 };
 
 export const accountExists = async (parent: any, args: { id: string }) => {
-    const user = await User.findOne({ identityId: args.id });
+    const user = await User.findOne({ id: args.id });
     return { exists: !!user };
 };
 
@@ -167,7 +167,8 @@ export const list = async (parent: any, args: { skip: number; take: number }, co
 export const setDevice = async (parent: any, args: { deviceToken: string }, context: { user: any }) => {
     const { deviceToken } = args;
     const { id } = context.user;
-    const user = await User.findOneOrFail({ where: { identityId: id } });
+    const user = await User.findOne({ where: { id } });
+    if (!user) throw new Error("User not found");
     user.profile.deviceToken = deviceToken;
     await user.profile.save();
     return true;
@@ -175,7 +176,8 @@ export const setDevice = async (parent: any, args: { deviceToken: string }, cont
 
 export const updateUsername = async (parent: any, args: { username: string }, context: { user: any }) => {
     const { id } = context.user;
-    const user = await User.findOneOrFail({ where: { identityId: id } });
+    const user = await User.findOne({ where: { id } });
+    if (!user) throw new Error("User not found");
     if (await Profile.findOne({ where: { username: args.username } }))
         throw new Error("username is already registered");
     user.profile.username = args.username;
@@ -186,7 +188,7 @@ export const updateUsername = async (parent: any, args: { username: string }, co
 export const setRecoveryCode = async (parent: any, args: { code: number }, context: { user: any }) => {
     const { id } = context.user;
     const user = await User.findOne({
-        where: { identityId: id },
+        where: { id },
         relations: ["profile"],
     });
     if (!user) throw new Error("user not found");
@@ -209,7 +211,7 @@ export const updateProfileInterests = async (
 ) => {
     const { id } = context.user;
     const { ageRange, city, state, interests, values, country } = args;
-    const user = await User.findOne({ where: { identityId: id } });
+    const user = await User.findOne({ where: { id } });
     if (!user) throw new Error("user not found");
     const profile = user.profile;
     if (ageRange) profile.ageRange = ageRange;
@@ -237,7 +239,7 @@ export const removeProfileInterests = async (
     const { id } = context.user;
     const { interest, value, ageRange, city, state, country } = args;
     const user = await User.findOne({
-        where: { identityId: id },
+        where: { id },
         relations: ["profile"],
     });
     if (!user) throw new Error("user not found");
@@ -262,14 +264,14 @@ export const removeProfileInterests = async (
 export const getUserMetrics = async (parent: any, args: { today: boolean }, context: { user: any }) => {
     const { id } = context.user;
     const { today = false } = args;
-    const user = await User.findOne({ where: { identityId: id } });
+    const user = await User.findOne({ where: { id } });
     if (!user) throw new Error("user not found");
     return (await DailyParticipantMetric.getSortedByUser(user, today)).map((metric) => metric.asV1());
 };
 
 export const getUserParticipationKeywords = async (parent: any, args: { id: string }, context: { user: any }) => {
     const { id } = context.user;
-    const user = await User.findOne({ where: { identityId: id } });
+    const user = await User.findOne({ where: { id } });
     if (!user) throw new Error("user not found");
     const participations = await Participant.find({
         where: { user: user },
@@ -287,7 +289,7 @@ export const getPreviousDayMetrics = async (_parent: any, args: any, context: { 
     const { id } = context.user;
     let metrics: { [key: string]: any } = {};
     const user = await User.findOne({
-        where: { identityId: id },
+        where: { id },
         relations: ["campaigns", "campaigns.campaign"],
     });
     if (!user) throw new Error("user not found");
@@ -319,7 +321,7 @@ export const updateNotificationSettings = async (
     const { id } = context.user;
     const { kyc, withdraw, campaignCreate, campaignUpdates } = args;
     const user = await User.findOne({
-        where: { identityId: id },
+        where: { id },
         relations: ["notificationSettings"],
     });
     if (!user) throw new Error("user not found");
@@ -355,7 +357,7 @@ export const sendUserMessages = async (
 export const uploadProfilePicture = async (parent: any, args: { image: string }, context: { user: any }) => {
     const { id } = context.user;
     const { image } = args;
-    const user = await User.findOne({ where: { identityId: id } });
+    const user = await User.findOne({ where: { id } });
     if (!user) throw new Error("user not found");
     const filename = await S3Client.uploadProfilePicture("profilePicture", user.id, image);
     user.profile.profilePicture = filename;
@@ -366,7 +368,7 @@ export const uploadProfilePicture = async (parent: any, args: { image: string },
 export const getWalletBalances = async (parent: any, args: any, context: { user: any }) => {
     const { id } = context.user;
     const user = await User.findOne({
-        where: { identityId: id },
+        where: { id },
         relations: ["wallet"],
     });
     if (!user) throw new Error("user not found");
@@ -404,7 +406,7 @@ export const startEmailVerification = async (parent: any, args: { email: string 
     try {
         const { id } = context.user;
         const { email } = args;
-        const user = await User.findOne({ where: { identityId: id }, relations: ["profile"] });
+        const user = await User.findOne({ where: { id }, relations: ["profile"] });
         if (!user) throw new Error("user not found");
         if (!email) throw new Error("email not provided");
         if (user.profile.email === email) throw new Error("email already exists");
@@ -412,11 +414,10 @@ export const startEmailVerification = async (parent: any, args: { email: string 
         if (!verificationData) {
             verificationData = new Verification();
             verificationData.email = email;
-            verificationData.token = generateRandomNonce();
-            verificationData.user = user;
+            verificationData.code = generateRandomNonce();
             await verificationData.save();
         }
-        await SesClient.emailAddressVerificationEmail(email, verificationData.token);
+        await SesClient.emailAddressVerificationEmail(email, verificationData.code);
         return {
             success: true,
             message: "Email sent to provided email address",
@@ -437,7 +438,7 @@ export const completeEmailVerification = async (
     try {
         const { id } = context.user;
         const { email, token } = args;
-        const user = await User.findOne({ where: { identityId: id }, relations: ["profile"] });
+        const user = await User.findOne({ where: { id }, relations: ["profile"] });
         if (!user) throw new Error("user not found");
         if (!email || !token) throw new Error("email or token missing");
         if (user.profile.email === email) throw new Error("email already exists");

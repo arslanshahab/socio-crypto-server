@@ -8,7 +8,7 @@ import * as kycController from "../controllers/kyc";
 import * as ethWithdrawController from "../controllers/ethWithdraw";
 import * as externalWallet from "../controllers/externalWallet";
 import * as orgController from "../controllers/org";
-import * as firebaseController from "../controllers/firebase";
+import * as authenticationController from "../controllers/authentication";
 import * as fundingController from "../controllers/fundingWallet";
 import * as stripeController from "../controllers/stripe";
 import * as cryptoController from "../controllers/crypto";
@@ -106,7 +106,7 @@ export const adminResolvers = {
         getWithdrawalHistory: withdrawController.getWithdrawalHistory,
         adminGetKycByUser: kycController.adminGetKycByUser,
         getFundingWallet: fundingController.get,
-        verifySession: firebaseController.getUserRole,
+        verifySession: authenticationController.getUserRole,
         listOrgs: orgController.listOrgs,
         listEmployees: orgController.listEmployees,
         listPaymentMethods: stripeController.listPaymentMethods,
@@ -126,7 +126,7 @@ export const adminResolvers = {
         updateKycStatus: kycController.updateKycStatus,
         attachEthereumAddress: externalWallet.attach,
         claimEthereumAddress: externalWallet.claim,
-        updatePassword: firebaseController.updateUserPassword,
+        updatePassword: authenticationController.updateUserPassword,
         newUser: orgController.newUser,
         addPaymentMethod: stripeController.addPaymentMethod,
         purchaseCoiin: stripeController.purchaseCoiin,
@@ -148,5 +148,12 @@ export const publicResolvers = {
     },
     Mutation: {
         trackAction: participantController.trackAction,
+        startVerification: authenticationController.startVerification,
+        completeVerification: authenticationController.completeVerification,
+        registerUser: authenticationController.registerUser,
+        loginUser: authenticationController.loginUser,
+        resetUserPassword: authenticationController.resetUserPassword,
+        recoverUserAccountStep1: authenticationController.recoverUserAccountStep1,
+        recoverUserAccountStep2: authenticationController.recoverUserAccountStep2,
     },
 };
