@@ -15,6 +15,7 @@ import { serverBaseUrl } from "../config";
 import { In } from "typeorm";
 import { rewardUserForParticipation } from "./weeklyReward";
 import {
+    createPasswordHash,
     findOrCreateCurrency,
     getCryptoAssestImageUrl,
     getMinWithdrawableAmount,
@@ -30,6 +31,7 @@ import { Request, Response } from "express";
 import { Verification } from "../models/Verification";
 import { formatFloat } from "../util/helpers";
 import { SesClient } from "../clients/ses";
+import { USER_NOT_FOUND, INCORRECT_PASSWORD, FormattedError, SAME_OLD_AND_NEW_PASSWORD } from "../util/errors";
 
 export const participate = async (parent: any, args: { campaignId: string; email: string }, context: { user: any }) => {
     try {
@@ -400,6 +402,31 @@ export const getWalletBalances = async (parent: any, args: any, context: { user:
         );
     }
     return allCurrencies;
+};
+
+export const updateUserPassword = async (
+    parent: any,
+    args: { oldPassword: string; newPassword: string },
+    context: { user: any }
+) => {
+    try {
+        const { id } = context.user;
+        const user = await User.findOne({ where: { id } });
+        if (!user) throw new Error(USER_NOT_FOUND);
+        const { oldPassword, newPassword } = args;
+        if (createPasswordHash({ email: user.email, password: oldPassword }) !== user.password)
+            throw new Error(INCORRECT_PASSWORD);
+        if (
+            createPasswordHash({ email: user.email, password: oldPassword }) ===
+            createPasswordHash({ email: user.email, password: newPassword })
+        )
+            throw new Error(SAME_OLD_AND_NEW_PASSWORD);
+        user.password = createPasswordHash({ email: user.email, password: newPassword });
+        await user.save();
+        return { success: true };
+    } catch (error) {
+        throw new FormattedError(error);
+    }
 };
 
 export const startEmailVerification = async (parent: any, args: { email: string }, context: { user: any }) => {

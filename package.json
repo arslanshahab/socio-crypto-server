@@ -1,6 +1,6 @@
 {
     "name": "raiinmaker-server",
-    "version": "1.5.9",
+    "version": "1.6.0",
     "main": "index.js",
     "repository": "git@github.com:dragonchain-inc/raiinmaker-server.git",
     "author": "Alex Benedetto <alex061994@gmail.com>",

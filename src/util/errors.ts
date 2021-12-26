@@ -38,6 +38,7 @@ export const USERNAME_NOT_EXISTS = "USERNAME_NOT_EXISTS";
 export const EMAIL_NOT_EXISTS = "EMAIL_NOT_EXISTS";
 export const EMAIL_NOT_VERIFIED = "EMAIL_NOT_VERIFIED";
 export const INCORRECT_PASSWORD = "INCORRECT_PASSWORD";
+export const SAME_OLD_AND_NEW_PASSWORD = "SAME_OLD_AND_NEW_PASSWORD";
 export const INCORRECT_CODE = "INCORRECT_CODE";
 export const USER_NOT_FOUND = "USER_NOT_FOUND";
 export const INCORRECT_CODE_OR_EMAIL = "INCORRECT_CODE_OR_EMAIL";
@@ -59,4 +60,5 @@ const errorMap: { [key: string]: string } = {
     SESION_EXPIRED: "Session expired, please login again.",
     INVALID_TOKEN: "Provided token is not valid",
     INCORRECT_CODE_OR_EMAIL: "Invalid code or verification not initialized",
+    SAME_OLD_AND_NEW_PASSWORD: "Current pass and old password cannot be same, please set a different password",
 };
