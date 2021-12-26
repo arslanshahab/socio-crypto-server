@@ -8,10 +8,10 @@ import { User } from "../models/User";
 import { FacebookClient } from "../clients/facebook";
 import { HourlyCampaignMetric } from "../models/HourlyCampaignMetric";
 import { Campaign } from "../models/Campaign";
-import fetch from "node-fetch";
 import { CampaignMedia } from "../models/CampaignMedia";
 import { ApolloError } from "apollo-server-express";
 import { TikTokClient } from "../clients/tiktok";
+import { downloadMedia } from "../helpers";
 
 export const allowedSocialLinks = ["twitter", "facebook", "tiktok"];
 
@@ -95,10 +95,11 @@ export const postToSocial = async (
         const { id } = context.user;
         const user = await User.findOne({ where: { id }, relations: ["socialLinks"] });
         if (!user) throw new Error("User not found");
-        const participant = await Participant.findOneOrFail({
+        const participant = await Participant.findOne({
             where: { id: participantId, user },
             relations: ["campaign"],
         });
+        if (!participant) throw new Error("Participant not found");
         if (!participant.campaign.isOpen()) throw new Error("campaign is closed");
         const socialLink = user.socialLinks.find((link) => link.type === socialType);
         // if (!socialLink) throw new Error(`you have not linked ${socialType} as a social platform`);
@@ -144,22 +145,6 @@ export const postToSocial = async (
         const timeTaken = (endTime - startTime) / 1000;
         console.log("number of seconds taken for this upload", timeTaken);
         return socialPost.id;
-    } catch (error) {
-        console.log(error.response.data);
-        return error.message;
-    }
-};
-
-export const postToTiktok = async (
-    parent: any,
-    args: {
-        video: string;
-    },
-    context: { user: any }
-) => {
-    try {
-        const result = await TikTokClient.post(args.video);
-        return result;
     } catch (error) {
         console.log(error.response.data);
         return error.message;
@@ -221,12 +206,4 @@ export const getParticipantSocialMetrics = async (parent: any, args: { id: strin
         likesScore: parseFloat(metrics.likesScore.toString()),
         shareScore: parseFloat(metrics.shareScore.toString()),
     };
-};
-
-const downloadMedia = async (mediaType: string, url: string, format: string): Promise<string> => {
-    return await fetch(url)
-        .then((r) => r.buffer())
-        .then((buf) =>
-            mediaType === "photo" ? buf.toString("base64") : `data:${format};base64,` + buf.toString("base64")
-        );
 };

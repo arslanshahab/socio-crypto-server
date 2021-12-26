@@ -75,7 +75,6 @@ export class Application {
         };
         if (NODE_ENV !== "production") {
             corsSettings.origin.push("http://localhost:3000");
-            // corsSettings.origin.push("https://studio.apollographql.com");
         }
         this.app.use(cookieParser());
         this.app.use(cors(corsSettings));
@@ -94,9 +93,7 @@ export class Application {
 
                 return {
                     async didEncounterErrors(requestContext) {
-                        requestContext.errors.forEach((error) => {
-                            console.log(`${error?.extensions?.code || "ERROR"}: ${error?.message || ""}`);
-                        });
+                        console.log(requestContext.errors);
                     },
                 };
             },
