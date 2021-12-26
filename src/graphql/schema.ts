@@ -139,6 +139,7 @@ export const typeDefs = gql`
             userId: String!
             verificationToken: String!
         ): SuccessResponse
+        updateUserPassword(oldPassword: String!, newPassword: String!): SuccessResponse
     }
 
     type Query {

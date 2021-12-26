@@ -18,7 +18,10 @@ const app = new Application();
     try {
         let date = initDateFromParams(new Date(), new Date().getDate(), 0, 0, 0);
         const campaigns = await Campaign.find({
-            where: [{ auditStatus: "PENDING" }, { endDate: LessThan(DateUtils.mixedDateToDatetimeString(date)) }],
+            where: [
+                { auditStatus: "PENDING" },
+                { endDate: LessThan(DateUtils.mixedDateToDatetimeString(date)), auditStatus: "DEFAULT" },
+            ],
             relations: ["participants", "prize", "org", "org.wallet", "escrow", "crypto"],
         });
         const entityManager = new EntityManager(connection);

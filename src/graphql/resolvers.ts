@@ -88,6 +88,7 @@ export const resolvers = {
         withdrawFunds: tatumController.withdrawFunds,
         startEmailVerification: userController.startEmailVerification,
         completeEmailVerification: userController.completeEmailVerification,
+        updateUserPassword: userController.updateUserPassword,
     },
 };
 
