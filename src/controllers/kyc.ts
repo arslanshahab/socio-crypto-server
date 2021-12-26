@@ -17,7 +17,7 @@ const validator = new Validator();
 export const verifyKyc = async (parent: any, args: any, context: { user: any }) => {
     try {
         const { id } = context.user;
-        const user = await User.findOneOrFail({ where: { identityId: id }, relations: ["profile"] });
+        const user = await User.findOne({ where: { id }, relations: ["profile"] });
         if (!user) throw new Error("user not found");
         if (user.kycStatus === "APPROVED") throw new Error("user is already kyc verified");
         const currentKycApplication = await findKycApplication(user);
@@ -25,6 +25,7 @@ export const verifyKyc = async (parent: any, args: any, context: { user: any }) 
         const { userKyc } = args;
         validator.validateKycRegistration(userKyc);
         const newAcuantApplication = await AcuantClient.submitApplication(userKyc);
+        console.log(newAcuantApplication);
         const verificationApplication = await VerificationApplication.newApplication(
             newAcuantApplication.mtid,
             getApplicationStatus(newAcuantApplication),
@@ -33,6 +34,7 @@ export const verifyKyc = async (parent: any, args: any, context: { user: any }) 
         await user.updateKycStatus(verificationApplication.status);
         return { kycId: verificationApplication.applicationId, status: verificationApplication.status };
     } catch (error) {
+        console.log("KYC_ERROR", error);
         throw new ApolloError(error.message);
     }
 };
@@ -40,7 +42,7 @@ export const verifyKyc = async (parent: any, args: any, context: { user: any }) 
 export const downloadKyc = async (parent: any, args: any, context: { user: any }) => {
     try {
         const { id } = context.user;
-        const user = await User.findOneOrFail({ where: { identityId: id }, relations: ["profile"] });
+        const user = await User.findOne({ where: { id }, relations: ["profile"] });
         if (!user) throw new Error("user not found");
         const kycApplication = await VerificationApplication.findOne({ where: { user } });
         if (!kycApplication) throw new Error("kyc data not found for user");
@@ -81,7 +83,7 @@ export const kycWebhook = asyncHandler(async (req: Request, res: Response) => {
 export const getKyc = async (_parent: any, args: any, context: { user: any }) => {
     try {
         const { id } = context.user;
-        const user = await User.findOneOrFail({ where: { identityId: id } });
+        const user = await User.findOne({ where: { id } });
         if (!user) throw new Error("user not found");
         const application = await findKycApplication(user);
         if (!application) throw new Error("kyc application not found");
@@ -106,7 +108,8 @@ export const adminGetKycByUser = async (parent: any, args: { userId: string }, c
 
 export const updateKyc = async (parent: any, args: { user: KycUser }, context: { user: any }) => {
     const { id } = context.user;
-    const user = await User.findOneOrFail({ where: { identityId: id } });
+    const user = await User.findOne({ where: { id } });
+    if (!user) throw new Error("User not found.");
     if (args.user.idProof) {
         await S3Client.uploadKycImage(user.id, "idProof", args.user.idProof);
         delete args.user.idProof;
@@ -129,10 +132,11 @@ export const updateKycStatus = async (
 ) => {
     checkPermissions({ hasRole: ["admin"] }, context);
     if (!["approve", "reject"].includes(args.status)) throw new Error("Status must be either approve or reject");
-    const user = await User.findOneOrFail({
+    const user = await User.findOne({
         where: { id: args.userId },
         relations: ["profile", "notificationSettings"],
     });
+    if (!user) throw new Error("User not found");
     user.kycStatus = args.status == "APPROVED" ? "APPROVED" : "REJECTED";
     await user.save();
     if (user.notificationSettings.kyc) {

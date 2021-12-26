@@ -2,6 +2,11 @@ import express, { Request } from "express";
 import { BigNumber } from "bignumber.js";
 import { Stripe } from "stripe";
 
+interface JWTPayload {
+    email: string;
+    id: string;
+}
+
 export interface XoxodayVoucher {
     productId: string;
     name: string;
@@ -239,6 +244,7 @@ export type TransferStatus =
 export type CampaignStatus = "ACTIVE" | "PENDING" | "INSUFFICIENT_FUNDS" | "CLOSED" | "APPROVED" | "DENIED";
 export type CampaignAuditStatus = "DEFAULT" | "AUDITED" | "PENDING";
 export type KycStatus = "APPROVED" | "PENDING" | "REJECTED" | "";
+export type VerificationType = "EMAIL" | "PASSWORD" | "";
 
 export interface GraphApiInputParameters {
     fields?: string[] | string;
