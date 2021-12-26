@@ -130,7 +130,7 @@ export const postToSocial = async (
         } else {
             postId = await client.post(participant, socialLink?.asClientCredentials(), text);
         }
-        console.log(`Posted to twitter with ID: ${postId}`);
+        console.log(`Posted to ${socialType} with ID: ${postId}`);
         await HourlyCampaignMetric.upsert(campaign, campaign.org, "post");
         await participant.campaign.save();
         const socialPost = await SocialPost.newSocialPost(
@@ -144,6 +144,22 @@ export const postToSocial = async (
         const timeTaken = (endTime - startTime) / 1000;
         console.log("number of seconds taken for this upload", timeTaken);
         return socialPost.id;
+    } catch (error) {
+        console.log(error.response.data);
+        return error.message;
+    }
+};
+
+export const postToTiktok = async (
+    parent: any,
+    args: {
+        video: string;
+    },
+    context: { user: any }
+) => {
+    try {
+        const result = await TikTokClient.post(args.video);
+        return result;
     } catch (error) {
         console.log(error.response.data);
         return error.message;
