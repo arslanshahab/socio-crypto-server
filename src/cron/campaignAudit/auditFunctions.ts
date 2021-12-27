@@ -134,14 +134,13 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
                 const transferData = transferDetails[index];
                 const wallet = await Wallet.findOne({ where: { user: transferData.participant.user } });
                 if (!wallet) throw new Error("wallet not found for user.");
-                const newTransfer = new Transfer();
-                newTransfer.currency = transferData.campaign.symbol;
-                newTransfer.campaign = transferData.campaign;
-                newTransfer.amount = transferData.amount;
-                newTransfer.action = "deposit";
-                newTransfer.ethAddress = transferData.userAccount.tatumId;
-                newTransfer.wallet = wallet;
-                newTransfer.status = "SUCCEEDED";
+                const newTransfer = Transfer.initTatumDeposit({
+                    symbol: transferData.campaign.symbol,
+                    campaign: transferData.campaign,
+                    amount: transferData.amount,
+                    tatumId: transferData.userAccount.tatumId,
+                    wallet: wallet,
+                });
                 transferRecords.push(newTransfer);
             }
         }

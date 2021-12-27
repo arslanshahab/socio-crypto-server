@@ -13,7 +13,6 @@ import { groupDailyMetricsByUser } from "./helpers";
 import { HourlyCampaignMetric } from "../models/HourlyCampaignMetric";
 import { serverBaseUrl } from "../config";
 import { In } from "typeorm";
-import { rewardUserForParticipation } from "./weeklyReward";
 import {
     createPasswordHash,
     findOrCreateCurrency,
@@ -63,7 +62,7 @@ export const participate = async (parent: any, args: { campaignId: string; email
         participant.link = await TinyUrl.shorten(url);
         await HourlyCampaignMetric.upsert(campaign, campaign.org, "participate");
         await participant.save();
-        await rewardUserForParticipation(user, participant);
+        await user.transferReward("PARTICIPATION_REWARD");
         return participant.asV1();
     } catch (e) {
         console.log(e);

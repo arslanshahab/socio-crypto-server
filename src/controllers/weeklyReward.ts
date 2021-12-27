@@ -1,7 +1,6 @@
-import { endOfISOWeek, getWeek, getYear, addDays, startOfDay, differenceInHours } from "date-fns";
+import { endOfISOWeek, getWeek, getYear, addDays, startOfDay } from "date-fns";
 import { User } from "../models/User";
 import { WeeklyReward } from "../models/WeeklyReward";
-import { Participant } from "../models/Participant";
 
 interface RewardResponse {
     loginRewardRedeemed: boolean;
@@ -14,8 +13,6 @@ interface RewardResponse {
     participationRedemptionDate: string;
     loginRedemptionDate: string;
 }
-const loginCoiinReward = 1;
-const participationCoiinReward = 2;
 
 export const getWeeklyRewards = async (parent: any, args: any, context: any) => {
     try {
@@ -32,43 +29,6 @@ export const getWeeklyRewards = async (parent: any, args: any, context: any) => 
     } catch (e) {
         console.log(e);
         return null;
-    }
-};
-
-export const rewardUserForLogin = async (user: User): Promise<any> => {
-    const accountAgeInHours = differenceInHours(new Date(), new Date(user.createdAt));
-    if (accountAgeInHours > 24) {
-        const weekKey = `${getWeek(user.lastLogin)}-${getYear(user.lastLogin)}`;
-        const thisWeeksReward = await WeeklyReward.findOne({
-            where: { user: user, rewardType: "login", week: weekKey },
-        });
-        if (!thisWeeksReward) {
-            await user.updateCoiinBalance("add", loginCoiinReward);
-            await WeeklyReward.addReward({
-                type: "login",
-                amount: loginCoiinReward,
-                week: weekKey,
-                user: user,
-                participant: null,
-            });
-        }
-    }
-};
-
-export const rewardUserForParticipation = async (user: User, participant: Participant): Promise<any> => {
-    const weekKey = `${getWeek(user.lastLogin)}-${getYear(user.lastLogin)}`;
-    const participationReward = await WeeklyReward.findOne({
-        where: { user: user, rewardType: "campaign-participation", week: weekKey },
-    });
-    if (!participationReward) {
-        await user.updateCoiinBalance("add", participationCoiinReward);
-        await WeeklyReward.addReward({
-            type: "campaign-participation",
-            amount: participationCoiinReward,
-            week: weekKey,
-            participant: participant,
-            user: user,
-        });
     }
 };
 

@@ -7,16 +7,18 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
     ManyToOne,
+    Between,
 } from "typeorm";
 import { DateUtils } from "typeorm/util/DateUtils";
 import { Wallet } from "./Wallet";
 import { Campaign } from "./Campaign";
 import { BN } from "../util/helpers";
 import { BigNumberEntityTransformer } from "../util/transformers";
-import { TransferStatus } from "../types";
+import { TransferAction, TransferStatus } from "../types";
 import { Org } from "./Org";
 import { RafflePrize } from "./RafflePrize";
 import { performCurrencyTransfer } from "../controllers/helpers";
+import { endOfWeek, startOfWeek } from "date-fns";
 
 @Entity()
 export class Transfer extends BaseEntity {
@@ -34,7 +36,7 @@ export class Transfer extends BaseEntity {
     public currency: string;
 
     @Column({ nullable: false })
-    public action: "transfer" | "withdraw" | "deposit" | "prize" | "refund" | "fee";
+    public action: TransferAction;
 
     @Column({ nullable: true })
     public status: TransferStatus;
@@ -146,7 +148,7 @@ export class Transfer extends BaseEntity {
         const org = await Org.findOne({ where: { name: "raiinmaker" }, relations: ["wallet"] });
         if (!org) throw new Error("raiinmaker org not found for payout");
         const transfer = new Transfer();
-        transfer.action = "fee";
+        transfer.action = "FEE";
         transfer.campaign = campaign;
         transfer.amount = amount;
         transfer.wallet = org.wallet;
@@ -155,9 +157,16 @@ export class Transfer extends BaseEntity {
         return transfer;
     }
 
+    public static async getRewardForThisWeek(type: TransferAction) {
+        const currentDate = new Date();
+        const start = startOfWeek(currentDate);
+        const end = endOfWeek(currentDate);
+        return await this.findOne({ where: { createdAt: Between(start, end), action: type } });
+    }
+
     public static newFromWalletPayout(wallet: Wallet, campaign: Campaign, amount: BigNumber): Transfer {
         const transfer = new Transfer();
-        transfer.action = "transfer";
+        transfer.action = "TRANSFER";
         transfer.campaign = campaign;
         transfer.amount = amount;
         transfer.wallet = wallet;
@@ -166,7 +175,7 @@ export class Transfer extends BaseEntity {
 
     public static newFromCampaignPayout(wallet: Wallet, campaign: Campaign, amount: BigNumber): Transfer {
         const transfer = new Transfer();
-        transfer.action = "transfer";
+        transfer.action = "TRANSFER";
         transfer.campaign = campaign;
         transfer.amount = amount;
         transfer.wallet = wallet;
@@ -177,7 +186,7 @@ export class Transfer extends BaseEntity {
 
     public static newFromCampaignPayoutRefund(wallet: Wallet, campaign: Campaign, amount: BigNumber): Transfer {
         const transfer = new Transfer();
-        transfer.action = "refund";
+        transfer.action = "REFUND";
         transfer.campaign = campaign;
         transfer.amount = amount;
         transfer.wallet = wallet;
@@ -194,7 +203,7 @@ export class Transfer extends BaseEntity {
     ): Transfer {
         const transfer = new Transfer();
         transfer.amount = amount;
-        transfer.action = "withdraw";
+        transfer.action = "WITHDRAW";
         transfer.wallet = wallet;
         transfer.status = "PENDING";
         transfer.currency = currency;
@@ -217,7 +226,7 @@ export class Transfer extends BaseEntity {
         transfer.amount = amount;
         transfer.status = "PENDING";
         transfer.currency = "usd";
-        transfer.action = "deposit";
+        transfer.action = "DEPOSIT";
         if (stripeCardId) transfer.stripeCardId = stripeCardId;
         if (paypalAddress) transfer.paypalAddress = paypalAddress;
         return transfer;
@@ -226,7 +235,7 @@ export class Transfer extends BaseEntity {
     public static newFromDeposit(wallet: Wallet, amount: BigNumber, ethAddress: string, transactionHash: string) {
         const transfer = new Transfer();
         transfer.amount = amount;
-        transfer.action = "deposit";
+        transfer.action = "DEPOSIT";
         transfer.ethAddress = ethAddress;
         transfer.transactionHash = transactionHash;
         transfer.wallet = wallet as Wallet;
@@ -236,22 +245,38 @@ export class Transfer extends BaseEntity {
     public static newFromRaffleSelection(wallet: Wallet, campaign: Campaign, prize: RafflePrize) {
         const transfer = new Transfer();
         transfer.amount = new BN(0);
-        transfer.action = "prize";
+        transfer.action = "PRIZE";
         transfer.wallet = wallet;
         transfer.campaign = campaign;
         transfer.rafflePrize = prize;
         return transfer;
     }
 
-    public static async addTatumDeposit(data: any) {
+    public static initTatumTransfer(data: {
+        symbol: string;
+        campaign?: Campaign;
+        amount: BigNumber;
+        tatumId: string;
+        wallet: Wallet;
+        action: TransferAction;
+    }) {
+        const newTransfer = new Transfer();
+        newTransfer.currency = data.symbol;
+        if (data.campaign) newTransfer.campaign = data.campaign;
+        newTransfer.amount = data.amount;
+        newTransfer.action = data.action;
+        newTransfer.ethAddress = data.tatumId;
+        newTransfer.wallet = data.wallet;
+        newTransfer.status = "SUCCEEDED";
+        return newTransfer;
+    }
+
+    public static async newReward(data: { wallet: Wallet; amount: BigNumber; symbol: string; type: TransferAction }) {
         const transfer = new Transfer();
-        transfer.action = "deposit";
-        transfer.status = "SUCCEEDED";
-        if (data.amount) transfer.amount = new BN(data.amount);
-        if (data.txId) transfer.transactionHash = data.txId;
-        if (data.currency) transfer.currency = data.currency;
-        if (data.wallet) transfer.wallet = data.wallet;
-        if (data.org) transfer.org = data.org;
-        return transfer.save();
+        transfer.amount = data.amount;
+        transfer.action = data.type;
+        transfer.currency = data.symbol;
+        transfer.wallet = data.wallet;
+        return await transfer.save();
     }
 }
