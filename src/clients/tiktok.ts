@@ -18,16 +18,18 @@ export class TikTokClient {
         mediaType: "photo" | "video" | "gif",
         mediaFormat: string
     ): Promise<string> => {
-        var bitmap = Buffer.from(data, "base64");
-        fs.writeFileSync("uploads/example2.mp4", bitmap);
-
-        console.log("here");
-        const formData = new FormData();
-        formData.append("video", fs.createReadStream("uploads/example2.mp4"));
-        const response = await axios.post(`${uploadUrl}?${new URLSearchParams({ open_id, access_token })}`, formData, {
-            headers: formData.getHeaders(),
-        });
-        console.log(response.data);
-        return "response";
+        try {
+            var bitmap = Buffer.from(data, "base64");
+            fs.writeFileSync("uploads/example2.mp4", bitmap);
+            const formData = new FormData();
+            formData.append("video", fs.createReadStream("uploads/example2.mp4"));
+            await axios.post(`${uploadUrl}?${new URLSearchParams({ open_id, access_token })}`, formData, {
+                headers: formData.getHeaders(),
+            });
+            return "response";
+        } catch (error) {
+            console.log(error.response.data);
+            throw new Error(error.response.data);
+        }
     };
 }
