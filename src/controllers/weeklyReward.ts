@@ -20,9 +20,8 @@ const participationCoiinReward = 2;
 export const getWeeklyRewards = async (parent: any, args: any, context: any) => {
     try {
         const { id } = context.user;
-        console.log('identity ID', id)
         const user = await User.findOne({
-            where: { identityId: id },
+            where: { id },
             relations: ["weeklyRewards"],
         });
         if (!user) throw new Error("user not found");

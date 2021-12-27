@@ -3,12 +3,12 @@ import {
     Entity,
     PrimaryGeneratedColumn,
     Column,
-    ManyToOne,
     CreateDateColumn,
     UpdateDateColumn,
+    BeforeInsert,
 } from "typeorm";
-import { User } from "./User";
-
+import { decrypt, encrypt } from "../util/crypto";
+import { generateRandomNonce } from "../util/helpers";
 @Entity()
 export class Verification extends BaseEntity {
     @PrimaryGeneratedColumn("uuid")
@@ -17,18 +17,36 @@ export class Verification extends BaseEntity {
     @Column({ nullable: false })
     public email: string;
 
-    @Column({ nullable: true, default: false })
+    @Column({ nullable: false, default: false })
     public verified: boolean;
 
     @Column({ nullable: false })
-    public token: string;
-
-    @ManyToOne((_type) => User, (user) => user.verifications)
-    public user: User;
+    public code: string;
 
     @CreateDateColumn()
     public createdAt: Date;
 
     @UpdateDateColumn()
     public updatedAt: Date;
+
+    @BeforeInsert()
+    prepreModel() {
+        this.email = this.email.toLowerCase();
+    }
+
+    public static createVerification = async (email: string) => {
+        const verificationData = new Verification();
+        verificationData.email = email;
+        verificationData.code = encrypt(generateRandomNonce());
+        return await verificationData.save();
+    };
+
+    public updateVerificationStatus = async (status: boolean) => {
+        this.verified = status;
+        return await this.save();
+    };
+
+    public getDecryptedCode = () => {
+        return decrypt(this.code);
+    };
 }

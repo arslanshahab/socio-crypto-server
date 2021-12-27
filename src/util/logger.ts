@@ -1,5 +1,5 @@
 import winston from "winston";
-import rTracer from "cls-rtracer"; // cls-hooked is a dependency of this package
+import rTracer from "cls-rtracer";
 const { combine, timestamp, printf } = winston.format;
 
 const rTracerFormat = printf((info) => {

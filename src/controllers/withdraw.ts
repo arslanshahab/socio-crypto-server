@@ -11,7 +11,7 @@ import { Response, Request } from "express";
 import { Firebase } from "../clients/firebase";
 import { WalletCurrency } from "../models/WalletCurrency";
 import { getTokenPriceInUsd } from "../clients/ethereum";
-import {performCoiinTransfer} from "./ethWithdraw";
+import { performCoiinTransfer } from "./ethWithdraw";
 import { v4 as uuidv4 } from "uuid";
 
 export const start = async (
@@ -23,7 +23,8 @@ export const start = async (
     const { id } = context.user;
     const { tokenSymbol = "coiin" } = args;
     const normalizedTokenSymbol = tokenSymbol.toLowerCase();
-    const user = await User.findOneOrFail({ where: { identityId: id } });
+    const user = await User.findOne({ where: { id } });
+    if (!user) throw new Error("User not found");
     const wallet = await Wallet.findOneOrFail({ where: { user }, relations: ["transfers", "currency"] });
     const pendingBalance = await Transfer.getTotalPendingByWallet(wallet, normalizedTokenSymbol, true);
     const totalWithdrawThisYear = await Transfer.getTotalAnnualWithdrawalByWallet(wallet);
@@ -315,7 +316,8 @@ export const getWalletWithPendingBalance = async (
 ) => {
     const { id } = context.user;
     const { tokenSymbol = "coiin" } = args;
-    const user = await User.findOneOrFail({ where: { identityId: id } });
+    const user = await User.findOne({ where: { id } });
+    if (!user) throw new Error("User not found");
     const wallet = await Wallet.findOneOrFail({ where: { user }, relations: ["transfers"] });
     const pendingBalance = await Transfer.getTotalPendingByWallet(wallet, tokenSymbol.toLowerCase());
     return wallet.asV1(pendingBalance.toString());

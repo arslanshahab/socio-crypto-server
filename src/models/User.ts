@@ -7,6 +7,7 @@ import {
     OneToOne,
     CreateDateColumn,
     UpdateDateColumn,
+    BeforeInsert,
 } from "typeorm";
 import { Participant } from "./Participant";
 import { XoxodayOrder } from "./XoxodayOrder";
@@ -26,20 +27,26 @@ import { ExternalAddress } from "./ExternalAddress";
 import { WeeklyReward } from "./WeeklyReward";
 import { KycStatus } from "../types";
 import { VerificationApplication } from "./VerificationApplication";
-import { Verification } from "./Verification";
+import { WalletCurrency } from "./WalletCurrency";
 
 @Entity()
 export class User extends BaseEntity {
     @PrimaryGeneratedColumn("uuid")
     public id: string;
 
-    @Column({ nullable: false })
+    @Column({ nullable: true })
     public identityId: string;
+
+    @Column({ nullable: false })
+    public email: string;
+
+    @Column({ nullable: false })
+    public password: string;
 
     @Column({ default: true })
     public active: boolean;
 
-    @Column({ nullable: true })
+    @Column({ nullable: true, default: "" })
     public kycStatus: KycStatus;
 
     @OneToMany((_type) => SocialPost, (posts) => posts.user)
@@ -57,75 +64,31 @@ export class User extends BaseEntity {
     @OneToMany((_type) => Participant, (participant) => participant.user)
     campaigns: Participant[];
 
-    @OneToOne(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => Wallet,
-        (wallet) => wallet.user
-    )
+    @OneToOne((_type) => Wallet, (wallet) => wallet.user)
     public wallet: Wallet;
 
-    @OneToMany(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => ExternalAddress,
-        (address) => address.user
-    )
+    @OneToMany((_type) => ExternalAddress, (address) => address.user)
     public addresses: ExternalAddress[];
 
-    @OneToMany(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => SocialLink,
-        (link) => link.user
-    )
+    @OneToMany((_type) => SocialLink, (link) => link.user)
     public socialLinks: SocialLink[];
 
-    @OneToMany(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => VerificationApplication,
-        (verification) => verification.user
-    )
+    @OneToMany((_type) => VerificationApplication, (verification) => verification.user)
     public identityVerifications: VerificationApplication[];
 
-    @OneToMany(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => FactorLink,
-        (link) => link.user
-    )
+    @OneToMany((_type) => FactorLink, (link) => link.user)
     public factorLinks: FactorLink[];
 
-    @OneToMany(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => Verification,
-        (verification) => verification.user
-    )
-    public verifications: Verification[];
-
-    @OneToMany(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => TwentyFourHourMetric,
-        (metrics) => metrics.user
-    )
+    @OneToMany((_type) => TwentyFourHourMetric, (metrics) => metrics.user)
     public twentyFourHourMetrics: TwentyFourHourMetric[];
 
-    @OneToOne(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => Profile,
-        (profile) => profile.user,
-        { eager: true }
-    )
+    @OneToOne((_type) => Profile, (profile) => profile.user, { eager: true })
     public profile: Profile;
 
-    @OneToOne(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => NotificationSettings,
-        (notifications) => notifications.user
-    )
+    @OneToOne((_type) => NotificationSettings, (notifications) => notifications.user)
     public notificationSettings: NotificationSettings;
 
-    @OneToMany(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => DailyParticipantMetric,
-        (metric) => metric.user
-    )
+    @OneToMany((_type) => DailyParticipantMetric, (metric) => metric.user)
     public dailyMetrics: DailyParticipantMetric[];
 
     @OneToMany((_type) => Admin, (admin) => admin.user)
@@ -137,13 +100,44 @@ export class User extends BaseEntity {
     @OneToMany((_type) => WeeklyReward, (rewards) => rewards.user)
     public weeklyRewards: WeeklyReward[];
 
+    @BeforeInsert()
+    prepreModel() {
+        this.email = this.email.toLowerCase();
+    }
+
+    public static async initNewUser(email: string, password: string, username: string): Promise<User> {
+        const user = new User();
+        const wallet = new Wallet();
+        const coiinWallet = new WalletCurrency();
+        const profile = new Profile();
+        const notificationSettings = new NotificationSettings();
+        user.email = email;
+        user.password = password;
+        coiinWallet.type = "coiin";
+        coiinWallet.balance = new BN(0);
+        await user.save();
+        wallet.user = user;
+        await wallet.save();
+        coiinWallet.wallet = wallet;
+        await coiinWallet.save();
+        profile.username = username;
+        profile.user = user;
+        await profile.save();
+        notificationSettings.user = user;
+        await notificationSettings.save();
+        user.profile = profile;
+        user.notificationSettings = notificationSettings;
+        return await user.save();
+    }
+
     public asV1() {
-        let returnedUser: any = { ...this };
+        let { password, ...returnedUser }: any = { ...this };
         if (this.profile) {
-            delete this.profile.id;
+            const { id, ...values } = this.profile;
             returnedUser = {
                 ...returnedUser,
-                ...this.profile,
+                ...values,
+                email: returnedUser.email,
                 hasRecoveryCodeSet: this.profile.recoveryCode !== null && this.profile.recoveryCode !== "",
             };
         }
@@ -182,6 +176,14 @@ export class User extends BaseEntity {
                 return coiinBalance.save();
             }
         }
+    }
+
+    public async updateKycStatus(status: KycStatus) {
+        if (this.kycStatus !== status && this.kycStatus !== "APPROVED") {
+            this.kycStatus = status;
+            return await this.save();
+        }
+        return this;
     }
 
     public static async getUsersForDailyMetricsCron(): Promise<User[]> {
@@ -335,7 +337,7 @@ export class User extends BaseEntity {
             if (loadOrders) query = query.leftJoinAndSelect("user.orders", "orders", 'orders."userId" = user.id');
         }
         query = query.leftJoinAndSelect("user.profile", "profile", 'profile."userId" = user.id');
-        query = query.where("user.identityId = :id", { id });
+        query = query.where("user.id = :id", { id });
         return query.getOne();
     }
 }
