@@ -694,11 +694,13 @@ export const getDashboardMetrics = async (parent: any, args: any, context: { use
     let aggregatedCampaignMetrics;
 
     if (orgId && campaignId == "-1") {
-        campaignMetrics = await DailyParticipantMetric.getParticipantMetricsQuery(orgId);
-        aggregatedCampaignMetrics = await DailyParticipantMetric.getTotalOrgMetrics(orgId);
+        campaignMetrics = await DailyParticipantMetric.getOrgMetrics(orgId);
+        aggregatedCampaignMetrics = await DailyParticipantMetric.getAggregatedOrgMetrics(orgId);
+        console.log(aggregatedCampaignMetrics);
     }
     if (campaignId && campaignId != "-1") {
         aggregatedCampaignMetrics = await DailyParticipantMetric.getAggregatedCampaignMetrics(campaignId);
+        console.log(aggregatedCampaignMetrics);
         campaignMetrics = await DailyParticipantMetric.getCampaignMetrics(campaignId);
     }
     return { aggregatedCampaignMetrics, campaignMetrics };

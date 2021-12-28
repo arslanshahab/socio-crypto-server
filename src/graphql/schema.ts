@@ -213,15 +213,16 @@ export const typeDefs = gql`
     }
     type DashboardMetrics {
         aggregatedCampaignMetrics: AggregatedCampaignMetrics
-        campaignMetrics: [OrgCampaignsMetrics]
+        campaignMetrics: [CampaignsMetrics]
     }
     type AggregatedCampaignMetrics {
+        campaign_name: String
         clickCount: Int
         viewCount: Int
         shareCount: Int
         participationScore: Int
     }
-    type OrgCampaignsMetrics {
+    type CampaignsMetrics {
         clickCount: Int
         viewCount: Int
         shareCount: Int
