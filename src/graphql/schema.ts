@@ -206,10 +206,9 @@ export const typeDefs = gql`
         getUserBalances(userId: String): [UserBalance]
         getTransferHistory(symbol: String, skip: Int, take: Int): PaginatedTransferHistory
         getUserAllCampaign: [UserAllCampaigns]
-        getUserCampaign(id: String): UserCampaign
         # downloadKyc(kycId: String!): [Factor]
         downloadKyc: KycApplicationResponse
-        getDashboardMetrics(campaignId: String): DashboardMetrics
+        getDashboardMetrics(campaignId: String, skip: Int, take: Int): DashboardMetrics
     }
     type DashboardMetrics {
         aggregatedCampaignMetrics: AggregatedCampaignMetrics
@@ -221,6 +220,7 @@ export const typeDefs = gql`
         viewCount: Int
         shareCount: Int
         participationScore: Int
+        totalParticipants: Int
     }
     type CampaignsMetrics {
         clickCount: Int
@@ -449,26 +449,6 @@ export const typeDefs = gql`
     type UserAllCampaigns {
         id: ID
         name: String
-    }
-    "Get Campaign of User by Id"
-    type UserCampaign {
-        id: ID
-        name: String
-        dailyMetrics: DailyMetric
-    }
-    type DailyMetric {
-        clickCount: Int
-        viewCount: Int
-        shareCount: Int
-        totalParticipationScore: Int
-        rewards: Int
-        participationScore: [Int]
-        singleDailyMetric: SingleDailyMetric
-    }
-    type SingleDailyMetric {
-        clickCount: [Int]
-        viewCount: [Int]
-        shareCount: [Int]
     }
 
     type AdminHourlyCampaignMetrics {

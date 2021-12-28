@@ -23,7 +23,6 @@ import { CampaignChannelTemplate } from "../types.d";
 import { CampaignMedia } from "../models/CampaignMedia";
 import { CampaignTemplate } from "../models/CampaignTemplate";
 import { isSupportedCurrency } from "../helpers";
-import BigNumber from "bignumber.js";
 
 const validator = new Validator();
 
@@ -592,116 +591,34 @@ export const getUserAllCampaign = async (parent: any, args: any, context: { user
     const campaigns = await Campaign.find({ where: { org: admin?.org } });
     return campaigns.map((x) => ({ id: x.id, name: x.name }));
 };
-export const getUserCampaign = async (parent: any, args: any, context: { user: any }) => {
-    checkPermissions({ hasRole: ["admin"] }, context);
-    const userId = context.user.id;
-    const campaignId = args.id;
-    let updatedData;
-
-    //! All Campaign Analytics
-    if (!campaignId || campaignId == "-1") {
-        const admin = await Admin.findOne({ where: { firebaseId: userId }, relations: ["org"] });
-        const campaigns = await Campaign.find({ where: { org: admin?.org }, relations: ["dailyMetrics"] });
-        const dailyMetrics = campaigns?.flatMap((x) => x.dailyMetrics);
-        const clickCount = dailyMetrics
-            .map((x) => new BigNumber(x.clickCount).toNumber())
-            .reduce((pre, next) => pre + next, 0);
-        const viewCount = dailyMetrics
-            .map((x) => new BigNumber(x.viewCount).toNumber())
-            .reduce((pre, next) => pre + next, 0);
-        const shareCount = dailyMetrics
-            .map((x) => new BigNumber(x.shareCount).toNumber())
-            .reduce((pre, next) => pre + next, 0);
-        let allCampaignsClicks;
-        allCampaignsClicks = campaigns?.map((x) => x.dailyMetrics.map((y) => new BigNumber(y.clickCount).toNumber()));
-        allCampaignsClicks = allCampaignsClicks.map((x) => x.reduce((pre, next) => pre + next, 0));
-
-        const totalParticipationScore = campaigns
-            .map((x) => new BigNumber(x.totalParticipationScore).toNumber())
-            .reduce((pre, next) => pre + next);
-        const participationScore = campaigns.map((x) => new BigNumber(x.totalParticipationScore).toNumber());
-
-        if (campaigns) {
-            updatedData = {
-                name: "All Campaigns",
-                dailyMetrics: {
-                    clickCount,
-                    viewCount,
-                    shareCount,
-                    totalParticipationScore,
-                    rewards: 150,
-                    participationScore,
-                    singleDailyMetric: {
-                        clickCount: allCampaignsClicks,
-                    },
-                },
-            };
-        }
-    }
-    //!--------Get Campaign Analytics by Id---------
-    else {
-        const singleCampaign = await Campaign.findOne({ where: { id: campaignId }, relations: ["dailyMetrics"] });
-        const dailMatrics = singleCampaign?.dailyMetrics;
-        const clickCount = dailMatrics?.map((x) => new BigNumber(x.clickCount).toNumber());
-        const viewCount = dailMatrics?.map((x) => new BigNumber(x.viewCount).toNumber());
-        const shareCount = dailMatrics?.map((x) => new BigNumber(x.shareCount).toNumber());
-        const totalClickCount = clickCount?.reduce((res, next) => res + next, 0);
-        const totalViewsCount = viewCount?.reduce((pre, next) => pre + next, 0);
-        const totalShareCount = shareCount?.reduce((pre, next) => pre + next, 0);
-
-        const participationScore = dailMatrics?.map((x) => new BigNumber(x.participationScore).toNumber());
-        const totalParticipationScore = participationScore?.reduce((pre, next) => pre + next, 0);
-        // const currentCampaignTier = await getCurrentCampaignTier(null, { campaign: singleCampaign });
-        // const rewardScore = calculateParticipantPayout(
-        //     currentCampaignTier,
-        //     singleCampaign!,
-        //     singleCampaign?.participants?.[0]!
-        // );
-
-        if (singleCampaign) {
-            updatedData = {
-                id: singleCampaign.id,
-                name: singleCampaign.name,
-                beginDate: singleCampaign.beginDate,
-                endDate: singleCampaign.endDate,
-                dailyMetrics: {
-                    clickCount: totalClickCount,
-                    viewCount: totalViewsCount,
-                    shareCount: totalShareCount,
-                    totalParticipationScore,
-                    rewards: 150,
-                    participationScore,
-                    singleDailyMetric: {
-                        clickCount,
-                        viewCount,
-                        shareCount,
-                    },
-                },
-            };
-        }
-    }
-
-    return updatedData;
-};
-
-export const getDashboardMetrics = async (parent: any, args: any, context: { user: any }) => {
+//! Dashboard Metrics
+export const getDashboardMetrics = async (parent: any, { campaignId, skip, take }: any, context: { user: any }) => {
     const userId = context.user.id;
     checkPermissions({ hasRole: ["admin"] }, context);
     const admin = await Admin.findOne({ where: { firebaseId: userId }, relations: ["org"] });
     const orgId = await admin?.org?.id;
-    const campaignId = await args?.campaignId;
     let campaignMetrics;
     let aggregatedCampaignMetrics;
+    let totalParticipants;
 
     if (orgId && campaignId == "-1") {
-        campaignMetrics = await DailyParticipantMetric.getOrgMetrics(orgId);
         aggregatedCampaignMetrics = await DailyParticipantMetric.getAggregatedOrgMetrics(orgId);
-        console.log(aggregatedCampaignMetrics);
+        campaignMetrics = await DailyParticipantMetric.getOrgMetrics(orgId);
+        totalParticipants = await Participant.count({
+            where: {
+                campaign: In(await (await Campaign.find({ where: { org: admin?.org } })).map((item) => item.id)),
+            },
+        });
     }
     if (campaignId && campaignId != "-1") {
         aggregatedCampaignMetrics = await DailyParticipantMetric.getAggregatedCampaignMetrics(campaignId);
-        console.log(aggregatedCampaignMetrics);
         campaignMetrics = await DailyParticipantMetric.getCampaignMetrics(campaignId);
+        totalParticipants = await Participant.count({
+            where: {
+                campaign: In([campaignId]),
+            },
+        });
     }
-    return { aggregatedCampaignMetrics, campaignMetrics };
+    const aggregaredMetrics = { ...aggregatedCampaignMetrics, totalParticipants };
+    return { aggregatedCampaignMetrics: aggregaredMetrics, campaignMetrics };
 };

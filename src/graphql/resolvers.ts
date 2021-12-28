@@ -116,7 +116,6 @@ export const adminResolvers = {
         getDepositAddressForSymbol: tatumController.getDepositAddress,
         getSupportedCurrencies: tatumController.getSupportedCurrencies,
         getUserAllCampaign: campaignController.getUserAllCampaign,
-        getUserCampaign: campaignController.getUserCampaign,
         getDashboardMetrics: campaignController.getDashboardMetrics,
     },
     Mutation: {
