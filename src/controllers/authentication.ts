@@ -83,6 +83,7 @@ export const registerUser = async (
         const verificationData = await Verification.findOne({ where: { id: decrypt(verificationToken) } });
         if (!verificationData || !verificationData.verified) throw new Error(EMAIL_NOT_VERIFIED);
         const user = await User.initNewUser(email, createPasswordHash({ email, password }), username);
+        await user.transferReward("REGISTRATION_REWARD");
         return { token: createSessionToken({ email: user.email, id: user.id }) };
     } catch (error) {
         throw new FormattedError(error);
@@ -93,9 +94,10 @@ export const loginUser = async (parent: any, args: { email: string; password: st
     try {
         const { email, password } = args;
         if (!email || !password) throw new Error(MISSING_PARAMS);
-        const user = await User.findOne({ where: { email: ILike(email) } });
+        const user = await User.findOne({ where: { email: ILike(email) }, relations: ["wallet"] });
         if (!user) throw new Error(EMAIL_NOT_EXISTS);
         if (user.password !== createPasswordHash({ email, password })) throw new Error(INCORRECT_PASSWORD);
+        await user.transferReward("LOGIN_REWARD");
         return { token: createSessionToken({ email: user.email, id: user.id }) };
     } catch (error) {
         throw new FormattedError(error);

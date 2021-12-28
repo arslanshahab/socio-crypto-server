@@ -204,7 +204,7 @@ export const typeDefs = gql`
         getTokenInUSD(symbol: String!): Float
         getTokenIdBySymbol(symbol: String!): String
         checkCoinGecko(symbol: String): Boolean
-        getWeeklyRewards: WeeklyRewardResponse
+        getWeeklyRewards: WeeklyRewardEstimation
         getRedemptionRequirements: RedemptionRequirements
         getUserBalances(userId: String): [UserBalance]
         getTransferHistory(symbol: String, skip: Int, take: Int): PaginatedTransferHistory
@@ -292,7 +292,7 @@ export const typeDefs = gql`
         orderLimitForTwentyFourHoursReached: Boolean
     }
 
-    type WeeklyRewardResponse {
+    type WeeklyRewardEstimation {
         loginRewardRedeemed: Boolean
         loginReward: Int
         nextLoginReward: String
