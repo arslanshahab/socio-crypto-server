@@ -13,7 +13,6 @@ import { groupDailyMetricsByUser } from "./helpers";
 import { HourlyCampaignMetric } from "../models/HourlyCampaignMetric";
 import { serverBaseUrl } from "../config";
 import { In } from "typeorm";
-import { rewardUserForParticipation } from "./weeklyReward";
 import {
     createPasswordHash,
     findOrCreateCurrency,
@@ -26,12 +25,12 @@ import { WalletCurrency } from "../models/WalletCurrency";
 import { Wallet } from "../models/Wallet";
 import { Currency } from "../models/Currency";
 import { flatten } from "lodash";
-import { asyncHandler } from "../util/helpers";
-import { Request, Response } from "express";
 import { Verification } from "../models/Verification";
 import { formatFloat } from "../util/helpers";
 import { SesClient } from "../clients/ses";
 import { USER_NOT_FOUND, INCORRECT_PASSWORD, FormattedError, SAME_OLD_AND_NEW_PASSWORD } from "../util/errors";
+import { addDays, endOfISOWeek, startOfDay } from "date-fns";
+import { Transfer } from "../models/Transfer";
 
 export const participate = async (parent: any, args: { campaignId: string; email: string }, context: { user: any }) => {
     try {
@@ -63,21 +62,13 @@ export const participate = async (parent: any, args: { campaignId: string; email
         participant.link = await TinyUrl.shorten(url);
         await HourlyCampaignMetric.upsert(campaign, campaign.org, "participate");
         await participant.save();
-        await rewardUserForParticipation(user, participant);
+        await user.transferReward("PARTICIPATION_REWARD");
         return participant.asV1();
     } catch (e) {
         console.log(e);
         return null;
     }
 };
-
-export const insertUser = asyncHandler(async (req: Request, res: Response) => {
-    const user = new User();
-    user.identityId = "banana";
-    user.active = true;
-    await user.save();
-    res.status(200).json({ success: true });
-});
 
 export const promotePermissions = async (
     parent: any,
@@ -481,5 +472,33 @@ export const completeEmailVerification = async (
             success: false,
             message: error.message,
         };
+    }
+};
+
+export const getWeeklyRewardEstimation = async (parent: any, args: any, context: any) => {
+    try {
+        const { id } = context.user;
+        const user = await User.findOne({
+            where: { id },
+            relations: ["wallet"],
+        });
+        if (!user) throw new Error("user not found");
+        const loginReward = await Transfer.getRewardForThisWeek(user.wallet, "LOGIN_REWARD");
+        const participationReward = await Transfer.getRewardForThisWeek(user.wallet, "PARTICIPATION_REWARD");
+        const nextReward = startOfDay(addDays(endOfISOWeek(user.lastLogin), 1));
+        return {
+            loginRewardRedeemed: Boolean(loginReward),
+            loginReward: parseInt(loginReward?.amount?.toString() || "0"),
+            nextLoginReward: nextReward.toString(),
+            participationReward: parseInt(participationReward?.amount?.toString() || "0"),
+            participationId: "",
+            nextParticipationReward: nextReward.toString(),
+            participationRewardRedeemed: Boolean(participationReward),
+            participationRedemptionDate: participationReward?.createdAt?.toString() || "",
+            loginRedemptionDate: loginReward?.createdAt?.toString() || "",
+        };
+    } catch (e) {
+        console.log(e);
+        return null;
     }
 };

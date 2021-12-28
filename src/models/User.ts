@@ -24,10 +24,16 @@ import { DailyParticipantMetric } from "./DailyParticipantMetric";
 import { NotificationSettings } from "./NotificationSettings";
 import { Admin } from "./Admin";
 import { ExternalAddress } from "./ExternalAddress";
-import { WeeklyReward } from "./WeeklyReward";
 import { KycStatus } from "../types";
 import { VerificationApplication } from "./VerificationApplication";
 import { WalletCurrency } from "./WalletCurrency";
+import { differenceInMonths } from "date-fns";
+import { Transfer } from "./Transfer";
+
+export const LOGIN_REWARD_AMOUNT = 1;
+export const PARTICIPATION_REWARD_AMOUNT = 2;
+export const REGISTRATION_REWARD_AMOUNT = 2;
+type RewardType = "LOGIN_REWARD" | "PARTICIPATION_REWARD" | "REGISTRATION_REWARD";
 
 @Entity()
 export class User extends BaseEntity {
@@ -97,9 +103,6 @@ export class User extends BaseEntity {
     @OneToMany((_type) => XoxodayOrder, (order) => order.user)
     public orders: XoxodayOrder[];
 
-    @OneToMany((_type) => WeeklyReward, (rewards) => rewards.user)
-    public weeklyRewards: WeeklyReward[];
-
     @BeforeInsert()
     prepreModel() {
         this.email = this.email.toLowerCase();
@@ -163,7 +166,7 @@ export class User extends BaseEntity {
         return returnedUser;
     }
 
-    public async updateCoiinBalance(operation: "add" | "subtract", amount: number): Promise<any> {
+    public async updateCoiinBalance(operation: "ADD" | "SUBTRACT", amount: number): Promise<any> {
         let user: User | undefined = this;
         if (!user.wallet || !user.wallet.walletCurrency) {
             user = await User.findOne({ where: { id: this.id }, relations: ["wallet", "wallet.walletCurrency"] });
@@ -172,7 +175,7 @@ export class User extends BaseEntity {
             const coiinBalance = user.wallet.walletCurrency.find((item) => item.type.toLowerCase() === "coiin");
             if (coiinBalance) {
                 coiinBalance.balance =
-                    operation === "add" ? coiinBalance.balance.plus(amount) : coiinBalance.balance.minus(amount);
+                    operation === "ADD" ? coiinBalance.balance.plus(amount) : coiinBalance.balance.minus(amount);
                 return coiinBalance.save();
             }
         }
@@ -185,6 +188,41 @@ export class User extends BaseEntity {
         }
         return this;
     }
+
+    public async updateLastLogin() {
+        this.lastLogin = new Date();
+        return await this.save();
+    }
+
+    public transferReward = async (type: RewardType): Promise<any> => {
+        const user = this;
+        const wallet = await Wallet.findOne({ where: { user } });
+        if (!wallet) throw new Error("User wallet not found");
+        let accountAgeInHours = 0,
+            thisWeeksReward;
+        if (type === "LOGIN_REWARD") accountAgeInHours = differenceInMonths(new Date(), new Date(user.createdAt));
+        if (type === "LOGIN_REWARD" || type === "PARTICIPATION_REWARD")
+            thisWeeksReward = await Transfer.getRewardForThisWeek(wallet, type);
+        const amount =
+            type === "REGISTRATION_REWARD"
+                ? REGISTRATION_REWARD_AMOUNT
+                : type === "PARTICIPATION_REWARD"
+                ? PARTICIPATION_REWARD_AMOUNT
+                : LOGIN_REWARD_AMOUNT;
+        if (
+            (type === "LOGIN_REWARD" && accountAgeInHours > 24 && !thisWeeksReward) ||
+            (type === "PARTICIPATION_REWARD" && !thisWeeksReward) ||
+            type === "REGISTRATION_REWARD"
+        ) {
+            await user.updateCoiinBalance("ADD", amount);
+            await Transfer.newReward({
+                wallet,
+                type,
+                symbol: "COIN",
+                amount: new BN(amount),
+            });
+        }
+    };
 
     public static async getUsersForDailyMetricsCron(): Promise<User[]> {
         return await this.createQueryBuilder("user")

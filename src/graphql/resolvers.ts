@@ -13,7 +13,6 @@ import * as fundingController from "../controllers/fundingWallet";
 import * as stripeController from "../controllers/stripe";
 import * as cryptoController from "../controllers/crypto";
 import * as xoxodayController from "../controllers/xoxoday";
-import * as weeklyReward from "../controllers/weeklyReward";
 import * as tatumController from "../controllers/tatum";
 import * as transferController from "../controllers/transfer";
 
@@ -48,7 +47,7 @@ export const resolvers = {
         checkCoinGecko: cryptoController.coinGeckoCheck,
         getUserParticipationKeywords: userController.getUserParticipationKeywords,
         getStoreVouchers: xoxodayController.getVouchers,
-        getWeeklyRewards: weeklyReward.getWeeklyRewards,
+        getWeeklyRewards: userController.getWeeklyRewardEstimation,
         getRedemptionRequirements: xoxodayController.redemptionRequirements,
         getUserBalances: userController.getWalletBalances,
         getTransferHistory: transferController.getTransferHistory,
