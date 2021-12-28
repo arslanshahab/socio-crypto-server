@@ -15,7 +15,6 @@ import { S3Client } from "../clients/s3";
 import { Profile } from "../models/Profile";
 import { NotificationSettings } from "../models/NotificationSettings";
 import { WalletCurrency } from "../models/WalletCurrency";
-import { rewardUserForLogin } from "./weeklyReward";
 
 const { NODE_ENV } = process.env;
 
@@ -146,9 +145,7 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
             }
         }
     }
-    user.lastLogin = new Date();
-    await user.save();
-    await rewardUserForLogin(user);
+    await user.updateLastLogin();
     const jwtPayload: { [key: string]: string } = { id: identityId };
     if (
         (emailAddress! && ["raiinmaker.com", "dragonchain.com"].includes(emailAddress!)) ||

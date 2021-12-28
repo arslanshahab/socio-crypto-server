@@ -217,13 +217,13 @@ export const withdrawFunds = async (
             amount: getWithdrawableAmount(amount),
         };
         await TatumClient.withdrawFundsToBlockchain(symbol, payload);
-        const newTransfer = new Transfer();
-        newTransfer.currency = symbol;
-        newTransfer.amount = new BigNumber(getWithdrawableAmount(amount));
-        newTransfer.action = "withdraw";
-        newTransfer.ethAddress = address;
-        newTransfer.wallet = user.wallet;
-        newTransfer.status = "SUCCEEDED";
+        const newTransfer = Transfer.initTatumTransfer({
+            symbol,
+            amount: new BigNumber(getWithdrawableAmount(amount)),
+            action: "WITHDRAW",
+            wallet: user.wallet,
+            tatumId: address,
+        });
         newTransfer.save();
         return {
             success: true,

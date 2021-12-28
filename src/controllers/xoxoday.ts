@@ -74,7 +74,7 @@ export const placeOrder = async (parent: any, args: { cart: Array<any>; email: s
         const ordersData = await prepareOrderList(cart, email);
         const orderStatusList = await Xoxoday.placeOrder(ordersData);
         const orderEntitiesList = await prepareOrderEntities(cart, orderStatusList);
-        await user.updateCoiinBalance("subtract", totalCoiinSpent);
+        await user.updateCoiinBalance("SUBTRACT", totalCoiinSpent);
         XoxodayOrderModel.saveOrderList(orderEntitiesList, user);
         return { success: true };
     } catch (error) {

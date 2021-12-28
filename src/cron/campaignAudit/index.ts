@@ -16,7 +16,7 @@ const app = new Application();
     await Secrets.initialize();
     const connection = await app.connectDatabase();
     try {
-        let date = initDateFromParams(new Date(), new Date().getDate(), 0, 0, 0);
+        let date = initDateFromParams({ date: new Date(), d: new Date().getDate(), h: 0, i: 0, s: 0 });
         const campaigns = await Campaign.find({
             where: [
                 { auditStatus: "PENDING" },
