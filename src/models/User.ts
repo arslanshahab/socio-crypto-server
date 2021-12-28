@@ -24,7 +24,6 @@ import { DailyParticipantMetric } from "./DailyParticipantMetric";
 import { NotificationSettings } from "./NotificationSettings";
 import { Admin } from "./Admin";
 import { ExternalAddress } from "./ExternalAddress";
-import { WeeklyReward } from "./WeeklyReward";
 import { KycStatus } from "../types";
 import { VerificationApplication } from "./VerificationApplication";
 import { WalletCurrency } from "./WalletCurrency";
@@ -103,9 +102,6 @@ export class User extends BaseEntity {
 
     @OneToMany((_type) => XoxodayOrder, (order) => order.user)
     public orders: XoxodayOrder[];
-
-    @OneToMany((_type) => WeeklyReward, (rewards) => rewards.user)
-    public weeklyRewards: WeeklyReward[];
 
     @BeforeInsert()
     prepreModel() {
@@ -206,7 +202,7 @@ export class User extends BaseEntity {
             thisWeeksReward;
         if (type === "LOGIN_REWARD") accountAgeInHours = differenceInMonths(new Date(), new Date(user.createdAt));
         if (type === "LOGIN_REWARD" || type === "PARTICIPATION_REWARD")
-            thisWeeksReward = await Transfer.getRewardForThisWeek(type);
+            thisWeeksReward = await Transfer.getRewardForThisWeek(wallet, type);
         const amount =
             type === "REGISTRATION_REWARD"
                 ? REGISTRATION_REWARD_AMOUNT

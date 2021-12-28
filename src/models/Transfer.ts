@@ -18,7 +18,7 @@ import { TransferAction, TransferStatus } from "../types";
 import { Org } from "./Org";
 import { RafflePrize } from "./RafflePrize";
 import { performCurrencyTransfer } from "../controllers/helpers";
-import { endOfWeek, startOfWeek } from "date-fns";
+import { startOfISOWeek, endOfISOWeek } from "date-fns";
 
 @Entity()
 export class Transfer extends BaseEntity {
@@ -157,11 +157,11 @@ export class Transfer extends BaseEntity {
         return transfer;
     }
 
-    public static async getRewardForThisWeek(type: TransferAction) {
+    public static async getRewardForThisWeek(wallet: Wallet, type: TransferAction) {
         const currentDate = new Date();
-        const start = startOfWeek(currentDate);
-        const end = endOfWeek(currentDate);
-        return await this.findOne({ where: { createdAt: Between(start, end), action: type } });
+        const start = startOfISOWeek(currentDate);
+        const end = endOfISOWeek(currentDate);
+        return await this.findOne({ where: { wallet, createdAt: Between(start, end), action: type } });
     }
 
     public static newFromWalletPayout(wallet: Wallet, campaign: Campaign, amount: BigNumber): Transfer {
