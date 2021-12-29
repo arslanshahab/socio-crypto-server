@@ -32,7 +32,7 @@ import { Transfer } from "./Transfer";
 
 export const LOGIN_REWARD_AMOUNT = 1;
 export const PARTICIPATION_REWARD_AMOUNT = 2;
-export const REGISTRATION_REWARD_AMOUNT = 2;
+export const REGISTRATION_REWARD_AMOUNT = 15;
 type RewardType = "LOGIN_REWARD" | "PARTICIPATION_REWARD" | "REGISTRATION_REWARD";
 
 @Entity()

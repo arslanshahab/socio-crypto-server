@@ -1,6 +1,6 @@
 const uploadUrl = "https://open-api.tiktok.com/share/video/upload";
 const open_id = "a509c4e1-a862-43e3-9a3f-0f91b1389adc";
-const access_token = "act.061c62cc03b92c2ddecbe98986a2dca3Na3Xe2ta06DTNkRWTXURuLa9mDZq";
+const access_token = "act.dbd28d98af1efdcb7821032da29accbesZQjL7GaMBXVZuCdQUGv3bWvJaPb";
 import { URLSearchParams } from "url";
 import { Participant } from "../models/Participant";
 import { SocialClientCredentials } from "../types.d";
@@ -18,17 +18,22 @@ export class TikTokClient {
         mediaType: "photo" | "video" | "gif",
         mediaFormat: string
     ): Promise<string> => {
+        const fileName = `raiinmaker-${participant.id}.${mediaFormat.split("/")[1]}`;
+        const filePath = `uploads/${fileName}`;
         try {
+            console.log("UPLOAD-TIKTOK FILE: ", fileName);
             var bitmap = Buffer.from(data, "base64");
-            fs.writeFileSync("uploads/example2.mp4", bitmap);
+            fs.writeFileSync(filePath, bitmap);
             const formData = new FormData();
-            formData.append("video", fs.createReadStream("uploads/example2.mp4"));
+            formData.append("video", fs.createReadStream(filePath));
             await axios.post(`${uploadUrl}?${new URLSearchParams({ open_id, access_token })}`, formData, {
                 headers: formData.getHeaders(),
             });
+            fs.unlinkSync(filePath);
             return "response";
         } catch (error) {
             console.log(error.response.data);
+            fs.unlinkSync(filePath);
             throw new Error(error.response.data);
         }
     };
