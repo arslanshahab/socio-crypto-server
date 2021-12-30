@@ -194,7 +194,7 @@ export const withdrawFunds = async (
     try {
         const { id } = context.user;
         const user = await User.findOne({
-            where: { identityId: id },
+            where: { id },
             relations: ["wallet"],
         });
         if (!user) throw new Error("User not found");
@@ -217,13 +217,13 @@ export const withdrawFunds = async (
             amount: getWithdrawableAmount(amount),
         };
         await TatumClient.withdrawFundsToBlockchain(symbol, payload);
-        const newTransfer = new Transfer();
-        newTransfer.currency = symbol;
-        newTransfer.amount = new BigNumber(getWithdrawableAmount(amount));
-        newTransfer.action = "withdraw";
-        newTransfer.ethAddress = address;
-        newTransfer.wallet = user.wallet;
-        newTransfer.status = "SUCCEEDED";
+        const newTransfer = Transfer.initTatumTransfer({
+            symbol,
+            amount: new BigNumber(getWithdrawableAmount(amount)),
+            action: "WITHDRAW",
+            wallet: user.wallet,
+            tatumId: address,
+        });
         newTransfer.save();
         return {
             success: true,

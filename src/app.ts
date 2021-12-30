@@ -5,7 +5,7 @@ import bodyParser from "body-parser";
 import { Connection, getConnectionOptions, createConnection } from "typeorm";
 import logger from "./util/logger";
 import { Secrets } from "./util/secrets";
-import { authenticate, firebaseAuth } from "./middleware/authentication";
+import { authenticateAdmin, authenticateUser } from "./middleware/authentication";
 import { errorHandler } from "./middleware/errorHandler";
 import { Dragonchain } from "./clients/dragonchain";
 import { Firebase } from "./clients/firebase";
@@ -13,7 +13,7 @@ import * as FactorController from "./controllers/factor";
 import * as Dragonfactor from "@myfii-dev/dragonfactor-auth";
 import { paypalWebhook } from "./controllers/withdraw";
 import { adminResolvers, publicResolvers, resolvers } from "./graphql/resolvers";
-import { sessionLogin, sessionLogout, updateUserPassword } from "./controllers/firebase";
+import { adminLogin, adminLogout, updateUserPassword } from "./controllers/authentication";
 import { trackClickByLink } from "./controllers/participant";
 import cookieParser from "cookie-parser";
 import { StripeAPI } from "./clients/stripe";
@@ -89,7 +89,9 @@ export class Application {
 
                 return {
                     async didEncounterErrors(requestContext) {
-                        console.log(requestContext.errors);
+                        requestContext.errors.forEach((error) => {
+                            console.log(`${error?.extensions?.code || "ERROR"}: ${error?.message || ""}`);
+                        });
                     },
                 };
             },
@@ -98,13 +100,13 @@ export class Application {
             typeDefs,
             resolvers,
             plugins: [requestPlugin],
-            context: authenticate,
+            context: authenticateUser,
         });
         const serverAdmin = new ApolloServer({
             typeDefs,
             resolvers: adminResolvers,
             plugins: [requestPlugin],
-            context: firebaseAuth,
+            context: authenticateAdmin,
         });
         const serverPublic = new ApolloServer({
             typeDefs,
@@ -132,8 +134,8 @@ export class Application {
         this.app.get("/v1/health", (_req: express.Request, res: express.Response) =>
             res.send("I am alive and well, thank you!")
         );
-        this.app.post("/v1/login", sessionLogin);
-        this.app.post("/v1/logout", sessionLogout);
+        this.app.post("/v1/login", adminLogin);
+        this.app.post("/v1/logout", adminLogout);
         this.app.put("/v1/password", updateUserPassword);
         this.app.post("/v1/payouts", paypalWebhook);
         this.app.post("/v1/xoxoday", initXoxoday);
@@ -148,7 +150,7 @@ export class Application {
         this.app.post("/v1/tatum/list-withdraws", getAllWithdrawls);
         this.app.post("/v1/tatum/transfer", transferBalance);
         this.app.get("/v1/xoxoday/filters", getXoxodayFilters);
-        this.app.post("/v1/kyc/webhook", kycWebhook);
+        this.app.post("/v1/dragonfactor/webhook", kycWebhook);
         this.app.use(
             "/v1/dragonfactor/login",
             Dragonfactor.expressMiddleware({

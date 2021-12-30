@@ -91,6 +91,7 @@ export class TwitterClient {
         try {
             text = text.replace("@", "#");
             logger.debug(`posting tweet to twitter with text: ${text}`);
+            if (text.length > 200) throw new Error("Text too long for twitter");
             const options: { [key: string]: string } = { status: text };
             const client = TwitterClient.getClient(credentials);
             if (data && mediaType && mediaFormat) {

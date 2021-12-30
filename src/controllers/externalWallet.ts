@@ -16,7 +16,7 @@ export const attach = async (parent: any, args: { ethereumAddress: string }, con
         if (!admin) throw new Error("user not found");
         user = await Org.getByAdminId(admin.id);
         isOrg = true;
-    } else user = await User.findOne({ where: { identityId: id } });
+    } else user = await User.findOne({ where: { id } });
     if (!user) throw new Error("user not found");
     if (await ExternalAddress.findOne({ where: { ethereumAddress: address } }))
         throw new Error("ethereum address already registered");
@@ -49,7 +49,7 @@ export const claim = async (
         const admin = await Admin.findOne({ where: { firebaseId: id } });
         if (!admin) throw new Error("admin not found");
         user = await Org.getByAdminId(admin.id);
-    } else user = await User.findOne({ where: { identityId: id } });
+    } else user = await User.findOne({ where: { id } });
     if (!user) throw new Error("user not found");
     const externalWallet = await ExternalAddress.getByUserAndAddress(user, address, method === "firebase");
     if (!externalWallet) throw new Error("external wallet not found");
@@ -70,7 +70,7 @@ export const get = async (parent: any, args: { ethereumAddress: string }, contex
         const admin = await Admin.findOne({ where: { firebaseId: id } });
         if (!admin) throw new Error("user not found");
         user = await Org.getByAdminId(admin.id);
-    } else user = await User.findOne({ where: { identityId: id } });
+    } else user = await User.findOne({ where: { id } });
     if (!user) throw new Error("user not found");
     const externalWallet = await ExternalAddress.getByUserAndAddress(user, address, method === "firebase");
     if (!externalWallet) throw new Error("external wallet not found");
@@ -86,7 +86,7 @@ export const list = async (parent: any, _args: any, context: { user: any }) => {
         if (!admin) throw new Error("user not found");
         user = await Org.getByAdminId(admin.id);
         isOrg = true;
-    } else user = await User.findOne({ where: { identityId: id }, relations: ["addresses"] });
+    } else user = await User.findOne({ where: { id }, relations: ["addresses"] });
     if (!user) throw new Error("user not found");
     return isOrg && (user as Org).wallet.addresses
         ? (user as Org).wallet.addresses.map((address) => address.asV1())

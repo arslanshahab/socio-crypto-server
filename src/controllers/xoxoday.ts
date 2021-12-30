@@ -61,20 +61,20 @@ export const getVouchers = async (parent: any, args: { country: string; page: nu
 export const placeOrder = async (parent: any, args: { cart: Array<any>; email: string }, context: { user: any }) => {
     try {
         const { cart, email } = args;
+        if (!email) throw new Error("No email provided");
         const { id } = context.user;
         const user = await User.findOne({
-            where: { identityId: id },
+            where: { id },
             relations: ["wallet", "wallet.walletCurrency", "campaigns", "orders", "socialLinks"],
         });
         if (!user) throw new Error("No user found");
-        if (!email) throw new Error("No email provided");
         if (!cart || !cart.length) throw new Error("Please provide some items to place an order.");
         const totalCoiinSpent = cart.reduce((a, b) => a + (b.coiinPrice || 0), 0);
         await ifUserCanRedeem(user, totalCoiinSpent);
         const ordersData = await prepareOrderList(cart, email);
         const orderStatusList = await Xoxoday.placeOrder(ordersData);
         const orderEntitiesList = await prepareOrderEntities(cart, orderStatusList);
-        await user.updateCoiinBalance("subtract", totalCoiinSpent);
+        await user.updateCoiinBalance("SUBTRACT", totalCoiinSpent);
         XoxodayOrderModel.saveOrderList(orderEntitiesList, user);
         return { success: true };
     } catch (error) {
@@ -87,7 +87,7 @@ export const redemptionRequirements = async (parent: any, args: {}, context: { u
     try {
         const { id } = context.user;
         const user = await User.findOne({
-            where: { identityId: id },
+            where: { id },
             relations: ["campaigns", "orders", "socialLinks"],
         });
         if (!user) throw new Error("No user found");

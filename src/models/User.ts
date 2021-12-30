@@ -7,6 +7,7 @@ import {
     OneToOne,
     CreateDateColumn,
     UpdateDateColumn,
+    BeforeInsert,
 } from "typeorm";
 import { Participant } from "./Participant";
 import { XoxodayOrder } from "./XoxodayOrder";
@@ -23,18 +24,30 @@ import { DailyParticipantMetric } from "./DailyParticipantMetric";
 import { NotificationSettings } from "./NotificationSettings";
 import { Admin } from "./Admin";
 import { ExternalAddress } from "./ExternalAddress";
-import { WeeklyReward } from "./WeeklyReward";
 import { KycStatus } from "../types";
 import { VerificationApplication } from "./VerificationApplication";
-import { Verification } from "./Verification";
+import { WalletCurrency } from "./WalletCurrency";
+import { differenceInMonths } from "date-fns";
+import { Transfer } from "./Transfer";
+
+export const LOGIN_REWARD_AMOUNT = 1;
+export const PARTICIPATION_REWARD_AMOUNT = 2;
+export const REGISTRATION_REWARD_AMOUNT = 2;
+type RewardType = "LOGIN_REWARD" | "PARTICIPATION_REWARD" | "REGISTRATION_REWARD";
 
 @Entity()
 export class User extends BaseEntity {
     @PrimaryGeneratedColumn("uuid")
     public id: string;
 
-    @Column({ nullable: false })
+    @Column({ nullable: true })
     public identityId: string;
+
+    @Column({ nullable: false })
+    public email: string;
+
+    @Column({ nullable: false })
+    public password: string;
 
     @Column({ default: true })
     public active: boolean;
@@ -57,75 +70,31 @@ export class User extends BaseEntity {
     @OneToMany((_type) => Participant, (participant) => participant.user)
     campaigns: Participant[];
 
-    @OneToOne(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => Wallet,
-        (wallet) => wallet.user
-    )
+    @OneToOne((_type) => Wallet, (wallet) => wallet.user)
     public wallet: Wallet;
 
-    @OneToMany(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => ExternalAddress,
-        (address) => address.user
-    )
+    @OneToMany((_type) => ExternalAddress, (address) => address.user)
     public addresses: ExternalAddress[];
 
-    @OneToMany(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => SocialLink,
-        (link) => link.user
-    )
+    @OneToMany((_type) => SocialLink, (link) => link.user)
     public socialLinks: SocialLink[];
 
-    @OneToMany(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => VerificationApplication,
-        (verification) => verification.user
-    )
+    @OneToMany((_type) => VerificationApplication, (verification) => verification.user)
     public identityVerifications: VerificationApplication[];
 
-    @OneToMany(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => FactorLink,
-        (link) => link.user
-    )
+    @OneToMany((_type) => FactorLink, (link) => link.user)
     public factorLinks: FactorLink[];
 
-    @OneToMany(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => Verification,
-        (verification) => verification.user
-    )
-    public verifications: Verification[];
-
-    @OneToMany(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => TwentyFourHourMetric,
-        (metrics) => metrics.user
-    )
+    @OneToMany((_type) => TwentyFourHourMetric, (metrics) => metrics.user)
     public twentyFourHourMetrics: TwentyFourHourMetric[];
 
-    @OneToOne(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => Profile,
-        (profile) => profile.user,
-        { eager: true }
-    )
+    @OneToOne((_type) => Profile, (profile) => profile.user, { eager: true })
     public profile: Profile;
 
-    @OneToOne(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => NotificationSettings,
-        (notifications) => notifications.user
-    )
+    @OneToOne((_type) => NotificationSettings, (notifications) => notifications.user)
     public notificationSettings: NotificationSettings;
 
-    @OneToMany(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => DailyParticipantMetric,
-        (metric) => metric.user
-    )
+    @OneToMany((_type) => DailyParticipantMetric, (metric) => metric.user)
     public dailyMetrics: DailyParticipantMetric[];
 
     @OneToMany((_type) => Admin, (admin) => admin.user)
@@ -134,16 +103,44 @@ export class User extends BaseEntity {
     @OneToMany((_type) => XoxodayOrder, (order) => order.user)
     public orders: XoxodayOrder[];
 
-    @OneToMany((_type) => WeeklyReward, (rewards) => rewards.user)
-    public weeklyRewards: WeeklyReward[];
+    @BeforeInsert()
+    prepreModel() {
+        this.email = this.email.toLowerCase();
+    }
+
+    public static async initNewUser(email: string, password: string, username: string): Promise<User> {
+        const user = new User();
+        const wallet = new Wallet();
+        const coiinWallet = new WalletCurrency();
+        const profile = new Profile();
+        const notificationSettings = new NotificationSettings();
+        user.email = email;
+        user.password = password;
+        coiinWallet.type = "coiin";
+        coiinWallet.balance = new BN(0);
+        await user.save();
+        wallet.user = user;
+        await wallet.save();
+        coiinWallet.wallet = wallet;
+        await coiinWallet.save();
+        profile.username = username;
+        profile.user = user;
+        await profile.save();
+        notificationSettings.user = user;
+        await notificationSettings.save();
+        user.profile = profile;
+        user.notificationSettings = notificationSettings;
+        return await user.save();
+    }
 
     public asV1() {
-        let returnedUser: any = { ...this };
+        let { password, ...returnedUser }: any = { ...this };
         if (this.profile) {
             const { id, ...values } = this.profile;
             returnedUser = {
                 ...returnedUser,
                 ...values,
+                email: returnedUser.email,
                 hasRecoveryCodeSet: this.profile.recoveryCode !== null && this.profile.recoveryCode !== "",
             };
         }
@@ -169,7 +166,7 @@ export class User extends BaseEntity {
         return returnedUser;
     }
 
-    public async updateCoiinBalance(operation: "add" | "subtract", amount: number): Promise<any> {
+    public async updateCoiinBalance(operation: "ADD" | "SUBTRACT", amount: number): Promise<any> {
         let user: User | undefined = this;
         if (!user.wallet || !user.wallet.walletCurrency) {
             user = await User.findOne({ where: { id: this.id }, relations: ["wallet", "wallet.walletCurrency"] });
@@ -178,7 +175,7 @@ export class User extends BaseEntity {
             const coiinBalance = user.wallet.walletCurrency.find((item) => item.type.toLowerCase() === "coiin");
             if (coiinBalance) {
                 coiinBalance.balance =
-                    operation === "add" ? coiinBalance.balance.plus(amount) : coiinBalance.balance.minus(amount);
+                    operation === "ADD" ? coiinBalance.balance.plus(amount) : coiinBalance.balance.minus(amount);
                 return coiinBalance.save();
             }
         }
@@ -191,6 +188,41 @@ export class User extends BaseEntity {
         }
         return this;
     }
+
+    public async updateLastLogin() {
+        this.lastLogin = new Date();
+        return await this.save();
+    }
+
+    public transferReward = async (type: RewardType): Promise<any> => {
+        const user = this;
+        const wallet = await Wallet.findOne({ where: { user } });
+        if (!wallet) throw new Error("User wallet not found");
+        let accountAgeInHours = 0,
+            thisWeeksReward;
+        if (type === "LOGIN_REWARD") accountAgeInHours = differenceInMonths(new Date(), new Date(user.createdAt));
+        if (type === "LOGIN_REWARD" || type === "PARTICIPATION_REWARD")
+            thisWeeksReward = await Transfer.getRewardForThisWeek(wallet, type);
+        const amount =
+            type === "REGISTRATION_REWARD"
+                ? REGISTRATION_REWARD_AMOUNT
+                : type === "PARTICIPATION_REWARD"
+                ? PARTICIPATION_REWARD_AMOUNT
+                : LOGIN_REWARD_AMOUNT;
+        if (
+            (type === "LOGIN_REWARD" && accountAgeInHours > 24 && !thisWeeksReward) ||
+            (type === "PARTICIPATION_REWARD" && !thisWeeksReward) ||
+            type === "REGISTRATION_REWARD"
+        ) {
+            await user.updateCoiinBalance("ADD", amount);
+            await Transfer.newReward({
+                wallet,
+                type,
+                symbol: "COIN",
+                amount: new BN(amount),
+            });
+        }
+    };
 
     public static async getUsersForDailyMetricsCron(): Promise<User[]> {
         return await this.createQueryBuilder("user")
@@ -343,7 +375,7 @@ export class User extends BaseEntity {
             if (loadOrders) query = query.leftJoinAndSelect("user.orders", "orders", 'orders."userId" = user.id');
         }
         query = query.leftJoinAndSelect("user.profile", "profile", 'profile."userId" = user.id');
-        query = query.where("user.identityId = :id", { id });
+        query = query.where("user.id = :id", { id });
         return query.getOne();
     }
 }
