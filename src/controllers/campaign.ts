@@ -584,10 +584,11 @@ export const payoutCampaignRewards = async (parent: any, args: { campaignId: str
     };
 };
 
-export const getUserAllCampaign = async (parent: any, args: any, context: { user: any }) => {
+export const listAllCampaignsForOrg = async (parent: any, args: any, context: { user: any }) => {
     const userId = context.user.id;
     checkPermissions({ hasRole: ["admin"] }, context);
     const admin = await Admin.findOne({ where: { firebaseId: userId }, relations: ["org"] });
+    if (!admin) throw new Error("Admin not found");
     const campaigns = await Campaign.find({ where: { org: admin?.org } });
     return campaigns.map((x) => ({ id: x.id, name: x.name }));
 };
