@@ -7,7 +7,6 @@ import { SesClient } from "../clients/ses";
 import { FailureByDesign } from "../util/errors";
 import { WalletCurrency } from "../models/WalletCurrency";
 import { Wallet } from "../models/Wallet";
-// import { Campaign } from "../models/Campaign";
 
 export const newOrg = async (
     parent: any,
