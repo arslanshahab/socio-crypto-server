@@ -589,7 +589,7 @@ export const listAllCampaignsForOrg = async (parent: any, args: any, context: { 
     checkPermissions({ hasRole: ["admin"] }, context);
     const admin = await Admin.findOne({ where: { firebaseId: userId }, relations: ["org"] });
     if (!admin) throw new Error("Admin not found");
-    const campaigns = await Campaign.find({ where: { org: admin?.org } });
+    const campaigns = await Campaign.find({ where: { org: admin.org } });
     return campaigns.map((x) => ({ id: x.id, name: x.name }));
 };
 //! Dashboard Metrics
@@ -597,11 +597,14 @@ export const getDashboardMetrics = async (parent: any, { campaignId, skip, take 
     const userId = context.user.id;
     checkPermissions({ hasRole: ["admin"] }, context);
     const admin = await Admin.findOne({ where: { firebaseId: userId }, relations: ["org"] });
-    const orgId = await admin?.org?.id;
+    if (!admin) throw new Error("Admin not found");
+    const { org } = admin;
+    if (!org) throw new Error("Organization not found");
+    const orgId = await admin.org.id;
     let campaignMetrics;
     let aggregatedCampaignMetrics;
     let totalParticipants;
-
+    if (!campaignId) throw new Error("Campaign Id not found");
     if (orgId && campaignId == "-1") {
         aggregatedCampaignMetrics = await DailyParticipantMetric.getAggregatedOrgMetrics(orgId);
         campaignMetrics = await DailyParticipantMetric.getOrgMetrics(orgId);
