@@ -43,7 +43,7 @@
 //         };
 //         const requestData: RequestData = {
 //             method: "POST",
-//             url: `${TatumClient.baseUrl}/v3/ethereum/smartcontract`,
+//             url: `${TatumClient.baseUrl}/ethereum/smartcontract`,
 //             payload,
 //             headers: { "x-api-key": Secrets.tatumApiKey, "x-testnet-type": "ethereum-rinkeby" },
 //         };

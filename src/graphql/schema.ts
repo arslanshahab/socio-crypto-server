@@ -78,7 +78,7 @@ export const typeDefs = gql`
         registerFactorLink(factor: JSON): User
         updateUsername(username: String!): User
         removeFactorLink(factorId: String!): User
-        verifyKyc(userKyc: KycApplication): KycUser
+        verifyKyc(userKyc: KycApplication): KycApplicationResponse
         updateKyc(user: JSON!): KycUser
         initiateWithdraw(withdrawAmount: Float!, ethAddress: String, tokenSymbol: String): Transfer
         updateWithdrawStatus(transferIds: [String]!, status: String!): [Transfer]
@@ -125,8 +125,21 @@ export const typeDefs = gql`
         removePaymentMethod(paymentMethodId: String): Boolean
         placeStoreOrder(cart: [JSON], email: String): JSON
         withdrawFunds(symbol: String, address: String, amount: Float): SuccessResponse
-        startEmailVerification(email: String): SuccessResponse
-        completeEmailVerification(email: String, token: String): SuccessResponse
+        startVerification(email: String!, type: VerificationType!): SuccessResponse
+        startEmailVerification(email: String!): SuccessResponse
+        completeEmailVerification(email: String!, token: String!): SuccessResponse
+        completeVerification(email: String!, code: String!): SuccessResponse
+        loginUser(email: String!, password: String!): SuccessResponse
+        registerUser(email: String!, username: String!, password: String!, verificationToken: String!): SuccessResponse
+        resetUserPassword(password: String!, verificationToken: String): SuccessResponse
+        recoverUserAccountStep1(username: String!, code: String!): SuccessResponse
+        recoverUserAccountStep2(
+            email: String!
+            password: String!
+            userId: String!
+            verificationToken: String!
+        ): SuccessResponse
+        updateUserPassword(oldPassword: String!, newPassword: String!): SuccessResponse
     }
 
     type Query {
@@ -157,7 +170,7 @@ export const typeDefs = gql`
         helloWorld: String
         isLastFactor: Boolean
         me(openCampaigns: Boolean): User
-        getKyc: KycUser
+        getKyc: KycApplicationResponse
         getWalletWithPendingBalance(tokenSymbol: String): Wallet
         getWithdrawals(status: String): [AdminWithdrawal]
         accountExists(id: String!): UserExistence
@@ -188,11 +201,30 @@ export const typeDefs = gql`
         getTokenInUSD(symbol: String!): Float
         getTokenIdBySymbol(symbol: String!): String
         checkCoinGecko(symbol: String): Boolean
-        getWeeklyRewards: WeeklyRewardResponse
+        getWeeklyRewards: WeeklyRewardEstimation
         getRedemptionRequirements: RedemptionRequirements
         getUserBalances(userId: String): [UserBalance]
         getTransferHistory(symbol: String, skip: Int, take: Int): PaginatedTransferHistory
-        downloadKyc(kycId: String!): [Factor]
+        downloadKyc: KycApplicationResponse
+    }
+
+    enum VerificationType {
+        EMAIL
+        PASSWORD
+    }
+
+    type KycApplicationResponse {
+        kycId: String
+        status: String
+        factors: FactorData
+    }
+
+    type FactorData {
+        fullName: String
+        email: String
+        address: String
+        isDocumentValid: Boolean
+        documentDetails: JSON
     }
 
     input KycApplication {
@@ -238,6 +270,9 @@ export const typeDefs = gql`
 
     type SuccessResponse {
         success: Boolean
+        verificationToken: String
+        userId: String
+        token: String
         message: String
     }
 
@@ -254,7 +289,7 @@ export const typeDefs = gql`
         orderLimitForTwentyFourHoursReached: Boolean
     }
 
-    type WeeklyRewardResponse {
+    type WeeklyRewardEstimation {
         loginRewardRedeemed: Boolean
         loginReward: Int
         nextLoginReward: String
