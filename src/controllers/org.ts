@@ -54,6 +54,10 @@ export const listOrgs = async (parent: any, args: { skip: number; take: number }
     }));
     return results;
 };
+export const getOrgDetails = async (parent: any, args: any, context: { user: any }) => {
+    const orgDetail = await Org.orgDetails();
+    return orgDetail;
+};
 
 export const newUser = async (
     parent: any,

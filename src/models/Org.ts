@@ -94,6 +94,18 @@ export class Org extends BaseEntity {
     public static async listOrgs(skip: number, take: number) {
         return await this.createQueryBuilder("org").skip(skip).take(take).getMany();
     }
+    public static async orgDetails() {
+        return await this.createQueryBuilder("org")
+            .leftJoin("org.campaigns", "campaign")
+            .leftJoin("org.admins", "admin")
+            .select("org.name", "name")
+            .addSelect("org.createdAt", "createdAt")
+            .addSelect("COUNT(campaign.id)", "campaignCount")
+            .addSelect("COUNT(DISTINCT(admin.id))", "adminCount")
+            .groupBy("org.name")
+            .addGroupBy("org.createdAt")
+            .getRawMany();
+    }
 
     public async isCurrencyAdded(symbol: string): Promise<boolean> {
         try {
