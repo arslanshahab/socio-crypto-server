@@ -279,7 +279,10 @@ export class User extends BaseEntity {
         };
     }
 
-    public static async getUser(id: string, graphqlQuery: FieldNode | undefined): Promise<User | undefined> {
+    public static async getUser(
+        data: { identityId: string; userId: string },
+        graphqlQuery: FieldNode | undefined
+    ): Promise<User | undefined> {
         let query = this.createQueryBuilder("user");
         if (graphqlQuery) {
             const fieldNodes = graphqlQuery.selectionSet?.selections.filter((node) => node.kind === "Field") || [];
@@ -381,7 +384,8 @@ export class User extends BaseEntity {
             if (loadOrders) query = query.leftJoinAndSelect("user.orders", "orders", 'orders."userId" = user.id');
         }
         query = query.leftJoinAndSelect("user.profile", "profile", 'profile."userId" = user.id');
-        query = query.where("user.id = :id", { id });
+        query = query.where("user.id = :id", { id: data.userId });
+        query = query.where("user.identityId = :identityId", { identityId: data.identityId });
         return query.getOne();
     }
 }

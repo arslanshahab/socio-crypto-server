@@ -138,9 +138,9 @@ export const me = async (
     context: { user: any },
     info: GraphQLResolveInfo
 ) => {
-    const { id } = context.user;
+    const { id, userId } = context.user;
     const query = info.fieldNodes.find((field) => field.name.value === info.fieldName);
-    const user = await User.getUser(id, query);
+    const user = await User.getUser({ identityId: id, userId }, query);
     if (!user) throw new Error("user not found");
     if (args.openCampaigns !== null && args.openCampaigns === true) {
         user.campaigns = user.campaigns.filter((p) => p.campaign.isOpen());
