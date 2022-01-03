@@ -4,7 +4,10 @@ import { Stripe } from "stripe";
 
 interface JWTPayload {
     email: string;
-    id: string;
+    userId: string;
+    id?: string;
+    role?: string;
+    company?: string;
 }
 
 export interface XoxodayVoucher {

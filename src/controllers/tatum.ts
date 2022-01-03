@@ -192,9 +192,9 @@ export const withdrawFunds = async (
     context: { user: any }
 ) => {
     try {
-        const { id } = context.user;
+        const { id, userId } = context.user;
         const user = await User.findOne({
-            where: { id },
+            where: [{ identityId: id }, { id: userId }],
             relations: ["wallet"],
         });
         if (!user) throw new Error("User not found");

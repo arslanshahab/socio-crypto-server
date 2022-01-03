@@ -194,6 +194,12 @@ export class User extends BaseEntity {
         return await this.save();
     }
 
+    public async updateEmailPassword(email: string, password: string) {
+        this.email = email;
+        this.password = password;
+        return await this.save();
+    }
+
     public transferReward = async (type: RewardType): Promise<any> => {
         const user = this;
         const wallet = await Wallet.findOne({ where: { user } });
