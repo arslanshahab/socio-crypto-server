@@ -7,7 +7,6 @@ import {
     OneToOne,
     CreateDateColumn,
     UpdateDateColumn,
-    BeforeInsert,
 } from "typeorm";
 import { Participant } from "./Participant";
 import { XoxodayOrder } from "./XoxodayOrder";
@@ -43,7 +42,10 @@ export class User extends BaseEntity {
     @Column({ nullable: true })
     public identityId: string;
 
-    @Column({ nullable: false })
+    @Column({
+        nullable: false,
+        transformer: { to: (value: string) => value?.toLowerCase() || "", from: (value: string) => value },
+    })
     public email: string;
 
     @Column({ nullable: false })
@@ -102,11 +104,6 @@ export class User extends BaseEntity {
 
     @OneToMany((_type) => XoxodayOrder, (order) => order.user)
     public orders: XoxodayOrder[];
-
-    @BeforeInsert()
-    prepreModel() {
-        this.email = this.email.toLowerCase();
-    }
 
     public static async initNewUser(email: string, password: string, username: string): Promise<User> {
         const user = new User();
@@ -194,6 +191,12 @@ export class User extends BaseEntity {
         return await this.save();
     }
 
+    public async updateEmailPassword(email: string, password: string) {
+        this.email = email;
+        this.password = password;
+        return await this.save();
+    }
+
     public transferReward = async (type: RewardType): Promise<any> => {
         const user = this;
         const wallet = await Wallet.findOne({ where: { user } });
@@ -273,7 +276,10 @@ export class User extends BaseEntity {
         };
     }
 
-    public static async getUser(id: string, graphqlQuery: FieldNode | undefined): Promise<User | undefined> {
+    public static async getUser(
+        data: { identityId: string; userId: string },
+        graphqlQuery: FieldNode | undefined
+    ): Promise<User | undefined> {
         let query = this.createQueryBuilder("user");
         if (graphqlQuery) {
             const fieldNodes = graphqlQuery.selectionSet?.selections.filter((node) => node.kind === "Field") || [];
@@ -375,7 +381,8 @@ export class User extends BaseEntity {
             if (loadOrders) query = query.leftJoinAndSelect("user.orders", "orders", 'orders."userId" = user.id');
         }
         query = query.leftJoinAndSelect("user.profile", "profile", 'profile."userId" = user.id');
-        query = query.where("user.id = :id", { id });
+        query = query.where("user.id = :id", { id: data.userId });
+        query = query.where("user.identityId = :identityId", { identityId: data.identityId });
         return query.getOne();
     }
 }
