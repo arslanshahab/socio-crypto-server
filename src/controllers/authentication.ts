@@ -84,7 +84,7 @@ export const registerUser = async (
         if (!verificationData || !verificationData.verified) throw new Error(EMAIL_NOT_VERIFIED);
         const user = await User.initNewUser(email, createPasswordHash({ email, password }), username);
         await user.transferReward("REGISTRATION_REWARD");
-        return { token: createSessionToken({ email: user.email, id: user.id }) };
+        return { token: createSessionToken(user) };
     } catch (error) {
         throw new FormattedError(error);
     }
@@ -98,7 +98,7 @@ export const loginUser = async (parent: any, args: { email: string; password: st
         if (!user) throw new Error(EMAIL_NOT_EXISTS);
         if (user.password !== createPasswordHash({ email, password })) throw new Error(INCORRECT_PASSWORD);
         await user.transferReward("LOGIN_REWARD");
-        return { token: createSessionToken({ email: user.email, id: user.id }) };
+        return { token: createSessionToken(user) };
     } catch (error) {
         throw new FormattedError(error);
     }
@@ -132,7 +132,7 @@ export const recoverUserAccountStep1 = async (parent: any, args: { username: str
         if (!user.email) {
             return { userId: user.id };
         } else {
-            return { token: createSessionToken({ email: user.email, id: user.id }) };
+            return { token: createSessionToken(user) };
         }
     } catch (error) {
         throw new FormattedError(error);
@@ -150,10 +150,8 @@ export const recoverUserAccountStep2 = async (
         const verificationData = await Verification.findOne({ where: { id: decrypt(verificationToken) } });
         if (!verificationData || !verificationData.verified) throw new Error(EMAIL_NOT_VERIFIED);
         if (user.email) throw new Error(EMAIL_EXISTS);
-        user.email = email;
-        user.password = createPasswordHash({ email, password });
-        await user.save();
-        return { token: createSessionToken({ email, id: userId }) };
+        await user.updateEmailPassword(email, createPasswordHash({ email, password }));
+        return { token: createSessionToken(user) };
     } catch (error) {
         throw new FormattedError(error);
     }
