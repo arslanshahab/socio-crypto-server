@@ -2,6 +2,11 @@ import express, { Request } from "express";
 import { BigNumber } from "bignumber.js";
 import { Stripe } from "stripe";
 
+interface JWTPayload {
+    email: string;
+    id: string;
+}
+
 export interface XoxodayVoucher {
     productId: string;
     name: string;
@@ -236,11 +241,23 @@ export type TransferStatus =
     | "APPROVED"
     | "REJECTED";
 
+export type TransferAction =
+    | "TRANSFER"
+    | "WITHDRAW"
+    | "DEPOSIT"
+    | "FEE"
+    | "PRIZE"
+    | "REFUND"
+    | "LOGIN_REWARD"
+    | "REGISTRATION_REWARD"
+    | "PARTICIPATION_REWARD"
+    | "CAMPAIGN_REWARD"
+    | "NETWORK_REWARD";
+
 export type CampaignStatus = "ACTIVE" | "PENDING" | "INSUFFICIENT_FUNDS" | "CLOSED" | "APPROVED" | "DENIED";
-
 export type CampaignAuditStatus = "DEFAULT" | "AUDITED" | "PENDING";
-
-export type KycStatus = 'APPROVED'| 'PENDING' | 'REJECTED' | '';
+export type KycStatus = "APPROVED" | "PENDING" | "REJECTED" | "";
+export type VerificationType = "EMAIL" | "PASSWORD" | "";
 
 export interface GraphApiInputParameters {
     fields?: string[] | string;
@@ -307,4 +324,13 @@ export interface Factor {
     providerId: string;
     signature: string;
     factor: string;
+}
+
+interface AcuantApplicationExtractedDetails {
+    age: number | null;
+    fullName: string | null;
+    address: string | null;
+    isDocumentValid: boolean | null;
+    documentDetails: string | null;
+    documentExpiry: Date | null;
 }

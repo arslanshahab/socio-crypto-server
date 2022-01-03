@@ -1,5 +1,5 @@
 import { SocialPost } from "../models/SocialPost";
-import {Tiers, AggregateDailyMetrics} from "../types";
+import { Tiers, AggregateDailyMetrics } from "../types";
 import { Participant } from "../models/Participant";
 import { Campaign } from "../models/Campaign";
 import { getConnection } from "typeorm";
@@ -10,8 +10,8 @@ import { DailyParticipantMetric } from "../models/DailyParticipantMetric";
 import { Org } from "../models/Org";
 import { Escrow } from "../models/Escrow";
 import { WalletCurrency } from "../models/WalletCurrency";
+import { FEE_RATE } from "../util/constants";
 
-export const FEE_RATE = process.env.FEE_RATE ? parseFloat(process.env.FEE_RATE) : 0.1;
 export const feeMultiplier = new BN(1).minus(FEE_RATE);
 
 export const updateOrgCampaignsStatusOnDeposit = async (wallet: Wallet) => {
@@ -229,7 +229,7 @@ export const performCurrencyAction = async (
 
 const addDays = (date: Date, days: number): Date => {
     const d = new Date(date);
-    d.setUTCDate(d.getUTCDate() + 1);
+    d.setUTCDate(d.getUTCDate() + days);
     return d;
 };
 
@@ -337,14 +337,4 @@ export const formatUTCDateForComparision = (date: Date): string => {
         currentDate.getUTCMonth() + 1 < 10 ? `0${currentDate.getUTCMonth() + 1}` : currentDate.getUTCMonth() + 1;
     const day = currentDate.getUTCDate() < 10 ? `0${currentDate.getUTCDate()}` : currentDate.getUTCDate();
     return `${currentDate.getUTCFullYear()}-${month}-${day}`;
-};
-
-export const getYesterdaysDate = (date: Date) => {
-    const yesterdayDate = new Date(date);
-    yesterdayDate.setUTCDate(new Date().getUTCDate() - 1);
-    yesterdayDate.setUTCHours(0);
-    yesterdayDate.setUTCMinutes(0);
-    yesterdayDate.setUTCSeconds(0);
-    yesterdayDate.setUTCMilliseconds(0);
-    return yesterdayDate;
 };

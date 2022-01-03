@@ -18,7 +18,7 @@ import { StringifiedArrayTransformer, BigNumberEntityTransformer, AlgorithmTrans
 import { BigNumber } from "bignumber.js";
 import { BN } from "../util/helpers";
 import { DailyParticipantMetric } from "./DailyParticipantMetric";
-import { getDatesBetweenDates, formatUTCDateForComparision, getYesterdaysDate } from "../controllers/helpers";
+import { getDatesBetweenDates, formatUTCDateForComparision } from "../controllers/helpers";
 import { User } from "./User";
 import { Org } from "./Org";
 import { HourlyCampaignMetric } from "./HourlyCampaignMetric";
@@ -31,7 +31,8 @@ import { TatumClient, CAMPAIGN_CREATION_AMOUNT } from "../clients/tatumClient";
 import { WalletCurrency } from "./WalletCurrency";
 import { Wallet } from "./Wallet";
 import { Currency } from "./Currency";
-import { getCryptoAssestImageUrl } from "../controllers/controllerHelpers";
+import { getCryptoAssestImageUrl } from "../helpers";
+import { initDateFromParams } from "../util/date";
 
 @Entity()
 export class Campaign extends BaseEntity {
@@ -233,10 +234,11 @@ export class Campaign extends BaseEntity {
     }
 
     public static async getAllParticipatingCampaignIdsByUser(user: User): Promise<string[]> {
-        const u = await User.findOneOrFail({
+        const u = await User.findOne({
             where: { id: user.id },
             relations: ["campaigns", "campaigns.campaign"],
         });
+        if (!u) throw new Error("User not found.");
         return u.campaigns.length > 0 ? u.campaigns.map((participant: Participant) => participant.campaign.id) : [];
     }
 
@@ -401,7 +403,14 @@ export class Campaign extends BaseEntity {
                         }
                     }
                 } else {
-                    const datesInBetween = getDatesBetweenDates(getYesterdaysDate(new Date()), new Date());
+                    const yesterday = initDateFromParams({
+                        date: new Date(),
+                        d: new Date().getDate() - 1,
+                        h: 0,
+                        i: 0,
+                        s: 0,
+                    });
+                    const datesInBetween = getDatesBetweenDates(yesterday, new Date());
                     for (let j = 0; j < datesInBetween.length; j++) {
                         await DailyParticipantMetric.insertPlaceholderRow(
                             datesInBetween[j],

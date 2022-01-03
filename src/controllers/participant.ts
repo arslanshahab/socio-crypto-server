@@ -27,7 +27,7 @@ const rateLimiter = getGraphQLRateLimiter({
 
 export const getParticipantByCampaignId = async (parent: any, args: { campaignId: string }, context: { user: any }) => {
     const { id } = context.user;
-    const user = await User.findOneOrFail({ where: { identityId: id } });
+    const user = await User.findOne({ where: { id } });
     const campaign = await Campaign.findOneOrFail({ where: { id: args.campaignId } });
     const particpant = await Participant.findOneOrFail({ where: { user, campaign }, relations: ["user", "campaign"] });
     return particpant.asV1();
@@ -122,7 +122,7 @@ export const getParticipantMetrics = async (parent: any, args: { participantId: 
     const { id } = context.user;
     const { participantId } = args;
     const additionalRows = [];
-    const user = await User.findOne({ where: { identityId: id } });
+    const user = await User.findOne({ where: { id } });
     if (!user) throw new Error("user not found");
     const participant = await Participant.findOne({ where: { id: participantId, user }, relations: ["campaign"] });
     if (!participant) throw new Error("participant not found");

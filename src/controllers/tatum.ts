@@ -5,10 +5,11 @@ import { Request, Response } from "express";
 import { TatumWallet } from "../models/TatumWallet";
 import { User } from "../models/User";
 import { S3Client } from "../clients/s3";
-import { findOrCreateCurrency, getWithdrawableAmount } from "./controllerHelpers";
+import { findOrCreateCurrency, getWithdrawableAmount } from "../helpers";
 import { Currency } from "../models/Currency";
 import { Transfer } from "../models/Transfer";
 import { BigNumber } from "bignumber.js";
+import { ApolloError } from "apollo-server-express";
 
 export const initWallet = asyncHandler(async (req: Request, res: Response) => {
     try {
@@ -146,7 +147,7 @@ export const getSupportedCurrencies = async (parent: any, args: any, context: { 
         return supportedCurrencies;
     } catch (error) {
         console.log("ERROR----", error);
-        return error;
+        throw new ApolloError(error.message);
     }
 };
 
@@ -181,7 +182,7 @@ export const getDepositAddress = async (parent: any, args: { symbol: string }, c
         }
     } catch (error) {
         console.log("ERROR----", error);
-        return error;
+        throw new ApolloError(error.message);
     }
 };
 
@@ -193,7 +194,7 @@ export const withdrawFunds = async (
     try {
         const { id } = context.user;
         const user = await User.findOne({
-            where: { identityId: id },
+            where: { id },
             relations: ["wallet"],
         });
         if (!user) throw new Error("User not found");
@@ -216,13 +217,13 @@ export const withdrawFunds = async (
             amount: getWithdrawableAmount(amount),
         };
         await TatumClient.withdrawFundsToBlockchain(symbol, payload);
-        const newTransfer = new Transfer();
-        newTransfer.currency = symbol;
-        newTransfer.amount = new BigNumber(getWithdrawableAmount(amount));
-        newTransfer.action = "withdraw";
-        newTransfer.ethAddress = address;
-        newTransfer.wallet = user.wallet;
-        newTransfer.status = "SUCCEEDED";
+        const newTransfer = Transfer.initTatumTransfer({
+            symbol,
+            amount: new BigNumber(getWithdrawableAmount(amount)),
+            action: "WITHDRAW",
+            wallet: user.wallet,
+            tatumId: address,
+        });
         newTransfer.save();
         return {
             success: true,
@@ -230,9 +231,6 @@ export const withdrawFunds = async (
         };
     } catch (error) {
         console.log("ERROR----", error);
-        return {
-            success: false,
-            message: "There was an error performing your withdraw",
-        };
+        throw new ApolloError(error.message);
     }
 };

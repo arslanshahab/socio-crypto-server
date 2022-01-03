@@ -3,18 +3,48 @@ import * as admin from "firebase-admin";
 import { Campaign } from "../models/Campaign";
 import { Secrets } from "../util/secrets";
 import { paginateList } from "../util/helpers";
+import { RequestData, doFetch } from "../util/fetchRequest";
+
+interface FirebaseUserLoginResponse {
+    kind: string;
+    localId: string;
+    email: string;
+    displayName: string;
+    idToken: string;
+    registered: boolean;
+    refreshToken: string;
+    expiresIn: string;
+}
 
 export class Firebase {
-    public static client: admin.app.App;
+    public static adminClient: admin.app.App;
+    public static baseUrl = "https://identitytoolkit.googleapis.com";
 
     public static initialize() {
-        Firebase.client = admin.initializeApp({
+        Firebase.adminClient = admin.initializeApp({
             credential: admin.credential.cert({
                 projectId: Secrets.firebaseProjectId,
                 clientEmail: Secrets.firebaseClientEmail,
                 privateKey: Secrets.firebasePrivateKey,
             }),
         });
+    }
+
+    private static async makeRequest(path: string, method: RequestData["method"], payload?: RequestData["payload"]) {
+        const url = `${Firebase.baseUrl}/${path}`;
+        const requestData: RequestData = {
+            method,
+            url,
+            payload,
+            query: { key: process.env.FIREBASE_API_KEY },
+        };
+        const response = await doFetch(requestData);
+        if (response.status !== 200) {
+            const error = await response.json();
+            console.log("FIREBASE_CLIENT_ERROR", error);
+            throw new Error(error?.message || "There was an error from firebase");
+        }
+        return await response.json();
     }
 
     public static async sendGenericNotification(tokens: string[], title: string, body: string) {
@@ -47,7 +77,7 @@ export class Firebase {
                 },
                 tokens: currentTokens,
             };
-            await Firebase.client.messaging().sendMulticast(message);
+            await Firebase.adminClient.messaging().sendMulticast(message);
         }
     }
 
@@ -82,7 +112,7 @@ export class Firebase {
                 },
                 tokens: currentSet,
             };
-            await Firebase.client.messaging().sendMulticast(message);
+            await Firebase.adminClient.messaging().sendMulticast(message);
         }
     }
 
@@ -92,35 +122,44 @@ export class Firebase {
         role: "manager" | "admin",
         tempPass: boolean
     ) {
-        return Firebase.client.auth().setCustomUserClaims(uid, { company: orgName, role, tempPass });
+        return Firebase.adminClient.auth().setCustomUserClaims(uid, { company: orgName, role, tempPass });
     }
 
     public static async createSessionCookie(token: string, expiresIn: number) {
-        return Firebase.client.auth().createSessionCookie(token, { expiresIn });
+        return Firebase.adminClient.auth().createSessionCookie(token, { expiresIn });
     }
 
     public static async verifySessionCookie(cookie: string) {
-        return Firebase.client.auth().verifySessionCookie(cookie, true);
+        return Firebase.adminClient.auth().verifySessionCookie(cookie, true);
     }
 
     public static async verifyToken(token: string) {
-        return Firebase.client.auth().verifyIdToken(token, true);
+        return Firebase.adminClient.auth().verifyIdToken(token, true);
     }
 
     public static async revokeRefreshToken(token: string) {
-        return Firebase.client.auth().revokeRefreshTokens(token);
+        return Firebase.adminClient.auth().revokeRefreshTokens(token);
     }
 
     public static async createNewUser(email: string, password: string) {
-        return Firebase.client.auth().createUser({ email, password });
+        return Firebase.adminClient.auth().createUser({ email, password });
+    }
+
+    public static async loginUser(email: string, password: string): Promise<FirebaseUserLoginResponse> {
+        const endpoint = "/v1/accounts:signInWithPassword";
+        return await Firebase.makeRequest(endpoint, "POST", { email, password, returnSecureToken: true });
     }
 
     public static async updateUserPassword(uid: string, password: string) {
-        return Firebase.client.auth().updateUser(uid, { password });
+        return Firebase.adminClient.auth().updateUser(uid, { password });
     }
 
-    public static async getUser(email: string) {
-        return Firebase.client.auth().getUserByEmail(email);
+    public static async getUserByEmail(email: string) {
+        return Firebase.adminClient.auth().getUserByEmail(email);
+    }
+
+    public static async getUserById(id: string) {
+        return Firebase.adminClient.auth().getUser(id);
     }
 
     public static async sendDailyParticipationUpdate(
@@ -158,7 +197,7 @@ export class Firebase {
             data: { title, body, redirection: JSON.stringify({ to: "harvest" }) },
             token,
         };
-        await Firebase.client.messaging().send(message);
+        await Firebase.adminClient.messaging().send(message);
     }
 
     public static async sendCampaignCreatedNotifications(tokens: string[], campaign: Campaign) {
@@ -197,7 +236,7 @@ export class Firebase {
                 },
                 tokens: currentSet,
             };
-            await Firebase.client.messaging().sendMulticast(message);
+            await Firebase.adminClient.messaging().sendMulticast(message);
         }
     }
 
@@ -225,7 +264,7 @@ export class Firebase {
             data: { title, body, redirection: JSON.stringify({ to: "harvest" }) },
             token,
         };
-        await Firebase.client.messaging().send(message);
+        await Firebase.adminClient.messaging().send(message);
     }
 
     public static async sendKycRejectionNotification(token: string) {
@@ -252,7 +291,7 @@ export class Firebase {
             data: { title, body, redirection: JSON.stringify({ to: "settings" }) },
             token,
         };
-        await Firebase.client.messaging().send(message);
+        await Firebase.adminClient.messaging().send(message);
     }
 
     public static async sendWithdrawalApprovalNotification(token: string, amount: BigInt, symbol: String = "COIIN") {
@@ -279,7 +318,7 @@ export class Firebase {
             data: { title, body, redirection: JSON.stringify({ to: "rewards" }) },
             token,
         };
-        await Firebase.client.messaging().send(message);
+        await Firebase.adminClient.messaging().send(message);
     }
 
     public static async sendWithdrawalRejectionNotification(token: string, amount: BigInt, symbol: string = "COIIN") {
@@ -306,20 +345,20 @@ export class Firebase {
             data: { title, body, redirection: JSON.stringify({ to: "settings" }) },
             token,
         };
-        await Firebase.client.messaging().send(message);
+        await Firebase.adminClient.messaging().send(message);
     }
 
-    public static async sendFactorVerificationUpdate(token: string, status: string) {
-        let title = '';
-        let body = '';
+    public static async sendKycVerificationUpdate(token: string, status: string) {
+        let title = "";
+        let body = "";
         switch (status) {
-            case'ACCEPTED':
+            case "ACCEPTED":
                 title = "Your KYC has been approved";
                 body = `Please go to your settings page to download the factors`;
                 break;
-            case 'REJECTED':
-                title = "Your KYC was denied"
-                body = "Please resubmit your documents or contact support"
+            case "REJECTED":
+                title = "Your KYC was denied";
+                body = "Please resubmit your documents or contact support";
                 break;
             default:
                 return;
@@ -345,6 +384,6 @@ export class Firebase {
             data: { title, body, redirection: JSON.stringify({ to: "settings" }) },
             token,
         };
-        await Firebase.client.messaging().send(message);
+        await Firebase.adminClient.messaging().send(message);
     }
 }
