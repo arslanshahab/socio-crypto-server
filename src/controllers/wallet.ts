@@ -12,8 +12,11 @@ export const getFundingWallet = async (args: any, context: { user: any }) => {
 };
 
 export const getUserWallet = async (args: any, context: { user: any }) => {
-    const { id } = context.user;
-    const user = await User.findOne({ where: { id }, relations: ["wallet", "wallet.walletCurrency"] });
+    const { id, userId } = context.user;
+    const user = await User.findOne({
+        where: [{ identityId: id }, { id: userId }],
+        relations: ["wallet", "wallet.walletCurrency"],
+    });
     if (!user) throw new Error("user not found");
     return user.wallet.asV1();
 };
