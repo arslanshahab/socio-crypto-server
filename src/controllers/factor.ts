@@ -15,8 +15,7 @@ import { S3Client } from "../clients/s3";
 import { Profile } from "../models/Profile";
 import { NotificationSettings } from "../models/NotificationSettings";
 import { WalletCurrency } from "../models/WalletCurrency";
-
-const { NODE_ENV } = process.env;
+import { JWTPayload } from "src/types";
 
 export const registerFactorLink = async (
     parent: any,
@@ -146,14 +145,7 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
         }
     }
     await user.updateLastLogin();
-    const jwtPayload: { [key: string]: string } = { id: identityId };
-    if (
-        (emailAddress! && ["raiinmaker.com", "dragonchain.com"].includes(emailAddress!)) ||
-        NODE_ENV === "development"
-    ) {
-        jwtPayload.role = "admin";
-        jwtPayload.company = "raiinmaker";
-    }
+    const jwtPayload: JWTPayload = { id: identityId, userId: user.id, email: user.email };
     const token = jwt.sign(jwtPayload, Secrets.encryptionKey, {
         expiresIn: "7d",
         audience: serverBaseUrl,
@@ -162,8 +154,8 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
         success: true,
         token,
         id: user.id,
-        role: jwtPayload.role,
-        company: jwtPayload.company,
+        role: "",
+        company: "",
     });
 });
 

@@ -8,7 +8,7 @@ import {
     UpdateDateColumn,
 } from "typeorm";
 import { User } from "./User";
-import { SocialClientCredentials } from "../types";
+import { SocialClientCredentials, SocialType } from "../types";
 import { decrypt } from "../util/crypto";
 
 @Entity()
@@ -17,7 +17,7 @@ export class SocialLink extends BaseEntity {
     public id: string;
 
     @Column({ nullable: false })
-    public type: string;
+    public type: SocialType;
 
     @Column({ nullable: true })
     public apiKey: string;

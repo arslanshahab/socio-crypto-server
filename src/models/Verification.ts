@@ -8,7 +8,7 @@ export class Verification extends BaseEntity {
 
     @Column({
         nullable: false,
-        transformer: { to: (value: string) => value?.toLowerCase() || "", from: (value: string) => value },
+        transformer: { to: (value: string) => value, from: (value: string) => value },
     })
     public email: string;
 

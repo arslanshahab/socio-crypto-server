@@ -5,9 +5,7 @@ import { Stripe } from "stripe";
 interface JWTPayload {
     email: string;
     userId: string;
-    id?: string;
-    role?: string;
-    company?: string;
+    id: string;
 }
 
 export interface XoxodayVoucher {
@@ -218,6 +216,8 @@ export interface SocialClientCredentials {
     apiKey?: string;
     apiSecret?: string;
 }
+
+export type SocialType = "twitter" | "facebook" | "tiktok";
 
 export interface PaypalPayout {
     recipient_type: "EMAIL";

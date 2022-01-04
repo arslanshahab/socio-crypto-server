@@ -28,6 +28,7 @@ import { VerificationApplication } from "./VerificationApplication";
 import { WalletCurrency } from "./WalletCurrency";
 import { differenceInMonths } from "date-fns";
 import { Transfer } from "./Transfer";
+import { JWTPayload } from "src/types";
 
 export const LOGIN_REWARD_AMOUNT = 1;
 export const PARTICIPATION_REWARD_AMOUNT = 2;
@@ -44,7 +45,7 @@ export class User extends BaseEntity {
 
     @Column({
         nullable: false,
-        transformer: { to: (value: string) => value?.toLowerCase() || "", from: (value: string) => value },
+        transformer: { to: (value: string) => value, from: (value: string) => value },
     })
     public email: string;
 
@@ -195,6 +196,14 @@ export class User extends BaseEntity {
         this.email = email;
         this.password = password;
         return await this.save();
+    }
+
+    public static async findUserByContext(data: JWTPayload, relations?: string[]) {
+        const { id, userId } = data;
+        return await User.findOne({
+            where: [{ identityId: id }, { id: userId }],
+            ...(relations && { relations: ["socialLinks"] }),
+        });
     }
 
     public transferReward = async (type: RewardType): Promise<any> => {

@@ -32,7 +32,7 @@ export const authenticateUser = async ({ req }: { req: express.Request }) => {
         const token = req.headers.authorization || "";
         if (!token) throw new Error(NO_TOKEN_PROVIDED);
         const user = verifySessionToken(token);
-        if (!user.id) throw new Error(SESSION_EXPIRED);
+        if (!user.id && !user.userId) throw new Error(SESSION_EXPIRED);
         return { user };
     } catch (error) {
         console.log(error);

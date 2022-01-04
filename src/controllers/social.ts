@@ -12,6 +12,7 @@ import { CampaignMedia } from "../models/CampaignMedia";
 import { ApolloError } from "apollo-server-express";
 import { TikTokClient } from "../clients/tiktok";
 import { downloadMedia } from "../helpers";
+import { JWTPayload, SocialType } from "src/types";
 
 export const allowedSocialLinks = ["twitter", "facebook", "tiktok"];
 
@@ -36,7 +37,7 @@ export const getSocialClient = (type: string, accessToken?: string): any => {
 
 export const registerSocialLink = async (
     parent: any,
-    args: { type: string; apiKey: string; apiSecret: string },
+    args: { type: SocialType; apiKey: string; apiSecret: string },
     context: { user: any }
 ) => {
     const { id, userId } = context.user;
@@ -59,6 +60,14 @@ export const registerSocialLink = async (
         link.user = user;
         await link.save();
     }
+    return true;
+};
+
+export const registerTiktokSocialLink = async (parent: any, args: { code: string }, context: { user: JWTPayload }) => {
+    const user = await User.findUserByContext(context.user, ["socialLinks"]);
+    if (!user) throw new Error("User not found");
+    const { code } = args;
+    console.log(code);
     return true;
 };
 
