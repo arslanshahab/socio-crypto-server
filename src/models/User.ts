@@ -7,6 +7,7 @@ import {
     OneToOne,
     CreateDateColumn,
     UpdateDateColumn,
+    BeforeInsert,
 } from "typeorm";
 import { Participant } from "./Participant";
 import { XoxodayOrder } from "./XoxodayOrder";
@@ -42,10 +43,7 @@ export class User extends BaseEntity {
     @Column({ nullable: true })
     public identityId: string;
 
-    @Column({
-        nullable: false,
-        transformer: { to: (value: string) => value?.toLowerCase() || "", from: (value: string) => value },
-    })
+    @Column({ nullable: false })
     public email: string;
 
     @Column({ nullable: false })
@@ -104,6 +102,11 @@ export class User extends BaseEntity {
 
     @OneToMany((_type) => XoxodayOrder, (order) => order.user)
     public orders: XoxodayOrder[];
+
+    @BeforeInsert()
+    nameToUpperCase() {
+        this.email = this.email ? this.email.toLowerCase() : this.email;
+    }
 
     public static async initNewUser(email: string, password: string, username: string): Promise<User> {
         const user = new User();
