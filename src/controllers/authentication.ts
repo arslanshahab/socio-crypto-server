@@ -181,7 +181,6 @@ export const startVerification = async (parent: any, args: { email: string; type
         await SesClient.emailAddressVerificationEmail(email, verificationData.getDecryptedCode());
         return { success: true };
     } catch (error) {
-        console.log(error);
         throw new FormattedError(error);
     }
 };

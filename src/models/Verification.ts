@@ -6,6 +6,7 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
     BeforeInsert,
+    BeforeUpdate,
 } from "typeorm";
 import { decrypt, encrypt } from "../util/crypto";
 import { generateRandomNonce } from "../util/helpers";
@@ -30,6 +31,7 @@ export class Verification extends BaseEntity {
     public updatedAt: Date;
 
     @BeforeInsert()
+    @BeforeUpdate()
     nameToUpperCase() {
         this.email = this.email ? this.email.toLowerCase() : this.email;
     }
