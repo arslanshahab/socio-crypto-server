@@ -56,7 +56,7 @@ export const typeDefs = gql`
             campaignTemplates: JSON
         ): CampaignCreationResponse
         generateCampaignAuditReport(campaignId: String!): AuditReport
-        payoutCampaignRewards(campaignId: String!, rejected: [String]!): Boolean
+        payoutCampaignRewards(campaignId: String!, rejected: [String]): Boolean
         deleteCampaign(id: String!): Campaign
         participate(campaignId: String!, email: String): Participant
         removeParticipation(campaignId: String!): User
