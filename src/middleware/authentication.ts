@@ -2,7 +2,7 @@ import { Firebase } from "../clients/firebase";
 import { AuthenticationError } from "apollo-server-express";
 import express from "express";
 import { verifySessionToken } from "../helpers";
-import { FormattedError, NO_TOKEN_PROVIDED, SESSION_EXPIRED } from "../util/errors";
+import { FormattedError, NO_TOKEN_PROVIDED } from "../util/errors";
 
 export const authenticateAdmin = async ({ req }: { req: express.Request }) => {
     try {
@@ -35,7 +35,6 @@ export const authenticateUser = async ({ req }: { req: express.Request }) => {
         const token = req.headers.authorization || "";
         if (!token) throw new Error(NO_TOKEN_PROVIDED);
         const user = verifySessionToken(token);
-        if (!user.id) throw new Error(SESSION_EXPIRED);
         return { user };
     } catch (error) {
         console.log(error);
