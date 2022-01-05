@@ -277,6 +277,45 @@ export class Campaign extends BaseEntity {
             .take(take)
             .getManyAndCount();
     }
+    //!--------------------
+
+    public static async findAuditCampaignsByStatus(
+        open: boolean,
+        skip: number,
+        take: number,
+        company: string,
+        sort: boolean,
+        approved: boolean,
+        pendingAudit: boolean
+    ) {
+        let where = "";
+        const now = DateUtils.mixedDateToDatetimeString(new Date());
+        if (open !== null && open !== undefined && open) {
+            where = `("beginDate" <= '${now}' AND "endDate" >= '${now}')`;
+        } else if (open !== null && open !== undefined && !open) {
+            where = `("beginDate" >= '${now}' OR "endDate" <= '${now}')`;
+        }
+        let query = this.createQueryBuilder("campaign").where(where);
+        if (company) query = query.andWhere(`"company"=:company`, { company });
+        if (approved) query = query.andWhere('"status"=:status', { status: "APPROVED" });
+        if (pendingAudit) query = query.andWhere('"audited"=:audited', { audited: false });
+        if (sort) query = query.orderBy("campaign.endDate", "DESC");
+        return await query
+            .leftJoinAndSelect("campaign.participants", "participant", 'participant."campaignId" = campaign.id')
+            .leftJoinAndSelect("participant.user", "user", 'user.id = participant."userId"')
+            .leftJoinAndSelect("campaign.crypto", "crypto", 'campaign."cryptoId" = crypto.id')
+            .leftJoinAndSelect("campaign.campaignMedia", "campaign_media", 'campaign_media."campaignId" = campaign.id')
+            .leftJoinAndSelect(
+                "campaign.campaignTemplates",
+                "campaign_template",
+                'campaign_template."campaignId" = campaign.id'
+            )
+            .skip(skip)
+            .take(take)
+            .getManyAndCount();
+    }
+
+    //!---------------------
 
     public static async listCampaignsByStatus(open: boolean = true, audited: boolean = false) {
         let where = "";

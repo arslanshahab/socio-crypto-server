@@ -405,6 +405,36 @@ export const listCampaigns = async (
     const data = results.map((result) => result.asV1());
     return { results: data, total };
 };
+//!---------------------------------
+export const listAuditCampaigns = async (
+    parent: any,
+    args: {
+        open: boolean;
+        skip: number;
+        take: number;
+        scoped: boolean;
+        sort: boolean;
+        approved: boolean;
+        pendingAudit: boolean;
+    },
+    context: { user: any }
+) => {
+    const { open, skip = 0, take = 10, scoped = false, sort = false, approved = true, pendingAudit = false } = args;
+    const { company } = context.user;
+    const [results, total] = await Campaign.findAuditCampaignsByStatus(
+        open,
+        skip,
+        take,
+        scoped && company,
+        sort,
+        approved,
+        pendingAudit
+    );
+    const data = results.map((result) => result.asV1());
+    return { results: data, total };
+};
+
+//!---------------------------------
 
 export const adminListPendingCampaigns = async (
     parent: any,
@@ -423,8 +453,19 @@ export const deleteCampaign = async (parent: any, args: { id: string }, context:
     if (role === "manager") where["company"] = company;
     const campaign = await Campaign.findOne({
         where,
-        relations: ["participants", "posts", "dailyMetrics", "hourlyMetrics", "prize", "payouts", "escrow"],
+        relations: [
+            "participants",
+            "posts",
+            "dailyMetrics",
+            "hourlyMetrics",
+            "prize",
+            "payouts",
+            "escrow",
+            "campaignTemplates",
+            "campaignMedia",
+        ],
     });
+    console.log("Campaign for Remove", campaign);
     if (!campaign) throw new Error("campaign not found");
     if (campaign.posts.length > 0)
         await SocialPost.delete({
@@ -436,6 +477,9 @@ export const deleteCampaign = async (parent: any, args: { id: string }, context:
     await Participant.remove(campaign.participants);
     await DailyParticipantMetric.remove(campaign.dailyMetrics);
     await HourlyCampaignMetric.remove(campaign.hourlyMetrics);
+    await CampaignTemplate.remove(campaign.campaignTemplates);
+    await CampaignMedia.remove(campaign.campaignMedia);
+    console.log("Removed Campaign", campaign);
     await campaign.remove();
     return campaign.asV1();
 };
@@ -581,6 +625,8 @@ export const payoutCampaignRewards = async (parent: any, args: { campaignId: str
     });
     if (!campaign) throw new Error("Campaign not found");
     campaign.auditStatus = "PENDING";
+    // campaign.auditStatus = "AUDITED";
+    console.log("Campaign Res", await campaign);
     await campaign.save();
     // return {
     //     success: true,

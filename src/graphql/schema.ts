@@ -156,6 +156,15 @@ export const typeDefs = gql`
             approved: Boolean
             pendingAudit: Boolean
         ): PaginatedCampaignResults
+        listAuditCampaigns(
+            open: Boolean
+            skip: Int
+            take: Int
+            scoped: Boolean
+            sort: Boolean
+            approved: Boolean
+            pendingAudit: Boolean
+        ): PaginatedCampaignResults
         getUserParticipationKeywords: [String]
         getStoreVouchers(country: String, page: Int): [StoreVoucher]
         getCampaign(id: String): Campaign
