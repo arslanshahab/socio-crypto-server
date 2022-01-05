@@ -30,6 +30,8 @@ export class Secrets {
     public static minterPrivateKey: string;
     public static acuantApiUser: string;
     public static acuantApiKey: string;
+    public static tiktokClientKey: string;
+    public static tiktokClientSecret: string;
 
     public static async initialize() {
         Secrets.firebaseProjectId =
@@ -96,5 +98,9 @@ export class Secrets {
             process.env.ACUANT_API_USER || `(await readFilePromise("/var/secrets/acuant/apiUser", "utf8"))`;
         Secrets.acuantApiKey =
             process.env.ACUANT_API_KEY || `(await readFilePromise("/var/secrets/acuant/apiKey", "utf8"))`;
+        Secrets.tiktokClientKey =
+            process.env.TIKTOK_CLIENT_KEY || `(await readFilePromise("/var/secrets/tiktok/clientKey", "utf8"))`;
+        Secrets.tiktokClientSecret =
+            process.env.TIKTOK_CLIENT_SECRET || `(await readFilePromise("/var/secrets/tiktok/clientSecret", "utf8"))`;
     }
 }

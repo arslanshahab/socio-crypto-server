@@ -88,6 +88,7 @@ export const resolvers = {
         startEmailVerification: userController.startEmailVerification,
         completeEmailVerification: userController.completeEmailVerification,
         updateUserPassword: userController.updateUserPassword,
+        registerTiktokSocialLink: socialController.registerTiktokSocialLink,
     },
 };
 

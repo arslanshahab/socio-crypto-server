@@ -15,15 +15,16 @@ export const doFetch = async (requestData: RequestData) => {
             url: requestData.query ? `${requestData.url}?${new URLSearchParams(requestData.query)}` : requestData.url,
             method: requestData.method,
             headers: {
-                "Content-Type": "application/json",
+                ...(requestData.payload && { "Content-Type": "application/json" }),
                 ...(requestData.headers && requestData.headers),
             },
-            data: requestData.method !== "GET" && requestData.payload ? requestData.payload : null,
+            ...(requestData.method !== "GET" && requestData.payload && { data: requestData.payload }),
         };
+        console.log(options);
         const resp = await axios(options);
         return resp.data;
     } catch (error) {
-        console.log(error.response.data);
+        console.log(error);
         throw new Error("There was an error making request");
     }
 };

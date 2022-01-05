@@ -13,6 +13,7 @@ import { ApolloError } from "apollo-server-express";
 import { TikTokClient } from "../clients/tiktok";
 import { downloadMedia } from "../helpers";
 import { JWTPayload, SocialType } from "src/types";
+import { FormattedError } from "../util/errors";
 
 export const allowedSocialLinks = ["twitter", "facebook", "tiktok"];
 
@@ -64,11 +65,17 @@ export const registerSocialLink = async (
 };
 
 export const registerTiktokSocialLink = async (parent: any, args: { code: string }, context: { user: JWTPayload }) => {
-    const user = await User.findUserByContext(context.user, ["socialLinks"]);
-    if (!user) throw new Error("User not found");
-    const { code } = args;
-    console.log(code);
-    return true;
+    try {
+        const user = await User.findUserByContext(context.user, ["socialLinks"]);
+        if (!user) throw new Error("User not found");
+        const { code } = args;
+        const tokens = await TikTokClient.fetchTokens(code);
+        console.log(tokens);
+        return { success: true };
+    } catch (error) {
+        console.log(error);
+        throw new FormattedError(error.message);
+    }
 };
 
 export const removeSocialLink = async (parent: any, args: { type: string }, context: { user: any }) => {
