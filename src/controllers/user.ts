@@ -5,7 +5,7 @@ import { Firebase } from "../clients/firebase";
 import { User } from "../models/User";
 import { TinyUrl } from "../clients/tinyUrl";
 import { S3Client } from "../clients/s3";
-import { sha256Hash } from "../util/crypto";
+import { decrypt, sha256Hash } from "../util/crypto";
 import { GraphQLResolveInfo } from "graphql";
 import { Profile } from "../models/Profile";
 import { DailyParticipantMetric } from "../models/DailyParticipantMetric";
@@ -428,7 +428,7 @@ export const startEmailVerification = async (parent: any, args: { email: string 
         if (!user) throw new Error("user not found");
         if (!email) throw new Error("email not provided");
         if (user.profile.email === email) throw new Error("email already exists");
-        let verificationData = await Verification.findOne({ where: { email: email, user: user, verified: false } });
+        let verificationData = await Verification.findOne({ where: { email: email, verified: false } });
         if (!verificationData) {
             verificationData = await Verification.createVerification(email);
         }
@@ -438,10 +438,7 @@ export const startEmailVerification = async (parent: any, args: { email: string 
             message: "Email sent to provided email address",
         };
     } catch (error) {
-        return {
-            success: false,
-            message: error.message,
-        };
+        throw new FormattedError(error);
     }
 };
 
@@ -457,21 +454,17 @@ export const completeEmailVerification = async (
         if (!user) throw new Error("user not found");
         if (!email || !token) throw new Error("email or token missing");
         if (user.profile.email === email) throw new Error("email already exists");
-        const verificationData = await Verification.findOne({ where: { email, user, verified: false, token } });
-        if (!verificationData) throw new Error("invalid token or verfication not initialized");
-        user.profile.email = email;
-        await user.profile.save();
-        verificationData.verified = true;
-        await verificationData.save();
+        const verificationData = await Verification.findOne({ where: { email, verified: false } });
+        if (!verificationData || decrypt(verificationData.code) !== token)
+            throw new Error("invalid token or verfication not initialized");
+        await user.updateEmail(email);
+        await verificationData.updateVerificationStatus(true);
         return {
             success: true,
             message: "Email address verified",
         };
     } catch (error) {
-        return {
-            success: false,
-            message: error.message,
-        };
+        throw new FormattedError(error);
     }
 };
 

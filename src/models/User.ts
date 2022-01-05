@@ -8,6 +8,7 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
     BeforeInsert,
+    BeforeUpdate,
 } from "typeorm";
 import { Participant } from "./Participant";
 import { XoxodayOrder } from "./XoxodayOrder";
@@ -105,6 +106,7 @@ export class User extends BaseEntity {
     public orders: XoxodayOrder[];
 
     @BeforeInsert()
+    @BeforeUpdate()
     nameToUpperCase() {
         this.email = this.email ? this.email.toLowerCase() : this.email;
     }
@@ -198,6 +200,11 @@ export class User extends BaseEntity {
     public async updateEmailPassword(email: string, password: string) {
         this.email = email;
         this.password = password;
+        return await this.save();
+    }
+
+    public async updateEmail(email: string) {
+        this.email = email;
         return await this.save();
     }
 
