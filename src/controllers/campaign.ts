@@ -465,7 +465,6 @@ export const deleteCampaign = async (parent: any, args: { id: string }, context:
             "campaignMedia",
         ],
     });
-    console.log("Campaign for Remove", campaign);
     if (!campaign) throw new Error("campaign not found");
     if (campaign.posts.length > 0)
         await SocialPost.delete({
@@ -479,7 +478,6 @@ export const deleteCampaign = async (parent: any, args: { id: string }, context:
     await HourlyCampaignMetric.remove(campaign.hourlyMetrics);
     await CampaignTemplate.remove(campaign.campaignTemplates);
     await CampaignMedia.remove(campaign.campaignMedia);
-    console.log("Removed Campaign", campaign);
     await campaign.remove();
     return campaign.asV1();
 };
@@ -624,9 +622,9 @@ export const payoutCampaignRewards = async (parent: any, args: { campaignId: str
         where: { id: campaignId, company },
     });
     if (!campaign) throw new Error("Campaign not found");
-    campaign.auditStatus = "PENDING";
-    // campaign.auditStatus = "AUDITED";
-    console.log("Campaign Res", await campaign);
+    // campaign.auditStatus = "PENDING";
+    campaign.auditStatus = "AUDITED";
+    campaign.audited = true;
     await campaign.save();
     // return {
     //     success: true,
