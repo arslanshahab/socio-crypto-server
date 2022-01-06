@@ -220,9 +220,9 @@ export interface TwitterLinkCredentials {
 export interface TiktokLinkCredentials {
     open_id: string;
     access_token: string;
-    expires_in: number;
+    expires_in: BigNumber;
     refresh_token: string;
-    refresh_expires_in: number;
+    refresh_expires_in: BigNumber;
 }
 
 export type SocialType = "twitter" | "facebook" | "tiktok";
