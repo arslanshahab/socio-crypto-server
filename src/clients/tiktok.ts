@@ -1,11 +1,9 @@
-const open_id = "a509c4e1-a862-43e3-9a3f-0f91b1389adc";
-const access_token = "act.dbd28d98af1efdcb7821032da29accbesZQjL7GaMBXVZuCdQUGv3bWvJaPb";
 import { Participant } from "../models/Participant";
-import { SocialClientCredentials } from "../types.d";
 import FormData from "form-data";
 import fs from "fs";
 import { doFetch, RequestData } from "../util/fetchRequest";
 import { Secrets } from "../util/secrets";
+import { SocialLink } from "../models/SocialLink";
 
 // https://open-api.tiktok.com/platform/oauth/connect/?client_key=awtv37zowsh2ryq2&scope=user.info.basic,video.list&response_type=code&redirect_uri=https://raiinmaker.loca.lt/&state=1234567890
 
@@ -14,7 +12,7 @@ export class TikTokClient {
 
     public static post = async (
         participant: Participant,
-        credentials: SocialClientCredentials,
+        socialLink: SocialLink,
         text: string,
         data: string,
         mediaType: "photo" | "video" | "gif",
@@ -28,10 +26,11 @@ export class TikTokClient {
             fs.writeFileSync(filePath, bitmap);
             const formData = new FormData();
             formData.append("video", fs.createReadStream(filePath));
+            const credentials = socialLink.getTiktokCreds();
             const requestData: RequestData = {
                 url: `${TikTokClient.baseUrl}/share/video/upload`,
                 method: "POST",
-                query: { open_id, access_token },
+                query: { open_id: credentials.open_id, access_token: credentials.access_token },
                 headers: formData.getHeaders(),
             };
             const resp = await doFetch(requestData);

@@ -212,9 +212,17 @@ export interface ActionValues {
     shares: BigNumber;
 }
 
-export interface SocialClientCredentials {
-    apiKey?: string;
-    apiSecret?: string;
+export interface TwitterLinkCredentials {
+    apiKey: string;
+    apiSecret: string;
+}
+
+export interface TiktokLinkCredentials {
+    open_id: string;
+    access_token: string;
+    expires_in: number;
+    refresh_token: string;
+    refresh_expires_in: number;
 }
 
 export type SocialType = "twitter" | "facebook" | "tiktok";

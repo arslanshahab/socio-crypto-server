@@ -1,4 +1,4 @@
-import { decrypt, encrypt } from "../util/crypto";
+import { decrypt } from "../util/crypto";
 import { SocialLink } from "../models/SocialLink";
 import { TwitterClient } from "../clients/twitter";
 import { Participant } from "../models/Participant";
@@ -46,21 +46,7 @@ export const registerSocialLink = async (
     if (!user) throw new Error("User not found");
     const { type, apiKey, apiSecret } = args;
     if (!allowedSocialLinks.includes(type)) throw new Error("the type must exist as a predefined type");
-    const existingLink = user.socialLinks.find((link: SocialLink) => link.type === type);
-    const encryptedApiKey = encrypt(apiKey);
-    const encryptedApiSecret = encrypt(apiSecret);
-    if (existingLink) {
-        existingLink.apiKey = encryptedApiKey;
-        existingLink.apiSecret = encryptedApiSecret;
-        await existingLink.save();
-    } else {
-        const link = new SocialLink();
-        link.type = type;
-        link.apiKey = encryptedApiKey;
-        link.apiSecret = encryptedApiSecret;
-        link.user = user;
-        await link.save();
-    }
+    await SocialLink.addTwitterLink(user, { apiKey, apiSecret });
     return true;
 };
 
@@ -70,7 +56,8 @@ export const registerTiktokSocialLink = async (parent: any, args: { code: string
         if (!user) throw new Error("User not found");
         const { code } = args;
         const tokens = await TikTokClient.fetchTokens(code);
-        console.log(tokens);
+        if (!tokens.access_token || !tokens.refresh_token) throw new Error("Error fetching tokens from tiktok");
+        await SocialLink.addTiktokLink(user, tokens);
         return { success: true };
     } catch (error) {
         console.log(error);
@@ -118,7 +105,7 @@ export const postToSocial = async (
         if (!participant) throw new Error("Participant not found");
         if (!participant.campaign.isOpen()) throw new Error("campaign is closed");
         const socialLink = user.socialLinks.find((link) => link.type === socialType);
-        // if (!socialLink) throw new Error(`you have not linked ${socialType} as a social platform`);
+        if (!socialLink) throw new Error(`you have not linked ${socialType} as a social platform`);
         const campaign = await Campaign.findOne({
             where: { id: participant.campaign.id },
             relations: ["org", "campaignMedia"],
@@ -136,16 +123,9 @@ export const postToSocial = async (
         }
         let postId: string;
         if (mediaType && mediaFormat) {
-            postId = await client.post(
-                participant,
-                socialLink?.asClientCredentials(),
-                text,
-                media,
-                mediaType,
-                mediaFormat
-            );
+            postId = await client.post(participant, socialLink, text, media, mediaType, mediaFormat);
         } else {
-            postId = await client.post(participant, socialLink?.asClientCredentials(), text);
+            postId = await client.post(participant, socialLink, text);
         }
         console.log(`Posted to ${socialType} with ID: ${postId}`);
         await HourlyCampaignMetric.upsert(campaign, campaign.org, "post");
@@ -178,7 +158,7 @@ export const getTotalFollowers = async (parent: any, args: any, context: { user:
         switch (link.type) {
             case "twitter":
                 client = getSocialClient(link.type);
-                followerTotals["twitter"] = await client.getTotalFollowers(link.asClientCredentials(), link.id);
+                followerTotals["twitter"] = await client.getTotalFollowers(link, link.id);
                 if (link.followerCount !== followerTotals["twitter"]) {
                     link.followerCount = followerTotals["twitter"];
                     await link.save();
@@ -207,7 +187,7 @@ export const getTweetById = async (parent: any, args: { id: string; type: string
     const socialLink = user.socialLinks.find((link) => link.type === "twitter");
     if (!socialLink) throw new Error(`you have not linked twitter as a social platform`);
     const client = getSocialClient(type);
-    return client.get(socialLink.asClientCredentials(), id);
+    return client.get(socialLink, id);
 };
 
 export const getParticipantSocialMetrics = async (parent: any, args: { id: string }, context: { user: any }) => {
