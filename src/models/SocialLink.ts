@@ -90,9 +90,9 @@ export class SocialLink extends BaseEntity {
         }
         socialLink.openId = tokens.open_id;
         socialLink.accessToken = tokens.access_token;
-        socialLink.accessTokenExpiry = tokens.expires_in;
+        socialLink.accessTokenExpiry = tokens.expires_in * 1000 + new Date().getTime();
         socialLink.refreshToken = tokens.refresh_token;
-        socialLink.refreshTokenExpiry = tokens.refresh_expires_in;
+        socialLink.refreshTokenExpiry = tokens.refresh_expires_in * 1000;
         return await socialLink.save();
     };
 }
