@@ -34,9 +34,6 @@ import {
     transferBalance,
 } from "./controllers/tatum";
 import { kycWebhook } from "./controllers/kyc";
-import FormData from "form-data";
-import fs from "fs";
-import axios from "axios";
 const { NODE_ENV = "development" } = process.env;
 
 export class Application {
@@ -172,66 +169,6 @@ export class Application {
         );
         this.app.use("/v1/referral/:participantId", trackClickByLink);
         this.app.use(errorHandler);
-
-        // testing tiktok video upload
-
-        this.app.post("/v1/tiktok/upload", async (req, res) => {
-            const openId = "a509c4e1-a862-43e3-9a3f-0f91b1389adc";
-            const accessToken = "act.061c62cc03b92c2ddecbe98986a2dca3Na3Xe2ta06DTNkRWTXURuLa9mDZq";
-            const url = `https://open-api.tiktok.com/share/video/upload?open_id=${openId}&access_token=${accessToken}`;
-            const data = new FormData();
-            data.append("video", fs.createReadStream("uploads/example.mp4"));
-            const result = await axios.post(url, data, {
-                headers: data.getHeaders(),
-            });
-            res.send(result.data);
-        });
-
-        //!--------------------------------
-        // TIKTO TESTING API ROUTES
-        const CLIENT_KEY = "awtv37zowsh2ryq2"; // this value can be found in app's developer portal
-        const CLIENT_SECRET = "2148282ddd97249d7cad91ff030c0a60"; // this value can be found in app's developer portal
-
-        const SERVER_ENDPOINT_REDIRECT = "https://raiinmaker.loca.lt/redirect";
-
-        this.app.get("/oauth", (req, res) => {
-            const csrfState = Math.random().toString(36).substring(7);
-            res.cookie("csrfState", csrfState, { maxAge: 60000 });
-            let url = "https://open-api.tiktok.com/platform/oauth/connect/";
-            url += `?client_key=${CLIENT_KEY}`;
-            url += `&scope=user.info.basic,video.list,video.upload`;
-            url += `&response_type=code`;
-            url += `&redirect_uri=${SERVER_ENDPOINT_REDIRECT}`;
-            url += `&state=` + csrfState;
-            res.redirect(url);
-        });
-        this.app.get("/redirect", (req, res) => {
-            const { code } = req.query;
-            let url_access_token = "https://open-api.tiktok.com/oauth/access_token/";
-            url_access_token += "?client_key=" + CLIENT_KEY;
-            url_access_token += "&client_secret=" + CLIENT_SECRET;
-            url_access_token += "&code=" + code;
-            url_access_token += "&grant_type=authorization_code";
-            fetch(url_access_token, { method: "post" })
-                .then((res) => res.json())
-                .then((json) => {
-                    console.log(json);
-                    res.send(json);
-                });
-        });
-        this.app.get("/refresh_token/", (req, res) => {
-            const refresh_token = req.query.refresh_token;
-            let url_refresh_token = "https://open-api.tiktok.com/oauth/refresh_token/";
-            url_refresh_token += "?client_key=" + CLIENT_KEY;
-            url_refresh_token += "&grant_type=refresh_token";
-            url_refresh_token += "&refresh_token=" + refresh_token;
-            fetch(url_refresh_token, { method: "post" })
-                .then((res) => res.json())
-                .then((json) => {
-                    res.send(json);
-                });
-        });
-        //!--------------------------------
     }
 
     public async startServer() {

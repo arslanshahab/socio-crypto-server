@@ -401,7 +401,7 @@ export class User extends BaseEntity {
         }
         query = query.leftJoinAndSelect("user.profile", "profile", 'profile."userId" = user.id');
         query = query.where("user.id = :id", { id: data.userId });
-        query = query.where("user.identityId = :identityId", { identityId: data.identityId });
+        query = query.orWhere("user.identityId = :identityId", { identityId: data.identityId });
         return query.getOne();
     }
 }
