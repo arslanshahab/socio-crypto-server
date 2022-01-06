@@ -13,7 +13,7 @@ import { ApolloError } from "apollo-server-express";
 import { TikTokClient } from "../clients/tiktok";
 import { downloadMedia } from "../helpers";
 import { JWTPayload, SocialType } from "src/types";
-import { FormattedError } from "../util/errors";
+import { ERROR_LINKING_TIKTOK, FormattedError, USER_NOT_FOUND } from "../util/errors";
 
 export const allowedSocialLinks = ["twitter", "facebook", "tiktok"];
 
@@ -53,15 +53,14 @@ export const registerSocialLink = async (
 export const registerTiktokSocialLink = async (parent: any, args: { code: string }, context: { user: JWTPayload }) => {
     try {
         const user = await User.findUserByContext(context.user, ["socialLinks"]);
-        if (!user) throw new Error("User not found");
+        if (!user) throw new Error(USER_NOT_FOUND);
         const { code } = args;
         const tokens = await TikTokClient.fetchTokens(code);
         console.log(tokens);
-        if (!tokens.access_token || !tokens.refresh_token) throw new Error("Error fetching tokens from tiktok");
+        if (!tokens.access_token || !tokens.refresh_token) throw new Error(ERROR_LINKING_TIKTOK);
         await SocialLink.addTiktokLink(user, tokens);
         return { success: true };
     } catch (error) {
-        console.log(error);
         throw new FormattedError(error.message);
     }
 };
