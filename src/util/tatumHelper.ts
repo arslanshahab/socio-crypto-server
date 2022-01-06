@@ -89,11 +89,5 @@ const sendTokenOffchainTransaction = async (currency: string, data: any) => {
         payload: data,
         headers: { "x-api-key": Secrets.tatumApiKey },
     };
-    const response = await doFetch(requestData);
-    if (response.status !== 200) {
-        const error: any = await response.json();
-        console.log(error.data);
-        throw new Error(error.message);
-    }
-    return await response.json();
+    return await doFetch(requestData);
 };

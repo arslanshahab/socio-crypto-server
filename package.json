@@ -1,6 +1,6 @@
 {
     "name": "raiinmaker-server",
-    "version": "1.6.8",
+    "version": "1.6.9",
     "main": "index.js",
     "repository": "git@github.com:dragonchain-inc/raiinmaker-server.git",
     "author": "Alex Benedetto <alex061994@gmail.com>",
@@ -40,6 +40,7 @@
         "ajv": "^6.12.2",
         "apollo-server-express": "^3.5.0",
         "aws-sdk": "^2.632.0",
+        "axios": "^0.24.0",
         "bignumber.js": "^9.0.0",
         "body-parser": "^1.19.0",
         "bs58": "^4.0.1",

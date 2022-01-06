@@ -30,10 +30,11 @@ import { VerificationApplication } from "./VerificationApplication";
 import { WalletCurrency } from "./WalletCurrency";
 import { differenceInMonths } from "date-fns";
 import { Transfer } from "./Transfer";
+import { JWTPayload } from "src/types";
 
 export const LOGIN_REWARD_AMOUNT = 1;
 export const PARTICIPATION_REWARD_AMOUNT = 2;
-export const REGISTRATION_REWARD_AMOUNT = 2;
+export const REGISTRATION_REWARD_AMOUNT = 15;
 type RewardType = "LOGIN_REWARD" | "PARTICIPATION_REWARD" | "REGISTRATION_REWARD";
 
 @Entity()
@@ -205,6 +206,14 @@ export class User extends BaseEntity {
     public async updateEmail(email: string) {
         this.email = email;
         return await this.save();
+    }
+
+    public static async findUserByContext(data: JWTPayload, relations?: string[]) {
+        const { id, userId } = data;
+        return await User.findOne({
+            where: [{ identityId: id }, { id: userId }],
+            ...(relations && { relations: ["socialLinks"] }),
+        });
     }
 
     public transferReward = async (type: RewardType): Promise<any> => {
