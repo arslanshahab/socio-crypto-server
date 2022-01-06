@@ -56,6 +56,7 @@ export const registerTiktokSocialLink = async (parent: any, args: { code: string
         if (!user) throw new Error("User not found");
         const { code } = args;
         const tokens = await TikTokClient.fetchTokens(code);
+        console.log(tokens);
         if (!tokens.access_token || !tokens.refresh_token) throw new Error("Error fetching tokens from tiktok");
         await SocialLink.addTiktokLink(user, tokens);
         return { success: true };
