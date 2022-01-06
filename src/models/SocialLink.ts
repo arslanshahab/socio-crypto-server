@@ -71,7 +71,7 @@ export class SocialLink extends BaseEntity {
         };
     };
 
-    public static addTwitterLink = async (user: User, keys: TwitterLinkCredentials) => {
+    public static addTwitterLink = async (user: User, keys: { apiKey: string; apiSecret: string }) => {
         let socialLink = await SocialLink.findOne({ where: { user, type: "twitter" } });
         if (!socialLink) {
             socialLink = new SocialLink();
@@ -83,7 +83,16 @@ export class SocialLink extends BaseEntity {
         return await socialLink.save();
     };
 
-    public static addTiktokLink = async (user: User, tokens: TiktokLinkCredentials) => {
+    public static addTiktokLink = async (
+        user: User,
+        tokens: {
+            open_id: string;
+            access_token: string;
+            expires_in: number;
+            refresh_token: string;
+            refresh_expires_in: number;
+        }
+    ) => {
         let socialLink = await SocialLink.findOne({ where: { user, type: "tiktok" } });
         if (!socialLink) {
             socialLink = new SocialLink();
@@ -92,9 +101,9 @@ export class SocialLink extends BaseEntity {
         }
         socialLink.openId = tokens.open_id;
         socialLink.accessToken = tokens.access_token;
-        socialLink.accessTokenExpiry = new BN(tokens.expires_in.toNumber() * 1000 + new Date().getTime());
+        socialLink.accessTokenExpiry = new BN(tokens.expires_in * 1000 + new Date().getTime());
         socialLink.refreshToken = tokens.refresh_token;
-        socialLink.refreshTokenExpiry = new BN(tokens.refresh_expires_in.toNumber() * 1000);
+        socialLink.refreshTokenExpiry = new BN(tokens.refresh_expires_in * 1000);
         return await socialLink.save();
     };
 }
