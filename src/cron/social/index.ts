@@ -86,7 +86,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                     logger.error(`participant ${post.user.id} has not linked ${post.type} as a social platform`);
                 } else {
                     try {
-                        const response = await TwitterClient.get(socialLink.asClientCredentials(), post.id, false);
+                        const response = await TwitterClient.get(socialLink, post.id, false);
                         const responseJSON = JSON.parse(response);
                         const updatedPost = await updatePostMetrics(
                             new BN(responseJSON["favorite_count"]),

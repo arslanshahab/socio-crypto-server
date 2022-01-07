@@ -44,6 +44,7 @@ export const INCORRECT_CODE = "INCORRECT_CODE";
 export const USER_NOT_FOUND = "USER_NOT_FOUND";
 export const INCORRECT_CODE_OR_EMAIL = "INCORRECT_CODE_OR_EMAIL";
 export const NO_TOKEN_PROVIDED = "NO_TOKEN_PROVIDED";
+export const ERROR_LINKING_TIKTOK = "ERROR_LINKING_TIKTOK";
 
 const errorMap: { [key: string]: string } = {
     SOMETHING_WENT_WRONG: "Something went wrong with your request. please try again!",
@@ -62,4 +63,5 @@ const errorMap: { [key: string]: string } = {
     INVALID_TOKEN: "Provided token is not valid",
     INCORRECT_CODE_OR_EMAIL: "Invalid code or verification not initialized",
     SAME_OLD_AND_NEW_PASSWORD: "Current pass and old password cannot be same, please set a different password",
+    ERROR_LINKING_TIKTOK: "There was an error adding you tiktok social link",
 };

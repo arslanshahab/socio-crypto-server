@@ -20,8 +20,7 @@ export const getExchangeRateForCurrency = async (symbol: string) => {
         method: "GET",
         url: `https://v6.exchangerate-api.com/v6/${apiKey}/latest/USD`,
     };
-    const exchangeRates = await doFetch(requestData);
-    const data = await exchangeRates.json();
+    const data = await doFetch(requestData);
     await getRedis().set(cacheKey, JSON.stringify(data));
     await getRedis().expire(cacheKey, 3600);
     return data?.conversion_rates[symbol] || 1;
@@ -42,8 +41,7 @@ export const getExchangeRateForCrypto = async (symbol: string) => {
         method: "GET",
         url: `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=1&sparkline=false`,
     };
-    const cryptoMarketRates = await doFetch(requestData);
-    const data = await cryptoMarketRates.json();
+    const data = await doFetch(requestData);
     await getRedis().set(cacheKey, JSON.stringify(data));
     await getRedis().expire(cacheKey, 3600);
     const symbolData = data.find((item: SymbolData) => item.symbol === symbol);

@@ -109,6 +109,9 @@ spec:
             - name: acuant
               mountPath: "/var/secrets/acuant"
               readOnly: true
+            - name: tiktok
+              mountPath: "/var/secrets/tiktok"
+              readOnly: true
           resources:
             {{- toYaml .Values.server.resources | nindent 12 }}
       volumes:
@@ -151,6 +154,9 @@ spec:
         - name: acuant
           secret:
             secretName: acuant
+        - name: tiktok
+          secret:
+            secretName: tiktok
 ---
 apiVersion: apps/v1
 kind: Deployment

@@ -102,7 +102,7 @@ export const redemptionRequirements = async (parent: any, args: {}, context: { u
         const twitterAccount = user.socialLinks.find((item) => item.type === "twitter");
         const socialClient = getSocialClient("twitter");
         const twitterFollowers = twitterAccount
-            ? await socialClient.getTotalFollowers(twitterAccount.asClientCredentials(), twitterAccount.id)
+            ? await socialClient.getTotalFollowers(twitterAccount, twitterAccount.id)
             : 0;
         return {
             accountAgeReached: accountAgeInDays >= 28,
@@ -179,10 +179,7 @@ const ifUserCanRedeem = async (user: User, totalCoiinSpent: number) => {
         throw new Error("You need to link your twitter account before you redeem!");
     }
     const socialClient = getSocialClient("twitter");
-    const twitterFollowers = await socialClient.getTotalFollowers(
-        twitterAccount.asClientCredentials(),
-        twitterAccount.id
-    );
+    const twitterFollowers = await socialClient.getTotalFollowers(twitterAccount, twitterAccount.id);
     if (twitterFollowers < 20) {
         throw new Error("You need to have atleast 20 followers on twitter before you redeem!");
     }

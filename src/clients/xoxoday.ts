@@ -44,8 +44,7 @@ export class Xoxoday {
                 url: `${this.baseUrl}/v1/oauth/token/user`,
                 payload: payload,
             };
-            const response = await doFetch(requestData);
-            const authData = await response.json();
+            const authData = await doFetch(requestData);
             if (authData.error) throw new Error("Error fetching access token for xoxoday");
             const augmentedAuthData = this.adjustTokenExpiry(authData);
             await S3Client.refreshXoxodayAuthData(augmentedAuthData);
@@ -69,12 +68,11 @@ export class Xoxoday {
                 payload: payload,
             };
             const response = await doFetch(requestData);
-            const authData = await response.json();
-            if (authData.error) {
-                console.log(authData.error);
+            if (response.error) {
+                console.log(response.error);
                 throw new Error("Error refreshing access token for xoxoday");
             }
-            const augmentedAuthData = this.adjustTokenExpiry(authData);
+            const augmentedAuthData = this.adjustTokenExpiry(response);
             await S3Client.refreshXoxodayAuthData(augmentedAuthData);
             return augmentedAuthData;
         } catch (error) {
@@ -102,15 +100,7 @@ export class Xoxoday {
                 payload: payload,
                 headers: { Authorization: "Bearer " + authData.access_token },
             };
-            const response = await doFetch(requestData);
-            const filters = await response.json();
-            if (response.status !== 200) {
-                if (!filters || filters.error) {
-                    console.log(filters.error);
-                    throw new Error(filters.message);
-                }
-            }
-            return filters;
+            return await doFetch(requestData);
         } catch (error) {
             throw new Error(error.message);
         }
@@ -148,14 +138,8 @@ export class Xoxoday {
                 headers: { Authorization: "Bearer " + authData.access_token },
             };
             const response = await doFetch(requestData);
-            const vouchers = await response.json();
-            if (response.status !== 200) {
-                if (!vouchers || vouchers.error) {
-                    console.log(vouchers.error);
-                    throw new Error(vouchers.message);
-                }
-            }
-            return vouchers?.data?.getVouchers?.data;
+            console.log(response);
+            return response?.data?.getVouchers?.data;
         } catch (error) {
             console.log(error);
             throw new Error(error.message);
@@ -183,17 +167,7 @@ export class Xoxoday {
                 promiseArray.push(doFetch(requestData));
             });
             const responseArray = await Promise.all(promiseArray);
-            for (let response of responseArray) {
-                if (response.status !== 200) {
-                    const data = await response.json();
-                    if (!data || data.error) {
-                        console.log(data.error);
-                        throw new Error(data.message);
-                    }
-                }
-            }
-            const statusList: Array<any> = await Promise.all(responseArray.map((item) => item.json()));
-            return statusList.map((item, index) => {
+            return responseArray.map((item, index) => {
                 return { ...item.data.placeOrder.data, ...orders[index] };
             });
         } catch (error) {

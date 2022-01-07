@@ -7,6 +7,8 @@ import {
     OneToOne,
     CreateDateColumn,
     UpdateDateColumn,
+    BeforeInsert,
+    BeforeUpdate,
 } from "typeorm";
 import { Participant } from "./Participant";
 import { XoxodayOrder } from "./XoxodayOrder";
@@ -28,10 +30,11 @@ import { VerificationApplication } from "./VerificationApplication";
 import { WalletCurrency } from "./WalletCurrency";
 import { differenceInMonths } from "date-fns";
 import { Transfer } from "./Transfer";
+import { JWTPayload } from "src/types";
 
 export const LOGIN_REWARD_AMOUNT = 1;
 export const PARTICIPATION_REWARD_AMOUNT = 2;
-export const REGISTRATION_REWARD_AMOUNT = 2;
+export const REGISTRATION_REWARD_AMOUNT = 15;
 type RewardType = "LOGIN_REWARD" | "PARTICIPATION_REWARD" | "REGISTRATION_REWARD";
 
 @Entity()
@@ -42,10 +45,7 @@ export class User extends BaseEntity {
     @Column({ nullable: true })
     public identityId: string;
 
-    @Column({
-        nullable: false,
-        transformer: { to: (value: string) => value?.toLowerCase() || "", from: (value: string) => value },
-    })
+    @Column({ nullable: false })
     public email: string;
 
     @Column({ nullable: false })
@@ -104,6 +104,12 @@ export class User extends BaseEntity {
 
     @OneToMany((_type) => XoxodayOrder, (order) => order.user)
     public orders: XoxodayOrder[];
+
+    @BeforeInsert()
+    @BeforeUpdate()
+    nameToUpperCase() {
+        this.email = this.email ? this.email.toLowerCase() : this.email;
+    }
 
     public static async initNewUser(email: string, password: string, username: string): Promise<User> {
         const user = new User();
@@ -195,6 +201,19 @@ export class User extends BaseEntity {
         this.email = email;
         this.password = password;
         return await this.save();
+    }
+
+    public async updateEmail(email: string) {
+        this.email = email;
+        return await this.save();
+    }
+
+    public static async findUserByContext(data: JWTPayload, relations?: string[]) {
+        const { id, userId } = data;
+        return await User.findOne({
+            where: [{ identityId: id }, { id: userId }],
+            ...(relations && { relations: ["socialLinks"] }),
+        });
     }
 
     public transferReward = async (type: RewardType): Promise<any> => {
@@ -382,7 +401,7 @@ export class User extends BaseEntity {
         }
         query = query.leftJoinAndSelect("user.profile", "profile", 'profile."userId" = user.id');
         query = query.where("user.id = :id", { id: data.userId });
-        query = query.where("user.identityId = :identityId", { identityId: data.identityId });
+        query = query.orWhere("user.identityId = :identityId", { identityId: data.identityId });
         return query.getOne();
     }
 }

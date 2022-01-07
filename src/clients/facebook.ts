@@ -5,6 +5,8 @@ export class FacebookClient {
         return new FacebookGraphApi(accessToken);
     }
 
+    public static post = async () => {};
+
     public static async getPageData(accessToken: string) {
         const payload: { [key: string]: any } = {};
         const client = FacebookClient.getClient(accessToken);

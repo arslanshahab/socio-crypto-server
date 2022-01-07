@@ -74,6 +74,7 @@ export const typeDefs = gql`
             defaultMedia: Boolean
             mediaId: String
         ): String
+        postToTiktok(video: String): String
         setDevice(deviceToken: String!): Boolean
         registerFactorLink(factor: JSON): User
         updateUsername(username: String!): User
@@ -140,6 +141,7 @@ export const typeDefs = gql`
             verificationToken: String!
         ): SuccessResponse
         updateUserPassword(oldPassword: String!, newPassword: String!): SuccessResponse
+        registerTiktokSocialLink(code: String!): SuccessResponse
     }
 
     type Query {
