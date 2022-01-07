@@ -91,11 +91,6 @@ export const redemptionRequirements = async (parent: any, args: {}, context: { u
             relations: ["campaigns", "orders", "socialLinks"],
         });
         if (!user) throw new Error("No user found");
-        const accountAgeInDays = differenceInDays(new Date(), new Date(user.createdAt));
-        const maxParticipationValue = Math.max(
-            ...user.campaigns.map((item) => (item.participationScore ? item.participationScore.toNumber() : 0)),
-            0
-        );
         const recentOrder = user.orders.sort(
             (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         )[0];
@@ -105,15 +100,11 @@ export const redemptionRequirements = async (parent: any, args: {}, context: { u
             ? await socialClient.getTotalFollowers(twitterAccount, twitterAccount.id)
             : 0;
         return {
-            accountAgeReached: accountAgeInDays >= 28,
-            accountAge: accountAgeInDays,
             accountAgeRequirement: 28,
             twitterLinked: twitterAccount ? true : false,
             twitterfollowers: twitterFollowers,
             twitterfollowersRequirement: 20,
-            participation: user.campaigns.length ? true : false,
-            participationScore: maxParticipationValue,
-            participationScoreRequirement: 20,
+            participation: Boolean(user.campaigns.length),
             orderLimitForTwentyFourHoursReached:
                 recentOrder && differenceInHours(new Date(), new Date(recentOrder.createdAt)) < 24 ? true : false,
         };
@@ -170,10 +161,6 @@ const prepareOrderEntities = async (cart: Array<any>, statusList: Array<any>): P
 };
 
 const ifUserCanRedeem = async (user: User, totalCoiinSpent: number) => {
-    const accountAgeInDays = differenceInDays(new Date(), new Date(user.createdAt));
-    if (accountAgeInDays < 28) {
-        throw new Error("Your account needs to be 4 weeks old before you can redeem anything!");
-    }
     const twitterAccount = user.socialLinks.find((item) => item.type === "twitter");
     if (!twitterAccount) {
         throw new Error("You need to link your twitter account before you redeem!");
@@ -183,15 +170,8 @@ const ifUserCanRedeem = async (user: User, totalCoiinSpent: number) => {
     if (twitterFollowers < 20) {
         throw new Error("You need to have atleast 20 followers on twitter before you redeem!");
     }
-    const participations = user.campaigns.filter((item) => item.participationScore);
-    const participationWithInfluence = participations.find((item) =>
-        item.participationScore.isGreaterThanOrEqualTo(20)
-    );
-    if (!participationWithInfluence) {
-        throw new Error(
-            "You need to have an influence of atleast 20 in any of your participations before you redeem anything!"
-        );
-    }
+    if (user.campaigns.length === 0)
+        throw new Error("You need to participate in atleast one campaign in order to redeem!");
     const recentOrder = user.orders.sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     )[0];
