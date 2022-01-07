@@ -16,7 +16,7 @@ import {
 } from "@tatumio/tatum";
 import { TatumWallet } from "../models/TatumWallet";
 import { S3Client } from "./s3";
-import { performWithdraw } from "../util/tatumHelper";
+import { offchainEstimateFee, performWithdraw } from "../util/tatumHelper";
 import { Currency } from "../models/Currency";
 
 export const CAMPAIGN_CREATION_AMOUNT = "CAMPAIGN-AMOUNT";
@@ -32,6 +32,12 @@ export interface WithdrawDetails {
     paymentId: string;
     senderNote: string;
     fee?: string;
+}
+
+export interface FeeCalculationParams {
+    senderAccountId: string;
+    address: string;
+    amount: string;
 }
 
 export class TatumClient {
@@ -202,9 +208,13 @@ export class TatumClient {
         }
     };
 
-    public static calculateWithdrawFee = async (data: {
-        senderAccountId: string;
-        address: string;
-        amount: string;
-    }) => {};
+    public static calculateWithdrawFee = async (data: FeeCalculationParams) => {
+        try {
+            const feeData = offchainEstimateFee(data);
+            console.log(feeData);
+        } catch (error) {
+            console.log(error);
+            throw new Error(error?.response?.data?.message || error.message);
+        }
+    };
 }

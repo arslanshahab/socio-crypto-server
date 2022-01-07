@@ -8,7 +8,7 @@ import { Participant } from "../models/Participant";
 import { SocialPost } from "../models/SocialPost";
 import { getTweetById } from "../controllers/social";
 import { getRedis } from "../clients/redis";
-import { BN, asyncHandler, calculateQualityMultiplier } from "../util/helpers";
+import { BN, asyncHandler, calculateQualityMultiplier } from "../util";
 import { DailyParticipantMetric } from "../models/DailyParticipantMetric";
 import { getDatesBetweenDates, formatUTCDateForComparision } from "./helpers";
 import { HourlyCampaignMetric } from "../models/HourlyCampaignMetric";

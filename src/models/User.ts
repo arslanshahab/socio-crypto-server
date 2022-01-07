@@ -18,7 +18,7 @@ import { SocialPost } from "./SocialPost";
 import { FactorLink } from "./FactorLink";
 import { TwentyFourHourMetric } from "./TwentyFourHourMetric";
 import BigNumber from "bignumber.js";
-import { BN } from "../util/helpers";
+import { BN } from "../util";
 import { FieldNode } from "graphql";
 import { Profile } from "./Profile";
 import { DailyParticipantMetric } from "./DailyParticipantMetric";

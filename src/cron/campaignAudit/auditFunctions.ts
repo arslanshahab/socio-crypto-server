@@ -9,7 +9,7 @@ import { SesClient } from "../../clients/ses";
 import { Dragonchain } from "../../clients/dragonchain";
 import { decrypt } from "../../util/crypto";
 import { getCurrentCampaignTier } from "../../controllers/campaign";
-import { BN } from "../../util/helpers";
+import { BN } from "../../util";
 import { BigNumber } from "bignumber.js";
 import { FEE_RATE } from "../../util/constants";
 import { Currency } from "../../models/Currency";

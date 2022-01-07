@@ -12,7 +12,7 @@ import { BigNumber } from "bignumber.js";
 import { BigNumberEntityTransformer } from "../util/transformers";
 import { User } from "./User";
 import { Campaign } from "./Campaign";
-import { BN } from "../util/helpers";
+import { BN } from "../util";
 import { Participant } from "./Participant";
 import { DateUtils } from "typeorm/util/DateUtils";
 import { AggregateDailyMetrics } from "../types";

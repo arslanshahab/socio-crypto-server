@@ -9,7 +9,7 @@ import {
     BeforeUpdate,
 } from "typeorm";
 import { decrypt, encrypt } from "../util/crypto";
-import { generateRandomNonce } from "../util/helpers";
+import { generateRandomNonce } from "../util";
 @Entity()
 export class Verification extends BaseEntity {
     @PrimaryGeneratedColumn("uuid")

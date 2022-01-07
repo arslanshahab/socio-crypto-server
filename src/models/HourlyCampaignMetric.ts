@@ -12,7 +12,7 @@ import { BigNumberEntityTransformer } from "../util/transformers";
 import { BigNumber } from "bignumber.js";
 import { Campaign } from "./Campaign";
 import { Org } from "./Org";
-import { BN } from "../util/helpers";
+import { BN } from "../util";
 import {
     CampaignMetricsGroupedByDateParsed,
     HourlyMetricsGroupedByDateQueryResult,

@@ -1,7 +1,7 @@
 import { Response } from "express";
 import jwt from "jsonwebtoken";
 import * as Dragonfactor from "@myfii-dev/dragonfactor-auth";
-import { asyncHandler, extractFactor, generateRandomNumber, createFactorsFromKycData, BN } from "../util/helpers";
+import { asyncHandler, extractFactor, generateRandomNumber, createFactorsFromKycData, BN } from "../util";
 import { AuthRequest, FactorGeneration } from "../types";
 import { FactorLink } from "../models/FactorLink";
 import { Secrets } from "../util/secrets";

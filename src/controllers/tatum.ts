@@ -1,11 +1,16 @@
-import { TatumClient, USER_WITHDRAW, RAIINMAKER_WITHDRAW, WithdrawDetails } from "../clients/tatumClient";
+import {
+    TatumClient,
+    USER_WITHDRAW,
+    RAIINMAKER_WITHDRAW,
+    WithdrawDetails,
+    FeeCalculationParams,
+} from "../clients/tatumClient";
 import { Admin } from "../models/Admin";
-import { asyncHandler } from "../util/helpers";
 import { Request, Response } from "express";
 import { TatumWallet } from "../models/TatumWallet";
 import { User } from "../models/User";
 import { S3Client } from "../clients/s3";
-import { findOrCreateCurrency, getWithdrawableAmount } from "../helpers";
+import { findOrCreateCurrency, getWithdrawableAmount, asyncHandler } from "../util";
 import { Currency } from "../models/Currency";
 import { Transfer } from "../models/Transfer";
 import { BigNumber } from "bignumber.js";
@@ -137,6 +142,17 @@ export const transferBalance = asyncHandler(async (req: Request, res: Response) 
     }
 });
 
+export const calculateWithdrawFee = asyncHandler(async (req: Request, res: Response) => {
+    try {
+        const { senderAccountId, address, amount, token } = req.body;
+        if (!token || token !== process.env.RAIINMAKER_DEV_TOKEN) throw new Error("Invalid Token");
+        const data = await TatumClient.calculateWithdrawFee({ senderAccountId, address, amount });
+        res.status(200).json(data);
+    } catch (error) {
+        res.status(200).json(error.message);
+    }
+});
+
 export const getSupportedCurrencies = async (parent: any, args: any, context: { user: any }) => {
     try {
         const { id } = context.user;
@@ -206,9 +222,6 @@ export const withdrawFunds = async (
         const userAccountBalance = await TatumClient.getAccountBalance(userCurrency.tatumId);
         if (parseFloat(userAccountBalance.availableBalance) < amount)
             throw new Error(`Not enough funds in user account`);
-        // const minWithdrawAmount = await getMinWithdrawableAmount(userCurrency.symbol.toLowerCase());
-        // if (amount < minWithdrawAmount)
-        //     throw new Error(`Unable to process withdraw, min amount required is ${minWithdrawAmount}`);
         let payload: WithdrawDetails = {
             senderAccountId: userCurrency.tatumId,
             paymentId: `${USER_WITHDRAW}:${user.id}`,

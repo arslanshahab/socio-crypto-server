@@ -2,7 +2,7 @@ import BigNumber from "bignumber.js";
 import * as admin from "firebase-admin";
 import { Campaign } from "../models/Campaign";
 import { Secrets } from "../util/secrets";
-import { paginateList } from "../util/helpers";
+import { paginateList } from "../util";
 import { RequestData, doFetch } from "../util/fetchRequest";
 
 interface FirebaseUserLoginResponse {

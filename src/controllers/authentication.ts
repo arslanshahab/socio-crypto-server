@@ -1,12 +1,11 @@
 import { Firebase } from "../clients/firebase";
-import { asyncHandler } from "../util/helpers";
 import { Request, Response } from "express";
 import { ILike } from "typeorm";
 import { Verification } from "../models/Verification";
 import { SesClient } from "../clients/ses";
 import { User } from "../models/User";
 import { VerificationType } from "src/types";
-import { createSessionToken, createPasswordHash } from "../helpers";
+import { createSessionToken, createPasswordHash, asyncHandler } from "../util";
 import { encrypt, decrypt, sha256Hash } from "../util/crypto";
 import { Profile } from "../models/Profile";
 import {

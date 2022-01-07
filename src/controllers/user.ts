@@ -19,14 +19,14 @@ import {
     getCryptoAssestImageUrl,
     getMinWithdrawableAmount,
     getUSDValueForCurrency,
-} from "../helpers";
+    formatFloat,
+} from "../util";
 import { TatumClient } from "../clients/tatumClient";
 import { WalletCurrency } from "../models/WalletCurrency";
 import { Wallet } from "../models/Wallet";
 import { Currency } from "../models/Currency";
 import { flatten } from "lodash";
 import { Verification } from "../models/Verification";
-import { formatFloat } from "../util/helpers";
 import { SesClient } from "../clients/ses";
 import { USER_NOT_FOUND, INCORRECT_PASSWORD, FormattedError, SAME_OLD_AND_NEW_PASSWORD } from "../util/errors";
 import { addDays, endOfISOWeek, startOfDay } from "date-fns";

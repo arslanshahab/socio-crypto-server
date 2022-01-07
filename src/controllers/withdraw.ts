@@ -5,7 +5,7 @@ import { Wallet } from "../models/Wallet";
 import { S3Client } from "../clients/s3";
 import { SesClient } from "../clients/ses";
 import { performCurrencyAction } from "./helpers";
-import { asyncHandler, BN } from "../util/helpers";
+import { asyncHandler, BN } from "../util";
 import { Paypal } from "../clients/paypal";
 import { Response, Request } from "express";
 import { Firebase } from "../clients/firebase";

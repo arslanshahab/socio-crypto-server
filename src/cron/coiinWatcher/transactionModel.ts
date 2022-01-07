@@ -1,4 +1,4 @@
-import { BN } from "../../util/helpers";
+import { BN } from "../../util";
 
 export class Transaction {
     public blockNumber: number;

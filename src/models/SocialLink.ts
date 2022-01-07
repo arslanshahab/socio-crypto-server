@@ -11,7 +11,7 @@ import { User } from "./User";
 import { SocialType, TiktokLinkCredentials, TwitterLinkCredentials } from "../types";
 import { decrypt, encrypt } from "../util/crypto";
 import BigNumber from "bignumber.js";
-import { BN } from "../util/helpers";
+import { BN } from "../util";
 
 @Entity()
 export class SocialLink extends BaseEntity {

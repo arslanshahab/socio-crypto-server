@@ -4,7 +4,7 @@ import { Participant } from "../models/Participant";
 import { Campaign } from "../models/Campaign";
 import { getConnection } from "typeorm";
 import { Wallet } from "../models/Wallet";
-import { BN, generateRandomNumber } from "../util/helpers";
+import { BN, generateRandomNumber } from "../util";
 import { BigNumber } from "bignumber.js";
 import { DailyParticipantMetric } from "../models/DailyParticipantMetric";
 import { Org } from "../models/Org";

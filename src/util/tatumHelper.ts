@@ -14,7 +14,7 @@ import {
 } from "@tatumio/tatum";
 import { doFetch, RequestData } from "./fetchRequest";
 import { Secrets } from "./secrets";
-import { TatumClient } from "../clients/tatumClient";
+import { TatumClient, FeeCalculationParams } from "../clients/tatumClient";
 
 export const performWithdraw = async (currency: string, body: any) => {
     switch (currency.toUpperCase()) {
@@ -83,6 +83,17 @@ export const performWithdraw = async (currency: string, body: any) => {
 
 const sendTokenOffchainTransaction = async (currency: string, data: any) => {
     const endpoint = `${TatumClient.baseUrl}/offchain/${currency.toLowerCase()}/transfer`;
+    const requestData: RequestData = {
+        method: "POST",
+        url: endpoint,
+        payload: data,
+        headers: { "x-api-key": Secrets.tatumApiKey },
+    };
+    return await doFetch(requestData);
+};
+
+export const offchainEstimateFee = async (data: FeeCalculationParams) => {
+    const endpoint = `${TatumClient.baseUrl}/v3/offchain/blockchain/estimate`;
     const requestData: RequestData = {
         method: "POST",
         url: endpoint,

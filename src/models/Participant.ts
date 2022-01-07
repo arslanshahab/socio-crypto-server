@@ -11,7 +11,7 @@ import { Campaign } from "./Campaign";
 import { User } from "./User";
 import { BigNumber } from "bignumber.js";
 import { BigNumberEntityTransformer } from "../util/transformers";
-import { BN } from "../util/helpers";
+import { BN } from "../util";
 import { encrypt } from "../util/crypto";
 
 @Entity()

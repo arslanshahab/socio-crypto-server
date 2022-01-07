@@ -11,7 +11,7 @@ import { Campaign } from "../models/Campaign";
 import { CampaignMedia } from "../models/CampaignMedia";
 import { ApolloError } from "apollo-server-express";
 import { TikTokClient } from "../clients/tiktok";
-import { downloadMedia } from "../helpers";
+import { downloadMedia } from "../util";
 import { JWTPayload, SocialType } from "src/types";
 import { ERROR_LINKING_TIKTOK, FormattedError, USER_NOT_FOUND } from "../util/errors";
 
