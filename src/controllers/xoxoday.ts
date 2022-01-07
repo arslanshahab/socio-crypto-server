@@ -6,7 +6,7 @@ import { XoxodayOrder, XoxodayVoucher } from "src/types";
 import { getExchangeRateForCurrency } from "../util/exchangeRate";
 import { XoxodayOrder as XoxodayOrderModel } from "../models/XoxodayOrder";
 import { User } from "../models/User";
-import { differenceInDays, differenceInHours } from "date-fns";
+import { differenceInHours } from "date-fns";
 import { getSocialClient } from "./social";
 import { S3Client } from "../clients/s3";
 
