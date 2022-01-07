@@ -39,17 +39,20 @@ export class TatumClient {
 
     public static async getAllCurrencies(): Promise<string[]> {
         try {
-            const wallets = await TatumWallet.find({ where: { enabled: true } });
-            return wallets.map((item) => item.currency);
+            return (await TatumWallet.find({ where: { enabled: true } })).map((item) => item.currency);
         } catch (error) {
-            console.log(error?.response?.data || error.message);
-            throw new Error(error?.response?.data?.message || error.message);
+            console.log(error);
+            throw new Error(error.message);
         }
     }
 
     public static async isCurrencySupported(symbol: string): Promise<boolean> {
-        const foundCurrency = await TatumWallet.findOne({ where: { currency: symbol.toUpperCase(), enabled: true } });
-        return Boolean(foundCurrency);
+        try {
+            return Boolean(await TatumWallet.findOne({ where: { currency: symbol.toUpperCase(), enabled: true } }));
+        } catch (error) {
+            console.log(error);
+            throw new Error(error.message);
+        }
     }
 
     public static async createWallet(currency: string) {
