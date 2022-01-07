@@ -6,6 +6,7 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
     BeforeInsert,
+    BeforeUpdate,
 } from "typeorm";
 import { decrypt, encrypt } from "../util/crypto";
 import { generateRandomNonce } from "../util/helpers";
@@ -30,8 +31,9 @@ export class Verification extends BaseEntity {
     public updatedAt: Date;
 
     @BeforeInsert()
-    prepreModel() {
-        this.email = this.email.toLowerCase();
+    @BeforeUpdate()
+    nameToUpperCase() {
+        this.email = this.email ? this.email.toLowerCase() : this.email;
     }
 
     public static createVerification = async (email: string) => {

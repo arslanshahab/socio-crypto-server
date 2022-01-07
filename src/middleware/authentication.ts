@@ -2,15 +2,12 @@ import { Firebase } from "../clients/firebase";
 import { AuthenticationError } from "apollo-server-express";
 import express from "express";
 import { verifySessionToken } from "../helpers";
-import { FormattedError, NO_TOKEN_PROVIDED, SESSION_EXPIRED } from "../util/errors";
+import { FormattedError, NO_TOKEN_PROVIDED } from "../util/errors";
 
 export const authenticateAdmin = async ({ req }: { req: express.Request }) => {
     try {
         const token = req.cookies.session || "";
         if (!token) throw new AuthenticationError("No token provided or session not initialized");
-        if (process.env.NODE_ENV === "development" && token === "Bearer raiinmaker") {
-            return { user: { id: "banana", company: "raiinmaker", role: "admin" } };
-        }
         const decodedToken = await Firebase.verifySessionCookie(token);
         if (!decodedToken) throw new AuthenticationError("invalid token");
         const firebaseUser = await Firebase.getUserById(decodedToken.uid);
@@ -35,7 +32,6 @@ export const authenticateUser = async ({ req }: { req: express.Request }) => {
         const token = req.headers.authorization || "";
         if (!token) throw new Error(NO_TOKEN_PROVIDED);
         const user = verifySessionToken(token);
-        if (!user.id) throw new Error(SESSION_EXPIRED);
         return { user };
     } catch (error) {
         console.log(error);

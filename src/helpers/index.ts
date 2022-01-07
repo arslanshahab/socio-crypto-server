@@ -14,6 +14,8 @@ import { User } from "../models/User";
 import crypto from "crypto";
 import { Secrets } from "../util/secrets";
 import jwt from "jsonwebtoken";
+import fetch from "node-fetch";
+import { serverBaseUrl } from "../config";
 
 // general helper functions start here
 export const isSupportedCurrency = async (symbol: string): Promise<boolean> => {
@@ -61,6 +63,14 @@ export const getUSDValueForCurrency = async (symbol: string, amount: number) => 
 
 export const getCryptoAssestImageUrl = (symbol: string): string => {
     return getImage(symbol).toLowerCase().includes("unknown") ? getImage("ETH") : getImage(symbol);
+};
+
+export const downloadMedia = async (mediaType: string, url: string, format: string): Promise<string> => {
+    return await fetch(url)
+        .then((r) => r.buffer())
+        .then((buf) =>
+            mediaType === "photo" ? buf.toString("base64") : `data:${format};base64,` + buf.toString("base64")
+        );
 };
 //general helper functions end here
 
@@ -173,10 +183,16 @@ export const createPasswordHash = (data: { email: string; password: string }) =>
     return crypto.createHmac("sha512", salt).update(data.password).digest("base64");
 };
 
-export const createSessionToken = (payload: JWTPayload): string => {
-    return jwt.sign(payload, Secrets.encryptionKey, { expiresIn: "7d" });
+export const createSessionToken = (user: User): string => {
+    const payload: JWTPayload = {
+        email: user.email,
+        id: user.identityId,
+        userId: user.id,
+    };
+    return jwt.sign(payload, Secrets.encryptionKey, { expiresIn: "7d", audience: serverBaseUrl });
 };
 
 export const verifySessionToken = (token: string): JWTPayload => {
-    return jwt.verify(token, Secrets.encryptionKey) as JWTPayload;
+    return jwt.verify(token, Secrets.encryptionKey, { audience: serverBaseUrl }) as JWTPayload;
 };
+// authentication helpers end here
