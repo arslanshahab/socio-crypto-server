@@ -1,5 +1,6 @@
 import { CampaignAuditReport, CampaignChannelMedia, CampaignStatus, DateTrunc } from "../types";
 import { Campaign } from "../models/Campaign";
+import { Admin } from "../models/Admin";
 import { checkPermissions } from "../middleware/authentication";
 import { Participant } from "../models/Participant";
 import { S3Client } from "../clients/s3";
@@ -30,6 +31,7 @@ export const getCurrentCampaignTier = async (parent: any, args: { campaignId?: s
     let currentTierSummary;
     let currentCampaign;
     let cryptoPriceUsd;
+
     if (campaignId) {
         const where: { [key: string]: string } = { id: campaignId };
         currentCampaign = await Campaign.findOne({ where });
@@ -580,4 +582,47 @@ export const payoutCampaignRewards = async (parent: any, args: { campaignId: str
         success: true,
         message: "Campaign has been submitted for auditting",
     };
+};
+
+export const listAllCampaignsForOrg = async (parent: any, args: any, context: { user: any }) => {
+    const userId = context.user.id;
+    checkPermissions({ hasRole: ["admin"] }, context);
+    const admin = await Admin.findOne({ where: { firebaseId: userId }, relations: ["org"] });
+    if (!admin) throw new Error("Admin not found");
+    const campaigns = await Campaign.find({ where: { org: admin.org } });
+    return campaigns.map((x) => ({ id: x.id, name: x.name }));
+};
+//! Dashboard Metrics
+export const getDashboardMetrics = async (parent: any, { campaignId, skip, take }: any, context: { user: any }) => {
+    const userId = context.user.id;
+    checkPermissions({ hasRole: ["admin"] }, context);
+    const admin = await Admin.findOne({ where: { firebaseId: userId }, relations: ["org"] });
+    if (!admin) throw new Error("Admin not found");
+    const { org } = admin;
+    if (!org) throw new Error("Organization not found");
+    const orgId = await admin.org.id;
+    let campaignMetrics;
+    let aggregatedCampaignMetrics;
+    let totalParticipants;
+    if (!campaignId) throw new Error("Campaign Id not found");
+    if (orgId && campaignId == "-1") {
+        aggregatedCampaignMetrics = await DailyParticipantMetric.getAggregatedOrgMetrics(orgId);
+        campaignMetrics = await DailyParticipantMetric.getOrgMetrics(orgId);
+        totalParticipants = await Participant.count({
+            where: {
+                campaign: In(await (await Campaign.find({ where: { org: admin?.org } })).map((item) => item.id)),
+            },
+        });
+    }
+    if (campaignId && campaignId != "-1") {
+        aggregatedCampaignMetrics = await DailyParticipantMetric.getAggregatedCampaignMetrics(campaignId);
+        campaignMetrics = await DailyParticipantMetric.getCampaignMetrics(campaignId);
+        totalParticipants = await Participant.count({
+            where: {
+                campaign: In([campaignId]),
+            },
+        });
+    }
+    const aggregaredMetrics = { ...aggregatedCampaignMetrics, totalParticipants };
+    return { aggregatedCampaignMetrics: aggregaredMetrics, campaignMetrics };
 };
