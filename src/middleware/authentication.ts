@@ -38,7 +38,6 @@ export const authenticateUser = async ({ req }: { req: express.Request }) => {
         if (!user.id) throw new Error(SESSION_EXPIRED);
         return { user };
     } catch (error) {
-        console.log(error);
         throw new FormattedError(error);
     }
 };
