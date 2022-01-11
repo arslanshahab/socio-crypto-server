@@ -622,13 +622,11 @@ export const payoutCampaignRewards = async (parent: any, args: { campaignId: str
         where: { id: campaignId, company },
     });
     if (!campaign) throw new Error("Campaign not found");
-    // campaign.auditStatus = "PENDING";
-    campaign.auditStatus = "AUDITED";
+    campaign.auditStatus = "PENDING";
     campaign.audited = true;
     await campaign.save();
-    // return {
-    //     success: true,
-    //     message: "Campaign has been submitted for auditting",
-    // };
-    return true;
+    return {
+        success: true,
+        message: "Campaign has been submitted for auditting",
+    };
 };
