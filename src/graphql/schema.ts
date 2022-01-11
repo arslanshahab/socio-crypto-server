@@ -207,7 +207,28 @@ export const typeDefs = gql`
         getRedemptionRequirements: RedemptionRequirements
         getUserBalances(userId: String): [UserBalance]
         getTransferHistory(symbol: String, skip: Int, take: Int): PaginatedTransferHistory
+        listAllCampaignsForOrg: [UserAllCampaigns]
+        # downloadKyc(kycId: String!): [Factor]
         downloadKyc: KycApplicationResponse
+        getDashboardMetrics(campaignId: String, skip: Int, take: Int): DashboardMetrics
+    }
+    type DashboardMetrics {
+        aggregatedCampaignMetrics: AggregatedCampaignMetrics
+        campaignMetrics: [CampaignsMetrics]
+    }
+    type AggregatedCampaignMetrics {
+        campaign_name: String
+        clickCount: Int
+        viewCount: Int
+        shareCount: Int
+        participationScore: Int
+        totalParticipants: Int
+    }
+    type CampaignsMetrics {
+        clickCount: Int
+        viewCount: Int
+        shareCount: Int
+        participationScore: Int
     }
 
     enum VerificationType {
@@ -347,11 +368,10 @@ export const typeDefs = gql`
     }
 
     type Org {
-        id: String
         name: String
-        stripeId: String
         createdAt: String
-        updatedAt: String
+        campaignCount: Int
+        adminCount: Int
     }
 
     type PaymentMethod {
@@ -425,6 +445,12 @@ export const typeDefs = gql`
         participantCount: Int
         discoveryCount: Int
         conversionCount: Int
+    }
+
+    "Get All Campaigns of User"
+    type UserAllCampaigns {
+        id: ID
+        name: String
     }
 
     type AdminHourlyCampaignMetrics {

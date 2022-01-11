@@ -276,6 +276,51 @@ export class DailyParticipantMetric extends BaseEntity {
         };
     }
 
+    public static async getAggregatedOrgMetrics(orgId: string) {
+        return await this.createQueryBuilder("metric")
+            .select(
+                'SUM(CAST(metric."clickCount" AS int)) as "clickCount", SUM(CAST(metric."viewCount" AS int)) as "viewCount", SUM(CAST(metric."shareCount" as int)) as "shareCount", SUM(CAST(metric."participationScore" as int)) as "participationScore"'
+            )
+            .innerJoin("metric.campaign", "campaign", 'campaign.id = metric."campaignId"')
+            .innerJoin("campaign.org", "org", 'org.id = campaign."orgId"')
+            .where("org.id = :orgId", { orgId })
+            .groupBy("org.id")
+            .getRawOne();
+    }
+    public static async getOrgMetrics(orgId: string) {
+        return await this.createQueryBuilder("metric")
+            .select([
+                'SUM(CAST(metric."clickCount" AS int)) as "clickCount", SUM(CAST(metric."viewCount" AS int)) as "viewCount", SUM(CAST(metric."shareCount" as int)) as "shareCount", SUM(CAST(metric."participationScore" as int)) as "participationScore"',
+            ])
+            .innerJoin("metric.campaign", "campaign", 'campaign.id = metric."campaignId"')
+            .innerJoin("campaign.org", "org", 'org.id = campaign."orgId"')
+            .where("org.id = :orgId", { orgId })
+            .groupBy("campaign.id")
+            .getRawMany();
+    }
+
+    public static async getAggregatedCampaignMetrics(campaignId: string) {
+        return await this.createQueryBuilder("metric")
+            .select(
+                'SUM(CAST(metric."clickCount" AS int)) as "clickCount", SUM(CAST(metric."viewCount" AS int)) as "viewCount", SUM(CAST(metric."shareCount" as int)) as "shareCount", SUM(CAST(metric."participationScore" as int)) as "participationScore"'
+            )
+            .innerJoin("metric.campaign", "campaign", 'campaign.id = metric."campaignId"')
+            .addSelect("campaign.name")
+            .where("metric.campaignId = :campaignId", { campaignId })
+            .groupBy("campaign.name")
+            .getRawOne();
+    }
+
+    public static async getCampaignMetrics(campaignId: string) {
+        return await this.createQueryBuilder("metric")
+            .select(
+                'SUM(CAST(metric."clickCount" AS int)) as "clickCount", SUM(CAST(metric."viewCount" AS int)) as "viewCount", SUM(CAST(metric."shareCount" as int)) as "shareCount", SUM(CAST(metric."participationScore" as int)) as "participationScore"'
+            )
+            .where("metric.campaignId = :campaignId", { campaignId })
+            .groupBy("metric.id")
+            .getRawMany();
+    }
+
     public static async getPreviousDayMetricsForAllCampaigns(campaignIds: string[]): Promise<DailyParticipantMetric[]> {
         const yesterdayDate = new Date();
         yesterdayDate.setDate(new Date().getDate() - 1);
