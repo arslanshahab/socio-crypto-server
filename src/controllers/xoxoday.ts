@@ -62,11 +62,13 @@ export const placeOrder = async (parent: any, args: { cart: Array<any>; email: s
     try {
         const { cart, email } = args;
         if (!email) throw new Error("No email provided");
-        const { id, userId } = context.user;
-        const user = await User.findOne({
-            where: [{ identityId: id }, { id: userId }],
-            relations: ["wallet", "wallet.walletCurrency", "campaigns", "orders", "socialLinks"],
-        });
+        const user = await User.findUserByContext(context.user, [
+            "wallet",
+            "wallet.walletCurrency",
+            "campaigns",
+            "orders",
+            "socialLinks",
+        ]);
         if (!user) throw new Error("No user found");
         if (!cart || !cart.length) throw new Error("Please provide some items to place an order.");
         const totalCoiinSpent = cart.reduce((a, b) => a + (b.coiinPrice || 0), 0);
@@ -85,11 +87,7 @@ export const placeOrder = async (parent: any, args: { cart: Array<any>; email: s
 
 export const redemptionRequirements = async (parent: any, args: {}, context: { user: any }) => {
     try {
-        const { id, userId } = context.user;
-        const user = await User.findOne({
-            where: [{ identityId: id }, { id: userId }],
-            relations: ["campaigns", "orders", "socialLinks"],
-        });
+        const user = await User.findUserByContext(context.user, ["campaigns", "orders", "socialLinks"]);
         if (!user) throw new Error("No user found");
         const accountAgeInDays = differenceInDays(new Date(), new Date(user.createdAt));
         const maxParticipationValue = Math.max(

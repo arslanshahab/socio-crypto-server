@@ -28,11 +28,8 @@ export const registerFactorLink = async (
         acceptedFactors: ["email", "myfii-kyc"],
         service: "raiinmaker",
     });
-    const { id, userId } = context.user;
-    const user = await User.findOneOrFail({
-        where: [{ identityId: id }, { id: userId }],
-        relations: ["factorLinks"],
-    });
+    const user = await User.findUserByContext(context.user, ["factorLinks"]);
+    if (!user) throw new Error("user not found");
     for (let i = 0; i < factors.length; i++) {
         const { providerId, id, type, name } = factors[i];
         if (await FactorLink.findOne({ where: { factorId: id, providerId } }))
@@ -51,11 +48,8 @@ export const registerFactorLink = async (
 };
 
 export const removeFactorLink = async (parent: any, args: { factorId: string }, context: { user: any }) => {
-    const { id, userId } = context.user;
-    const user = await User.findOneOrFail({
-        where: [{ identityId: id }, { id: userId }],
-        relations: ["factorLinks"],
-    });
+    const user = await User.findUserByContext(context.user, ["factorLinks"]);
+    if (!user) throw new Error("user not found");
     const factorLink = user.factorLinks.find((link: FactorLink) => link.factorId === args.factorId);
     if (!factorLink) throw new Error("requested factor not found");
     await factorLink.remove();
@@ -68,11 +62,8 @@ export const removeFactorLink = async (parent: any, args: { factorId: string }, 
 };
 
 export const isLastFactor = async (_parent: any, args: any, context: { user: any }) => {
-    const { id, userId } = context.user;
-    const user = await User.findOneOrFail({
-        where: [{ identityId: id }, { id: userId }],
-        relations: ["factorLinks"],
-    });
+    const user = await User.findUserByContext(context.user, ["factorLinks"]);
+    if (!user) throw new Error("user not found");
     return user.factorLinks.length === 1;
 };
 
@@ -204,10 +195,9 @@ export const recover = asyncHandler(async (req: AuthRequest, res: Response) => {
 });
 
 export const generateFactors = async (parent: any, args: { factors: FactorGeneration[] }, context: { user: any }) => {
-    const { id, userId } = context.user;
     const { factors } = args;
     if (!factors) throw new Error("must provide factor association IDs");
-    const user = await User.findOne({ where: [{ identityId: id }, { id: userId }] });
+    const user = await User.findUserByContext(context.user);
     if (!user) throw new Error("user not found");
     if (user.kycStatus !== "APPROVED") throw new Error("you can only generate factors with an approved KYC");
     const kycData = await S3Client.getUserObject(user.id);
