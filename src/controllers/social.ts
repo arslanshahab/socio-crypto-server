@@ -10,6 +10,7 @@ import { HourlyCampaignMetric } from "../models/HourlyCampaignMetric";
 import { Campaign } from "../models/Campaign";
 import fetch from "node-fetch";
 import { CampaignMedia } from "../models/CampaignMedia";
+import { ApolloError } from "apollo-server-express";
 export const allowedSocialLinks = ["twitter", "facebook"];
 
 const assetUrl =
@@ -92,14 +93,8 @@ export const postToSocial = async (
         console.log(`posting to social`);
         const startTime = new Date().getTime();
         let { socialType, text, mediaType, mediaFormat, media, participantId, defaultMedia, mediaId } = args;
-<<<<<<< HEAD
-        if (!allowedSocialLinks.includes(socialType)) throw new Error("the type must exist as a predefined type");
-        const { id, userId } = context.user;
-        const user = await User.findOne({ where: [{ identityId: id }, { id: userId }], relations: ["socialLinks"] });
-=======
         if (!allowedSocialLinks.includes(socialType)) throw new ApolloError(`posting to ${socialType} is not allowed`);
         const user = await User.findUserByContext(context.user, ["socialLinks"]);
->>>>>>> 6500361 (new changes)
         if (!user) throw new Error("User not found");
         const participant = await Participant.findOneOrFail({
             where: { id: participantId, user },
