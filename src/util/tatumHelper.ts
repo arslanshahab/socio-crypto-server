@@ -93,7 +93,7 @@ const sendTokenOffchainTransaction = async (currency: string, data: any) => {
 };
 
 export const offchainEstimateFee = async (data: FeeCalculationParams) => {
-    const endpoint = `${TatumClient.baseUrl}/v3/offchain/blockchain/estimate`;
+    const endpoint = `${TatumClient.baseUrl}/offchain/blockchain/estimate`;
     const requestData: RequestData = {
         method: "POST",
         url: endpoint,

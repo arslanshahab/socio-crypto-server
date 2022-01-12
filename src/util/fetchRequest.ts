@@ -20,11 +20,10 @@ export const doFetch = async (requestData: RequestData) => {
             },
             ...(requestData.method !== "GET" && requestData.payload && { data: requestData.payload }),
         };
-        console.log(options);
         const resp = await axios(options);
         return resp.data;
     } catch (error) {
-        console.log(error);
+        console.log(error.response);
         throw new Error("There was an error making request");
     }
 };

@@ -38,6 +38,8 @@ export interface FeeCalculationParams {
     senderAccountId: string;
     address: string;
     amount: string;
+    tatumWallet: TatumWallet;
+    currency: Currency;
 }
 
 export class TatumClient {
@@ -210,8 +212,7 @@ export class TatumClient {
 
     public static calculateWithdrawFee = async (data: FeeCalculationParams) => {
         try {
-            const feeData = offchainEstimateFee(data);
-            console.log(feeData);
+            return await offchainEstimateFee(data);
         } catch (error) {
             console.log(error);
             throw new Error(error?.response?.data?.message || error.message);

@@ -12,7 +12,7 @@ import { Escrow } from "../models/Escrow";
 import { WalletCurrency } from "../models/WalletCurrency";
 import { FEE_RATE } from "../util/constants";
 
-export const feeMultiplier = new BN(1).minus(FEE_RATE);
+export const feeMultiplier = (() => new BN(1).minus(FEE_RATE));
 
 export const updateOrgCampaignsStatusOnDeposit = async (wallet: Wallet) => {
     const org = await Org.listOrgCampaignsByWalletIdAndStatus(wallet.id, "INSUFFICIENT_FUNDS");

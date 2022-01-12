@@ -7,7 +7,7 @@
     "license": "MIT",
     "scripts": {
         "dev": "nodemon",
-        "start": "set PORT=4000 && set AWS_PROFILE=raiinmaker && set TS_NODE_FILES=true && set NODE_ENV=development && ts-node src/index.ts",
+        "start": "PORT=4000 AWS_PROFILE=raiinmaker TS_NODE_FILES=true NODE_ENV=development ts-node src/index.ts",
         "build": "tsc",
         "clean": "rm -rf dist/",
         "test": "yarn test:integration:ci",
@@ -35,7 +35,7 @@
     },
     "dependencies": {
         "@myfii-dev/dragonfactor-auth": "^0.0.12",
-        "@tatumio/tatum": "^1.29.31",
+        "@tatumio/tatum": "^1.30.9",
         "@types/lodash": "^4.14.170",
         "ajv": "^6.12.2",
         "apollo-server-express": "^3.5.0",

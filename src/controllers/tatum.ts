@@ -1,10 +1,4 @@
-import {
-    TatumClient,
-    USER_WITHDRAW,
-    RAIINMAKER_WITHDRAW,
-    WithdrawDetails,
-    FeeCalculationParams,
-} from "../clients/tatumClient";
+import { TatumClient, USER_WITHDRAW, RAIINMAKER_WITHDRAW, WithdrawDetails } from "../clients/tatumClient";
 import { Admin } from "../models/Admin";
 import { Request, Response } from "express";
 import { TatumWallet } from "../models/TatumWallet";
@@ -23,13 +17,13 @@ export const initWallet = asyncHandler(async (req: Request, res: Response) => {
         const foundWallet = await TatumWallet.findOne({ where: { currency: currency } });
         if (foundWallet) throw new Error(`Wallet already exists for currency: ${currency}`);
         const wallet: any = await TatumClient.createWallet(currency);
+        await S3Client.setTatumWalletKeys(currency, {
+            ...wallet,
+        });
         await TatumWallet.addTatumWallet({
             xpub: wallet.xpub || "",
             address: wallet.address || "",
             currency,
-        });
-        await S3Client.setTatumWalletKeys(currency, {
-            ...wallet,
         });
         res.status(200).json(wallet);
     } catch (error) {
@@ -146,7 +140,16 @@ export const calculateWithdrawFee = asyncHandler(async (req: Request, res: Respo
     try {
         const { senderAccountId, address, amount, token } = req.body;
         if (!token || token !== process.env.RAIINMAKER_DEV_TOKEN) throw new Error("Invalid Token");
-        const data = await TatumClient.calculateWithdrawFee({ senderAccountId, address, amount });
+        const currency = await Currency.findOne({ where: { tatumId: senderAccountId } });
+        const tatumWallet = await TatumWallet.findOne({ where: { currency: currency?.symbol } });
+        if (!tatumWallet || !currency) throw new Error("tatum wallet not found for provided sender account.");
+        const data = await TatumClient.calculateWithdrawFee({
+            senderAccountId,
+            address,
+            amount,
+            tatumWallet,
+            currency,
+        });
         res.status(200).json(data);
     } catch (error) {
         res.status(200).json(error.message);
