@@ -10,6 +10,7 @@ import { HourlyCampaignMetric } from "../models/HourlyCampaignMetric";
 import { Campaign } from "../models/Campaign";
 import fetch from "node-fetch";
 import { CampaignMedia } from "../models/CampaignMedia";
+import { ApolloError } from "apollo-server-express";
 export const allowedSocialLinks = ["twitter", "facebook"];
 
 const assetUrl =
@@ -38,18 +39,20 @@ export const registerSocialLink = async (
     args: { type: string; apiKey: string; apiSecret: string },
     context: { user: any }
 ) => {
-    const { id, userId } = context.user;
-    const user = await User.findOne({ where: [{ identityId: id }, { id: userId }], relations: ["socialLinks"] });
+    const user = await User.findUserByContext(context.user, ["socialLinks"]);
     if (!user) throw new Error("User not found");
     const { type, apiKey, apiSecret } = args;
+    console.log("args received", args);
     if (!allowedSocialLinks.includes(type)) throw new Error("the type must exist as a predefined type");
     const existingLink = user.socialLinks.find((link: SocialLink) => link.type === type);
+    console.log("exsting link", existingLink);
     const encryptedApiKey = encrypt(apiKey);
     const encryptedApiSecret = encrypt(apiSecret);
     if (existingLink) {
         existingLink.apiKey = encryptedApiKey;
         existingLink.apiSecret = encryptedApiSecret;
         await existingLink.save();
+        console.log("IF - exsting link", existingLink);
     } else {
         const link = new SocialLink();
         link.type = type;
@@ -57,14 +60,14 @@ export const registerSocialLink = async (
         link.apiSecret = encryptedApiSecret;
         link.user = user;
         await link.save();
+        console.log("ELSE - link", link);
     }
     return true;
 };
 
 export const removeSocialLink = async (parent: any, args: { type: string }, context: { user: any }) => {
     const { type } = args;
-    const { id, userId } = context.user;
-    const user = await User.findOne({ where: [{ identityId: id }, { id: userId }], relations: ["socialLinks"] });
+    const user = await User.findUserByContext(context.user, ["socialLinks"]);
     if (!user) throw new Error("User not found");
     if (!allowedSocialLinks.includes(type)) throw new Error("the type must exist as a predefined type");
     const existingType = user.socialLinks.find((link) => link.type === type);
@@ -90,9 +93,8 @@ export const postToSocial = async (
         console.log(`posting to social`);
         const startTime = new Date().getTime();
         let { socialType, text, mediaType, mediaFormat, media, participantId, defaultMedia, mediaId } = args;
-        if (!allowedSocialLinks.includes(socialType)) throw new Error("the type must exist as a predefined type");
-        const { id, userId } = context.user;
-        const user = await User.findOne({ where: [{ identityId: id }, { id: userId }], relations: ["socialLinks"] });
+        if (!allowedSocialLinks.includes(socialType)) throw new ApolloError(`posting to ${socialType} is not allowed`);
+        const user = await User.findUserByContext(context.user, ["socialLinks"]);
         if (!user) throw new Error("User not found");
         const participant = await Participant.findOneOrFail({
             where: { id: participantId, user },
@@ -155,9 +157,8 @@ export const postToSocial = async (
 
 export const getTotalFollowers = async (parent: any, args: any, context: { user: any }) => {
     let client;
-    const { id, userId } = context.user;
     const followerTotals: { [key: string]: number } = {};
-    const user = await User.findOne({ where: [{ identityId: id }, { id: userId }] });
+    const user = await User.findUserByContext(context.user);
     if (!user) throw new Error("User not found");
     const socialLinks = await SocialLink.find({ where: { user } });
     for (const link of socialLinks) {
@@ -187,8 +188,7 @@ export const getTotalFollowers = async (parent: any, args: any, context: { user:
 
 export const getTweetById = async (parent: any, args: { id: string; type: string }, context: { user: any }) => {
     const { id, type } = args;
-    const { id: identityId, userId } = context.user;
-    const user = await User.findOne({ where: [{ identityId }, { id: userId }], relations: ["socialLinks"] });
+    const user = await User.findUserByContext(context.user, ["socialLinks"]);
     if (!user) throw new Error("User not found");
     const socialLink = user.socialLinks.find((link) => link.type === "twitter");
     if (!socialLink) throw new Error(`you have not linked twitter as a social platform`);
