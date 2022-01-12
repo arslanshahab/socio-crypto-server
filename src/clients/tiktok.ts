@@ -37,9 +37,9 @@ export class TikTokClient {
             fs.unlinkSync(filePath);
             return resp;
         } catch (error) {
-            console.log(error.response.data);
+            console.log(error);
             fs.unlinkSync(filePath);
-            throw new Error(error.response.data);
+            throw new Error("There was an error uploading content to tiktok.");
         }
     };
 
