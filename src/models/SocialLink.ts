@@ -12,6 +12,7 @@ import { SocialType, TiktokLinkCredentials, TwitterLinkCredentials } from "../ty
 import { decrypt, encrypt } from "../util/crypto";
 import BigNumber from "bignumber.js";
 import { BN } from "../util/helpers";
+import { BigNumberEntityTransformer } from "../util/transformers";
 
 @Entity()
 export class SocialLink extends BaseEntity {
@@ -30,13 +31,13 @@ export class SocialLink extends BaseEntity {
     @Column({ nullable: true })
     public accessToken: string;
 
-    @Column({ nullable: true, type: "varchar" })
+    @Column({ nullable: true, type: "varchar", transformer: BigNumberEntityTransformer })
     public accessTokenExpiry: BigNumber;
 
     @Column({ nullable: true })
     public refreshToken: string;
 
-    @Column({ nullable: true, type: "varchar" })
+    @Column({ nullable: true, type: "varchar", transformer: BigNumberEntityTransformer })
     public refreshTokenExpiry: BigNumber;
 
     @Column({ nullable: true })
@@ -101,9 +102,9 @@ export class SocialLink extends BaseEntity {
         }
         socialLink.openId = tokens.open_id;
         socialLink.accessToken = tokens.access_token;
-        socialLink.accessTokenExpiry = new BN(tokens.expires_in * 1000 + new Date().getTime());
+        socialLink.accessTokenExpiry = new BN(tokens.expires_in * 1000).plus(new Date().getTime());
         socialLink.refreshToken = tokens.refresh_token;
-        socialLink.refreshTokenExpiry = new BN(tokens.refresh_expires_in * 1000);
+        socialLink.refreshTokenExpiry = new BN(tokens.refresh_expires_in * 1000).plus(new Date().getTime());
         return await socialLink.save();
     };
 }
