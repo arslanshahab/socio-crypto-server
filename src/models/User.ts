@@ -211,7 +211,7 @@ export class User extends BaseEntity {
     public static async findUserByContext(data: JWTPayload, relations?: string[]) {
         const { id, userId } = data;
         return await User.findOne({
-            where: [{ identityId: id }, { id: userId }],
+            where: { ...(id && { identityId: id }), ...(userId && { id: userId }) },
             ...(relations && { relations: ["socialLinks"] }),
         });
     }
