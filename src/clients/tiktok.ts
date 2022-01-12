@@ -34,6 +34,7 @@ export class TikTokClient {
                 headers: formData.getHeaders(),
             };
             const resp = await doFetch(requestData);
+            console.log(resp);
             fs.unlinkSync(filePath);
             return resp;
         } catch (error) {
