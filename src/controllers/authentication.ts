@@ -96,6 +96,7 @@ export const loginUser = async (parent: any, args: { email: string; password: st
         const user = await User.findOne({ where: { email: ILike(email) }, relations: ["wallet"] });
         if (!user) throw new Error(EMAIL_NOT_EXISTS);
         if (user.password !== createPasswordHash({ email, password })) throw new Error(INCORRECT_PASSWORD);
+        await user.updateLastLogin();
         await user.transferReward("LOGIN_REWARD");
         return { token: createSessionToken(user) };
     } catch (error) {
