@@ -42,14 +42,17 @@ export const registerSocialLink = async (
     const user = await User.findOne({ where: [{ identityId: id }, { id: userId }], relations: ["socialLinks"] });
     if (!user) throw new Error("User not found");
     const { type, apiKey, apiSecret } = args;
+    console.log("args received", args);
     if (!allowedSocialLinks.includes(type)) throw new Error("the type must exist as a predefined type");
     const existingLink = user.socialLinks.find((link: SocialLink) => link.type === type);
+    console.log("exsting link", existingLink);
     const encryptedApiKey = encrypt(apiKey);
     const encryptedApiSecret = encrypt(apiSecret);
     if (existingLink) {
         existingLink.apiKey = encryptedApiKey;
         existingLink.apiSecret = encryptedApiSecret;
         await existingLink.save();
+        console.log("IF - exsting link", existingLink);
     } else {
         const link = new SocialLink();
         link.type = type;
@@ -57,6 +60,7 @@ export const registerSocialLink = async (
         link.apiSecret = encryptedApiSecret;
         link.user = user;
         await link.save();
+        console.log("ELSE - link", link);
     }
     return true;
 };
