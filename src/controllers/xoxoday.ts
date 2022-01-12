@@ -89,9 +89,9 @@ export const redemptionRequirements = async (parent: any, args: {}, context: { u
     try {
         const user = await User.findUserByContext(context.user, ["campaigns", "orders", "socialLinks"]);
         if (!user) throw new Error("No user found");
-        const recentOrder = user.orders.sort(
-            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        )[0];
+        const recentOrder =
+            user?.orders?.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0] ||
+            undefined;
         const twitterAccount = user.socialLinks.find((item) => item.type === "twitter");
         const socialClient = getSocialClient("twitter");
         const twitterFollowers = twitterAccount
@@ -103,8 +103,11 @@ export const redemptionRequirements = async (parent: any, args: {}, context: { u
             twitterfollowers: twitterFollowers,
             twitterfollowersRequirement: 20,
             participation: Boolean(user.campaigns.length),
-            orderLimitForTwentyFourHoursReached:
-                recentOrder && differenceInHours(new Date(), new Date(recentOrder.createdAt)) < 24 ? true : false,
+            orderLimitForTwentyFourHoursReached: recentOrder
+                ? differenceInHours(new Date(), new Date(recentOrder.createdAt)) < 24
+                    ? true
+                    : false
+                : true,
         };
     } catch (error) {
         console.log(error);
