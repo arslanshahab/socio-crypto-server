@@ -19,7 +19,11 @@ export class TikTokClient {
         mediaFormat: string
     ): Promise<string> => {
         const fileName = `raiinmaker-${participant.id}.${mediaFormat.split("/")[1]}`;
-        const filePath = `uploads/${fileName}`;
+        const directory = "uploads";
+        if (!fs.existsSync(directory)) {
+            fs.mkdirSync(directory);
+        }
+        const filePath = `${directory}/${fileName}`;
         try {
             console.log("UPLOAD-TIKTOK FILE: ", fileName);
             var bitmap = Buffer.from(data, "base64");
