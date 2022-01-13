@@ -145,7 +145,7 @@ export const calculateWithdrawFee = asyncHandler(async (req: Request, res: Respo
         if (!tatumWallet || !currency) throw new Error("tatum wallet not found for provided sender account.");
         const data = await TatumClient.calculateWithdrawFee({
             senderAccountId,
-            address,
+            toAddress: address,
             amount,
             tatumWallet,
             currency,

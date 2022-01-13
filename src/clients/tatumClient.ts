@@ -36,7 +36,7 @@ export interface WithdrawDetails {
 
 export interface FeeCalculationParams {
     senderAccountId: string;
-    address: string;
+    toAddress: string;
     amount: string;
     tatumWallet: TatumWallet;
     currency: Currency;
