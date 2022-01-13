@@ -20,10 +20,9 @@ export const start = async (
     context: { user: any }
 ) => {
     if (args.withdrawAmount <= 0) throw new Error("withdraw amount must be a positive number");
-    const { id, userId } = context.user;
     const { tokenSymbol = "coiin" } = args;
     const normalizedTokenSymbol = tokenSymbol.toLowerCase();
-    const user = await User.findOne({ where: [{ identityId: id }, { id: userId }] });
+    const user = await User.findUserByContext(context.user);
     if (!user) throw new Error("User not found");
     const wallet = await Wallet.findOneOrFail({ where: { user }, relations: ["transfers", "currency"] });
     const pendingBalance = await Transfer.getTotalPendingByWallet(wallet, normalizedTokenSymbol, true);
@@ -314,9 +313,8 @@ export const getWalletWithPendingBalance = async (
     args: { tokenSymbol: string },
     context: { user: any }
 ) => {
-    const { id, userId } = context.user;
     const { tokenSymbol = "coiin" } = args;
-    const user = await User.findOne({ where: [{ identityId: id }, { id: userId }] });
+    const user = await User.findUserByContext(context.user);
     if (!user) throw new Error("User not found");
     const wallet = await Wallet.findOneOrFail({ where: { user }, relations: ["transfers"] });
     const pendingBalance = await Transfer.getTotalPendingByWallet(wallet, tokenSymbol.toLowerCase());

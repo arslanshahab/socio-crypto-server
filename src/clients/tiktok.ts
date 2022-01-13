@@ -19,7 +19,11 @@ export class TikTokClient {
         mediaFormat: string
     ): Promise<string> => {
         const fileName = `raiinmaker-${participant.id}.${mediaFormat.split("/")[1]}`;
-        const filePath = `uploads/${fileName}`;
+        const directory = "uploads";
+        if (!fs.existsSync(directory)) {
+            fs.mkdirSync(directory);
+        }
+        const filePath = `${directory}/${fileName}`;
         try {
             console.log("UPLOAD-TIKTOK FILE: ", fileName);
             var bitmap = Buffer.from(data, "base64");
@@ -34,12 +38,13 @@ export class TikTokClient {
                 headers: formData.getHeaders(),
             };
             const resp = await doFetch(requestData);
+            console.log(resp);
             fs.unlinkSync(filePath);
             return resp;
         } catch (error) {
-            console.log(error.response.data);
+            console.log(error);
             fs.unlinkSync(filePath);
-            throw new Error(error.response.data);
+            throw new Error("There was an error uploading content to tiktok.");
         }
     };
 

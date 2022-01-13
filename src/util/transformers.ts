@@ -43,3 +43,14 @@ export const AlgorithmTransformer: ValueTransformer = {
     from: transformAlgorithm,
     to: (value) => value,
 };
+
+export const DateToUTCTransformer: ValueTransformer = {
+    from: (value: any) => {
+        if (!value) return;
+        return new Date(value).getTime();
+    },
+    to: (value: any) => {
+        if (!value) return;
+        return new Date(value);
+    },
+};

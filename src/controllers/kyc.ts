@@ -14,8 +14,7 @@ const validator = new Validator();
 
 export const verifyKyc = async (parent: any, args: any, context: { user: any }) => {
     try {
-        const { id, userId } = context.user;
-        const user = await User.findOne({ where: [{ identityId: id }, { id: userId }], relations: ["profile"] });
+        const user = await User.findUserByContext(context.user, ["profile"]);
         if (!user) throw new Error("user not found");
         if (user.kycStatus === "APPROVED") throw new Error("user is already kyc verified");
         const currentKycApplication = await findKycApplication(user);
@@ -39,8 +38,7 @@ export const verifyKyc = async (parent: any, args: any, context: { user: any }) 
 
 export const downloadKyc = async (parent: any, args: any, context: { user: any }) => {
     try {
-        const { id, userId } = context.user;
-        const user = await User.findOne({ where: [{ identityId: id }, { id: userId }], relations: ["profile"] });
+        const user = await User.findUserByContext(context.user, ["profile"]);
         if (!user) throw new Error("user not found");
         const kycApplication = await VerificationApplication.findOne({ where: { user } });
         if (!kycApplication) throw new Error("kyc data not found for user");
@@ -80,8 +78,7 @@ export const kycWebhook = asyncHandler(async (req: Request, res: Response) => {
 
 export const getKyc = async (_parent: any, args: any, context: { user: any }) => {
     try {
-        const { id, userId } = context.user;
-        const user = await User.findOne({ where: [{ identityId: id }, { id: userId }] });
+        const user = await User.findUserByContext(context.user);
         if (!user) throw new Error("user not found");
         const application = await findKycApplication(user);
         if (!application) throw new Error("kyc application not found");
@@ -105,8 +102,8 @@ export const adminGetKycByUser = async (parent: any, args: { userId: string }, c
 };
 
 export const updateKyc = async (parent: any, args: { user: KycUser }, context: { user: any }) => {
-    const { id, userId } = context.user;
-    const user = await User.findOne({ where: [{ identityId: id }, { id: userId }] });
+    const user = await User.findUserByContext(context.user);
+    if (!user) throw new Error("user not found");
     if (!user) throw new Error("User not found.");
     if (args.user.idProof) {
         await S3Client.uploadKycImage(user.id, "idProof", args.user.idProof);

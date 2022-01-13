@@ -61,11 +61,13 @@ export const placeOrder = async (parent: any, args: { cart: Array<any>; email: s
     try {
         const { cart, email } = args;
         if (!email) throw new Error("No email provided");
-        const { id, userId } = context.user;
-        const user = await User.findOne({
-            where: [{ identityId: id }, { id: userId }],
-            relations: ["wallet", "wallet.walletCurrency", "campaigns", "orders", "socialLinks"],
-        });
+        const user = await User.findUserByContext(context.user, [
+            "wallet",
+            "wallet.walletCurrency",
+            "campaigns",
+            "orders",
+            "socialLinks",
+        ]);
         if (!user) throw new Error("No user found");
         if (!cart || !cart.length) throw new Error("Please provide some items to place an order.");
         const totalCoiinSpent = cart.reduce((a, b) => a + (b.coiinPrice || 0), 0);
@@ -84,15 +86,11 @@ export const placeOrder = async (parent: any, args: { cart: Array<any>; email: s
 
 export const redemptionRequirements = async (parent: any, args: {}, context: { user: any }) => {
     try {
-        const { id, userId } = context.user;
-        const user = await User.findOne({
-            where: [{ identityId: id }, { id: userId }],
-            relations: ["campaigns", "orders", "socialLinks"],
-        });
+        const user = await User.findUserByContext(context.user, ["campaigns", "orders", "socialLinks"]);
         if (!user) throw new Error("No user found");
-        const recentOrder = user.orders.sort(
-            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        )[0];
+        const recentOrder =
+            user?.orders?.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0] ||
+            undefined;
         const twitterAccount = user.socialLinks.find((item) => item.type === "twitter");
         const socialClient = getSocialClient("twitter");
         const twitterFollowers = twitterAccount
@@ -104,8 +102,11 @@ export const redemptionRequirements = async (parent: any, args: {}, context: { u
             twitterfollowers: twitterFollowers,
             twitterfollowersRequirement: 20,
             participation: Boolean(user.campaigns.length),
-            orderLimitForTwentyFourHoursReached:
-                recentOrder && differenceInHours(new Date(), new Date(recentOrder.createdAt)) < 24 ? true : false,
+            orderLimitForTwentyFourHoursReached: recentOrder
+                ? differenceInHours(new Date(), new Date(recentOrder.createdAt)) < 24
+                    ? true
+                    : false
+                : true,
         };
     } catch (error) {
         console.log(error);
