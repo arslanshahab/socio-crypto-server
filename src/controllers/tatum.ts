@@ -4,11 +4,11 @@ import { Request, Response } from "express";
 import { TatumWallet } from "../models/TatumWallet";
 import { User } from "../models/User";
 import { S3Client } from "../clients/s3";
-import { findOrCreateCurrency, getWithdrawableAmount, asyncHandler } from "../util";
+import { asyncHandler, BN } from "../util";
 import { Currency } from "../models/Currency";
 import { Transfer } from "../models/Transfer";
-import { BigNumber } from "bignumber.js";
 import { ApolloError } from "apollo-server-express";
+import { adjustWithdrawableAmount, findOrCreateCurrency, transferFundsToRaiinmaker } from "../util/tatumHelper";
 
 export const initWallet = asyncHandler(async (req: Request, res: Response) => {
     try {
@@ -136,26 +136,6 @@ export const transferBalance = asyncHandler(async (req: Request, res: Response) 
     }
 });
 
-export const calculateWithdrawFee = asyncHandler(async (req: Request, res: Response) => {
-    try {
-        const { senderAccountId, address, amount, token } = req.body;
-        if (!token || token !== process.env.RAIINMAKER_DEV_TOKEN) throw new Error("Invalid Token");
-        const currency = await Currency.findOne({ where: { tatumId: senderAccountId } });
-        const tatumWallet = await TatumWallet.findOne({ where: { currency: currency?.symbol } });
-        if (!tatumWallet || !currency) throw new Error("tatum wallet not found for provided sender account.");
-        const data = await TatumClient.calculateWithdrawFee({
-            senderAccountId,
-            toAddress: address,
-            amount,
-            tatumWallet,
-            currency,
-        });
-        res.status(200).json(data);
-    } catch (error) {
-        res.status(200).json(error.message);
-    }
-});
-
 export const getSupportedCurrencies = async (parent: any, args: any, context: { user: any }) => {
     try {
         const { id } = context.user;
@@ -219,6 +199,19 @@ export const withdrawFunds = async (
         const userCurrency = await Currency.findOne({ where: { wallet: user.wallet, symbol } });
         if (!userCurrency) throw new Error(`No such currency:${symbol} in user wallet`);
         const userAccountBalance = await TatumClient.getAccountBalance(userCurrency.tatumId);
+        const tatumWallet = await TatumWallet.findOne({ where: { currency: symbol } });
+        if (!tatumWallet || !userCurrency) throw new Error("Tatum wallet not found for provided sender account.");
+
+        const withdrawAbleAmount = await adjustWithdrawableAmount({
+            senderAccountId: userCurrency.tatumId,
+            toAddress: address,
+            amount: amount,
+            tatumWallet,
+            currency: userCurrency,
+        });
+
+        console.log(withdrawAbleAmount);
+
         if (parseFloat(userAccountBalance.availableBalance) < amount)
             throw new Error(`Not enough funds in user account`);
         let payload: WithdrawDetails = {
@@ -226,12 +219,17 @@ export const withdrawFunds = async (
             paymentId: `${USER_WITHDRAW}:${user.id}`,
             senderNote: RAIINMAKER_WITHDRAW,
             address,
-            amount: getWithdrawableAmount(amount),
+            amount: withdrawAbleAmount,
+            index: 2,
         };
         await TatumClient.withdrawFundsToBlockchain(symbol, payload);
+        await transferFundsToRaiinmaker({
+            tatumId: userCurrency.tatumId,
+            amount: String(amount - parseFloat(withdrawAbleAmount)),
+        });
         const newTransfer = Transfer.initTatumTransfer({
             symbol,
-            amount: new BigNumber(getWithdrawableAmount(amount)),
+            amount: new BN(withdrawAbleAmount),
             action: "WITHDRAW",
             wallet: user.wallet,
             tatumId: address,

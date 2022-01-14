@@ -15,7 +15,6 @@ import { serverBaseUrl } from "../config";
 import { In } from "typeorm";
 import {
     createPasswordHash,
-    findOrCreateCurrency,
     getCryptoAssestImageUrl,
     getMinWithdrawableAmount,
     getUSDValueForCurrency,
@@ -31,6 +30,7 @@ import { SesClient } from "../clients/ses";
 import { USER_NOT_FOUND, INCORRECT_PASSWORD, FormattedError, SAME_OLD_AND_NEW_PASSWORD } from "../util/errors";
 import { addDays, endOfISOWeek, startOfDay } from "date-fns";
 import { Transfer } from "../models/Transfer";
+import { findOrCreateCurrency } from "../util/tatumHelper";
 
 export const participate = async (parent: any, args: { campaignId: string; email: string }, context: { user: any }) => {
     try {
@@ -337,7 +337,7 @@ export const getWalletBalances = async (parent: any, args: any, context: { user:
     const balances = await TatumClient.getBalanceForAccountList(currencies);
     let allCurrencies = currencies.map(async (currencyItem) => {
         const balance = balances.find((balanceItem) => currencyItem.tatumId === balanceItem.tatumId);
-        const minWithdrawAmount = await getMinWithdrawableAmount(currencyItem.symbol.toLowerCase());
+        const minWithdrawAmount = await getMinWithdrawableAmount(currencyItem.symbol);
         return {
             balance: formatFloat(balance.availableBalance),
             symbol: currencyItem.symbol,

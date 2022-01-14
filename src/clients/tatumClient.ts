@@ -19,11 +19,12 @@ import { S3Client } from "./s3";
 import { offchainEstimateFee, performWithdraw } from "../util/tatumHelper";
 import { Currency } from "../models/Currency";
 
-export const CAMPAIGN_CREATION_AMOUNT = "CAMPAIGN-AMOUNT";
-export const CAMPAIGN_FEE = "CAMPAIGN-FEE";
-export const CAMPAIGN_REWARD = "CAMPAIGN-REWARD";
-export const USER_WITHDRAW = "USER-WITHDRAW";
-export const RAIINMAKER_WITHDRAW = "RAIINMAKER-WITHDRAW";
+export const CAMPAIGN_CREATION_AMOUNT = "CAMPAIGN_CREATION_AMOUNT";
+export const CAMPAIGN_FEE = "CAMPAIGN_FEE";
+export const CAMPAIGN_REWARD = "CAMPAIGN_REWARD";
+export const USER_WITHDRAW = "USER_WITHDRAW";
+export const USER_WITHDRAW_FEE = "USER_WITHDRAW_FEE";
+export const RAIINMAKER_WITHDRAW = "RAIINMAKER_WITHDRAW";
 
 export interface WithdrawDetails {
     senderAccountId: string;
@@ -32,12 +33,13 @@ export interface WithdrawDetails {
     paymentId: string;
     senderNote: string;
     fee?: string;
+    index: number;
 }
 
 export interface FeeCalculationParams {
     senderAccountId: string;
     toAddress: string;
-    amount: string;
+    amount: number;
     tatumWallet: TatumWallet;
     currency: Currency;
 }
@@ -195,8 +197,8 @@ export class TatumClient {
             const body = { ...walletKeys, ...data };
             return await performWithdraw(currency, body);
         } catch (error) {
-            console.log(error?.response?.data || error.message);
-            throw new Error(error?.response?.data?.message || error.message);
+            console.log(error);
+            throw new Error(error);
         }
     };
 

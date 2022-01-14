@@ -14,73 +14,110 @@ import {
 } from "@tatumio/tatum";
 import { doFetch, RequestData } from "./fetchRequest";
 import { Secrets } from "./secrets";
-import { TatumClient, FeeCalculationParams } from "../clients/tatumClient";
+import { TatumClient, FeeCalculationParams, USER_WITHDRAW_FEE } from "../clients/tatumClient";
+import { Currency } from "../models/Currency";
+import { Wallet } from "../models/Wallet";
+import { BN, getERC20ValueOfETH } from ".";
+import { Org } from "../models/Org";
+import { Transfer } from "../models/Transfer";
 
-// const symbolToChain: { [key: string]: string } = {
-//     BTC: "BTC",
-//     ETH: "ETH",
-//     XRP: "XRP",
-//     XLM: "XLM",
-//     BCH: "BCH",
-//     LTC: "LTC",
-//     FLOW: "FLOW",
-//     CELO: "CELO",
-//     EGLD: "EGLD",
-//     TRON: "TRON",
-//     ADA: "ADA",
-//     QTUM: "QTUM",
-//     BNB: "BNB",
-//     BSC: "BSC",
-//     DOGE: "DOGE",
-//     VET: "VET",
-//     ONE: "ONE",
-//     NEO: "NEO",
-//     BAT: "ETH",
-//     USDT: "ETH",
-//     WBTC: "ETH",
-//     USDC: "ETH",
-//     TUSD: "ETH",
-//     MKR: "ETH",
-//     LINK: "ETH",
-//     PAX: "ETH",
-//     PAXG: "ETH",
-//     UNI: "ETH",
-// };
+const BCH_WITHDRAW_FEE = 0.001;
+const BNB_WITHDRAW_FEE = 0.01;
+const XLM_WITHDRAW_FEE = 20;
+const XRP_WITHDRAW_FEE = 10;
+
+export const symbolToChain: { [key: string]: string } = {
+    BTC: "BTC",
+    ETH: "ETH",
+    XRP: "XRP",
+    XLM: "XLM",
+    BCH: "BCH",
+    LTC: "LTC",
+    FLOW: "FLOW",
+    CELO: "CELO",
+    EGLD: "EGLD",
+    TRON: "TRON",
+    ADA: "ADA",
+    QTUM: "QTUM",
+    BNB: "BNB",
+    BSC: "BSC",
+    DOGE: "DOGE",
+    VET: "VET",
+    ONE: "ONE",
+    NEO: "NEO",
+    BAT: "ETH",
+    USDT: "ETH",
+    WBTC: "ETH",
+    USDC: "ETH",
+    TUSD: "ETH",
+    MKR: "ETH",
+    LINK: "ETH",
+    PAX: "ETH",
+    PAXG: "ETH",
+    UNI: "ETH",
+};
 
 export const performWithdraw = async (currency: string, body: any) => {
-    const wihtdrawCallback: { [key: string]: any } = {
-        BTC: await sendBitcoinOffchainTransaction(false, body),
-        ETH: await sendEthOffchainTransaction(false, body),
-        XRP: await sendXrpOffchainTransaction(false, body),
-        XLM: await sendXlmOffchainTransaction(false, body),
-        BCH: await sendBitcoinCashOffchainTransaction(false, body),
-        LTC: await sendLitecoinOffchainTransaction(false, body),
-        FLOW: await sendTokenOffchainTransaction(currency, body),
-        CELO: await sendCeloOffchainTransaction(false, body),
-        EGLD: await sendEgldOffchainTransaction(false, body),
-        TRON: await sendTronOffchainTransaction(false, body),
-        ADA: await sendAdaOffchainTransaction(false, body),
-        QTUM: await sendTokenOffchainTransaction(currency, body),
-        BNB: await sendTokenOffchainTransaction(currency, body),
-        BSC: await sendBscOffchainTransaction(false, body),
-        DOGE: await sendDogecoinOffchainTransaction(false, body),
-        VET: await sendTokenOffchainTransaction(currency, body),
-        ONE: await sendTokenOffchainTransaction(currency, body),
-        NEO: await sendTokenOffchainTransaction(currency, body),
-        BAT: await sendEthOffchainTransaction(false, body),
-        USDT: await sendEthOffchainTransaction(false, body),
-        WBTC: await sendEthOffchainTransaction(false, body),
-        USDC: await sendEthOffchainTransaction(false, body),
-        TUSD: await sendEthOffchainTransaction(false, body),
-        MKR: await sendEthOffchainTransaction(false, body),
-        LINK: await sendEthOffchainTransaction(false, body),
-        PAX: await sendEthOffchainTransaction(false, body),
-        PAXG: await sendEthOffchainTransaction(false, body),
-        UNI: await sendEthOffchainTransaction(false, body),
-    };
-    if (!Object.keys(wihtdrawCallback).find((item) => item === currency))
-        throw new Error(`Withdraws for ${currency} are not supported at this moment.`);
-    return await wihtdrawCallback[currency.toUpperCase()];
+    switch (currency.toUpperCase()) {
+        case "BTC":
+            return await sendBitcoinOffchainTransaction(false, body);
+        case "ETH":
+            return await sendEthOffchainTransaction(false, body);
+        case "XRP":
+            return await sendXrpOffchainTransaction(false, body);
+        case "XLM":
+            return await sendXlmOffchainTransaction(false, body);
+        case "BCH":
+            return await sendBitcoinCashOffchainTransaction(false, body);
+        case "LTC":
+            return await sendLitecoinOffchainTransaction(false, body);
+        case "FLOW":
+            return sendTokenOffchainTransaction(currency, body);
+        case "CELO":
+            return await sendCeloOffchainTransaction(false, body);
+        case "EGLD":
+            return await sendEgldOffchainTransaction(false, body);
+        case "TRON":
+            return await sendTronOffchainTransaction(false, body);
+        case "ADA":
+            return await sendAdaOffchainTransaction(false, body);
+        case "QTUM":
+            return sendTokenOffchainTransaction(currency, body);
+        case "BNB":
+            return sendTokenOffchainTransaction(currency, body);
+        case "BSC":
+            return await sendBscOffchainTransaction(false, body);
+        case "DOGE":
+            return await sendDogecoinOffchainTransaction(false, body);
+        case "VET":
+            return sendTokenOffchainTransaction(currency, body);
+        case "ONE":
+            return sendTokenOffchainTransaction(currency, body);
+        case "NEO":
+            return sendTokenOffchainTransaction(currency, body);
+        case "BAT":
+            return await sendERC20OffchainTransaction(body);
+        case "USDT":
+            return await sendERC20OffchainTransaction(body);
+        case "WBTC":
+            return await sendERC20OffchainTransaction(body);
+        case "USDC":
+            return await sendERC20OffchainTransaction(body);
+        case "TUSD":
+            return await sendERC20OffchainTransaction(body);
+        case "MKR":
+            return await sendERC20OffchainTransaction(body);
+        case "LINK":
+            return await sendERC20OffchainTransaction(body);
+        case "PAX":
+            return await sendERC20OffchainTransaction(body);
+        case "PAXG":
+            return await sendERC20OffchainTransaction(body);
+        case "UNI":
+            return await sendERC20OffchainTransaction(body);
+        default:
+            throw new Error(`Withdraws for ${currency} are not supported at this moment.`);
+    }
 };
 
 const sendTokenOffchainTransaction = async (currency: string, data: any) => {
@@ -94,43 +131,77 @@ const sendTokenOffchainTransaction = async (currency: string, data: any) => {
     return await doFetch(requestData);
 };
 
-export const offchainEstimateFee = async (data: FeeCalculationParams) => {
-    try {
-        console.log(data.tatumWallet.currency);
-        const feeEstimateCallback: { [key: string]: any } = {
-            BTC: await estimateLedgerToBlockchainFee(data),
-            ETH: await estimateLedgerToBlockchainFee(data),
-            XRP: await estimateLedgerToBlockchainFee(data),
-            XLM: await estimateLedgerToBlockchainFee(data),
-            BCH: await (async () => 0.001),
-            LTC: await estimateLedgerToBlockchainFee(data),
-            FLOW: await estimateLedgerToBlockchainFee(data),
-            CELO: await estimateLedgerToBlockchainFee(data),
-            EGLD: await estimateLedgerToBlockchainFee(data),
-            TRON: await estimateLedgerToBlockchainFee(data),
-            ADA: await estimateLedgerToBlockchainFee(data),
-            QTUM: await estimateLedgerToBlockchainFee(data),
-            BNB: await estimateLedgerToBlockchainFee(data),
-            BSC: await estimateLedgerToBlockchainFee(data),
-            DOGE: await estimateLedgerToBlockchainFee(data),
-            VET: await estimateLedgerToBlockchainFee(data),
-            ONE: await estimateLedgerToBlockchainFee(data),
-            NEO: await estimateLedgerToBlockchainFee(data),
-            BAT: await estimateLedgerToBlockchainFee(data),
-            USDT: await estimateLedgerToBlockchainFee(data),
-            WBTC: await estimateLedgerToBlockchainFee(data),
-            USDC: await estimateLedgerToBlockchainFee(data),
-            TUSD: await estimateLedgerToBlockchainFee(data),
-            MKR: await estimateLedgerToBlockchainFee(data),
-            LINK: await estimateLedgerToBlockchainFee(data),
-            PAX: await estimateLedgerToBlockchainFee(data),
-            PAXG: await estimateLedgerToBlockchainFee(data),
-            UNI: await estimateLedgerToBlockchainFee(data),
-        };
-        return await feeEstimateCallback[data.tatumWallet.currency];
-    } catch (error) {
-        console.log(error);
-        throw new Error("There was an error estimating withdraw fee.");
+const sendERC20OffchainTransaction = async (data: any) => {
+    const endpoint = `${TatumClient.baseUrl}/offchain/ethereum/erc20/transfer`;
+    const requestData: RequestData = {
+        method: "POST",
+        url: endpoint,
+        payload: data,
+        headers: { "x-api-key": Secrets.tatumApiKey },
+    };
+    return await doFetch(requestData);
+};
+
+export const offchainEstimateFee = async (data: FeeCalculationParams): Promise<number> => {
+    switch (data.tatumWallet.currency.toUpperCase()) {
+        case "BTC":
+            return await estimateLedgerToBlockchainFee(data);
+        case "ETH":
+            return await estimateWithdrawFee(data);
+        case "XRP":
+            return XRP_WITHDRAW_FEE;
+        case "XLM":
+            return XLM_WITHDRAW_FEE;
+        case "BCH":
+            return BCH_WITHDRAW_FEE;
+        case "LTC":
+            return await estimateLedgerToBlockchainFee(data);
+        case "FLOW":
+            return estimateLedgerToBlockchainFee(data);
+        case "CELO":
+            return await estimateLedgerToBlockchainFee(data);
+        case "EGLD":
+            return await estimateLedgerToBlockchainFee(data);
+        case "TRON":
+            return await estimateLedgerToBlockchainFee(data);
+        case "ADA":
+            return await estimateLedgerToBlockchainFee(data);
+        case "QTUM":
+            return estimateLedgerToBlockchainFee(data);
+        case "BNB":
+            return BNB_WITHDRAW_FEE;
+        case "BSC":
+            return await estimateWithdrawFee(data);
+        case "DOGE":
+            return await estimateLedgerToBlockchainFee(data);
+        case "VET":
+            return estimateLedgerToBlockchainFee(data);
+        case "ONE":
+            return estimateLedgerToBlockchainFee(data);
+        case "NEO":
+            return estimateLedgerToBlockchainFee(data);
+        case "BAT":
+            return await estimateLedgerToBlockchainFee(data);
+        case "USDT":
+            return await estimateWithdrawFee(data);
+        case "WBTC":
+            return await estimateLedgerToBlockchainFee(data);
+        case "USDC":
+            return await estimateLedgerToBlockchainFee(data);
+        case "TUSD":
+            return await estimateLedgerToBlockchainFee(data);
+        case "MKR":
+            return await estimateLedgerToBlockchainFee(data);
+        case "LINK":
+            return await estimateLedgerToBlockchainFee(data);
+        case "PAX":
+            return await estimateLedgerToBlockchainFee(data);
+        case "PAXG":
+            return await estimateLedgerToBlockchainFee(data);
+        case "UNI":
+            return await estimateLedgerToBlockchainFee(data);
+        default:
+            throw new Error("There was an error calculating withdraw fee.");
     }
 };
 
@@ -150,18 +221,70 @@ export const estimateLedgerToBlockchainFee = async (data: FeeCalculationParams) 
     return (await doFetch(requestData)).fast;
 };
 
-export const estimateBCHFee = async (data: FeeCalculationParams) => {
-    const endpoint = `${TatumClient.baseUrl}/offchain/blockchain/estimate`;
+export const estimateWithdrawFee = async (data: FeeCalculationParams) => {
+    const endpoint = `${TatumClient.baseUrl}/blockchain/estimate`;
+    const chain = symbolToChain[data.tatumWallet.currency];
+    let feeAmount = 0;
     const requestData: RequestData = {
         method: "POST",
         url: endpoint,
         payload: {
-            senderAccountId: data.senderAccountId,
-            address: data.toAddress,
+            chain,
             amount: data.amount,
-            xpub: data.tatumWallet.xpub,
+            type: "TRANSFER_ERC20",
+            sender: data.currency.depositAddress,
+            recipient: data.toAddress,
         },
         headers: { "x-api-key": Secrets.tatumApiKey },
     };
-    return (await doFetch(requestData)).fast;
+    const resp = await doFetch(requestData);
+    if (chain === "ETH" || chain === "BSC") {
+        feeAmount = (resp.gasLimit * resp.gasPrice) / 10 ** 10;
+    } else {
+        feeAmount = resp.fast;
+    }
+    return feeAmount;
+};
+
+export const findOrCreateCurrency = async (symbol: string, wallet: Wallet): Promise<Currency> => {
+    let ledgerAccount = await Currency.findOne({ where: { wallet, symbol } });
+    if (!ledgerAccount) {
+        const newLedgerAccount = await TatumClient.createLedgerAccount(symbol);
+        const newDepositAddress = await TatumClient.generateDepositAddress(newLedgerAccount.id);
+        console.log(newDepositAddress);
+        ledgerAccount = await Currency.addAccount({
+            ...newLedgerAccount,
+            ...newDepositAddress,
+            wallet,
+        });
+    }
+    return ledgerAccount;
+};
+
+export const adjustWithdrawableAmount = async (data: FeeCalculationParams): Promise<string> => {
+    const chain = symbolToChain[data.currency.symbol];
+    let adjustedAmount = data.amount;
+    const fee = await TatumClient.calculateWithdrawFee(data);
+    if (chain === "ETH" && data.currency.symbol !== chain) {
+        const feeInSymbol = await getERC20ValueOfETH(data.currency.symbol, fee);
+        console.log("fee in symbol", feeInSymbol);
+        adjustedAmount = adjustedAmount - feeInSymbol;
+    }
+    return adjustedAmount.toString();
+};
+
+export const transferFundsToRaiinmaker = async (data: { tatumId: string; amount: string }): Promise<any> => {
+    const raiinmakerOrg = await Org.findOne({ where: { name: "raiinmaker" }, relations: ["wallet"] });
+    if (!raiinmakerOrg) throw new Error("Org not found for raiinmaker.");
+    const raiinmakerCurrency = await Currency.findOne({ where: { wallet: raiinmakerOrg?.wallet } });
+    if (!raiinmakerCurrency) throw new Error("Currency not found for raiinmaker.");
+    await TatumClient.transferFunds(data.tatumId, raiinmakerCurrency.tatumId, data.amount, USER_WITHDRAW_FEE);
+    const newTransfer = Transfer.initTatumTransfer({
+        symbol: raiinmakerCurrency.symbol,
+        amount: new BN(data.amount),
+        action: "DEPOSIT",
+        wallet: raiinmakerOrg.wallet,
+        tatumId: data.tatumId,
+    });
+    return await newTransfer.save();
 };

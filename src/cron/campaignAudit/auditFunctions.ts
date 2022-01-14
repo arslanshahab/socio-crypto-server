@@ -96,21 +96,21 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
         const transferDetails = [];
         for (let index = 0; index < participants.length; index++) {
             const participant = participants[index];
-            const userAccount = await Currency.findOne({
+            const userCurrency = await Currency.findOne({
                 where: { wallet: await Wallet.findOne({ where: { user: participant.user } }), symbol: campaign.symbol },
             });
-            if (!userAccount) throw new Error(`currency not found for user ${participant.user.id}`);
+            if (!userCurrency) throw new Error(`currency not found for user ${participant.user.id}`);
             promiseArray.push(
                 TatumClient.transferFunds(
                     campaignAccount.tatumId,
-                    userAccount.tatumId,
+                    userCurrency.tatumId,
                     usersRewards[participant.user.id].toString(),
                     `${CAMPAIGN_REWARD}:${campaign.id}`
                 )
             );
             transferDetails.push({
                 campaignAccount,
-                userAccount,
+                userCurrency,
                 campaign,
                 participant,
                 amount: usersRewards[participant.user.id],
@@ -138,7 +138,7 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
                     symbol: transferData.campaign.symbol,
                     campaign: transferData.campaign,
                     amount: transferData.amount,
-                    tatumId: transferData.userAccount.tatumId,
+                    tatumId: transferData.userCurrency.tatumId,
                     wallet,
                     action: "CAMPAIGN_REWARD",
                 });

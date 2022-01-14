@@ -1,11 +1,9 @@
 import { CryptoCurrency } from "../models/CryptoCurrency";
 import { TatumClient } from "../clients/tatumClient";
-import { Currency } from "../models/Currency";
 import { getExchangeRateForCrypto } from "./exchangeRate";
 // eslint-disable-next-line
 // @ts-ignore
 import getImage from "cryptoicons-cdn";
-import { Wallet } from "../models/Wallet";
 import { AcuantClient, AcuantApplication, Etr } from "../clients/acuant";
 import {
     AcuantApplicationExtractedDetails,
@@ -34,30 +32,8 @@ export const isSupportedCurrency = async (symbol: string): Promise<boolean> => {
     return await TatumClient.isCurrencySupported(symbol);
 };
 
-export const findOrCreateCurrency = async (symbol: string, wallet: Wallet): Promise<Currency> => {
-    try {
-        let ledgerAccount = await Currency.findOne({ where: { wallet, symbol } });
-        if (!ledgerAccount) {
-            const newLedgerAccount = await TatumClient.createLedgerAccount(symbol);
-            const newDepositAddress = await TatumClient.generateDepositAddress(newLedgerAccount.id);
-            ledgerAccount = await Currency.addAccount({
-                ...newLedgerAccount,
-                ...newDepositAddress,
-                wallet,
-            });
-        }
-        return ledgerAccount;
-    } catch (error) {
-        console.log(error);
-        throw new Error(error.message);
-    }
-};
-
-export const getWithdrawableAmount = (amount: number): string => {
-    return (amount * 0.95).toFixed(8);
-};
-
 export const getMinWithdrawableAmount = async (symbol: string) => {
+    symbol = symbol.toLowerCase();
     const minLimit = process.env.MIN_WITHDRAW_LIMIT ? parseFloat(process.env.MIN_WITHDRAW_LIMIT) : 250;
     const marketRate = await getExchangeRateForCrypto(symbol);
     return (1 / marketRate) * minLimit;
@@ -69,6 +45,13 @@ export const getUSDValueForCurrency = async (symbol: string, amount: number) => 
     }
     const marketRate = await getExchangeRateForCrypto(symbol);
     return marketRate * amount;
+};
+
+export const getERC20ValueOfETH = async (symbol: string, amount: number): Promise<number> => {
+    const marketRateSymbol = await getExchangeRateForCrypto(symbol);
+    const marketRateETH = await getExchangeRateForCrypto("ETH");
+    const ETHtoSymbol = marketRateETH / marketRateSymbol;
+    return ETHtoSymbol * amount;
 };
 
 export const getCryptoAssestImageUrl = (symbol: string): string => {
