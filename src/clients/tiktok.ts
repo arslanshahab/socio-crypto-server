@@ -19,7 +19,7 @@ export class TikTokClient {
         mediaFormat: string
     ): Promise<string> => {
         const fileName = `raiinmaker-${participant.id}.${mediaFormat.split("/")[1]}`;
-        const directory = process.env.NODE_ENV === "development" ? "./src/clients/uploads" : "./clients/uploads";
+        const directory = process.env.NODE_ENV === "development" ? "./src/clients/uploads" : "./dist/clients/uploads";
         if (!fs.existsSync(directory)) {
             fs.mkdirSync(directory);
         }
