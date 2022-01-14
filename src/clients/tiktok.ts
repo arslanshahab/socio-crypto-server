@@ -38,6 +38,7 @@ export class TikTokClient {
                 headers: formData.getHeaders(),
             };
             const resp = await doFetch(requestData);
+            console.log(resp);
             if (!resp?.data?.share_id) throw new Error("There was an error uploading file to tiktok");
             fs.unlinkSync(filePath);
             return resp?.data?.share_id;
