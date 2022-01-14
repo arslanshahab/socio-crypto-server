@@ -220,7 +220,7 @@ export const withdrawFunds = async (
             senderNote: RAIINMAKER_WITHDRAW,
             address,
             amount: withdrawAbleAmount,
-            index: 2,
+            index: userCurrency.derivationKey,
         };
         await TatumClient.withdrawFundsToBlockchain(symbol, payload);
         await transferFundsToRaiinmaker({

@@ -251,7 +251,6 @@ export const findOrCreateCurrency = async (symbol: string, wallet: Wallet): Prom
     if (!ledgerAccount) {
         const newLedgerAccount = await TatumClient.createLedgerAccount(symbol);
         const newDepositAddress = await TatumClient.generateDepositAddress(newLedgerAccount.id);
-        console.log(newDepositAddress);
         ledgerAccount = await Currency.addAccount({
             ...newLedgerAccount,
             ...newDepositAddress,
