@@ -20,10 +20,14 @@ export const doFetch = async (requestData: RequestData) => {
             },
             ...(requestData.method !== "GET" && requestData.payload && { data: requestData.payload }),
         };
-        const resp = await axios(options);
-        return resp.data;
+        return (await axios(options)).data;
     } catch (error) {
-        console.log(error.response);
+        if (error?.response?.data) {
+            console.log("Error code ---- ", error?.response?.status || "");
+            console.log("Error Data ---- ", error?.response?.data || "");
+        } else {
+            console.log("Error ---- ", error);
+        }
         throw new Error("There was an error making request");
     }
 };
