@@ -19,7 +19,7 @@ export class TikTokClient {
         mediaFormat: string
     ): Promise<string> => {
         const fileName = `raiinmaker-${participant.id}.${mediaFormat.split("/")[1]}`;
-        const directory = process.env.NODE_ENV === "development" ? "./src/clients/uploads" : "./clients/uploads";
+        const directory = process.env.NODE_ENV === "development" ? "./src/clients/uploads" : "./dist/clients/uploads";
         if (!fs.existsSync(directory)) {
             fs.mkdirSync(directory);
         }
@@ -37,10 +37,10 @@ export class TikTokClient {
                 query: { open_id: credentials.open_id, access_token: credentials.access_token },
                 headers: formData.getHeaders(),
             };
-            const shareId = (await doFetch(requestData))?.data?.share_id;
-            if (!shareId) throw new Error("There was an error uploading file to tiktok");
+            const resp = await doFetch(requestData);
+            if (!resp?.data?.share_id) throw new Error("There was an error uploading file to tiktok");
             fs.unlinkSync(filePath);
-            return shareId;
+            return resp?.data?.share_id;
         } catch (error) {
             console.log(error);
             fs.unlinkSync(filePath);
