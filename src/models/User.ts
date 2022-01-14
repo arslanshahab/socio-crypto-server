@@ -212,7 +212,7 @@ export class User extends BaseEntity {
         const { id, userId } = data;
         return await User.findOne({
             where: { ...(id && { identityId: id }), ...(userId && { id: userId }) },
-            ...(relations && { relations: ["socialLinks"] }),
+            ...(relations && { relations }),
         });
     }
 
