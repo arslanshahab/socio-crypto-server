@@ -1,6 +1,6 @@
 FROM node:14.15.0 AS base
 WORKDIR /app
-RUN mkdir /app/uploads
+
 FROM base AS builder
 ARG NPM_TOKEN
 COPY .npmrc .
