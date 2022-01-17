@@ -82,6 +82,7 @@ export const createNewCampaign = async (
         socialMediaType: string[];
         campaignMedia: CampaignChannelMedia[];
         campaignTemplates: CampaignChannelTemplate[];
+        isGlobal: boolean;
     },
     context: { user: any }
 ) => {
@@ -109,6 +110,7 @@ export const createNewCampaign = async (
         socialMediaType,
         campaignMedia,
         campaignTemplates,
+        isGlobal,
     } = args;
     validator.validateAlgorithmCreateSchema(JSON.parse(algorithm));
     if (!!requirements) validator.validateCampaignRequirementsSchema(requirements);
@@ -149,6 +151,7 @@ export const createNewCampaign = async (
         imagePath,
         campaignType,
         socialMediaType,
+        isGlobal,
         targetVideo,
         org
     );

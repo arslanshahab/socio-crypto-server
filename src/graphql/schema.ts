@@ -28,6 +28,7 @@ export const typeDefs = gql`
             rafflePrize: JSON
             campaignMedia: JSON
             campaignTemplates: JSON
+            isGlobal: Boolean
         ): CampaignCreationResponse
         updateCampaign(
             id: String

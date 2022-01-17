@@ -116,6 +116,9 @@ export class Campaign extends BaseEntity {
     @Column({ type: "jsonb", nullable: true })
     public requirements: CampaignRequirementSpecs;
 
+    @Column({ nullable: false, default: false })
+    public isGlobal: boolean;
+
     @Column({
         type: "text",
         nullable: false,
@@ -447,6 +450,7 @@ export class Campaign extends BaseEntity {
         imagePath: string,
         campaignType: string,
         socialMediaType: string[],
+        isGlobal: boolean,
         targetVideo?: string,
         org?: Org
     ): Campaign {
@@ -466,6 +470,7 @@ export class Campaign extends BaseEntity {
         campaign.imagePath = imagePath;
         campaign.campaignType = campaignType;
         campaign.socialMediaType = socialMediaType;
+        campaign.isGlobal = isGlobal;
         if (targetVideo) campaign.targetVideo = targetVideo;
         if (description) campaign.description = description;
         if (instructions) campaign.instructions = instructions;
