@@ -112,6 +112,8 @@ export const createNewCampaign = async (
         campaignTemplates,
         isGlobal,
     } = args;
+    if (isGlobal && (await Campaign.findOne({ where: { isGlobal, symbol } })))
+        throw new Error("A global campaign already exists for this currency!");
     validator.validateAlgorithmCreateSchema(JSON.parse(algorithm));
     if (!!requirements) validator.validateCampaignRequirementsSchema(requirements);
     if (type === "raffle") {
