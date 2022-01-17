@@ -62,4 +62,16 @@ export class TikTokClient {
         };
         return await doFetch(requestData);
     };
+    public static tiktokVideoList = async (socialLink: SocialLink) => {
+        const credentials = socialLink.getTiktokCreds();
+        const requestData: RequestData = {
+            url: `${TikTokClient.baseUrl}/video/list/`,
+            method: "POST",
+            payload: { open_id: credentials.open_id, access_token: credentials.access_token },
+        };
+        const tiktokVideoList = await doFetch(requestData);
+        console.log("Res of Tiktok", tiktokVideoList);
+        return tiktokVideoList;
+    };
+
 }

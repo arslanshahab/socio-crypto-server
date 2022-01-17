@@ -211,6 +211,11 @@ export const typeDefs = gql`
         # downloadKyc(kycId: String!): [Factor]
         downloadKyc: KycApplicationResponse
         getDashboardMetrics(campaignId: String, skip: Int, take: Int): DashboardMetrics
+        listOfTiktokVideo(socialType:String): [TiktokVideo]
+    }
+    type TiktokVideo {
+        name: String
+        viewCount: Int
     }
     type DashboardMetrics {
         aggregatedCampaignMetrics: AggregatedCampaignMetrics

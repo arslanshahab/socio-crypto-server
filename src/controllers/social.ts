@@ -200,3 +200,19 @@ export const getParticipantSocialMetrics = async (parent: any, args: { id: strin
         shareScore: parseFloat(metrics.shareScore.toString()),
     };
 };
+export const listOfTiktokVideo = async (
+    parent: any,
+    args: {
+        socialType: "twitter" | "facebook" | "tiktok";
+    },
+    context: { user: any }
+) => {
+    const { socialType } = args;
+    const user = await User.findUserByContext(context.user, ["socialLinks"]);
+    if (!user) throw new Error("User not found");
+    const socialLink = user.socialLinks.find((link) => link.type === socialType);
+    if (!socialLink) throw new Error(`you have not linked ${socialType} as a social platform`);
+    const tiktokVideoRes = await TikTokClient.tiktokVideoList(socialLink);
+    console.log("Tiktok videos res in socials", tiktokVideoRes);
+    // return tiktokVideoRes;
+};

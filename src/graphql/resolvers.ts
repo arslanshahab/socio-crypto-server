@@ -52,6 +52,7 @@ export const resolvers = {
         getUserBalances: userController.getWalletBalances,
         getTransferHistory: transferController.getTransferHistory,
         downloadKyc: kycController.downloadKyc,
+        listOfTiktokVideo: socialController.listOfTiktokVideo,
     },
     Mutation: {
         generateFactorsFromKyc: factorController.generateFactors,
@@ -118,6 +119,7 @@ export const adminResolvers = {
         getSupportedCurrencies: tatumController.getSupportedCurrencies,
         listAllCampaignsForOrg: campaignController.listAllCampaignsForOrg,
         getDashboardMetrics: campaignController.getDashboardMetrics,
+
     },
     Mutation: {
         newOrg: orgController.newOrg,
