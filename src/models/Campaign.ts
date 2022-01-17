@@ -116,6 +116,9 @@ export class Campaign extends BaseEntity {
     @Column({ type: "jsonb", nullable: true })
     public requirements: CampaignRequirementSpecs;
 
+    @Column({ nullable: false, default: false })
+    public isGlobal: boolean;
+
     @Column({
         type: "text",
         nullable: false,
@@ -263,6 +266,7 @@ export class Campaign extends BaseEntity {
         if (approved) query = query.andWhere('"status"=:status', { status: "APPROVED" });
         if (pendingAudit) query = query.andWhere('"audited"=:audited', { audited: false });
         if (sort) query = query.orderBy("campaign.endDate", "DESC");
+        query = query.andWhere('"isGlobal"=:isGlobal', { isGlobal: false });
         return await query
             .leftJoinAndSelect("campaign.participants", "participant", 'participant."campaignId" = campaign.id')
             .leftJoinAndSelect("participant.user", "user", 'user.id = participant."userId"')
@@ -290,6 +294,7 @@ export class Campaign extends BaseEntity {
         return query
             .where(where)
             .andWhere('"audited"=:audited', { audited })
+            .andWhere('"isGlobal"=:isGlobal', { isGlobal: false })
             .leftJoinAndSelect("campaign.participants", "participant", 'participant."campaignId" = campaign.id')
             .leftJoinAndSelect("participant.user", "user", 'user.id = participant."userId"')
             .getMany();
@@ -300,6 +305,7 @@ export class Campaign extends BaseEntity {
             .leftJoinAndSelect("campaign.org", "org", 'campaign."orgId" = org.id')
             .leftJoinAndSelect("campaign.crypto", "crypto", 'campaign."cryptoId" = crypto.id')
             .where("status=:status", { status: status.toUpperCase() })
+            .andWhere('"isGlobal"=:isGlobal', { isGlobal: false })
             .skip(skip)
             .take(take)
             .getManyAndCount();
@@ -447,6 +453,7 @@ export class Campaign extends BaseEntity {
         imagePath: string,
         campaignType: string,
         socialMediaType: string[],
+        isGlobal: boolean,
         targetVideo?: string,
         org?: Org
     ): Campaign {
@@ -456,7 +463,7 @@ export class Campaign extends BaseEntity {
         campaign.coiinTotal = new BN(coiinTotal);
         campaign.target = target;
         campaign.company = company;
-        campaign.status = "PENDING";
+        campaign.status = isGlobal ? "APPROVED" : "PENDING";
         campaign.symbol = symbol.toUpperCase();
         campaign.beginDate = new Date(beginDate);
         campaign.endDate = new Date(endDate);
@@ -466,6 +473,7 @@ export class Campaign extends BaseEntity {
         campaign.imagePath = imagePath;
         campaign.campaignType = campaignType;
         campaign.socialMediaType = socialMediaType;
+        campaign.isGlobal = isGlobal;
         if (targetVideo) campaign.targetVideo = targetVideo;
         if (description) campaign.description = description;
         if (instructions) campaign.instructions = instructions;
