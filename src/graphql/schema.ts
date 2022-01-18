@@ -81,7 +81,7 @@ export const typeDefs = gql`
             mediaType: String
             mediaFormat: String
             media: String
-        ): String
+        ): SuccessResponse
         setDevice(deviceToken: String!): Boolean
         registerFactorLink(factor: JSON): User
         updateUsername(username: String!): User

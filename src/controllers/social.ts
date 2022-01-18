@@ -132,11 +132,17 @@ export const postToSocial = async (
         console.log(`Posted to ${socialType} with ID: ${postId}`);
         await HourlyCampaignMetric.upsert(campaign, campaign.org, "post");
         await participant.campaign.save();
-        await SocialPost.newSocialPost(postId, socialType, participant.id, user, participant.campaign).save();
+        const socialPost = await SocialPost.newSocialPost(
+            postId,
+            socialType,
+            participant.id,
+            user,
+            participant.campaign
+        ).save();
         const endTime = new Date().getTime();
         const timeTaken = (endTime - startTime) / 1000;
         console.log("number of seconds taken for this upload", timeTaken);
-        return { success: true };
+        return socialPost.id;
     } catch (error) {
         throw new FormattedError(error);
     }
