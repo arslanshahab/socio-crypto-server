@@ -15,7 +15,7 @@ import { downloadMedia } from "../util";
 import { JWTPayload, SocialType } from "src/types";
 import { ERROR_LINKING_TIKTOK, FormattedError, GLOBAL_CAMPAIGN_NOT_FOUND, USER_NOT_FOUND } from "../util/errors";
 import { TatumClient } from "../clients/tatumClient";
-import { findOrCreateCurrency } from "src/util/tatumHelper";
+import { findOrCreateCurrency } from "../util/tatumHelper";
 
 export const allowedSocialLinks = ["twitter", "facebook", "tiktok"];
 
