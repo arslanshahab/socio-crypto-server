@@ -12,7 +12,10 @@ import { BN, calculateQualityMultiplier } from "../../util/helpers";
 import { DailyParticipantMetric } from "../../models/DailyParticipantMetric";
 import { HourlyCampaignMetric } from "../../models/HourlyCampaignMetric";
 import { QualityScore } from "../../models/QualityScore";
+import * as dotenv from "dotenv";
 
+
+dotenv.config();
 const app = new Application();
 
 const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: SocialPost) => {

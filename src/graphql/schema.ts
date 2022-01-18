@@ -28,6 +28,7 @@ export const typeDefs = gql`
             rafflePrize: JSON
             campaignMedia: JSON
             campaignTemplates: JSON
+            isGlobal: Boolean
         ): CampaignCreationResponse
         updateCampaign(
             id: String
@@ -74,7 +75,13 @@ export const typeDefs = gql`
             defaultMedia: Boolean
             mediaId: String
         ): String
-        postToTiktok(video: String): String
+        postContentGlobally(
+            socialType: String!
+            text: String!
+            mediaType: String
+            mediaFormat: String
+            media: String
+        ): SuccessResponse
         setDevice(deviceToken: String!): Boolean
         registerFactorLink(factor: JSON): User
         updateUsername(username: String!): User

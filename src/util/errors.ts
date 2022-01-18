@@ -21,7 +21,7 @@ export class FormattedError extends ApolloError {
         if (error.name === TokenExpiredError.name || error.name === JsonWebTokenError.name) code = SESSION_EXPIRED;
         if (error.name === Error.name) code = errorMap[error.message] ? error.message : SOMETHING_WENT_WRONG;
         if (code === SOMETHING_WENT_WRONG) console.log(error);
-        let errorMessage = errorMap[code];
+        let errorMessage = error instanceof ApolloError ? error.message : errorMap[code];
         super(errorMessage, code);
         this.code = code;
         this.message = errorMessage;
@@ -44,6 +44,7 @@ export const USER_NOT_FOUND = "USER_NOT_FOUND";
 export const INCORRECT_CODE_OR_EMAIL = "INCORRECT_CODE_OR_EMAIL";
 export const NO_TOKEN_PROVIDED = "NO_TOKEN_PROVIDED";
 export const ERROR_LINKING_TIKTOK = "ERROR_LINKING_TIKTOK";
+export const GLOBAL_CAMPAIGN_NOT_FOUND = "GLOBAL_CAMPAIGN_NOT_FOUND";
 
 const errorMap: { [key: string]: string } = {
     SOMETHING_WENT_WRONG: "Something went wrong with your request. please try again!",
@@ -63,4 +64,5 @@ const errorMap: { [key: string]: string } = {
     INCORRECT_CODE_OR_EMAIL: "Invalid code or verification not initialized",
     SAME_OLD_AND_NEW_PASSWORD: "Current pass and old password cannot be same, please set a different password",
     ERROR_LINKING_TIKTOK: "There was an error adding you tiktok social link",
+    GLOBAL_CAMPAIGN_NOT_FOUND: "Global campaign doesn't exists.",
 };

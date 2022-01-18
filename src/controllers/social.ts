@@ -11,9 +11,10 @@ import { Campaign } from "../models/Campaign";
 import { CampaignMedia } from "../models/CampaignMedia";
 import { ApolloError } from "apollo-server-express";
 import { TikTokClient } from "../clients/tiktok";
-import { downloadMedia } from "../helpers";
+import { downloadMedia, findOrCreateCurrency } from "../helpers";
 import { JWTPayload, SocialType } from "src/types";
-import { ERROR_LINKING_TIKTOK, FormattedError, USER_NOT_FOUND } from "../util/errors";
+import { ERROR_LINKING_TIKTOK, FormattedError, GLOBAL_CAMPAIGN_NOT_FOUND, USER_NOT_FOUND } from "../util/errors";
+import { TatumClient } from "../clients/tatumClient";
 
 export const allowedSocialLinks = ["twitter", "facebook", "tiktok"];
 
@@ -97,25 +98,25 @@ export const postToSocial = async (
         let { socialType, text, mediaType, mediaFormat, media, participantId, defaultMedia, mediaId } = args;
         if (!allowedSocialLinks.includes(socialType)) throw new ApolloError(`posting to ${socialType} is not allowed`);
         const user = await User.findUserByContext(context.user, ["socialLinks"]);
-        if (!user) throw new Error("User not found");
+        if (!user) throw new Error(USER_NOT_FOUND);
         const participant = await Participant.findOne({
             where: { id: participantId, user },
             relations: ["campaign"],
         });
-        if (!participant) throw new Error("Participant not found");
-        if (!participant.campaign.isOpen()) throw new Error("campaign is closed");
+        if (!participant) throw new ApolloError("Participant not found");
+        if (!participant.campaign.isOpen()) throw new ApolloError("campaign is closed");
         const socialLink = user.socialLinks.find((link) => link.type === socialType);
-        if (!socialLink) throw new Error(`you have not linked ${socialType} as a social platform`);
+        if (!socialLink) throw new ApolloError(`you have not linked ${socialType} as a social platform`);
         const campaign = await Campaign.findOne({
             where: { id: participant.campaign.id },
             relations: ["org", "campaignMedia"],
         });
-        if (!campaign) throw new Error("campaign not found");
+        if (!campaign) throw new ApolloError("campaign not found");
         const client = getSocialClient(socialType);
         if (defaultMedia) {
             console.log(`downloading media with mediaID ----- ${mediaId}`);
             const selectedMedia = await CampaignMedia.findOne({ where: { id: mediaId } });
-            if (!selectedMedia) throw new Error(`Provided mediaId doesn't exist`);
+            if (!selectedMedia) throw new ApolloError(`Provided mediaId doesn't exist`);
             const mediaUrl = `${assetUrl}/campaign/${campaign.id}/${selectedMedia.media}`;
             const downloaded = await downloadMedia(mediaType, mediaUrl, selectedMedia.mediaFormat);
             media = downloaded;
@@ -127,6 +128,7 @@ export const postToSocial = async (
         } else {
             postId = await client.post(participant, socialLink, text);
         }
+        if (!postId) throw new ApolloError("There was an error posting to twitter.");
         console.log(`Posted to ${socialType} with ID: ${postId}`);
         await HourlyCampaignMetric.upsert(campaign, campaign.org, "post");
         await participant.campaign.save();
@@ -142,8 +144,7 @@ export const postToSocial = async (
         console.log("number of seconds taken for this upload", timeTaken);
         return socialPost.id;
     } catch (error) {
-        console.log(error);
-        return error.message;
+        throw new FormattedError(error);
     }
 };
 
@@ -209,11 +210,49 @@ export const listOfTiktokVideo = async (
 ) => {
     const { socialType } = args;
     const user = await User.findUserByContext(context.user, ["socialLinks"]);
+    // console.log("Tiktok videos res in socials", user);
     if (!user) throw new Error("User not found");
     const socialLink = user.socialLinks.find((link) => link.type === socialType);
     if (!socialLink) throw new Error(`you have not linked ${socialType} as a social platform`);
     const tiktokVideoRes = await TikTokClient.tiktokVideoList(socialLink);
-    const tiktokVideoList= tiktokVideoRes.data.videos;
-    console.log("Tiktok videos res in socials", tiktokVideoList); 
+    const tiktokVideoList = tiktokVideoRes.data.videos;
     return tiktokVideoList;
+};
+export const postContentGlobally = async (
+    parent: any,
+    args: {
+        socialType: "twitter" | "facebook" | "tiktok";
+        text: string;
+        mediaType: "video" | "photo" | "gif";
+        mediaFormat: string;
+        media: string;
+    },
+    context: { user: JWTPayload }
+) => {
+    try {
+        if (!allowedSocialLinks.includes(args.socialType))
+            throw new ApolloError(`posting to ${args.socialType} is not allowed`);
+        const user = await User.findUserByContext(context.user, ["socialLinks"]);
+        if (!user) throw new Error(USER_NOT_FOUND);
+        const globalCampaign = await Campaign.findOne({
+            where: { isGlobal: true, symbol: "COIIN" },
+            relations: ["org"],
+        });
+        if (!globalCampaign) throw new Error(GLOBAL_CAMPAIGN_NOT_FOUND);
+        let participant = await Participant.findOne({ where: { user, campaign: globalCampaign } });
+        if (!participant) {
+            if (await TatumClient.isCurrencySupported(globalCampaign.symbol)) {
+                await findOrCreateCurrency(globalCampaign.symbol, user.wallet);
+            }
+            participant = await Participant.createNewParticipant(user, globalCampaign, user.email);
+        }
+        await postToSocial(
+            null,
+            { ...args, defaultMedia: false, mediaId: "none", participantId: participant.id },
+            context
+        );
+        return { success: true };
+    } catch (error) {
+        throw new FormattedError(error);
+    }
 };

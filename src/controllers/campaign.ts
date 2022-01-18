@@ -23,6 +23,7 @@ import { CampaignChannelTemplate } from "../types.d";
 import { CampaignMedia } from "../models/CampaignMedia";
 import { CampaignTemplate } from "../models/CampaignTemplate";
 import { isSupportedCurrency } from "../helpers";
+import { addYears } from "date-fns";
 
 const validator = new Validator();
 
@@ -82,11 +83,12 @@ export const createNewCampaign = async (
         socialMediaType: string[];
         campaignMedia: CampaignChannelMedia[];
         campaignTemplates: CampaignChannelTemplate[];
+        isGlobal: boolean;
     },
     context: { user: any }
 ) => {
     const { role, company } = checkPermissions({ hasRole: ["admin", "manager"] }, context);
-    const {
+    let {
         name,
         beginDate,
         endDate,
@@ -109,7 +111,15 @@ export const createNewCampaign = async (
         socialMediaType,
         campaignMedia,
         campaignTemplates,
+        isGlobal,
     } = args;
+    if (isGlobal) {
+        if (await Campaign.findOne({ where: { isGlobal, symbol } }))
+            throw new Error("A global campaign already exists for this currency!");
+        const globalEndDate = addYears(new Date(endDate), 100);
+        endDate = globalEndDate.toLocaleString();
+    }
+
     validator.validateAlgorithmCreateSchema(JSON.parse(algorithm));
     if (!!requirements) validator.validateCampaignRequirementsSchema(requirements);
     if (type === "raffle") {
@@ -149,6 +159,7 @@ export const createNewCampaign = async (
         imagePath,
         campaignType,
         socialMediaType,
+        isGlobal,
         targetVideo,
         org
     );
