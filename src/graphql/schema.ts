@@ -214,8 +214,11 @@ export const typeDefs = gql`
         listOfTiktokVideo(socialType:String): [TiktokVideo]
     }
     type TiktokVideo {
-        name: String
-        viewCount: Int
+        title: String
+        like_count:Int
+        comment_count:Int
+        view_count: Int
+        share_count:Int
     }
     type DashboardMetrics {
         aggregatedCampaignMetrics: AggregatedCampaignMetrics

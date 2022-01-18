@@ -63,15 +63,27 @@ export class TikTokClient {
         return await doFetch(requestData);
     };
     public static tiktokVideoList = async (socialLink: SocialLink) => {
-        const credentials = socialLink.getTiktokCreds();
+        // const credentials = socialLink.getTiktokCreds();
+        const access_token = "act.621458c1fbb562cd239b4752886c250bbXxPe0voWPtRq50lhfr75D9o23T9";
+        const open_id = "a509c4e1-a862-43e3-9a3f-0f91b1389adc";
         const requestData: RequestData = {
             url: `${TikTokClient.baseUrl}/video/list/`,
             method: "POST",
-            payload: { open_id: credentials.open_id, access_token: credentials.access_token },
+            payload: {
+                open_id: open_id,
+                access_token: access_token,
+                fields: [
+                    "embed_html",
+                    "embed_link",
+                    "like_count",
+                    "comment_count",
+                    "share_count",
+                    "view_count",
+                    "title",
+                ],
+            },
         };
-        const tiktokVideoList = await doFetch(requestData);
-        console.log("Res of Tiktok", tiktokVideoList);
-        return tiktokVideoList;
+        const tiktokRes = await doFetch(requestData);
+        return tiktokRes;
     };
-
 }

@@ -213,6 +213,7 @@ export const listOfTiktokVideo = async (
     const socialLink = user.socialLinks.find((link) => link.type === socialType);
     if (!socialLink) throw new Error(`you have not linked ${socialType} as a social platform`);
     const tiktokVideoRes = await TikTokClient.tiktokVideoList(socialLink);
-    console.log("Tiktok videos res in socials", tiktokVideoRes);
-    // return tiktokVideoRes;
+    const tiktokVideoList= tiktokVideoRes.data.videos;
+    console.log("Tiktok videos res in socials", tiktokVideoList); 
+    return tiktokVideoList;
 };
