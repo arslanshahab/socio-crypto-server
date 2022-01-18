@@ -54,11 +54,11 @@ export class SocialPost extends BaseEntity {
         post.campaign = campaign;
         return post;
     }
-    public static fetchSocialPostId() {
+    public static fetchSocialPostById(userId: string) {
         const id = this.createQueryBuilder("post")
             .select("post.id")
-            .where("post.userId = :userId", { userId: "ffa6c84e-4eda-4b9e-aaae-bd672acd3c7c" })
+            .where("post.userId = :userId", { userId })
             .getMany();
-        console.log("Social Ids",id);
+        return id;
     }
 }

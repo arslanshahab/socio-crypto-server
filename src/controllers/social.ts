@@ -210,11 +210,11 @@ export const listOfTiktokVideo = async (
 ) => {
     const { socialType } = args;
     const user = await User.findUserByContext(context.user, ["socialLinks"]);
-    // console.log("Tiktok videos res in socials", user);
     if (!user) throw new Error("User not found");
+    const userId = user.id;
     const socialLink = user.socialLinks.find((link) => link.type === socialType);
     if (!socialLink) throw new Error(`you have not linked ${socialType} as a social platform`);
-    const tiktokVideoRes = await TikTokClient.tiktokVideoList(socialLink);
+    const tiktokVideoRes = await TikTokClient.tiktokVideoList(socialLink, userId);
     const tiktokVideoList = tiktokVideoRes.data.videos;
     return tiktokVideoList;
 };

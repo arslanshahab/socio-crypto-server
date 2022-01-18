@@ -4,7 +4,7 @@ import fs from "fs";
 import { doFetch, RequestData } from "../util/fetchRequest";
 import { Secrets } from "../util/secrets";
 import { SocialLink } from "../models/SocialLink";
-import { SocialPost } from "src/models/SocialPost";
+import { SocialPost } from "../models/SocialPost";
 
 // https://open-api.tiktok.com/platform/oauth/connect/?client_key=awtv37zowsh2ryq2&scope=user.info.basic,video.list&response_type=code&redirect_uri=https://raiinmaker.loca.lt/&state=1234567890
 
@@ -63,13 +63,13 @@ export class TikTokClient {
         };
         return await doFetch(requestData);
     };
-    public static tiktokVideoList = async (socialLink: SocialLink) => {
+    public static tiktokVideoList = async (socialLink: SocialLink, userId: string) => {
         // const credentials = socialLink.getTiktokCreds();
         const access_token = "act.621458c1fbb562cd239b4752886c250bbXxPe0voWPtRq50lhfr75D9o23T9";
         const open_id = "a509c4e1-a862-43e3-9a3f-0f91b1389adc";
-        // const videoId = ["1481919565420367873"];
-        const socialPostId= await SocialPost.fetchSocialPostId();
-        console.log("socialPostId", socialPostId);
+        const socialPostId = await SocialPost.fetchSocialPostById(userId);
+        const videoId = socialPostId.map((id) => id.id);
+        if(videoId.length < 1) throw new Error("No video id found");
         const requestData: RequestData = {
             url: `${TikTokClient.baseUrl}/video/query/`,
             method: "POST",
@@ -77,7 +77,7 @@ export class TikTokClient {
                 open_id: open_id,
                 access_token: access_token,
                 filters: {
-                    video_ids: ["1481919565420367873"],
+                    video_ids: videoId,
                 },
                 fields: [
                     "embed_html",
@@ -91,7 +91,8 @@ export class TikTokClient {
             },
         };
         const tiktokRes = await doFetch(requestData);
-        console.log("Tiktok video res",tiktokRes);
+        if(!tiktokRes || !tiktokRes.data) throw new Error("There was an error fetching tiktok data");
+        console.log("Tiktok video res", tiktokRes);
         return tiktokRes;
     };
 }
