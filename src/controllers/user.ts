@@ -3,7 +3,6 @@ import { Participant } from "../models/Participant";
 import { checkPermissions } from "../middleware/authentication";
 import { Firebase } from "../clients/firebase";
 import { User } from "../models/User";
-import { TinyUrl } from "../clients/tinyUrl";
 import { S3Client } from "../clients/s3";
 import { decrypt, sha256Hash } from "../util/crypto";
 import { GraphQLResolveInfo } from "graphql";
@@ -11,7 +10,6 @@ import { Profile } from "../models/Profile";
 import { DailyParticipantMetric } from "../models/DailyParticipantMetric";
 import { groupDailyMetricsByUser } from "./helpers";
 import { HourlyCampaignMetric } from "../models/HourlyCampaignMetric";
-import { serverBaseUrl } from "../config";
 import { In } from "typeorm";
 import {
     createPasswordHash,
@@ -32,7 +30,11 @@ import { addDays, endOfISOWeek, startOfDay } from "date-fns";
 import { Transfer } from "../models/Transfer";
 import { findOrCreateCurrency } from "../util/tatumHelper";
 
-export const participate = async (parent: any, args: { campaignId: string; email: string }, context: { user: any }) => {
+export const participate = async (
+    parent: any,
+    args: { campaignId: string; email: string },
+    context: { user: any }
+): Promise<Participant> => {
     try {
         const user = await User.findUserByContext(context.user, ["campaigns", "wallet"]);
         if (!user) throw new Error("user not found");
@@ -51,17 +53,12 @@ export const participate = async (parent: any, args: { campaignId: string; email
         if (await TatumClient.isCurrencySupported(campaign.symbol)) {
             await findOrCreateCurrency(campaign.symbol, user.wallet);
         }
-        const participant = Participant.newParticipant(user, campaign, args.email);
-        await participant.save();
-        const url = `${serverBaseUrl}/v1/referral/${participant.id}`;
-        participant.link = await TinyUrl.shorten(url);
-        await HourlyCampaignMetric.upsert(campaign, campaign.org, "participate");
-        await participant.save();
-        await user.transferReward("PARTICIPATION_REWARD");
-        return participant.asV1();
+        const participant = Participant.createNewParticipant(user, campaign, args.email);
+        if (!campaign.isGlobal) await user.transferReward("PARTICIPATION_REWARD");
+        return participant;
     } catch (e) {
         console.log(e);
-        return null;
+        throw new Error("There was an error participating in a campaign.");
     }
 };
 

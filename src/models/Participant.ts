@@ -13,6 +13,9 @@ import { BigNumber } from "bignumber.js";
 import { BigNumberEntityTransformer } from "../util/transformers";
 import { BN } from "../util";
 import { encrypt } from "../util/crypto";
+import { serverBaseUrl } from "../config";
+import { TinyUrl } from "../clients/tinyUrl";
+import { HourlyCampaignMetric } from "./HourlyCampaignMetric";
 
 @Entity()
 export class Participant extends BaseEntity {
@@ -82,7 +85,7 @@ export class Participant extends BaseEntity {
         return returnedValue;
     }
 
-    public static newParticipant(user: User, campaign: Campaign, email?: string): Participant {
+    public static async createNewParticipant(user: User, campaign: Campaign, email?: string) {
         const participant = new Participant();
         participant.clickCount = new BN(0);
         participant.viewCount = new BN(0);
@@ -91,6 +94,10 @@ export class Participant extends BaseEntity {
         participant.user = user;
         participant.campaign = campaign;
         if (email) participant.email = encrypt(email);
-        return participant;
+        await participant.save();
+        const url = `${serverBaseUrl}/v1/referral/${participant.id}`;
+        participant.link = await TinyUrl.shorten(url);
+        await HourlyCampaignMetric.upsert(campaign, campaign.org, "participate");
+        return await participant.save();
     }
 }
