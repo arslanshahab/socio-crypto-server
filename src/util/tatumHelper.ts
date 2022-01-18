@@ -25,6 +25,9 @@ const BCH_WITHDRAW_FEE = 0.001;
 const BNB_WITHDRAW_FEE = 0.01;
 const XLM_WITHDRAW_FEE = 20;
 const XRP_WITHDRAW_FEE = 10;
+const BTC_WITHDRAW_FEE = 0.0005;
+// const DOGE_WITHDRAW_FEE = 5;
+// const LTC_WITHDRAW_FEE = 0.001;
 
 export const symbolToChain: { [key: string]: string } = {
     BTC: "BTC",
@@ -145,7 +148,7 @@ const sendERC20OffchainTransaction = async (data: any) => {
 export const offchainEstimateFee = async (data: FeeCalculationParams): Promise<number> => {
     switch (data.tatumWallet.currency.toUpperCase()) {
         case "BTC":
-            return await estimateLedgerToBlockchainFee(data);
+            return await BTC_WITHDRAW_FEE;
         case "ETH":
             return await estimateWithdrawFee(data);
         case "XRP":
@@ -213,7 +216,7 @@ export const estimateLedgerToBlockchainFee = async (data: FeeCalculationParams) 
         payload: {
             senderAccountId: data.senderAccountId,
             address: data.toAddress,
-            amount: data.amount,
+            amount: String(data.amount),
             xpub: data.tatumWallet.xpub,
         },
         headers: { "x-api-key": Secrets.tatumApiKey },
@@ -230,7 +233,7 @@ export const estimateWithdrawFee = async (data: FeeCalculationParams) => {
         url: endpoint,
         payload: {
             chain,
-            amount: data.amount,
+            amount: String(data.amount),
             type: "TRANSFER_ERC20",
             sender: data.currency.depositAddress,
             recipient: data.toAddress,
@@ -264,26 +267,37 @@ export const adjustWithdrawableAmount = async (data: FeeCalculationParams): Prom
     const chain = symbolToChain[data.currency.symbol];
     let adjustedAmount = data.amount;
     const fee = await TatumClient.calculateWithdrawFee(data);
+    console.log("withdraw fee ---", fee);
     if (chain === "ETH" && data.currency.symbol !== chain) {
         const feeInSymbol = await getERC20ValueOfETH(data.currency.symbol, fee);
         console.log("fee in symbol", feeInSymbol);
         adjustedAmount = adjustedAmount - feeInSymbol;
+    } else {
+        adjustedAmount = adjustedAmount - fee;
     }
-    return adjustedAmount.toString();
+    return String(adjustedAmount);
 };
 
-export const transferFundsToRaiinmaker = async (data: { tatumId: string; amount: string }): Promise<any> => {
-    const raiinmakerOrg = await Org.findOne({ where: { name: "raiinmaker" }, relations: ["wallet"] });
-    if (!raiinmakerOrg) throw new Error("Org not found for raiinmaker.");
-    const raiinmakerCurrency = await Currency.findOne({ where: { wallet: raiinmakerOrg?.wallet } });
-    if (!raiinmakerCurrency) throw new Error("Currency not found for raiinmaker.");
-    await TatumClient.transferFunds(data.tatumId, raiinmakerCurrency.tatumId, data.amount, USER_WITHDRAW_FEE);
-    const newTransfer = Transfer.initTatumTransfer({
-        symbol: raiinmakerCurrency.symbol,
-        amount: new BN(data.amount),
-        action: "DEPOSIT",
-        wallet: raiinmakerOrg.wallet,
-        tatumId: data.tatumId,
-    });
-    return await newTransfer.save();
+export const transferFundsToRaiinmaker = async (data: { currency: Currency; amount: string }): Promise<any> => {
+    const chain = symbolToChain[data.currency.symbol];
+    if (chain === "ETH" && data.currency.symbol !== chain) {
+        const raiinmakerOrg = await Org.findOne({ where: { name: "raiinmaker" }, relations: ["wallet"] });
+        if (!raiinmakerOrg) throw new Error("Org not found for raiinmaker.");
+        const raiinmakerCurrency = await Currency.findOne({ where: { wallet: raiinmakerOrg?.wallet } });
+        if (!raiinmakerCurrency) throw new Error("Currency not found for raiinmaker.");
+        await TatumClient.transferFunds(
+            data.currency.tatumId,
+            raiinmakerCurrency.tatumId,
+            data.amount,
+            USER_WITHDRAW_FEE
+        );
+        const newTransfer = Transfer.initTatumTransfer({
+            symbol: raiinmakerCurrency.symbol,
+            amount: new BN(data.amount),
+            action: "DEPOSIT",
+            wallet: raiinmakerOrg.wallet,
+            tatumId: data.currency.tatumId,
+        });
+        return await newTransfer.save();
+    }
 };

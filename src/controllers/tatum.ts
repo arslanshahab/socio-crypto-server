@@ -1,4 +1,4 @@
-import { TatumClient, USER_WITHDRAW, RAIINMAKER_WITHDRAW, WithdrawDetails } from "../clients/tatumClient";
+import { RAIINMAKER_WITHDRAW, TatumClient, USER_WITHDRAW, WithdrawDetails } from "../clients/tatumClient";
 import { Admin } from "../models/Admin";
 import { Request, Response } from "express";
 import { TatumWallet } from "../models/TatumWallet";
@@ -197,7 +197,7 @@ export const withdrawFunds = async (
         symbol = symbol.toUpperCase();
         if (!(await TatumClient.isCurrencySupported(symbol))) throw new Error(`currency ${symbol} is not supported`);
         const userCurrency = await Currency.findOne({ where: { wallet: user.wallet, symbol } });
-        if (!userCurrency) throw new Error(`No such currency:${symbol} in user wallet`);
+        if (!userCurrency) throw new Error(`User wallet not found for currency ${symbol}`);
         const userAccountBalance = await TatumClient.getAccountBalance(userCurrency.tatumId);
         const tatumWallet = await TatumWallet.findOne({ where: { currency: symbol } });
         if (!tatumWallet || !userCurrency) throw new Error("Tatum wallet not found for provided sender account.");
@@ -210,11 +210,11 @@ export const withdrawFunds = async (
             currency: userCurrency,
         });
 
-        console.log(withdrawAbleAmount);
+        console.log("withdrawable --", withdrawAbleAmount);
 
         if (parseFloat(userAccountBalance.availableBalance) < amount)
             throw new Error(`Not enough funds in user account`);
-        let payload: WithdrawDetails = {
+        const payload: WithdrawDetails = {
             senderAccountId: userCurrency.tatumId,
             paymentId: `${USER_WITHDRAW}:${user.id}`,
             senderNote: RAIINMAKER_WITHDRAW,
@@ -224,7 +224,7 @@ export const withdrawFunds = async (
         };
         await TatumClient.withdrawFundsToBlockchain(symbol, payload);
         await transferFundsToRaiinmaker({
-            tatumId: userCurrency.tatumId,
+            currency: userCurrency,
             amount: String(amount - parseFloat(withdrawAbleAmount)),
         });
         const newTransfer = Transfer.initTatumTransfer({
