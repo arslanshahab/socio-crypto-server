@@ -65,11 +65,11 @@ export class TikTokClient {
     };
     public static tiktokVideoList = async (socialLink: SocialLink, userId: string) => {
         // const credentials = socialLink.getTiktokCreds();
-        const access_token = "act.621458c1fbb562cd239b4752886c250bbXxPe0voWPtRq50lhfr75D9o23T9";
+        const access_token = "act.9e35974121c0ae8476e7ade096b4aa3fRJnRjfIGVhbinqt3e2NaaAXhtNyM";
         const open_id = "a509c4e1-a862-43e3-9a3f-0f91b1389adc";
         const socialPostId = await SocialPost.fetchSocialPostById(userId);
         const videoId = socialPostId.map((id) => id.id);
-        if(videoId.length < 1) throw new Error("No video id found");
+        if (videoId.length < 1) throw new Error("videoId not found");
         const requestData: RequestData = {
             url: `${TikTokClient.baseUrl}/video/query/`,
             method: "POST",
@@ -90,9 +90,25 @@ export class TikTokClient {
                 ],
             },
         };
-        const tiktokRes = await doFetch(requestData);
-        if(!tiktokRes || !tiktokRes.data) throw new Error("There was an error fetching tiktok data");
-        console.log("Tiktok video res", tiktokRes);
-        return tiktokRes;
+        const videoQueryRes = await doFetch(requestData);
+        if (!videoQueryRes || !videoQueryRes.data) throw new Error("There was an error fetching tiktok data");
+        return videoQueryRes;
+    };
+    public static fetchTiktokUserRecord = async (socialLink: SocialLink) => {
+        // const credentials = socialLink.getTiktokCreds();
+        const access_token = "act.9e35974121c0ae8476e7ade096b4aa3fRJnRjfIGVhbinqt3e2NaaAXhtNyM";
+        const open_id = "a509c4e1-a862-43e3-9a3f-0f91b1389adc";
+        const requestData: RequestData = {
+            url: `${TikTokClient.baseUrl}/user/info/`,
+            method: "POST",
+            payload: {
+                open_id: open_id,
+                access_token: access_token,
+                fields: ["open_id", "union_id", "avatar_url", "display_name"],
+            },
+        };
+        const userInfoRes = await doFetch(requestData);
+        if (!userInfoRes || !userInfoRes.data) throw new Error("There was an error fetching tiktok data");
+        return userInfoRes;
     };
 }

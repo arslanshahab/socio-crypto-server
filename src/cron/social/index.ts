@@ -13,7 +13,7 @@ import { DailyParticipantMetric } from "../../models/DailyParticipantMetric";
 import { HourlyCampaignMetric } from "../../models/HourlyCampaignMetric";
 import { QualityScore } from "../../models/QualityScore";
 import * as dotenv from "dotenv";
-
+import { listOfTiktokVideo, tiktokUserRecord } from "../../controllers/social";
 
 dotenv.config();
 const app = new Application();
@@ -85,6 +85,12 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                     where: { user: post.user, type: post.type },
                     relations: ["user"],
                 });
+
+                let user = {
+                    userId: socialLink?.user?.id,
+                };
+                await tiktokUserRecord("", { socialType: "tiktok" }, { user: user });
+                await listOfTiktokVideo("", { socialType: "tiktok" }, { user: user });
                 if (!socialLink) {
                     logger.error(`participant ${post.user.id} has not linked ${post.type} as a social platform`);
                 } else {
@@ -95,7 +101,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                             new BN(responseJSON["favorite_count"]),
                             new BN(responseJSON["retweet_count"]),
                             post
-                        );
+                            );
                         logger.info(`pushing new metrics on social post for campaign: ${post.campaign.name}`);
                         postsToSave.push(updatedPost);
                     } catch (e) {
