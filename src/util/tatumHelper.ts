@@ -21,13 +21,24 @@ import { BN, getERC20ValueOfETH } from ".";
 import { Org } from "../models/Org";
 import { Transfer } from "../models/Transfer";
 
-const BCH_WITHDRAW_FEE = 0.001;
-const BNB_WITHDRAW_FEE = 0.01;
-const XLM_WITHDRAW_FEE = 20;
-const XRP_WITHDRAW_FEE = 10;
-const BTC_WITHDRAW_FEE = 0.0005;
-// const DOGE_WITHDRAW_FEE = 5;
-// const LTC_WITHDRAW_FEE = 0.001;
+interface WithdrawFeeData {
+    withdrawAbleAmount: string;
+    fee: string;
+}
+
+const BCH_DEFAULT_WITHDRAW_FEE = 0.001;
+const BNB_DEFAULT_WITHDRAW_FEE = 0.0005;
+const XLM_DEFAULT_WITHDRAW_FEE = 20;
+const XRP_DEFAULT_WITHDRAW_FEE = 10;
+// const DOGE_DEFAULT_WITHDRAW_FEE = 5;
+// const LTC_DEFAULT_WITHDRAW_FEE = 0.001;
+
+const fixDecimals = (num: any) => {
+    if (typeof num === "string") {
+        num = parseFloat(num);
+    }
+    return num.toFixed(11);
+};
 
 export const symbolToChain: { [key: string]: string } = {
     BTC: "BTC",
@@ -148,15 +159,15 @@ const sendERC20OffchainTransaction = async (data: any) => {
 export const offchainEstimateFee = async (data: FeeCalculationParams): Promise<number> => {
     switch (data.tatumWallet.currency.toUpperCase()) {
         case "BTC":
-            return await BTC_WITHDRAW_FEE;
+            return await estimateLedgerToBlockchainFee(data);
         case "ETH":
             return await estimateWithdrawFee(data);
         case "XRP":
-            return XRP_WITHDRAW_FEE;
+            return XRP_DEFAULT_WITHDRAW_FEE;
         case "XLM":
-            return XLM_WITHDRAW_FEE;
+            return XLM_DEFAULT_WITHDRAW_FEE;
         case "BCH":
-            return BCH_WITHDRAW_FEE;
+            return BCH_DEFAULT_WITHDRAW_FEE;
         case "LTC":
             return await estimateLedgerToBlockchainFee(data);
         case "FLOW":
@@ -172,7 +183,7 @@ export const offchainEstimateFee = async (data: FeeCalculationParams): Promise<n
         case "QTUM":
             return estimateLedgerToBlockchainFee(data);
         case "BNB":
-            return BNB_WITHDRAW_FEE;
+            return BNB_DEFAULT_WITHDRAW_FEE;
         case "BSC":
             return await estimateWithdrawFee(data);
         case "DOGE":
@@ -221,7 +232,8 @@ export const estimateLedgerToBlockchainFee = async (data: FeeCalculationParams) 
         },
         headers: { "x-api-key": Secrets.tatumApiKey },
     };
-    return (await doFetch(requestData)).fast;
+    const resp = await doFetch(requestData);
+    return parseFloat(fixDecimals(resp.fast));
 };
 
 export const estimateWithdrawFee = async (data: FeeCalculationParams) => {
@@ -246,7 +258,7 @@ export const estimateWithdrawFee = async (data: FeeCalculationParams) => {
     } else {
         feeAmount = resp.fast;
     }
-    return feeAmount;
+    return parseFloat(fixDecimals(feeAmount));
 };
 
 export const findOrCreateCurrency = async (symbol: string, wallet: Wallet): Promise<Currency> => {
@@ -263,19 +275,20 @@ export const findOrCreateCurrency = async (symbol: string, wallet: Wallet): Prom
     return ledgerAccount;
 };
 
-export const adjustWithdrawableAmount = async (data: FeeCalculationParams): Promise<string> => {
+export const adjustWithdrawableAmount = async (data: FeeCalculationParams): Promise<WithdrawFeeData> => {
     const chain = symbolToChain[data.currency.symbol];
-    let adjustedAmount = data.amount;
-    const fee = await TatumClient.calculateWithdrawFee(data);
-    console.log("withdraw fee ---", fee);
+    let adjustedAmount = new BN(fixDecimals(data.amount));
+    let fee = await TatumClient.calculateWithdrawFee(data);
     if (chain === "ETH" && data.currency.symbol !== chain) {
-        const feeInSymbol = await getERC20ValueOfETH(data.currency.symbol, fee);
-        console.log("fee in symbol", feeInSymbol);
-        adjustedAmount = adjustedAmount - feeInSymbol;
+        fee = await getERC20ValueOfETH(data.currency.symbol, fee);
+        adjustedAmount = adjustedAmount.minus(fee);
     } else {
-        adjustedAmount = adjustedAmount - fee;
+        adjustedAmount = adjustedAmount.minus(fee);
     }
-    return String(adjustedAmount);
+    return {
+        withdrawAbleAmount: fixDecimals(adjustedAmount.toNumber()),
+        fee: fixDecimals(fee),
+    };
 };
 
 export const transferFundsToRaiinmaker = async (data: { currency: Currency; amount: string }): Promise<any> => {
