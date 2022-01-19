@@ -4,7 +4,8 @@ import fs from "fs";
 import { doFetch, RequestData } from "../util/fetchRequest";
 import { Secrets } from "../util/secrets";
 import { SocialLink } from "../models/SocialLink";
-import { SocialPost } from "../models/SocialPost";
+// import { SocialPost } from "../models/SocialPost";
+// import { User } from "../models/User";
 
 // https://open-api.tiktok.com/platform/oauth/connect/?client_key=awtv37zowsh2ryq2&scope=user.info.basic,video.list&response_type=code&redirect_uri=https://raiinmaker.loca.lt/&state=1234567890
 
@@ -63,13 +64,9 @@ export class TikTokClient {
         };
         return await doFetch(requestData);
     };
-    public static tiktokVideoList = async (socialLink: SocialLink, userId: string) => {
-        // const credentials = socialLink.getTiktokCreds();
+    public static tiktokVideoList = async (socialLink: SocialLink, id: any) => {
         const access_token = "act.9e35974121c0ae8476e7ade096b4aa3fRJnRjfIGVhbinqt3e2NaaAXhtNyM";
         const open_id = "a509c4e1-a862-43e3-9a3f-0f91b1389adc";
-        const socialPostId = await SocialPost.fetchSocialPostById(userId);
-        const videoId = socialPostId.map((id) => id.id);
-        if (videoId.length < 1) throw new Error("videoId not found");
         const requestData: RequestData = {
             url: `${TikTokClient.baseUrl}/video/query/`,
             method: "POST",
@@ -77,7 +74,7 @@ export class TikTokClient {
                 open_id: open_id,
                 access_token: access_token,
                 filters: {
-                    video_ids: videoId,
+                    video_ids: id,
                 },
                 fields: [
                     "embed_html",
@@ -91,10 +88,10 @@ export class TikTokClient {
             },
         };
         const videoQueryRes = await doFetch(requestData);
-        if (!videoQueryRes || !videoQueryRes.data) throw new Error("There was an error fetching tiktok data");
-        return videoQueryRes;
+        if (!videoQueryRes?.data?.videos) throw new Error("There was an error fetching tiktok data");
+        return videoQueryRes.data.videos;
     };
-    public static fetchTiktokUserRecord = async (socialLink: SocialLink) => {
+    public static tiktokUserRecord = async (socialLink: SocialLink) => {
         // const credentials = socialLink.getTiktokCreds();
         const access_token = "act.9e35974121c0ae8476e7ade096b4aa3fRJnRjfIGVhbinqt3e2NaaAXhtNyM";
         const open_id = "a509c4e1-a862-43e3-9a3f-0f91b1389adc";
@@ -109,6 +106,7 @@ export class TikTokClient {
         };
         const userInfoRes = await doFetch(requestData);
         if (!userInfoRes || !userInfoRes.data) throw new Error("There was an error fetching tiktok data");
-        return userInfoRes;
+        const tiktokUserInfo = userInfoRes.data.user;
+        return tiktokUserInfo;
     };
 }

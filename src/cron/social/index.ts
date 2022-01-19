@@ -13,7 +13,7 @@ import { DailyParticipantMetric } from "../../models/DailyParticipantMetric";
 import { HourlyCampaignMetric } from "../../models/HourlyCampaignMetric";
 import { QualityScore } from "../../models/QualityScore";
 import * as dotenv from "dotenv";
-import { listOfTiktokVideo, tiktokUserRecord } from "../../controllers/social";
+import { TikTokClient } from "../../clients/tiktok";
 
 dotenv.config();
 const app = new Application();
@@ -85,25 +85,32 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                     where: { user: post.user, type: post.type },
                     relations: ["user"],
                 });
-
-                let user = {
-                    userId: socialLink?.user?.id,
-                };
-                await tiktokUserRecord("", { socialType: "tiktok" }, { user: user });
-                await listOfTiktokVideo("", { socialType: "tiktok" }, { user: user });
                 if (!socialLink) {
                     logger.error(`participant ${post.user.id} has not linked ${post.type} as a social platform`);
                 } else {
                     try {
-                        const response = await TwitterClient.get(socialLink, post.id, false);
-                        const responseJSON = JSON.parse(response);
-                        const updatedPost = await updatePostMetrics(
-                            new BN(responseJSON["favorite_count"]),
-                            new BN(responseJSON["retweet_count"]),
-                            post
+                        if (socialLink?.type === "twitter") {
+                            const response = await TwitterClient.get(socialLink, post.id, false);
+                            const responseJSON = JSON.parse(response);
+                            const updatedPost = await updatePostMetrics(
+                                new BN(responseJSON["favorite_count"]),
+                                new BN(responseJSON["retweet_count"]),
+                                post
                             );
-                        logger.info(`pushing new metrics on social post for campaign: ${post.campaign.name}`);
-                        postsToSave.push(updatedPost);
+                            logger.info(`pushing new metrics on social post for campaign: ${post.campaign.name}`);
+                            postsToSave.push(updatedPost);
+                        }
+                        if (socialLink?.type === "tiktok") {
+                            const postDetails = (await TikTokClient.tiktokVideoList(socialLink, [post.id]))[0];
+                            const likeCount = postDetails.like_count;
+                            const shareCount = postDetails.share_count;
+                            const updatedPost = await updatePostMetrics(
+                                new BN(likeCount) || 0,
+                                new BN(shareCount) || 0,
+                                post
+                            );
+                            postsToSave.push(updatedPost);
+                        }
                     } catch (e) {
                         console.log(e);
                     }

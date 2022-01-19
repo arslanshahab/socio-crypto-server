@@ -52,8 +52,6 @@ export const resolvers = {
         getUserBalances: userController.getWalletBalances,
         getTransferHistory: transferController.getTransferHistory,
         downloadKyc: kycController.downloadKyc,
-        listOfTiktokVideo: socialController.listOfTiktokVideo,
-        tiktokUserRecord: socialController.tiktokUserRecord,
     },
     Mutation: {
         generateFactorsFromKyc: factorController.generateFactors,

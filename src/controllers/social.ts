@@ -201,49 +201,7 @@ export const getParticipantSocialMetrics = async (parent: any, args: { id: strin
         shareScore: parseFloat(metrics.shareScore.toString()),
     };
 };
-export const listOfTiktokVideo = async (
-    parent: any,
-    args: {
-        socialType: "twitter" | "facebook" | "tiktok";
-    },
-    context: { user: any }
-) => {
-    try {
-        const { socialType } = args;
-        const user = await User.findUserByContext(context.user, ["socialLinks"]);
-        if (!user) throw new Error("User not found");
-        const userId = user.id;
-        const socialLink = user.socialLinks.find((link) => link.type === socialType);
-        if (!socialLink) throw new Error(`you have not linked ${socialType} as a social platform`);
-        const tiktokVideo = await TikTokClient.tiktokVideoList(socialLink, userId);
-        const tiktokVideoList = tiktokVideo.data.videos;
-        if (!tiktokVideoList) throw new Error("There is no video found");
-        return tiktokVideoList;
-    } catch (error) {
-        throw new FormattedError(error);
-    }
-};
-export const tiktokUserRecord = async (
-    parent: any,
-    args: { socialType: "twitter" | "facebook" | "tiktok" },
-    context: {
-        user: any;
-    }
-) => {
-    try {
-        const { socialType } = args;
-        const user = await User.findUserByContext(context.user, ["socialLinks"]);
-        if (!user) throw new Error("User not found");
-        const socialLink = user.socialLinks.find((link) => link.type === socialType);
-        if (!socialLink) throw new Error(`you have not linked ${socialType} as a social platform`);
-        const tiktokUser = await TikTokClient.fetchTiktokUserRecord(socialLink);
-        if (!tiktokUser) throw new Error("There is no user found");
-        const tiktokUserInfo = tiktokUser.data.user;
-        return tiktokUserInfo;
-    } catch (error) {
-        throw new FormattedError(error);
-    }
-};
+
 export const postContentGlobally = async (
     parent: any,
     args: {
