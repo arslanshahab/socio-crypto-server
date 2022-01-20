@@ -16,7 +16,7 @@ import {
 } from "@tatumio/tatum";
 import { TatumWallet } from "../models/TatumWallet";
 import { S3Client } from "./s3";
-import { offchainEstimateFee, performWithdraw } from "../util/tatumHelper";
+import { offchainEstimateFee, performWithdraw, symbolToChain } from "../util/tatumHelper";
 import { Currency } from "../models/Currency";
 
 export const CAMPAIGN_CREATION_AMOUNT = "CAMPAIGN_CREATION_AMOUNT";
@@ -49,7 +49,7 @@ export class TatumClient {
 
     public static getAllCurrencies = async (): Promise<string[]> => {
         try {
-            return (await TatumWallet.find({ where: { enabled: true } })).map((item) => item.currency);
+            return Object.keys(symbolToChain);
         } catch (error) {
             console.log(error);
             throw new Error(error.message);
@@ -58,7 +58,7 @@ export class TatumClient {
 
     public static isCurrencySupported = async (symbol: string): Promise<boolean> => {
         try {
-            return Boolean(await TatumWallet.findOne({ where: { currency: symbol.toUpperCase(), enabled: true } }));
+            return Boolean(Object.keys(symbolToChain).includes(symbol));
         } catch (error) {
             console.log(error);
             throw new Error(error.message);
