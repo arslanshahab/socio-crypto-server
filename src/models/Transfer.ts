@@ -12,7 +12,7 @@ import {
 import { DateUtils } from "typeorm/util/DateUtils";
 import { Wallet } from "./Wallet";
 import { Campaign } from "./Campaign";
-import { BN } from "../util/helpers";
+import { BN } from "../util";
 import { BigNumberEntityTransformer } from "../util/transformers";
 import { TransferAction, TransferStatus } from "../types";
 import { Org } from "./Org";

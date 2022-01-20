@@ -2,7 +2,7 @@ import fetch from "node-fetch";
 import Web3 from "web3";
 import logger from "../../util/logger";
 import { CryptoTransaction } from "../../models/CryptoTransaction";
-import { BN } from "../../util/helpers";
+import { BN } from "../../util";
 import { AbiItem } from "web3-utils";
 import abi from "../../abi.json";
 

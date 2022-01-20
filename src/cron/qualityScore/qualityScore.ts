@@ -4,7 +4,7 @@ import { StandardDeviation } from "./StandardDeviation";
 import { BigNumber } from "bignumber.js";
 import { ParticipantEngagement } from "../../types";
 import { QualityScore } from "../../models/QualityScore";
-import { BN } from "../../util/helpers";
+import { BN } from "../../util";
 
 const calculateQualityTier = (deviation: BigNumber, engagement: BigNumber, average: BigNumber) => {
     const scoreDeviation = engagement.minus(average).div(deviation);

@@ -1,7 +1,7 @@
 import { Firebase } from "../clients/firebase";
 import { AuthenticationError } from "apollo-server-express";
 import express from "express";
-import { verifySessionToken } from "../helpers";
+import { verifySessionToken } from "../util";
 import { FormattedError, NO_TOKEN_PROVIDED } from "../util/errors";
 
 export const authenticateAdmin = async ({ req }: { req: express.Request }) => {
@@ -34,7 +34,6 @@ export const authenticateUser = async ({ req }: { req: express.Request }) => {
         const user = verifySessionToken(token);
         return { user };
     } catch (error) {
-        console.log(error);
         throw new FormattedError(error);
     }
 };

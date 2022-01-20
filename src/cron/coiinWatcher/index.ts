@@ -4,7 +4,7 @@ import { Secrets } from "../../util/secrets";
 import { Application } from "../../app";
 import { ExternalAddress } from "../../models/ExternalAddress";
 import { Transfer } from "../../models/Transfer";
-import { BN } from "../../util/helpers";
+import { BN } from "../../util";
 import { performCurrencyAction, updateOrgCampaignsStatusOnDeposit } from "../../controllers/helpers";
 import { CryptoCurrency } from "../../models/CryptoCurrency";
 import { CryptoTransaction } from "../../models/CryptoTransaction";

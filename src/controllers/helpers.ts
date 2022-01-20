@@ -4,7 +4,7 @@ import { Participant } from "../models/Participant";
 import { Campaign } from "../models/Campaign";
 import { getConnection } from "typeorm";
 import { Wallet } from "../models/Wallet";
-import { BN, generateRandomNumber } from "../util/helpers";
+import { BN, generateRandomNumber } from "../util";
 import { BigNumber } from "bignumber.js";
 import { DailyParticipantMetric } from "../models/DailyParticipantMetric";
 import { Org } from "../models/Org";
@@ -12,7 +12,7 @@ import { Escrow } from "../models/Escrow";
 import { WalletCurrency } from "../models/WalletCurrency";
 import { FEE_RATE } from "../util/constants";
 
-export const feeMultiplier = new BN(1).minus(FEE_RATE);
+export const feeMultiplier = (() => new BN(1).minus(FEE_RATE));
 
 export const updateOrgCampaignsStatusOnDeposit = async (wallet: Wallet) => {
     const org = await Org.listOrgCampaignsByWalletIdAndStatus(wallet.id, "INSUFFICIENT_FUNDS");

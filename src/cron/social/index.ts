@@ -8,7 +8,7 @@ import logger from "../../util/logger";
 import { SocialLink } from "../../models/SocialLink";
 import { Participant } from "../../models/Participant";
 import { BigNumber } from "bignumber.js";
-import { BN, calculateQualityMultiplier } from "../../util/helpers";
+import { BN, calculateQualityMultiplier } from "../../util";
 import { DailyParticipantMetric } from "../../models/DailyParticipantMetric";
 import { HourlyCampaignMetric } from "../../models/HourlyCampaignMetric";
 import { QualityScore } from "../../models/QualityScore";

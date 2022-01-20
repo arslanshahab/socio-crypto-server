@@ -3,7 +3,7 @@ import { BigNumber } from "bignumber.js";
 import { Campaign } from "../../models/Campaign";
 import { User } from "../../models/User";
 import { SocialPost } from "../../models/SocialPost";
-import { BN } from "../../util/helpers";
+import { BN } from "../../util";
 import { SocialLink } from "../../models/SocialLink";
 
 export class EngagementRate {
