@@ -1,4 +1,4 @@
-import { decrypt, encrypt } from "../util/crypto";
+import { decrypt } from "../util/crypto";
 import { SocialLink } from "../models/SocialLink";
 import { TwitterClient } from "../clients/twitter";
 import { Participant } from "../models/Participant";
@@ -8,63 +8,69 @@ import { User } from "../models/User";
 import { FacebookClient } from "../clients/facebook";
 import { HourlyCampaignMetric } from "../models/HourlyCampaignMetric";
 import { Campaign } from "../models/Campaign";
-import fetch from "node-fetch";
 import { CampaignMedia } from "../models/CampaignMedia";
-export const allowedSocialLinks = ["twitter", "facebook"];
+import { ApolloError } from "apollo-server-express";
+import { TikTokClient } from "../clients/tiktok";
+import { downloadMedia } from "../util";
+import { JWTPayload, SocialType } from "src/types";
+import { ERROR_LINKING_TIKTOK, FormattedError, GLOBAL_CAMPAIGN_NOT_FOUND, USER_NOT_FOUND } from "../util/errors";
+import { TatumClient } from "../clients/tatumClient";
+import { findOrCreateCurrency } from "../util/tatumHelper";
+
+export const allowedSocialLinks = ["twitter", "facebook", "tiktok"];
 
 const assetUrl =
     process.env.NODE_ENV === "production"
         ? "https://raiinmaker-media.api.raiinmaker.com"
         : "https://raiinmaker-media-staging.api.raiinmaker.com";
 
-export const getSocialClient = (type: string, accessToken?: string) => {
-    let client: any;
+export const getSocialClient = (type: string, accessToken?: string): any => {
     switch (type) {
         case "twitter":
-            client = TwitterClient;
-            break;
+            return TwitterClient;
+        case "tiktok":
+            return TikTokClient;
         case "facebook":
             if (!accessToken) throw new Error("access token required");
-            client = FacebookClient.getClient(accessToken);
-            break;
+            return FacebookClient.getClient(accessToken);
         default:
             throw new Error("no client for this social link type");
     }
-    return client;
 };
 
 export const registerSocialLink = async (
     parent: any,
-    args: { type: string; apiKey: string; apiSecret: string },
+    args: { type: SocialType; apiKey: string; apiSecret: string },
     context: { user: any }
 ) => {
-    const { id, userId } = context.user;
-    const user = await User.findOne({ where: [{ identityId: id }, { id: userId }], relations: ["socialLinks"] });
+    const user = await User.findUserByContext(context.user, ["socialLinks"]);
     if (!user) throw new Error("User not found");
     const { type, apiKey, apiSecret } = args;
+    console.log("args received", args);
+    console.log("user data", context.user);
+    console.log("user found", user);
     if (!allowedSocialLinks.includes(type)) throw new Error("the type must exist as a predefined type");
-    const existingLink = user.socialLinks.find((link: SocialLink) => link.type === type);
-    const encryptedApiKey = encrypt(apiKey);
-    const encryptedApiSecret = encrypt(apiSecret);
-    if (existingLink) {
-        existingLink.apiKey = encryptedApiKey;
-        existingLink.apiSecret = encryptedApiSecret;
-        await existingLink.save();
-    } else {
-        const link = new SocialLink();
-        link.type = type;
-        link.apiKey = encryptedApiKey;
-        link.apiSecret = encryptedApiSecret;
-        link.user = user;
-        await link.save();
-    }
+    await SocialLink.addTwitterLink(user, { apiKey, apiSecret });
     return true;
+};
+
+export const registerTiktokSocialLink = async (parent: any, args: { code: string }, context: { user: JWTPayload }) => {
+    try {
+        const user = await User.findUserByContext(context.user, ["socialLinks"]);
+        if (!user) throw new Error(USER_NOT_FOUND);
+        const { code } = args;
+        const tokens = await TikTokClient.fetchTokens(code);
+        if (!tokens.data.access_token || !tokens.data.refresh_token) throw new Error(ERROR_LINKING_TIKTOK);
+        await SocialLink.addOrUpdateTiktokLink(user, tokens.data);
+        return { success: true };
+    } catch (error) {
+        throw new FormattedError(error);
+    }
 };
 
 export const removeSocialLink = async (parent: any, args: { type: string }, context: { user: any }) => {
     const { type } = args;
-    const { id, userId } = context.user;
-    const user = await User.findOne({ where: [{ identityId: id }, { id: userId }], relations: ["socialLinks"] });
+    const user = await User.findUserByContext(context.user, ["socialLinks"]);
     if (!user) throw new Error("User not found");
     if (!allowedSocialLinks.includes(type)) throw new Error("the type must exist as a predefined type");
     const existingType = user.socialLinks.find((link) => link.type === type);
@@ -75,7 +81,7 @@ export const removeSocialLink = async (parent: any, args: { type: string }, cont
 export const postToSocial = async (
     parent: any,
     args: {
-        socialType: "twitter" | "facebook";
+        socialType: "twitter" | "facebook" | "tiktok";
         text: string;
         mediaType: "video" | "photo" | "gif";
         mediaFormat: string;
@@ -90,50 +96,40 @@ export const postToSocial = async (
         console.log(`posting to social`);
         const startTime = new Date().getTime();
         let { socialType, text, mediaType, mediaFormat, media, participantId, defaultMedia, mediaId } = args;
-        if (!allowedSocialLinks.includes(socialType)) throw new Error("the type must exist as a predefined type");
-        const { id, userId } = context.user;
-        const user = await User.findOne({ where: [{ identityId: id }, { id: userId }], relations: ["socialLinks"] });
-        if (!user) throw new Error("User not found");
-        const participant = await Participant.findOneOrFail({
+        if (!allowedSocialLinks.includes(socialType)) throw new ApolloError(`posting to ${socialType} is not allowed`);
+        const user = await User.findUserByContext(context.user, ["socialLinks"]);
+        if (!user) throw new Error(USER_NOT_FOUND);
+        const participant = await Participant.findOne({
             where: { id: participantId, user },
             relations: ["campaign"],
         });
-        if (!participant.campaign.isOpen()) throw new Error("campaign is closed");
+        if (!participant) throw new ApolloError("Participant not found");
+        if (!participant.campaign.isOpen()) throw new ApolloError("campaign is closed");
         const socialLink = user.socialLinks.find((link) => link.type === socialType);
-        if (!socialLink) throw new Error(`you have not linked ${socialType} as a social platform`);
+        if (!socialLink) throw new ApolloError(`you have not linked ${socialType} as a social platform`);
         const campaign = await Campaign.findOne({
             where: { id: participant.campaign.id },
             relations: ["org", "campaignMedia"],
         });
-        if (!campaign) throw new Error("campaign not found");
+        if (!campaign) throw new ApolloError("campaign not found");
         const client = getSocialClient(socialType);
         if (defaultMedia) {
             console.log(`downloading media with mediaID ----- ${mediaId}`);
             const selectedMedia = await CampaignMedia.findOne({ where: { id: mediaId } });
-            console.log(`media found ----- ${selectedMedia}`);
-            if (selectedMedia) {
-                const mediaUrl = `${assetUrl}/campaign/${campaign.id}/${selectedMedia.media}`;
-                const downloaded = await downloadMedia(mediaType, mediaUrl, selectedMedia.mediaFormat);
-                media = downloaded;
-                mediaFormat = selectedMedia.mediaFormat;
-            } else {
-                throw new Error(`Provided mediaId doesn't exist`);
-            }
+            if (!selectedMedia) throw new ApolloError(`Provided mediaId doesn't exist`);
+            const mediaUrl = `${assetUrl}/campaign/${campaign.id}/${selectedMedia.media}`;
+            const downloaded = await downloadMedia(mediaType, mediaUrl, selectedMedia.mediaFormat);
+            media = downloaded;
+            mediaFormat = selectedMedia.mediaFormat;
         }
         let postId: string;
         if (mediaType && mediaFormat) {
-            postId = await client.post(
-                participant,
-                socialLink.asClientCredentials(),
-                text,
-                media,
-                mediaType,
-                mediaFormat
-            );
+            postId = await client.post(participant, socialLink, text, media, mediaType, mediaFormat);
         } else {
-            postId = await client.post(participant, socialLink.asClientCredentials(), text);
+            postId = await client.post(participant, socialLink, text);
         }
-        console.log(`Posted to twitter with ID: ${postId}`);
+        if (!postId) throw new ApolloError("There was an error posting to twitter.");
+        console.log(`Posted to ${socialType} with ID: ${postId}`);
         await HourlyCampaignMetric.upsert(campaign, campaign.org, "post");
         await participant.campaign.save();
         const socialPost = await SocialPost.newSocialPost(
@@ -148,23 +144,21 @@ export const postToSocial = async (
         console.log("number of seconds taken for this upload", timeTaken);
         return socialPost.id;
     } catch (error) {
-        console.log(error);
-        return error.message;
+        throw new FormattedError(error);
     }
 };
 
 export const getTotalFollowers = async (parent: any, args: any, context: { user: any }) => {
     let client;
-    const { id, userId } = context.user;
     const followerTotals: { [key: string]: number } = {};
-    const user = await User.findOne({ where: [{ identityId: id }, { id: userId }] });
+    const user = await User.findUserByContext(context.user);
     if (!user) throw new Error("User not found");
     const socialLinks = await SocialLink.find({ where: { user } });
     for (const link of socialLinks) {
         switch (link.type) {
             case "twitter":
                 client = getSocialClient(link.type);
-                followerTotals["twitter"] = await client.getTotalFollowers(link.asClientCredentials(), link.id);
+                followerTotals["twitter"] = await client.getTotalFollowers(link, link.id);
                 if (link.followerCount !== followerTotals["twitter"]) {
                     link.followerCount = followerTotals["twitter"];
                     await link.save();
@@ -187,13 +181,12 @@ export const getTotalFollowers = async (parent: any, args: any, context: { user:
 
 export const getTweetById = async (parent: any, args: { id: string; type: string }, context: { user: any }) => {
     const { id, type } = args;
-    const { id: identityId, userId } = context.user;
-    const user = await User.findOne({ where: [{ identityId }, { id: userId }], relations: ["socialLinks"] });
+    const user = await User.findUserByContext(context.user, ["socialLinks"]);
     if (!user) throw new Error("User not found");
     const socialLink = user.socialLinks.find((link) => link.type === "twitter");
     if (!socialLink) throw new Error(`you have not linked twitter as a social platform`);
     const client = getSocialClient(type);
-    return client.get(socialLink.asClientCredentials(), id);
+    return client.get(socialLink, id);
 };
 
 export const getParticipantSocialMetrics = async (parent: any, args: { id: string }, context: { user: any }) => {
@@ -209,10 +202,41 @@ export const getParticipantSocialMetrics = async (parent: any, args: { id: strin
     };
 };
 
-const downloadMedia = async (mediaType: string, url: string, format: string): Promise<string> => {
-    return await fetch(url)
-        .then((r) => r.buffer())
-        .then((buf) =>
-            mediaType === "photo" ? buf.toString("base64") : `data:${format};base64,` + buf.toString("base64")
+export const postContentGlobally = async (
+    parent: any,
+    args: {
+        socialType: "twitter" | "facebook" | "tiktok";
+        text: string;
+        mediaType: "video" | "photo" | "gif";
+        mediaFormat: string;
+        media: string;
+    },
+    context: { user: JWTPayload }
+) => {
+    try {
+        if (!allowedSocialLinks.includes(args.socialType))
+            throw new ApolloError(`posting to ${args.socialType} is not allowed`);
+        const user = await User.findUserByContext(context.user, ["socialLinks"]);
+        if (!user) throw new Error(USER_NOT_FOUND);
+        const globalCampaign = await Campaign.findOne({
+            where: { isGlobal: true, symbol: "COIIN" },
+            relations: ["org"],
+        });
+        if (!globalCampaign) throw new Error(GLOBAL_CAMPAIGN_NOT_FOUND);
+        let participant = await Participant.findOne({ where: { user, campaign: globalCampaign } });
+        if (!participant) {
+            if (await TatumClient.isCurrencySupported(globalCampaign.symbol)) {
+                await findOrCreateCurrency(globalCampaign.symbol, user.wallet);
+            }
+            participant = await Participant.createNewParticipant(user, globalCampaign, user.email);
+        }
+        await postToSocial(
+            null,
+            { ...args, defaultMedia: false, mediaId: "none", participantId: participant.id },
+            context
         );
+        return { success: true };
+    } catch (error) {
+        throw new FormattedError(error);
+    }
 };

@@ -4,7 +4,7 @@ import { User } from "../../models/User";
 import { TwentyFourHourMetric } from "../../models/TwentyFourHourMetric";
 import { DailyParticipantMetric } from "../../models/DailyParticipantMetric";
 import { Participant } from "../../models/Participant";
-import { BN } from "../../util/helpers";
+import { BN } from "../../util";
 import * as campaignController from "../../controllers/campaign";
 import { getTokenPriceInUsd } from "../../clients/ethereum";
 

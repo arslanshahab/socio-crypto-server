@@ -1,12 +1,11 @@
 import { Firebase } from "../clients/firebase";
-import { asyncHandler } from "../util/helpers";
 import { Request, Response } from "express";
 import { ILike } from "typeorm";
 import { Verification } from "../models/Verification";
 import { SesClient } from "../clients/ses";
 import { User } from "../models/User";
 import { VerificationType } from "src/types";
-import { createSessionToken, createPasswordHash } from "../helpers";
+import { createSessionToken, createPasswordHash, asyncHandler } from "../util";
 import { encrypt, decrypt, sha256Hash } from "../util/crypto";
 import { Profile } from "../models/Profile";
 import {
@@ -97,6 +96,7 @@ export const loginUser = async (parent: any, args: { email: string; password: st
         const user = await User.findOne({ where: { email: ILike(email) }, relations: ["wallet"] });
         if (!user) throw new Error(EMAIL_NOT_EXISTS);
         if (user.password !== createPasswordHash({ email, password })) throw new Error(INCORRECT_PASSWORD);
+        await user.updateLastLogin();
         await user.transferReward("LOGIN_REWARD");
         return { token: createSessionToken(user) };
     } catch (error) {
@@ -181,7 +181,6 @@ export const startVerification = async (parent: any, args: { email: string; type
         await SesClient.emailAddressVerificationEmail(email, verificationData.getDecryptedCode());
         return { success: true };
     } catch (error) {
-        console.log(error);
         throw new FormattedError(error);
     }
 };

@@ -8,6 +8,7 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
     BeforeInsert,
+    BeforeUpdate,
 } from "typeorm";
 import { Participant } from "./Participant";
 import { XoxodayOrder } from "./XoxodayOrder";
@@ -17,7 +18,7 @@ import { SocialPost } from "./SocialPost";
 import { FactorLink } from "./FactorLink";
 import { TwentyFourHourMetric } from "./TwentyFourHourMetric";
 import BigNumber from "bignumber.js";
-import { BN } from "../util/helpers";
+import { BN } from "../util";
 import { FieldNode } from "graphql";
 import { Profile } from "./Profile";
 import { DailyParticipantMetric } from "./DailyParticipantMetric";
@@ -29,10 +30,11 @@ import { VerificationApplication } from "./VerificationApplication";
 import { WalletCurrency } from "./WalletCurrency";
 import { differenceInMonths } from "date-fns";
 import { Transfer } from "./Transfer";
+import { JWTPayload } from "src/types";
 
 export const LOGIN_REWARD_AMOUNT = 1;
 export const PARTICIPATION_REWARD_AMOUNT = 2;
-export const REGISTRATION_REWARD_AMOUNT = 2;
+export const REGISTRATION_REWARD_AMOUNT = 15;
 type RewardType = "LOGIN_REWARD" | "PARTICIPATION_REWARD" | "REGISTRATION_REWARD";
 
 @Entity()
@@ -104,8 +106,9 @@ export class User extends BaseEntity {
     public orders: XoxodayOrder[];
 
     @BeforeInsert()
-    prepreModel() {
-        this.email = this.email.toLowerCase();
+    @BeforeUpdate()
+    nameToUpperCase() {
+        this.email = this.email ? this.email.toLowerCase() : this.email;
     }
 
     public static async initNewUser(email: string, password: string, username: string): Promise<User> {
@@ -200,6 +203,19 @@ export class User extends BaseEntity {
         return await this.save();
     }
 
+    public async updateEmail(email: string) {
+        this.email = email;
+        return await this.save();
+    }
+
+    public static async findUserByContext(data: JWTPayload, relations?: string[]) {
+        const { id, userId } = data;
+        return await User.findOne({
+            where: { ...(id && { identityId: id }), ...(userId && { id: userId }) },
+            ...(relations && { relations }),
+        });
+    }
+
     public transferReward = async (type: RewardType): Promise<any> => {
         const user = this;
         const wallet = await Wallet.findOne({ where: { user } });
@@ -279,7 +295,10 @@ export class User extends BaseEntity {
         };
     }
 
-    public static async getUser(id: string, graphqlQuery: FieldNode | undefined): Promise<User | undefined> {
+    public static async getUser(
+        data: { identityId: string; userId: string },
+        graphqlQuery: FieldNode | undefined
+    ): Promise<User | undefined> {
         let query = this.createQueryBuilder("user");
         if (graphqlQuery) {
             const fieldNodes = graphqlQuery.selectionSet?.selections.filter((node) => node.kind === "Field") || [];
@@ -381,7 +400,8 @@ export class User extends BaseEntity {
             if (loadOrders) query = query.leftJoinAndSelect("user.orders", "orders", 'orders."userId" = user.id');
         }
         query = query.leftJoinAndSelect("user.profile", "profile", 'profile."userId" = user.id');
-        query = query.where("user.id = :id", { id });
+        query = query.where("user.id = :id", { id: data.userId });
+        query = query.orWhere("user.identityId = :identityId", { identityId: data.identityId });
         return query.getOne();
     }
 }

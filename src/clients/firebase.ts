@@ -2,7 +2,7 @@ import BigNumber from "bignumber.js";
 import * as admin from "firebase-admin";
 import { Campaign } from "../models/Campaign";
 import { Secrets } from "../util/secrets";
-import { paginateList } from "../util/helpers";
+import { paginateList } from "../util";
 import { RequestData, doFetch } from "../util/fetchRequest";
 
 interface FirebaseUserLoginResponse {
@@ -39,12 +39,7 @@ export class Firebase {
             query: { key: process.env.FIREBASE_API_KEY },
         };
         const response = await doFetch(requestData);
-        if (response.status !== 200) {
-            const error = await response.json();
-            console.log("FIREBASE_CLIENT_ERROR", error);
-            throw new Error(error?.message || "There was an error from firebase");
-        }
-        return await response.json();
+        return response.data;
     }
 
     public static async sendGenericNotification(tokens: string[], title: string, body: string) {

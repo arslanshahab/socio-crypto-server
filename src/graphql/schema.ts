@@ -28,6 +28,7 @@ export const typeDefs = gql`
             rafflePrize: JSON
             campaignMedia: JSON
             campaignTemplates: JSON
+            isGlobal: Boolean
         ): CampaignCreationResponse
         updateCampaign(
             id: String
@@ -74,6 +75,13 @@ export const typeDefs = gql`
             defaultMedia: Boolean
             mediaId: String
         ): String
+        postContentGlobally(
+            socialType: String!
+            text: String!
+            mediaType: String
+            mediaFormat: String
+            media: String
+        ): SuccessResponse
         setDevice(deviceToken: String!): Boolean
         registerFactorLink(factor: JSON): User
         updateUsername(username: String!): User
@@ -140,6 +148,7 @@ export const typeDefs = gql`
             verificationToken: String!
         ): SuccessResponse
         updateUserPassword(oldPassword: String!, newPassword: String!): SuccessResponse
+        registerTiktokSocialLink(code: String!): SuccessResponse
     }
 
     type Query {
@@ -194,7 +203,7 @@ export const typeDefs = gql`
         verifySession: JSON
         getFundingWallet: FundingWallet
         listOrgs(skip: Int, take: Int): [Org]
-        getOrgDetails(orgId: String): [OrgDetail]
+        getOrgDetails: [OrgDetail]
         listEmployees: [Employee]
         listPaymentMethods: [PaymentMethod]
         listPendingCampaigns(skip: Int, take: Int): PaginatedCampaignResults
@@ -206,7 +215,29 @@ export const typeDefs = gql`
         getRedemptionRequirements: RedemptionRequirements
         getUserBalances(userId: String): [UserBalance]
         getTransferHistory(symbol: String, skip: Int, take: Int): PaginatedTransferHistory
+        listAllCampaignsForOrg: [UserAllCampaigns]
+        # downloadKyc(kycId: String!): [Factor]
         downloadKyc: KycApplicationResponse
+        getDashboardMetrics(campaignId: String, skip: Int, take: Int): DashboardMetrics
+    }
+
+    type DashboardMetrics {
+        aggregatedCampaignMetrics: AggregatedCampaignMetrics
+        campaignMetrics: [CampaignsMetrics]
+    }
+    type AggregatedCampaignMetrics {
+        campaign_name: String
+        clickCount: Int
+        viewCount: Int
+        shareCount: Int
+        participationScore: Int
+        totalParticipants: Int
+    }
+    type CampaignsMetrics {
+        clickCount: Int
+        viewCount: Int
+        shareCount: Int
+        participationScore: Int
     }
 
     enum VerificationType {
@@ -346,10 +377,11 @@ export const typeDefs = gql`
     }
 
     type Org {
+        id: String
         name: String
+        stripeId: String
         createdAt: String
-        campaignCount: Int
-        adminCount: Int
+        updatedAt: String
     }
     type OrgDetail {
         name: String
@@ -429,6 +461,12 @@ export const typeDefs = gql`
         participantCount: Int
         discoveryCount: Int
         conversionCount: Int
+    }
+
+    "Get All Campaigns of User"
+    type UserAllCampaigns {
+        id: ID
+        name: String
     }
 
     type AdminHourlyCampaignMetrics {
