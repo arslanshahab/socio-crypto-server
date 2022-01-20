@@ -205,7 +205,6 @@ export const typeDefs = gql`
         listOrgs(skip: Int, take: Int): [Org]
         listEmployees: EmployeeOrganization
         getOrgDetails: [OrgDetail]
-        # listEmployees: [Employee]
         listPaymentMethods: [PaymentMethod]
         listPendingCampaigns(skip: Int, take: Int): PaginatedCampaignResults
         listSupportedCrypto: [CryptoCurrency]
