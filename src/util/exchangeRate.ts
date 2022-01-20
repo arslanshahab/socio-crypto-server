@@ -27,6 +27,7 @@ export const getExchangeRateForCurrency = async (symbol: string) => {
 };
 
 export const getExchangeRateForCrypto = async (symbol: string) => {
+    symbol = symbol.toLowerCase();
     const cacheKey = "exchangeRatesForCrypto";
     let cachedResponse = await getRedis().get(cacheKey);
     if (cachedResponse) {

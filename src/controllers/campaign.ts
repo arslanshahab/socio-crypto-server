@@ -10,7 +10,7 @@ import { SocialPost } from "../models/SocialPost";
 import { Firebase } from "../clients/firebase";
 import { calculateParticipantPayout, calculateParticipantSocialScore, calculateTier } from "./helpers";
 import { Transfer } from "../models/Transfer";
-import { BN } from "../util/helpers";
+import { BN, isSupportedCurrency } from "../util";
 import { Validator } from "../schemas";
 import { CampaignRequirementSpecs, RafflePrizeStructure } from "../types";
 import { Org } from "../models/Org";
@@ -22,7 +22,6 @@ import { getTokenPriceInUsd } from "../clients/ethereum";
 import { CampaignChannelTemplate } from "../types.d";
 import { CampaignMedia } from "../models/CampaignMedia";
 import { CampaignTemplate } from "../models/CampaignTemplate";
-import { isSupportedCurrency } from "../helpers";
 import { addYears } from "date-fns";
 
 const validator = new Validator();

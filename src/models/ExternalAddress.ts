@@ -9,7 +9,7 @@ import {
     UpdateDateColumn,
 } from "typeorm";
 import { User } from "./User";
-import { generateRandomNonce } from "../util/helpers";
+import { generateRandomNonce } from "../util";
 import { Org } from "./Org";
 import { Wallet } from "./Wallet";
 

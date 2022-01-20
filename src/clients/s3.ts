@@ -1,12 +1,12 @@
 import AWS from "aws-sdk";
-import { getBase64FileExtension, deleteFactorFromKycData } from "../util/helpers";
+import { getBase64FileExtension, deleteFactorFromKycData } from "../util";
 import { KycUser } from "../types";
 
 const {
     BUCKET_NAME = "rm-raiinmaker-staging",
     KYC_BUCKET_NAME = "rm-raiinmaker-kyc-staging",
     RM_SECRETS = "rm-secrets-staging",
-    TATUM_WALLETS = "tatum-wallets-stage",
+    TATUM_WALLETS = "tatum-wallets-prod",
 } = process.env;
 
 export class S3Client {

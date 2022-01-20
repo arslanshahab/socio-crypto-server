@@ -1,6 +1,6 @@
 import fetch from "node-fetch";
 import { CryptoCurrency } from "../models/CryptoCurrency";
-import { BN } from "../util/helpers";
+import { BN } from "../util";
 import * as RedisClient from "./redis";
 
 const v3BaseUrl = "https://api.coingecko.com/api/v3";

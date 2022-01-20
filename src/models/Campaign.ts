@@ -16,7 +16,6 @@ import { SocialPost } from "./SocialPost";
 import { Transfer } from "./Transfer";
 import { StringifiedArrayTransformer, BigNumberEntityTransformer, AlgorithmTransformer } from "../util/transformers";
 import { BigNumber } from "bignumber.js";
-import { BN } from "../util/helpers";
 import { DailyParticipantMetric } from "./DailyParticipantMetric";
 import { getDatesBetweenDates, formatUTCDateForComparision } from "../controllers/helpers";
 import { User } from "./User";
@@ -31,7 +30,7 @@ import { TatumClient, CAMPAIGN_CREATION_AMOUNT } from "../clients/tatumClient";
 import { WalletCurrency } from "./WalletCurrency";
 import { Wallet } from "./Wallet";
 import { Currency } from "./Currency";
-import { getCryptoAssestImageUrl } from "../helpers";
+import { getCryptoAssestImageUrl, BN } from "../util";
 import { initDateFromParams } from "../util/date";
 
 @Entity()

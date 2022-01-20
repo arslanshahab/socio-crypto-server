@@ -1,6 +1,6 @@
 import { StripeAPI } from "../clients/stripe";
 import { Org } from "../models/Org";
-import { asyncHandler, BN, USD_PER_COIIN } from "../util/helpers";
+import { asyncHandler, BN, USD_PER_COIIN } from "../util";
 import { Request, Response } from "express";
 import { Secrets } from "../util/secrets";
 import { Transfer } from "../models/Transfer";
