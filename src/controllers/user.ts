@@ -58,7 +58,7 @@ export const participate = async (
         return participant;
     } catch (e) {
         console.log(e);
-        throw new Error("There was an error participating in a campaign.");
+        throw new Error(e.message);
     }
 };
 

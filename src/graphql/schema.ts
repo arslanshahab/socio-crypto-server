@@ -219,6 +219,7 @@ export const typeDefs = gql`
         downloadKyc: KycApplicationResponse
         getDashboardMetrics(campaignId: String, skip: Int, take: Int): DashboardMetrics
     }
+
     type DashboardMetrics {
         aggregatedCampaignMetrics: AggregatedCampaignMetrics
         campaignMetrics: [CampaignsMetrics]
