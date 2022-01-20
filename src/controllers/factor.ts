@@ -136,7 +136,7 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
         }
     }
     await user.updateLastLogin();
-    const jwtPayload: JWTPayload = { id: identityId, userId: user.id, email: user.email };
+    const jwtPayload: JWTPayload = { id: identityId, userId: user.id, email: user.email, role: "admin" };
     const token = jwt.sign(jwtPayload, Secrets.encryptionKey, {
         expiresIn: "7d",
         audience: serverBaseUrl,

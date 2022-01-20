@@ -6,6 +6,7 @@ interface JWTPayload {
     email: string;
     userId: string;
     id: string;
+    role: string;
 }
 
 export interface XoxodayVoucher {
