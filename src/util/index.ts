@@ -393,6 +393,7 @@ export const createSessionToken = (user: User): string => {
         email: user.email,
         id: user.identityId,
         userId: user.id,
+        role: "admin",
     };
     return jwt.sign(payload, Secrets.encryptionKey, { expiresIn: "7d", audience: serverBaseUrl });
 };
