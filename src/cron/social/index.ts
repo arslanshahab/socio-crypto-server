@@ -101,7 +101,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                             postsToSave.push(updatedPost);
                         }
                         if (socialLink?.type === "tiktok") {
-                            const postDetails = (await TikTokClient.tiktokVideoList(socialLink, [post.id]))[0];
+                            const postDetails = (await TikTokClient.getPosts(socialLink, [post.id]))[0];
                             const likeCount = postDetails.like_count;
                             const shareCount = postDetails.share_count;
                             const updatedPost = await updatePostMetrics(

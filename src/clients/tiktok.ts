@@ -2,13 +2,41 @@ import { Participant } from "../models/Participant";
 import FormData from "form-data";
 import fs from "fs";
 import { doFetch, RequestData } from "../util/fetchRequest";
-import { Secrets } from "../util/secrets";
 import { SocialLink } from "../models/SocialLink";
+import { Secrets } from "../util/secrets";
+import { TiktokLinkCredentials } from "src/types";
 
 // https://open-api.tiktok.com/platform/oauth/connect/?client_key=awtv37zowsh2ryq2&scope=user.info.basic,video.list&response_type=code&redirect_uri=https://raiinmaker.loca.lt/&state=1234567890
 
 export class TikTokClient {
     public static baseUrl = "https://open-api.tiktok.com";
+
+    public static fetchTokens = async (code: string) => {
+        const requestData: RequestData = {
+            url: `${TikTokClient.baseUrl}/oauth/access_token/`,
+            method: "post",
+            query: {
+                client_key: Secrets.tiktokClientKey,
+                client_secret: Secrets.tiktokClientSecret,
+                grant_type: "authorization_code",
+                code,
+            },
+        };
+        return await doFetch(requestData);
+    };
+
+    public static refetchTokens = async (refreshToken: string) => {
+        const requestData: RequestData = {
+            url: `${TikTokClient.baseUrl}/oauth/refresh_token/`,
+            method: "post",
+            query: {
+                client_key: Secrets.tiktokClientKey,
+                refresh_token: refreshToken,
+                grant_type: "refresh_token",
+            },
+        };
+        return await doFetch(requestData);
+    };
 
     public static post = async (
         participant: Participant,
@@ -30,7 +58,7 @@ export class TikTokClient {
             fs.writeFileSync(filePath, bitmap);
             const formData = new FormData();
             formData.append("video", fs.createReadStream(filePath));
-            const credentials = socialLink.getTiktokCreds();
+            const credentials = await TikTokClient.getTokens(socialLink);
             const requestData: RequestData = {
                 url: `${TikTokClient.baseUrl}/share/video/upload`,
                 method: "POST",
@@ -49,30 +77,16 @@ export class TikTokClient {
         }
     };
 
-    public static fetchTokens = async (code: string) => {
-        const requestData: RequestData = {
-            url: `${TikTokClient.baseUrl}/oauth/access_token/`,
-            method: "post",
-            query: {
-                client_key: Secrets.tiktokClientKey,
-                client_secret: Secrets.tiktokClientSecret,
-                grant_type: "authorization_code",
-                code,
-            },
-        };
-        return await doFetch(requestData);
-    };
-    public static tiktokVideoList = async (socialLink: SocialLink, id: any) => {
-        const access_token = "act.6267941353283a02ff835151f369db61JA1arzJUCay7gl5sCkITym1VlO2N";
-        const open_id = "a509c4e1-a862-43e3-9a3f-0f91b1389adc";
+    public static getPosts = async (socialLink: SocialLink, sharedIds: string[]) => {
+        const credentials = await TikTokClient.getTokens(socialLink);
         const requestData: RequestData = {
             url: `${TikTokClient.baseUrl}/video/query/`,
             method: "POST",
             payload: {
-                open_id: open_id,
-                access_token: access_token,
+                open_id: credentials.open_id,
+                access_token: credentials.access_token,
                 filters: {
-                    video_ids: id,
+                    video_ids: sharedIds,
                 },
                 fields: [
                     "embed_html",
@@ -86,25 +100,33 @@ export class TikTokClient {
             },
         };
         const videoQueryRes = await doFetch(requestData);
-        if (!videoQueryRes?.data?.videos) throw new Error("There was an error fetching tiktok data");
+        if (!videoQueryRes?.data?.videos) throw new Error("There was an error fetching videos from tiktok.");
         return videoQueryRes.data.videos;
     };
-    public static tiktokUserRecord = async (socialLink: SocialLink) => {
-        // const credentials = socialLink.getTiktokCreds();
-        const access_token = "act.6267941353283a02ff835151f369db61JA1arzJUCay7gl5sCkITym1VlO2N";
-        const open_id = "a509c4e1-a862-43e3-9a3f-0f91b1389adc";
+
+    public static getUserData = async (socialLink: SocialLink) => {
+        const credentials = await TikTokClient.getTokens(socialLink);
         const requestData: RequestData = {
             url: `${TikTokClient.baseUrl}/user/info/`,
             method: "POST",
             payload: {
-                open_id: open_id,
-                access_token: access_token,
+                open_id: credentials.open_id,
+                access_token: credentials.access_token,
                 fields: ["open_id", "union_id", "avatar_url", "display_name"],
             },
         };
-        const userInfoRes = await doFetch(requestData);
-        if (!userInfoRes || !userInfoRes.data) throw new Error("There was an error fetching tiktok data");
-        const tiktokUserInfo = userInfoRes.data.user;
-        return tiktokUserInfo;
+        const userInfo = await doFetch(requestData);
+        if (!userInfo || !userInfo.data) throw new Error("There was an error fetching user data from tiktok.");
+        return userInfo.data.user;
+    };
+
+    private static getTokens = async (socialLink: SocialLink): Promise<TiktokLinkCredentials> => {
+        let credentials = socialLink.getTiktokCreds();
+        if (credentials.expires_in.isLessThan(new Date().getTime())) {
+            const tokens = await TikTokClient.fetchTokens(credentials.refresh_token);
+            await SocialLink.addOrUpdateTiktokLink(socialLink.user, tokens.data);
+            credentials = socialLink.getTiktokCreds();
+        }
+        return credentials;
     };
 }

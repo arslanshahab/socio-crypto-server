@@ -84,7 +84,7 @@ export class SocialLink extends BaseEntity {
         return await socialLink.save();
     };
 
-    public static addTiktokLink = async (
+    public static addOrUpdateTiktokLink = async (
         user: User,
         tokens: {
             open_id: string;
