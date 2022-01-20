@@ -4,8 +4,6 @@ import fs from "fs";
 import { doFetch, RequestData } from "../util/fetchRequest";
 import { Secrets } from "../util/secrets";
 import { SocialLink } from "../models/SocialLink";
-// import { SocialPost } from "../models/SocialPost";
-// import { User } from "../models/User";
 
 // https://open-api.tiktok.com/platform/oauth/connect/?client_key=awtv37zowsh2ryq2&scope=user.info.basic,video.list&response_type=code&redirect_uri=https://raiinmaker.loca.lt/&state=1234567890
 
@@ -65,7 +63,7 @@ export class TikTokClient {
         return await doFetch(requestData);
     };
     public static tiktokVideoList = async (socialLink: SocialLink, id: any) => {
-        const access_token = "act.9e35974121c0ae8476e7ade096b4aa3fRJnRjfIGVhbinqt3e2NaaAXhtNyM";
+        const access_token = "act.6267941353283a02ff835151f369db61JA1arzJUCay7gl5sCkITym1VlO2N";
         const open_id = "a509c4e1-a862-43e3-9a3f-0f91b1389adc";
         const requestData: RequestData = {
             url: `${TikTokClient.baseUrl}/video/query/`,
@@ -93,7 +91,7 @@ export class TikTokClient {
     };
     public static tiktokUserRecord = async (socialLink: SocialLink) => {
         // const credentials = socialLink.getTiktokCreds();
-        const access_token = "act.9e35974121c0ae8476e7ade096b4aa3fRJnRjfIGVhbinqt3e2NaaAXhtNyM";
+        const access_token = "act.6267941353283a02ff835151f369db61JA1arzJUCay7gl5sCkITym1VlO2N";
         const open_id = "a509c4e1-a862-43e3-9a3f-0f91b1389adc";
         const requestData: RequestData = {
             url: `${TikTokClient.baseUrl}/user/info/`,
