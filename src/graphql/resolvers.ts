@@ -100,7 +100,6 @@ export const adminResolvers = {
         getCurrentCampaignTier: campaignController.getCurrentCampaignTier,
         getExternalAddress: externalWallet.get,
         listCampaigns: campaignController.listCampaigns,
-        listAuditCampaigns: campaignController.listAuditCampaigns,
         listExternalAddresses: externalWallet.list,
         getCampaignMetrics: campaignController.adminGetCampaignMetrics,
         getWithdrawalsV2: withdrawController.getWithdrawalsV2,
