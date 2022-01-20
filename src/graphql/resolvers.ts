@@ -110,6 +110,7 @@ export const adminResolvers = {
         getFundingWallet: fundingController.get,
         verifySession: authenticationController.getUserRole,
         listOrgs: orgController.listOrgs,
+        getOrgDetails: orgController.getOrgDetails,
         listEmployees: orgController.listEmployees,
         listPaymentMethods: stripeController.listPaymentMethods,
         listPendingCampaigns: campaignController.adminListPendingCampaigns,

@@ -203,6 +203,7 @@ export const typeDefs = gql`
         verifySession: JSON
         getFundingWallet: FundingWallet
         listOrgs(skip: Int, take: Int): [Org]
+        getOrgDetails: [OrgDetail]
         listEmployees: [Employee]
         listPaymentMethods: [PaymentMethod]
         listPendingCampaigns(skip: Int, take: Int): PaginatedCampaignResults
@@ -376,6 +377,13 @@ export const typeDefs = gql`
     }
 
     type Org {
+        id: String
+        name: String
+        stripeId: String
+        createdAt: String
+        updatedAt: String
+    }
+    type OrgDetail {
         name: String
         createdAt: String
         campaignCount: Int
