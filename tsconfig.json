@@ -30,7 +30,7 @@
             "models": ["models/*"],
             "clients": ["clients/*"]
         },
-        "lib": ["ES2020.Promise"]
+        "lib": ["ES2020.Promise", "es2019", "DOM", "ES6", "DOM.Iterable", "ScriptHost"]
     },
     "include": ["src/*", "src/**/*"],
     "exclude": ["node_modules/**"],

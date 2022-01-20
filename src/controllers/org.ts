@@ -34,6 +34,12 @@ export const newOrg = async (
     await SesClient.sendNewOrgConfirmationEmail(orgName, email, password);
     return org;
 };
+export const listOrgs = async (parent: any, args: { skip: number; take: number }, context: { user: any }) => {
+    if (context.user.company !== "raiinmaker") throw new Error("forbidden");
+    const { skip = 0, take = 10 } = args;
+    const orgs = await Org.listOrgs(skip, take);
+    return orgs.map((org) => org.asV1());
+};
 
 export const getHourlyOrgMetrics = async (parent: any, args: any, context: { user: any }) => {
     const { company } = checkPermissions({ hasRole: ["admin"] }, context);
@@ -42,11 +48,9 @@ export const getHourlyOrgMetrics = async (parent: any, args: any, context: { use
     return await HourlyCampaignMetric.getSortedByOrgId(org.id);
 };
 
-export const listOrgs = async (parent: any, args: { skip: number; take: number }, context: { user: any }) => {
-    if (context.user.company !== "raiinmaker") throw new Error("forbidden");
-    const { skip = 0, take = 10 } = args;
-    const orgs = await Org.listOrgs(skip, take);
-    return orgs.map((org) => org.asV1());
+export const getOrgDetails = async (parent: any, args: any, context: { user: any }) => {
+    const orgDetail = await Org.orgDetails();
+    return orgDetail;
 };
 
 export const newUser = async (

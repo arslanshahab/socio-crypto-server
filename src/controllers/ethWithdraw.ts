@@ -1,5 +1,5 @@
 import Web3 from "web3";
-import { BN, USD_PER_COIIN } from "../util/helpers";
+import { BN, USD_PER_COIIN } from "../util";
 import abi from "../abi.json";
 import { getEthPriceInUSD, getTokenPriceInUsd } from "../clients/ethereum";
 import { AbiItem } from "web3-utils";

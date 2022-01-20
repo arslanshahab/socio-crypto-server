@@ -32,6 +32,9 @@ export class Currency extends BaseEntity {
     @Column({ nullable: true })
     public destinationTag: number;
 
+    @Column({ nullable: true })
+    public derivationKey: number;
+
     @ManyToOne((_type) => Wallet, (wallet) => wallet.currency)
     public wallet: Currency;
 
@@ -56,6 +59,7 @@ export class Currency extends BaseEntity {
         if (data.memo) account.memo = data.memo;
         if (data.message) account.message = data.message;
         if (data.destinationTag) account.destinationTag = data.destinationTag;
+        if (data.derivationKey) account.derivationKey = data.derivationKey;
         return await Currency.save(account);
     }
 }

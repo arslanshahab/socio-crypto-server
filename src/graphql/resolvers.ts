@@ -88,6 +88,8 @@ export const resolvers = {
         startEmailVerification: userController.startEmailVerification,
         completeEmailVerification: userController.completeEmailVerification,
         updateUserPassword: userController.updateUserPassword,
+        registerTiktokSocialLink: socialController.registerTiktokSocialLink,
+        postContentGlobally: socialController.postContentGlobally,
     },
 };
 
@@ -108,6 +110,7 @@ export const adminResolvers = {
         getFundingWallet: fundingController.get,
         verifySession: authenticationController.getUserRole,
         listOrgs: orgController.listOrgs,
+        getOrgDetails: orgController.getOrgDetails,
         listEmployees: orgController.listEmployees,
         listPaymentMethods: stripeController.listPaymentMethods,
         listPendingCampaigns: campaignController.adminListPendingCampaigns,
@@ -115,6 +118,8 @@ export const adminResolvers = {
         checkCoinGecko: cryptoController.coinGeckoCheck,
         getDepositAddressForSymbol: tatumController.getDepositAddress,
         getSupportedCurrencies: tatumController.getSupportedCurrencies,
+        listAllCampaignsForOrg: campaignController.listAllCampaignsForOrg,
+        getDashboardMetrics: campaignController.getDashboardMetrics,
     },
     Mutation: {
         newOrg: orgController.newOrg,

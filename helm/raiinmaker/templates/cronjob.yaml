@@ -68,6 +68,9 @@ spec:
                 - name: acuant
                   mountPath: "/var/secrets/acuant"
                   readOnly: true
+                - name: tiktok
+                  mountPath: "/var/secrets/tiktok"
+                  readOnly: true
               resources:
                 requests:
                   memory: "128Mi"
@@ -116,6 +119,9 @@ spec:
             - name: acuant
               secret:
                 secretName: acuant
+            - name: tiktok
+              secret:
+                secretName: tiktok
 ---
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -187,6 +193,9 @@ spec:
                 - name: acuant
                   mountPath: "/var/secrets/acuant"
                   readOnly: true
+                - name: tiktok
+                  mountPath: "/var/secrets/tiktok"
+                  readOnly: true
               resources:
                 requests:
                   memory: "128Mi"
@@ -235,6 +244,9 @@ spec:
             - name: acuant
               secret:
                 secretName: acuant
+            - name: tiktok
+              secret:
+                secretName: tiktok
 ---
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -309,6 +321,9 @@ spec:
                 - name: acuant
                   mountPath: "/var/secrets/acuant"
                   readOnly: true
+                - name: tiktok
+                  mountPath: "/var/secrets/tiktok"
+                  readOnly: true
               resources:
                 requests:
                   memory: "128Mi"
@@ -357,6 +372,9 @@ spec:
             - name: acuant
               secret:
                 secretName: acuant
+            - name: tiktok
+              secret:
+                secretName: tiktok
 ---
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -431,6 +449,9 @@ spec:
                 - name: acuant
                   mountPath: "/var/secrets/acuant"
                   readOnly: true
+                - name: tiktok
+                  mountPath: "/var/secrets/tiktok"
+                  readOnly: true
               resources:
                 requests:
                   memory: "128Mi"
@@ -479,6 +500,9 @@ spec:
             - name: acuant
               secret:
                 secretName: acuant
+            - name: tiktok
+              secret:
+                secretName: tiktok
 ---
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -553,6 +577,9 @@ spec:
                 - name: acuant
                   mountPath: "/var/secrets/acuant"
                   readOnly: true
+                - name: tiktok
+                  mountPath: "/var/secrets/tiktok"
+                  readOnly: true
               resources:
                 requests:
                   memory: "128Mi"
@@ -601,3 +628,6 @@ spec:
             - name: acuant
               secret:
                 secretName: acuant
+            - name: tiktok
+              secret:
+                secretName: tiktok
