@@ -199,9 +199,10 @@ export const withdrawFunds = async (
         const userCurrency = await Currency.findOne({ where: { wallet: user.wallet, symbol } });
         if (!userCurrency) throw new Error(`User wallet not found for currency ${symbol}`);
         const userAccountBalance = await TatumClient.getAccountBalance(userCurrency.tatumId);
+        if (parseFloat(userAccountBalance.availableBalance) < amount)
+            throw new Error(`Not enough funds in user account`);
         const tatumWallet = await TatumWallet.findOne({ where: { currency: symbol } });
         if (!tatumWallet || !userCurrency) throw new Error("Tatum wallet not found for provided sender account.");
-
         const { withdrawAbleAmount, fee } = await adjustWithdrawableAmount({
             senderAccountId: userCurrency.tatumId,
             toAddress: address,
@@ -209,16 +210,13 @@ export const withdrawFunds = async (
             tatumWallet,
             currency: userCurrency,
         });
-
-        if (parseFloat(userAccountBalance.availableBalance) < amount)
-            throw new Error(`Not enough funds in user account`);
         const payload: WithdrawDetails = {
             senderAccountId: userCurrency.tatumId,
             paymentId: `${USER_WITHDRAW}:${user.id}`,
             senderNote: RAIINMAKER_WITHDRAW,
             address,
             amount: withdrawAbleAmount,
-            index: userCurrency.derivationKey,
+            ...(userCurrency.derivationKey && { index: 2 }),
             fee,
         };
         await TatumClient.withdrawFundsToBlockchain(symbol, payload);

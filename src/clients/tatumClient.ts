@@ -33,7 +33,7 @@ export interface WithdrawDetails {
     paymentId: string;
     senderNote: string;
     fee?: string;
-    index: number;
+    index?: number;
 }
 
 export interface FeeCalculationParams {

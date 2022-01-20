@@ -33,11 +33,11 @@ const XRP_DEFAULT_WITHDRAW_FEE = 10;
 // const DOGE_DEFAULT_WITHDRAW_FEE = 5;
 // const LTC_DEFAULT_WITHDRAW_FEE = 0.001;
 
-const fixDecimals = (num: any) => {
+const fixDecimalsForTatum = (num: any) => {
     if (typeof num === "string") {
         num = parseFloat(num);
     }
-    return num.toFixed(11);
+    return num.toFixed(8);
 };
 
 export const symbolToChain: { [key: string]: string } = {
@@ -161,7 +161,7 @@ export const offchainEstimateFee = async (data: FeeCalculationParams): Promise<n
         case "BTC":
             return await estimateLedgerToBlockchainFee(data);
         case "ETH":
-            return await estimateWithdrawFee(data);
+            return await estimateETHWithdrawFee(data);
         case "XRP":
             return XRP_DEFAULT_WITHDRAW_FEE;
         case "XLM":
@@ -233,7 +233,7 @@ export const estimateLedgerToBlockchainFee = async (data: FeeCalculationParams) 
         headers: { "x-api-key": Secrets.tatumApiKey },
     };
     const resp = await doFetch(requestData);
-    return parseFloat(fixDecimals(resp.fast));
+    return parseFloat(fixDecimalsForTatum(resp.fast));
 };
 
 export const estimateWithdrawFee = async (data: FeeCalculationParams) => {
@@ -253,12 +253,33 @@ export const estimateWithdrawFee = async (data: FeeCalculationParams) => {
         headers: { "x-api-key": Secrets.tatumApiKey },
     };
     const resp = await doFetch(requestData);
+    console.log(resp);
     if (chain === "ETH" || chain === "BSC") {
-        feeAmount = (resp.gasLimit * resp.gasPrice) / 10 ** 10;
+        feeAmount = (resp.gasLimit * resp.gasPrice) / 1e10;
     } else {
         feeAmount = resp.fast;
     }
-    return parseFloat(fixDecimals(feeAmount));
+    return parseFloat(fixDecimalsForTatum(feeAmount));
+};
+
+export const estimateETHWithdrawFee = async (data: FeeCalculationParams) => {
+    const endpoint = `${TatumClient.baseUrl}/ethereum/gas`;
+    let feeAmount = 0;
+    const requestData: RequestData = {
+        method: "POST",
+        url: endpoint,
+        payload: {
+            amount: fixDecimalsForTatum(data.amount),
+            type: "TRANSFER_ERC20",
+            from: data.currency.depositAddress,
+            to: data.toAddress,
+        },
+        headers: { "x-api-key": Secrets.tatumApiKey },
+    };
+    const resp = await doFetch(requestData);
+    console.log(resp);
+    feeAmount = (25000 * resp.gasPrice) / 1e18;
+    return parseFloat(fixDecimalsForTatum(feeAmount));
 };
 
 export const findOrCreateCurrency = async (symbol: string, wallet: Wallet): Promise<Currency> => {
@@ -277,17 +298,16 @@ export const findOrCreateCurrency = async (symbol: string, wallet: Wallet): Prom
 
 export const adjustWithdrawableAmount = async (data: FeeCalculationParams): Promise<WithdrawFeeData> => {
     const chain = symbolToChain[data.currency.symbol];
-    let adjustedAmount = new BN(fixDecimals(data.amount));
+    let adjustedAmount = fixDecimalsForTatum(data.amount);
     let fee = await TatumClient.calculateWithdrawFee(data);
     if (chain === "ETH" && data.currency.symbol !== chain) {
+        console.log("mmmm mmm");
         fee = await getERC20ValueOfETH(data.currency.symbol, fee);
-        adjustedAmount = adjustedAmount.minus(fee);
-    } else {
-        adjustedAmount = adjustedAmount.minus(fee);
     }
+    adjustedAmount = adjustedAmount - fee;
     return {
-        withdrawAbleAmount: fixDecimals(adjustedAmount.toNumber()),
-        fee: fixDecimals(fee),
+        withdrawAbleAmount: fixDecimalsForTatum(adjustedAmount),
+        fee: fixDecimalsForTatum(fee),
     };
 };
 
