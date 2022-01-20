@@ -1,13 +1,14 @@
 import Twitter from "twitter";
 import logger from "../util/logger";
 import { Secrets } from "../util/secrets";
-import { SocialClientCredentials } from "../types";
 import { getRedis } from "./redis";
 import { extractVideoData, chunkVideo, sleep } from "../controllers/helpers";
 import { Participant } from "../models/Participant";
+import { SocialLink } from "../models/SocialLink";
+import { TwitterLinkCredentials } from "src/types";
 
 export class TwitterClient {
-    public static getClient(userCredentials: SocialClientCredentials): Twitter {
+    public static getClient(userCredentials: TwitterLinkCredentials): Twitter {
         return new Twitter({
             consumer_key: Secrets.twitterConsumerKey,
             consumer_secret: Secrets.twitterConsumerSecretKey,
@@ -82,7 +83,7 @@ export class TwitterClient {
 
     public static post = async (
         participant: Participant,
-        credentials: SocialClientCredentials,
+        socialLink: SocialLink,
         text: string,
         data?: string,
         mediaType?: "photo" | "video" | "gif",
@@ -93,7 +94,7 @@ export class TwitterClient {
             logger.debug(`posting tweet to twitter with text: ${text}`);
             if (text.length > 200) throw new Error("Text too long for twitter");
             const options: { [key: string]: string } = { status: text };
-            const client = TwitterClient.getClient(credentials);
+            const client = TwitterClient.getClient(socialLink.getTwitterCreds());
             if (data && mediaType && mediaFormat) {
                 options["media_ids"] =
                     mediaType === "photo"
@@ -108,28 +109,28 @@ export class TwitterClient {
         }
     };
 
-    public static getTotalFollowers = async (credentials: SocialClientCredentials, id: string, cached = true) => {
+    public static getTotalFollowers = async (socialLink: SocialLink, id: string, cached = true) => {
         logger.info(`getting follower count`);
         let cacheKey = `twitterFollowerCount:${id}`;
         if (cached) {
             const cachedResponse = await getRedis().get(cacheKey);
             if (cachedResponse) return cachedResponse;
         }
-        const client = TwitterClient.getClient(credentials);
+        const client = TwitterClient.getClient(socialLink.getTwitterCreds());
         const response = await client.get("/account/verify_credentials", { include_entities: false });
         const followerCount = response["followers_count"];
         await getRedis().set(cacheKey, JSON.stringify(followerCount), "EX", 900);
         return followerCount;
     };
 
-    public static get = async (credentials: SocialClientCredentials, id: string, cached = true): Promise<string> => {
+    public static get = async (socialLink: SocialLink, id: string, cached = true): Promise<string> => {
         logger.debug(`retrieving tweet with id: ${id}`);
         let cacheKey = `twitter:${id}`;
         if (cached) {
             const cachedResponse = await getRedis().get(cacheKey);
             if (cachedResponse) return cachedResponse;
         }
-        const client = TwitterClient.getClient(credentials);
+        const client = TwitterClient.getClient(socialLink.getTwitterCreds());
         const twitterResponse = await client.get("/statuses/show", { id });
         await getRedis().set(cacheKey, JSON.stringify(twitterResponse), "EX", 900); // cache for 15 minutes
         return JSON.stringify(twitterResponse);

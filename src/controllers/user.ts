@@ -3,43 +3,40 @@ import { Participant } from "../models/Participant";
 import { checkPermissions } from "../middleware/authentication";
 import { Firebase } from "../clients/firebase";
 import { User } from "../models/User";
-import { TinyUrl } from "../clients/tinyUrl";
 import { S3Client } from "../clients/s3";
-import { sha256Hash } from "../util/crypto";
+import { decrypt, sha256Hash } from "../util/crypto";
 import { GraphQLResolveInfo } from "graphql";
 import { Profile } from "../models/Profile";
 import { DailyParticipantMetric } from "../models/DailyParticipantMetric";
 import { groupDailyMetricsByUser } from "./helpers";
 import { HourlyCampaignMetric } from "../models/HourlyCampaignMetric";
-import { serverBaseUrl } from "../config";
 import { In } from "typeorm";
 import {
     createPasswordHash,
-    findOrCreateCurrency,
     getCryptoAssestImageUrl,
     getMinWithdrawableAmount,
     getUSDValueForCurrency,
-} from "../helpers";
+    formatFloat,
+} from "../util";
 import { TatumClient } from "../clients/tatumClient";
 import { WalletCurrency } from "../models/WalletCurrency";
 import { Wallet } from "../models/Wallet";
 import { Currency } from "../models/Currency";
 import { flatten } from "lodash";
 import { Verification } from "../models/Verification";
-import { formatFloat } from "../util/helpers";
 import { SesClient } from "../clients/ses";
 import { USER_NOT_FOUND, INCORRECT_PASSWORD, FormattedError, SAME_OLD_AND_NEW_PASSWORD } from "../util/errors";
 import { addDays, endOfISOWeek, startOfDay } from "date-fns";
 import { Transfer } from "../models/Transfer";
+import { findOrCreateCurrency } from "../util/tatumHelper";
 
-export const participate = async (parent: any, args: { campaignId: string; email: string }, context: { user: any }) => {
+export const participate = async (
+    parent: any,
+    args: { campaignId: string; email: string },
+    context: { user: any }
+): Promise<Participant> => {
     try {
-        const { id, userId } = context.user;
-        const user = await User.findOne({
-            where: [{ identityId: id }, { id: userId }],
-            relations: ["campaigns", "wallet"],
-        });
-
+        const user = await User.findUserByContext(context.user, ["campaigns", "wallet"]);
         if (!user) throw new Error("user not found");
         const campaign = await Campaign.findOne({
             where: { id: args.campaignId },
@@ -56,17 +53,12 @@ export const participate = async (parent: any, args: { campaignId: string; email
         if (await TatumClient.isCurrencySupported(campaign.symbol)) {
             await findOrCreateCurrency(campaign.symbol, user.wallet);
         }
-        const participant = Participant.newParticipant(user, campaign, args.email);
-        await participant.save();
-        const url = `${serverBaseUrl}/v1/referral/${participant.id}`;
-        participant.link = await TinyUrl.shorten(url);
-        await HourlyCampaignMetric.upsert(campaign, campaign.org, "participate");
-        await participant.save();
-        await user.transferReward("PARTICIPATION_REWARD");
-        return participant.asV1();
+        const participant = Participant.createNewParticipant(user, campaign, args.email);
+        if (!campaign.isGlobal) await user.transferReward("PARTICIPATION_REWARD");
+        return participant;
     } catch (e) {
         console.log(e);
-        return null;
+        throw new Error(e.message);
     }
 };
 
@@ -100,11 +92,7 @@ export const promotePermissions = async (
 };
 
 export const removeParticipation = async (parent: any, args: { campaignId: string }, context: { user: any }) => {
-    const { id, userId } = context.user;
-    const user = await User.findOne({
-        where: [{ identityId: id }, { id: userId }],
-        relations: ["campaigns", "wallet"],
-    });
+    const user = await await User.findUserByContext(context.user, ["campaigns", "wallet"]);
     if (!user) throw new Error("user not found");
     const campaign = await Campaign.findOne({
         where: { id: args.campaignId },
@@ -159,8 +147,7 @@ export const list = async (parent: any, args: { skip: number; take: number }, co
 
 export const setDevice = async (parent: any, args: { deviceToken: string }, context: { user: any }) => {
     const { deviceToken } = args;
-    const { id, userId } = context.user;
-    const user = await User.findOne({ where: [{ identityId: id }, { id: userId }] });
+    const user = await User.findUserByContext(context.user);
     if (!user) throw new Error("User not found");
     user.profile.deviceToken = deviceToken;
     await user.profile.save();
@@ -168,8 +155,7 @@ export const setDevice = async (parent: any, args: { deviceToken: string }, cont
 };
 
 export const updateUsername = async (parent: any, args: { username: string }, context: { user: any }) => {
-    const { id, userId } = context.user;
-    const user = await User.findOne({ where: [{ identityId: id }, { id: userId }] });
+    const user = await User.findUserByContext(context.user);
     if (!user) throw new Error("User not found");
     if (await Profile.findOne({ where: { username: args.username } }))
         throw new Error("username is already registered");
@@ -179,11 +165,7 @@ export const updateUsername = async (parent: any, args: { username: string }, co
 };
 
 export const setRecoveryCode = async (parent: any, args: { code: number }, context: { user: any }) => {
-    const { id, userId } = context.user;
-    const user = await User.findOne({
-        where: [{ identityId: id }, { id: userId }],
-        relations: ["profile"],
-    });
+    const user = await User.findUserByContext(context.user, ["profile"]);
     if (!user) throw new Error("user not found");
     user.profile.recoveryCode = sha256Hash(args.code.toString());
     await user.profile.save();
@@ -202,9 +184,8 @@ export const updateProfileInterests = async (
     },
     context: { user: any }
 ) => {
-    const { id, userId } = context.user;
     const { ageRange, city, state, interests, values, country } = args;
-    const user = await User.findOne({ where: [{ identityId: id }, { id: userId }] });
+    const user = await User.findUserByContext(context.user);
     if (!user) throw new Error("user not found");
     const profile = user.profile;
     if (ageRange) profile.ageRange = ageRange;
@@ -229,12 +210,8 @@ export const removeProfileInterests = async (
     },
     context: { user: any }
 ) => {
-    const { id, userId } = context.user;
     const { interest, value, ageRange, city, state, country } = args;
-    const user = await User.findOne({
-        where: [{ identityId: id }, { id: userId }],
-        relations: ["profile"],
-    });
+    const user = await User.findUserByContext(context.user, ["profile"]);
     if (!user) throw new Error("user not found");
     const profile = await Profile.findOne({ where: { user } });
     if (!profile) throw new Error("profile not found");
@@ -255,16 +232,14 @@ export const removeProfileInterests = async (
 };
 
 export const getUserMetrics = async (parent: any, args: { today: boolean }, context: { user: any }) => {
-    const { id, userId } = context.user;
     const { today = false } = args;
-    const user = await User.findOne({ where: [{ identityId: id }, { id: userId }] });
+    const user = await User.findUserByContext(context.user);
     if (!user) throw new Error("user not found");
     return (await DailyParticipantMetric.getSortedByUser(user, today)).map((metric) => metric.asV1());
 };
 
 export const getUserParticipationKeywords = async (parent: any, args: { id: string }, context: { user: any }) => {
-    const { id, userId } = context.user;
-    const user = await User.findOne({ where: [{ identityId: id }, { id: userId }] });
+    const user = await User.findUserByContext(context.user);
     if (!user) throw new Error("user not found");
     const participations = await Participant.find({
         where: { user: user },
@@ -279,12 +254,8 @@ export const getUserParticipationKeywords = async (parent: any, args: { id: stri
 };
 
 export const getPreviousDayMetrics = async (_parent: any, args: any, context: { user: any }) => {
-    const { id, userId } = context.user;
     let metrics: { [key: string]: any } = {};
-    const user = await User.findOne({
-        where: [{ identityId: id }, { id: userId }],
-        relations: ["campaigns", "campaigns.campaign"],
-    });
+    const user = await User.findUserByContext(context.user, ["campaigns", "campaigns.campaign"]);
     if (!user) throw new Error("user not found");
     if (user.campaigns.length > 0) {
         for (let i = 0; i < user.campaigns.length; i++) {
@@ -311,12 +282,8 @@ export const updateNotificationSettings = async (
     },
     context: { user: any }
 ) => {
-    const { id, userId } = context.user;
     const { kyc, withdraw, campaignCreate, campaignUpdates } = args;
-    const user = await User.findOne({
-        where: [{ identityId: id }, { id: userId }],
-        relations: ["notificationSettings"],
-    });
+    const user = await User.findUserByContext(context.user, ["notificationSettings"]);
     if (!user) throw new Error("user not found");
     const notificationSettings = user.notificationSettings;
     if (kyc !== null && kyc !== undefined) notificationSettings.kyc = kyc;
@@ -348,9 +315,8 @@ export const sendUserMessages = async (
 };
 
 export const uploadProfilePicture = async (parent: any, args: { image: string }, context: { user: any }) => {
-    const { id, userId } = context.user;
     const { image } = args;
-    const user = await User.findOne({ where: [{ identityId: id }, { id: userId }] });
+    const user = await await User.findUserByContext(context.user);
     if (!user) throw new Error("user not found");
     const filename = await S3Client.uploadProfilePicture("profilePicture", user.id, image);
     user.profile.profilePicture = filename;
@@ -359,11 +325,7 @@ export const uploadProfilePicture = async (parent: any, args: { image: string },
 };
 
 export const getWalletBalances = async (parent: any, args: any, context: { user: any }) => {
-    const { id, userId } = context.user;
-    const user = await User.findOne({
-        where: [{ identityId: id }, { id: userId }],
-        relations: ["wallet"],
-    });
+    const user = await User.findUserByContext(context.user, ["wallet"]);
     if (!user) throw new Error("user not found");
     const coiinCurrency = await WalletCurrency.findOne({
         where: { wallet: await Wallet.findOne({ where: { user: user } }), type: "coiin" },
@@ -372,7 +334,7 @@ export const getWalletBalances = async (parent: any, args: any, context: { user:
     const balances = await TatumClient.getBalanceForAccountList(currencies);
     let allCurrencies = currencies.map(async (currencyItem) => {
         const balance = balances.find((balanceItem) => currencyItem.tatumId === balanceItem.tatumId);
-        const minWithdrawAmount = await getMinWithdrawableAmount(currencyItem.symbol.toLowerCase());
+        const minWithdrawAmount = await getMinWithdrawableAmount(currencyItem.symbol);
         return {
             balance: formatFloat(balance.availableBalance),
             symbol: currencyItem.symbol,
@@ -401,8 +363,7 @@ export const updateUserPassword = async (
     context: { user: any }
 ) => {
     try {
-        const { id, userId } = context.user;
-        const user = await User.findOne({ where: [{ identityId: id }, { id: userId }] });
+        const user = await User.findUserByContext(context.user);
         if (!user) throw new Error(USER_NOT_FOUND);
         const { oldPassword, newPassword } = args;
         if (createPasswordHash({ email: user.email, password: oldPassword }) !== user.password)
@@ -422,13 +383,12 @@ export const updateUserPassword = async (
 
 export const startEmailVerification = async (parent: any, args: { email: string }, context: { user: any }) => {
     try {
-        const { id, userId } = context.user;
         const { email } = args;
-        const user = await User.findOne({ where: [{ identityId: id }, { id: userId }], relations: ["profile"] });
+        const user = await User.findUserByContext(context.user, ["profile"]);
         if (!user) throw new Error("user not found");
         if (!email) throw new Error("email not provided");
         if (user.profile.email === email) throw new Error("email already exists");
-        let verificationData = await Verification.findOne({ where: { email: email, user: user, verified: false } });
+        let verificationData = await Verification.findOne({ where: { email: email, verified: false } });
         if (!verificationData) {
             verificationData = await Verification.createVerification(email);
         }
@@ -438,10 +398,7 @@ export const startEmailVerification = async (parent: any, args: { email: string 
             message: "Email sent to provided email address",
         };
     } catch (error) {
-        return {
-            success: false,
-            message: error.message,
-        };
+        throw new FormattedError(error);
     }
 };
 
@@ -451,37 +408,28 @@ export const completeEmailVerification = async (
     context: { user: any }
 ) => {
     try {
-        const { id, userId } = context.user;
         const { email, token } = args;
-        const user = await User.findOne({ where: [{ identityId: id }, { id: userId }], relations: ["profile"] });
+        const user = await User.findUserByContext(context.user, ["profile"]);
         if (!user) throw new Error("user not found");
         if (!email || !token) throw new Error("email or token missing");
         if (user.profile.email === email) throw new Error("email already exists");
-        const verificationData = await Verification.findOne({ where: { email, user, verified: false, token } });
-        if (!verificationData) throw new Error("invalid token or verfication not initialized");
-        user.profile.email = email;
-        await user.profile.save();
-        verificationData.verified = true;
-        await verificationData.save();
+        const verificationData = await Verification.findOne({ where: { email, verified: false } });
+        if (!verificationData || decrypt(verificationData.code) !== token)
+            throw new Error("invalid token or verfication not initialized");
+        await user.updateEmail(email);
+        await verificationData.updateVerificationStatus(true);
         return {
             success: true,
             message: "Email address verified",
         };
     } catch (error) {
-        return {
-            success: false,
-            message: error.message,
-        };
+        throw new FormattedError(error);
     }
 };
 
 export const getWeeklyRewardEstimation = async (parent: any, args: any, context: any) => {
     try {
-        const { id, userId } = context.user;
-        const user = await User.findOne({
-            where: [{ identityId: id }, { id: userId }],
-            relations: ["wallet"],
-        });
+        const user = await User.findUserByContext(context.user, ["wallet"]);
         if (!user) throw new Error("user not found");
         const loginReward = await Transfer.getRewardForThisWeek(user.wallet, "LOGIN_REWARD");
         const participationReward = await Transfer.getRewardForThisWeek(user.wallet, "PARTICIPATION_REWARD");

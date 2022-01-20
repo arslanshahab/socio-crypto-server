@@ -1,5 +1,5 @@
 import { BigNumber } from "bignumber.js";
-import { BN } from "../../util/helpers";
+import { BN } from "../../util";
 
 export class StandardDeviation {
     average: BigNumber;

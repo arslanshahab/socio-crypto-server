@@ -8,11 +8,14 @@ import logger from "../../util/logger";
 import { SocialLink } from "../../models/SocialLink";
 import { Participant } from "../../models/Participant";
 import { BigNumber } from "bignumber.js";
-import { BN, calculateQualityMultiplier } from "../../util/helpers";
+import { BN, calculateQualityMultiplier } from "../../util";
 import { DailyParticipantMetric } from "../../models/DailyParticipantMetric";
 import { HourlyCampaignMetric } from "../../models/HourlyCampaignMetric";
 import { QualityScore } from "../../models/QualityScore";
+import * as dotenv from "dotenv";
+import { TikTokClient } from "../../clients/tiktok";
 
+dotenv.config();
 const app = new Application();
 
 const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: SocialPost) => {
@@ -86,15 +89,28 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                     logger.error(`participant ${post.user.id} has not linked ${post.type} as a social platform`);
                 } else {
                     try {
-                        const response = await TwitterClient.get(socialLink.asClientCredentials(), post.id, false);
-                        const responseJSON = JSON.parse(response);
-                        const updatedPost = await updatePostMetrics(
-                            new BN(responseJSON["favorite_count"]),
-                            new BN(responseJSON["retweet_count"]),
-                            post
-                        );
-                        logger.info(`pushing new metrics on social post for campaign: ${post.campaign.name}`);
-                        postsToSave.push(updatedPost);
+                        if (socialLink?.type === "twitter") {
+                            const response = await TwitterClient.get(socialLink, post.id, false);
+                            const responseJSON = JSON.parse(response);
+                            const updatedPost = await updatePostMetrics(
+                                new BN(responseJSON["favorite_count"]),
+                                new BN(responseJSON["retweet_count"]),
+                                post
+                            );
+                            logger.info(`pushing new metrics on social post for campaign: ${post.campaign.name}`);
+                            postsToSave.push(updatedPost);
+                        }
+                        if (socialLink?.type === "tiktok") {
+                            const postDetails = (await TikTokClient.getPosts(socialLink, [post.id]))[0];
+                            const likeCount = postDetails.like_count;
+                            const shareCount = postDetails.share_count;
+                            const updatedPost = await updatePostMetrics(
+                                new BN(likeCount) || 0,
+                                new BN(shareCount) || 0,
+                                post
+                            );
+                            postsToSave.push(updatedPost);
+                        }
                     } catch (e) {
                         console.log(e);
                     }

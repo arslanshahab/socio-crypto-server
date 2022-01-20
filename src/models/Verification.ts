@@ -1,15 +1,21 @@
-import { BaseEntity, Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from "typeorm";
+import {
+    BaseEntity,
+    Entity,
+    PrimaryGeneratedColumn,
+    Column,
+    CreateDateColumn,
+    UpdateDateColumn,
+    BeforeInsert,
+    BeforeUpdate,
+} from "typeorm";
 import { decrypt, encrypt } from "../util/crypto";
-import { generateRandomNonce } from "../util/helpers";
+import { generateRandomNonce } from "../util";
 @Entity()
 export class Verification extends BaseEntity {
     @PrimaryGeneratedColumn("uuid")
     public id: string;
 
-    @Column({
-        nullable: false,
-        transformer: { to: (value: string) => value?.toLowerCase() || "", from: (value: string) => value },
-    })
+    @Column({ nullable: false })
     public email: string;
 
     @Column({ nullable: false, default: false })
@@ -23,6 +29,12 @@ export class Verification extends BaseEntity {
 
     @UpdateDateColumn()
     public updatedAt: Date;
+
+    @BeforeInsert()
+    @BeforeUpdate()
+    nameToUpperCase() {
+        this.email = this.email ? this.email.toLowerCase() : this.email;
+    }
 
     public static createVerification = async (email: string) => {
         const verificationData = new Verification();

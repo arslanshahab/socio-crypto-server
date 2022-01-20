@@ -88,6 +88,8 @@ export const resolvers = {
         startEmailVerification: userController.startEmailVerification,
         completeEmailVerification: userController.completeEmailVerification,
         updateUserPassword: userController.updateUserPassword,
+        registerTiktokSocialLink: socialController.registerTiktokSocialLink,
+        postContentGlobally: socialController.postContentGlobally,
     },
 };
 
@@ -116,6 +118,8 @@ export const adminResolvers = {
         checkCoinGecko: cryptoController.coinGeckoCheck,
         getDepositAddressForSymbol: tatumController.getDepositAddress,
         getSupportedCurrencies: tatumController.getSupportedCurrencies,
+        listAllCampaignsForOrg: campaignController.listAllCampaignsForOrg,
+        getDashboardMetrics: campaignController.getDashboardMetrics,
     },
     Mutation: {
         newOrg: orgController.newOrg,
