@@ -8,7 +8,7 @@ import { Secrets } from "../util/secrets";
 import { User } from "../models/User";
 import { serverBaseUrl } from "../config";
 import { Wallet } from "../models/Wallet";
-import { Dragonchain } from "../clients/dragonchain";
+// import { Dragonchain } from "../clients/dragonchain";
 import { sha256Hash } from "../util/crypto";
 import { limit } from "../util/rateLimiter";
 import { S3Client } from "../clients/s3";
@@ -169,7 +169,7 @@ export const recover = asyncHandler(async (req: AuthRequest, res: Response) => {
         relations: ["user"],
     });
     if (!profile) {
-        await Dragonchain.ledgerAccountRecoveryAttempt(undefined, identityId, message, code, false);
+        // await Dragonchain.ledgerAccountRecoveryAttempt(undefined, identityId, message, code, false);
         return res.status(404).json({
             code: "NOT_FOUND",
             message: "requested account not found",
@@ -179,7 +179,7 @@ export const recover = asyncHandler(async (req: AuthRequest, res: Response) => {
     await S3Client.deleteUserInfoIfExists(user.id);
     await S3Client.deleteKycImage(user.id, "idProof");
     await S3Client.deleteKycImage(user.id, "addressProof");
-    await Dragonchain.ledgerAccountRecoveryAttempt(user.id, identityId, message, code, true);
+    // await Dragonchain.ledgerAccountRecoveryAttempt(user.id, identityId, message, code, true);
     user.identityId = identityId;
     user.kycStatus = "";
     await user.save();

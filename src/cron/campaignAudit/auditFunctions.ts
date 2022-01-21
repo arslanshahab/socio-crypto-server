@@ -6,7 +6,7 @@ import { Wallet } from "../../models/Wallet";
 import { RafflePrize } from "../../models/RafflePrize";
 import { Transfer } from "../../models/Transfer";
 import { SesClient } from "../../clients/ses";
-import { Dragonchain } from "../../clients/dragonchain";
+// import { Dragonchain } from "../../clients/dragonchain";
 import { decrypt } from "../../util/crypto";
 import { getCurrentCampaignTier } from "../../controllers/campaign";
 import { BN } from "../../util";
@@ -46,7 +46,7 @@ export const payoutRaffleCampaignRewards = async (
     campaign.auditStatus = "AUDITED";
     await entityManager.save([campaign, wallet, transfer]);
     await SesClient.sendRafflePrizeRedemptionEmail(winner.user.id, decrypt(winner.email), campaign);
-    await Dragonchain.ledgerRaffleCampaignAudit({ [winner.user.id]: campaign.prize.displayName }, [], campaign.id);
+    // await Dragonchain.ledgerRaffleCampaignAudit({ [winner.user.id]: campaign.prize.displayName }, [], campaign.id);
     return { [winner.user.id]: winner.user.profile.deviceToken };
 };
 
@@ -270,6 +270,6 @@ export const payoutCoiinCampaignRewards = async (
     await entityManager.save(participants);
     await entityManager.save(transfers);
 
-    await Dragonchain.ledgerCoiinCampaignAudit(usersWalletValues, rejected, campaign.id);
+    // await Dragonchain.ledgerCoiinCampaignAudit(usersWalletValues, rejected, campaign.id);
     return userDeviceIds;
 };
