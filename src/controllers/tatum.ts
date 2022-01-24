@@ -14,7 +14,7 @@ export const initWallet = asyncHandler(async (req: Request, res: Response) => {
     try {
         let { currency } = req.body;
         currency = currency.toUpperCase();
-        const foundWallet = await TatumWallet.findOne({ where: { currency: currency } });
+        const foundWallet = await TatumClient.getWallet(currency);
         if (foundWallet) throw new Error(`Wallet already exists for currency: ${currency}`);
         const wallet: any = await TatumClient.createWallet(currency);
         await S3Client.setTatumWalletKeys(currency, {
@@ -36,7 +36,7 @@ export const saveWallet = asyncHandler(async (req: Request, res: Response) => {
         let { mnemonic, secret, privateKey, xpub, address, currency, token } = req.body;
         if (!token || token !== process.env.RAIINMAKER_DEV_TOKEN) throw new Error("Invalid Token");
         currency = currency.toUpperCase();
-        const foundWallet = await TatumWallet.findOne({ where: { currency: currency } });
+        const foundWallet = await TatumClient.getWallet(currency);
         if (foundWallet) throw new Error(`Wallet already exists for currency: ${currency}`);
         const wallet = await TatumWallet.addTatumWallet({ xpub, address, currency });
         await S3Client.setTatumWalletKeys(currency, {
@@ -159,26 +159,16 @@ export const getDepositAddress = async (parent: any, args: { symbol: string }, c
         symbol = symbol.toUpperCase();
         if (!symbol) throw new Error("Currency not supported");
         const fromTatum = await TatumClient.isCurrencySupported(symbol);
-        if (!fromTatum) {
-            return {
-                symbol,
-                address: process.env.ETHEREUM_DEPOSIT_ADDRESS,
-                fromTatum,
-                destinationTag: "",
-                memo: "",
-                message: "",
-            };
-        } else {
-            const ledgerAccount = await findOrCreateCurrency(symbol, admin.org.wallet);
-            return {
-                symbol,
-                address: ledgerAccount.depositAddress,
-                fromTatum,
-                destinationTag: ledgerAccount.destinationTag,
-                memo: ledgerAccount.memo,
-                message: ledgerAccount.message,
-            };
-        }
+        let ledgerAccount;
+        if (fromTatum) ledgerAccount = await findOrCreateCurrency(symbol, admin.org.wallet);
+        return {
+            symbol,
+            address: ledgerAccount?.depositAddress || process.env.ETHEREUM_DEPOSIT_ADDRESS,
+            fromTatum,
+            destinationTag: ledgerAccount?.destinationTag || "",
+            memo: ledgerAccount?.memo || "",
+            message: ledgerAccount?.message || "",
+        };
     } catch (error) {
         console.log("ERROR----", error);
         throw new ApolloError(error.message);
@@ -201,7 +191,7 @@ export const withdrawFunds = async (
         const userAccountBalance = await TatumClient.getAccountBalance(userCurrency.tatumId);
         if (parseFloat(userAccountBalance.availableBalance) < amount)
             throw new Error(`Not enough funds in user account`);
-        const tatumWallet = await TatumWallet.findOne({ where: { currency: symbol } });
+        const tatumWallet = await TatumClient.getWallet(symbol);
         if (!tatumWallet || !userCurrency) throw new Error("Tatum wallet not found for provided sender account.");
         const { withdrawAbleAmount, fee } = await adjustWithdrawableAmount({
             senderAccountId: userCurrency.tatumId,
