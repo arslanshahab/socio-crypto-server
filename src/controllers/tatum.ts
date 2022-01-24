@@ -1,4 +1,4 @@
-import { RAIINMAKER_WITHDRAW, TatumClient, USER_WITHDRAW, WithdrawDetails } from "../clients/tatumClient";
+import { RAIINMAKER_WITHDRAW, TatumClient, USER_WITHDRAW } from "../clients/tatumClient";
 import { Admin } from "../models/Admin";
 import { Request, Response } from "express";
 import { TatumWallet } from "../models/TatumWallet";
@@ -8,7 +8,7 @@ import { asyncHandler, BN } from "../util";
 import { Currency } from "../models/Currency";
 import { Transfer } from "../models/Transfer";
 import { ApolloError } from "apollo-server-express";
-import { adjustWithdrawableAmount, findOrCreateCurrency, transferFundsToRaiinmaker } from "../util/tatumHelper";
+import { findOrCreateCurrency } from "../util/tatumHelper";
 
 export const initWallet = asyncHandler(async (req: Request, res: Response) => {
     try {
@@ -193,30 +193,18 @@ export const withdrawFunds = async (
             throw new Error(`Not enough funds in user account`);
         const tatumWallet = await TatumClient.getWallet(symbol);
         if (!tatumWallet || !userCurrency) throw new Error("Tatum wallet not found for provided sender account.");
-        const { withdrawAbleAmount, fee } = await adjustWithdrawableAmount({
-            senderAccountId: userCurrency.tatumId,
-            toAddress: address,
-            amount: amount,
-            tatumWallet,
-            currency: userCurrency,
-        });
-        const payload: WithdrawDetails = {
+        await TatumClient.withdrawFundsToBlockchain({
             senderAccountId: userCurrency.tatumId,
             paymentId: `${USER_WITHDRAW}:${user.id}`,
             senderNote: RAIINMAKER_WITHDRAW,
             address,
-            amount: withdrawAbleAmount,
-            ...(userCurrency.derivationKey && { index: 2 }),
-            fee,
-        };
-        await TatumClient.withdrawFundsToBlockchain(symbol, payload);
-        await transferFundsToRaiinmaker({
+            amount,
             currency: userCurrency,
-            amount: String(amount - parseFloat(withdrawAbleAmount)),
+            wallet: tatumWallet,
         });
         const newTransfer = Transfer.initTatumTransfer({
             symbol,
-            amount: new BN(withdrawAbleAmount),
+            amount: new BN(amount),
             action: "WITHDRAW",
             wallet: user.wallet,
             tatumId: address,

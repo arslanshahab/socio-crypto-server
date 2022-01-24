@@ -1,18 +1,15 @@
 import { PrimaryGeneratedColumn, Entity, BaseEntity, CreateDateColumn, UpdateDateColumn, Column } from "typeorm";
 
 @Entity()
-export class TatumWallet extends BaseEntity {
+export class CustodialAddress extends BaseEntity {
     @PrimaryGeneratedColumn("uuid")
     public id: string;
 
     @Column({ nullable: false })
-    public currency: string;
+    public chain: string;
 
     @Column({ nullable: false })
-    public enabled: boolean;
-
-    @Column({ nullable: false })
-    public xpub: string;
+    public free: boolean;
 
     @Column({ nullable: false })
     public address: string;
@@ -23,18 +20,17 @@ export class TatumWallet extends BaseEntity {
     @UpdateDateColumn()
     public updatedAt: Date;
 
-    public asV1(): TatumWallet {
+    public asV1(): CustodialAddress {
         return {
             ...this,
         };
     }
 
-    public static async addTatumWallet(data: any): Promise<TatumWallet> {
-        let account = new TatumWallet();
-        account.enabled = true;
-        account.currency = data.currency || "";
-        account.xpub = data.xpub || "";
+    public static async addTatumWallet(data: any): Promise<CustodialAddress> {
+        let account = new CustodialAddress();
+        account.free = true;
+        account.chain = data.currency || "";
         account.address = data.address || "";
-        return await TatumWallet.save(account);
+        return await CustodialAddress.save(account);
     }
 }

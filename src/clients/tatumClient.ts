@@ -16,7 +16,7 @@ import {
 } from "@tatumio/tatum";
 import { TatumWallet } from "../models/TatumWallet";
 import { S3Client } from "./s3";
-import { offchainEstimateFee, performWithdraw } from "../util/tatumHelper";
+import { offchainEstimateFee, performOffchainWithdraw } from "../util/tatumHelper";
 import { Currency } from "../models/Currency";
 import { RequestData, doFetch } from "../util/fetchRequest";
 
@@ -27,14 +27,16 @@ export const USER_WITHDRAW = "USER_WITHDRAW";
 export const USER_WITHDRAW_FEE = "USER_WITHDRAW_FEE";
 export const RAIINMAKER_WITHDRAW = "RAIINMAKER_WITHDRAW";
 
-export interface WithdrawDetails {
+export interface WithdrawPayload {
     senderAccountId: string;
     address: string;
-    amount: string;
+    amount: number;
     paymentId: string;
     senderNote: string;
     fee?: string;
     index?: number;
+    currency: Currency;
+    wallet: TatumWallet;
 }
 
 export interface FeeCalculationParams {
@@ -45,11 +47,19 @@ export interface FeeCalculationParams {
     currency: Currency;
 }
 
-interface CustodialAddressPayload {
+export interface CustodialAddressPayload {
     chain: string;
     fromPrivateKey: string;
     owner: string;
     batchCount: number;
+}
+
+export interface WalletKeys {
+    xpub?: string;
+    privateKey?: string;
+    walletAddress?: string;
+    secret?: string;
+    mnemonic?: string;
 }
 
 export const symbolToChain: { [key: string]: string } = {
@@ -86,6 +96,41 @@ export const symbolToChain: { [key: string]: string } = {
 export class TatumClient {
     public static baseUrl = "https://api-eu1.tatum.io/v3";
 
+    private static createCustodialAddresses = async (
+        data: CustodialAddressPayload
+    ): Promise<{ txId: string; failed: boolean }> => {
+        const endpoint = `${TatumClient.baseUrl}/blockchain/sc/custodial/batch`;
+        const requestData: RequestData = {
+            method: "POST",
+            url: endpoint,
+            payload: data,
+            headers: { "x-api-key": Secrets.tatumApiKey },
+        };
+        return await doFetch(requestData);
+    };
+
+    private static getCustodialAddresses = async (data: { txId: string; chain: string }): Promise<string[]> => {
+        const endpoint = `${TatumClient.baseUrl}/blockchain/sc/custodial/${data.chain}/${data.txId}`;
+        const requestData: RequestData = {
+            method: "GET",
+            url: endpoint,
+            headers: { "x-api-key": Secrets.tatumApiKey },
+        };
+        return await doFetch(requestData);
+    };
+
+    private static getWalletKeys = async (symbol: string): Promise<WalletKeys> => {
+        try {
+            if (!TatumClient.isCurrencySupported(symbol)) throw new Error(`Currency ${symbol} is not supported`);
+            const baseChain = symbolToChain[symbol];
+            if (baseChain === "ETH" || baseChain === "BSC") symbol = baseChain;
+            return await S3Client.getTatumWalletKeys(symbol);
+        } catch (error) {
+            console.log(error);
+            throw new Error(error.message);
+        }
+    };
+
     public static getAllCurrencies = (): string[] => {
         try {
             return Object.keys(symbolToChain);
@@ -106,7 +151,7 @@ export class TatumClient {
 
     public static getBaseChain = (symbol: string): string => {
         try {
-            if (!this.isCurrencySupported(symbol)) throw new Error(`Currency ${symbol} is not supported`);
+            if (!TatumClient.isCurrencySupported(symbol)) throw new Error(`Currency ${symbol} is not supported`);
             return symbolToChain[symbol.toUpperCase()];
         } catch (error) {
             console.log(error);
@@ -116,7 +161,7 @@ export class TatumClient {
 
     public static getWallet = async (symbol: string) => {
         try {
-            if (!this.isCurrencySupported(symbol)) throw new Error(`Currency ${symbol} is not supported`);
+            if (!TatumClient.isCurrencySupported(symbol)) throw new Error(`Currency ${symbol} is not supported`);
             const baseChain = symbolToChain[symbol];
             if (baseChain === "ETH" || baseChain === "BSC") symbol = baseChain;
             return await TatumWallet.findOne({ where: { currency: symbol, enabled: true } });
@@ -138,7 +183,7 @@ export class TatumClient {
     public static createLedgerAccount = async (symbol: string) => {
         try {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
-            const walletData = await this.getWallet(symbol);
+            const walletData = await TatumClient.getWallet(symbol);
             if (walletData) {
                 return await createAccount({
                     currency: symbol.toUpperCase(),
@@ -246,17 +291,17 @@ export class TatumClient {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
             return await getTransactionsByAccount(filter, pageSize, offset);
         } catch (error) {
-            console.log(error?.response?.data || error.message);
+            console.log(error);
             throw new Error(error?.response?.data?.message || error.message);
         }
     };
 
-    public static withdrawFundsToBlockchain = async (currency: string, data: WithdrawDetails) => {
+    public static withdrawFundsToBlockchain = async (data: WithdrawPayload) => {
         try {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
-            const walletKeys = await S3Client.getTatumWalletKeys(currency);
+            const walletKeys = await TatumClient.getWalletKeys(data.currency.symbol);
             const body = { ...walletKeys, ...data };
-            return await performWithdraw(currency, body);
+            return await performOffchainWithdraw(body);
         } catch (error) {
             console.log(error);
             throw new Error(error);
@@ -268,7 +313,7 @@ export class TatumClient {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
             return await getWithdrawals(status, currency, pageSize, offset);
         } catch (error) {
-            console.log(error?.response?.data || error.message);
+            console.log(error);
             throw new Error(error?.response?.data?.message || error.message);
         }
     };
@@ -283,38 +328,20 @@ export class TatumClient {
     };
 
     public static generateCustodialAddresses = async (symbol: string): Promise<string[]> => {
-        const chain = this.getBaseChain(symbol);
-        const walletKeys = await S3Client.getTatumWalletKeys(chain);
-        const txResp = await this.createCustodialAddresses({
-            owner: walletKeys.address,
-            batchCount: 100,
-            fromPrivateKey: walletKeys.privateKey,
-            chain,
-        });
-        if (txResp.failed) throw new Error("There was an error creating custodial addresses.");
-        return await this.getCustodialAddresses({ chain, txId: txResp.txId });
-    };
-
-    private static createCustodialAddresses = async (
-        data: CustodialAddressPayload
-    ): Promise<{ txId: string; failed: boolean }> => {
-        const endpoint = `${TatumClient.baseUrl}/blockchain/sc/custodial/batch`;
-        const requestData: RequestData = {
-            method: "POST",
-            url: endpoint,
-            payload: data,
-            headers: { "x-api-key": Secrets.tatumApiKey },
-        };
-        return await doFetch(requestData);
-    };
-
-    private static getCustodialAddresses = async (data: { txId: string; chain: string }): Promise<string[]> => {
-        const endpoint = `${TatumClient.baseUrl}/blockchain/sc/custodial/${data.chain}/${data.txId}`;
-        const requestData: RequestData = {
-            method: "GET",
-            url: endpoint,
-            headers: { "x-api-key": Secrets.tatumApiKey },
-        };
-        return await doFetch(requestData);
+        try {
+            const chain = TatumClient.getBaseChain(symbol);
+            const walletKeys = await TatumClient.getWalletKeys(chain);
+            const txResp = await TatumClient.createCustodialAddresses({
+                owner: walletKeys?.walletAddress || "",
+                batchCount: 100,
+                fromPrivateKey: walletKeys?.privateKey || "",
+                chain,
+            });
+            if (txResp.failed) throw new Error("There was an error creating custodial addresses.");
+            return await TatumClient.getCustodialAddresses({ chain, txId: txResp.txId });
+        } catch (error) {
+            console.log(error);
+            throw new Error(error?.response?.data?.message || error.message);
+        }
     };
 }
