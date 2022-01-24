@@ -1,3 +1,4 @@
+import { CustodialAddressChain } from "src/types";
 import { PrimaryGeneratedColumn, Entity, BaseEntity, CreateDateColumn, UpdateDateColumn, Column } from "typeorm";
 
 @Entity()
@@ -6,10 +7,10 @@ export class CustodialAddress extends BaseEntity {
     public id: string;
 
     @Column({ nullable: false })
-    public chain: string;
+    public chain: CustodialAddressChain;
 
-    @Column({ nullable: false })
-    public free: boolean;
+    @Column({ nullable: false, default: true })
+    public available: boolean;
 
     @Column({ nullable: false })
     public address: string;
@@ -26,11 +27,14 @@ export class CustodialAddress extends BaseEntity {
         };
     }
 
-    public static async addTatumWallet(data: any): Promise<CustodialAddress> {
-        let account = new CustodialAddress();
-        account.free = true;
-        account.chain = data.currency || "";
-        account.address = data.address || "";
-        return await CustodialAddress.save(account);
+    public static async saveAddresses(list: string[], chain: CustodialAddressChain): Promise<CustodialAddress[]> {
+        const addresses: CustodialAddress[] = [];
+        list.forEach((item: string) => {
+            const newAddress = new CustodialAddress();
+            newAddress.address = item;
+            newAddress.chain = chain;
+            addresses.push(newAddress);
+        });
+        return await CustodialAddress.save(addresses);
     }
 }

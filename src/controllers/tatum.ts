@@ -9,6 +9,8 @@ import { Currency } from "../models/Currency";
 import { Transfer } from "../models/Transfer";
 import { ApolloError } from "apollo-server-express";
 import { findOrCreateCurrency } from "../util/tatumHelper";
+import { CustodialAddress } from "../models/CustodialAddress";
+import { CustodialAddressChain } from "src/types";
 
 export const initWallet = asyncHandler(async (req: Request, res: Response) => {
     try {
@@ -47,6 +49,20 @@ export const saveWallet = asyncHandler(async (req: Request, res: Response) => {
             xpub,
         });
         res.status(200).json(wallet);
+    } catch (error) {
+        res.status(403).json(error.message);
+    }
+});
+
+export const generateCustodialAddresses = asyncHandler(async (req: Request, res: Response) => {
+    try {
+        let { currency, token } = req.body;
+        currency = currency.toUpperCase();
+        if (!token || token !== process.env.RAIINMAKER_DEV_TOKEN) throw new Error("Invalid Token");
+        if (!TatumClient.isCurrencySupported(currency)) throw new Error(`Currency ${currency} is not supported`);
+        const list = await TatumClient.generateCustodialAddresses(currency);
+        await CustodialAddress.saveAddresses(list, TatumClient.getBaseChain(currency) as CustodialAddressChain);
+        res.status(200).json(list);
     } catch (error) {
         res.status(403).json(error.message);
     }
