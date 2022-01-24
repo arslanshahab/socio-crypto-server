@@ -19,6 +19,7 @@ import { S3Client } from "./s3";
 import { offchainEstimateFee, performOffchainWithdraw } from "../util/tatumHelper";
 import { Currency } from "../models/Currency";
 import { RequestData, doFetch } from "../util/fetchRequest";
+import { sleep } from "../controllers/helpers";
 
 export const CAMPAIGN_CREATION_AMOUNT = "CAMPAIGN_CREATION_AMOUNT";
 export const CAMPAIGN_FEE = "CAMPAIGN_FEE";
@@ -124,7 +125,8 @@ export class TatumClient {
             if (!TatumClient.isCurrencySupported(symbol)) throw new Error(`Currency ${symbol} is not supported`);
             const baseChain = symbolToChain[symbol];
             if (baseChain === "ETH" || baseChain === "BSC") symbol = baseChain;
-            return await S3Client.getTatumWalletKeys(symbol);
+            const keys = await S3Client.getTatumWalletKeys(symbol);
+            return { ...keys, walletAddress: keys.address };
         } catch (error) {
             console.log(error);
             throw new Error(error.message);
@@ -333,11 +335,13 @@ export class TatumClient {
             const walletKeys = await TatumClient.getWalletKeys(chain);
             const txResp = await TatumClient.createCustodialAddresses({
                 owner: walletKeys?.walletAddress || "",
-                batchCount: 100,
+                batchCount: 20,
                 fromPrivateKey: walletKeys?.privateKey || "",
                 chain,
             });
+            console.log(txResp);
             if (txResp.failed) throw new Error("There was an error creating custodial addresses.");
+            await sleep(20000);
             return await TatumClient.getCustodialAddresses({ chain, txId: txResp.txId });
         } catch (error) {
             console.log(error);

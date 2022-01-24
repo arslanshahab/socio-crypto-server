@@ -25,6 +25,7 @@ import { Wallet } from "../models/Wallet";
 import { BN, getERC20ValueOfETH } from ".";
 import { Org } from "../models/Org";
 import { Transfer } from "../models/Transfer";
+import { CustodialAddress } from "../models/CustodialAddress";
 
 interface WithdrawFeeData {
     withdrawAbleAmount: string;
@@ -162,14 +163,20 @@ export const estimateLedgerToBlockchainFee = async (data: FeeCalculationParams) 
 export const findOrCreateCurrency = async (symbol: string, wallet: Wallet): Promise<Currency> => {
     const foundWallet = await Wallet.findOne({ where: { id: wallet.id }, relations: ["user", "org"] });
     const baseChain = TatumClient.getBaseChain(symbol);
-    const shouldCreateDepositAddress =
-        Boolean(foundWallet?.user && baseChain !== "ETH" && baseChain !== "BSC") || Boolean(foundWallet?.org);
     let ledgerAccount = await Currency.findOne({ where: { wallet, symbol } });
     let newDepositAddress;
     if (!ledgerAccount) {
         const newLedgerAccount = await TatumClient.createLedgerAccount(symbol);
-        if (shouldCreateDepositAddress)
+        if (baseChain !== "ETH" && baseChain !== "BSC") {
+            if (foundWallet?.org) {
+                const availableAddress = await CustodialAddress.findOne({
+                    where: { chain: baseChain, available: true },
+                });
+                newDepositAddress = availableAddress;
+            }
+        } else {
             newDepositAddress = await TatumClient.generateDepositAddress(newLedgerAccount.id);
+        }
         ledgerAccount = await Currency.addAccount({
             ...newLedgerAccount,
             ...(newDepositAddress && newDepositAddress),

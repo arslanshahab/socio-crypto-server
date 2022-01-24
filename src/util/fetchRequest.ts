@@ -23,11 +23,11 @@ export const doFetch = async (requestData: RequestData) => {
         return (await axios(options)).data;
     } catch (error) {
         if (error?.response?.data) {
-            console.log("Error code ---- ", error?.response?.status || "");
             console.log("Error Data ---- ", error?.response?.data || "");
+            throw new Error(error?.response?.data?.message);
         } else {
             console.log("Error ---- ", error);
+            throw new Error(error.message);
         }
-        throw new Error("There was an error making request");
     }
 };
