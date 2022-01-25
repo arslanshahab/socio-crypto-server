@@ -1,5 +1,14 @@
 import { CustodialAddressChain } from "src/types";
-import { PrimaryGeneratedColumn, Entity, BaseEntity, CreateDateColumn, UpdateDateColumn, Column } from "typeorm";
+import {
+    PrimaryGeneratedColumn,
+    Entity,
+    BaseEntity,
+    CreateDateColumn,
+    UpdateDateColumn,
+    Column,
+    ManyToOne,
+} from "typeorm";
+import { Wallet } from "./Wallet";
 
 @Entity()
 export class CustodialAddress extends BaseEntity {
@@ -15,6 +24,9 @@ export class CustodialAddress extends BaseEntity {
     @Column({ nullable: false })
     public address: string;
 
+    @ManyToOne((_type) => Wallet, (wallet) => wallet.custodialAddress)
+    public wallet: Wallet;
+
     @CreateDateColumn()
     public createdAt: Date;
 
@@ -25,6 +37,16 @@ export class CustodialAddress extends BaseEntity {
         return {
             ...this,
         };
+    }
+
+    public async changeAvailability(flag: boolean) {
+        this.available = flag;
+        return await this.save();
+    }
+
+    public async assignWallet(wallet: Wallet) {
+        if (!this.wallet) this.wallet = wallet;
+        return await this.save();
     }
 
     public static async saveAddresses(list: string[], chain: CustodialAddressChain): Promise<CustodialAddress[]> {

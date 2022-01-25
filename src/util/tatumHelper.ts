@@ -10,6 +10,7 @@ import {
     sendBscOffchainTransaction,
     sendCeloOffchainTransaction,
     sendTronOffchainTransaction,
+    assignDepositAddress,
 } from "@tatumio/tatum";
 import { doFetch, RequestData } from "./fetchRequest";
 import { Secrets } from "./secrets";
@@ -161,21 +162,29 @@ export const estimateLedgerToBlockchainFee = async (data: FeeCalculationParams) 
 };
 
 export const findOrCreateCurrency = async (symbol: string, wallet: Wallet): Promise<Currency> => {
+    if (!TatumClient.isCurrencySupported(symbol)) throw new Error(`Currency ${symbol} is not supported`);
     const foundWallet = await Wallet.findOne({ where: { id: wallet.id }, relations: ["user", "org"] });
-    const baseChain = TatumClient.getBaseChain(symbol);
+    const chain = TatumClient.getBaseChain(symbol);
     let ledgerAccount = await Currency.findOne({ where: { wallet, symbol } });
     let newDepositAddress;
     if (!ledgerAccount) {
         const newLedgerAccount = await TatumClient.createLedgerAccount(symbol);
-        if (baseChain !== "ETH" && baseChain !== "BSC") {
+        if (newLedgerAccount.isCustodial) {
             if (foundWallet?.org) {
                 const availableAddress = await CustodialAddress.findOne({
-                    where: { chain: baseChain, available: true },
+                    where: [
+                        { chain, wallet },
+                        { chain, available: true },
+                    ],
                 });
+                if (!availableAddress?.available) throw new Error("No custodial address available.");
+                await assignDepositAddress(newLedgerAccount.account.id, availableAddress.address);
                 newDepositAddress = availableAddress;
+                await availableAddress.changeAvailability(false);
+                await availableAddress.assignWallet(wallet);
             }
         } else {
-            newDepositAddress = await TatumClient.generateDepositAddress(newLedgerAccount.id);
+            newDepositAddress = await TatumClient.generateDepositAddress(newLedgerAccount.account.id);
         }
         ledgerAccount = await Currency.addAccount({
             ...newLedgerAccount,

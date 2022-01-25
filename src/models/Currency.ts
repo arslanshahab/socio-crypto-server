@@ -36,7 +36,7 @@ export class Currency extends BaseEntity {
     public derivationKey: number;
 
     @ManyToOne((_type) => Wallet, (wallet) => wallet.currency)
-    public wallet: Currency;
+    public wallet: Wallet;
 
     @CreateDateColumn()
     public createdAt: Date;

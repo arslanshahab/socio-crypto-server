@@ -4,7 +4,6 @@ import {
     createAccount,
     generateDepositAddress,
     Currency as TatumCurrency,
-    Fiat,
     getAccountBalance,
     getTransactionsByAccount,
     TransactionFilter,
@@ -153,7 +152,6 @@ export class TatumClient {
 
     public static getBaseChain = (symbol: string): string => {
         try {
-            if (!TatumClient.isCurrencySupported(symbol)) throw new Error(`Currency ${symbol} is not supported`);
             return symbolToChain[symbol.toUpperCase()];
         } catch (error) {
             console.log(error);
@@ -163,9 +161,8 @@ export class TatumClient {
 
     public static getWallet = async (symbol: string) => {
         try {
-            if (!TatumClient.isCurrencySupported(symbol)) throw new Error(`Currency ${symbol} is not supported`);
-            const baseChain = symbolToChain[symbol];
-            if (baseChain === "ETH" || baseChain === "BSC") symbol = baseChain;
+            const chain = TatumClient.getBaseChain(symbol);
+            if (chain === "ETH" || chain === "BSC") symbol = chain;
             return await TatumWallet.findOne({ where: { currency: symbol, enabled: true } });
         } catch (error) {
             console.log(error);
@@ -182,19 +179,17 @@ export class TatumClient {
         }
     };
 
-    public static createLedgerAccount = async (symbol: string) => {
+    public static createLedgerAccount = async (currency: string) => {
         try {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
-            const walletData = await TatumClient.getWallet(symbol);
-            if (walletData) {
-                return await createAccount({
-                    currency: symbol.toUpperCase(),
-                    accountingCurrency: "USD" as Fiat,
-                    xpub: walletData.xpub || walletData.address,
-                });
-            } else {
-                throw new Error(`No wallet found for symbol: ${symbol}`);
-            }
+            const walletData = await TatumClient.getWallet(currency);
+            const chain = TatumClient.getBaseChain(currency);
+            const isCustodial = chain === "ETH" || chain === "BSC";
+            const account = await createAccount({
+                currency,
+                ...(isCustodial && { xpub: walletData?.xpub || walletData?.address }),
+            });
+            return { account, isCustodial };
         } catch (error) {
             console.log(error?.response?.data || error.message);
             throw new Error(error?.response?.data?.message || error.message);
