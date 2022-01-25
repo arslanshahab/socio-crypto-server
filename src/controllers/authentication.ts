@@ -81,6 +81,7 @@ export const registerUser = async (
         if (await Profile.findOne({ where: { username: ILike(username) } })) throw new Error(USERNAME_EXISTS);
         const verificationData = await Verification.findOne({ where: { id: decrypt(verificationToken) } });
         if (!verificationData || !verificationData.verified) throw new Error(EMAIL_NOT_VERIFIED);
+        if (verificationData.email.toLowerCase() !== email.toLowerCase()) throw new Error(EMAIL_NOT_VERIFIED);
         const user = await User.initNewUser(email, createPasswordHash({ email, password }), username);
         await user.transferReward("REGISTRATION_REWARD");
         return { token: createSessionToken(user) };
