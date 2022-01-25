@@ -8,7 +8,6 @@ import { asyncHandler, BN } from "../util";
 import { Currency } from "../models/Currency";
 import { Transfer } from "../models/Transfer";
 import { ApolloError } from "apollo-server-express";
-import { findOrCreateCurrency } from "../util/tatumHelper";
 import { CustodialAddress } from "../models/CustodialAddress";
 import { CustodialAddressChain } from "src/types";
 
@@ -176,7 +175,7 @@ export const getDepositAddress = async (parent: any, args: { symbol: string }, c
         if (!symbol) throw new Error("Currency not supported");
         const fromTatum = await TatumClient.isCurrencySupported(symbol);
         let ledgerAccount;
-        if (fromTatum) ledgerAccount = await findOrCreateCurrency(symbol, admin.org.wallet);
+        if (fromTatum) ledgerAccount = await TatumClient.findOrCreateCurrency(symbol, admin.org.wallet);
         return {
             symbol,
             address: ledgerAccount?.depositAddress || process.env.ETHEREUM_DEPOSIT_ADDRESS,

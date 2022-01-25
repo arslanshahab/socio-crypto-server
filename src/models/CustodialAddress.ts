@@ -49,6 +49,14 @@ export class CustodialAddress extends BaseEntity {
         return await this.save();
     }
 
+    public static getAvailableAddress = async (chain: string, wallet: Wallet) => {
+        let data = await CustodialAddress.findOne({ where: { chain, wallet } });
+        if (!data) {
+            data = await CustodialAddress.findOne({ where: { chain, available: true } });
+        }
+        return data;
+    };
+
     public static async saveAddresses(list: string[], chain: CustodialAddressChain): Promise<CustodialAddress[]> {
         const addresses: CustodialAddress[] = [];
         list.forEach((item: string) => {

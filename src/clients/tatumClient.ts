@@ -12,6 +12,7 @@ import {
     getBlockedAmountsByAccountId,
     storeTransaction,
     getWithdrawals,
+    assignDepositAddress,
 } from "@tatumio/tatum";
 import { TatumWallet } from "../models/TatumWallet";
 import { S3Client } from "./s3";
@@ -19,6 +20,8 @@ import { offchainEstimateFee, performOffchainWithdraw } from "../util/tatumHelpe
 import { Currency } from "../models/Currency";
 import { RequestData, doFetch } from "../util/fetchRequest";
 import { sleep } from "../controllers/helpers";
+import { Wallet } from "../models/Wallet";
+import { CustodialAddress } from "../models/CustodialAddress";
 
 export const CAMPAIGN_CREATION_AMOUNT = "CAMPAIGN_CREATION_AMOUNT";
 export const CAMPAIGN_FEE = "CAMPAIGN_FEE";
@@ -179,17 +182,14 @@ export class TatumClient {
         }
     };
 
-    public static createLedgerAccount = async (currency: string) => {
+    public static createLedgerAccount = async (currency: string, isCustodial: boolean) => {
         try {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
             const walletData = await TatumClient.getWallet(currency);
-            const chain = TatumClient.getBaseChain(currency);
-            const isCustodial = chain === "ETH" || chain === "BSC";
-            const account = await createAccount({
+            return await createAccount({
                 currency,
-                ...(isCustodial && { xpub: walletData?.xpub || walletData?.address }),
+                ...(!isCustodial && { xpub: walletData?.xpub || walletData?.address }),
             });
-            return { account, isCustodial };
         } catch (error) {
             console.log(error?.response?.data || error.message);
             throw new Error(error?.response?.data?.message || error.message);
@@ -340,6 +340,41 @@ export class TatumClient {
             return await TatumClient.getCustodialAddresses({ chain, txId: txResp.txId });
         } catch (error) {
             console.log(error);
+            throw new Error(error?.response?.data?.message || error.message);
+        }
+    };
+
+    public static findOrCreateCurrency = async (symbol: string, wallet: Wallet): Promise<Currency> => {
+        try {
+            if (!TatumClient.isCurrencySupported(symbol)) throw new Error(`Currency ${symbol} is not supported`);
+            const foundWallet = await Wallet.findOne({ where: { id: wallet.id }, relations: ["user", "org"] });
+            const chain = TatumClient.getBaseChain(symbol);
+            const isCustodial = chain === "ETH" || chain === "BSC";
+            let ledgerAccount = await Currency.findOne({ where: { wallet, symbol } });
+            let newDepositAddress;
+            if (!ledgerAccount) {
+                const newLedgerAccount = await TatumClient.createLedgerAccount(symbol, isCustodial);
+                if (isCustodial) {
+                    if (foundWallet?.org) {
+                        const availableAddress = await CustodialAddress.getAvailableAddress(chain, wallet);
+                        if (!availableAddress) throw new Error("No custodial address available.");
+                        await assignDepositAddress(newLedgerAccount.id, availableAddress.address);
+                        newDepositAddress = availableAddress;
+                        await availableAddress.changeAvailability(false);
+                        await availableAddress.assignWallet(wallet);
+                    }
+                } else {
+                    newDepositAddress = await TatumClient.generateDepositAddress(newLedgerAccount.id);
+                }
+                ledgerAccount = await Currency.addAccount({
+                    ...newLedgerAccount,
+                    ...(newDepositAddress && { address: newDepositAddress.address }),
+                    wallet,
+                });
+            }
+            return ledgerAccount;
+        } catch (error) {
+            console.log(error?.response?.data || error.message);
             throw new Error(error?.response?.data?.message || error.message);
         }
     };

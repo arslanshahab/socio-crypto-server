@@ -10,7 +10,6 @@ import {
     sendBscOffchainTransaction,
     sendCeloOffchainTransaction,
     sendTronOffchainTransaction,
-    assignDepositAddress,
 } from "@tatumio/tatum";
 import { doFetch, RequestData } from "./fetchRequest";
 import { Secrets } from "./secrets";
@@ -22,11 +21,9 @@ import {
     WithdrawPayload,
 } from "../clients/tatumClient";
 import { Currency } from "../models/Currency";
-import { Wallet } from "../models/Wallet";
 import { BN, getERC20ValueOfETH } from ".";
 import { Org } from "../models/Org";
 import { Transfer } from "../models/Transfer";
-import { CustodialAddress } from "../models/CustodialAddress";
 
 interface WithdrawFeeData {
     withdrawAbleAmount: string;
@@ -159,40 +156,6 @@ export const estimateLedgerToBlockchainFee = async (data: FeeCalculationParams) 
     };
     const resp = await doFetch(requestData);
     return parseFloat(fixDecimalsForTatum(resp.fast));
-};
-
-export const findOrCreateCurrency = async (symbol: string, wallet: Wallet): Promise<Currency> => {
-    if (!TatumClient.isCurrencySupported(symbol)) throw new Error(`Currency ${symbol} is not supported`);
-    const foundWallet = await Wallet.findOne({ where: { id: wallet.id }, relations: ["user", "org"] });
-    const chain = TatumClient.getBaseChain(symbol);
-    let ledgerAccount = await Currency.findOne({ where: { wallet, symbol } });
-    let newDepositAddress;
-    if (!ledgerAccount) {
-        const newLedgerAccount = await TatumClient.createLedgerAccount(symbol);
-        if (newLedgerAccount.isCustodial) {
-            if (foundWallet?.org) {
-                const availableAddress = await CustodialAddress.findOne({
-                    where: [
-                        { chain, wallet },
-                        { chain, available: true },
-                    ],
-                });
-                if (!availableAddress?.available) throw new Error("No custodial address available.");
-                await assignDepositAddress(newLedgerAccount.account.id, availableAddress.address);
-                newDepositAddress = availableAddress;
-                await availableAddress.changeAvailability(false);
-                await availableAddress.assignWallet(wallet);
-            }
-        } else {
-            newDepositAddress = await TatumClient.generateDepositAddress(newLedgerAccount.account.id);
-        }
-        ledgerAccount = await Currency.addAccount({
-            ...newLedgerAccount,
-            ...(newDepositAddress && newDepositAddress),
-            wallet,
-        });
-    }
-    return ledgerAccount;
 };
 
 export const adjustWithdrawableAmount = async (data: FeeCalculationParams): Promise<WithdrawFeeData> => {
