@@ -10,6 +10,8 @@ import { Transfer } from "../models/Transfer";
 import { ApolloError } from "apollo-server-express";
 import { CustodialAddress } from "../models/CustodialAddress";
 import { CustodialAddressChain } from "src/types";
+import { Wallet } from "../models/Wallet";
+import { Org } from "../models/Org";
 
 export const initWallet = asyncHandler(async (req: Request, res: Response) => {
     try {
@@ -206,16 +208,21 @@ export const withdrawFunds = async (
         const userAccountBalance = await TatumClient.getAccountBalance(userCurrency.tatumId);
         if (parseFloat(userAccountBalance.availableBalance) < amount)
             throw new Error(`Not enough funds in user account`);
-        const tatumWallet = await TatumClient.getWallet(symbol);
-        if (!tatumWallet || !userCurrency) throw new Error("Tatum wallet not found for provided sender account.");
+        if (!userCurrency) throw new Error("Tatum account not found for user.");
+        const custodialAddress = await CustodialAddress.findOne({
+            where: {
+                wallet: await Wallet.findOne({ where: { org: await Org.findOne({ where: { name: "raiinmaker" } }) } }),
+            },
+        });
+        if (!custodialAddress) throw new Error("No custodial address available for raiinmaker");
         await TatumClient.withdrawFundsToBlockchain({
             senderAccountId: userCurrency.tatumId,
             paymentId: `${USER_WITHDRAW}:${user.id}`,
             senderNote: RAIINMAKER_WITHDRAW,
             address,
-            amount,
+            amount: amount.toString(),
             currency: userCurrency,
-            wallet: tatumWallet,
+            custodialAddress,
         });
         const newTransfer = Transfer.initTatumTransfer({
             symbol,
