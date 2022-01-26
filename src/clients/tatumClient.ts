@@ -494,6 +494,7 @@ export class TatumClient {
 
     public static generateCustodialAddresses = async (symbol: string): Promise<string[]> => {
         try {
+            if (!TatumClient.isCustodialWallet(symbol)) throw new Error("Operation not supported.");
             const chain = TatumClient.getBaseChain(symbol);
             const wallet = await TatumClient.getWallet(chain);
             const txResp = await TatumClient.createCustodialAddresses({
