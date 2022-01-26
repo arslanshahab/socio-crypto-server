@@ -409,6 +409,46 @@ export class TatumClient {
         }
     };
 
+    public static estimateETHWithdrawFee = async (data: FeeCalculationParams) => {
+        const endpoint = `${TatumClient.baseUrl}/ethereum/gas`;
+        const chain = TatumClient.getBaseChain(data.currency.symbol);
+        const isERC20 = chain === "ETH" && data.currency.symbol !== chain;
+        const requestData: RequestData = {
+            method: "POST",
+            url: endpoint,
+            payload: {
+                amount: fixDecimalsForTatum(data.amount),
+                from: data.currency.depositAddress,
+                to: data.toAddress,
+                ...(isERC20 && { contractAddress: TatumClient.getContractAddress(data.currency.symbol) }),
+            },
+            headers: { "x-api-key": Secrets.tatumApiKey },
+        };
+        const resp = await doFetch(requestData);
+        const feeAmount = (resp.gasLimit * resp.gasPrice) / 1e18;
+        return parseFloat(fixDecimalsForTatum(feeAmount));
+    };
+
+    public static estimateBSCWithdrawFee = async (data: FeeCalculationParams) => {
+        const endpoint = `${TatumClient.baseUrl}/bsc/gas`;
+        const chain = TatumClient.getBaseChain(data.currency.symbol);
+        const isBEP20 = chain === "BSC" && data.currency.symbol !== chain;
+        const requestData: RequestData = {
+            method: "POST",
+            url: endpoint,
+            payload: {
+                amount: fixDecimalsForTatum(data.amount),
+                from: data.currency.depositAddress,
+                to: data.toAddress,
+                ...(isBEP20 && { contractAddress: TatumClient.getContractAddress(data.currency.symbol) }),
+            },
+            headers: { "x-api-key": Secrets.tatumApiKey },
+        };
+        const resp = await doFetch(requestData);
+        const feeAmount = (resp.gasLimit * resp.gasPrice) / 1e18;
+        return parseFloat(fixDecimalsForTatum(feeAmount));
+    };
+
     public static sendTokenOffchainTransaction = async (data: WithdrawPayload & WalletKeys) => {
         try {
             const endpoint = `${TatumClient.baseUrl}/offchain/${data.currency.symbol.toLowerCase()}/transfer`;
@@ -453,7 +493,7 @@ export class TatumClient {
             const walletKeys = await TatumClient.getWalletKeys(chain);
             const txResp = await TatumClient.createCustodialAddresses({
                 owner: walletKeys?.walletAddress || "",
-                batchCount: 20,
+                batchCount: 1,
                 fromPrivateKey: walletKeys?.privateKey || "",
                 chain,
             });

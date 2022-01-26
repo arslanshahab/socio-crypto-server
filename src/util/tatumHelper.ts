@@ -84,7 +84,8 @@ export const fixDecimalsForTatum = (num: any) => {
 };
 
 export const offchainEstimateFee = async (data: FeeCalculationParams): Promise<number> => {
-    switch (data.currency.symbol) {
+    const chain = TatumClient.getBaseChain(data.currency.symbol);
+    switch (chain) {
         case "BTC":
             return await TatumClient.estimateLedgerToBlockchainFee(data);
         case "XRP":
@@ -109,6 +110,10 @@ export const offchainEstimateFee = async (data: FeeCalculationParams): Promise<n
             return BNB_DEFAULT_WITHDRAW_FEE;
         case "DOGE":
             return await TatumClient.estimateLedgerToBlockchainFee(data);
+        case "ETH":
+            return await TatumClient.estimateETHWithdrawFee(data);
+        case "BSC":
+            return await TatumClient.estimateBSCWithdrawFee(data);
         default:
             throw new Error("There was an error calculating withdraw fee.");
     }
