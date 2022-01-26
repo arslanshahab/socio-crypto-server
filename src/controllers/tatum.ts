@@ -17,8 +17,8 @@ export const initWallet = asyncHandler(async (req: Request, res: Response) => {
     try {
         let { currency } = req.body;
         currency = currency.toUpperCase();
-        const foundWallet = await TatumClient.getWallet(currency);
-        if (foundWallet) throw new Error(`Wallet already exists for currency: ${currency}`);
+        if (await TatumClient.ifWalletExists(currency))
+            throw new Error(`Wallet already exists for currency: ${currency}`);
         const wallet: any = await TatumClient.createWallet(currency);
         await S3Client.setTatumWalletKeys(currency, {
             ...wallet,
@@ -39,8 +39,8 @@ export const saveWallet = asyncHandler(async (req: Request, res: Response) => {
         let { mnemonic, secret, privateKey, xpub, address, currency, token } = req.body;
         if (!token || token !== process.env.RAIINMAKER_DEV_TOKEN) throw new Error("Invalid Token");
         currency = currency.toUpperCase();
-        const foundWallet = await TatumClient.getWallet(currency);
-        if (foundWallet) throw new Error(`Wallet already exists for currency: ${currency}`);
+        if (await TatumClient.ifWalletExists(currency))
+            throw new Error(`Wallet already exists for currency: ${currency}`);
         const wallet = await TatumWallet.addTatumWallet({ xpub, address, currency });
         await S3Client.setTatumWalletKeys(currency, {
             mnemonic,

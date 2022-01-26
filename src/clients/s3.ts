@@ -6,7 +6,7 @@ const {
     BUCKET_NAME = "rm-raiinmaker-staging",
     KYC_BUCKET_NAME = "rm-raiinmaker-kyc-staging",
     RM_SECRETS = "rm-secrets-staging",
-    TATUM_WALLETS = "tatum-wallets-prod",
+    TATUM_WALLETS = "tatum-wallets-stage",
 } = process.env;
 
 export class S3Client {
