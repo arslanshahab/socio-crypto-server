@@ -1,8 +1,9 @@
-import { TatumClient, FeeCalculationParams, USER_WITHDRAW_FEE } from "../clients/tatumClient";
+import { TatumClient, USER_WITHDRAW_FEE, WithdrawPayload } from "../clients/tatumClient";
 import { Currency } from "../models/Currency";
 import { BN, getERC20ValueOfETH } from ".";
 import { Org } from "../models/Org";
 import { Transfer } from "../models/Transfer";
+import { formatFloat } from "./index";
 
 interface WithdrawFeeData {
     withdrawAbleAmount: string;
@@ -11,8 +12,8 @@ interface WithdrawFeeData {
 
 const BCH_DEFAULT_WITHDRAW_FEE = 0.001;
 const BNB_DEFAULT_WITHDRAW_FEE = 0.0005;
-const XLM_DEFAULT_WITHDRAW_FEE = 20;
-const XRP_DEFAULT_WITHDRAW_FEE = 10;
+const XLM_DEFAULT_WITHDRAW_FEE = 0.01;
+const XRP_DEFAULT_WITHDRAW_FEE = 0.1;
 // const DOGE_DEFAULT_WITHDRAW_FEE = 5;
 // const LTC_DEFAULT_WITHDRAW_FEE = 0.001;
 
@@ -56,6 +57,8 @@ export const SYMBOL_TO_CHAIN: { [key: string]: string } = {
 };
 
 export const SYMBOL_TO_CONTRACT: { [key: string]: string } = {
+    ETH: "0x0000000",
+    BSC: "0x0000000",
     USDT: "0xdac17f958d2ee523a2206206994597c13d831ec7",
     USDC: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
     BAT: "0x0d8775f648430679a709e98d2b0cb6250d2887ef",
@@ -70,20 +73,13 @@ export const SYMBOL_TO_CONTRACT: { [key: string]: string } = {
     BBTC: "0x5b0dfe077b16479715c9838eb644892008abbfe6",
     BETH: "0x250632378e573c6be1ac2f97fcdf00515d0aa91b",
     WBNB: "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
-    DAI: "0x1af3f329e8be154074d8769d1ffa4ee058b1dbc3",
-    // BXRP: "BSC",
-    // BLTC: "BSC",
-    // BBCH: "BSC",
+    BDOT: "0x08bd7F9849f8EEC12fd78c9fED6ba4e47269e3d5",
+    BXRP: "0xb48063146a5ea2a4114a62d7fe6ed59ed2094b68",
+    BLTC: "0x173b3bbe6492ce717f4b8a6e57a0c308e732a91e",
+    BBCH: "0x003ab14e9e91e64f8826bb096657990c83e5d195",
 };
 
-export const fixDecimalsForTatum = (num: any) => {
-    if (typeof num === "string") {
-        num = parseFloat(num);
-    }
-    return num.toFixed(8);
-};
-
-export const offchainEstimateFee = async (data: FeeCalculationParams): Promise<number> => {
+export const offchainEstimateFee = async (data: WithdrawPayload): Promise<number> => {
     const chain = TatumClient.getBaseChain(data.currency.symbol);
     switch (chain) {
         case "BTC":
@@ -111,17 +107,17 @@ export const offchainEstimateFee = async (data: FeeCalculationParams): Promise<n
         case "DOGE":
             return await TatumClient.estimateLedgerToBlockchainFee(data);
         case "ETH":
-            return await TatumClient.estimateETHWithdrawFee(data);
+            return await TatumClient.estimateCustodialWithdrawFee(data);
         case "BSC":
-            return await TatumClient.estimateBSCWithdrawFee(data);
+            return await TatumClient.estimateCustodialWithdrawFee(data);
         default:
             throw new Error("There was an error calculating withdraw fee.");
     }
 };
 
-export const adjustWithdrawableAmount = async (data: FeeCalculationParams): Promise<WithdrawFeeData> => {
+export const adjustWithdrawableAmount = async (data: WithdrawPayload): Promise<WithdrawFeeData> => {
     const chain = TatumClient.getBaseChain(data.currency.symbol);
-    let adjustedAmount = fixDecimalsForTatum(data.amount);
+    let adjustedAmount = parseFloat(formatFloat(data.amount));
     let fee = await offchainEstimateFee(data);
     if (chain === "ETH" && data.currency.symbol !== chain) {
         fee = await getERC20ValueOfETH(data.currency.symbol, fee);
@@ -131,31 +127,23 @@ export const adjustWithdrawableAmount = async (data: FeeCalculationParams): Prom
     }
     adjustedAmount = adjustedAmount - fee;
     return {
-        withdrawAbleAmount: fixDecimalsForTatum(adjustedAmount),
-        fee: fixDecimalsForTatum(fee),
+        withdrawAbleAmount: formatFloat(adjustedAmount),
+        fee: formatFloat(fee),
     };
 };
 
 export const transferFundsToRaiinmaker = async (data: { currency: Currency; amount: string }): Promise<any> => {
-    const chain = TatumClient.getBaseChain(data.currency.symbol);
-    if (chain === "ETH" && data.currency.symbol !== chain) {
-        const raiinmakerOrg = await Org.findOne({ where: { name: "raiinmaker" }, relations: ["wallet"] });
-        if (!raiinmakerOrg) throw new Error("Org not found for raiinmaker.");
-        const raiinmakerCurrency = await Currency.findOne({ where: { wallet: raiinmakerOrg?.wallet } });
-        if (!raiinmakerCurrency) throw new Error("Currency not found for raiinmaker.");
-        await TatumClient.transferFunds(
-            data.currency.tatumId,
-            raiinmakerCurrency.tatumId,
-            data.amount,
-            USER_WITHDRAW_FEE
-        );
-        const newTransfer = Transfer.initTatumTransfer({
-            symbol: data.currency.symbol,
-            amount: new BN(data.amount),
-            action: "FEE",
-            wallet: raiinmakerOrg.wallet,
-            tatumId: raiinmakerCurrency.tatumId,
-        });
-        newTransfer.save();
-    }
+    const raiinmakerOrg = await Org.findOne({ where: { name: "raiinmaker" }, relations: ["wallet"] });
+    if (!raiinmakerOrg) throw new Error("Org not found for raiinmaker.");
+    const raiinmakerCurrency = await Currency.findOne({ where: { wallet: raiinmakerOrg?.wallet } });
+    if (!raiinmakerCurrency) throw new Error("Currency not found for raiinmaker.");
+    await TatumClient.transferFunds(data.currency.tatumId, raiinmakerCurrency.tatumId, data.amount, USER_WITHDRAW_FEE);
+    const newTransfer = Transfer.initTatumTransfer({
+        symbol: data.currency.symbol,
+        amount: new BN(data.amount),
+        action: "FEE",
+        wallet: raiinmakerOrg.wallet,
+        tatumId: raiinmakerCurrency.tatumId,
+    });
+    newTransfer.save();
 };
