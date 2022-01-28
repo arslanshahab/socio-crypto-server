@@ -137,7 +137,9 @@ export const adjustWithdrawableAmount = async (data: WithdrawPayload): Promise<W
 export const transferFundsToRaiinmaker = async (data: { currency: Currency; amount: string }): Promise<any> => {
     const raiinmakerOrg = await Org.findOne({ where: { name: "raiinmaker" }, relations: ["wallet"] });
     if (!raiinmakerOrg) throw new Error("Org not found for raiinmaker.");
-    const raiinmakerCurrency = await Currency.findOne({ where: { wallet: raiinmakerOrg?.wallet } });
+    const raiinmakerCurrency = await Currency.findOne({
+        where: { symbol: data.currency.symbol, wallet: raiinmakerOrg?.wallet },
+    });
     if (!raiinmakerCurrency) throw new Error("Currency not found for raiinmaker.");
     const transferData = await TatumClient.transferFunds(
         data.currency.tatumId,
