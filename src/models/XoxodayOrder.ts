@@ -1,12 +1,4 @@
-import {
-    PrimaryGeneratedColumn,
-    Entity,
-    BaseEntity,
-    CreateDateColumn,
-    UpdateDateColumn,
-    ManyToOne,
-    Column,
-} from "typeorm";
+import { PrimaryGeneratedColumn, Entity, BaseEntity, CreateDateColumn, UpdateDateColumn, Column } from "typeorm";
 import { User } from "./User";
 
 @Entity()
@@ -38,9 +30,6 @@ export class XoxodayOrder extends BaseEntity {
     @Column({ nullable: false })
     public denomination: number;
 
-    @ManyToOne((_type) => User, (user) => user.orders)
-    public user: User;
-
     @CreateDateColumn()
     public createdAt: Date;
 
@@ -65,7 +54,6 @@ export class XoxodayOrder extends BaseEntity {
             order.productId = item.productId;
             order.quantity = item.quantity;
             order.denomination = item.denomination;
-            order.user = user;
             orders.push(order);
         });
         return await XoxodayOrder.save(orders);
