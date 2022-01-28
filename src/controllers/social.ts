@@ -128,7 +128,6 @@ export const postToSocial = async (
             postId = await client.post(participant, socialLink, text);
         }
         if (!postId) throw new ApolloError("There was an error posting to twitter.");
-        console.log(`Posted to ${socialType} with ID: ${postId}`);
         await HourlyCampaignMetric.upsert(campaign, campaign.org, "post");
         await participant.campaign.save();
         const socialPost = await SocialPost.newSocialPost(
