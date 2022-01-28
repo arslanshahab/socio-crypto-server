@@ -253,6 +253,7 @@ export class Transfer extends BaseEntity {
     }
 
     public static initTatumTransfer(data: {
+        txId?: string;
         symbol: string;
         campaign?: Campaign;
         amount: BigNumber;
@@ -263,6 +264,7 @@ export class Transfer extends BaseEntity {
         const newTransfer = new Transfer();
         newTransfer.currency = data.symbol;
         if (data.campaign) newTransfer.campaign = data.campaign;
+        if (data.txId) newTransfer.transactionHash = data.txId;
         newTransfer.amount = data.amount;
         newTransfer.action = data.action;
         newTransfer.ethAddress = data.tatumId;

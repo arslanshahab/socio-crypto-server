@@ -47,13 +47,6 @@ export const getUSDValueForCurrency = async (symbol: string, amount: number) => 
     return marketRate * amount;
 };
 
-export const getERC20ValueOfETH = async (symbol: string, amount: number): Promise<number> => {
-    const marketRateSymbol = await getExchangeRateForCrypto(symbol);
-    const marketRateETH = await getExchangeRateForCrypto("ETH");
-    const ETHtoSymbol = marketRateETH / marketRateSymbol;
-    return ETHtoSymbol * amount;
-};
-
 export const getCryptoAssestImageUrl = (symbol: string): string => {
     return getImage(symbol).toLowerCase().includes("unknown") ? getImage("ETH") : getImage(symbol);
 };

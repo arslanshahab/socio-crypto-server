@@ -20,7 +20,6 @@ import {
     sendAdaOffchainTransaction,
     sendDogecoinOffchainTransaction,
     sendXrpOffchainTransaction,
-    sendXlmOffchainTransaction,
     sendCeloOffchainTransaction,
     sendTronOffchainTransaction,
     offchainCompleteWithdrawal,
@@ -100,7 +99,9 @@ export class TatumClient {
         return await doFetch(requestData);
     };
 
-    private static prepareTransferFromCustodialWallet = async (data: WithdrawPayload & WalletKeys): Promise<string> => {
+    private static prepareTransferFromCustodialWallet = async (
+        data: WithdrawPayload & WalletKeys
+    ): Promise<{ txId: string }> => {
         const endpoint = `${TatumClient.baseUrl}/blockchain/sc/custodial/transfer`;
         const requestData: RequestData = {
             method: "POST",
@@ -141,6 +142,35 @@ export class TatumClient {
         try {
             const chain = TatumClient.getBaseChain(symbol);
             return chain === "ETH" || chain === "BSC";
+        } catch (error) {
+            console.log(error);
+            throw new Error(error.message);
+        }
+    };
+
+    public static isERC20 = (symbol: string): boolean => {
+        try {
+            const chain = TatumClient.getBaseChain(symbol);
+            return chain === "ETH";
+        } catch (error) {
+            console.log(error);
+            throw new Error(error.message);
+        }
+    };
+
+    public static isBEP20 = (symbol: string): boolean => {
+        try {
+            const chain = TatumClient.getBaseChain(symbol);
+            return chain === "BSC";
+        } catch (error) {
+            console.log(error);
+            throw new Error(error.message);
+        }
+    };
+
+    public static isSubCustodialToken = (symbol: string): boolean => {
+        try {
+            return TatumClient.isCustodialWallet(symbol) && symbol !== TatumClient.getBaseChain(symbol);
         } catch (error) {
             console.log(error);
             throw new Error(error.message);
@@ -319,8 +349,6 @@ export class TatumClient {
             const payload = { ...wallet, ...data };
             const chain = TatumClient.getBaseChain(payload.currency.symbol);
             const { withdrawAbleAmount, fee } = await adjustWithdrawableAmount(payload);
-            console.log("withdrawAbleAmount ---- ", withdrawAbleAmount);
-            console.log("fee ---- ", fee);
             const body = {
                 ...payload,
                 amount: withdrawAbleAmount,
@@ -333,8 +361,6 @@ export class TatumClient {
                         return await sendBitcoinOffchainTransaction(false, body as any);
                     case "XRP":
                         return await sendXrpOffchainTransaction(false, body as any);
-                    case "XLM":
-                        return await sendXlmOffchainTransaction(false, body as any);
                     case "BCH":
                         return await sendBitcoinCashOffchainTransaction(false, body as any);
                     case "LTC":
@@ -359,14 +385,14 @@ export class TatumClient {
                         throw new Error(`Withdraws for ${body.currency.symbol} are not supported at this moment.`);
                 }
             };
-            await callWithdrawMethod();
-            if (TatumClient.isCustodialWallet(data.currency.symbol) && data.currency.symbol !== chain) {
+            const withdrawTX = await callWithdrawMethod();
+            if (TatumClient.isSubCustodialToken(data.currency.symbol)) {
                 await transferFundsToRaiinmaker({
                     currency: payload.currency,
                     amount: fee,
                 });
             }
-            return true;
+            return withdrawTX;
         } catch (error) {
             console.log(error?.response?.data || error.message);
             throw new Error(error?.response?.data?.message || error.message);
@@ -406,30 +432,10 @@ export class TatumClient {
         }
     };
 
-    // public static estimateETHWithdrawFee = async (data: WithdrawPayload) => {
-    //     const endpoint = `${TatumClient.baseUrl}/ethereum/gas`;
-    //     const chain = TatumClient.getBaseChain(data.currency.symbol);
-    //     const isERC20 = chain === "ETH" && data.currency.symbol !== chain;
-    //     const requestData: RequestData = {
-    //         method: "POST",
-    //         url: endpoint,
-    //         payload: {
-    //             amount: fixDecimalsForTatum(data.amount),
-    //             from: data.currency.depositAddress,
-    //             to: data.address,
-    //             ...(isERC20 && { contractAddress: TatumClient.getContractAddress(data.currency.symbol) }),
-    //         },
-    //         headers: { "x-api-key": Secrets.tatumApiKey },
-    //     };
-    //     const resp = await doFetch(requestData);
-    //     const feeAmount = (resp.gasLimit * resp.gasPrice) / 1e18;
-    //     return parseFloat(fixDecimalsForTatum(feeAmount));
-    // };
-
     public static estimateCustodialWithdrawFee = async (data: WithdrawPayload) => {
         const endpoint = `${TatumClient.baseUrl}/blockchain/estimate`;
         const chain = TatumClient.getBaseChain(data.currency.symbol);
-        const isERC20 = (chain === "ETH" || chain === "BSC") && data.currency.symbol !== chain;
+        const isSubCustodialToken = TatumClient.isSubCustodialToken(data.currency.symbol);
         const wallet = await TatumClient.getWallet(chain);
         const requestData: RequestData = {
             method: "POST",
@@ -440,14 +446,13 @@ export class TatumClient {
                 amount: formatFloat(data.amount),
                 sender: wallet.walletAddress,
                 recipient: data.address,
-                ...(isERC20 && { contractAddress: TatumClient.getContractAddress(data.currency.symbol) }),
+                ...(isSubCustodialToken && { contractAddress: TatumClient.getContractAddress(data.currency.symbol) }),
                 custodialAddress: data.custodialAddress.address,
-                tokenType: isERC20 ? 0 : 3,
+                tokenType: isSubCustodialToken ? 0 : 3,
             },
             headers: { "x-api-key": Secrets.tatumApiKey },
         };
         const resp = await doFetch(requestData);
-        console.log(resp);
         const feeAmount = (resp.gasLimit * resp.gasPrice) / 1e9;
         return parseFloat(formatFloat(feeAmount));
     };
@@ -468,20 +473,20 @@ export class TatumClient {
         }
     };
 
-    public static sendOffchainTransactionFromCustodial = async (data: WithdrawPayload & WalletKeys) => {
+    public static sendOffchainTransactionFromCustodial = async (
+        data: WithdrawPayload & WalletKeys
+    ): Promise<{ txId: string }> => {
         try {
-            console.log("starting withdraw-----");
             const ledgerTX = await offchainStoreWithdrawal({
                 senderAccountId: data.currency.tatumId,
                 address: data.address,
                 amount: data.amount,
                 fee: data.fee,
             });
-            console.log("ledger tx response ---- ", ledgerTX);
             try {
                 const offchainTX = await TatumClient.prepareTransferFromCustodialWallet(data);
-                console.log("custodial tx response ----- ", offchainTX);
-                return await offchainCompleteWithdrawal(ledgerTX.id, offchainTX);
+                await offchainCompleteWithdrawal(ledgerTX.id, offchainTX.txId);
+                return offchainTX;
             } catch (error) {
                 await offchainCancelWithdrawal(ledgerTX.id);
                 throw new Error("There was an error performing blockchain transaction.");
@@ -503,7 +508,6 @@ export class TatumClient {
                 fromPrivateKey: wallet?.privateKey || "",
                 chain,
             });
-            console.log(txResp);
             if (txResp.failed) throw new Error("There was an error creating custodial addresses.");
             await sleep(20000);
             return await TatumClient.getCustodialAddresses({ chain, txId: txResp.txId });

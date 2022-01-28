@@ -1,9 +1,10 @@
 import { TatumClient, USER_WITHDRAW_FEE, WithdrawPayload } from "../clients/tatumClient";
 import { Currency } from "../models/Currency";
-import { BN, getERC20ValueOfETH } from ".";
+import { BN } from ".";
 import { Org } from "../models/Org";
 import { Transfer } from "../models/Transfer";
 import { formatFloat } from "./index";
+import { getExchangeRateForCrypto } from "./exchangeRate";
 
 interface WithdrawFeeData {
     withdrawAbleAmount: string;
@@ -12,16 +13,15 @@ interface WithdrawFeeData {
 
 const BCH_DEFAULT_WITHDRAW_FEE = 0.001;
 const BNB_DEFAULT_WITHDRAW_FEE = 0.0005;
-const XLM_DEFAULT_WITHDRAW_FEE = 0.01;
 const XRP_DEFAULT_WITHDRAW_FEE = 0.1;
 // const DOGE_DEFAULT_WITHDRAW_FEE = 5;
 // const LTC_DEFAULT_WITHDRAW_FEE = 0.001;
+// const XLM_DEFAULT_WITHDRAW_FEE = 0.01;
 
 export const SYMBOL_TO_CHAIN: { [key: string]: string } = {
     BTC: "BTC",
     ETH: "ETH",
     XRP: "XRP",
-    XLM: "XLM",
     BCH: "BCH",
     LTC: "LTC",
     FLOW: "FLOW",
@@ -86,8 +86,6 @@ export const offchainEstimateFee = async (data: WithdrawPayload): Promise<number
             return await TatumClient.estimateLedgerToBlockchainFee(data);
         case "XRP":
             return XRP_DEFAULT_WITHDRAW_FEE;
-        case "XLM":
-            return XLM_DEFAULT_WITHDRAW_FEE;
         case "BCH":
             return BCH_DEFAULT_WITHDRAW_FEE;
         case "LTC":
@@ -115,15 +113,19 @@ export const offchainEstimateFee = async (data: WithdrawPayload): Promise<number
     }
 };
 
+export const getFeeInSymbol = async (base: string, symbol: string, amount: number): Promise<number> => {
+    const marketRateSymbol = await getExchangeRateForCrypto(symbol);
+    const marketRateBase = await getExchangeRateForCrypto(base);
+    const BasetoSymbol = marketRateBase / marketRateSymbol;
+    return BasetoSymbol * amount;
+};
+
 export const adjustWithdrawableAmount = async (data: WithdrawPayload): Promise<WithdrawFeeData> => {
-    const chain = TatumClient.getBaseChain(data.currency.symbol);
     let adjustedAmount = parseFloat(formatFloat(data.amount));
+    const base = TatumClient.isERC20(data.currency.symbol) ? "ETH" : "BNB";
     let fee = await offchainEstimateFee(data);
-    if (chain === "ETH" && data.currency.symbol !== chain) {
-        fee = await getERC20ValueOfETH(data.currency.symbol, fee);
-    }
-    if (chain === "BSC" && data.currency.symbol !== chain) {
-        fee = await getERC20ValueOfETH(data.currency.symbol, fee);
+    if (TatumClient.isSubCustodialToken(data.currency.symbol)) {
+        fee = await getFeeInSymbol(base, data.currency.symbol, fee);
     }
     adjustedAmount = adjustedAmount - fee;
     return {
@@ -137,8 +139,14 @@ export const transferFundsToRaiinmaker = async (data: { currency: Currency; amou
     if (!raiinmakerOrg) throw new Error("Org not found for raiinmaker.");
     const raiinmakerCurrency = await Currency.findOne({ where: { wallet: raiinmakerOrg?.wallet } });
     if (!raiinmakerCurrency) throw new Error("Currency not found for raiinmaker.");
-    await TatumClient.transferFunds(data.currency.tatumId, raiinmakerCurrency.tatumId, data.amount, USER_WITHDRAW_FEE);
+    const transferData = await TatumClient.transferFunds(
+        data.currency.tatumId,
+        raiinmakerCurrency.tatumId,
+        data.amount,
+        USER_WITHDRAW_FEE
+    );
     const newTransfer = Transfer.initTatumTransfer({
+        txId: transferData?.reference,
         symbol: data.currency.symbol,
         amount: new BN(data.amount),
         action: "FEE",

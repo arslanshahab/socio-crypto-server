@@ -215,7 +215,7 @@ export const withdrawFunds = async (
             },
         });
         if (!custodialAddress) throw new Error("No custodial address available for raiinmaker");
-        await TatumClient.withdrawFundsToBlockchain({
+        const withdrawResp = await TatumClient.withdrawFundsToBlockchain({
             senderAccountId: userCurrency.tatumId,
             paymentId: `${USER_WITHDRAW}:${user.id}`,
             senderNote: RAIINMAKER_WITHDRAW,
@@ -225,6 +225,7 @@ export const withdrawFunds = async (
             custodialAddress,
         });
         const newTransfer = Transfer.initTatumTransfer({
+            txId: withdrawResp?.txId,
             symbol,
             amount: new BN(amount),
             action: "WITHDRAW",
