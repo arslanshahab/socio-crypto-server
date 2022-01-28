@@ -211,6 +211,7 @@ export const withdrawFunds = async (
         if (!userCurrency) throw new Error("Tatum account not found for user.");
         const custodialAddress = await CustodialAddress.findOne({
             where: {
+                chain: TatumClient.getBaseChain(symbol),
                 wallet: await Wallet.findOne({ where: { org: await Org.findOne({ where: { name: "raiinmaker" } }) } }),
             },
         });

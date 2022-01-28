@@ -483,8 +483,10 @@ export class TatumClient {
                 amount: data.amount,
                 fee: data.fee,
             });
+            console.log("ledger TX ---- ", ledgerTX);
             try {
                 const offchainTX = await TatumClient.prepareTransferFromCustodialWallet(data);
+                console.log("blockchain TX ---- ", offchainTX);
                 await offchainCompleteWithdrawal(ledgerTX.id, offchainTX.txId);
                 return offchainTX;
             } catch (error) {
