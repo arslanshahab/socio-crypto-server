@@ -162,24 +162,17 @@ const prepareOrderEntities = async (cart: Array<any>, statusList: Array<any>): P
 
 const ifUserCanRedeem = async (user: User, totalCoiinSpent: number) => {
     const twitterAccount = user.socialLinks.find((item) => item.type === "twitter");
-    if (!twitterAccount) {
-        throw new Error("You need to link your twitter account before you redeem!");
-    }
+    if (!twitterAccount) throw new Error("You need to link your twitter account before you redeem!");
     const socialClient = getSocialClient("twitter");
     const twitterFollowers = await socialClient.getTotalFollowers(twitterAccount, twitterAccount.id);
-    if (twitterFollowers < 20) {
-        throw new Error("You need to have atleast 20 followers on twitter before you redeem!");
-    }
-    if (user.campaigns.length === 0)
-        throw new Error("You need to participate in atleast one campaign in order to redeem!");
+    if (twitterFollowers < 20) throw new Error("You need to have atleast 20 followers on twitter before you redeem!");
+    if (!user.campaigns.length) throw new Error("You need to participate in atleast one campaign in order to redeem!");
     const recentOrder = user.orders.sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     )[0];
-    if (recentOrder && differenceInHours(new Date(), new Date(recentOrder.createdAt)) < 24) {
+    if (recentOrder && differenceInHours(new Date(), new Date(recentOrder.createdAt)) < 24)
         throw new Error("You need to wait for few hours before you can redeem again!");
-    }
     const userCoiins = user.wallet.walletCurrency.find((item) => item.type.toLowerCase() === "coiin");
-    if (!userCoiins || userCoiins.balance.isLessThanOrEqualTo(0) || userCoiins.balance.isLessThan(totalCoiinSpent)) {
+    if (!userCoiins || userCoiins.balance.isLessThanOrEqualTo(0) || userCoiins.balance.isLessThan(totalCoiinSpent))
         throw new Error("Not enough coiin balance to proceed with this transaction!");
-    }
 };

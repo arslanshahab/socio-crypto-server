@@ -9,6 +9,8 @@ interface JWTPayload {
     role: string;
 }
 
+export type CustodialAddressChain = "ETH" | "MATIC" | "BSC" | "ONE" | "XDC";
+
 export interface XoxodayVoucher {
     productId: string;
     name: string;

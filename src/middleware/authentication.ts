@@ -39,8 +39,7 @@ export const authenticateUser = async ({ req }: { req: express.Request }) => {
 };
 
 export const checkPermissions = (opts: { hasRole?: string[]; restrictCompany?: string }, context: { user: any }) => {
-    const { role, id, company } = context.user;
-    console.log(`UID: ${id} requesting a admin route`);
+    const { role, company } = context.user;
     if (opts.hasRole) {
         if (!role || !opts.hasRole.includes(role)) throw new Error("forbidden");
     }

@@ -213,7 +213,7 @@ export const typeDefs = gql`
         checkCoinGecko(symbol: String): Boolean
         getWeeklyRewards: WeeklyRewardEstimation
         getRedemptionRequirements: RedemptionRequirements
-        getUserBalances(userId: String): [UserBalance]
+        getUserBalances: [UserBalance]
         getTransferHistory(symbol: String, skip: Int, take: Int): PaginatedTransferHistory
         listAllCampaignsForOrg: [UserAllCampaigns]
         # downloadKyc(kycId: String!): [Factor]

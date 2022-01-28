@@ -28,7 +28,6 @@ import { SesClient } from "../clients/ses";
 import { USER_NOT_FOUND, INCORRECT_PASSWORD, FormattedError, SAME_OLD_AND_NEW_PASSWORD } from "../util/errors";
 import { addDays, endOfISOWeek, startOfDay } from "date-fns";
 import { Transfer } from "../models/Transfer";
-import { findOrCreateCurrency } from "../util/tatumHelper";
 
 export const participate = async (
     parent: any,
@@ -51,7 +50,7 @@ export const participate = async (
             throw new Error("user already participating in this campaign");
 
         if (await TatumClient.isCurrencySupported(campaign.symbol)) {
-            await findOrCreateCurrency(campaign.symbol, user.wallet);
+            await TatumClient.findOrCreateCurrency(campaign.symbol, user.wallet);
         }
         const participant = Participant.createNewParticipant(user, campaign, args.email);
         if (!campaign.isGlobal) await user.transferReward("PARTICIPATION_REWARD");

@@ -17,9 +17,6 @@ export class TatumWallet extends BaseEntity {
     @Column({ nullable: false })
     public address: string;
 
-    @Column({ nullable: false })
-    public owner: string;
-
     @CreateDateColumn()
     public createdAt: Date;
 
@@ -38,7 +35,6 @@ export class TatumWallet extends BaseEntity {
         account.currency = data.currency || "";
         account.xpub = data.xpub || "";
         account.address = data.address || "";
-        account.owner = "raiinmaker";
         return await TatumWallet.save(account);
     }
 }
