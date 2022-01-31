@@ -12,6 +12,7 @@ import { CustodialAddress } from "../models/CustodialAddress";
 import { CustodialAddressChain } from "src/types";
 import { Wallet } from "../models/Wallet";
 import { Org } from "../models/Org";
+import { RAIINMAKER_ORG_NAME } from "../util/constants";
 
 export const initWallet = asyncHandler(async (req: Request, res: Response) => {
     try {
@@ -172,19 +173,17 @@ export const getDepositAddress = async (parent: any, args: { symbol: string }, c
         const { id } = context.user;
         const admin = await Admin.findOne({ where: { firebaseId: id }, relations: ["org", "org.wallet"] });
         if (!admin) throw new Error("Admin not found!");
-        let { symbol } = args;
-        symbol = symbol.toUpperCase();
-        if (!symbol) throw new Error("Currency not supported");
-        const fromTatum = await TatumClient.isCurrencySupported(symbol);
-        let ledgerAccount;
-        if (fromTatum) ledgerAccount = await TatumClient.findOrCreateCurrency(symbol, admin.org.wallet);
+        const symbol = args.symbol.toUpperCase();
+        if (!TatumClient.isCurrencySupported(symbol)) throw new Error("Currency not supported");
+        const ledgerAccount = await TatumClient.findOrCreateCurrency(symbol, admin.org.wallet);
+        if (!ledgerAccount) throw new Error("Ledger account not found.");
         return {
             symbol,
-            address: ledgerAccount?.depositAddress || process.env.ETHEREUM_DEPOSIT_ADDRESS,
-            fromTatum,
-            destinationTag: ledgerAccount?.destinationTag || "",
-            memo: ledgerAccount?.memo || "",
-            message: ledgerAccount?.message || "",
+            address: ledgerAccount.depositAddress,
+            fromTatum: TatumClient.isCurrencySupported(symbol),
+            destinationTag: ledgerAccount.destinationTag,
+            memo: ledgerAccount.memo,
+            message: ledgerAccount.message,
         };
     } catch (error) {
         console.log("ERROR----", error);
@@ -212,7 +211,9 @@ export const withdrawFunds = async (
         const custodialAddress = await CustodialAddress.findOne({
             where: {
                 chain: TatumClient.getBaseChain(symbol),
-                wallet: await Wallet.findOne({ where: { org: await Org.findOne({ where: { name: "raiinmaker" } }) } }),
+                wallet: await Wallet.findOne({
+                    where: { org: await Org.findOne({ where: { name: RAIINMAKER_ORG_NAME } }) },
+                }),
             },
         });
         if (!custodialAddress) throw new Error("No custodial address available for raiinmaker");

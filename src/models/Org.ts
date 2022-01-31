@@ -17,6 +17,7 @@ import { Wallet } from "./Wallet";
 import { TatumClient } from "../clients/tatumClient";
 import { WalletCurrency } from "./WalletCurrency";
 import { Currency } from "./Currency";
+import { RAIINMAKER_ORG_NAME } from "../util/constants";
 
 @Entity()
 export class Org extends BaseEntity {
@@ -167,4 +168,13 @@ export class Org extends BaseEntity {
             throw new Error(error.message);
         }
     }
+
+    public static getCurrencyForRaiinmaker = async (symbol: string) => {
+        const raiinmakerOrg = await Org.findOne({ where: { name: RAIINMAKER_ORG_NAME }, relations: ["wallet"] });
+        if (!raiinmakerOrg) throw new Error(`Org not found for ${RAIINMAKER_ORG_NAME}.`);
+        return await Currency.findOne({
+            where: { symbol, wallet: raiinmakerOrg?.wallet },
+            relations: ["wallet"],
+        });
+    };
 }

@@ -32,6 +32,7 @@ import { Wallet } from "./Wallet";
 import { Currency } from "./Currency";
 import { getCryptoAssestImageUrl, BN } from "../util";
 import { initDateFromParams } from "../util/date";
+import { RAIINMAKER_ORG_NAME } from "src/util/constants";
 
 @Entity()
 export class Campaign extends BaseEntity {
@@ -76,7 +77,7 @@ export class Campaign extends BaseEntity {
     @Column({ default: "", nullable: true })
     public instructions: string;
 
-    @Column({ nullable: false, default: "raiinmaker" })
+    @Column({ nullable: false, default: RAIINMAKER_ORG_NAME })
     public company: string;
 
     @Column({ nullable: true })

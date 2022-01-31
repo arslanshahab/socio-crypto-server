@@ -9,6 +9,7 @@ import { Validator } from "../schemas";
 import { AcuantApplication, AcuantClient } from "../clients/acuant";
 import { findKycApplication, getApplicationStatus, generateFactorsFromKYC, asyncHandler } from "../util";
 import { ApolloError } from "apollo-server-express";
+import { RAIINMAKER_ORG_NAME } from "../util/constants";
 
 const validator = new Validator();
 
@@ -89,7 +90,7 @@ export const getKyc = async (_parent: any, args: any, context: { user: any }) =>
 };
 
 export const adminGetKycByUser = async (parent: any, args: { userId: string }, context: { user: any }) => {
-    checkPermissions({ restrictCompany: "raiinmaker" }, context);
+    checkPermissions({ restrictCompany: RAIINMAKER_ORG_NAME }, context);
     const { userId } = args;
     const user = await User.findOne({ where: { id: userId } });
     if (!user) throw new Error("user not found");

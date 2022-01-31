@@ -23,6 +23,7 @@ import { CampaignChannelTemplate } from "../types.d";
 import { CampaignMedia } from "../models/CampaignMedia";
 import { CampaignTemplate } from "../models/CampaignTemplate";
 import { addYears } from "date-fns";
+import { RAIINMAKER_ORG_NAME } from "../util/constants";
 
 const validator = new Validator();
 
@@ -349,7 +350,7 @@ export const adminUpdateCampaignStatus = async (
     args: { status: CampaignStatus; campaignId: string },
     context: { user: any }
 ) => {
-    checkPermissions({ restrictCompany: "raiinmaker" }, context);
+    checkPermissions({ restrictCompany: RAIINMAKER_ORG_NAME }, context);
     const { status, campaignId } = args;
     const campaign = await Campaign.findOne({
         where: { id: campaignId },
@@ -417,7 +418,7 @@ export const adminListPendingCampaigns = async (
     args: { skip: number; take: number },
     context: { user: any }
 ) => {
-    checkPermissions({ restrictCompany: "raiinmaker" }, context);
+    checkPermissions({ restrictCompany: RAIINMAKER_ORG_NAME }, context);
     const { skip = 0, take = 10 } = args;
     const [results, total] = await Campaign.adminListCampaignsByStatus(skip, take);
     return { results: results.map((result) => result.asV1()), total };

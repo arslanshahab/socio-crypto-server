@@ -11,7 +11,7 @@ import { decrypt } from "../../util/crypto";
 import { getCurrentCampaignTier } from "../../controllers/campaign";
 import { BN } from "../../util";
 import { BigNumber } from "bignumber.js";
-import { FEE_RATE } from "../../util/constants";
+import { FEE_RATE, RAIINMAKER_ORG_NAME } from "../../util/constants";
 import { Currency } from "../../models/Currency";
 import { Org } from "../../models/Org";
 import { User } from "../../models/User";
@@ -66,7 +66,9 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
         totalRewardAmount = totalRewardAmount.minus(campaignFee);
         const raiinmakerAccount = await Currency.findOne({
             where: {
-                wallet: await Wallet.findOne({ where: { org: await Org.findOne({ where: { name: "raiinmaker" } }) } }),
+                wallet: await Wallet.findOne({
+                    where: { org: await Org.findOne({ where: { name: RAIINMAKER_ORG_NAME } }) },
+                }),
                 symbol: campaign.symbol,
             },
         });
@@ -118,7 +120,7 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
         }
 
         // transfer campaign fee to raiinmaker tatum account
-        if (campaign.org.name !== "raiinmaker") {
+        if (campaign.org.name !== RAIINMAKER_ORG_NAME) {
             await TatumClient.transferFunds(
                 campaignAccount.tatumId,
                 raiinmakerAccount.tatumId,

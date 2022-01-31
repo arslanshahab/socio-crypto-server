@@ -7,13 +7,14 @@ import { SesClient } from "../clients/ses";
 import { FailureByDesign } from "../util/errors";
 import { WalletCurrency } from "../models/WalletCurrency";
 import { Wallet } from "../models/Wallet";
+import { RAIINMAKER_ORG_NAME } from "../util/constants";
 
 export const newOrg = async (
     parent: any,
     args: { orgName: string; email: string; name: string },
     context: { user: any }
 ) => {
-    if (context.user.company !== "raiinmaker") throw new Error("forbidden");
+    if (context.user.company !== RAIINMAKER_ORG_NAME) throw new Error("forbidden");
     const { orgName, email, name } = args;
     const orgNameToLower = orgName.toLowerCase();
     const password = Math.random().toString(16).substr(2, 15);
@@ -35,7 +36,7 @@ export const newOrg = async (
     return org;
 };
 export const listOrgs = async (parent: any, args: { skip: number; take: number }, context: { user: any }) => {
-    if (context.user.company !== "raiinmaker") throw new Error("forbidden");
+    if (context.user.company !== RAIINMAKER_ORG_NAME) throw new Error("forbidden");
     const { skip = 0, take = 10 } = args;
     const orgs = await Org.listOrgs(skip, take);
     return orgs.map((org) => org.asV1());

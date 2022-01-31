@@ -5,6 +5,7 @@ import { Org } from "../models/Org";
 import { Transfer } from "../models/Transfer";
 import { formatFloat } from "./index";
 import { getExchangeRateForCrypto } from "./exchangeRate";
+import { RAIINMAKER_ORG_NAME } from "./constants";
 
 interface WithdrawFeeData {
     withdrawAbleAmount: string;
@@ -135,11 +136,7 @@ export const adjustWithdrawableAmount = async (data: WithdrawPayload): Promise<W
 };
 
 export const transferFundsToRaiinmaker = async (data: { currency: Currency; amount: string }): Promise<any> => {
-    const raiinmakerOrg = await Org.findOne({ where: { name: "raiinmaker" }, relations: ["wallet"] });
-    if (!raiinmakerOrg) throw new Error("Org not found for raiinmaker.");
-    const raiinmakerCurrency = await Currency.findOne({
-        where: { symbol: data.currency.symbol, wallet: raiinmakerOrg?.wallet },
-    });
+    const raiinmakerCurrency = await Org.getCurrencyForRaiinmaker(data.currency.symbol);
     if (!raiinmakerCurrency) throw new Error("Currency not found for raiinmaker.");
     const transferData = await TatumClient.transferFunds(
         data.currency.tatumId,
@@ -152,7 +149,7 @@ export const transferFundsToRaiinmaker = async (data: { currency: Currency; amou
         symbol: data.currency.symbol,
         amount: new BN(data.amount),
         action: "FEE",
-        wallet: raiinmakerOrg.wallet,
+        wallet: raiinmakerCurrency.wallet,
         tatumId: raiinmakerCurrency.tatumId,
     });
     newTransfer.save();

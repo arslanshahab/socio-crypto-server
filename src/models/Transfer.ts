@@ -21,6 +21,7 @@ import { RafflePrize } from "./RafflePrize";
 import { performCurrencyTransfer } from "../controllers/helpers";
 import { startOfISOWeek, endOfISOWeek } from "date-fns";
 import { initDateFromParams } from "../util/date";
+import { RAIINMAKER_ORG_NAME } from "src/util/constants";
 
 @Entity()
 export class Transfer extends BaseEntity {
@@ -147,7 +148,7 @@ export class Transfer extends BaseEntity {
     }
 
     public static async transferCampaignPayoutFee(campaign: Campaign, amount: BigNumber): Promise<Transfer> {
-        const org = await Org.findOne({ where: { name: "raiinmaker" }, relations: ["wallet"] });
+        const org = await Org.findOne({ where: { name: RAIINMAKER_ORG_NAME }, relations: ["wallet"] });
         if (!org) throw new Error("raiinmaker org not found for payout");
         const transfer = new Transfer();
         transfer.action = "FEE";
