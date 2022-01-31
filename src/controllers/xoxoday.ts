@@ -73,9 +73,8 @@ export const placeOrder = async (parent: any, args: { cart: Array<any>; email: s
         await ifUserCanRedeem(user, totalCoiinSpent);
         const ordersData = await prepareOrderList(cart, email);
         const orderStatusList = await Xoxoday.placeOrder(ordersData);
-        const orderEntitiesList = await prepareOrderEntities(cart, orderStatusList);
         await user.updateCoiinBalance("SUBTRACT", totalCoiinSpent);
-        XoxodayOrderModel.saveOrderList(orderEntitiesList, user);
+        XoxodayOrderModel.saveOrderList(await prepareOrderEntities(cart, orderStatusList), user);
         await Transfer.newReward({
             wallet: user.wallet,
             symbol: "COIIN",
