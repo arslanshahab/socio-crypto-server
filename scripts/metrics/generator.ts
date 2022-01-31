@@ -1,4 +1,4 @@
-import { BN } from "../../src/util/helpers";
+import { BN } from "../../src/util/";
 import {
     checkFrequency,
     generateAlgorithm,
