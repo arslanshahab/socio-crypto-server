@@ -51,6 +51,7 @@ export const resolvers = {
         getRedemptionRequirements: xoxodayController.redemptionRequirements,
         getUserBalances: userController.getWalletBalances,
         getTransferHistory: transferController.getTransferHistory,
+        getTransferHistoryV2: transferController.getTransferHistoryV2,
         downloadKyc: kycController.downloadKyc,
     },
     Mutation: {

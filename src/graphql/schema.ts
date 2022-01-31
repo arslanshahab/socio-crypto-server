@@ -215,6 +215,7 @@ export const typeDefs = gql`
         getRedemptionRequirements: RedemptionRequirements
         getUserBalances: [UserBalance]
         getTransferHistory(symbol: String, skip: Int, take: Int): PaginatedTransferHistory
+        getTransferHistoryV2(symbol: String, skip: Int, take: Int): PaginatedTransferHistory
         listAllCampaignsForOrg: [UserAllCampaigns]
         # downloadKyc(kycId: String!): [Factor]
         downloadKyc: KycApplicationResponse
