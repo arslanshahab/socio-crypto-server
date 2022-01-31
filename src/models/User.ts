@@ -11,7 +11,6 @@ import {
     BeforeUpdate,
 } from "typeorm";
 import { Participant } from "./Participant";
-import { XoxodayOrder } from "./XoxodayOrder";
 import { Wallet } from "./Wallet";
 import { SocialLink } from "./SocialLink";
 import { SocialPost } from "./SocialPost";
@@ -31,6 +30,7 @@ import { WalletCurrency } from "./WalletCurrency";
 import { differenceInMonths } from "date-fns";
 import { Transfer } from "./Transfer";
 import { JWTPayload } from "src/types";
+import { XoxodayOrder } from "./XoxodayOrder";
 
 export const LOGIN_REWARD_AMOUNT = 1;
 export const PARTICIPATION_REWARD_AMOUNT = 2;
@@ -159,9 +159,6 @@ export class User extends BaseEntity {
             }
             if (this.campaigns && this.campaigns.length > 0) {
                 returnedUser.campaigns = this.campaigns.map((participant) => participant.asV1());
-            }
-            if (this.orders && this.orders.length > 0) {
-                returnedUser.orders = this.orders.map((order) => order.asV1());
             }
         } catch (e) {
             console.log(e);

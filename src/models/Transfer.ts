@@ -8,6 +8,7 @@ import {
     UpdateDateColumn,
     ManyToOne,
     Between,
+    MoreThan,
 } from "typeorm";
 import { DateUtils } from "typeorm/util/DateUtils";
 import { Wallet } from "./Wallet";
@@ -19,6 +20,7 @@ import { Org } from "./Org";
 import { RafflePrize } from "./RafflePrize";
 import { performCurrencyTransfer } from "../controllers/helpers";
 import { startOfISOWeek, endOfISOWeek } from "date-fns";
+import { initDateFromParams } from "../util/date";
 
 @Entity()
 export class Transfer extends BaseEntity {
@@ -162,6 +164,13 @@ export class Transfer extends BaseEntity {
         const start = startOfISOWeek(currentDate);
         const end = endOfISOWeek(currentDate);
         return await this.findOne({ where: { wallet, createdAt: Between(start, end), action: type } });
+    }
+
+    public static async getLast24HourRedemption(wallet: Wallet, type: TransferAction) {
+        const date = initDateFromParams({ date: new Date(), d: new Date().getDate() - 1, h: 0, i: 0, s: 0 });
+        return await Transfer.findOne({
+            where: { action: type, createdAt: MoreThan(DateUtils.mixedDateToDatetimeString(date)) },
+        });
     }
 
     public static newFromWalletPayout(wallet: Wallet, campaign: Campaign, amount: BigNumber): Transfer {
