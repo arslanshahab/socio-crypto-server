@@ -564,6 +564,7 @@ export const typeDefs = gql`
         interests: [String]
         values: [String]
         notificationSettings: NotificationSettings
+        orders: [JSON]
     }
 
     type PublicUser {

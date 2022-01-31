@@ -7,6 +7,7 @@ import { User } from "../models/User";
 import { getSocialClient } from "./social";
 import { S3Client } from "../clients/s3";
 import { Transfer } from "../models/Transfer";
+import { XoxodayOrder as XoxodayOrderModel } from "../models/XoxodayOrder";
 
 export const initXoxoday = asyncHandler(async (req: Request, res: Response) => {
     try {
@@ -71,8 +72,10 @@ export const placeOrder = async (parent: any, args: { cart: Array<any>; email: s
         const totalCoiinSpent = cart.reduce((a, b) => a + (b.coiinPrice || 0), 0);
         await ifUserCanRedeem(user, totalCoiinSpent);
         const ordersData = await prepareOrderList(cart, email);
-        await Xoxoday.placeOrder(ordersData);
+        const orderStatusList = await Xoxoday.placeOrder(ordersData);
+        const orderEntitiesList = await prepareOrderEntities(cart, orderStatusList);
         await user.updateCoiinBalance("SUBTRACT", totalCoiinSpent);
+        XoxodayOrderModel.saveOrderList(orderEntitiesList, user);
         await Transfer.newReward({
             wallet: user.wallet,
             symbol: "COIIN",
@@ -84,6 +87,15 @@ export const placeOrder = async (parent: any, args: { cart: Array<any>; email: s
         console.log(error);
         return error;
     }
+};
+
+const prepareOrderEntities = async (cart: Array<any>, statusList: Array<any>): Promise<Array<any>> => {
+    return cart.map((item, index) => {
+        return {
+            ...statusList[index],
+            ...item,
+        };
+    });
 };
 
 export const redemptionRequirements = async (parent: any, args: {}, context: { user: any }) => {
