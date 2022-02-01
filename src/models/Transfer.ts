@@ -21,7 +21,7 @@ import { RafflePrize } from "./RafflePrize";
 import { performCurrencyTransfer } from "../controllers/helpers";
 import { startOfISOWeek, endOfISOWeek } from "date-fns";
 import { initDateFromParams } from "../util/date";
-import { RAIINMAKER_ORG_NAME } from "src/util/constants";
+import { RAIINMAKER_ORG_NAME } from "../util/constants";
 
 @Entity()
 export class Transfer extends BaseEntity {

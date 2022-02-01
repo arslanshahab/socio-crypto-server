@@ -103,12 +103,12 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
             });
             if (!userCurrency) throw new Error(`currency not found for user ${participant.user.id}`);
             promiseArray.push(
-                TatumClient.transferFunds(
-                    campaignAccount.tatumId,
-                    userCurrency.tatumId,
-                    usersRewards[participant.user.id].toString(),
-                    `${CAMPAIGN_REWARD}:${campaign.id}`
-                )
+                TatumClient.transferFunds({
+                    senderAccountId: campaignAccount.tatumId,
+                    recipientAccountId: userCurrency.tatumId,
+                    amount: usersRewards[participant.user.id].toString(),
+                    recipientNote: `${CAMPAIGN_REWARD}:${campaign.id}`,
+                })
             );
             transferDetails.push({
                 campaignAccount,
@@ -121,12 +121,12 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
 
         // transfer campaign fee to raiinmaker tatum account
         if (campaign.org.name !== RAIINMAKER_ORG_NAME) {
-            await TatumClient.transferFunds(
-                campaignAccount.tatumId,
-                raiinmakerAccount.tatumId,
-                raiinmakerFee.toString(),
-                `${CAMPAIGN_FEE}:${campaign.id}`
-            );
+            await TatumClient.transferFunds({
+                senderAccountId: campaignAccount.tatumId,
+                recipientAccountId: raiinmakerAccount.tatumId,
+                amount: raiinmakerFee.toString(),
+                recipientNote: `${CAMPAIGN_FEE}:${campaign.id}`,
+            });
         }
         const responses = await Promise.allSettled(promiseArray);
         const transferRecords = [];

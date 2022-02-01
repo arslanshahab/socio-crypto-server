@@ -5,7 +5,6 @@ import { Org } from "../models/Org";
 import { Transfer } from "../models/Transfer";
 import { formatFloat } from "./index";
 import { getExchangeRateForCrypto } from "./exchangeRate";
-import { RAIINMAKER_ORG_NAME } from "./constants";
 
 interface WithdrawFeeData {
     withdrawAbleAmount: string;
@@ -55,6 +54,7 @@ export const SYMBOL_TO_CHAIN: { [key: string]: string } = {
     BXRP: "BSC",
     BLTC: "BSC",
     BBCH: "BSC",
+    COIIN: "ETH",
 };
 
 export const SYMBOL_TO_CONTRACT: { [key: string]: string } = {
@@ -78,6 +78,7 @@ export const SYMBOL_TO_CONTRACT: { [key: string]: string } = {
     BXRP: "0xb48063146a5ea2a4114a62d7fe6ed59ed2094b68",
     BLTC: "0x173b3bbe6492ce717f4b8a6e57a0c308e732a91e",
     BBCH: "0x003ab14e9e91e64f8826bb096657990c83e5d195",
+    COIIN: "0x7fbF6cbD742D451BE76A7C7497f0c6630345e2E8",
 };
 
 export const offchainEstimateFee = async (data: WithdrawPayload): Promise<number> => {
@@ -138,12 +139,12 @@ export const adjustWithdrawableAmount = async (data: WithdrawPayload): Promise<W
 export const transferFundsToRaiinmaker = async (data: { currency: Currency; amount: string }): Promise<any> => {
     const raiinmakerCurrency = await Org.getCurrencyForRaiinmaker(data.currency.symbol);
     if (!raiinmakerCurrency) throw new Error("Currency not found for raiinmaker.");
-    const transferData = await TatumClient.transferFunds(
-        data.currency.tatumId,
-        raiinmakerCurrency.tatumId,
-        data.amount,
-        USER_WITHDRAW_FEE
-    );
+    const transferData = await TatumClient.transferFunds({
+        senderAccountId: data.currency.tatumId,
+        recipientAccountId: raiinmakerCurrency.tatumId,
+        amount: data.amount,
+        recipientNote: USER_WITHDRAW_FEE,
+    });
     const newTransfer = Transfer.initTatumTransfer({
         txId: transferData?.reference,
         symbol: data.currency.symbol,

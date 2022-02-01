@@ -9,7 +9,7 @@ import {
 } from "typeorm";
 import { User } from "./User";
 import { Org } from "./Org";
-import { RAIINMAKER_ORG_NAME } from "src/util/constants";
+import { RAIINMAKER_ORG_NAME } from "../util/constants";
 
 @Entity()
 export class Admin extends BaseEntity {

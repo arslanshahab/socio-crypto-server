@@ -147,7 +147,12 @@ export const transferBalance = asyncHandler(async (req: Request, res: Response) 
     try {
         const { toAccount, fromAccount, amount, note, token } = req.body;
         if (!token || token !== process.env.RAIINMAKER_DEV_TOKEN) throw new Error("Invalid Token");
-        const data = await TatumClient.transferFunds(fromAccount, toAccount, amount, note);
+        const data = await TatumClient.transferFunds({
+            senderAccountId: fromAccount,
+            recipientAccountId: toAccount,
+            amount: amount,
+            recipientNote: note,
+        });
         res.status(200).json(data);
     } catch (error) {
         res.status(200).json(error.message);

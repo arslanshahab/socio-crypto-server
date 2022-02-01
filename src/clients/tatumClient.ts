@@ -283,15 +283,15 @@ export class TatumClient {
         }
     };
 
-    public static transferFunds = async (
-        senderAccountId: string,
-        recipientAccountId: string,
-        amount: string,
-        recipientNote: string
-    ) => {
+    public static transferFunds = async (data: {
+        senderAccountId: string;
+        recipientAccountId: string;
+        amount: string;
+        recipientNote: string;
+    }) => {
         try {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
-            return await storeTransaction({ senderAccountId, recipientAccountId, amount, recipientNote });
+            return await storeTransaction(data);
         } catch (error) {
             console.log(error?.response?.data || error.message);
             throw new Error(error?.response?.data?.message || error.message);

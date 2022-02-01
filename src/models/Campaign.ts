@@ -32,7 +32,7 @@ import { Wallet } from "./Wallet";
 import { Currency } from "./Currency";
 import { getCryptoAssestImageUrl, BN } from "../util";
 import { initDateFromParams } from "../util/date";
-import { RAIINMAKER_ORG_NAME } from "src/util/constants";
+import { RAIINMAKER_ORG_NAME } from "../util/constants";
 
 @Entity()
 export class Campaign extends BaseEntity {

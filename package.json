@@ -29,7 +29,7 @@
         "migration:generate": "yarn clean && yarn build && yarn typeorm:cli migration:generate",
         "metrics:generate": "NODE_ENV=script ts-node scripts/metrics/index.ts",
         "admin:generate": "NODE_ENV=script ts-node scripts/admin/index.ts",
-        "coiin:migrate": "NODE_ENV=script ts-node scripts/user/coiinMigrationToTatum.ts",
+        "coiin:migrate": "AWS_PROFILE=raiinmaker TS_NODE_FILES=true NODE_ENV=development ts-node scripts/user/coiinMigrationToTatum.ts",
         "cron:watcher:run": "AWS_PROFILE=raiinmaker LOAD_ENV=true ts-node src/cron/coiinWatcher/index.ts",
         "cron:coiinMinter:run": "AWS_PROFILE=raiinmaker LOAD_ENV=true ts-node src/cron/coiinMinter/index.ts",
         "cron:campaignAudit:run": "AWS_PROFILE=raiinmaker LOAD_ENV=true ts-node src/cron/campaignAudit/index.ts",
