@@ -54,7 +54,7 @@ export const SYMBOL_TO_CHAIN: { [key: string]: string } = {
     BXRP: "BSC",
     BLTC: "BSC",
     BBCH: "BSC",
-    COIIN: "ETH",
+    COIIN: "BSC",
 };
 
 export const SYMBOL_TO_CONTRACT: { [key: string]: string } = {
@@ -78,7 +78,7 @@ export const SYMBOL_TO_CONTRACT: { [key: string]: string } = {
     BXRP: "0xb48063146a5ea2a4114a62d7fe6ed59ed2094b68",
     BLTC: "0x173b3bbe6492ce717f4b8a6e57a0c308e732a91e",
     BBCH: "0x003ab14e9e91e64f8826bb096657990c83e5d195",
-    COIIN: "0x7fbF6cbD742D451BE76A7C7497f0c6630345e2E8",
+    COIIN: "0xc6fd4c36a822d43283b79cce07d015a1faf7b321",
 };
 
 export const offchainEstimateFee = async (data: WithdrawPayload): Promise<number> => {
