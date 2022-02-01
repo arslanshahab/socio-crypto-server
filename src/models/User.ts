@@ -9,6 +9,7 @@ import {
     UpdateDateColumn,
     BeforeInsert,
     BeforeUpdate,
+    ILike,
 } from "typeorm";
 import { Participant } from "./Participant";
 import { Wallet } from "./Wallet";
@@ -211,6 +212,20 @@ export class User extends BaseEntity {
             where: { ...(id && { identityId: id }), ...(userId && { id: userId }) },
             ...(relations && { relations }),
         });
+    }
+
+    public static async findUserByEmail(email: string) {
+        let user = await User.findOne({ where: { email: ILike(email) } });
+        if (!user) {
+            const profile = await Profile.findOne({ where: { email }, relations: ["user"] });
+            if (profile) {
+                user = profile.user;
+                await user.updateEmail(profile.email);
+                profile.email = "";
+                await profile.save();
+            }
+        }
+        return user;
     }
 
     public transferReward = async (type: RewardType): Promise<any> => {
