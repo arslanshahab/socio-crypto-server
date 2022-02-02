@@ -269,6 +269,7 @@ export class Campaign extends BaseEntity {
         return await query
             .leftJoinAndSelect("campaign.participants", "participant", 'participant."campaignId" = campaign.id')
             .leftJoinAndSelect("participant.user", "user", 'user.id = participant."userId"')
+            .leftJoinAndSelect("user.profile", "profile", 'user.id = profile."userId"')
             .leftJoinAndSelect("campaign.crypto", "crypto", 'campaign."cryptoId" = crypto.id')
             .leftJoinAndSelect("campaign.campaignMedia", "campaign_media", 'campaign_media."campaignId" = campaign.id')
             .leftJoinAndSelect(
