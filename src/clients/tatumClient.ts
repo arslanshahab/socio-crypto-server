@@ -356,7 +356,7 @@ export class TatumClient {
                 fee,
             };
             const callWithdrawMethod = async () => {
-                switch (`${chain}-Murad`) {
+                switch (chain) {
                     case "BTC":
                         return await sendBitcoinOffchainTransaction(false, body as any);
                     case "XRP":
