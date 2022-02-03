@@ -433,6 +433,8 @@ export const getWeeklyRewardEstimation = async (parent: any, args: any, context:
         const loginReward = await Transfer.getRewardForThisWeek(user.wallet, "LOGIN_REWARD");
         const participationReward = await Transfer.getRewardForThisWeek(user.wallet, "PARTICIPATION_REWARD");
         const nextReward = startOfDay(addDays(endOfISOWeek(user.lastLogin), 1));
+        const coiinEarnedToday = await Transfer.getCoinnEarnedToday(user.wallet);
+        console.log("gdfhdg", coiinEarnedToday);
         return {
             loginRewardRedeemed: Boolean(loginReward),
             loginReward: parseInt(loginReward?.amount?.toString() || "0"),
@@ -443,6 +445,7 @@ export const getWeeklyRewardEstimation = async (parent: any, args: any, context:
             participationRewardRedeemed: Boolean(participationReward),
             participationRedemptionDate: participationReward?.createdAt?.toString() || "",
             loginRedemptionDate: loginReward?.createdAt?.toString() || "",
+            earnedToday: coiinEarnedToday,
         };
     } catch (e) {
         console.log(e);
