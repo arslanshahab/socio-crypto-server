@@ -21,6 +21,7 @@ import { RafflePrize } from "./RafflePrize";
 import { performCurrencyTransfer } from "../controllers/helpers";
 import { startOfISOWeek, endOfISOWeek } from "date-fns";
 import { initDateFromParams } from "../util/date";
+import { COIIN } from "../util/constants";
 
 @Entity()
 export class Transfer extends BaseEntity {
@@ -169,8 +170,24 @@ export class Transfer extends BaseEntity {
     public static async getLast24HourRedemption(wallet: Wallet, type: TransferAction) {
         const date = initDateFromParams({ date: new Date(), d: new Date().getDate() - 1, h: 0, i: 0, s: 0 });
         return await Transfer.findOne({
-            where: { action: type, createdAt: MoreThan(DateUtils.mixedDateToDatetimeString(date)) },
+            where: { action: type, createdAt: MoreThan(DateUtils.mixedDateToUtcDatetimeString(date)) },
         });
+    }
+
+    public static async getCoinnEarnedToday(wallet: Wallet) {
+        const today = initDateFromParams({ date: new Date(), h: 0, i: 0, s: 0 });
+        const { earnings } = await this.createQueryBuilder("transfer")
+            .select("SUM(CAST(transfer.amount AS DECIMAL)) as earnings")
+            .where(
+                `transfer."createdAt" >= :date AND transfer."walletId" = :wallet AND transfer.currency ilike '%' || :currency || '%'`,
+                {
+                    currency: COIIN,
+                    date: DateUtils.mixedDateToUtcDatetimeString(today),
+                    wallet: wallet.id,
+                }
+            )
+            .getRawOne();
+        return earnings;
     }
 
     public static newFromWalletPayout(wallet: Wallet, campaign: Campaign, amount: BigNumber): Transfer {

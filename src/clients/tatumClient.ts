@@ -389,7 +389,7 @@ export class TatumClient {
             if (TatumClient.isSubCustodialToken(data.currency.symbol)) {
                 await transferFundsToRaiinmaker({
                     currency: payload.currency,
-                    amount: fee,
+                    amount: (parseFloat(data.amount) - parseFloat(withdrawAbleAmount)).toString(),
                 });
             }
             return withdrawTX;
@@ -446,7 +446,7 @@ export class TatumClient {
                 amount: formatFloat(data.amount),
                 sender: wallet.walletAddress,
                 recipient: data.address,
-                ...(isSubCustodialToken && { contractAddress: TatumClient.getContractAddress(data.currency.symbol) }),
+                contractAddress: TatumClient.getContractAddress(data.currency.symbol),
                 custodialAddress: data.custodialAddress.address,
                 tokenType: isSubCustodialToken ? 0 : 3,
             },

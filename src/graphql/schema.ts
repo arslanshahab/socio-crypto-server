@@ -327,6 +327,7 @@ export const typeDefs = gql`
         participationRewardRedeemed: Boolean
         participationRedemptionDate: String
         loginRedemptionDate: String
+        earnedToday: Float
     }
 
     type CampaignCreationResponse {
@@ -568,12 +569,6 @@ export const typeDefs = gql`
         orders: [JSON]
     }
 
-    type PublicUser {
-        id: String
-        username: String
-        ageRange: String
-    }
-
     type KycUser {
         firstName: String
         lastName: String
@@ -707,7 +702,7 @@ export const typeDefs = gql`
     type Participant {
         id: String
         metrics: ParticipantMetrics
-        user: PublicUser
+        user: User
         campaign: Campaign
         link: String
         participationScore: Float
