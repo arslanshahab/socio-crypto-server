@@ -132,14 +132,14 @@ export const typeDefs = gql`
         deleteCryptoFromWallet(id: String!): String
         removePaymentMethod(paymentMethodId: String): Boolean
         placeStoreOrder(cart: [JSON], email: String): JSON
-        withdrawFunds(symbol: String, address: String, amount: Float): SuccessResponse
+        withdrawFunds(symbol: String!, address: String!, amount: Float!, verificationToken: String!): SuccessResponse
         startVerification(email: String!, type: VerificationType!): SuccessResponse
         startEmailVerification(email: String!): SuccessResponse
         completeEmailVerification(email: String!, token: String!): SuccessResponse
         completeVerification(email: String!, code: String!): SuccessResponse
         loginUser(email: String!, password: String!): SuccessResponse
         registerUser(email: String!, username: String!, password: String!, verificationToken: String!): SuccessResponse
-        resetUserPassword(password: String!, verificationToken: String): SuccessResponse
+        resetUserPassword(password: String!, verificationToken: String!): SuccessResponse
         recoverUserAccountStep1(username: String!, code: String!): SuccessResponse
         recoverUserAccountStep2(
             email: String!
@@ -215,7 +215,7 @@ export const typeDefs = gql`
         getRedemptionRequirements: RedemptionRequirements
         getUserBalances: [UserBalance]
         getTransferHistory(symbol: String, skip: Int, take: Int): PaginatedTransferHistory
-        getTransferHistoryV2(symbol: String, skip: Int, take: Int): PaginatedTransferHistory
+        getTransferHistoryV2(symbol: String, skip: Int, take: Int, type: String): PaginatedTransferHistory
         listAllCampaignsForOrg: [UserAllCampaigns]
         # downloadKyc(kycId: String!): [Factor]
         downloadKyc: KycApplicationResponse
@@ -244,6 +244,7 @@ export const typeDefs = gql`
     enum VerificationType {
         EMAIL
         PASSWORD
+        WITHDRAW
     }
 
     type KycApplicationResponse {

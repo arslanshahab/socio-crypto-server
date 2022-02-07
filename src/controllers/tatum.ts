@@ -12,6 +12,9 @@ import { CustodialAddress } from "../models/CustodialAddress";
 import { CustodialAddressChain } from "src/types";
 import { Wallet } from "../models/Wallet";
 import { Org } from "../models/Org";
+import { Verification } from "../models/Verification";
+import { decrypt } from "../util/crypto";
+import { EMAIL_NOT_VERIFIED } from "../util/errors";
 
 export const initWallet = asyncHandler(async (req: Request, res: Response) => {
     try {
@@ -194,15 +197,18 @@ export const getDepositAddress = async (parent: any, args: { symbol: string }, c
 
 export const withdrawFunds = async (
     parent: any,
-    args: { symbol: string; address: string; amount: number },
+    args: { symbol: string; address: string; amount: number; verificationToken: string },
     context: { user: any }
 ) => {
     try {
         const user = await User.findUserByContext(context.user, ["wallet"]);
         if (!user) throw new Error("User not found");
-        let { symbol, address, amount } = args;
+        let { symbol, address, amount, verificationToken } = args;
         symbol = symbol.toUpperCase();
         if (!(await TatumClient.isCurrencySupported(symbol))) throw new Error(`currency ${symbol} is not supported`);
+        const verificationData = await Verification.findOne({ where: { id: decrypt(verificationToken) } });
+        if (!verificationData || !verificationData.verified || verificationData.email !== user.email)
+            throw new Error(EMAIL_NOT_VERIFIED);
         const userCurrency = await Currency.findOne({ where: { wallet: user.wallet, symbol } });
         if (!userCurrency) throw new Error(`User wallet not found for currency ${symbol}`);
         const userAccountBalance = await TatumClient.getAccountBalance(userCurrency.tatumId);
