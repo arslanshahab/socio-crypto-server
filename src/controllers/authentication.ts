@@ -165,6 +165,7 @@ export const startVerification = async (parent: any, args: { email: string; type
         const userWithEmail = await User.findUserByEmail(email);
         if (type === "EMAIL" && userWithEmail) throw new Error(EMAIL_EXISTS);
         if (type === "PASSWORD" && !userWithEmail) throw new Error(EMAIL_NOT_EXISTS);
+        if (type === "WITHDRAW" && !userWithEmail) throw new Error(EMAIL_NOT_EXISTS);
         let verificationData = await Verification.findOne({ where: { email, verified: false } });
         if (!verificationData) {
             verificationData = await Verification.createVerification(email);
