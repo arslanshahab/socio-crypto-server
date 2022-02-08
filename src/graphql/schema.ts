@@ -641,6 +641,7 @@ export const typeDefs = gql`
         beginDate: String
         endDate: String
         coiinTotal: Float
+        coiinTotalUSD: Float
         status: String
         symbol: String
         symbolImageUrl: String

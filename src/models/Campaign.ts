@@ -32,6 +32,7 @@ import { Wallet } from "./Wallet";
 import { Currency } from "./Currency";
 import { getCryptoAssestImageUrl, BN } from "../util";
 import { initDateFromParams } from "../util/date";
+import { getSymbolValueInUSD } from "../util/exchangeRate";
 
 @Entity()
 export class Campaign extends BaseEntity {
@@ -58,6 +59,8 @@ export class Campaign extends BaseEntity {
 
     @Column({ type: "varchar", transformer: BigNumberEntityTransformer })
     public coiinTotal: BigNumber;
+
+    public coiinTotalUSD: number;
 
     @Column({
         type: "varchar",
@@ -233,6 +236,16 @@ export class Campaign extends BaseEntity {
         if (this.crypto) returnedCampaign.crypto = this.crypto.asV1();
         if (this.symbol) returnedCampaign.symbolImageUrl = getCryptoAssestImageUrl(this.symbol);
         return returnedCampaign;
+    }
+
+    public async asV2() {
+        const campaign = { ...this.asV1() };
+        console.log(campaign);
+        campaign.coiinTotalUSD = await getSymbolValueInUSD(
+            campaign.symbol,
+            parseFloat(campaign?.coiinTotal?.toString() || "0")
+        );
+        return campaign;
     }
 
     public static async getAllParticipatingCampaignIdsByUser(user: User): Promise<string[]> {
