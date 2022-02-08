@@ -189,6 +189,13 @@ export class Transfer extends BaseEntity {
             .getRawOne();
         return earnings;
     }
+    public static async getTransectionHistory(orgId: String) {
+        const query = await this.createQueryBuilder("transfer")
+            .leftJoin("transfer.wallet", "wallet", 'transfer."walletId"=wallet.id ')
+            .where("wallet.orgId = :orgId", { orgId })
+            .getMany();
+        return query;
+    }
 
     public static newFromWalletPayout(wallet: Wallet, campaign: Campaign, amount: BigNumber): Transfer {
         const transfer = new Transfer();
