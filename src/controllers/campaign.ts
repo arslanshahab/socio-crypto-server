@@ -408,7 +408,7 @@ export const listCampaigns = async (
         approved,
         pendingAudit
     );
-    const data = results.map((result) => result.asV1());
+    const data = results.map(async (result) => await result.asV2());
     return { results: data, total };
 };
 
@@ -420,7 +420,7 @@ export const adminListPendingCampaigns = async (
     checkPermissions({ restrictCompany: "raiinmaker" }, context);
     const { skip = 0, take = 10 } = args;
     const [results, total] = await Campaign.adminListCampaignsByStatus(skip, take);
-    return { results: results.map((result) => result.asV1()), total };
+    return { results: results.map(async (result) => await result.asV1()), total };
 };
 
 export const deleteCampaign = async (parent: any, args: { id: string }, context: { user: any }) => {
@@ -457,7 +457,7 @@ export const get = async (parent: any, args: { id: string }) => {
     campaign.participants.sort((a, b) => {
         return parseFloat(b.participationScore.minus(a.participationScore).toString());
     });
-    return campaign.asV1();
+    return campaign.asV2();
 };
 
 export const publicGet = async (parent: any, args: { campaignId: string }) => {
