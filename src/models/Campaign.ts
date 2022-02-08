@@ -240,7 +240,6 @@ export class Campaign extends BaseEntity {
 
     public async asV2() {
         const campaign = { ...this.asV1() };
-        console.log(campaign);
         campaign.coiinTotalUSD = await getSymbolValueInUSD(
             campaign.symbol,
             parseFloat(campaign?.coiinTotal?.toString() || "0")
