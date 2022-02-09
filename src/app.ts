@@ -7,7 +7,7 @@ import logger from "./util/logger";
 import { Secrets } from "./util/secrets";
 import { authenticateAdmin, authenticateUser } from "./middleware/authentication";
 import { errorHandler } from "./middleware/errorHandler";
-import { Dragonchain } from "./clients/dragonchain";
+// import { Dragonchain } from "./clients/dragonchain";
 import { Firebase } from "./clients/firebase";
 import * as FactorController from "./controllers/factor";
 import * as Dragonfactor from "@myfii-dev/dragonfactor-auth";
@@ -32,6 +32,7 @@ import {
     blockAccountBalance,
     getAllWithdrawls,
     transferBalance,
+    generateCustodialAddresses,
 } from "./controllers/tatum";
 import { kycWebhook } from "./controllers/kyc";
 const { NODE_ENV = "development" } = process.env;
@@ -53,7 +54,7 @@ export class Application {
         this.databaseConnection = await this.connectDatabase();
         await Secrets.initialize();
         await Firebase.initialize();
-        await Dragonchain.initialize();
+        // await Dragonchain.initialize();
         StripeAPI.initialize();
         this.app = express();
         const corsSettings = {
@@ -148,6 +149,7 @@ export class Application {
         this.app.post("/v1/tatum/balance", getAccountBalance);
         this.app.post("/v1/tatum/list-withdraws", getAllWithdrawls);
         this.app.post("/v1/tatum/transfer", transferBalance);
+        this.app.post("/v1/tatum/custodialAddress", generateCustodialAddresses);
         this.app.get("/v1/xoxoday/filters", getXoxodayFilters);
         this.app.post("/v1/dragonfactor/webhook", kycWebhook);
         this.app.use(

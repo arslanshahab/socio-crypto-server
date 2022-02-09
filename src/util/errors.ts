@@ -46,6 +46,7 @@ export const INCORRECT_CODE_OR_EMAIL = "INCORRECT_CODE_OR_EMAIL";
 export const NO_TOKEN_PROVIDED = "NO_TOKEN_PROVIDED";
 export const ERROR_LINKING_TIKTOK = "ERROR_LINKING_TIKTOK";
 export const GLOBAL_CAMPAIGN_NOT_FOUND = "GLOBAL_CAMPAIGN_NOT_FOUND";
+export const VERIFICATION_TOKEN_EXPIRED = "VERIFICATION_TOKEN_EXPIRED";
 
 const errorMap: { [key: string]: string } = {
     SOMETHING_WENT_WRONG: "Something went wrong with your request. please try again!",
@@ -66,4 +67,5 @@ const errorMap: { [key: string]: string } = {
     SAME_OLD_AND_NEW_PASSWORD: "Current pass and old password cannot be same, please set a different password",
     ERROR_LINKING_TIKTOK: "There was an error adding you tiktok social link",
     GLOBAL_CAMPAIGN_NOT_FOUND: "Global campaign doesn't exists.",
+    VERIFICATION_TOKEN_EXPIRED: "Verification token expired.",
 };

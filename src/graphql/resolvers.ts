@@ -51,6 +51,7 @@ export const resolvers = {
         getRedemptionRequirements: xoxodayController.redemptionRequirements,
         getUserBalances: userController.getWalletBalances,
         getTransferHistory: transferController.getTransferHistory,
+        getTransferHistoryV2: transferController.getTransferHistoryV2,
         downloadKyc: kycController.downloadKyc,
     },
     Mutation: {
@@ -111,6 +112,7 @@ export const adminResolvers = {
         getFundingWallet: fundingController.get,
         verifySession: authenticationController.getUserRole,
         listOrgs: orgController.listOrgs,
+        getOrgDetails: orgController.getOrgDetails,
         listEmployees: orgController.listEmployees,
         listPaymentMethods: stripeController.listPaymentMethods,
         listPendingCampaigns: campaignController.adminListPendingCampaigns,

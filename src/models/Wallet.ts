@@ -15,6 +15,7 @@ import { Org } from "./Org";
 import { ExternalAddress } from "./ExternalAddress";
 import { Escrow } from "./Escrow";
 import { Currency } from "./Currency";
+import { CustodialAddress } from "./CustodialAddress";
 
 @Entity()
 export class Wallet extends BaseEntity {
@@ -24,49 +25,27 @@ export class Wallet extends BaseEntity {
     @OneToMany((_type) => WalletCurrency, (walletCurrency) => walletCurrency.wallet, { eager: true })
     public walletCurrency: WalletCurrency[];
 
-    @OneToOne(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => Org,
-        (org) => org.wallet
-    )
+    @OneToOne((_type) => Org, (org) => org.wallet)
     @JoinColumn()
     public org: Org;
 
-    @OneToOne(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => User,
-        (user) => user.wallet
-    )
+    @OneToOne((_type) => User, (user) => user.wallet)
     @JoinColumn()
     public user: User;
 
-    @OneToMany(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => ExternalAddress,
-        (address) => address.wallet
-    )
+    @OneToMany((_type) => ExternalAddress, (address) => address.wallet)
     public addresses: ExternalAddress[];
 
-    @OneToMany(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => Currency,
-        (currency) => currency.wallet
-    )
+    @OneToMany((_type) => Currency, (currency) => currency.wallet)
     public currency: Currency[];
 
-    @OneToMany(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => Escrow,
-        (escrow) => escrow.wallet
-    )
+    @OneToMany((_type) => CustodialAddress, (custodialAddress) => custodialAddress.wallet)
+    public custodialAddress: CustodialAddress[];
+
+    @OneToMany((_type) => Escrow, (escrow) => escrow.wallet)
     public escrows: Escrow[];
 
-    @OneToMany(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => Transfer,
-        (transfer) => transfer.wallet,
-        { eager: true }
-    )
+    @OneToMany((_type) => Transfer, (transfer) => transfer.wallet, { eager: true })
     public transfers: Transfer[];
 
     @CreateDateColumn()

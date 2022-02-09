@@ -15,7 +15,6 @@ import { downloadMedia } from "../util";
 import { JWTPayload, SocialType } from "src/types";
 import { ERROR_LINKING_TIKTOK, FormattedError, GLOBAL_CAMPAIGN_NOT_FOUND, USER_NOT_FOUND } from "../util/errors";
 import { TatumClient } from "../clients/tatumClient";
-import { findOrCreateCurrency } from "../util/tatumHelper";
 
 export const allowedSocialLinks = ["twitter", "facebook", "tiktok"];
 
@@ -129,7 +128,6 @@ export const postToSocial = async (
             postId = await client.post(participant, socialLink, text);
         }
         if (!postId) throw new ApolloError("There was an error posting to twitter.");
-        console.log(`Posted to ${socialType} with ID: ${postId}`);
         await HourlyCampaignMetric.upsert(campaign, campaign.org, "post");
         await participant.campaign.save();
         const socialPost = await SocialPost.newSocialPost(
@@ -226,7 +224,7 @@ export const postContentGlobally = async (
         let participant = await Participant.findOne({ where: { user, campaign: globalCampaign } });
         if (!participant) {
             if (await TatumClient.isCurrencySupported(globalCampaign.symbol)) {
-                await findOrCreateCurrency(globalCampaign.symbol, user.wallet);
+                await TatumClient.findOrCreateCurrency(globalCampaign.symbol, user.wallet);
             }
             participant = await Participant.createNewParticipant(user, globalCampaign, user.email);
         }

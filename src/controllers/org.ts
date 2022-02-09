@@ -48,6 +48,11 @@ export const getHourlyOrgMetrics = async (parent: any, args: any, context: { use
     return await HourlyCampaignMetric.getSortedByOrgId(org.id);
 };
 
+export const getOrgDetails = async (parent: any, args: any, context: { user: any }) => {
+    const orgDetail = await Org.orgDetails();
+    return orgDetail;
+};
+
 export const newUser = async (
     parent: any,
     args: { email: string; name: string; role: string },

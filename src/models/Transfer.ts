@@ -8,17 +8,20 @@ import {
     UpdateDateColumn,
     ManyToOne,
     Between,
+    MoreThan,
 } from "typeorm";
 import { DateUtils } from "typeorm/util/DateUtils";
 import { Wallet } from "./Wallet";
 import { Campaign } from "./Campaign";
-import { BN } from "../util";
+import { BN, getCryptoAssestImageUrl } from "../util";
 import { BigNumberEntityTransformer } from "../util/transformers";
 import { TransferAction, TransferStatus } from "../types";
 import { Org } from "./Org";
 import { RafflePrize } from "./RafflePrize";
 import { performCurrencyTransfer } from "../controllers/helpers";
 import { startOfISOWeek, endOfISOWeek } from "date-fns";
+import { initDateFromParams } from "../util/date";
+import { COIIN } from "../util/constants";
 
 @Entity()
 export class Transfer extends BaseEntity {
@@ -78,9 +81,14 @@ export class Transfer extends BaseEntity {
     @ManyToOne((_type) => RafflePrize, (prize) => prize.transfers)
     public rafflePrize: RafflePrize;
 
+    public symbolImageUrl = "";
+
     public asV1() {
         const response: any = { ...this, amount: parseFloat(this.amount.toString()) };
+        response.symbolImageUrl = getCryptoAssestImageUrl(this.currency);
         if (this.usdAmount) response.usdAmount = parseFloat(this.usdAmount.toString());
+        if (this.action) response.action = this?.action?.toUpperCase() || "";
+        if (this.status) response.status = this?.status?.toUpperCase() || "";
         return response;
     }
 
@@ -162,6 +170,29 @@ export class Transfer extends BaseEntity {
         const start = startOfISOWeek(currentDate);
         const end = endOfISOWeek(currentDate);
         return await this.findOne({ where: { wallet, createdAt: Between(start, end), action: type } });
+    }
+
+    public static async getLast24HourRedemption(wallet: Wallet, type: TransferAction) {
+        const date = initDateFromParams({ date: new Date(), d: new Date().getDate() - 1, h: 0, i: 0, s: 0 });
+        return await Transfer.findOne({
+            where: { action: type, createdAt: MoreThan(DateUtils.mixedDateToUtcDatetimeString(date)) },
+        });
+    }
+
+    public static async getCoinnEarnedToday(wallet: Wallet) {
+        const today = initDateFromParams({ date: new Date(), h: 0, i: 0, s: 0 });
+        const { earnings } = await this.createQueryBuilder("transfer")
+            .select("SUM(CAST(transfer.amount AS DECIMAL)) as earnings")
+            .where(
+                `transfer."createdAt" >= :date AND transfer."walletId" = :wallet AND transfer.currency ilike '%' || :currency || '%'`,
+                {
+                    currency: COIIN,
+                    date: DateUtils.mixedDateToUtcDatetimeString(today),
+                    wallet: wallet.id,
+                }
+            )
+            .getRawOne();
+        return earnings;
     }
 
     public static newFromWalletPayout(wallet: Wallet, campaign: Campaign, amount: BigNumber): Transfer {
@@ -253,6 +284,7 @@ export class Transfer extends BaseEntity {
     }
 
     public static initTatumTransfer(data: {
+        txId?: string;
         symbol: string;
         campaign?: Campaign;
         amount: BigNumber;
@@ -263,6 +295,7 @@ export class Transfer extends BaseEntity {
         const newTransfer = new Transfer();
         newTransfer.currency = data.symbol;
         if (data.campaign) newTransfer.campaign = data.campaign;
+        if (data.txId) newTransfer.transactionHash = data.txId;
         newTransfer.amount = data.amount;
         newTransfer.action = data.action;
         newTransfer.ethAddress = data.tatumId;

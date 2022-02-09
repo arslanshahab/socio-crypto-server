@@ -9,6 +9,8 @@ interface JWTPayload {
     role: string;
 }
 
+export type CustodialAddressChain = "ETH" | "MATIC" | "BSC" | "ONE" | "XDC";
+
 export interface XoxodayVoucher {
     productId: string;
     name: string;
@@ -264,12 +266,13 @@ export type TransferAction =
     | "REGISTRATION_REWARD"
     | "PARTICIPATION_REWARD"
     | "CAMPAIGN_REWARD"
-    | "NETWORK_REWARD";
+    | "NETWORK_REWARD"
+    | "XOXODAY_REDEMPTION";
 
 export type CampaignStatus = "ACTIVE" | "PENDING" | "INSUFFICIENT_FUNDS" | "CLOSED" | "APPROVED" | "DENIED";
 export type CampaignAuditStatus = "DEFAULT" | "AUDITED" | "PENDING";
 export type KycStatus = "APPROVED" | "PENDING" | "REJECTED" | "";
-export type VerificationType = "EMAIL" | "PASSWORD" | "";
+export type VerificationType = "EMAIL" | "PASSWORD" | "WITHDRAW" | "";
 
 export interface GraphApiInputParameters {
     fields?: string[] | string;

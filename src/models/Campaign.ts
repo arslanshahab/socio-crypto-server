@@ -32,6 +32,7 @@ import { Wallet } from "./Wallet";
 import { Currency } from "./Currency";
 import { getCryptoAssestImageUrl, BN } from "../util";
 import { initDateFromParams } from "../util/date";
+import { getSymbolValueInUSD } from "../util/exchangeRate";
 
 @Entity()
 export class Campaign extends BaseEntity {
@@ -58,6 +59,8 @@ export class Campaign extends BaseEntity {
 
     @Column({ type: "varchar", transformer: BigNumberEntityTransformer })
     public coiinTotal: BigNumber;
+
+    public coiinTotalUSD: number;
 
     @Column({
         type: "varchar",
@@ -144,6 +147,7 @@ export class Campaign extends BaseEntity {
 
     @Column({ type: "text", nullable: true })
     public type: string;
+
     public symbolImageUrl = "";
 
     @OneToMany(
@@ -221,7 +225,7 @@ export class Campaign extends BaseEntity {
             totalParticipationScore: parseFloat(
                 this.totalParticipationScore ? this.totalParticipationScore.toString() : "0"
             ),
-            coiinTotal: parseFloat(this.coiinTotal ? this.coiinTotal.toString() : "0"),
+            coiinTotal: parseFloat(this?.coiinTotal?.toString() || "0"),
             algorithm: Campaign.parseAlgorithm(this.algorithm),
         };
         if (this.participants && this.participants.length > 0)
@@ -233,6 +237,15 @@ export class Campaign extends BaseEntity {
         if (this.crypto) returnedCampaign.crypto = this.crypto.asV1();
         if (this.symbol) returnedCampaign.symbolImageUrl = getCryptoAssestImageUrl(this.symbol);
         return returnedCampaign;
+    }
+
+    public async asV2() {
+        const campaign = { ...this.asV1() };
+        campaign.coiinTotalUSD = await getSymbolValueInUSD(
+            campaign.symbol,
+            parseFloat(campaign?.coiinTotal?.toString() || "0")
+        );
+        return campaign;
     }
 
     public static async getAllParticipatingCampaignIdsByUser(user: User): Promise<string[]> {
@@ -269,6 +282,7 @@ export class Campaign extends BaseEntity {
         return await query
             .leftJoinAndSelect("campaign.participants", "participant", 'participant."campaignId" = campaign.id')
             .leftJoinAndSelect("participant.user", "user", 'user.id = participant."userId"')
+            .leftJoinAndSelect("user.profile", "profile", 'user.id = profile."userId"')
             .leftJoinAndSelect("campaign.crypto", "crypto", 'campaign."cryptoId" = crypto.id')
             .leftJoinAndSelect("campaign.campaignMedia", "campaign_media", 'campaign_media."campaignId" = campaign.id')
             .leftJoinAndSelect(
