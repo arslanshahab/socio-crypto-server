@@ -147,6 +147,7 @@ export class Campaign extends BaseEntity {
 
     @Column({ type: "text", nullable: true })
     public type: string;
+
     public symbolImageUrl = "";
 
     @OneToMany(
@@ -224,7 +225,7 @@ export class Campaign extends BaseEntity {
             totalParticipationScore: parseFloat(
                 this.totalParticipationScore ? this.totalParticipationScore.toString() : "0"
             ),
-            coiinTotal: parseFloat(this.coiinTotal ? this.coiinTotal.toString() : "0"),
+            coiinTotal: parseFloat(this?.coiinTotal?.toString() || "0"),
             algorithm: Campaign.parseAlgorithm(this.algorithm),
         };
         if (this.participants && this.participants.length > 0)
