@@ -417,36 +417,6 @@ export const listCampaigns = async (
     const data = results.map(async (result) => await result.asV2());
     return { results: data, total };
 };
-//!---------------------------------
-export const listAuditCampaigns = async (
-    parent: any,
-    args: {
-        open: boolean;
-        skip: number;
-        take: number;
-        scoped: boolean;
-        sort: boolean;
-        approved: boolean;
-        pendingAudit: boolean;
-    },
-    context: { user: any }
-) => {
-    const { open, skip = 0, take = 10, scoped = false, sort = false, approved = true, pendingAudit = false } = args;
-    const { company } = context.user;
-    const [results, total] = await Campaign.findAuditCampaignsByStatus(
-        open,
-        skip,
-        take,
-        scoped && company,
-        sort,
-        approved,
-        pendingAudit
-    );
-    const data = results.map((result) => result.asV1());
-    return { results: data, total };
-};
-
-//!---------------------------------
 
 export const adminListPendingCampaigns = async (
     parent: any,
@@ -635,7 +605,6 @@ export const payoutCampaignRewards = async (parent: any, args: { campaignId: str
     });
     if (!campaign) throw new Error("Campaign not found");
     campaign.auditStatus = "PENDING";
-    campaign.audited = true;
     await campaign.save();
     return {
         success: true,

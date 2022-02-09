@@ -276,7 +276,11 @@ export class Campaign extends BaseEntity {
         let query = this.createQueryBuilder("campaign").where(where);
         if (company) query = query.andWhere(`"company"=:company`, { company });
         if (approved) query = query.andWhere('"status"=:status', { status: "APPROVED" });
-        if (pendingAudit) query = query.andWhere('"audited"=:audited', { audited: false });
+        if (pendingAudit) {
+            query = query.andWhere('"auditStatus"=:auditStatus', { auditStatus: "DEFAULT" });
+        } else {
+            query = query.andWhere('"auditStatus"=:auditStatus', { auditStatus: "AUDITED" });
+        }
         if (sort) query = query.orderBy("campaign.endDate", "DESC");
         query = query.andWhere('"isGlobal"=:isGlobal', { isGlobal: false });
         return await query
@@ -290,34 +294,6 @@ export class Campaign extends BaseEntity {
                 "campaign_template",
                 'campaign_template."campaignId" = campaign.id'
             )
-            .skip(skip)
-            .take(take)
-            .getManyAndCount();
-    }
-    //! Find Audit Campaigns By Status
-    public static async findAuditCampaignsByStatus(
-        open: boolean,
-        skip: number,
-        take: number,
-        company: string,
-        sort: boolean,
-        approved: boolean,
-        pendingAudit: boolean
-    ) {
-        let where = "";
-        const now = DateUtils.mixedDateToDatetimeString(new Date());
-        if (open !== null && open !== undefined && open) {
-            where = `("beginDate" <= '${now}' AND "endDate" >= '${now}')`;
-        } else if (open !== null && open !== undefined && !open) {
-            where = `("beginDate" >= '${now}' OR "endDate" <= '${now}')`;
-        }
-        let query = this.createQueryBuilder("campaign").where(where);
-        if (company) query = query.andWhere(`"company"=:company`, { company });
-        if (approved) query = query.andWhere('"status"=:status', { status: "APPROVED" });
-        if (pendingAudit) query = query.andWhere('"auditStatus"=:auditStatus', { auditStatus: "DEFAULT" });
-        if (sort) query = query.orderBy("campaign.endDate", "DESC");
-        return await query
-            .leftJoinAndSelect("campaign.participants", "participant", 'participant."campaignId" = campaign.id')
             .skip(skip)
             .take(take)
             .getManyAndCount();
