@@ -32,6 +32,7 @@ import { differenceInMonths } from "date-fns";
 import { Transfer } from "./Transfer";
 import { JWTPayload } from "src/types";
 import { XoxodayOrder } from "./XoxodayOrder";
+import { COIIN } from "../util/constants";
 
 export const LOGIN_REWARD_AMOUNT = 1;
 export const PARTICIPATION_REWARD_AMOUNT = 2;
@@ -252,7 +253,7 @@ export class User extends BaseEntity {
             await Transfer.newReward({
                 wallet,
                 type,
-                symbol: "COIN",
+                symbol: COIIN,
                 amount: new BN(amount),
             });
         }

@@ -13,8 +13,6 @@ import { CustodialAddressChain } from "src/types";
 import { Wallet } from "../models/Wallet";
 import { Org } from "../models/Org";
 import { Verification } from "../models/Verification";
-import { decrypt } from "../util/crypto";
-import { EMAIL_NOT_VERIFIED } from "../util/errors";
 
 export const initWallet = asyncHandler(async (req: Request, res: Response) => {
     try {
@@ -206,9 +204,7 @@ export const withdrawFunds = async (
         let { symbol, address, amount, verificationToken } = args;
         symbol = symbol.toUpperCase();
         if (!(await TatumClient.isCurrencySupported(symbol))) throw new Error(`currency ${symbol} is not supported`);
-        const verificationData = await Verification.findOne({ where: { id: decrypt(verificationToken) } });
-        if (!verificationData || !verificationData.verified || verificationData.email !== user.email)
-            throw new Error(EMAIL_NOT_VERIFIED);
+        await Verification.verifyToken({ verificationToken });
         const userCurrency = await Currency.findOne({ where: { wallet: user.wallet, symbol } });
         if (!userCurrency) throw new Error(`User wallet not found for currency ${symbol}`);
         const userAccountBalance = await TatumClient.getAccountBalance(userCurrency.tatumId);

@@ -6,20 +6,17 @@ import { SesClient } from "../clients/ses";
 import { User } from "../models/User";
 import { VerificationType } from "src/types";
 import { createSessionToken, createPasswordHash, asyncHandler } from "../util";
-import { encrypt, decrypt, sha256Hash } from "../util/crypto";
 import { Profile } from "../models/Profile";
 import {
     FormattedError,
     MISSING_PARAMS,
     USERNAME_EXISTS,
     EMAIL_EXISTS,
-    EMAIL_NOT_VERIFIED,
     INCORRECT_PASSWORD,
     EMAIL_NOT_EXISTS,
     USERNAME_NOT_EXISTS,
     INCORRECT_CODE,
     USER_NOT_FOUND,
-    INCORRECT_CODE_OR_EMAIL,
 } from "../util/errors";
 
 const isSecure = process.env.NODE_ENV === "production";
@@ -79,9 +76,7 @@ export const registerUser = async (
         if (!email || !password || !username || !verificationToken) throw new Error(MISSING_PARAMS);
         if (await User.findOne({ where: { email: ILike(email) } })) throw new Error(EMAIL_EXISTS);
         if (await Profile.findOne({ where: { username: ILike(username) } })) throw new Error(USERNAME_EXISTS);
-        const verificationData = await Verification.findOne({ where: { id: decrypt(verificationToken) } });
-        if (!verificationData || !verificationData.verified || verificationData.email !== email.toLowerCase())
-            throw new Error(EMAIL_NOT_VERIFIED);
+        await Verification.verifyToken({ verificationToken, email });
         const user = await User.initNewUser(email, createPasswordHash({ email, password }), username);
         await user.transferReward("REGISTRATION_REWARD");
         return { token: createSessionToken(user) };
@@ -109,8 +104,7 @@ export const resetUserPassword = async (parent: any, args: { verificationToken: 
     try {
         const { password, verificationToken } = args;
         if (!verificationToken || !password) throw new Error(MISSING_PARAMS);
-        const verificationData = await Verification.findOne({ where: { id: decrypt(verificationToken) } });
-        if (!verificationData || !verificationData.verified) throw new Error(EMAIL_NOT_VERIFIED);
+        const verificationData = await Verification.verifyToken({ verificationToken });
         const user = await User.findOne({ where: { email: verificationData.email } });
         if (!user) throw new Error(USER_NOT_FOUND);
         user.password = createPasswordHash({ email: verificationData.email, password });
@@ -127,7 +121,7 @@ export const recoverUserAccountStep1 = async (parent: any, args: { username: str
         if (!username || !code) throw new Error(MISSING_PARAMS);
         const profile = await Profile.findOne({ where: { username: ILike(username) }, relations: ["user"] });
         if (!profile) throw new Error(USERNAME_NOT_EXISTS);
-        if (profile.recoveryCode !== sha256Hash(code)) throw new Error(INCORRECT_CODE);
+        if (!profile.isRecoveryCodeValid(code)) throw new Error(INCORRECT_CODE);
         const user = profile.user;
         if (!user) throw new Error(USER_NOT_FOUND);
         if (!user.email) {
@@ -148,8 +142,7 @@ export const recoverUserAccountStep2 = async (
         const { email, password, userId, verificationToken } = args;
         const user = await User.findOne({ where: { id: userId } });
         if (!user) throw new Error(USER_NOT_FOUND);
-        const verificationData = await Verification.findOne({ where: { id: decrypt(verificationToken) } });
-        if (!verificationData || !verificationData.verified) throw new Error(EMAIL_NOT_VERIFIED);
+        await Verification.verifyToken({ verificationToken, email });
         if (user.email) throw new Error(EMAIL_EXISTS);
         await user.updateEmailPassword(email, createPasswordHash({ email, password }));
         return { token: createSessionToken(user) };
@@ -166,10 +159,7 @@ export const startVerification = async (parent: any, args: { email: string; type
         if (type === "EMAIL" && userWithEmail) throw new Error(EMAIL_EXISTS);
         if (type === "PASSWORD" && !userWithEmail) throw new Error(EMAIL_NOT_EXISTS);
         if (type === "WITHDRAW" && !userWithEmail) throw new Error(EMAIL_NOT_EXISTS);
-        let verificationData = await Verification.findOne({ where: { email, verified: false } });
-        if (!verificationData) {
-            verificationData = await Verification.createVerification(email);
-        }
+        let verificationData = await Verification.generateVerification({ email, type });
         await SesClient.emailAddressVerificationEmail(email, verificationData.getDecryptedCode());
         return { success: true };
     } catch (error) {
@@ -181,10 +171,8 @@ export const completeVerification = async (parent: any, args: { email: string; c
     try {
         const { email, code } = args;
         if (!email || !code) throw new Error(MISSING_PARAMS);
-        const verificationData = await Verification.findOne({ where: { email, verified: false } });
-        if (!verificationData || decrypt(verificationData.code) !== code) throw new Error(INCORRECT_CODE_OR_EMAIL);
-        await verificationData.updateVerificationStatus(true);
-        return { success: true, verificationToken: encrypt(verificationData.id) };
+        const verification = await Verification.verifyCode({ code, email });
+        return { success: true, verificationToken: verification.generateToken() };
     } catch (error) {
         throw new FormattedError(error);
     }

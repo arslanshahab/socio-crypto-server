@@ -520,6 +520,7 @@ export const typeDefs = gql`
         createdAt: String
         updatedAt: String
         wallet: Wallet
+        symbolImageUrl: String
     }
 
     type TwentyFourHourMetric {

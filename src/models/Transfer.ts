@@ -13,7 +13,7 @@ import {
 import { DateUtils } from "typeorm/util/DateUtils";
 import { Wallet } from "./Wallet";
 import { Campaign } from "./Campaign";
-import { BN } from "../util";
+import { BN, getCryptoAssestImageUrl } from "../util";
 import { BigNumberEntityTransformer } from "../util/transformers";
 import { TransferAction, TransferStatus } from "../types";
 import { Org } from "./Org";
@@ -81,9 +81,14 @@ export class Transfer extends BaseEntity {
     @ManyToOne((_type) => RafflePrize, (prize) => prize.transfers)
     public rafflePrize: RafflePrize;
 
+    public symbolImageUrl = "";
+
     public asV1() {
         const response: any = { ...this, amount: parseFloat(this.amount.toString()) };
+        response.symbolImageUrl = getCryptoAssestImageUrl(this.currency);
         if (this.usdAmount) response.usdAmount = parseFloat(this.usdAmount.toString());
+        if (this.action) response.action = this?.action?.toUpperCase() || "";
+        if (this.status) response.status = this?.status?.toUpperCase() || "";
         return response;
     }
 
