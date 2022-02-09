@@ -276,10 +276,8 @@ export class Campaign extends BaseEntity {
         let query = this.createQueryBuilder("campaign").where(where);
         if (company) query = query.andWhere(`"company"=:company`, { company });
         if (approved) query = query.andWhere('"status"=:status', { status: "APPROVED" });
-        if (pendingAudit) {
+        if (pendingAudit === true) {
             query = query.andWhere('"auditStatus"=:auditStatus', { auditStatus: "DEFAULT" });
-        } else {
-            query = query.andWhere('"auditStatus"=:auditStatus', { auditStatus: "AUDITED" });
         }
         if (sort) query = query.orderBy("campaign.endDate", "DESC");
         query = query.andWhere('"isGlobal"=:isGlobal', { isGlobal: false });
