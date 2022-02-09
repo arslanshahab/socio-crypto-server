@@ -749,6 +749,7 @@ export const typeDefs = gql`
     type FollowerCounts {
         twitter: Int
         facebook: Int
+        tiktok: Int
     }
 
     type AuditReport {

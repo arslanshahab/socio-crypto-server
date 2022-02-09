@@ -170,6 +170,14 @@ export const getTotalFollowers = async (parent: any, args: any, context: { user:
                     await link.save();
                 }
                 break;
+            case "tiktok":
+                const tiktokFollower = await TikTokClient.getFolowers();
+                followerTotals["tiktok"] = tiktokFollower;
+                if (link.followerCount !== followerTotals["tiktok"]) {
+                    link.followerCount = followerTotals["tiktok"];
+                    await link.save();
+                }
+                break;
             default:
                 break;
         }
