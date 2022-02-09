@@ -10,6 +10,7 @@ import {
 } from "typeorm";
 import { StringifiedArrayTransformer } from "../util/transformers";
 import { User } from "./User";
+import { sha256Hash } from "../util/crypto";
 
 @Entity()
 export class Profile extends BaseEntity {
@@ -65,4 +66,8 @@ export class Profile extends BaseEntity {
 
     @UpdateDateColumn()
     public updatedAt: Date;
+
+    public isRecoveryCodeValid = (code: string) => {
+        return this.recoveryCode === sha256Hash(code);
+    };
 }

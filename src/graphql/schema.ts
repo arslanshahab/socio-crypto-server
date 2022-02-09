@@ -57,7 +57,7 @@ export const typeDefs = gql`
             campaignTemplates: JSON
         ): CampaignCreationResponse
         generateCampaignAuditReport(campaignId: String!): AuditReport
-        payoutCampaignRewards(campaignId: String!, rejected: [String]!): Boolean
+        payoutCampaignRewards(campaignId: String!, rejected: [String]): SuccessResponse
         deleteCampaign(id: String!): Campaign
         participate(campaignId: String!, email: String): Participant
         removeParticipation(campaignId: String!): User
@@ -203,8 +203,8 @@ export const typeDefs = gql`
         verifySession: JSON
         getFundingWallet: FundingWallet
         listOrgs(skip: Int, take: Int): [Org]
+        listEmployees: EmployeeOrganization
         getOrgDetails: [OrgDetail]
-        listEmployees: [Employee]
         listPaymentMethods: [PaymentMethod]
         listPendingCampaigns(skip: Int, take: Int): PaginatedCampaignResults
         listSupportedCrypto: [CryptoCurrency]
@@ -312,10 +312,15 @@ export const typeDefs = gql`
     }
 
     type RedemptionRequirements {
+        accountAgeReached: Boolean
+        accountAge: Int
+        accountAgeRequirement: Int
         twitterLinked: Boolean
         twitterfollowers: Int
         twitterfollowersRequirement: Int
         participation: Boolean
+        participationScore: Int
+        participationScoreRequirement: Int
         orderLimitForTwentyFourHoursReached: Boolean
     }
 
@@ -397,6 +402,11 @@ export const typeDefs = gql`
 
     type Employee {
         name: String
+        createdAt: String
+    }
+    type EmployeeOrganization {
+        orgName: String
+        adminsDetails: [Employee]
     }
 
     type Stripe {
@@ -521,6 +531,7 @@ export const typeDefs = gql`
         createdAt: String
         updatedAt: String
         wallet: Wallet
+        symbolImageUrl: String
     }
 
     type TwentyFourHourMetric {

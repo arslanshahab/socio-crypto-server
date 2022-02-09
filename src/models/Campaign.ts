@@ -147,6 +147,7 @@ export class Campaign extends BaseEntity {
 
     @Column({ type: "text", nullable: true })
     public type: string;
+
     public symbolImageUrl = "";
 
     @OneToMany(
@@ -224,7 +225,7 @@ export class Campaign extends BaseEntity {
             totalParticipationScore: parseFloat(
                 this.totalParticipationScore ? this.totalParticipationScore.toString() : "0"
             ),
-            coiinTotal: parseFloat(this.coiinTotal ? this.coiinTotal.toString() : "0"),
+            coiinTotal: parseFloat(this?.coiinTotal?.toString() || "0"),
             algorithm: Campaign.parseAlgorithm(this.algorithm),
         };
         if (this.participants && this.participants.length > 0)
@@ -275,7 +276,11 @@ export class Campaign extends BaseEntity {
         let query = this.createQueryBuilder("campaign").where(where);
         if (company) query = query.andWhere(`"company"=:company`, { company });
         if (approved) query = query.andWhere('"status"=:status', { status: "APPROVED" });
-        if (pendingAudit) query = query.andWhere('"audited"=:audited', { audited: false });
+        if (pendingAudit) {
+            query = query.andWhere('"auditStatus"=:auditStatus', { auditStatus: "DEFAULT" });
+        } else {
+            query = query.andWhere('"auditStatus"=:auditStatus', { auditStatus: "AUDITED" });
+        }
         if (sort) query = query.orderBy("campaign.endDate", "DESC");
         query = query.andWhere('"isGlobal"=:isGlobal', { isGlobal: false });
         return await query

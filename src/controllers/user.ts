@@ -387,10 +387,7 @@ export const startEmailVerification = async (parent: any, args: { email: string 
         if (!user) throw new Error("user not found");
         if (!email) throw new Error("email not provided");
         if (user.profile.email === email) throw new Error("email already exists");
-        let verificationData = await Verification.findOne({ where: { email: email, verified: false } });
-        if (!verificationData) {
-            verificationData = await Verification.createVerification(email);
-        }
+        let verificationData = await Verification.generateVerification({ email, type: "EMAIL" });
         await SesClient.emailAddressVerificationEmail(email, verificationData.getDecryptedCode());
         return {
             success: true,
@@ -411,7 +408,8 @@ export const completeEmailVerification = async (
         const user = await User.findUserByContext(context.user, ["profile"]);
         if (!user) throw new Error("user not found");
         if (!email || !token) throw new Error("email or token missing");
-        if (user.profile.email === email) throw new Error("email already exists");
+        if ((await User.findOne({ where: { email } })) || (await Profile.findOne({ where: { email } })))
+            throw new Error("Email already exists");
         const verificationData = await Verification.findOne({ where: { email, verified: false } });
         if (!verificationData || decrypt(verificationData.code) !== token)
             throw new Error("invalid token or verfication not initialized");
@@ -444,7 +442,7 @@ export const getWeeklyRewardEstimation = async (parent: any, args: any, context:
             participationRewardRedeemed: Boolean(participationReward),
             participationRedemptionDate: participationReward?.createdAt?.toString() || "",
             loginRedemptionDate: loginReward?.createdAt?.toString() || "",
-            earnedToday: coiinEarnedToday,
+            earnedToday: coiinEarnedToday || 0,
         };
     } catch (e) {
         console.log(e);
