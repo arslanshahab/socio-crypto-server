@@ -34,7 +34,7 @@ export const get = async (parent: any, args: any, context: { user: any }) => {
         });
     }
     return {
-        ...wallet,
+        // ...wallet,
         currency: allCurrencies,
     };
 };
