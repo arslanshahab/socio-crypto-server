@@ -1,2 +1,32 @@
 export const FEE_RATE = process.env.FEE_RATE ? parseFloat(process.env.FEE_RATE) : 0.1;
 export const COIIN = "COIIN";
+export const CRYPTO_ICONS_BUCKET_URL = "https://rm-crypto-icons.s3.us-west-2.amazonaws.com";
+export const CRYPTO_ICONS_MAP: { [key: string]: string } = {
+    ADA: "ada-icon.svg",
+    BAT: "bat-icon.svg",
+    BCH: "bch-icon.svg",
+    BNB: "bnb-icon.svg",
+    BTC: "btc-icon.svg",
+    BUSD: "busd-icon.svg",
+    CAKE: "cake-icon.svg",
+    CELO: "celo-icon.svg",
+    DOGE: "doge-icon.svg",
+    EGLD: "egld-icon.svg",
+    ETH: "eth-icon.svg",
+    FLOW: "flow-icon.svg",
+    LINK: "link-icon.svg",
+    LTC: "ltc-icon.svg",
+    MKR: "mkr-icon.svg",
+    NEO: "neo-icon.svg",
+    ONE: "one-icon.svg",
+    PAXG: "paxg-icon.svg",
+    QTUM: "qtum-icon.svg",
+    TRX: "trx-icon.svg",
+    TUSD: "tusd-icon.svg",
+    UNI: "uni-icon.svg",
+    USDC: "usdc-icon.svg",
+    USDT: "usdt-icon.svg",
+    VET: "vet-icon.svg",
+    WBTC: "wbtc-icon.svg",
+    XRP: "xrp-icon.svg",
+};
