@@ -203,7 +203,7 @@ export const typeDefs = gql`
         verifySession: JSON
         getFundingWallet: FundingWallet
         listOrgs(skip: Int, take: Int): [Org]
-        listEmployees: EmployeeOrganization
+        listEmployees(skip: Int, take: Int): EmployeeOrganization
         getOrgDetails: [OrgDetail]
         listPaymentMethods: [PaymentMethod]
         listPendingCampaigns(skip: Int, take: Int): PaginatedCampaignResults
