@@ -102,21 +102,22 @@ export class TatumClient {
     private static prepareTransferFromCustodialWallet = async (
         data: WithdrawPayload & WalletKeys
     ): Promise<{ txId: string }> => {
-        const endpoint = `${TatumClient.baseUrl}/blockchain/sc/custodial/transfer`;
+        const isSubCustodialToken = TatumClient.isSubCustodialToken(data.currency.symbol);
         const requestData: RequestData = {
             method: "POST",
-            url: endpoint,
+            url: `${TatumClient.baseUrl}/blockchain/sc/custodial/transfer`,
             payload: {
                 chain: TatumClient.getBaseChain(data.currency.symbol) as TatumCurrency,
                 custodialAddress: data.custodialAddress.address,
                 tokenAddress: TatumClient.getContractAddress(data.currency.symbol),
-                contractType: 0,
+                contractType: isSubCustodialToken ? 0 : 3,
                 recipient: data.address,
                 amount: data.amount,
                 fromPrivateKey: data.privateKey,
             },
             headers: { "x-api-key": Secrets.tatumApiKey },
         };
+        console.log(requestData.payload);
         return await doFetch(requestData);
     };
 
@@ -389,7 +390,7 @@ export class TatumClient {
             if (TatumClient.isSubCustodialToken(data.currency.symbol)) {
                 await transferFundsToRaiinmaker({
                     currency: payload.currency,
-                    amount: fee,
+                    amount: (parseFloat(data.amount) - parseFloat(withdrawAbleAmount)).toString(),
                 });
             }
             return withdrawTX;
@@ -446,7 +447,7 @@ export class TatumClient {
                 amount: formatFloat(data.amount),
                 sender: wallet.walletAddress,
                 recipient: data.address,
-                ...(isSubCustodialToken && { contractAddress: TatumClient.getContractAddress(data.currency.symbol) }),
+                contractAddress: TatumClient.getContractAddress(data.currency.symbol),
                 custodialAddress: data.custodialAddress.address,
                 tokenType: isSubCustodialToken ? 0 : 3,
             },

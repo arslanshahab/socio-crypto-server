@@ -272,7 +272,7 @@ export type TransferAction =
 export type CampaignStatus = "ACTIVE" | "PENDING" | "INSUFFICIENT_FUNDS" | "CLOSED" | "APPROVED" | "DENIED";
 export type CampaignAuditStatus = "DEFAULT" | "AUDITED" | "PENDING";
 export type KycStatus = "APPROVED" | "PENDING" | "REJECTED" | "";
-export type VerificationType = "EMAIL" | "PASSWORD" | "";
+export type VerificationType = "EMAIL" | "PASSWORD" | "WITHDRAW" | "";
 
 export interface GraphApiInputParameters {
     fields?: string[] | string;

@@ -9,6 +9,7 @@ import {
     UpdateDateColumn,
     BeforeInsert,
     BeforeUpdate,
+    ILike,
 } from "typeorm";
 import { Participant } from "./Participant";
 import { Wallet } from "./Wallet";
@@ -31,6 +32,7 @@ import { differenceInMonths } from "date-fns";
 import { Transfer } from "./Transfer";
 import { JWTPayload } from "src/types";
 import { XoxodayOrder } from "./XoxodayOrder";
+import { COIIN } from "../util/constants";
 
 export const LOGIN_REWARD_AMOUNT = 1;
 export const PARTICIPATION_REWARD_AMOUNT = 2;
@@ -213,6 +215,20 @@ export class User extends BaseEntity {
         });
     }
 
+    public static async findUserByEmail(email: string) {
+        let user = await User.findOne({ where: { email: ILike(email) } });
+        if (!user) {
+            const profile = await Profile.findOne({ where: { email }, relations: ["user"] });
+            if (profile) {
+                user = profile.user;
+                await user.updateEmail(profile.email);
+                profile.email = "";
+                await profile.save();
+            }
+        }
+        return user;
+    }
+
     public transferReward = async (type: RewardType): Promise<any> => {
         const user = this;
         const wallet = await Wallet.findOne({ where: { user } });
@@ -237,7 +253,7 @@ export class User extends BaseEntity {
             await Transfer.newReward({
                 wallet,
                 type,
-                symbol: "COIN",
+                symbol: COIIN,
                 amount: new BN(amount),
             });
         }

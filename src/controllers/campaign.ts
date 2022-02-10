@@ -4,7 +4,7 @@ import { Admin } from "../models/Admin";
 import { checkPermissions } from "../middleware/authentication";
 import { Participant } from "../models/Participant";
 import { S3Client } from "../clients/s3";
-import { In } from "typeorm";
+import { In, ILike } from "typeorm";
 import { User } from "../models/User";
 import { SocialPost } from "../models/SocialPost";
 import { Firebase } from "../clients/firebase";
@@ -138,6 +138,12 @@ export const createNewCampaign = async (
         if (!isCurrencySupported) throw new Error("this currency is not supported");
         const isWalletAvailable = await org.isCurrencyAdded(symbol);
         if (!isWalletAvailable) throw new Error("currency not found in wallet");
+    }
+    const findCampaignName = await Campaign.findOne({ name: ILike(name) });
+    if (findCampaignName) {
+        return new Error(
+            "The campaign already exists with this name, please change your campaign name and submit it again."
+        );
     }
     const campaign = Campaign.newCampaign(
         name,
@@ -409,7 +415,7 @@ export const listCampaigns = async (
         approved,
         pendingAudit
     );
-    const data = results.map((result) => result.asV1());
+    const data = results.map(async (result) => await result.asV2());
     return { results: data, total };
 };
 
@@ -421,7 +427,7 @@ export const adminListPendingCampaigns = async (
     checkPermissions({ restrictCompany: RAIINMAKER_ORG_NAME }, context);
     const { skip = 0, take = 10 } = args;
     const [results, total] = await Campaign.adminListCampaignsByStatus(skip, take);
-    return { results: results.map((result) => result.asV1()), total };
+    return { results: results.map(async (result) => await result.asV1()), total };
 };
 
 export const deleteCampaign = async (parent: any, args: { id: string }, context: { user: any }) => {
@@ -430,7 +436,17 @@ export const deleteCampaign = async (parent: any, args: { id: string }, context:
     if (role === "manager") where["company"] = company;
     const campaign = await Campaign.findOne({
         where,
-        relations: ["participants", "posts", "dailyMetrics", "hourlyMetrics", "prize", "payouts", "escrow"],
+        relations: [
+            "participants",
+            "posts",
+            "dailyMetrics",
+            "hourlyMetrics",
+            "prize",
+            "payouts",
+            "escrow",
+            "campaignTemplates",
+            "campaignMedia",
+        ],
     });
     if (!campaign) throw new Error("campaign not found");
     if (campaign.posts.length > 0)
@@ -443,6 +459,8 @@ export const deleteCampaign = async (parent: any, args: { id: string }, context:
     await Participant.remove(campaign.participants);
     await DailyParticipantMetric.remove(campaign.dailyMetrics);
     await HourlyCampaignMetric.remove(campaign.hourlyMetrics);
+    await CampaignTemplate.remove(campaign.campaignTemplates);
+    await CampaignMedia.remove(campaign.campaignMedia);
     await campaign.remove();
     return campaign.asV1();
 };
@@ -458,7 +476,7 @@ export const get = async (parent: any, args: { id: string }) => {
     campaign.participants.sort((a, b) => {
         return parseFloat(b.participationScore.minus(a.participationScore).toString());
     });
-    return campaign.asV1();
+    return campaign.asV2();
 };
 
 export const publicGet = async (parent: any, args: { campaignId: string }) => {
