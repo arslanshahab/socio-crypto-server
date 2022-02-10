@@ -2,6 +2,7 @@ export const FEE_RATE = process.env.FEE_RATE ? parseFloat(process.env.FEE_RATE) 
 export const COIIN = "COIIN";
 export const CRYPTO_ICONS_BUCKET_URL = "https://rm-crypto-icons.s3.us-west-2.amazonaws.com";
 export const CRYPTO_ICONS_MAP: { [key: string]: string } = {
+    COIIN: "coiin.png",
     ADA: "ada-icon.svg",
     BAT: "bat-icon.svg",
     BCH: "bch-icon.svg",
@@ -29,4 +30,5 @@ export const CRYPTO_ICONS_MAP: { [key: string]: string } = {
     VET: "vet-icon.svg",
     WBTC: "wbtc-icon.svg",
     XRP: "xrp-icon.svg",
+    XLM: "xlm-icon.svg",
 };

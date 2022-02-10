@@ -429,6 +429,7 @@ export const typeDefs = gql`
         id: String
         type: String
         balance: Float
+        symbolImageUrl: String
     }
 
     type ExternalAddress {
