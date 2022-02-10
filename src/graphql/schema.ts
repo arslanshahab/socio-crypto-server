@@ -203,7 +203,7 @@ export const typeDefs = gql`
         verifySession: JSON
         getFundingWallet: FundingWallet
         listOrgs(skip: Int, take: Int): [Org]
-        listEmployees: EmployeeOrganization
+        listEmployees(skip: Int, take: Int): EmployeeOrganization
         getOrgDetails: [OrgDetail]
         listPaymentMethods: [PaymentMethod]
         listPendingCampaigns(skip: Int, take: Int): PaginatedCampaignResults
@@ -220,6 +220,7 @@ export const typeDefs = gql`
         # downloadKyc(kycId: String!): [Factor]
         downloadKyc: KycApplicationResponse
         getDashboardMetrics(campaignId: String, skip: Int, take: Int): DashboardMetrics
+        transectionHistory: [Transfer]
     }
 
     type DashboardMetrics {
@@ -428,6 +429,7 @@ export const typeDefs = gql`
         id: String
         type: String
         balance: Float
+        symbolImageUrl: String
     }
 
     type ExternalAddress {
@@ -748,6 +750,7 @@ export const typeDefs = gql`
     type FollowerCounts {
         twitter: Int
         facebook: Int
+        tiktok: Int
     }
 
     type AuditReport {
