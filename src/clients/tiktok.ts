@@ -6,8 +6,6 @@ import { SocialLink } from "../models/SocialLink";
 import { Secrets } from "../util/secrets";
 import { TiktokLinkCredentials } from "src/types";
 
-// https://open-api.tiktok.com/platform/oauth/connect/?client_key=awtv37zowsh2ryq2&scope=user.info.basic,video.list&response_type=code&redirect_uri=https://raiinmaker.loca.lt/&state=1234567890
-
 export class TikTokClient {
     public static baseUrl = "https://open-api.tiktok.com";
 
@@ -25,7 +23,7 @@ export class TikTokClient {
         return await doFetch(requestData);
     };
 
-    public static refetchTokens = async (refreshToken: string) => {
+    public static refreshTokens = async (refreshToken: string) => {
         const requestData: RequestData = {
             url: `${TikTokClient.baseUrl}/oauth/refresh_token/`,
             method: "post",
@@ -123,7 +121,9 @@ export class TikTokClient {
     private static getTokens = async (socialLink: SocialLink): Promise<TiktokLinkCredentials> => {
         let credentials = socialLink.getTiktokCreds();
         if (credentials.expires_in.isLessThan(new Date().getTime())) {
-            const tokens = await TikTokClient.fetchTokens(credentials.refresh_token);
+            const tokens = await TikTokClient.refreshTokens(credentials.refresh_token);
+            console.log("tokens", tokens);
+            console.log("user", socialLink.user);
             await SocialLink.addOrUpdateTiktokLink(socialLink.user, tokens.data);
             credentials = socialLink.getTiktokCreds();
         }

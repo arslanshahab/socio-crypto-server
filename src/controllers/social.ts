@@ -96,7 +96,7 @@ export const postToSocial = async (
         const startTime = new Date().getTime();
         let { socialType, text, mediaType, mediaFormat, media, participantId, defaultMedia, mediaId } = args;
         if (!allowedSocialLinks.includes(socialType)) throw new ApolloError(`posting to ${socialType} is not allowed`);
-        const user = await User.findUserByContext(context.user, ["socialLinks"]);
+        const user = await User.findUserByContext(context.user);
         if (!user) throw new Error(USER_NOT_FOUND);
         const participant = await Participant.findOne({
             where: { id: participantId, user },
@@ -104,7 +104,7 @@ export const postToSocial = async (
         });
         if (!participant) throw new ApolloError("Participant not found");
         if (!participant.campaign.isOpen()) throw new ApolloError("campaign is closed");
-        const socialLink = user.socialLinks.find((link) => link.type === socialType);
+        const socialLink = await SocialLink.findOne({ where: { user, type: socialType }, relations: ["user"] });
         if (!socialLink) throw new ApolloError(`you have not linked ${socialType} as a social platform`);
         const campaign = await Campaign.findOne({
             where: { id: participant.campaign.id },
