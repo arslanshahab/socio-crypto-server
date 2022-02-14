@@ -30,6 +30,7 @@ export const authenticateAdmin = async ({ req }: { req: express.Request }) => {
 export const authenticateUser = async ({ req }: { req: express.Request }) => {
     try {
         const token = req.headers.authorization || "";
+        console.log(token);
         if (!token) throw new Error(NO_TOKEN_PROVIDED);
         const user = verifySessionToken(token);
         return { user };
