@@ -51,6 +51,7 @@ export const resolvers = {
         getRedemptionRequirements: xoxodayController.redemptionRequirements,
         getUserBalances: userController.getWalletBalances,
         getTransferHistory: transferController.getTransferHistory,
+        getTransferHistoryV2: transferController.getTransferHistoryV2,
         downloadKyc: kycController.downloadKyc,
     },
     Mutation: {
@@ -88,6 +89,8 @@ export const resolvers = {
         startEmailVerification: userController.startEmailVerification,
         completeEmailVerification: userController.completeEmailVerification,
         updateUserPassword: userController.updateUserPassword,
+        registerTiktokSocialLink: socialController.registerTiktokSocialLink,
+        postContentGlobally: socialController.postContentGlobally,
     },
 };
 
@@ -108,6 +111,7 @@ export const adminResolvers = {
         getFundingWallet: fundingController.get,
         verifySession: authenticationController.getUserRole,
         listOrgs: orgController.listOrgs,
+        getOrgDetails: orgController.getOrgDetails,
         listEmployees: orgController.listEmployees,
         listPaymentMethods: stripeController.listPaymentMethods,
         listPendingCampaigns: campaignController.adminListPendingCampaigns,
@@ -115,6 +119,9 @@ export const adminResolvers = {
         checkCoinGecko: cryptoController.coinGeckoCheck,
         getDepositAddressForSymbol: tatumController.getDepositAddress,
         getSupportedCurrencies: tatumController.getSupportedCurrencies,
+        listAllCampaignsForOrg: campaignController.listAllCampaignsForOrg,
+        getDashboardMetrics: campaignController.getDashboardMetrics,
+        transectionHistory: fundingController.transectionHistory,
     },
     Mutation: {
         newOrg: orgController.newOrg,

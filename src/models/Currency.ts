@@ -20,7 +20,7 @@ export class Currency extends BaseEntity {
     @Column({ nullable: false })
     public symbol: string;
 
-    @Column({ nullable: false })
+    @Column({ nullable: true })
     public depositAddress: string;
 
     @Column({ nullable: true })
@@ -32,8 +32,11 @@ export class Currency extends BaseEntity {
     @Column({ nullable: true })
     public destinationTag: number;
 
+    @Column({ nullable: true })
+    public derivationKey: number;
+
     @ManyToOne((_type) => Wallet, (wallet) => wallet.currency)
-    public wallet: Currency;
+    public wallet: Wallet;
 
     @CreateDateColumn()
     public createdAt: Date;
@@ -51,11 +54,12 @@ export class Currency extends BaseEntity {
         let account = new Currency();
         account.tatumId = data.id;
         account.symbol = data.currency;
-        account.depositAddress = data.address;
         account.wallet = data.wallet;
+        if (data.address) account.depositAddress = data.address;
         if (data.memo) account.memo = data.memo;
         if (data.message) account.message = data.message;
         if (data.destinationTag) account.destinationTag = data.destinationTag;
+        if (data.derivationKey) account.derivationKey = data.derivationKey;
         return await Currency.save(account);
     }
 }

@@ -1,30 +1,33 @@
-import { TatumClient, USER_WITHDRAW, RAIINMAKER_WITHDRAW, WithdrawDetails } from "../clients/tatumClient";
+import { RAIINMAKER_WITHDRAW, TatumClient, USER_WITHDRAW } from "../clients/tatumClient";
 import { Admin } from "../models/Admin";
-import { asyncHandler } from "../util/helpers";
 import { Request, Response } from "express";
 import { TatumWallet } from "../models/TatumWallet";
 import { User } from "../models/User";
 import { S3Client } from "../clients/s3";
-import { findOrCreateCurrency, getWithdrawableAmount } from "../helpers";
+import { asyncHandler, BN } from "../util";
 import { Currency } from "../models/Currency";
 import { Transfer } from "../models/Transfer";
-import { BigNumber } from "bignumber.js";
 import { ApolloError } from "apollo-server-express";
+import { CustodialAddress } from "../models/CustodialAddress";
+import { CustodialAddressChain } from "src/types";
+import { Wallet } from "../models/Wallet";
+import { Org } from "../models/Org";
+import { Verification } from "../models/Verification";
 
 export const initWallet = asyncHandler(async (req: Request, res: Response) => {
     try {
         let { currency } = req.body;
         currency = currency.toUpperCase();
-        const foundWallet = await TatumWallet.findOne({ where: { currency: currency } });
-        if (foundWallet) throw new Error(`Wallet already exists for currency: ${currency}`);
+        if (await TatumClient.ifWalletExists(currency))
+            throw new Error(`Wallet already exists for currency: ${currency}`);
         const wallet: any = await TatumClient.createWallet(currency);
+        await S3Client.setTatumWalletKeys(currency, {
+            ...wallet,
+        });
         await TatumWallet.addTatumWallet({
             xpub: wallet.xpub || "",
             address: wallet.address || "",
             currency,
-        });
-        await S3Client.setTatumWalletKeys(currency, {
-            ...wallet,
         });
         res.status(200).json(wallet);
     } catch (error) {
@@ -37,8 +40,8 @@ export const saveWallet = asyncHandler(async (req: Request, res: Response) => {
         let { mnemonic, secret, privateKey, xpub, address, currency, token } = req.body;
         if (!token || token !== process.env.RAIINMAKER_DEV_TOKEN) throw new Error("Invalid Token");
         currency = currency.toUpperCase();
-        const foundWallet = await TatumWallet.findOne({ where: { currency: currency } });
-        if (foundWallet) throw new Error(`Wallet already exists for currency: ${currency}`);
+        if (await TatumClient.ifWalletExists(currency))
+            throw new Error(`Wallet already exists for currency: ${currency}`);
         const wallet = await TatumWallet.addTatumWallet({ xpub, address, currency });
         await S3Client.setTatumWalletKeys(currency, {
             mnemonic,
@@ -48,6 +51,20 @@ export const saveWallet = asyncHandler(async (req: Request, res: Response) => {
             xpub,
         });
         res.status(200).json(wallet);
+    } catch (error) {
+        res.status(403).json(error.message);
+    }
+});
+
+export const generateCustodialAddresses = asyncHandler(async (req: Request, res: Response) => {
+    try {
+        let { currency, token } = req.body;
+        currency = currency.toUpperCase();
+        if (!token || token !== process.env.RAIINMAKER_DEV_TOKEN) throw new Error("Invalid Token");
+        if (!TatumClient.isCurrencySupported(currency)) throw new Error(`Currency ${currency} is not supported`);
+        const list = await TatumClient.generateCustodialAddresses(currency);
+        await CustodialAddress.saveAddresses(list, TatumClient.getBaseChain(currency) as CustodialAddressChain);
+        res.status(200).json(list);
     } catch (error) {
         res.status(403).json(error.message);
     }
@@ -160,26 +177,16 @@ export const getDepositAddress = async (parent: any, args: { symbol: string }, c
         symbol = symbol.toUpperCase();
         if (!symbol) throw new Error("Currency not supported");
         const fromTatum = await TatumClient.isCurrencySupported(symbol);
-        if (!fromTatum) {
-            return {
-                symbol,
-                address: process.env.ETHEREUM_DEPOSIT_ADDRESS,
-                fromTatum,
-                destinationTag: "",
-                memo: "",
-                message: "",
-            };
-        } else {
-            const ledgerAccount = await findOrCreateCurrency(symbol, admin.org.wallet);
-            return {
-                symbol,
-                address: ledgerAccount.depositAddress,
-                fromTatum,
-                destinationTag: ledgerAccount.destinationTag,
-                memo: ledgerAccount.memo,
-                message: ledgerAccount.message,
-            };
-        }
+        let ledgerAccount;
+        if (fromTatum) ledgerAccount = await TatumClient.findOrCreateCurrency(symbol, admin.org.wallet);
+        return {
+            symbol,
+            address: ledgerAccount?.depositAddress || process.env.ETHEREUM_DEPOSIT_ADDRESS,
+            fromTatum,
+            destinationTag: ledgerAccount?.destinationTag || "",
+            memo: ledgerAccount?.memo || "",
+            message: ledgerAccount?.message || "",
+        };
     } catch (error) {
         console.log("ERROR----", error);
         throw new ApolloError(error.message);
@@ -188,34 +195,42 @@ export const getDepositAddress = async (parent: any, args: { symbol: string }, c
 
 export const withdrawFunds = async (
     parent: any,
-    args: { symbol: string; address: string; amount: number },
+    args: { symbol: string; address: string; amount: number; verificationToken: string },
     context: { user: any }
 ) => {
     try {
         const user = await User.findUserByContext(context.user, ["wallet"]);
         if (!user) throw new Error("User not found");
-        let { symbol, address, amount } = args;
+        let { symbol, address, amount, verificationToken } = args;
         symbol = symbol.toUpperCase();
         if (!(await TatumClient.isCurrencySupported(symbol))) throw new Error(`currency ${symbol} is not supported`);
+        await Verification.verifyToken({ verificationToken });
         const userCurrency = await Currency.findOne({ where: { wallet: user.wallet, symbol } });
-        if (!userCurrency) throw new Error(`No such currency:${symbol} in user wallet`);
+        if (!userCurrency) throw new Error(`User wallet not found for currency ${symbol}`);
         const userAccountBalance = await TatumClient.getAccountBalance(userCurrency.tatumId);
         if (parseFloat(userAccountBalance.availableBalance) < amount)
             throw new Error(`Not enough funds in user account`);
-        // const minWithdrawAmount = await getMinWithdrawableAmount(userCurrency.symbol.toLowerCase());
-        // if (amount < minWithdrawAmount)
-        //     throw new Error(`Unable to process withdraw, min amount required is ${minWithdrawAmount}`);
-        let payload: WithdrawDetails = {
+        if (!userCurrency) throw new Error("Tatum account not found for user.");
+        const custodialAddress = await CustodialAddress.findOne({
+            where: {
+                chain: TatumClient.getBaseChain(symbol),
+                wallet: await Wallet.findOne({ where: { org: await Org.findOne({ where: { name: "raiinmaker" } }) } }),
+            },
+        });
+        if (!custodialAddress) throw new Error("No custodial address available for raiinmaker");
+        const withdrawResp = await TatumClient.withdrawFundsToBlockchain({
             senderAccountId: userCurrency.tatumId,
             paymentId: `${USER_WITHDRAW}:${user.id}`,
             senderNote: RAIINMAKER_WITHDRAW,
             address,
-            amount: getWithdrawableAmount(amount),
-        };
-        await TatumClient.withdrawFundsToBlockchain(symbol, payload);
+            amount: amount.toString(),
+            currency: userCurrency,
+            custodialAddress,
+        });
         const newTransfer = Transfer.initTatumTransfer({
+            txId: withdrawResp?.txId,
             symbol,
-            amount: new BigNumber(getWithdrawableAmount(amount)),
+            amount: new BN(amount),
             action: "WITHDRAW",
             wallet: user.wallet,
             tatumId: address,

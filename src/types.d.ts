@@ -5,10 +5,11 @@ import { Stripe } from "stripe";
 interface JWTPayload {
     email: string;
     userId: string;
-    id?: string;
-    role?: string;
-    company?: string;
+    id: string;
+    role: string;
 }
+
+export type CustodialAddressChain = "ETH" | "MATIC" | "BSC" | "ONE" | "XDC";
 
 export interface XoxodayVoucher {
     productId: string;
@@ -214,10 +215,20 @@ export interface ActionValues {
     shares: BigNumber;
 }
 
-export interface SocialClientCredentials {
-    apiKey?: string;
-    apiSecret?: string;
+export interface TwitterLinkCredentials {
+    apiKey: string;
+    apiSecret: string;
 }
+
+export interface TiktokLinkCredentials {
+    open_id: string;
+    access_token: string;
+    expires_in: BigNumber;
+    refresh_token: string;
+    refresh_expires_in: BigNumber;
+}
+
+export type SocialType = "twitter" | "facebook" | "tiktok";
 
 export interface PaypalPayout {
     recipient_type: "EMAIL";
@@ -255,12 +266,13 @@ export type TransferAction =
     | "REGISTRATION_REWARD"
     | "PARTICIPATION_REWARD"
     | "CAMPAIGN_REWARD"
-    | "NETWORK_REWARD";
+    | "NETWORK_REWARD"
+    | "XOXODAY_REDEMPTION";
 
 export type CampaignStatus = "ACTIVE" | "PENDING" | "INSUFFICIENT_FUNDS" | "CLOSED" | "APPROVED" | "DENIED";
 export type CampaignAuditStatus = "DEFAULT" | "AUDITED" | "PENDING";
 export type KycStatus = "APPROVED" | "PENDING" | "REJECTED" | "";
-export type VerificationType = "EMAIL" | "PASSWORD" | "";
+export type VerificationType = "EMAIL" | "PASSWORD" | "WITHDRAW" | "";
 
 export interface GraphApiInputParameters {
     fields?: string[] | string;

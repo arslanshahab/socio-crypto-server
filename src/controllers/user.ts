@@ -3,7 +3,6 @@ import { Participant } from "../models/Participant";
 import { checkPermissions } from "../middleware/authentication";
 import { Firebase } from "../clients/firebase";
 import { User } from "../models/User";
-import { TinyUrl } from "../clients/tinyUrl";
 import { S3Client } from "../clients/s3";
 import { decrypt, sha256Hash } from "../util/crypto";
 import { GraphQLResolveInfo } from "graphql";
@@ -11,28 +10,30 @@ import { Profile } from "../models/Profile";
 import { DailyParticipantMetric } from "../models/DailyParticipantMetric";
 import { groupDailyMetricsByUser } from "./helpers";
 import { HourlyCampaignMetric } from "../models/HourlyCampaignMetric";
-import { serverBaseUrl } from "../config";
 import { In } from "typeorm";
 import {
     createPasswordHash,
-    findOrCreateCurrency,
     getCryptoAssestImageUrl,
     getMinWithdrawableAmount,
     getUSDValueForCurrency,
-} from "../helpers";
+    formatFloat,
+} from "../util";
 import { TatumClient } from "../clients/tatumClient";
 import { WalletCurrency } from "../models/WalletCurrency";
 import { Wallet } from "../models/Wallet";
 import { Currency } from "../models/Currency";
 import { flatten } from "lodash";
 import { Verification } from "../models/Verification";
-import { formatFloat } from "../util/helpers";
 import { SesClient } from "../clients/ses";
 import { USER_NOT_FOUND, INCORRECT_PASSWORD, FormattedError, SAME_OLD_AND_NEW_PASSWORD } from "../util/errors";
 import { addDays, endOfISOWeek, startOfDay } from "date-fns";
 import { Transfer } from "../models/Transfer";
 
-export const participate = async (parent: any, args: { campaignId: string; email: string }, context: { user: any }) => {
+export const participate = async (
+    parent: any,
+    args: { campaignId: string; email: string },
+    context: { user: any }
+): Promise<Participant> => {
     try {
         const user = await User.findUserByContext(context.user, ["campaigns", "wallet"]);
         if (!user) throw new Error("user not found");
@@ -49,19 +50,14 @@ export const participate = async (parent: any, args: { campaignId: string; email
             throw new Error("user already participating in this campaign");
 
         if (await TatumClient.isCurrencySupported(campaign.symbol)) {
-            await findOrCreateCurrency(campaign.symbol, user.wallet);
+            await TatumClient.findOrCreateCurrency(campaign.symbol, user.wallet);
         }
-        const participant = Participant.newParticipant(user, campaign, args.email);
-        await participant.save();
-        const url = `${serverBaseUrl}/v1/referral/${participant.id}`;
-        participant.link = await TinyUrl.shorten(url);
-        await HourlyCampaignMetric.upsert(campaign, campaign.org, "participate");
-        await participant.save();
-        await user.transferReward("PARTICIPATION_REWARD");
-        return participant.asV1();
+        const participant = Participant.createNewParticipant(user, campaign, args.email);
+        if (!campaign.isGlobal) await user.transferReward("PARTICIPATION_REWARD");
+        return participant;
     } catch (e) {
         console.log(e);
-        return null;
+        throw new Error(e.message);
     }
 };
 
@@ -337,7 +333,7 @@ export const getWalletBalances = async (parent: any, args: any, context: { user:
     const balances = await TatumClient.getBalanceForAccountList(currencies);
     let allCurrencies = currencies.map(async (currencyItem) => {
         const balance = balances.find((balanceItem) => currencyItem.tatumId === balanceItem.tatumId);
-        const minWithdrawAmount = await getMinWithdrawableAmount(currencyItem.symbol.toLowerCase());
+        const minWithdrawAmount = await getMinWithdrawableAmount(currencyItem.symbol);
         return {
             balance: formatFloat(balance.availableBalance),
             symbol: currencyItem.symbol,
@@ -391,10 +387,7 @@ export const startEmailVerification = async (parent: any, args: { email: string 
         if (!user) throw new Error("user not found");
         if (!email) throw new Error("email not provided");
         if (user.profile.email === email) throw new Error("email already exists");
-        let verificationData = await Verification.findOne({ where: { email: email, verified: false } });
-        if (!verificationData) {
-            verificationData = await Verification.createVerification(email);
-        }
+        let verificationData = await Verification.generateVerification({ email, type: "EMAIL" });
         await SesClient.emailAddressVerificationEmail(email, verificationData.getDecryptedCode());
         return {
             success: true,
@@ -415,7 +408,8 @@ export const completeEmailVerification = async (
         const user = await User.findUserByContext(context.user, ["profile"]);
         if (!user) throw new Error("user not found");
         if (!email || !token) throw new Error("email or token missing");
-        if (user.profile.email === email) throw new Error("email already exists");
+        if ((await User.findOne({ where: { email } })) || (await Profile.findOne({ where: { email } })))
+            throw new Error("Email already exists");
         const verificationData = await Verification.findOne({ where: { email, verified: false } });
         if (!verificationData || decrypt(verificationData.code) !== token)
             throw new Error("invalid token or verfication not initialized");
@@ -437,6 +431,7 @@ export const getWeeklyRewardEstimation = async (parent: any, args: any, context:
         const loginReward = await Transfer.getRewardForThisWeek(user.wallet, "LOGIN_REWARD");
         const participationReward = await Transfer.getRewardForThisWeek(user.wallet, "PARTICIPATION_REWARD");
         const nextReward = startOfDay(addDays(endOfISOWeek(user.lastLogin), 1));
+        const coiinEarnedToday = await Transfer.getCoinnEarnedToday(user.wallet);
         return {
             loginRewardRedeemed: Boolean(loginReward),
             loginReward: parseInt(loginReward?.amount?.toString() || "0"),
@@ -447,6 +442,7 @@ export const getWeeklyRewardEstimation = async (parent: any, args: any, context:
             participationRewardRedeemed: Boolean(participationReward),
             participationRedemptionDate: participationReward?.createdAt?.toString() || "",
             loginRedemptionDate: loginReward?.createdAt?.toString() || "",
+            earnedToday: coiinEarnedToday || 0,
         };
     } catch (e) {
         console.log(e);

@@ -1,15 +1,16 @@
 import { CampaignAuditReport, CampaignChannelMedia, CampaignStatus, DateTrunc } from "../types";
 import { Campaign } from "../models/Campaign";
+import { Admin } from "../models/Admin";
 import { checkPermissions } from "../middleware/authentication";
 import { Participant } from "../models/Participant";
 import { S3Client } from "../clients/s3";
-import { In } from "typeorm";
+import { In, ILike } from "typeorm";
 import { User } from "../models/User";
 import { SocialPost } from "../models/SocialPost";
 import { Firebase } from "../clients/firebase";
 import { calculateParticipantPayout, calculateParticipantSocialScore, calculateTier } from "./helpers";
 import { Transfer } from "../models/Transfer";
-import { BN } from "../util/helpers";
+import { BN, isSupportedCurrency } from "../util";
 import { Validator } from "../schemas";
 import { CampaignRequirementSpecs, RafflePrizeStructure } from "../types";
 import { Org } from "../models/Org";
@@ -21,7 +22,7 @@ import { getTokenPriceInUsd } from "../clients/ethereum";
 import { CampaignChannelTemplate } from "../types.d";
 import { CampaignMedia } from "../models/CampaignMedia";
 import { CampaignTemplate } from "../models/CampaignTemplate";
-import { isSupportedCurrency } from "../helpers";
+import { addYears } from "date-fns";
 
 const validator = new Validator();
 
@@ -30,6 +31,7 @@ export const getCurrentCampaignTier = async (parent: any, args: { campaignId?: s
     let currentTierSummary;
     let currentCampaign;
     let cryptoPriceUsd;
+
     if (campaignId) {
         const where: { [key: string]: string } = { id: campaignId };
         currentCampaign = await Campaign.findOne({ where });
@@ -80,11 +82,12 @@ export const createNewCampaign = async (
         socialMediaType: string[];
         campaignMedia: CampaignChannelMedia[];
         campaignTemplates: CampaignChannelTemplate[];
+        isGlobal: boolean;
     },
     context: { user: any }
 ) => {
     const { role, company } = checkPermissions({ hasRole: ["admin", "manager"] }, context);
-    const {
+    let {
         name,
         beginDate,
         endDate,
@@ -107,7 +110,15 @@ export const createNewCampaign = async (
         socialMediaType,
         campaignMedia,
         campaignTemplates,
+        isGlobal,
     } = args;
+    if (isGlobal) {
+        if (await Campaign.findOne({ where: { isGlobal, symbol } }))
+            throw new Error("A global campaign already exists for this currency!");
+        const globalEndDate = addYears(new Date(endDate), 100);
+        endDate = globalEndDate.toLocaleString();
+    }
+
     validator.validateAlgorithmCreateSchema(JSON.parse(algorithm));
     if (!!requirements) validator.validateCampaignRequirementsSchema(requirements);
     if (type === "raffle") {
@@ -126,6 +137,12 @@ export const createNewCampaign = async (
         if (!isCurrencySupported) throw new Error("this currency is not supported");
         const isWalletAvailable = await org.isCurrencyAdded(symbol);
         if (!isWalletAvailable) throw new Error("currency not found in wallet");
+    }
+    const findCampaignName = await Campaign.findOne({ name: ILike(name) });
+    if (findCampaignName) {
+        return new Error(
+            "The campaign already exists with this name, please change your campaign name and submit it again."
+        );
     }
     const campaign = Campaign.newCampaign(
         name,
@@ -147,6 +164,7 @@ export const createNewCampaign = async (
         imagePath,
         campaignType,
         socialMediaType,
+        isGlobal,
         targetVideo,
         org
     );
@@ -402,7 +420,7 @@ export const listCampaigns = async (
         approved,
         pendingAudit
     );
-    const data = results.map((result) => result.asV1());
+    const data = results.map(async (result) => await result.asV2());
     return { results: data, total };
 };
 
@@ -414,7 +432,7 @@ export const adminListPendingCampaigns = async (
     checkPermissions({ restrictCompany: "raiinmaker" }, context);
     const { skip = 0, take = 10 } = args;
     const [results, total] = await Campaign.adminListCampaignsByStatus(skip, take);
-    return { results: results.map((result) => result.asV1()), total };
+    return { results: results.map(async (result) => await result.asV1()), total };
 };
 
 export const deleteCampaign = async (parent: any, args: { id: string }, context: { user: any }) => {
@@ -423,7 +441,17 @@ export const deleteCampaign = async (parent: any, args: { id: string }, context:
     if (role === "manager") where["company"] = company;
     const campaign = await Campaign.findOne({
         where,
-        relations: ["participants", "posts", "dailyMetrics", "hourlyMetrics", "prize", "payouts", "escrow"],
+        relations: [
+            "participants",
+            "posts",
+            "dailyMetrics",
+            "hourlyMetrics",
+            "prize",
+            "payouts",
+            "escrow",
+            "campaignTemplates",
+            "campaignMedia",
+        ],
     });
     if (!campaign) throw new Error("campaign not found");
     if (campaign.posts.length > 0)
@@ -436,6 +464,8 @@ export const deleteCampaign = async (parent: any, args: { id: string }, context:
     await Participant.remove(campaign.participants);
     await DailyParticipantMetric.remove(campaign.dailyMetrics);
     await HourlyCampaignMetric.remove(campaign.hourlyMetrics);
+    await CampaignTemplate.remove(campaign.campaignTemplates);
+    await CampaignMedia.remove(campaign.campaignMedia);
     await campaign.remove();
     return campaign.asV1();
 };
@@ -451,7 +481,7 @@ export const get = async (parent: any, args: { id: string }) => {
     campaign.participants.sort((a, b) => {
         return parseFloat(b.participationScore.minus(a.participationScore).toString());
     });
-    return campaign.asV1();
+    return campaign.asV2();
 };
 
 export const publicGet = async (parent: any, args: { campaignId: string }) => {
@@ -586,4 +616,47 @@ export const payoutCampaignRewards = async (parent: any, args: { campaignId: str
         success: true,
         message: "Campaign has been submitted for auditting",
     };
+};
+
+export const listAllCampaignsForOrg = async (parent: any, args: any, context: { user: any }) => {
+    const userId = context.user.id;
+    checkPermissions({ hasRole: ["admin"] }, context);
+    const admin = await Admin.findOne({ where: { firebaseId: userId }, relations: ["org"] });
+    if (!admin) throw new Error("Admin not found");
+    const campaigns = await Campaign.find({ where: { org: admin.org } });
+    return campaigns.map((x) => ({ id: x.id, name: x.name }));
+};
+//! Dashboard Metrics
+export const getDashboardMetrics = async (parent: any, { campaignId, skip, take }: any, context: { user: any }) => {
+    const userId = context.user.id;
+    checkPermissions({ hasRole: ["admin"] }, context);
+    const admin = await Admin.findOne({ where: { firebaseId: userId }, relations: ["org"] });
+    if (!admin) throw new Error("Admin not found");
+    const { org } = admin;
+    if (!org) throw new Error("Organization not found");
+    const orgId = await admin.org.id;
+    let campaignMetrics;
+    let aggregatedCampaignMetrics;
+    let totalParticipants;
+    if (!campaignId) throw new Error("Campaign Id not found");
+    if (orgId && campaignId == "-1") {
+        aggregatedCampaignMetrics = await DailyParticipantMetric.getAggregatedOrgMetrics(orgId);
+        campaignMetrics = await DailyParticipantMetric.getOrgMetrics(orgId);
+        totalParticipants = await Participant.count({
+            where: {
+                campaign: In(await (await Campaign.find({ where: { org: admin?.org } })).map((item) => item.id)),
+            },
+        });
+    }
+    if (campaignId && campaignId != "-1") {
+        aggregatedCampaignMetrics = await DailyParticipantMetric.getAggregatedCampaignMetrics(campaignId);
+        campaignMetrics = await DailyParticipantMetric.getCampaignMetrics(campaignId);
+        totalParticipants = await Participant.count({
+            where: {
+                campaign: In([campaignId]),
+            },
+        });
+    }
+    const aggregaredMetrics = { ...aggregatedCampaignMetrics, totalParticipants };
+    return { aggregatedCampaignMetrics: aggregaredMetrics, campaignMetrics };
 };

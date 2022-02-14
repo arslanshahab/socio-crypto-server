@@ -1,16 +1,13 @@
 import { Firebase } from "../clients/firebase";
 import { AuthenticationError } from "apollo-server-express";
 import express from "express";
-import { verifySessionToken } from "../helpers";
+import { verifySessionToken } from "../util";
 import { FormattedError, NO_TOKEN_PROVIDED } from "../util/errors";
 
 export const authenticateAdmin = async ({ req }: { req: express.Request }) => {
     try {
         const token = req.cookies.session || "";
         if (!token) throw new AuthenticationError("No token provided or session not initialized");
-        if (process.env.NODE_ENV === "development" && token === "Bearer raiinmaker") {
-            return { user: { id: "banana", company: "raiinmaker", role: "admin" } };
-        }
         const decodedToken = await Firebase.verifySessionCookie(token);
         if (!decodedToken) throw new AuthenticationError("invalid token");
         const firebaseUser = await Firebase.getUserById(decodedToken.uid);
@@ -38,14 +35,12 @@ export const authenticateUser = async ({ req }: { req: express.Request }) => {
         const user = verifySessionToken(token);
         return { user };
     } catch (error) {
-        console.log(error);
         throw new FormattedError(error);
     }
 };
 
 export const checkPermissions = (opts: { hasRole?: string[]; restrictCompany?: string }, context: { user: any }) => {
-    const { role, id, company } = context.user;
-    console.log(`UID: ${id} requesting a admin route`);
+    const { role, company } = context.user;
     if (opts.hasRole) {
         if (!role || !opts.hasRole.includes(role)) throw new Error("forbidden");
     }

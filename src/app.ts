@@ -32,9 +32,9 @@ import {
     blockAccountBalance,
     getAllWithdrawls,
     transferBalance,
+    generateCustodialAddresses,
 } from "./controllers/tatum";
 import { kycWebhook } from "./controllers/kyc";
-
 const { NODE_ENV = "development" } = process.env;
 
 export class Application {
@@ -71,7 +71,9 @@ export class Application {
             exposedHeaders: ["x-auth-token"],
             credentials: true,
         };
-        if (NODE_ENV !== "production") corsSettings.origin.push("http://localhost:3000");
+        if (NODE_ENV !== "production") {
+            corsSettings.origin.push("http://localhost:3000");
+        }
         this.app.use(cookieParser());
         this.app.use(cors(corsSettings));
         this.app.post("/v1/payments", bodyParser.raw({ type: "application/json" }), stripeWebhook);
@@ -89,9 +91,7 @@ export class Application {
 
                 return {
                     async didEncounterErrors(requestContext) {
-                        requestContext.errors.forEach((error) => {
-                            console.log(`${error?.extensions?.code || "ERROR"}: ${error?.message || ""}`);
-                        });
+                        console.log(requestContext.errors);
                     },
                 };
             },
@@ -149,6 +149,7 @@ export class Application {
         this.app.post("/v1/tatum/balance", getAccountBalance);
         this.app.post("/v1/tatum/list-withdraws", getAllWithdrawls);
         this.app.post("/v1/tatum/transfer", transferBalance);
+        this.app.post("/v1/tatum/custodialAddress", generateCustodialAddresses);
         this.app.get("/v1/xoxoday/filters", getXoxodayFilters);
         this.app.post("/v1/dragonfactor/webhook", kycWebhook);
         this.app.use(

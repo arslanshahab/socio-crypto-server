@@ -6,10 +6,12 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
     BeforeInsert,
-    BeforeUpdate,
 } from "typeorm";
 import { decrypt, encrypt } from "../util/crypto";
-import { generateRandomNonce } from "../util/helpers";
+import { generateRandomNonce } from "../util";
+import { EMAIL_NOT_VERIFIED, INCORRECT_CODE_OR_EMAIL, VERIFICATION_TOKEN_EXPIRED } from "../util/errors";
+import { addMinutes, isPast } from "date-fns";
+import { VerificationType } from "src/types";
 @Entity()
 export class Verification extends BaseEntity {
     @PrimaryGeneratedColumn("uuid")
@@ -21,8 +23,14 @@ export class Verification extends BaseEntity {
     @Column({ nullable: false, default: false })
     public verified: boolean;
 
+    @Column({ nullable: true })
+    public expiry: Date;
+
     @Column({ nullable: false })
     public code: string;
+
+    @Column({ nullable: true, default: "" })
+    public type: VerificationType;
 
     @CreateDateColumn()
     public createdAt: Date;
@@ -31,17 +39,9 @@ export class Verification extends BaseEntity {
     public updatedAt: Date;
 
     @BeforeInsert()
-    @BeforeUpdate()
     nameToUpperCase() {
         this.email = this.email ? this.email.toLowerCase() : this.email;
     }
-
-    public static createVerification = async (email: string) => {
-        const verificationData = new Verification();
-        verificationData.email = email;
-        verificationData.code = encrypt(generateRandomNonce());
-        return await verificationData.save();
-    };
 
     public updateVerificationStatus = async (status: boolean) => {
         this.verified = status;
@@ -50,5 +50,55 @@ export class Verification extends BaseEntity {
 
     public getDecryptedCode = () => {
         return decrypt(this.code);
+    };
+
+    public generateToken = () => {
+        return encrypt(this.id);
+    };
+
+    public isCodeExpired = () => {
+        return !this.expiry ? false : isPast(new Date(this.expiry));
+    };
+
+    public addExpiryTime = async () => {
+        this.expiry = addMinutes(new Date(), 60);
+        return await this.save();
+    };
+
+    public expireToken = async () => {
+        this.expiry = new Date();
+        return await this.save();
+    };
+
+    public static generateVerification = async (data: { email: string; type: VerificationType }) => {
+        let verification = await Verification.findOne({ where: { email: data.email, verified: false } });
+        if (!verification) {
+            verification = new Verification();
+            verification.email = data.email;
+            verification.type = data.type;
+            verification.code = encrypt(generateRandomNonce());
+            return await verification.save();
+        }
+        return verification;
+    };
+
+    public static verifyCode = async (data: { code: string; email: string }) => {
+        const verification = await Verification.findOne({
+            where: { email: data.email, verified: false },
+        });
+        if (!verification || data.code !== decrypt(verification.code)) throw new Error(INCORRECT_CODE_OR_EMAIL);
+        await verification.addExpiryTime();
+        return await verification.updateVerificationStatus(true);
+    };
+
+    public static verifyToken = async (data: { verificationToken: string; email?: string }) => {
+        const verification = await Verification.findOne({
+            where: { id: decrypt(data.verificationToken), verified: true },
+        });
+        if (!verification) throw new Error(EMAIL_NOT_VERIFIED);
+        if (data.email && data.email.toLowerCase() !== verification.email) throw new Error(EMAIL_NOT_VERIFIED);
+        if (verification.isCodeExpired()) throw new Error(VERIFICATION_TOKEN_EXPIRED);
+        await verification.expireToken();
+        return verification;
     };
 }

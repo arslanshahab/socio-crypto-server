@@ -105,12 +105,6 @@ export class AcuantClient {
                 ).toString("base64")}`,
             },
         };
-        const response = await doFetch(requestData);
-        if (response.status !== 200) {
-            const error = await response.json();
-            console.log("ACUANT_CLIENT_ERROR", error);
-            throw new Error(error?.error_message || "There was an error from acuant");
-        }
-        return await response.json();
+        return await doFetch(requestData);
     }
 }

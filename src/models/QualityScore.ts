@@ -1,7 +1,7 @@
 import { BaseEntity, Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { BigNumberEntityTransformer } from "../util/transformers";
 import { BigNumber } from "bignumber.js";
-import { BN } from "../util/helpers";
+import { BN } from "../util";
 
 @Entity()
 export class QualityScore extends BaseEntity {

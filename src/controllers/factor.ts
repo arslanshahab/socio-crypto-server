@@ -1,22 +1,21 @@
 import { Response } from "express";
 import jwt from "jsonwebtoken";
 import * as Dragonfactor from "@myfii-dev/dragonfactor-auth";
-import { asyncHandler, extractFactor, generateRandomNumber, createFactorsFromKycData, BN } from "../util/helpers";
+import { asyncHandler, extractFactor, generateRandomNumber, createFactorsFromKycData, BN } from "../util";
 import { AuthRequest, FactorGeneration } from "../types";
 import { FactorLink } from "../models/FactorLink";
 import { Secrets } from "../util/secrets";
 import { User } from "../models/User";
 import { serverBaseUrl } from "../config";
 import { Wallet } from "../models/Wallet";
-import { Dragonchain } from "../clients/dragonchain";
+// import { Dragonchain } from "../clients/dragonchain";
 import { sha256Hash } from "../util/crypto";
 import { limit } from "../util/rateLimiter";
 import { S3Client } from "../clients/s3";
 import { Profile } from "../models/Profile";
 import { NotificationSettings } from "../models/NotificationSettings";
 import { WalletCurrency } from "../models/WalletCurrency";
-
-const { NODE_ENV } = process.env;
+import { JWTPayload } from "src/types";
 
 export const registerFactorLink = async (
     parent: any,
@@ -137,14 +136,7 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
         }
     }
     await user.updateLastLogin();
-    const jwtPayload: { [key: string]: string } = { id: identityId };
-    if (
-        (emailAddress! && ["raiinmaker.com", "dragonchain.com"].includes(emailAddress!)) ||
-        NODE_ENV === "development"
-    ) {
-        jwtPayload.role = "admin";
-        jwtPayload.company = "raiinmaker";
-    }
+    const jwtPayload: JWTPayload = { id: identityId, userId: user.id, email: user.email, role: "admin" };
     const token = jwt.sign(jwtPayload, Secrets.encryptionKey, {
         expiresIn: "7d",
         audience: serverBaseUrl,
@@ -153,8 +145,8 @@ export const login = asyncHandler(async (req: AuthRequest, res: Response) => {
         success: true,
         token,
         id: user.id,
-        role: jwtPayload.role,
-        company: jwtPayload.company,
+        role: "",
+        company: "",
     });
 });
 
@@ -177,7 +169,7 @@ export const recover = asyncHandler(async (req: AuthRequest, res: Response) => {
         relations: ["user"],
     });
     if (!profile) {
-        await Dragonchain.ledgerAccountRecoveryAttempt(undefined, identityId, message, code, false);
+        // await Dragonchain.ledgerAccountRecoveryAttempt(undefined, identityId, message, code, false);
         return res.status(404).json({
             code: "NOT_FOUND",
             message: "requested account not found",
@@ -187,7 +179,7 @@ export const recover = asyncHandler(async (req: AuthRequest, res: Response) => {
     await S3Client.deleteUserInfoIfExists(user.id);
     await S3Client.deleteKycImage(user.id, "idProof");
     await S3Client.deleteKycImage(user.id, "addressProof");
-    await Dragonchain.ledgerAccountRecoveryAttempt(user.id, identityId, message, code, true);
+    // await Dragonchain.ledgerAccountRecoveryAttempt(user.id, identityId, message, code, true);
     user.identityId = identityId;
     user.kycStatus = "";
     await user.save();

@@ -1,14 +1,13 @@
-import { asyncHandler } from "../util/helpers";
 import { Request, Response } from "express";
 import { Xoxoday } from "../clients/xoxoday";
-import { generateRandomId, supportedCountries } from "../util/helpers";
+import { generateRandomId, supportedCountries, asyncHandler } from "../util";
 import { XoxodayOrder, XoxodayVoucher } from "src/types";
 import { getExchangeRateForCurrency } from "../util/exchangeRate";
-import { XoxodayOrder as XoxodayOrderModel } from "../models/XoxodayOrder";
 import { User } from "../models/User";
-import { differenceInDays, differenceInHours } from "date-fns";
 import { getSocialClient } from "./social";
 import { S3Client } from "../clients/s3";
+import { Transfer } from "../models/Transfer";
+import { XoxodayOrder as XoxodayOrderModel } from "../models/XoxodayOrder";
 
 export const initXoxoday = asyncHandler(async (req: Request, res: Response) => {
     try {
@@ -66,7 +65,6 @@ export const placeOrder = async (parent: any, args: { cart: Array<any>; email: s
             "wallet",
             "wallet.walletCurrency",
             "campaigns",
-            "orders",
             "socialLinks",
         ]);
         if (!user) throw new Error("No user found");
@@ -75,9 +73,14 @@ export const placeOrder = async (parent: any, args: { cart: Array<any>; email: s
         await ifUserCanRedeem(user, totalCoiinSpent);
         const ordersData = await prepareOrderList(cart, email);
         const orderStatusList = await Xoxoday.placeOrder(ordersData);
-        const orderEntitiesList = await prepareOrderEntities(cart, orderStatusList);
         await user.updateCoiinBalance("SUBTRACT", totalCoiinSpent);
-        XoxodayOrderModel.saveOrderList(orderEntitiesList, user);
+        XoxodayOrderModel.saveOrderList(await prepareOrderEntities(cart, orderStatusList), user);
+        await Transfer.newReward({
+            wallet: user.wallet,
+            symbol: "COIIN",
+            amount: totalCoiinSpent,
+            type: "XOXODAY_REDEMPTION",
+        });
         return { success: true };
     } catch (error) {
         console.log(error);
@@ -85,35 +88,31 @@ export const placeOrder = async (parent: any, args: { cart: Array<any>; email: s
     }
 };
 
+const prepareOrderEntities = async (cart: Array<any>, statusList: Array<any>): Promise<Array<any>> => {
+    return cart.map((item, index) => {
+        return {
+            ...statusList[index],
+            ...item,
+        };
+    });
+};
+
 export const redemptionRequirements = async (parent: any, args: {}, context: { user: any }) => {
     try {
-        const user = await User.findUserByContext(context.user, ["campaigns", "orders", "socialLinks"]);
+        const user = await User.findUserByContext(context.user, ["campaigns", "socialLinks"]);
         if (!user) throw new Error("No user found");
-        const accountAgeInDays = differenceInDays(new Date(), new Date(user.createdAt));
-        const maxParticipationValue = Math.max(
-            ...user.campaigns.map((item) => (item.participationScore ? item.participationScore.toNumber() : 0)),
-            0
-        );
-        const recentOrder = user.orders.sort(
-            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        )[0];
+        const recentOrder = await Transfer.getLast24HourRedemption(user.wallet, "XOXODAY_REDEMPTION");
         const twitterAccount = user.socialLinks.find((item) => item.type === "twitter");
         const socialClient = getSocialClient("twitter");
         const twitterFollowers = twitterAccount
-            ? await socialClient.getTotalFollowers(twitterAccount.asClientCredentials(), twitterAccount.id)
+            ? await socialClient.getTotalFollowers(twitterAccount, twitterAccount.id)
             : 0;
         return {
-            accountAgeReached: accountAgeInDays >= 28,
-            accountAge: accountAgeInDays,
-            accountAgeRequirement: 28,
             twitterLinked: twitterAccount ? true : false,
             twitterfollowers: twitterFollowers,
             twitterfollowersRequirement: 20,
-            participation: user.campaigns.length ? true : false,
-            participationScore: maxParticipationValue,
-            participationScoreRequirement: 20,
-            orderLimitForTwentyFourHoursReached:
-                recentOrder && differenceInHours(new Date(), new Date(recentOrder.createdAt)) < 24 ? true : false,
+            participation: Boolean(user.campaigns.length),
+            orderLimitForTwentyFourHoursReached: Boolean(recentOrder),
         };
     } catch (error) {
         console.log(error);
@@ -158,49 +157,16 @@ const prepareOrderList = async (list: Array<any>, email: string): Promise<Array<
     });
 };
 
-const prepareOrderEntities = async (cart: Array<any>, statusList: Array<any>): Promise<Array<any>> => {
-    return cart.map((item, index) => {
-        return {
-            ...statusList[index],
-            ...item,
-        };
-    });
-};
-
 const ifUserCanRedeem = async (user: User, totalCoiinSpent: number) => {
-    const accountAgeInDays = differenceInDays(new Date(), new Date(user.createdAt));
-    if (accountAgeInDays < 28) {
-        throw new Error("Your account needs to be 4 weeks old before you can redeem anything!");
-    }
     const twitterAccount = user.socialLinks.find((item) => item.type === "twitter");
-    if (!twitterAccount) {
-        throw new Error("You need to link your twitter account before you redeem!");
-    }
+    if (!twitterAccount) throw new Error("You need to link your twitter account before you redeem!");
     const socialClient = getSocialClient("twitter");
-    const twitterFollowers = await socialClient.getTotalFollowers(
-        twitterAccount.asClientCredentials(),
-        twitterAccount.id
-    );
-    if (twitterFollowers < 20) {
-        throw new Error("You need to have atleast 20 followers on twitter before you redeem!");
-    }
-    const participations = user.campaigns.filter((item) => item.participationScore);
-    const participationWithInfluence = participations.find((item) =>
-        item.participationScore.isGreaterThanOrEqualTo(20)
-    );
-    if (!participationWithInfluence) {
-        throw new Error(
-            "You need to have an influence of atleast 20 in any of your participations before you redeem anything!"
-        );
-    }
-    const recentOrder = user.orders.sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    )[0];
-    if (recentOrder && differenceInHours(new Date(), new Date(recentOrder.createdAt)) < 24) {
-        throw new Error("You need to wait for few hours before you can redeem again!");
-    }
+    const twitterFollowers = await socialClient.getTotalFollowers(twitterAccount, twitterAccount.id);
+    if (twitterFollowers < 20) throw new Error("You need to have atleast 20 followers on twitter before you redeem!");
+    if (!user.campaigns.length) throw new Error("You need to participate in atleast one campaign in order to redeem!");
+    const recentOrder = await Transfer.getLast24HourRedemption(user.wallet, "XOXODAY_REDEMPTION");
+    if (recentOrder) throw new Error("You need to wait for few hours before you can redeem again!");
     const userCoiins = user.wallet.walletCurrency.find((item) => item.type.toLowerCase() === "coiin");
-    if (!userCoiins || userCoiins.balance.isLessThanOrEqualTo(0) || userCoiins.balance.isLessThan(totalCoiinSpent)) {
+    if (!userCoiins || userCoiins.balance.isLessThanOrEqualTo(0) || userCoiins.balance.isLessThan(totalCoiinSpent))
         throw new Error("Not enough coiin balance to proceed with this transaction!");
-    }
 };

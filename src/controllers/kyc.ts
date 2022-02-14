@@ -3,13 +3,11 @@ import { User } from "../models/User";
 import { checkPermissions } from "../middleware/authentication";
 import { KycUser } from "../types";
 import { Firebase } from "../clients/firebase";
-import { asyncHandler } from "../util/helpers";
 import { Request, Response } from "express";
 import { VerificationApplication } from "../models/VerificationApplication";
 import { Validator } from "../schemas";
 import { AcuantApplication, AcuantClient } from "../clients/acuant";
-import { findKycApplication, getApplicationStatus } from "../helpers";
-import { generateFactorsFromKYC } from "../helpers/index";
+import { findKycApplication, getApplicationStatus, generateFactorsFromKYC, asyncHandler } from "../util";
 import { ApolloError } from "apollo-server-express";
 
 const validator = new Validator();

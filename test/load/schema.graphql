@@ -42,6 +42,7 @@ type Mutation {
   registerSocialLink(type:String!,apiKey:String!,apiSecret:String!): Boolean
   removeSocialLink(type:String!): Boolean
   postToSocial(type:String!,text:String!,photo:String,video:String,participantId:String!): String
+  postToTiktok(video:String): String
   setDevice(deviceToken:String!): Boolean
   registerFactorLink(factor: JSON): User
   updateUsername(username:String!): User

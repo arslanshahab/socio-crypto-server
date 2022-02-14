@@ -28,6 +28,7 @@ export const typeDefs = gql`
             rafflePrize: JSON
             campaignMedia: JSON
             campaignTemplates: JSON
+            isGlobal: Boolean
         ): CampaignCreationResponse
         updateCampaign(
             id: String
@@ -56,7 +57,7 @@ export const typeDefs = gql`
             campaignTemplates: JSON
         ): CampaignCreationResponse
         generateCampaignAuditReport(campaignId: String!): AuditReport
-        payoutCampaignRewards(campaignId: String!, rejected: [String]!): Boolean
+        payoutCampaignRewards(campaignId: String!, rejected: [String]): SuccessResponse
         deleteCampaign(id: String!): Campaign
         participate(campaignId: String!, email: String): Participant
         removeParticipation(campaignId: String!): User
@@ -74,6 +75,13 @@ export const typeDefs = gql`
             defaultMedia: Boolean
             mediaId: String
         ): String
+        postContentGlobally(
+            socialType: String!
+            text: String!
+            mediaType: String
+            mediaFormat: String
+            media: String
+        ): SuccessResponse
         setDevice(deviceToken: String!): Boolean
         registerFactorLink(factor: JSON): User
         updateUsername(username: String!): User
@@ -124,14 +132,14 @@ export const typeDefs = gql`
         deleteCryptoFromWallet(id: String!): String
         removePaymentMethod(paymentMethodId: String): Boolean
         placeStoreOrder(cart: [JSON], email: String): JSON
-        withdrawFunds(symbol: String, address: String, amount: Float): SuccessResponse
+        withdrawFunds(symbol: String!, address: String!, amount: Float!, verificationToken: String!): SuccessResponse
         startVerification(email: String!, type: VerificationType!): SuccessResponse
         startEmailVerification(email: String!): SuccessResponse
         completeEmailVerification(email: String!, token: String!): SuccessResponse
         completeVerification(email: String!, code: String!): SuccessResponse
         loginUser(email: String!, password: String!): SuccessResponse
         registerUser(email: String!, username: String!, password: String!, verificationToken: String!): SuccessResponse
-        resetUserPassword(password: String!, verificationToken: String): SuccessResponse
+        resetUserPassword(password: String!, verificationToken: String!): SuccessResponse
         recoverUserAccountStep1(username: String!, code: String!): SuccessResponse
         recoverUserAccountStep2(
             email: String!
@@ -140,6 +148,7 @@ export const typeDefs = gql`
             verificationToken: String!
         ): SuccessResponse
         updateUserPassword(oldPassword: String!, newPassword: String!): SuccessResponse
+        registerTiktokSocialLink(code: String!): SuccessResponse
     }
 
     type Query {
@@ -194,7 +203,8 @@ export const typeDefs = gql`
         verifySession: JSON
         getFundingWallet: FundingWallet
         listOrgs(skip: Int, take: Int): [Org]
-        listEmployees: [Employee]
+        listEmployees(skip: Int, take: Int): EmployeeOrganization
+        getOrgDetails: [OrgDetail]
         listPaymentMethods: [PaymentMethod]
         listPendingCampaigns(skip: Int, take: Int): PaginatedCampaignResults
         listSupportedCrypto: [CryptoCurrency]
@@ -203,14 +213,39 @@ export const typeDefs = gql`
         checkCoinGecko(symbol: String): Boolean
         getWeeklyRewards: WeeklyRewardEstimation
         getRedemptionRequirements: RedemptionRequirements
-        getUserBalances(userId: String): [UserBalance]
+        getUserBalances: [UserBalance]
         getTransferHistory(symbol: String, skip: Int, take: Int): PaginatedTransferHistory
+        getTransferHistoryV2(symbol: String, skip: Int, take: Int, type: String): PaginatedTransferHistory
+        listAllCampaignsForOrg: [UserAllCampaigns]
+        # downloadKyc(kycId: String!): [Factor]
         downloadKyc: KycApplicationResponse
+        getDashboardMetrics(campaignId: String, skip: Int, take: Int): DashboardMetrics
+        transectionHistory: [Transfer]
+    }
+
+    type DashboardMetrics {
+        aggregatedCampaignMetrics: AggregatedCampaignMetrics
+        campaignMetrics: [CampaignsMetrics]
+    }
+    type AggregatedCampaignMetrics {
+        campaign_name: String
+        clickCount: Int
+        viewCount: Int
+        shareCount: Int
+        participationScore: Int
+        totalParticipants: Int
+    }
+    type CampaignsMetrics {
+        clickCount: Int
+        viewCount: Int
+        shareCount: Int
+        participationScore: Int
     }
 
     enum VerificationType {
         EMAIL
         PASSWORD
+        WITHDRAW
     }
 
     type KycApplicationResponse {
@@ -299,6 +334,7 @@ export const typeDefs = gql`
         participationRewardRedeemed: Boolean
         participationRedemptionDate: String
         loginRedemptionDate: String
+        earnedToday: Float
     }
 
     type CampaignCreationResponse {
@@ -351,6 +387,12 @@ export const typeDefs = gql`
         createdAt: String
         updatedAt: String
     }
+    type OrgDetail {
+        name: String
+        createdAt: String
+        campaignCount: Int
+        adminCount: Int
+    }
 
     type PaymentMethod {
         id: String
@@ -360,6 +402,11 @@ export const typeDefs = gql`
 
     type Employee {
         name: String
+        createdAt: String
+    }
+    type EmployeeOrganization {
+        orgName: String
+        adminsDetails: [Employee]
     }
 
     type Stripe {
@@ -382,6 +429,7 @@ export const typeDefs = gql`
         id: String
         type: String
         balance: Float
+        symbolImageUrl: String
     }
 
     type ExternalAddress {
@@ -423,6 +471,12 @@ export const typeDefs = gql`
         participantCount: Int
         discoveryCount: Int
         conversionCount: Int
+    }
+
+    "Get All Campaigns of User"
+    type UserAllCampaigns {
+        id: ID
+        name: String
     }
 
     type AdminHourlyCampaignMetrics {
@@ -478,6 +532,7 @@ export const typeDefs = gql`
         createdAt: String
         updatedAt: String
         wallet: Wallet
+        symbolImageUrl: String
     }
 
     type TwentyFourHourMetric {
@@ -526,12 +581,6 @@ export const typeDefs = gql`
         values: [String]
         notificationSettings: NotificationSettings
         orders: [JSON]
-    }
-
-    type PublicUser {
-        id: String
-        username: String
-        ageRange: String
     }
 
     type KycUser {
@@ -605,6 +654,7 @@ export const typeDefs = gql`
         beginDate: String
         endDate: String
         coiinTotal: Float
+        coiinTotalUSD: Float
         status: String
         symbol: String
         symbolImageUrl: String
@@ -667,7 +717,7 @@ export const typeDefs = gql`
     type Participant {
         id: String
         metrics: ParticipantMetrics
-        user: PublicUser
+        user: User
         campaign: Campaign
         link: String
         participationScore: Float
@@ -700,6 +750,7 @@ export const typeDefs = gql`
     type FollowerCounts {
         twitter: Int
         facebook: Int
+        tiktok: Int
     }
 
     type AuditReport {

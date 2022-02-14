@@ -16,7 +16,6 @@ import { SocialPost } from "./SocialPost";
 import { Transfer } from "./Transfer";
 import { StringifiedArrayTransformer, BigNumberEntityTransformer, AlgorithmTransformer } from "../util/transformers";
 import { BigNumber } from "bignumber.js";
-import { BN } from "../util/helpers";
 import { DailyParticipantMetric } from "./DailyParticipantMetric";
 import { getDatesBetweenDates, formatUTCDateForComparision } from "../controllers/helpers";
 import { User } from "./User";
@@ -31,8 +30,9 @@ import { TatumClient, CAMPAIGN_CREATION_AMOUNT } from "../clients/tatumClient";
 import { WalletCurrency } from "./WalletCurrency";
 import { Wallet } from "./Wallet";
 import { Currency } from "./Currency";
-import { getCryptoAssestImageUrl } from "../helpers";
+import { getCryptoAssestImageUrl, BN } from "../util";
 import { initDateFromParams } from "../util/date";
+import { getSymbolValueInUSD } from "../util/exchangeRate";
 
 @Entity()
 export class Campaign extends BaseEntity {
@@ -59,6 +59,8 @@ export class Campaign extends BaseEntity {
 
     @Column({ type: "varchar", transformer: BigNumberEntityTransformer })
     public coiinTotal: BigNumber;
+
+    public coiinTotalUSD: number;
 
     @Column({
         type: "varchar",
@@ -116,6 +118,9 @@ export class Campaign extends BaseEntity {
     @Column({ type: "jsonb", nullable: true })
     public requirements: CampaignRequirementSpecs;
 
+    @Column({ nullable: false, default: false })
+    public isGlobal: boolean;
+
     @Column({
         type: "text",
         nullable: false,
@@ -142,6 +147,7 @@ export class Campaign extends BaseEntity {
 
     @Column({ type: "text", nullable: true })
     public type: string;
+
     public symbolImageUrl = "";
 
     @OneToMany(
@@ -219,7 +225,7 @@ export class Campaign extends BaseEntity {
             totalParticipationScore: parseFloat(
                 this.totalParticipationScore ? this.totalParticipationScore.toString() : "0"
             ),
-            coiinTotal: parseFloat(this.coiinTotal ? this.coiinTotal.toString() : "0"),
+            coiinTotal: parseFloat(this?.coiinTotal?.toString() || "0"),
             algorithm: Campaign.parseAlgorithm(this.algorithm),
         };
         if (this.participants && this.participants.length > 0)
@@ -231,6 +237,15 @@ export class Campaign extends BaseEntity {
         if (this.crypto) returnedCampaign.crypto = this.crypto.asV1();
         if (this.symbol) returnedCampaign.symbolImageUrl = getCryptoAssestImageUrl(this.symbol);
         return returnedCampaign;
+    }
+
+    public async asV2() {
+        const campaign = { ...this.asV1() };
+        campaign.coiinTotalUSD = await getSymbolValueInUSD(
+            campaign.symbol,
+            parseFloat(campaign?.coiinTotal?.toString() || "0")
+        );
+        return campaign;
     }
 
     public static async getAllParticipatingCampaignIdsByUser(user: User): Promise<string[]> {
@@ -261,11 +276,15 @@ export class Campaign extends BaseEntity {
         let query = this.createQueryBuilder("campaign").where(where);
         if (company) query = query.andWhere(`"company"=:company`, { company });
         if (approved) query = query.andWhere('"status"=:status', { status: "APPROVED" });
-        if (pendingAudit) query = query.andWhere('"audited"=:audited', { audited: false });
+        if (pendingAudit === true) {
+            query = query.andWhere('"auditStatus"=:auditStatus', { auditStatus: "DEFAULT" });
+        }
         if (sort) query = query.orderBy("campaign.endDate", "DESC");
+        query = query.andWhere('"isGlobal"=:isGlobal', { isGlobal: false });
         return await query
             .leftJoinAndSelect("campaign.participants", "participant", 'participant."campaignId" = campaign.id')
             .leftJoinAndSelect("participant.user", "user", 'user.id = participant."userId"')
+            .leftJoinAndSelect("user.profile", "profile", 'user.id = profile."userId"')
             .leftJoinAndSelect("campaign.crypto", "crypto", 'campaign."cryptoId" = crypto.id')
             .leftJoinAndSelect("campaign.campaignMedia", "campaign_media", 'campaign_media."campaignId" = campaign.id')
             .leftJoinAndSelect(
@@ -290,6 +309,7 @@ export class Campaign extends BaseEntity {
         return query
             .where(where)
             .andWhere('"audited"=:audited', { audited })
+            .andWhere('"isGlobal"=:isGlobal', { isGlobal: false })
             .leftJoinAndSelect("campaign.participants", "participant", 'participant."campaignId" = campaign.id')
             .leftJoinAndSelect("participant.user", "user", 'user.id = participant."userId"')
             .getMany();
@@ -300,6 +320,7 @@ export class Campaign extends BaseEntity {
             .leftJoinAndSelect("campaign.org", "org", 'campaign."orgId" = org.id')
             .leftJoinAndSelect("campaign.crypto", "crypto", 'campaign."cryptoId" = crypto.id')
             .where("status=:status", { status: status.toUpperCase() })
+            .andWhere('"isGlobal"=:isGlobal', { isGlobal: false })
             .skip(skip)
             .take(take)
             .getManyAndCount();
@@ -447,6 +468,7 @@ export class Campaign extends BaseEntity {
         imagePath: string,
         campaignType: string,
         socialMediaType: string[],
+        isGlobal: boolean,
         targetVideo?: string,
         org?: Org
     ): Campaign {
@@ -456,7 +478,7 @@ export class Campaign extends BaseEntity {
         campaign.coiinTotal = new BN(coiinTotal);
         campaign.target = target;
         campaign.company = company;
-        campaign.status = "PENDING";
+        campaign.status = isGlobal ? "APPROVED" : "PENDING";
         campaign.symbol = symbol.toUpperCase();
         campaign.beginDate = new Date(beginDate);
         campaign.endDate = new Date(endDate);
@@ -466,6 +488,7 @@ export class Campaign extends BaseEntity {
         campaign.imagePath = imagePath;
         campaign.campaignType = campaignType;
         campaign.socialMediaType = socialMediaType;
+        campaign.isGlobal = isGlobal;
         if (targetVideo) campaign.targetVideo = targetVideo;
         if (description) campaign.description = description;
         if (instructions) campaign.instructions = instructions;

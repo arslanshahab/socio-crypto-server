@@ -9,16 +9,16 @@ import {
     UpdateDateColumn,
     BeforeInsert,
     BeforeUpdate,
+    ILike,
 } from "typeorm";
 import { Participant } from "./Participant";
-import { XoxodayOrder } from "./XoxodayOrder";
 import { Wallet } from "./Wallet";
 import { SocialLink } from "./SocialLink";
 import { SocialPost } from "./SocialPost";
 import { FactorLink } from "./FactorLink";
 import { TwentyFourHourMetric } from "./TwentyFourHourMetric";
 import BigNumber from "bignumber.js";
-import { BN } from "../util/helpers";
+import { BN } from "../util";
 import { FieldNode } from "graphql";
 import { Profile } from "./Profile";
 import { DailyParticipantMetric } from "./DailyParticipantMetric";
@@ -31,10 +31,12 @@ import { WalletCurrency } from "./WalletCurrency";
 import { differenceInMonths } from "date-fns";
 import { Transfer } from "./Transfer";
 import { JWTPayload } from "src/types";
+import { XoxodayOrder } from "./XoxodayOrder";
+import { COIIN } from "../util/constants";
 
 export const LOGIN_REWARD_AMOUNT = 1;
 export const PARTICIPATION_REWARD_AMOUNT = 2;
-export const REGISTRATION_REWARD_AMOUNT = 2;
+export const REGISTRATION_REWARD_AMOUNT = 15;
 type RewardType = "LOGIN_REWARD" | "PARTICIPATION_REWARD" | "REGISTRATION_REWARD";
 
 @Entity()
@@ -160,9 +162,6 @@ export class User extends BaseEntity {
             if (this.campaigns && this.campaigns.length > 0) {
                 returnedUser.campaigns = this.campaigns.map((participant) => participant.asV1());
             }
-            if (this.orders && this.orders.length > 0) {
-                returnedUser.orders = this.orders.map((order) => order.asV1());
-            }
         } catch (e) {
             console.log(e);
         }
@@ -216,6 +215,20 @@ export class User extends BaseEntity {
         });
     }
 
+    public static async findUserByEmail(email: string) {
+        let user = await User.findOne({ where: { email: ILike(email) } });
+        if (!user) {
+            const profile = await Profile.findOne({ where: { email }, relations: ["user"] });
+            if (profile) {
+                user = profile.user;
+                await user.updateEmail(profile.email);
+                profile.email = "";
+                await profile.save();
+            }
+        }
+        return user;
+    }
+
     public transferReward = async (type: RewardType): Promise<any> => {
         const user = this;
         const wallet = await Wallet.findOne({ where: { user } });
@@ -240,7 +253,7 @@ export class User extends BaseEntity {
             await Transfer.newReward({
                 wallet,
                 type,
-                symbol: "COIN",
+                symbol: COIIN,
                 amount: new BN(amount),
             });
         }
