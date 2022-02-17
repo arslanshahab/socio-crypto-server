@@ -5,9 +5,7 @@ import { doFetch, RequestData } from "../util/fetchRequest";
 import { SocialLink } from "../models/SocialLink";
 import { Secrets } from "../util/secrets";
 import { TiktokLinkCredentials } from "src/types";
-// import axios from "axios";
 import path from 'path'
-// import video from "./uploads/videoplayback.mp4";
 
 export class TikTokClient {
     public static baseUrl = "https://open-api.tiktok.com";
@@ -74,7 +72,7 @@ export class TikTokClient {
                 payload: formData
             };
             const resp = await doFetch(requestData);
-            console.log("RESP",resp);
+            console.log("RESPONSE",resp);
             if (!resp?.data?.share_id) throw new Error("There was an error uploading file to tiktok");
             fs.unlinkSync(filePath);
             return resp?.data?.share_id;
