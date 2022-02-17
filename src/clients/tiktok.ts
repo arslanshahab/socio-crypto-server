@@ -5,6 +5,9 @@ import { doFetch, RequestData } from "../util/fetchRequest";
 import { SocialLink } from "../models/SocialLink";
 import { Secrets } from "../util/secrets";
 import { TiktokLinkCredentials } from "src/types";
+// import axios from "axios";
+import path from 'path'
+// import video from "./uploads/videoplayback.mp4";
 
 export class TikTokClient {
     public static baseUrl = "https://open-api.tiktok.com";
@@ -43,28 +46,35 @@ export class TikTokClient {
         data: string,
         mediaType: "photo" | "video" | "gif",
         mediaFormat: string
-    ): Promise<string> => {
+    ): Promise<string | any> => {
         const fileName = `raiinmaker-${participant.id}.${mediaFormat.split("/")[1]}`;
-        const directory = process.env.NODE_ENV === "development" ? "./src/clients/uploads" : "./dist/clients/uploads";
-        if (!fs.existsSync(directory)) {
-            fs.mkdirSync(directory);
-        }
-        const filePath = `${directory}/${fileName}`;
+        // const directory = process.env.NODE_ENV === "development" ? "./src/clients/uploads" : "./dist/clients/uploads";
+        const filePath = `${path.resolve(__dirname, './uploads')}/${fileName}`;
+        // if (!fs.existsSync(filePath)) {
+        //     fs.mkdirSync(filePath);
+        // }
+        // const filePath = path.resolve(__dirname, "./uploads/videoplayback.mp4");
         try {
-            console.log("UPLOAD-TIKTOK FILE: ", fileName);
+            console.log("UPLOAD-TIKTOK FILE -:)", fileName, filePath);
             var bitmap = Buffer.from(data, "base64");
             fs.writeFileSync(filePath, bitmap);
-            const formData = new FormData();
-            formData.append("video", fs.createReadStream(filePath));
+            const formData = new FormData({
+                maxDataSize: Infinity
+            });
+            const file = fs.createReadStream(path.resolve(__dirname, filePath));
+            formData.append("video", file);
+            // let file = fs.createReadStream(filePath);
+            // formData.append("video", fs.createReadStream(filePath));
             const credentials = await TikTokClient.getTokens(socialLink);
             const requestData: RequestData = {
                 url: `${TikTokClient.baseUrl}/share/video/upload`,
                 method: "POST",
                 query: { open_id: credentials.open_id, access_token: credentials.access_token },
                 headers: formData.getHeaders(),
+                payload: formData
             };
             const resp = await doFetch(requestData);
-            console.log(resp);
+            console.log("RESP",resp);
             if (!resp?.data?.share_id) throw new Error("There was an error uploading file to tiktok");
             fs.unlinkSync(filePath);
             return resp?.data?.share_id;
