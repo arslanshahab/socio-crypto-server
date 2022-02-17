@@ -44,7 +44,7 @@ export class TikTokClient {
         data: string,
         mediaType: "photo" | "video" | "gif",
         mediaFormat: string
-    ): Promise<string | any> => {
+    ): Promise<string> => {
         const fileName = `raiinmaker-${participant.id}.${mediaFormat.split("/")[1]}`;
         // const directory = process.env.NODE_ENV === "development" ? "./src/clients/uploads" : "./dist/clients/uploads";
         const filePath = `${path.resolve(__dirname, './uploads')}/${fileName}`;
