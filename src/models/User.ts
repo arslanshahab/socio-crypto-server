@@ -177,6 +177,7 @@ export class User extends BaseEntity {
                 ...values,
                 email: returnedUser.email,
                 hasRecoveryCodeSet: this.profile.recoveryCode !== null && this.profile.recoveryCode !== "",
+                username: this.profile.username || "",
             };
         }
         try {
