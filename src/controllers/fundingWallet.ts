@@ -3,6 +3,7 @@ import { TatumClient } from "../clients/tatumClient";
 import { Wallet } from "../models/Wallet";
 import { Currency } from "../models/Currency";
 import { Transfer } from "../models/Transfer";
+import { getCryptoAssestImageUrl } from "../util";
 
 export const get = async (parent: any, args: any, context: { user: any }) => {
     try {
@@ -21,6 +22,7 @@ export const get = async (parent: any, args: any, context: { user: any }) => {
             return {
                 balance: balance.availableBalance,
                 type: currencyItem.symbol,
+                symbolImageUrl: getCryptoAssestImageUrl(currencyItem.symbol),
             };
         });
         return {

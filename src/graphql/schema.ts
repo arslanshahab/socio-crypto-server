@@ -72,7 +72,7 @@ export const typeDefs = gql`
             mediaFormat: String
             media: String
             participantId: String!
-            defaultMedia: Boolean
+            defaultMedia: Boolean!
             mediaId: String
         ): String
         postContentGlobally(
@@ -203,7 +203,7 @@ export const typeDefs = gql`
         verifySession: JSON
         getFundingWallet: FundingWallet
         listOrgs(skip: Int, take: Int): [Org]
-        listEmployees: EmployeeOrganization
+        listEmployees(skip: Int, take: Int): EmployeeOrganization
         getOrgDetails: [OrgDetail]
         listPaymentMethods: [PaymentMethod]
         listPendingCampaigns(skip: Int, take: Int): PaginatedCampaignResults
@@ -228,18 +228,18 @@ export const typeDefs = gql`
         campaignMetrics: [CampaignsMetrics]
     }
     type AggregatedCampaignMetrics {
-        campaign_name: String
-        clickCount: Int
-        viewCount: Int
-        shareCount: Int
-        participationScore: Int
-        totalParticipants: Int
+        campaignName: String!
+        clickCount: Int!
+        viewCount: Int!
+        shareCount: Int!
+        participationScore: Int!
+        totalParticipants: Int!
     }
     type CampaignsMetrics {
-        clickCount: Int
-        viewCount: Int
-        shareCount: Int
-        participationScore: Int
+        clickCount: Int!
+        viewCount: Int!
+        shareCount: Int!
+        participationScore: Int!
     }
 
     enum VerificationType {
@@ -249,8 +249,8 @@ export const typeDefs = gql`
     }
 
     type KycApplicationResponse {
-        kycId: String
-        status: String
+        kycId: String!
+        status: String!
         factors: FactorData
     }
 
@@ -282,29 +282,29 @@ export const typeDefs = gql`
     }
 
     type PaginatedTransferHistory {
-        total: Int
+        total: Int!
         results: [Transfer]
     }
 
     type DepostAddressObject {
-        symbol: String
-        address: String
-        fromTatum: Boolean
+        symbol: String!
+        address: String!
+        fromTatum: Boolean!
         memo: String
         message: String
         destinationTag: String
     }
 
     type UserBalance {
-        symbol: String
-        balance: Float
+        symbol: String!
+        balance: Float!
         minWithdrawAmount: Float
-        usdBalance: String
-        imageUrl: String
+        usdBalance: String!
+        imageUrl: String!
     }
 
     type SuccessResponse {
-        success: Boolean
+        success: Boolean!
         verificationToken: String
         userId: String
         token: String
@@ -312,33 +312,33 @@ export const typeDefs = gql`
     }
 
     type RedemptionRequirements {
-        accountAgeReached: Boolean
-        accountAge: Int
+        accountAgeReached: Boolean!
+        accountAge: Int!
         accountAgeRequirement: Int
-        twitterLinked: Boolean
-        twitterfollowers: Int
-        twitterfollowersRequirement: Int
-        participation: Boolean
+        twitterLinked: Boolean!
+        twitterfollowers: Int!
+        twitterfollowersRequirement: Int!
+        participation: Boolean!
         participationScore: Int
         participationScoreRequirement: Int
-        orderLimitForTwentyFourHoursReached: Boolean
+        orderLimitForTwentyFourHoursReached: Boolean!
     }
 
     type WeeklyRewardEstimation {
-        loginRewardRedeemed: Boolean
-        loginReward: Int
-        nextLoginReward: String
-        participationReward: Int
-        participationId: String
-        nextParticipationReward: String
-        participationRewardRedeemed: Boolean
-        participationRedemptionDate: String
-        loginRedemptionDate: String
-        earnedToday: Float
+        loginRewardRedeemed: Boolean!
+        loginReward: Int!
+        nextLoginReward: String!
+        participationReward: Int!
+        participationId: String!
+        nextParticipationReward: String!
+        participationRewardRedeemed: Boolean!
+        participationRedemptionDate: String!
+        loginRedemptionDate: String!
+        earnedToday: Float!
     }
 
     type CampaignCreationResponse {
-        campaignId: String
+        campaignId: String!
         campaignImageSignedURL: String
         raffleImageSignedURL: String
         mediaUrls: [CampaignMediaSignedUrls]
@@ -351,47 +351,47 @@ export const typeDefs = gql`
     }
 
     type StoreVoucher {
-        productId: String
-        name: String
-        imageUrl: String
-        countryName: String
-        countryCode: String
-        currencyCode: String
-        exchangeRate: String
-        valueDenominations: [String]
+        productId: String!
+        name: String!
+        imageUrl: String!
+        countryName: String!
+        countryCode: String!
+        currencyCode: String!
+        exchangeRate: String!
+        valueDenominations: [String]!
     }
 
     type StoreOrder {
-        poNumber: String
-        productId: String
-        quantity: Int
-        denomination: Int
-        cartId: String
-        coiinPrice: String
-        name: String
-        imageUrl: String
-        countryName: String
-        countryCode: String
-        currencyCode: String
-        exchangeRate: String
+        poNumber: String!
+        productId: String!
+        quantity: Int!
+        denomination: Int!
+        cartId: String!
+        coiinPrice: String!
+        name: String!
+        imageUrl: String!
+        countryName: String!
+        countryCode: String!
+        currencyCode: String!
+        exchangeRate: String!
     }
 
     type OrderConfirmation {
-        orderId: String
+        orderId: String!
     }
 
     type Org {
-        id: String
-        name: String
+        id: String!
+        name: String!
         stripeId: String
         createdAt: String
         updatedAt: String
     }
     type OrgDetail {
-        name: String
+        name: String!
         createdAt: String
-        campaignCount: Int
-        adminCount: Int
+        campaignCount: Int!
+        adminCount: Int!
     }
 
     type PaymentMethod {
@@ -401,7 +401,7 @@ export const typeDefs = gql`
     }
 
     type Employee {
-        name: String
+        name: String!
         createdAt: String
     }
     type EmployeeOrganization {
@@ -429,6 +429,7 @@ export const typeDefs = gql`
         id: String
         type: String
         balance: Float
+        symbolImageUrl: String
     }
 
     type ExternalAddress {
@@ -472,7 +473,6 @@ export const typeDefs = gql`
         conversionCount: Int
     }
 
-    "Get All Campaigns of User"
     type UserAllCampaigns {
         id: ID
         name: String
@@ -518,10 +518,10 @@ export const typeDefs = gql`
     }
 
     type Transfer {
-        id: String
+        id: String!
         usdAmount: Float
-        amount: Float
-        action: String
+        amount: Float!
+        action: String!
         status: String
         withdrawStatus: String
         ethAddress: String
@@ -548,8 +548,8 @@ export const typeDefs = gql`
     }
 
     type CurrentTier {
-        currentTier: Int
-        currentTotal: Float
+        currentTier: Int!
+        currentTotal: Float!
         campaignType: String
         tokenValueUsd: String
         tokenValueCoiin: String
@@ -560,15 +560,15 @@ export const typeDefs = gql`
     }
 
     type User {
-        id: String
-        email: String
-        username: String
+        id: String!
+        email: String!
+        username: String!
         profilePicture: String
         campaigns: [Participant]
-        wallet: Wallet
+        wallet: Wallet!
         hasRecoveryCodeSet: Boolean
         identityId: String
-        kycStatus: String
+        kycStatus: String!
         socialLinks: [SocialLink]
         factorLinks: [FactorLink]
         twentyFourHourMetrics: [TwentyFourHourMetric]
@@ -627,20 +627,20 @@ export const typeDefs = gql`
     }
 
     type Wallet {
-        id: String
+        id: String!
         pendingBalance: String
         walletCurrency: [WalletCurrency]
         transfers: [Transfer]
     }
 
     type PaginatedUserResults {
-        results: [User]
-        total: Int
+        results: [User]!
+        total: Int!
     }
 
     type PaginatedCampaignResults {
-        results: [Campaign]
-        total: Int
+        results: [Campaign]!
+        total: Int!
     }
 
     type PaginatedSocialPostResults {
@@ -648,34 +648,34 @@ export const typeDefs = gql`
     }
 
     type Campaign {
-        id: String
-        name: String
-        beginDate: String
-        endDate: String
-        coiinTotal: Float
-        coiinTotalUSD: Float
-        status: String
-        symbol: String
-        symbolImageUrl: String
+        id: String!
+        name: String!
+        beginDate: String!
+        endDate: String!
+        coiinTotal: Float!
+        coiinTotalUSD: Float!
+        status: String!
+        symbol: String!
+        symbolImageUrl: String!
         totalParticipationScore: Float
         target: String
-        description: String
-        instructions: String
+        description: String!
+        instructions: String!
         company: String
-        algorithm: JSON
-        audited: Boolean
+        algorithm: JSON!
+        audited: Boolean!
         targetVideo: String
-        imagePath: String
-        campaignType: String
-        socialMediaType: [String]
+        imagePath: String!
+        campaignType: String!
+        socialMediaType: [String]!
         tagline: String
         requirements: JSON
         suggestedPosts: [String]
         createdAt: String
-        keywords: [String]
+        keywords: [String]!
         suggestedTags: [String]
         participants: [Participant]
-        type: String
+        type: String!
         prize: RafflePrize
         org: Org
         crypto: CryptoCurrency
@@ -702,7 +702,7 @@ export const typeDefs = gql`
     }
 
     type CryptoCurrency {
-        type: String
+        type: String!
         contractAddress: String
     }
 
@@ -714,21 +714,21 @@ export const typeDefs = gql`
     }
 
     type Participant {
-        id: String
+        id: String!
         metrics: ParticipantMetrics
-        user: User
-        campaign: Campaign
+        user: User!
+        campaign: Campaign!
         link: String
         participationScore: Float
     }
 
     type SocialPost {
-        id: String
-        type: String
-        likes: Int
-        shares: Int
-        comments: Int
-        participantId: String
+        id: String!
+        type: String!
+        likes: Int!
+        shares: Int!
+        comments: Int!
+        participantId: String!
     }
 
     type ParticipantMetrics {

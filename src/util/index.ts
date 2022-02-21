@@ -24,6 +24,7 @@ import { serverBaseUrl } from "../config";
 import { Request, Response, NextFunction } from "express";
 import { BigNumber } from "bignumber.js";
 import { Factor } from "../models/Factor";
+import { CRYPTO_ICONS_MAP, CRYPTO_ICONS_BUCKET_URL } from "./constants";
 
 // general helper functions start here
 export const isSupportedCurrency = async (symbol: string): Promise<boolean> => {
@@ -48,7 +49,8 @@ export const getUSDValueForCurrency = async (symbol: string, amount: number) => 
 };
 
 export const getCryptoAssestImageUrl = (symbol: string): string => {
-    return getImage(symbol).toLowerCase().includes("unknown") ? getImage("ETH") : getImage(symbol);
+    const key = CRYPTO_ICONS_MAP[symbol.toUpperCase()] || CRYPTO_ICONS_MAP["ETH"];
+    return `${CRYPTO_ICONS_BUCKET_URL}/${key}`;
 };
 
 export const downloadMedia = async (mediaType: string, url: string, format: string): Promise<string> => {

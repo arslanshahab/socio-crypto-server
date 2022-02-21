@@ -279,7 +279,7 @@ export const updateCampaign = async (
         const isWalletAvailable = await org.isCurrencyAdded(symbol);
         if (!isWalletAvailable) throw new Error("currency not found in wallet");
     }
-    const campaign = await Campaign.findOne({ where: { id: id } });
+    const campaign = await Campaign.findOne({ where: { id: id }, relations: ["campaignTemplates"] });
     if (!campaign) throw new Error("campaign not found");
     let campaignImageSignedURL = "";
     let raffleImageSignedURL = "";
@@ -314,6 +314,12 @@ export const updateCampaign = async (
                 }
             } else {
                 CampaignTemplate.saveTemplate(receivedTemplate, campaign);
+            }
+        }
+        for (let index = 0; index < campaign.campaignTemplates.length; index++) {
+            const template = campaign.campaignTemplates[index];
+            if (!campaignTemplates.find((item) => item.id === template.id)) {
+                await template.remove();
             }
         }
     }

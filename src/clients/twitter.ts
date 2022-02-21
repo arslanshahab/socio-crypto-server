@@ -8,6 +8,7 @@ import { SocialLink } from "../models/SocialLink";
 import { TwitterLinkCredentials } from "src/types";
 
 export class TwitterClient {
+    public static textLimit = 280;
     public static getClient(userCredentials: TwitterLinkCredentials): Twitter {
         return new Twitter({
             consumer_key: Secrets.twitterConsumerKey,
@@ -92,7 +93,7 @@ export class TwitterClient {
         try {
             text = text.replace("@", "#");
             logger.debug(`posting tweet to twitter with text: ${text}`);
-            if (text.length > 200) throw new Error("Text too long for twitter");
+            if (text.length > TwitterClient.textLimit) throw new Error("Text too long for twitter");
             const options: { [key: string]: string } = { status: text };
             const client = TwitterClient.getClient(socialLink.getTwitterCreds());
             if (data && mediaType && mediaFormat) {
