@@ -168,6 +168,36 @@ export class User extends BaseEntity {
         return returnedUser;
     }
 
+    public async asV2() {
+        let { password, ...returnedUser }: any = { ...this };
+        if (this.profile) {
+            const { id, ...values } = this.profile;
+            returnedUser = {
+                ...returnedUser,
+                ...values,
+                email: returnedUser.email,
+                hasRecoveryCodeSet: this.profile.recoveryCode !== null && this.profile.recoveryCode !== "",
+            };
+        }
+        try {
+            if (this.posts && this.posts.length > 0) {
+                returnedUser.posts = this.posts.map((post) => post.asV1());
+            }
+            if (this.twentyFourHourMetrics && this.twentyFourHourMetrics.length > 0) {
+                returnedUser.twentyFourHourMetrics = this.twentyFourHourMetrics.map((metric) => metric.asV1());
+            }
+            if (this.wallet) {
+                returnedUser.wallet = this.wallet.asV1();
+            }
+            if (this.campaigns && this.campaigns.length > 0) {
+                returnedUser.campaigns = this.campaigns.map(async (participant) => await participant.asV2());
+            }
+        } catch (e) {
+            console.log(e);
+        }
+        return returnedUser;
+    }
+
     public async updateCoiinBalance(operation: "ADD" | "SUBTRACT", amount: number): Promise<any> {
         let user: User | undefined = this;
         if (!user.wallet || !user.wallet.walletCurrency) {
