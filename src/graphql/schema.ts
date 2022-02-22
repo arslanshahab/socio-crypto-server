@@ -221,6 +221,7 @@ export const typeDefs = gql`
         downloadKyc: KycApplicationResponse
         getDashboardMetrics(campaignId: String, skip: Int, take: Int): DashboardMetrics
         transectionHistory: [Transfer]
+        getCampaignParticipants(campaignId: String): [Participant]
     }
 
     type DashboardMetrics {

@@ -84,7 +84,6 @@ export class Participant extends BaseEntity {
         if (this.user) returnedValue.user = this.user.asV1();
         return returnedValue;
     }
-
     public async asV2() {
         const returnedValue: Participant = {
             ...this,

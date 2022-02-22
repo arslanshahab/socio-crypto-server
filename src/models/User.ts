@@ -146,7 +146,8 @@ export class User extends BaseEntity {
                 ...returnedUser,
                 ...values,
                 email: returnedUser.email,
-                hasRecoveryCodeSet: this.profile.recoveryCode !== null && this.profile.recoveryCode !== "",
+                hasRecoveryCodeSet: Boolean(this.profile.recoveryCode),
+                username: this.profile.username || "",
             };
         }
         try {
@@ -176,7 +177,7 @@ export class User extends BaseEntity {
                 ...returnedUser,
                 ...values,
                 email: returnedUser.email,
-                hasRecoveryCodeSet: this.profile.recoveryCode !== null && this.profile.recoveryCode !== "",
+                hasRecoveryCodeSet: Boolean(this.profile.recoveryCode),
                 username: this.profile.username || "",
             };
         }
