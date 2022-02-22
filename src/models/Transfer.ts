@@ -90,11 +90,12 @@ export class Transfer extends BaseEntity {
         if (this.action) response.action = this?.action?.toUpperCase() || "";
         if (this.status) response.status = this?.status?.toUpperCase() || "";
         if (this.campaign) {
-            response.campaigns = this.campaign.asV1();
+            response.campaign = this.campaign.asV1();
         }
         if (this.wallet) {
             response.wallet = this.wallet.asV1();
         }
+        console.log(response);
         return response;
     }
 
