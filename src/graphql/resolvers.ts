@@ -53,6 +53,7 @@ export const resolvers = {
         getTransferHistory: transferController.getTransferHistory,
         getTransferHistoryV2: transferController.getTransferHistoryV2,
         downloadKyc: kycController.downloadKyc,
+        getCampaignParticipants: participantController.getCampaignParticipants,
     },
     Mutation: {
         generateFactorsFromKyc: factorController.generateFactors,
