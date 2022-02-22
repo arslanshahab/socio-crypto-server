@@ -92,6 +92,9 @@ export class Transfer extends BaseEntity {
         if (this.campaign) {
             response.campaigns = this.campaign.asV1();
         }
+        if (this.wallet) {
+            response.wallet = this.wallet.asV1();
+        }
         return response;
     }
 
