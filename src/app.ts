@@ -84,7 +84,7 @@ export class Application {
             async requestDidStart(requestContext) {
                 console.log({
                     timestamp: new Date().toISOString(),
-                    operation: requestContext.request.operationName,
+                    operation: requestContext.request.operationName || JSON.stringify(requestContext.request.query),
                     request: requestContext.request.http?.url,
                     // variables: requestContext.request.variables,
                 });

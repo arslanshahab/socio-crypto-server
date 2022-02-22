@@ -84,6 +84,19 @@ export class Participant extends BaseEntity {
         if (this.user) returnedValue.user = this.user.asV1();
         return returnedValue;
     }
+    public async asV2() {
+        const returnedValue: Participant = {
+            ...this,
+            metrics: this.metrics(),
+            clickCount: parseFloat(this.clickCount.toString()),
+            viewCount: parseFloat(this.viewCount.toString()),
+            submissionCount: parseFloat(this.submissionCount.toString()),
+            participationScore: parseFloat(this.participationScore.toString()),
+            ...(this.campaign && { campaign: await this.campaign.asV2() }),
+            ...(this.user && { user: await this.user.asV2() }),
+        };
+        return returnedValue;
+    }
 
     public static async createNewParticipant(user: User, campaign: Campaign, email?: string) {
         const participant = new Participant();
