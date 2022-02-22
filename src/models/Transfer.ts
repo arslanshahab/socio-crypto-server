@@ -89,6 +89,9 @@ export class Transfer extends BaseEntity {
         if (this.usdAmount) response.usdAmount = parseFloat(this.usdAmount.toString());
         if (this.action) response.action = this?.action?.toUpperCase() || "";
         if (this.status) response.status = this?.status?.toUpperCase() || "";
+        if (this.campaign) {
+            response.campaigns = this.campaign.asV1();
+        }
         return response;
     }
 
