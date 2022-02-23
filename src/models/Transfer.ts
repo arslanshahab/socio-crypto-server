@@ -95,7 +95,6 @@ export class Transfer extends BaseEntity {
         if (this.wallet) {
             response.wallet = this.wallet.asV1();
         }
-        console.log(response);
         return response;
     }
 
