@@ -134,7 +134,7 @@ export const me = async (
     } else if (args.openCampaigns !== null && args.openCampaigns === false) {
         user.campaigns = user.campaigns.filter((p) => !p.campaign.isOpen());
     }
-    return user.asV1();
+    return await user.asV2();
 };
 
 export const list = async (parent: any, args: { skip: number; take: number }, context: { user: any }) => {

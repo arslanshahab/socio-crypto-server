@@ -88,9 +88,20 @@ export const trackAction = async (
 export const getParticipant = async (parent: any, args: { id: string }) => {
     const { id } = args;
     const where: { [key: string]: string } = { id };
-    const participant = await Participant.findOne({ where, relations: ["user"] });
+    const participant = await Participant.findOne({ where, relations: ["user", "campaign"] });
     if (!participant) throw new Error("participant not found");
     return participant.asV1();
+};
+
+export const getCampaignParticipants = async (parent: any, args: { campaignId: string }) => {
+    const { campaignId } = args;
+    const campaignParticipants = await Participant.find({
+        where: { campaign: await Campaign.findOne({ where: { id: campaignId } }) },
+        relations: ["user", "campaign"],
+    });
+    if (!campaignParticipants) throw new Error("participant not found");
+    const data = campaignParticipants.map(async (result) => await result.asV2());
+    return data;
 };
 
 export const getPosts = async (parent: any, args: { id: string }, context: any) => {
