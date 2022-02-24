@@ -35,6 +35,7 @@ import {
     generateCustodialAddresses,
 } from "./controllers/tatum";
 import { kycWebhook } from "./controllers/kyc";
+import { GraphQLRequestContext } from "../node_modules/apollo-server-types/dist/index.d";
 const { NODE_ENV = "development" } = process.env;
 
 export class Application {
@@ -80,13 +81,18 @@ export class Application {
         this.app.use(bodyParser.json({ limit: "550mb" }));
         this.app.use(bodyParser.urlencoded({ extended: true }));
         this.app.set("port", process.env.PORT || 8080);
+
+        const filterOperationName = (context: GraphQLRequestContext) => {
+            const query = context.request.query?.split(" ")[1];
+            return query ? query.split("(")[0] : "";
+        };
+
         const requestPlugin: ApolloServerPlugin = {
             async requestDidStart(requestContext) {
                 console.log({
                     timestamp: new Date().toISOString(),
-                    operation: requestContext.request.operationName || JSON.stringify(requestContext.request.query),
+                    operation: filterOperationName(requestContext),
                     request: requestContext.request.http?.url,
-                    // variables: requestContext.request.variables,
                 });
 
                 return {

@@ -72,7 +72,7 @@ export const typeDefs = gql`
             mediaFormat: String
             media: String
             participantId: String!
-            defaultMedia: Boolean!
+            defaultMedia: Boolean
             mediaId: String
         ): String
         postContentGlobally(
