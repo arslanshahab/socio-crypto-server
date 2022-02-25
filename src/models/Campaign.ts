@@ -121,6 +121,9 @@ export class Campaign extends BaseEntity {
     @Column({ nullable: false, default: false })
     public isGlobal: boolean;
 
+    @Column({ nullable: false, default: true })
+    public showUrl: boolean;
+
     @Column({
         type: "text",
         nullable: false,
@@ -469,6 +472,7 @@ export class Campaign extends BaseEntity {
         campaignType: string,
         socialMediaType: string[],
         isGlobal: boolean,
+        showUrl: boolean,
         targetVideo?: string,
         org?: Org
     ): Campaign {
@@ -489,6 +493,7 @@ export class Campaign extends BaseEntity {
         campaign.campaignType = campaignType;
         campaign.socialMediaType = socialMediaType;
         campaign.isGlobal = isGlobal;
+        campaign.showUrl = showUrl;
         if (targetVideo) campaign.targetVideo = targetVideo;
         if (description) campaign.description = description;
         if (instructions) campaign.instructions = instructions;
