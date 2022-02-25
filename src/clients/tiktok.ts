@@ -131,6 +131,7 @@ export class TikTokClient {
         }
         return credentials;
     };
+
     public static getFolowers = async () => {
         return 1;
     };

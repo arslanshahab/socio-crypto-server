@@ -148,7 +148,13 @@ export const typeDefs = gql`
             verificationToken: String!
         ): SuccessResponse
         updateUserPassword(oldPassword: String!, newPassword: String!): SuccessResponse
-        registerTiktokSocialLink(code: String!): SuccessResponse
+        registerTiktokSocialLink(
+            open_id: String!
+            access_token: String!
+            expires_in: Int!
+            refresh_token: String!
+            refresh_expires_in: Int!
+        ): SuccessResponse
     }
 
     type Query {
