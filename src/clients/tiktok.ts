@@ -21,6 +21,7 @@ export class TikTokClient {
                 code,
             },
         };
+        console.log("TIKTOK-TOKENS-REQUEST:", requestData);
         return await doFetch(requestData);
     };
 
@@ -34,6 +35,7 @@ export class TikTokClient {
                 grant_type: "refresh_token",
             },
         };
+        console.log("TIKTOK-TOKENS-REFRESH-REQUEST:", requestData);
         return await doFetch(requestData);
     };
 
