@@ -13,7 +13,7 @@ import { ApolloError } from "apollo-server-express";
 import { TikTokClient } from "../clients/tiktok";
 import { downloadMedia } from "../util";
 import { JWTPayload, SocialType } from "src/types";
-import { ERROR_LINKING_TIKTOK, FormattedError, GLOBAL_CAMPAIGN_NOT_FOUND, USER_NOT_FOUND } from "../util/errors";
+import { FormattedError, GLOBAL_CAMPAIGN_NOT_FOUND, USER_NOT_FOUND } from "../util/errors";
 import { TatumClient } from "../clients/tatumClient";
 
 export const allowedSocialLinks = ["twitter", "facebook", "tiktok"];
