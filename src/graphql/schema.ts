@@ -29,6 +29,7 @@ export const typeDefs = gql`
             campaignMedia: JSON
             campaignTemplates: JSON
             isGlobal: Boolean
+            showUrl: Boolean!
         ): CampaignCreationResponse
         updateCampaign(
             id: String
@@ -41,6 +42,8 @@ export const typeDefs = gql`
             description: String
             instructions: String
             symbol: String
+            isGlobal: Boolean
+            showUrl: Boolean!
             company: String
             algorithm: String!
             requirements: JSON
@@ -663,6 +666,8 @@ export const typeDefs = gql`
         coiinTotalUSD: Float!
         status: String!
         symbol: String!
+        isGlobal: Boolean
+        showUrl: Boolean!
         symbolImageUrl: String!
         totalParticipationScore: Float
         target: String
