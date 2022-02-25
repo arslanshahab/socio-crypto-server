@@ -65,7 +65,7 @@ const errorMap: { [key: string]: string } = {
     INVALID_TOKEN: "Provided token is not valid",
     INCORRECT_CODE_OR_EMAIL: "Invalid code or verification not initialized",
     SAME_OLD_AND_NEW_PASSWORD: "Current pass and old password cannot be same, please set a different password",
-    ERROR_LINKING_TIKTOK: "There was an error adding you tiktok social link",
+    ERROR_LINKING_TIKTOK: "There was an error linking your tiktok social account.",
     GLOBAL_CAMPAIGN_NOT_FOUND: "Global campaign doesn't exists.",
     VERIFICATION_TOKEN_EXPIRED: "Verification token expired.",
 };

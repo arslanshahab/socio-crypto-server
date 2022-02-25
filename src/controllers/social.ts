@@ -53,15 +53,24 @@ export const registerSocialLink = async (
     return true;
 };
 
-export const registerTiktokSocialLink = async (parent: any, args: { code: string }, context: { user: JWTPayload }) => {
+export const registerTiktokSocialLink = async (
+    parent: any,
+    args: {
+        open_id: string;
+        access_token: string;
+        expires_in: number;
+        refresh_token: string;
+        refresh_expires_in: number;
+    },
+    context: { user: JWTPayload }
+) => {
     try {
         const user = await User.findUserByContext(context.user, ["socialLinks"]);
         if (!user) throw new Error(USER_NOT_FOUND);
-        const { code } = args;
-        const tokens = await TikTokClient.fetchTokens(code);
-        console.log("TIKTOK-TOKENS: ", tokens);
-        if (!tokens.data.access_token || !tokens.data.refresh_token) throw new Error(ERROR_LINKING_TIKTOK);
-        await SocialLink.addOrUpdateTiktokLink(user, tokens.data);
+        // const tokens = await TikTokClient.fetchTokens(code);
+        console.log("TIKTOK-TOKENS: ", args);
+        // if (!tokens.data.access_token || !tokens.data.refresh_token) throw new Error(ERROR_LINKING_TIKTOK);
+        await SocialLink.addOrUpdateTiktokLink(user, args);
         return { success: true };
     } catch (error) {
         throw new FormattedError(error);
