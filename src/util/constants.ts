@@ -1,5 +1,6 @@
 export const FEE_RATE = process.env.FEE_RATE ? parseFloat(process.env.FEE_RATE) : 0.1;
 export const COIIN = "COIIN";
+export const RAIINMAKER_ORG_NAME = "raiinmaker";
 export const CRYPTO_ICONS_BUCKET_URL = "https://rm-crypto-icons.s3.us-west-2.amazonaws.com";
 export const CRYPTO_ICONS_MAP: { [key: string]: string } = {
     COIIN: "coiin.png",
