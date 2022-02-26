@@ -217,7 +217,8 @@ export const withdrawFunds = async (
                 wallet: await Wallet.findOne({ where: { org: await Org.findOne({ where: { name: "raiinmaker" } }) } }),
             },
         });
-        if (!custodialAddress) throw new Error("No custodial address available for raiinmaker");
+        if (TatumClient.isCustodialWallet(symbol) && !custodialAddress)
+            throw new Error("No custodial address available for raiinmaker");
         const withdrawResp = await TatumClient.withdrawFundsToBlockchain({
             senderAccountId: userCurrency.tatumId,
             paymentId: `${USER_WITHDRAW}:${user.id}`,
