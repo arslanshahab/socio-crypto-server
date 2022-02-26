@@ -100,6 +100,16 @@ export const getAccountBalance = asyncHandler(async (req: Request, res: Response
     }
 });
 
+export const createTatumAccount = asyncHandler(async (req: Request, res: Response) => {
+    try {
+        const { userId, currency, token } = req.body;
+        if (!token || token !== process.env.RAIINMAKER_DEV_TOKEN) throw new Error("Invalid Token");
+        res.status(200).json(true);
+    } catch (error) {
+        res.status(200).json(error.message);
+    }
+});
+
 export const listBlockedAmounts = asyncHandler(async (req: Request, res: Response) => {
     try {
         const { accountId, token, pageSize = 50, offset = 0 } = req.body;

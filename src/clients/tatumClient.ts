@@ -200,7 +200,7 @@ export class TatumClient {
         try {
             if (!TatumClient.isCurrencySupported(symbol)) throw new Error(`Currency ${symbol} is not supported`);
             if (TatumClient.isCustodialWallet(symbol)) symbol = TatumClient.getBaseChain(symbol);
-            return Boolean(await TatumWallet.findOne({ where: { currency: symbol, enabled: true } }));
+            return Boolean(await TatumWallet.findOne({ where: { currency: symbol } }));
         } catch (error) {
             console.log(error);
             throw new Error(error.message);
@@ -215,7 +215,7 @@ export class TatumClient {
             if (TatumClient.isCustodialWallet(symbol)) symbol = TatumClient.getBaseChain(symbol);
             const keys = await S3Client.getTatumWalletKeys(symbol);
             const walletKeys = { ...keys, walletAddress: keys.address };
-            const dbWallet = await TatumWallet.findOne({ where: { currency: symbol, enabled: true } });
+            const dbWallet = await TatumWallet.findOne({ where: { currency: symbol } });
             return { ...walletKeys, currency: dbWallet?.currency, xpub: dbWallet?.xpub, address: dbWallet?.address };
         } catch (error) {
             console.log(error);
