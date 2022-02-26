@@ -99,6 +99,19 @@ export const getAccountBalance = asyncHandler(async (req: Request, res: Response
     }
 });
 
+export const createTatumAccount = asyncHandler(async (req: Request, res: Response) => {
+    try {
+        const { userId, symbol, token } = req.body;
+        if (!token || token !== process.env.RAIINMAKER_DEV_TOKEN) throw new Error("Invalid Token");
+        const user = await User.findOne({ where: { id: userId }, relations: ["wallet"] });
+        if (!user) throw new Error("User not found.");
+        const tatumCurrency = await TatumClient.findOrCreateCurrency(symbol, user.wallet);
+        res.status(200).json(tatumCurrency);
+    } catch (error) {
+        res.status(200).json(error.message);
+    }
+});
+
 export const listBlockedAmounts = asyncHandler(async (req: Request, res: Response) => {
     try {
         const { accountId, token, pageSize = 50, offset = 0 } = req.body;
