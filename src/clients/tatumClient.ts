@@ -56,7 +56,7 @@ export interface WithdrawPayload {
     fee?: string;
     index?: number;
     currency: Currency;
-    custodialAddress: CustodialAddress;
+    custodialAddress: CustodialAddress | undefined;
 }
 
 export interface CustodialAddressPayload {
@@ -108,7 +108,7 @@ export class TatumClient {
             url: `${TatumClient.baseUrl}/blockchain/sc/custodial/transfer`,
             payload: {
                 chain: TatumClient.getBaseChain(data.currency.symbol) as TatumCurrency,
-                custodialAddress: data.custodialAddress.address,
+                custodialAddress: data.custodialAddress?.address,
                 tokenAddress: TatumClient.getContractAddress(data.currency.symbol),
                 contractType: isSubCustodialToken ? 0 : 3,
                 recipient: data.address,
@@ -448,7 +448,7 @@ export class TatumClient {
                 sender: wallet.walletAddress,
                 recipient: data.address,
                 contractAddress: TatumClient.getContractAddress(data.currency.symbol),
-                custodialAddress: data.custodialAddress.address,
+                custodialAddress: data.custodialAddress?.address,
                 tokenType: isSubCustodialToken ? 0 : 3,
             },
             headers: { "x-api-key": Secrets.tatumApiKey },
