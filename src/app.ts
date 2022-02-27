@@ -33,6 +33,7 @@ import {
     getAllWithdrawls,
     transferBalance,
     generateCustodialAddresses,
+    createTatumAccount,
 } from "./controllers/tatum";
 import { kycWebhook } from "./controllers/kyc";
 import { GraphQLRequestContext } from "../node_modules/apollo-server-types/dist/index.d";
@@ -148,6 +149,7 @@ export class Application {
         this.app.post("/v1/xoxoday/tokens", uploadXoxodayTokens);
         this.app.post("/v1/tatum/initWallet", initWallet);
         this.app.post("/v1/tatum/saveWallet", saveWallet);
+        this.app.post("/v1/tatum/createAccount", createTatumAccount);
         this.app.post("/v1/tatum/transactions", getAccountTransactions);
         this.app.post("/v1/tatum/unblock", unblockAccountBalance);
         this.app.post("/v1/tatum/block", blockAccountBalance);

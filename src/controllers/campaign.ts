@@ -84,6 +84,7 @@ export const createNewCampaign = async (
         campaignMedia: CampaignChannelMedia[];
         campaignTemplates: CampaignChannelTemplate[];
         isGlobal: boolean;
+        showUrl: boolean;
     },
     context: { user: any }
 ) => {
@@ -112,6 +113,7 @@ export const createNewCampaign = async (
         campaignMedia,
         campaignTemplates,
         isGlobal,
+        showUrl,
     } = args;
     if (isGlobal) {
         if (await Campaign.findOne({ where: { isGlobal, symbol } }))
@@ -166,6 +168,7 @@ export const createNewCampaign = async (
         campaignType,
         socialMediaType,
         isGlobal,
+        showUrl,
         targetVideo,
         org
     );
@@ -233,6 +236,7 @@ export const updateCampaign = async (
         campaignMedia: CampaignChannelMedia[];
         campaignTemplates: CampaignChannelTemplate[];
         symbol: string;
+        showUrl: boolean;
     },
     context: { user: any }
 ) => {
@@ -260,6 +264,7 @@ export const updateCampaign = async (
         campaignMedia,
         campaignTemplates,
         symbol,
+        showUrl,
     } = args;
     validator.validateAlgorithmCreateSchema(JSON.parse(algorithm));
     if (!!requirements) validator.validateCampaignRequirementsSchema(requirements);
@@ -284,6 +289,7 @@ export const updateCampaign = async (
     let campaignImageSignedURL = "";
     let raffleImageSignedURL = "";
     let mediaUrls: any = [];
+    campaign.showUrl = showUrl;
     if (name) campaign.name = name;
     if (target) campaign.target = target;
     if (beginDate) campaign.beginDate = new Date(beginDate);

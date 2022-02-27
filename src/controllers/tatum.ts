@@ -102,9 +102,12 @@ export const getAccountBalance = asyncHandler(async (req: Request, res: Response
 
 export const createTatumAccount = asyncHandler(async (req: Request, res: Response) => {
     try {
-        const { userId, currency, token } = req.body;
+        const { userId, symbol, token } = req.body;
         if (!token || token !== process.env.RAIINMAKER_DEV_TOKEN) throw new Error("Invalid Token");
-        res.status(200).json(true);
+        const user = await User.findOne({ where: { id: userId }, relations: ["wallet"] });
+        if (!user) throw new Error("User not found.");
+        const tatumCurrency = await TatumClient.findOrCreateCurrency(symbol, user.wallet);
+        res.status(200).json(tatumCurrency);
     } catch (error) {
         res.status(200).json(error.message);
     }
@@ -233,7 +236,8 @@ export const withdrawFunds = async (
                 }),
             },
         });
-        if (!custodialAddress) throw new Error("No custodial address available for raiinmaker");
+        if (TatumClient.isCustodialWallet(symbol) && !custodialAddress)
+            throw new Error("No custodial address available for raiinmaker");
         const withdrawResp = await TatumClient.withdrawFundsToBlockchain({
             senderAccountId: userCurrency.tatumId,
             paymentId: `${USER_WITHDRAW}:${user.id}`,
