@@ -32,7 +32,7 @@
         },
         "lib": ["ES2020.Promise", "es2019", "DOM", "ES6", "DOM.Iterable", "ScriptHost"]
     },
-    "include": ["src/*", "src/**/*", "scripts/*", "scripts/**/*"],
+    "include": ["src/*", "src/**/*"],
     "exclude": ["node_modules/**"],
     "compileOnSave": false
 }
