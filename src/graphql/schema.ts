@@ -135,7 +135,13 @@ export const typeDefs = gql`
         deleteCryptoFromWallet(id: String!): String
         removePaymentMethod(paymentMethodId: String): Boolean
         placeStoreOrder(cart: [JSON], email: String): JSON
-        withdrawFunds(symbol: String!, address: String!, amount: Float!, verificationToken: String!): SuccessResponse
+        withdrawFunds(
+            symbol: String!
+            network: String!
+            address: String!
+            amount: Float!
+            verificationToken: String!
+        ): SuccessResponse
         startVerification(email: String!, type: VerificationType!): SuccessResponse
         startEmailVerification(email: String!): SuccessResponse
         completeEmailVerification(email: String!, token: String!): SuccessResponse
@@ -311,6 +317,7 @@ export const typeDefs = gql`
         minWithdrawAmount: Float
         usdBalance: String!
         imageUrl: String!
+        network: String!
     }
 
     type SuccessResponse {
