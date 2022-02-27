@@ -26,7 +26,6 @@ export const get = async (parent: any, args: any, context: { user: any }) => {
             };
         });
         return {
-            ...wallet,
             currency: allCurrencies,
         };
     } catch (error) {
