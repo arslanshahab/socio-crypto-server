@@ -8,7 +8,7 @@ export const CRYPTO_ICONS_MAP: { [key: string]: string } = {
     BAT: "bat-icon.png",
     BCH: "bch-icon.png",
     BNB: "bnb-icon.png",
-    // BSC: "bnb-icon.png",
+    BSC: "bnb-icon.png",
     BTC: "btc-icon.png",
     BUSD: "busd-icon.png",
     CAKE: "cake-icon.png",
