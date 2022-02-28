@@ -18,6 +18,7 @@ import {
     INCORRECT_CODE,
     USER_NOT_FOUND,
 } from "../util/errors";
+import { SentryClient } from "../clients/sentry";
 
 const isSecure = process.env.NODE_ENV === "production";
 
@@ -96,6 +97,7 @@ export const loginUser = async (parent: any, args: { email: string; password: st
         await user.transferReward({ type: "LOGIN_REWARD" });
         return { token: createSessionToken(user) };
     } catch (error) {
+        SentryClient.captureException(error);
         throw new FormattedError(error);
     }
 };

@@ -37,6 +37,8 @@ import {
 } from "./controllers/tatum";
 import { kycWebhook } from "./controllers/kyc";
 import { GraphQLRequestContext } from "../node_modules/apollo-server-types/dist/index.d";
+import * as Sentry from "@sentry/node";
+
 const { NODE_ENV = "development" } = process.env;
 
 export class Application {
@@ -58,6 +60,10 @@ export class Application {
         await Firebase.initialize();
         // await Dragonchain.initialize();
         StripeAPI.initialize();
+        Sentry.init({
+            dsn: Secrets.sentryDSN,
+            tracesSampleRate: 1.0,
+        });
         this.app = express();
         const corsSettings = {
             origin: [
@@ -98,7 +104,7 @@ export class Application {
 
                 return {
                     async didEncounterErrors(requestContext) {
-                        console.log(requestContext.errors);
+                        Sentry.captureException(requestContext.errors);
                     },
                 };
             },
