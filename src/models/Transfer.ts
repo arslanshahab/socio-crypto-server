@@ -44,6 +44,9 @@ export class Transfer extends BaseEntity {
     @Column({ nullable: true })
     public status: TransferStatus;
 
+    @Column({ nullable: true })
+    public network: string;
+
     // TODO: We should get rid of this column as well. It seems pretty redundant, and considering payouts aren't a thing yet this should be doable.
     @Column({ nullable: true })
     public payoutStatus: TransferStatus;

@@ -540,6 +540,7 @@ export const typeDefs = gql`
         amount: Float!
         action: String!
         status: String
+        network: String
         withdrawStatus: String
         ethAddress: String
         currency: String
