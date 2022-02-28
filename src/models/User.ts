@@ -33,6 +33,7 @@ import { Transfer } from "./Transfer";
 import { JWTPayload } from "src/types";
 import { XoxodayOrder } from "./XoxodayOrder";
 import { COIIN } from "../util/constants";
+import { Campaign } from "./Campaign";
 
 export const LOGIN_REWARD_AMOUNT = 1;
 export const PARTICIPATION_REWARD_AMOUNT = 2;
@@ -261,8 +262,9 @@ export class User extends BaseEntity {
         return user;
     }
 
-    public transferReward = async (type: RewardType): Promise<any> => {
+    public transferReward = async (data: { type: RewardType; campaign?: Campaign }): Promise<any> => {
         const user = this;
+        const { type, campaign } = data;
         const wallet = await Wallet.findOne({ where: { user } });
         if (!wallet) throw new Error("User wallet not found");
         let accountAgeInHours = 0,
@@ -287,6 +289,7 @@ export class User extends BaseEntity {
                 type,
                 symbol: COIIN,
                 amount: new BN(amount),
+                campaign,
             });
         }
     };
