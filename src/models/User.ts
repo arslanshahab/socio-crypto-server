@@ -35,6 +35,7 @@ import { COIIN, REWARD_AMOUNTS } from "../util/constants";
 import { Transfer } from "./Transfer";
 import { TatumClient } from "../clients/tatumClient";
 import { Org } from "./Org";
+import { Campaign } from "./Campaign";
 
 @Entity()
 export class User extends BaseEntity {
@@ -217,8 +218,9 @@ export class User extends BaseEntity {
         }
     }
 
-    public transferCoiinReward = async (type: RewardType): Promise<any> => {
+    public transferCoiinReward = async (data: { type: RewardType; campaign?: Campaign }): Promise<any> => {
         const user = this;
+        const { type, campaign } = data;
         const wallet = await Wallet.findOne({ where: { user } });
         if (!wallet) throw new Error("User wallet not found");
         let accountAgeInHours = 0,
@@ -249,6 +251,7 @@ export class User extends BaseEntity {
                 type,
                 symbol: COIIN,
                 amount: new BN(amount),
+                campaign,
             });
         }
     };

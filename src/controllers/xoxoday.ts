@@ -8,8 +8,8 @@ import { getSocialClient } from "./social";
 import { S3Client } from "../clients/s3";
 import { Transfer } from "../models/Transfer";
 import { XoxodayOrder as XoxodayOrderModel } from "../models/XoxodayOrder";
-import { TatumClient } from "src/clients/tatumClient";
-import { COIIN } from "src/util/constants";
+import { TatumClient } from "../clients/tatumClient";
+import { COIIN } from "../util/constants";
 
 export const initXoxoday = asyncHandler(async (req: Request, res: Response) => {
     try {

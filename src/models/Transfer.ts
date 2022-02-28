@@ -44,6 +44,9 @@ export class Transfer extends BaseEntity {
     @Column({ nullable: true })
     public status: TransferStatus;
 
+    @Column({ nullable: true })
+    public network: string;
+
     // TODO: We should get rid of this column as well. It seems pretty redundant, and considering payouts aren't a thing yet this should be doable.
     @Column({ nullable: true })
     public payoutStatus: TransferStatus;
@@ -317,12 +320,19 @@ export class Transfer extends BaseEntity {
         return newTransfer;
     }
 
-    public static async newReward(data: { wallet: Wallet; amount: BigNumber; symbol: string; type: TransferAction }) {
+    public static async newReward(data: {
+        wallet: Wallet;
+        amount: BigNumber;
+        symbol: string;
+        type: TransferAction;
+        campaign?: Campaign;
+    }) {
         const transfer = new Transfer();
         transfer.amount = data.amount;
         transfer.action = data.type;
         transfer.currency = data.symbol;
         transfer.wallet = data.wallet;
+        if (data.campaign) transfer.campaign = data.campaign;
         return await transfer.save();
     }
 }
