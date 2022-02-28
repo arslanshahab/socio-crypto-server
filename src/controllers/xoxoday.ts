@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { Xoxoday } from "../clients/xoxoday";
-import { generateRandomId, supportedCountries, asyncHandler } from "../util";
+import { generateRandomId, supportedCountries, asyncHandler, BN } from "../util";
 import { XoxodayOrder, XoxodayVoucher } from "src/types";
 import { getExchangeRateForCurrency } from "../util/exchangeRate";
 import { User } from "../models/User";
@@ -8,6 +8,8 @@ import { getSocialClient } from "./social";
 import { S3Client } from "../clients/s3";
 import { Transfer } from "../models/Transfer";
 import { XoxodayOrder as XoxodayOrderModel } from "../models/XoxodayOrder";
+import { TatumClient } from "src/clients/tatumClient";
+import { COIIN } from "src/util/constants";
 
 export const initXoxoday = asyncHandler(async (req: Request, res: Response) => {
     try {
@@ -166,7 +168,8 @@ const ifUserCanRedeem = async (user: User, totalCoiinSpent: number) => {
     if (!user.campaigns.length) throw new Error("You need to participate in atleast one campaign in order to redeem!");
     const recentOrder = await Transfer.getLast24HourRedemption(user.wallet, "XOXODAY_REDEMPTION");
     if (recentOrder) throw new Error("You need to wait for few hours before you can redeem again!");
-    const userCoiins = user.wallet.walletCurrency.find((item) => item.type.toLowerCase() === "coiin");
-    if (!userCoiins || userCoiins.balance.isLessThanOrEqualTo(0) || userCoiins.balance.isLessThan(totalCoiinSpent))
+    const userCurrency = await TatumClient.findOrCreateCurrency(COIIN, user.wallet);
+    const coiinBalance = new BN((await TatumClient.getAccountBalance(userCurrency.tatumId)).availableBalance);
+    if (coiinBalance.isLessThanOrEqualTo(0) || coiinBalance.isLessThan(totalCoiinSpent))
         throw new Error("Not enough coiin balance to proceed with this transaction!");
 };

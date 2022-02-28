@@ -52,7 +52,7 @@ export const participate = async (
             await TatumClient.findOrCreateCurrency(campaign.symbol, user.wallet);
         }
         const participant = Participant.createNewParticipant(user, campaign, args.email);
-        if (!campaign.isGlobal) await user.transferReward("PARTICIPATION_REWARD");
+        if (!campaign.isGlobal) await user.transferCoiinReward("PARTICIPATION_REWARD");
         return participant;
     } catch (e) {
         console.log(e);

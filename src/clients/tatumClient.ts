@@ -40,7 +40,6 @@ import { Wallet } from "../models/Wallet";
 import { CustodialAddress } from "../models/CustodialAddress";
 import { formatFloat } from "../util/index";
 import { COIIN } from "../util/constants";
-
 export const CAMPAIGN_CREATION_AMOUNT = "CAMPAIGN_CREATION_AMOUNT";
 export const CAMPAIGN_FEE = "CAMPAIGN_FEE";
 export const CAMPAIGN_REWARD = "CAMPAIGN_REWARD";
