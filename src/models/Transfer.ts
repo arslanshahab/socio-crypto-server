@@ -320,12 +320,19 @@ export class Transfer extends BaseEntity {
         return newTransfer;
     }
 
-    public static async newReward(data: { wallet: Wallet; amount: BigNumber; symbol: string; type: TransferAction }) {
+    public static async newReward(data: {
+        wallet: Wallet;
+        amount: BigNumber;
+        symbol: string;
+        type: TransferAction;
+        campaign?: Campaign;
+    }) {
         const transfer = new Transfer();
         transfer.amount = data.amount;
         transfer.action = data.type;
         transfer.currency = data.symbol;
         transfer.wallet = data.wallet;
+        if (data.campaign) transfer.campaign = data.campaign;
         return await transfer.save();
     }
 }
