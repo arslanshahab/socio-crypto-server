@@ -23,49 +23,69 @@ import { SentryClient } from "../clients/sentry";
 const isSecure = process.env.NODE_ENV === "production";
 
 export const adminLogin = asyncHandler(async (req: Request, res: Response) => {
-    const { idToken } = req.body;
-    let sessionCookie;
-    const decodedToken = await Firebase.verifyToken(idToken);
-    const user = await Firebase.getUserById(decodedToken.uid);
-    if (!user.customClaims) return res.status(401).json({ code: "UNAUTHORIZED", message: "unauthorized" });
-    if (user.customClaims.tempPass === true) return res.status(200).json({ resetPass: true });
-    const expiresIn = 60 * 60 * 24 * 5 * 1000;
-    // Only process if the user just signed in in the last 5 minutes.
-    if (new Date().getTime() / 1000 - decodedToken.auth_time < 5 * 60) {
-        sessionCookie = await Firebase.createSessionCookie(idToken, expiresIn);
-    } else {
-        res.status(401).send("Recent sign in required!");
+    try {
+        const { idToken } = req.body;
+        let sessionCookie;
+        const decodedToken = await Firebase.verifyToken(idToken);
+        const user = await Firebase.getUserById(decodedToken.uid);
+        if (!user.customClaims) return res.status(401).json({ code: "UNAUTHORIZED", message: "unauthorized" });
+        if (user.customClaims.tempPass === true) return res.status(200).json({ resetPass: true });
+        const expiresIn = 60 * 60 * 24 * 5 * 1000;
+        // Only process if the user just signed in in the last 5 minutes.
+        if (new Date().getTime() / 1000 - decodedToken.auth_time < 5 * 60) {
+            sessionCookie = await Firebase.createSessionCookie(idToken, expiresIn);
+        } else {
+            res.status(401).send("Recent sign in required!");
+        }
+        const options = { maxAge: expiresIn, httpOnly: true, secure: isSecure };
+        res.cookie("session", sessionCookie, options);
+        return res.status(200).json({ resetPass: false });
+    } catch (error) {
+        SentryClient.captureException(error);
+        throw new Error("There was an error");
     }
-    const options = { maxAge: expiresIn, httpOnly: true, secure: isSecure };
-    res.cookie("session", sessionCookie, options);
-    return res.status(200).json({ resetPass: false });
 });
 
 export const adminLogout = asyncHandler(async (req: Request, res: Response) => {
-    const sessionCookie = req.cookies.session || "";
-    res.clearCookie("session");
-    const decodedToken = await Firebase.verifySessionCookie(sessionCookie);
-    await Firebase.revokeRefreshToken(decodedToken.sub);
-    return res.status(200).json({ success: true });
+    try {
+        const sessionCookie = req.cookies.session || "";
+        res.clearCookie("session");
+        const decodedToken = await Firebase.verifySessionCookie(sessionCookie);
+        await Firebase.revokeRefreshToken(decodedToken.sub);
+        return res.status(200).json({ success: true });
+    } catch (error) {
+        SentryClient.captureException(error);
+        return res.status(500).json(false);
+    }
 });
 
 export const getUserRole = async (parent: any, args: any, context: { user: any }) => {
-    return {
-        role: context.user.role ? context.user.role : null,
-        company: context.user.company ? context.user.company : null,
-        tempPass: context.user.tempPass ? context.user.tempPass : null,
-    };
+    try {
+        return {
+            role: context.user.role ? context.user.role : null,
+            company: context.user.company ? context.user.company : null,
+            tempPass: context.user.tempPass ? context.user.tempPass : null,
+        };
+    } catch (error) {
+        SentryClient.captureException(error);
+        throw new Error("There was an error");
+    }
 };
 
 export const updateUserPassword = asyncHandler(async (req: Request, res: Response) => {
-    const { idToken, password } = req.body;
-    const decodedToken = await Firebase.verifyToken(idToken);
-    if (!decodedToken) return res.status(401).json({ code: "UNAUTHORIZED", message: "unauthorized" });
-    const user = await Firebase.getUserById(decodedToken.uid);
-    if (!user.customClaims) return res.status(401).json({ code: "UNAUTHORIZED", message: "unauthorized" });
-    await Firebase.updateUserPassword(user.uid, password);
-    await Firebase.setCustomUserClaims(user.uid, user.customClaims.company, user.customClaims.role, false);
-    return res.status(200).json({ success: true });
+    try {
+        const { idToken, password } = req.body;
+        const decodedToken = await Firebase.verifyToken(idToken);
+        if (!decodedToken) return res.status(401).json({ code: "UNAUTHORIZED", message: "unauthorized" });
+        const user = await Firebase.getUserById(decodedToken.uid);
+        if (!user.customClaims) return res.status(401).json({ code: "UNAUTHORIZED", message: "unauthorized" });
+        await Firebase.updateUserPassword(user.uid, password);
+        await Firebase.setCustomUserClaims(user.uid, user.customClaims.company, user.customClaims.role, false);
+        return res.status(200).json({ success: true });
+    } catch (error) {
+        SentryClient.captureException(error);
+        throw new Error("There was an error");
+    }
 });
 
 export const registerUser = async (
@@ -82,6 +102,7 @@ export const registerUser = async (
         await user.transferReward({ type: "REGISTRATION_REWARD" });
         return { token: createSessionToken(user) };
     } catch (error) {
+        SentryClient.captureException(error);
         throw new FormattedError(error);
     }
 };
@@ -113,6 +134,7 @@ export const resetUserPassword = async (parent: any, args: { verificationToken: 
         await user.save();
         return { success: true };
     } catch (error) {
+        SentryClient.captureException(error);
         throw new FormattedError(error);
     }
 };
@@ -132,6 +154,7 @@ export const recoverUserAccountStep1 = async (parent: any, args: { username: str
             return { token: createSessionToken(user) };
         }
     } catch (error) {
+        SentryClient.captureException(error);
         throw new FormattedError(error);
     }
 };
@@ -149,6 +172,7 @@ export const recoverUserAccountStep2 = async (
         await user.updateEmailPassword(email, createPasswordHash({ email, password }));
         return { token: createSessionToken(user) };
     } catch (error) {
+        SentryClient.captureException(error);
         throw new FormattedError(error);
     }
 };
@@ -165,6 +189,7 @@ export const startVerification = async (parent: any, args: { email: string; type
         await SesClient.emailAddressVerificationEmail(email, verificationData.getDecryptedCode());
         return { success: true };
     } catch (error) {
+        SentryClient.captureException(error);
         throw new FormattedError(error);
     }
 };
@@ -176,6 +201,7 @@ export const completeVerification = async (parent: any, args: { email: string; c
         const verification = await Verification.verifyCode({ code, email });
         return { success: true, verificationToken: verification.generateToken() };
     } catch (error) {
+        SentryClient.captureException(error);
         throw new FormattedError(error);
     }
 };
