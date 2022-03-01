@@ -477,17 +477,27 @@ export const publicGet = async (parent: any, args: { campaignId: string }) => {
 };
 
 export const adminGetCampaignMetrics = async (parent: any, args: { campaignId: string }, context: { user: any }) => {
-    checkPermissions({ hasRole: ["admin"] }, context);
-    const { campaignId } = args;
-    const campaign = await Campaign.findOne({ where: { id: campaignId } });
-    if (!campaign) throw new Error("campaign not found");
-    return await Campaign.getCampaignMetrics(campaignId);
+    try {
+        checkPermissions({ hasRole: ["admin"] }, context);
+        const { campaignId } = args;
+        const campaign = await Campaign.findOne({ where: { id: campaignId } });
+        if (!campaign) throw new Error("campaign not found");
+        return await Campaign.getCampaignMetrics(campaignId);
+    } catch (error) {
+        SentryClient.captureException(error);
+        throw new Error("Something went wrong! But dont worry, Our team has been notified.");
+    }
 };
 
 export const adminGetPlatformMetrics = async (parent: any, args: any, context: { user: any }) => {
-    checkPermissions({ hasRole: ["admin"] }, context);
-    const metrics = await Campaign.getPlatformMetrics();
-    return metrics;
+    try {
+        checkPermissions({ hasRole: ["admin"] }, context);
+        const metrics = await Campaign.getPlatformMetrics();
+        return metrics;
+    } catch (error) {
+        SentryClient.captureException(error);
+        throw new Error("Something went wrong! But dont worry, Our team has been notified.");
+    }
 };
 export const adminGetHourlyCampaignMetrics = async (
     parent: any,
@@ -499,19 +509,24 @@ export const adminGetHourlyCampaignMetrics = async (
     },
     context: { user: any }
 ) => {
-    const { company } = checkPermissions({ hasRole: ["admin"] }, context);
-    HourlyCampaignMetric.validate.validateHourlyMetricsArgs(args);
-    const { campaignId, filter, startDate, endDate } = args;
-    const org = await Org.findOne({ where: { name: company } });
-    if (!org) throw new Error("org not found");
-    const campaign = await Campaign.findOne({
-        where: { id: campaignId, org },
-        relations: ["org"],
-    });
-    if (!campaign) throw new Error("campaign not found");
-    const { currentTotal } = calculateTier(campaign.totalParticipationScore, campaign.algorithm.tiers);
-    const metrics = await HourlyCampaignMetric.getDateGroupedMetrics(filter, startDate, endDate, campaign.id);
-    return HourlyCampaignMetric.parseHourlyCampaignMetrics(metrics, filter, currentTotal);
+    try {
+        const { company } = checkPermissions({ hasRole: ["admin"] }, context);
+        HourlyCampaignMetric.validate.validateHourlyMetricsArgs(args);
+        const { campaignId, filter, startDate, endDate } = args;
+        const org = await Org.findOne({ where: { name: company } });
+        if (!org) throw new Error("org not found");
+        const campaign = await Campaign.findOne({
+            where: { id: campaignId, org },
+            relations: ["org"],
+        });
+        if (!campaign) throw new Error("campaign not found");
+        const { currentTotal } = calculateTier(campaign.totalParticipationScore, campaign.algorithm.tiers);
+        const metrics = await HourlyCampaignMetric.getDateGroupedMetrics(filter, startDate, endDate, campaign.id);
+        return HourlyCampaignMetric.parseHourlyCampaignMetrics(metrics, filter, currentTotal);
+    } catch (error) {
+        SentryClient.captureException(error);
+        throw new Error("Something went wrong! But dont worry, Our team has been notified.");
+    }
 };
 
 export const adminGetHourlyPlatformMetrics = async (
@@ -519,11 +534,16 @@ export const adminGetHourlyPlatformMetrics = async (
     args: { filter: DateTrunc; startDate: string; endDate: string },
     context: { user: any }
 ) => {
-    checkPermissions({ hasRole: ["admin"] }, context);
-    HourlyCampaignMetric.validate.validateHourlyMetricsArgs(args);
-    const { filter, startDate, endDate } = args;
-    const metrics = await HourlyCampaignMetric.getDateGroupedMetrics(filter, startDate, endDate);
-    return HourlyCampaignMetric.parseHourlyPlatformMetrics(metrics, filter);
+    try {
+        checkPermissions({ hasRole: ["admin"] }, context);
+        HourlyCampaignMetric.validate.validateHourlyMetricsArgs(args);
+        const { filter, startDate, endDate } = args;
+        const metrics = await HourlyCampaignMetric.getDateGroupedMetrics(filter, startDate, endDate);
+        return HourlyCampaignMetric.parseHourlyPlatformMetrics(metrics, filter);
+    } catch (error) {
+        SentryClient.captureException(error);
+        throw new Error("Something went wrong! But dont worry, Our team has been notified.");
+    }
 };
 
 export const generateCampaignAuditReport = async (
@@ -531,117 +551,137 @@ export const generateCampaignAuditReport = async (
     args: { campaignId: string },
     context: { user: any }
 ) => {
-    const { company } = checkPermissions({ hasRole: ["admin", "manager"] }, context);
-    const { campaignId } = args;
-    const campaign = await Campaign.findCampaignById(campaignId, company);
-    if (!campaign) throw new Error("Campaign not found");
-    const { currentTotal } = await getCurrentCampaignTier(null, { campaign });
-    const bigNumTotal = new BN(campaign.type !== "coiin" ? 0 : currentTotal);
-    const auditReport: CampaignAuditReport = {
-        totalClicks: new BN(0),
-        totalViews: new BN(0),
-        totalSubmissions: new BN(0),
-        totalLikes: new BN(0),
-        totalShares: new BN(0),
-        totalParticipationScore: campaign.totalParticipationScore,
-        totalRewardPayout: bigNumTotal,
-        flaggedParticipants: [],
-    };
-    for (const participant of campaign.participants) {
-        const { totalLikes, totalShares } = await calculateParticipantSocialScore(participant, campaign);
-        auditReport.totalShares = auditReport.totalShares.plus(totalShares);
-        auditReport.totalLikes = auditReport.totalLikes.plus(totalLikes);
-        auditReport.totalClicks = auditReport.totalClicks.plus(participant.clickCount);
-        auditReport.totalViews = auditReport.totalViews.plus(participant.viewCount);
-        auditReport.totalSubmissions = auditReport.totalSubmissions.plus(participant.submissionCount);
-        const totalParticipantPayout = await calculateParticipantPayout(bigNumTotal, campaign, participant);
+    try {
+        const { company } = checkPermissions({ hasRole: ["admin", "manager"] }, context);
+        const { campaignId } = args;
+        const campaign = await Campaign.findCampaignById(campaignId, company);
+        if (!campaign) throw new Error("Campaign not found");
+        const { currentTotal } = await getCurrentCampaignTier(null, { campaign });
+        const bigNumTotal = new BN(campaign.type !== "coiin" ? 0 : currentTotal);
+        const auditReport: CampaignAuditReport = {
+            totalClicks: new BN(0),
+            totalViews: new BN(0),
+            totalSubmissions: new BN(0),
+            totalLikes: new BN(0),
+            totalShares: new BN(0),
+            totalParticipationScore: campaign.totalParticipationScore,
+            totalRewardPayout: bigNumTotal,
+            flaggedParticipants: [],
+        };
+        for (const participant of campaign.participants) {
+            const { totalLikes, totalShares } = await calculateParticipantSocialScore(participant, campaign);
+            auditReport.totalShares = auditReport.totalShares.plus(totalShares);
+            auditReport.totalLikes = auditReport.totalLikes.plus(totalLikes);
+            auditReport.totalClicks = auditReport.totalClicks.plus(participant.clickCount);
+            auditReport.totalViews = auditReport.totalViews.plus(participant.viewCount);
+            auditReport.totalSubmissions = auditReport.totalSubmissions.plus(participant.submissionCount);
+            const totalParticipantPayout = await calculateParticipantPayout(bigNumTotal, campaign, participant);
 
-        const condition =
-            campaign.type === "raffle"
-                ? participant.participationScore.gt(auditReport.totalParticipationScore.times(new BN(0.15)))
-                : totalParticipantPayout.gt(auditReport.totalRewardPayout.times(new BN(0.15)));
+            const condition =
+                campaign.type === "raffle"
+                    ? participant.participationScore.gt(auditReport.totalParticipationScore.times(new BN(0.15)))
+                    : totalParticipantPayout.gt(auditReport.totalRewardPayout.times(new BN(0.15)));
 
-        if (condition) {
-            auditReport.flaggedParticipants.push({
-                participantId: participant.id,
-                viewPayout: participant.viewCount.times(campaign.algorithm.pointValues.views),
-                clickPayout: participant.clickCount.times(campaign.algorithm.pointValues.clicks),
-                submissionPayout: participant.submissionCount.times(campaign.algorithm.pointValues.submissions),
-                likesPayout: totalLikes.times(campaign.algorithm.pointValues.likes),
-                sharesPayout: totalShares.times(campaign.algorithm.pointValues.shares),
-                totalPayout: totalParticipantPayout,
-            });
-        }
-    }
-    const report: { [key: string]: any } = auditReport;
-    for (const key in report) {
-        if (key === "flaggedParticipants") {
-            for (const flagged of report[key]) {
-                for (const value in flagged) {
-                    if (value !== "participantId") flagged[value] = parseFloat(flagged[value].toString());
-                }
+            if (condition) {
+                auditReport.flaggedParticipants.push({
+                    participantId: participant.id,
+                    viewPayout: participant.viewCount.times(campaign.algorithm.pointValues.views),
+                    clickPayout: participant.clickCount.times(campaign.algorithm.pointValues.clicks),
+                    submissionPayout: participant.submissionCount.times(campaign.algorithm.pointValues.submissions),
+                    likesPayout: totalLikes.times(campaign.algorithm.pointValues.likes),
+                    sharesPayout: totalShares.times(campaign.algorithm.pointValues.shares),
+                    totalPayout: totalParticipantPayout,
+                });
             }
-            continue;
         }
-        report[key] = parseFloat(report[key].toString());
+        const report: { [key: string]: any } = auditReport;
+        for (const key in report) {
+            if (key === "flaggedParticipants") {
+                for (const flagged of report[key]) {
+                    for (const value in flagged) {
+                        if (value !== "participantId") flagged[value] = parseFloat(flagged[value].toString());
+                    }
+                }
+                continue;
+            }
+            report[key] = parseFloat(report[key].toString());
+        }
+        return auditReport;
+    } catch (error) {
+        SentryClient.captureException(error);
+        throw new Error("Something went wrong! But dont worry, Our team has been notified.");
     }
-    return auditReport;
 };
 
 export const payoutCampaignRewards = async (parent: any, args: { campaignId: string }, context: { user: any }) => {
-    const { company } = checkPermissions({ hasRole: ["admin", "manager"] }, context);
-    const { campaignId } = args;
-    const campaign = await Campaign.findOneOrFail({
-        where: { id: campaignId, company },
-    });
-    if (!campaign) throw new Error("Campaign not found");
-    campaign.auditStatus = "PENDING";
-    await campaign.save();
-    return {
-        success: true,
-        message: "Campaign has been submitted for auditting",
-    };
+    try {
+        const { company } = checkPermissions({ hasRole: ["admin", "manager"] }, context);
+        const { campaignId } = args;
+        const campaign = await Campaign.findOneOrFail({
+            where: { id: campaignId, company },
+        });
+        if (!campaign) throw new Error("Campaign not found");
+        campaign.auditStatus = "PENDING";
+        await campaign.save();
+        return {
+            success: true,
+            message: "Campaign has been submitted for auditting",
+        };
+    } catch (error) {
+        SentryClient.captureException(error);
+        throw new Error("Something went wrong! But dont worry, Our team has been notified.");
+    }
 };
 
 export const listAllCampaignsForOrg = async (parent: any, args: any, context: { user: any }) => {
-    const userId = context.user.id;
-    checkPermissions({ hasRole: ["admin"] }, context);
-    const admin = await Admin.findOne({ where: { firebaseId: userId }, relations: ["org"] });
-    if (!admin) throw new Error("Admin not found");
-    const campaigns = await Campaign.find({ where: { org: admin.org } });
-    return campaigns.map((x) => ({ id: x.id, name: x.name }));
+    try {
+        const userId = context.user.id;
+        checkPermissions({ hasRole: ["admin"] }, context);
+        const admin = await Admin.findOne({ where: { firebaseId: userId }, relations: ["org"] });
+        if (!admin) throw new Error("Admin not found");
+        const campaigns = await Campaign.find({ where: { org: admin.org } });
+        return campaigns.map((x) => ({ id: x.id, name: x.name }));
+    } catch (error) {
+        SentryClient.captureException(error);
+        throw new Error("Something went wrong! But dont worry, Our team has been notified.");
+    }
 };
 //! Dashboard Metrics
 export const getDashboardMetrics = async (parent: any, { campaignId, skip, take }: any, context: { user: any }) => {
-    const userId = context.user.id;
-    checkPermissions({ hasRole: ["admin"] }, context);
-    const admin = await Admin.findOne({ where: { firebaseId: userId }, relations: ["org"] });
-    if (!admin) throw new Error("Admin not found");
-    const { org } = admin;
-    if (!org) throw new Error("Organization not found");
-    const orgId = await admin.org.id;
-    let campaignMetrics;
-    let aggregatedCampaignMetrics;
-    let totalParticipants;
-    if (!campaignId) throw new Error("Campaign Id not found");
-    if (orgId && campaignId == "-1") {
-        aggregatedCampaignMetrics = await DailyParticipantMetric.getAggregatedOrgMetrics(orgId);
-        campaignMetrics = await DailyParticipantMetric.getOrgMetrics(orgId);
-        totalParticipants = await Participant.count({
-            where: {
-                campaign: In(await (await Campaign.find({ where: { org: admin?.org } })).map((item) => item.id)),
-            },
-        });
+    try {
+        const userId = context.user.id;
+        checkPermissions({ hasRole: ["admin"] }, context);
+        const admin = await Admin.findOne({ where: { firebaseId: userId }, relations: ["org"] });
+        if (!admin) throw new Error("Admin not found");
+        const { org } = admin;
+        if (!org) throw new Error("Organization not found");
+        const orgId = await admin.org.id;
+        let campaignMetrics;
+        let aggregatedCampaignMetrics;
+        let totalParticipants;
+        if (!campaignId) throw new Error("Campaign Id not found");
+        if (orgId && campaignId == "-1") {
+            aggregatedCampaignMetrics = await DailyParticipantMetric.getAggregatedOrgMetrics(orgId);
+            campaignMetrics = await DailyParticipantMetric.getOrgMetrics(orgId);
+            totalParticipants = await Participant.count({
+                where: {
+                    campaign: In(await (await Campaign.find({ where: { org: admin?.org } })).map((item) => item.id)),
+                },
+            });
+        }
+        if (campaignId && campaignId != "-1") {
+            aggregatedCampaignMetrics = await DailyParticipantMetric.getAggregatedCampaignMetrics(campaignId);
+            campaignMetrics = await DailyParticipantMetric.getCampaignMetrics(campaignId);
+            totalParticipants = await Participant.count({
+                where: {
+                    campaign: In([campaignId]),
+                },
+            });
+        }
+        const aggregaredMetrics = { ...aggregatedCampaignMetrics, totalParticipants };
+        return { aggregatedCampaignMetrics: aggregaredMetrics, campaignMetrics };
+    } catch (error) {
+        SentryClient.captureException(error);
+        throw new Error("Something went wrong! But dont worry, Our team has been notified.");
     }
-    if (campaignId && campaignId != "-1") {
-        aggregatedCampaignMetrics = await DailyParticipantMetric.getAggregatedCampaignMetrics(campaignId);
-        campaignMetrics = await DailyParticipantMetric.getCampaignMetrics(campaignId);
-        totalParticipants = await Participant.count({
-            where: {
-                campaign: In([campaignId]),
-            },
-        });
-    }
-    const aggregaredMetrics = { ...aggregatedCampaignMetrics, totalParticipants };
-    return { aggregatedCampaignMetrics: aggregaredMetrics, campaignMetrics };
 };
