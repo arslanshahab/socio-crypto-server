@@ -53,7 +53,7 @@ export const participate = async (
             await TatumClient.findOrCreateCurrency(campaign.symbol, user.wallet);
         }
         const participant = Participant.createNewParticipant(user, campaign, args.email);
-        if (!campaign.isGlobal) await user.transferReward("PARTICIPATION_REWARD");
+        if (!campaign.isGlobal) await user.transferReward({ type: "PARTICIPATION_REWARD", campaign });
         return participant;
     } catch (e) {
         console.log(e);
@@ -340,6 +340,7 @@ export const getWalletBalances = async (parent: any, args: any, context: { user:
             minWithdrawAmount,
             usdBalance: getUSDValueForCurrency(currencyItem.symbol.toLowerCase(), balance.availableBalance),
             imageUrl: getCryptoAssestImageUrl(currencyItem.symbol),
+            network: TatumClient.getBaseChain(currencyItem.symbol) || "",
         };
     });
     if (coiinCurrency) {
@@ -350,9 +351,11 @@ export const getWalletBalances = async (parent: any, args: any, context: { user:
                 minWithdrawAmount: coiinCurrency.balance.toNumber(),
                 usdBalance: getUSDValueForCurrency(coiinCurrency.type.toLowerCase(), coiinCurrency.balance.toNumber()),
                 imageUrl: getCryptoAssestImageUrl(coiinCurrency.type.toUpperCase()),
+                network: "BSC",
             })
         );
     }
+    console.log(allCurrencies);
     return allCurrencies;
 };
 

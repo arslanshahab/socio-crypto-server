@@ -208,7 +208,7 @@ export const getDepositAddress = async (parent: any, args: { symbol: string }, c
 
 export const withdrawFunds = async (
     parent: any,
-    args: { symbol: string; address: string; amount: number; verificationToken: string },
+    args: { symbol: string; network: string; address: string; amount: number; verificationToken: string },
     context: { user: any }
 ) => {
     try {

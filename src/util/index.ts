@@ -49,7 +49,7 @@ export const getUSDValueForCurrency = async (symbol: string, amount: number) => 
 };
 
 export const getCryptoAssestImageUrl = (symbol: string): string => {
-    const key = CRYPTO_ICONS_MAP[symbol?.toUpperCase() || "ETH"];
+    const key = CRYPTO_ICONS_MAP[symbol?.toUpperCase() || "ETH"] || CRYPTO_ICONS_MAP["ETH"];
     return `${CRYPTO_ICONS_BUCKET_URL}/${key}`;
 };
 
