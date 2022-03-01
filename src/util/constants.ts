@@ -6,6 +6,7 @@ export const CRYPTO_ICONS_MAP: { [key: string]: string } = {
     COIIN: "coiin.png",
     ADA: "ada-icon.png",
     BAT: "bat-icon.png",
+    MATIC: "matic-icon.png",
     BCH: "bch-icon.png",
     BNB: "bnb-icon.png",
     BSC: "bnb-icon.png",
