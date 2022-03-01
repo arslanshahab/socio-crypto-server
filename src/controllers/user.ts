@@ -340,7 +340,7 @@ export const getWalletBalances = async (parent: any, args: any, context: { user:
             minWithdrawAmount,
             usdBalance: getUSDValueForCurrency(currencyItem.symbol.toLowerCase(), balance.availableBalance),
             imageUrl: getCryptoAssestImageUrl(currencyItem.symbol),
-            network: TatumClient.getBaseChain(currencyItem.symbol),
+            network: TatumClient.getBaseChain(currencyItem.symbol) || "",
         };
     });
     if (coiinCurrency) {
