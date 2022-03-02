@@ -309,9 +309,17 @@ export type TransferAction =
     | "XOXODAY_REDEMPTION";
 
 export type CampaignStatus = "ACTIVE" | "PENDING" | "INSUFFICIENT_FUNDS" | "CLOSED" | "APPROVED" | "DENIED";
+export type CampaignState = "ALL" | "OPEN" | "CLOSED";
 export type CampaignAuditStatus = "DEFAULT" | "AUDITED" | "PENDING";
 export type KycStatus = "APPROVED" | "PENDING" | "REJECTED" | "";
 export type VerificationType = "EMAIL" | "PASSWORD" | "WITHDRAW" | "";
+
+export interface ListCampaignsVariables {
+    skip: number;
+    take: number;
+    state: CampaignState;
+    status: CampaignStatus | "ALL";
+}
 
 export interface GraphApiInputParameters {
     fields?: string[] | string;

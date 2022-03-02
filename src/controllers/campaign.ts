@@ -22,6 +22,7 @@ import { CampaignMedia } from "../models/CampaignMedia";
 import { CampaignTemplate } from "../models/CampaignTemplate";
 import { addYears } from "date-fns";
 import { SentryClient } from "../clients/sentry";
+import { JWTPayload } from "src/types";
 
 const validator = new Validator();
 
@@ -387,6 +388,12 @@ export const listCampaigns = async (parent: any, args: ListCampaignsVariables, c
         SentryClient.captureException(error);
         throw new Error("Something went wrong! But dont worry, Our team has been notified.");
     }
+};
+
+export const listCampaignsV2 = async (parent: any, args: ListCampaignsVariables, context: { user: JWTPayload }) => {
+    const [results, total] = await Campaign.findCampaignsByStatusV2(args);
+    const data = results.map(async (result) => await result.asV2());
+    return { results: data, total };
 };
 
 export const adminListPendingCampaigns = async (
