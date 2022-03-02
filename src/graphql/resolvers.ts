@@ -20,11 +20,13 @@ export const resolvers = {
     Query: {
         helloWorld: () => "Hello world!",
         listCampaigns: campaignController.listCampaigns,
+        listCampaignsV2: campaignController.listCampaignsV2,
         getCampaign: campaignController.get,
         getParticipant: participantController.getParticipant,
         getParticipantPosts: participantController.getPosts,
         listUsers: userController.list,
         me: userController.me,
+        meV2: userController.meV2,
         getCurrentCampaignTier: campaignController.getCurrentCampaignTier,
         isLastFactor: factorController.isLastFactor,
         getParticipantByCampaignId: participantController.getParticipantByCampaignId,

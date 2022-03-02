@@ -1,4 +1,4 @@
-import { CampaignAuditReport, CampaignChannelMedia, CampaignStatus, DateTrunc } from "../types";
+import { CampaignAuditReport, CampaignChannelMedia, ListCampaignsVariables, CampaignStatus, DateTrunc } from "../types";
 import { Campaign } from "../models/Campaign";
 import { Admin } from "../models/Admin";
 import { checkPermissions } from "../middleware/authentication";
@@ -23,6 +23,7 @@ import { CampaignChannelTemplate } from "../types.d";
 import { CampaignMedia } from "../models/CampaignMedia";
 import { CampaignTemplate } from "../models/CampaignTemplate";
 import { addYears } from "date-fns";
+import { JWTPayload } from "src/types";
 
 const validator = new Validator();
 
@@ -426,6 +427,12 @@ export const listCampaigns = async (
         approved,
         pendingAudit
     );
+    const data = results.map(async (result) => await result.asV2());
+    return { results: data, total };
+};
+
+export const listCampaignsV2 = async (parent: any, args: ListCampaignsVariables, context: { user: JWTPayload }) => {
+    const [results, total] = await Campaign.findCampaignsByStatusV2(args);
     const data = results.map(async (result) => await result.asV2());
     return { results: data, total };
 };
