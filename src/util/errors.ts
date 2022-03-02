@@ -17,7 +17,6 @@ export class FormattedError extends ApolloError {
     public message: string;
 
     public constructor(error: any) {
-        console.log(error);
         let code = SOMETHING_WENT_WRONG;
         if (error.name === TokenExpiredError.name || error.name === JsonWebTokenError.name) code = SESSION_EXPIRED;
         if (error.name === Error.name) code = errorMap[error.message] ? error.message : SOMETHING_WENT_WRONG;

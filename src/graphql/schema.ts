@@ -235,7 +235,7 @@ export const typeDefs = gql`
         # downloadKyc(kycId: String!): [Factor]
         downloadKyc: KycApplicationResponse
         getDashboardMetrics(campaignId: String, skip: Int, take: Int): DashboardMetrics
-        transectionHistory: [Transfer]
+        transactionHistory: [Transfer]
         getCampaignParticipants(campaignId: String): [Participant]
     }
 

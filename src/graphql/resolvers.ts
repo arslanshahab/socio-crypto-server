@@ -122,7 +122,7 @@ export const adminResolvers = {
         getSupportedCurrencies: tatumController.getSupportedCurrencies,
         listAllCampaignsForOrg: campaignController.listAllCampaignsForOrg,
         getDashboardMetrics: campaignController.getDashboardMetrics,
-        transectionHistory: fundingController.transectionHistory,
+        transactionHistory: fundingController.transactionHistory,
     },
     Mutation: {
         newOrg: orgController.newOrg,

@@ -203,7 +203,7 @@ export class Transfer extends BaseEntity {
             .getRawOne();
         return earnings;
     }
-    public static async getTransectionHistory(orgId: String) {
+    public static async getTransactionHistory(orgId: String) {
         const query = await this.createQueryBuilder("transfer")
             .leftJoin("transfer.wallet", "wallet", 'transfer."walletId"=wallet.id ')
             .where("wallet.orgId = :orgId", { orgId })
