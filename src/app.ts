@@ -63,6 +63,7 @@ export class Application {
         Sentry.init({
             dsn: Secrets.sentryDSN,
             debug: true,
+            environment: process.env.NODE_ENV || "staging",
             tracesSampleRate: 1.0,
         });
         this.app = express();
