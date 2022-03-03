@@ -1,6 +1,6 @@
 {
     "name": "raiinmaker-server",
-    "version": "2.4.8",
+    "version": "2.4.9",
     "main": "index.js",
     "repository": "git@github.com:dragonchain-inc/raiinmaker-server.git",
     "author": "Alex Benedetto <alex061994@gmail.com>",
@@ -36,6 +36,8 @@
     },
     "dependencies": {
         "@myfii-dev/dragonfactor-auth": "^0.0.12",
+        "@sentry/node": "^6.18.0",
+        "@sentry/tracing": "^6.18.0",
         "@tatumio/tatum": "^1.30.9",
         "@types/lodash": "^4.14.170",
         "@types/websocket": "^1.0.5",

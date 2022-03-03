@@ -11,6 +11,45 @@ interface JWTPayload {
 
 export type CustodialAddressChain = "ETH" | "MATIC" | "BSC" | "ONE" | "XDC";
 
+export interface NewCampaignVariables {
+    id?: string;
+    name: string;
+    targetVideo?: string;
+    beginDate: string;
+    endDate: string;
+    coiinTotal: number;
+    target: string;
+    description: string;
+    instructions: string;
+    company: string;
+    algorithm: string;
+    imagePath: string;
+    tagline: string;
+    requirements: CampaignRequirementSpecs;
+    suggestedPosts: string[];
+    suggestedTags: string[];
+    keywords: string[];
+    type: string;
+    rafflePrize: RafflePrizeStructure;
+    symbol: string;
+    campaignType: string;
+    socialMediaType: string[];
+    campaignMedia: CampaignChannelMedia[];
+    campaignTemplates: CampaignChannelTemplate[];
+    isGlobal: boolean;
+    showUrl: boolean;
+}
+
+export interface ListCampaignsVariables {
+    open: boolean;
+    skip: number;
+    take: number;
+    scoped: boolean;
+    sort: boolean;
+    approved: boolean;
+    pendingAudit: boolean;
+}
+
 export interface XoxodayVoucher {
     productId: string;
     name: string;
