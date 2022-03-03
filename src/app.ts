@@ -119,7 +119,16 @@ export class Application {
                                 });
                                 Sentry.captureException(err);
                                 if (!FormattedError.isFormatted(err.extensions?.code)) {
-                                    Sentry.captureMessage("Caught something fatal!", Sentry.Severity.Fatal);
+                                    Sentry.captureMessage(
+                                        `Caught something Fatal - ${
+                                            ctx.operationName || filterOperationName(requestContext)
+                                        }`
+                                    );
+                                } else {
+                                    Sentry.captureMessage(
+                                        `Caught an Error - ${ctx.operationName || filterOperationName(requestContext)}`,
+                                        Sentry.Severity.Error
+                                    );
                                 }
                             });
                         }
