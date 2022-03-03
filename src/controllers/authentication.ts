@@ -18,7 +18,6 @@ import {
     INCORRECT_CODE,
     USER_NOT_FOUND,
 } from "../util/errors";
-import { SentryClient } from "../clients/sentry";
 
 const isSecure = process.env.NODE_ENV === "production";
 
@@ -41,8 +40,7 @@ export const adminLogin = asyncHandler(async (req: Request, res: Response) => {
         res.cookie("session", sessionCookie, options);
         return res.status(200).json({ resetPass: false });
     } catch (error) {
-        SentryClient.captureException(error);
-        throw new Error("There was an error");
+        throw new Error("Something went wrong with your request. please try again!");
     }
 });
 
@@ -54,8 +52,7 @@ export const adminLogout = asyncHandler(async (req: Request, res: Response) => {
         await Firebase.revokeRefreshToken(decodedToken.sub);
         return res.status(200).json({ success: true });
     } catch (error) {
-        SentryClient.captureException(error);
-        return res.status(500).json(false);
+        throw new Error("Something went wrong with your request. please try again!");
     }
 });
 
@@ -67,8 +64,7 @@ export const getUserRole = async (parent: any, args: any, context: { user: any }
             tempPass: context.user.tempPass ? context.user.tempPass : null,
         };
     } catch (error) {
-        SentryClient.captureException(error);
-        throw new Error("There was an error");
+        throw new Error("Something went wrong.");
     }
 };
 
@@ -83,8 +79,7 @@ export const updateUserPassword = asyncHandler(async (req: Request, res: Respons
         await Firebase.setCustomUserClaims(user.uid, user.customClaims.company, user.customClaims.role, false);
         return res.status(200).json({ success: true });
     } catch (error) {
-        SentryClient.captureException(error);
-        throw new Error("There was an error");
+        throw new Error("Something went wrong.");
     }
 });
 
@@ -102,7 +97,6 @@ export const registerUser = async (
         await user.transferReward({ type: "REGISTRATION_REWARD" });
         return { token: createSessionToken(user) };
     } catch (error) {
-        SentryClient.captureException(error);
         throw new FormattedError(error);
     }
 };
@@ -118,8 +112,7 @@ export const loginUser = async (parent: any, args: { email: string; password: st
         await user.transferReward({ type: "LOGIN_REWARD" });
         return { token: createSessionToken(user) };
     } catch (error) {
-        SentryClient.captureException(error);
-        throw new FormattedError(error);
+        return new FormattedError(error);
     }
 };
 
@@ -134,7 +127,6 @@ export const resetUserPassword = async (parent: any, args: { verificationToken: 
         await user.save();
         return { success: true };
     } catch (error) {
-        SentryClient.captureException(error);
         throw new FormattedError(error);
     }
 };
@@ -154,7 +146,6 @@ export const recoverUserAccountStep1 = async (parent: any, args: { username: str
             return { token: createSessionToken(user) };
         }
     } catch (error) {
-        SentryClient.captureException(error);
         throw new FormattedError(error);
     }
 };
@@ -172,7 +163,6 @@ export const recoverUserAccountStep2 = async (
         await user.updateEmailPassword(email, createPasswordHash({ email, password }));
         return { token: createSessionToken(user) };
     } catch (error) {
-        SentryClient.captureException(error);
         throw new FormattedError(error);
     }
 };
@@ -189,7 +179,6 @@ export const startVerification = async (parent: any, args: { email: string; type
         await SesClient.emailAddressVerificationEmail(email, verificationData.getDecryptedCode());
         return { success: true };
     } catch (error) {
-        SentryClient.captureException(error);
         throw new FormattedError(error);
     }
 };
@@ -201,7 +190,6 @@ export const completeVerification = async (parent: any, args: { email: string; c
         const verification = await Verification.verifyCode({ code, email });
         return { success: true, verificationToken: verification.generateToken() };
     } catch (error) {
-        SentryClient.captureException(error);
         throw new FormattedError(error);
     }
 };

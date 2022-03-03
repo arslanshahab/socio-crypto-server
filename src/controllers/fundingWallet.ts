@@ -5,7 +5,6 @@ import { Wallet } from "../models/Wallet";
 import { Currency } from "../models/Currency";
 import { Transfer } from "../models/Transfer";
 import { getCryptoAssestImageUrl } from "../util";
-import { SentryClient } from "../clients/sentry";
 
 export const get = async (parent: any, args: any, context: { user: any }) => {
     try {
@@ -43,8 +42,7 @@ export const get = async (parent: any, args: any, context: { user: any }) => {
             currency: allCurrencies,
         };
     } catch (error) {
-        SentryClient.captureException(error);
-        throw new Error("Something went wrong! But dont worry, Our team has been notified.");
+        throw new Error("Something went wrong with your request. please try again!");
     }
 };
 export const transactionHistory = async (parent: any, args: any, context: { user: any }) => {
@@ -58,7 +56,6 @@ export const transactionHistory = async (parent: any, args: any, context: { user
         const transection = transfer.map((result) => result.asV1());
         return transection;
     } catch (error) {
-        SentryClient.captureException(error);
-        throw new Error("Something went wrong! But dont worry, Our team has been notified.");
+        throw new Error("Something went wrong with your request. please try again!");
     }
 };

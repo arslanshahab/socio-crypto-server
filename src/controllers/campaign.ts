@@ -23,6 +23,19 @@ import { CampaignTemplate } from "../models/CampaignTemplate";
 import { addYears } from "date-fns";
 import { SentryClient } from "../clients/sentry";
 import { JWTPayload } from "src/types";
+import {
+    ERROR_CALCULATING_TIER,
+    FormattedError,
+    GLOBAL_CAMPAIGN_EXIST_FOR_CURRENCY,
+    RAFFLE_PRIZE_MISSING,
+    COMPANY_NOT_SPECIFIED,
+    CURRENCY_NOT_SUPPORTED,
+    CAMPAIGN_NAME_EXISTS,
+    CURRENCY_NOT_FOUND,
+    CAMPAIGN_NOT_FOUND,
+    CAMPAIGN_ORGANIZATION_MISSING,
+} from "../util/errors";
+import { ORG_NOT_FOUND } from "../util/errors";
 
 const validator = new Validator();
 
@@ -36,7 +49,7 @@ export const getCurrentCampaignTier = async (parent: any, args: { campaignId?: s
         if (campaignId) {
             const where: { [key: string]: string } = { id: campaignId };
             currentCampaign = await Campaign.findOne({ where });
-            if (!currentCampaign) throw new Error("campaign not found");
+            if (!currentCampaign) throw new Error(ORG_NOT_FOUND);
             if (currentCampaign.type == "raffle") return { currentTier: -1, currentTotal: 0 };
             currentTierSummary = calculateTier(
                 currentCampaign.totalParticipationScore,
@@ -48,7 +61,7 @@ export const getCurrentCampaignTier = async (parent: any, args: { campaignId?: s
             currentTierSummary = calculateTier(campaign.totalParticipationScore, campaign.algorithm.tiers);
             if (campaign.crypto) cryptoPriceUsd = await getTokenPriceInUsd(campaign.crypto.type);
         }
-        if (!currentTierSummary) throw new Error("failure calculating current tier");
+        if (!currentTierSummary) throw new Error(ERROR_CALCULATING_TIER);
         let body: any = {
             currentTier: currentTierSummary.currentTier,
             currentTotal: parseFloat(currentTierSummary.currentTotal.toString()),
@@ -59,8 +72,7 @@ export const getCurrentCampaignTier = async (parent: any, args: { campaignId?: s
         if (cryptoPriceUsd) body.tokenValueCoiin = cryptoPriceUsd.times(10).toString();
         return body;
     } catch (error) {
-        SentryClient.captureException(error);
-        throw new Error("Something went wrong! But dont worry, Our team has been notified.");
+        throw new FormattedError(error);
     }
 };
 
@@ -95,7 +107,7 @@ export const createNewCampaign = async (parent: any, args: NewCampaignVariables,
         } = args;
         if (isGlobal) {
             if (await Campaign.findOne({ where: { isGlobal, symbol } }))
-                throw new Error("A global campaign already exists for this currency!");
+                throw new Error(GLOBAL_CAMPAIGN_EXIST_FOR_CURRENCY);
             const globalEndDate = addYears(new Date(endDate), 100);
             endDate = globalEndDate.toLocaleString();
         }
@@ -103,28 +115,23 @@ export const createNewCampaign = async (parent: any, args: NewCampaignVariables,
         validator.validateAlgorithmCreateSchema(JSON.parse(algorithm));
         if (!!requirements) validator.validateCampaignRequirementsSchema(requirements);
         if (type === "raffle") {
-            if (!rafflePrize) throw new Error("must specify prize for raffle");
+            if (!rafflePrize) throw new Error(RAFFLE_PRIZE_MISSING);
             validator.validateRafflePrizeSchema(rafflePrize);
         }
-        if (role === "admin" && !args.company) throw new Error("administrators need to specify a company in args");
+        if (role === "admin" && !args.company) throw new Error(COMPANY_NOT_SPECIFIED);
         const campaignCompany = role === "admin" ? args.company : company;
         const org = await Org.findOne({
             where: { name: company },
             relations: ["wallet", "wallet.walletCurrency"],
         });
-        if (!org) throw new Error("org not found");
+        if (!org) throw new Error(ORG_NOT_FOUND);
         if (type === "crypto") {
             const isCurrencySupported = await isSupportedCurrency(symbol);
-            if (!isCurrencySupported) throw new Error("this currency is not supported");
+            if (!isCurrencySupported) throw new Error(CURRENCY_NOT_SUPPORTED);
             const isWalletAvailable = await org.isCurrencyAdded(symbol);
-            if (!isWalletAvailable) throw new Error("currency not found in wallet");
+            if (!isWalletAvailable) throw new Error(CURRENCY_NOT_FOUND);
         }
-        const findCampaignName = await Campaign.findOne({ name: ILike(name) });
-        if (findCampaignName) {
-            return new Error(
-                "The campaign already exists with this name, please change your campaign name and submit it again."
-            );
-        }
+        if (await Campaign.findOne({ name: ILike(name) })) return new Error(CAMPAIGN_NAME_EXISTS);
         const campaign = Campaign.newCampaign(
             name,
             beginDate,
@@ -190,8 +197,7 @@ export const createNewCampaign = async (parent: any, args: NewCampaignVariables,
             mediaUrls: mediaUrls,
         };
     } catch (error) {
-        SentryClient.captureException(error);
-        throw new Error("Something went wrong! But dont worry, Our team has been notified.");
+        throw new FormattedError(error);
     }
 };
 
@@ -226,23 +232,23 @@ export const updateCampaign = async (parent: any, args: NewCampaignVariables, co
         validator.validateAlgorithmCreateSchema(JSON.parse(algorithm));
         if (!!requirements) validator.validateCampaignRequirementsSchema(requirements);
         if (type === "raffle") {
-            if (!rafflePrize) throw new Error("must specify prize for raffle");
+            if (!rafflePrize) throw new Error(RAFFLE_PRIZE_MISSING);
             validator.validateRafflePrizeSchema(rafflePrize);
         }
-        if (role === "admin" && !args.company) throw new Error("administrators need to specify a company in args");
+        if (role === "admin" && !args.company) throw new Error(COMPANY_NOT_SPECIFIED);
         const org = await Org.findOne({
             where: { name: company },
             relations: ["wallet", "wallet.walletCurrency"],
         });
-        if (!org) throw new Error("org not found");
+        if (!org) throw new Error(ORG_NOT_FOUND);
         if (type === "crypto") {
             const isCurrencySupported = await isSupportedCurrency(symbol);
-            if (!isCurrencySupported) throw new Error("this currency is not supported");
+            if (!isCurrencySupported) throw new Error(CURRENCY_NOT_SUPPORTED);
             const isWalletAvailable = await org.isCurrencyAdded(symbol);
-            if (!isWalletAvailable) throw new Error("currency not found in wallet");
+            if (!isWalletAvailable) throw new Error(CURRENCY_NOT_FOUND);
         }
         const campaign = await Campaign.findOne({ where: { id: id }, relations: ["campaignTemplates"] });
-        if (!campaign) throw new Error("campaign not found");
+        if (!campaign) throw new Error(CAMPAIGN_NOT_FOUND);
         let campaignImageSignedURL = "";
         let raffleImageSignedURL = "";
         let mediaUrls: any = [];
@@ -319,8 +325,7 @@ export const updateCampaign = async (parent: any, args: NewCampaignVariables, co
             mediaUrls: mediaUrls,
         };
     } catch (error) {
-        SentryClient.captureException(error);
-        throw new Error("Something went wrong! But dont worry, Our team has been notified.");
+        throw new FormattedError(error);
     }
 };
 
@@ -336,8 +341,8 @@ export const adminUpdateCampaignStatus = async (
             where: { id: campaignId },
             relations: ["org"],
         });
-        if (!campaign) throw new Error("campaign not found");
-        if (!campaign.org) throw new Error("No organization found for campaign");
+        if (!campaign) throw new Error(CAMPAIGN_NOT_FOUND);
+        if (!campaign.org) throw new Error(CAMPAIGN_ORGANIZATION_MISSING);
         switch (status) {
             case "APPROVED":
                 if (campaign.type === "raffle") {
@@ -364,8 +369,7 @@ export const adminUpdateCampaignStatus = async (
         if (deviceTokens.length > 0) await Firebase.sendCampaignCreatedNotifications(deviceTokens, campaign);
         return true;
     } catch (error) {
-        SentryClient.captureException(error);
-        throw new Error("Something went wrong! But dont worry, Our team has been notified.");
+        throw new FormattedError(error);
     }
 };
 
@@ -386,7 +390,7 @@ export const listCampaigns = async (parent: any, args: ListCampaignsVariables, c
         return { results: data, total };
     } catch (error) {
         SentryClient.captureException(error);
-        throw new Error("Something went wrong! But dont worry, Our team has been notified.");
+        throw new Error("Something went wrong with your request. please try again!");
     }
 };
 
@@ -408,7 +412,7 @@ export const adminListPendingCampaigns = async (
         return { results: results.map(async (result) => await result.asV1()), total };
     } catch (error) {
         SentryClient.captureException(error);
-        throw new Error("Something went wrong! But dont worry, Our team has been notified.");
+        throw new Error("Something went wrong with your request. please try again!");
     }
 };
 
@@ -448,7 +452,7 @@ export const deleteCampaign = async (parent: any, args: { id: string }, context:
         return campaign.asV1();
     } catch (error) {
         SentryClient.captureException(error);
-        throw new Error("Something went wrong! But dont worry, Our team has been notified.");
+        throw new Error("Something went wrong with your request. please try again!");
     }
 };
 
@@ -467,7 +471,7 @@ export const get = async (parent: any, args: { id: string }) => {
         return campaign.asV2();
     } catch (error) {
         SentryClient.captureException(error);
-        throw new Error("Something went wrong! But dont worry, Our team has been notified.");
+        throw new Error("Something went wrong with your request. please try again!");
     }
 };
 
@@ -479,7 +483,7 @@ export const publicGet = async (parent: any, args: { campaignId: string }) => {
         return campaign.asV1();
     } catch (error) {
         SentryClient.captureException(error);
-        throw new Error("Something went wrong! But dont worry, Our team has been notified.");
+        throw new Error("Something went wrong with your request. please try again!");
     }
 };
 
@@ -492,7 +496,7 @@ export const adminGetCampaignMetrics = async (parent: any, args: { campaignId: s
         return await Campaign.getCampaignMetrics(campaignId);
     } catch (error) {
         SentryClient.captureException(error);
-        throw new Error("Something went wrong! But dont worry, Our team has been notified.");
+        throw new Error("Something went wrong with your request. please try again!");
     }
 };
 
@@ -503,7 +507,7 @@ export const adminGetPlatformMetrics = async (parent: any, args: any, context: {
         return metrics;
     } catch (error) {
         SentryClient.captureException(error);
-        throw new Error("Something went wrong! But dont worry, Our team has been notified.");
+        throw new Error("Something went wrong with your request. please try again!");
     }
 };
 export const adminGetHourlyCampaignMetrics = async (
@@ -532,7 +536,7 @@ export const adminGetHourlyCampaignMetrics = async (
         return HourlyCampaignMetric.parseHourlyCampaignMetrics(metrics, filter, currentTotal);
     } catch (error) {
         SentryClient.captureException(error);
-        throw new Error("Something went wrong! But dont worry, Our team has been notified.");
+        throw new Error("Something went wrong with your request. please try again!");
     }
 };
 
@@ -549,7 +553,7 @@ export const adminGetHourlyPlatformMetrics = async (
         return HourlyCampaignMetric.parseHourlyPlatformMetrics(metrics, filter);
     } catch (error) {
         SentryClient.captureException(error);
-        throw new Error("Something went wrong! But dont worry, Our team has been notified.");
+        throw new Error("Something went wrong with your request. please try again!");
     }
 };
 
@@ -616,7 +620,7 @@ export const generateCampaignAuditReport = async (
         return auditReport;
     } catch (error) {
         SentryClient.captureException(error);
-        throw new Error("Something went wrong! But dont worry, Our team has been notified.");
+        throw new Error("Something went wrong with your request. please try again!");
     }
 };
 
@@ -636,7 +640,7 @@ export const payoutCampaignRewards = async (parent: any, args: { campaignId: str
         };
     } catch (error) {
         SentryClient.captureException(error);
-        throw new Error("Something went wrong! But dont worry, Our team has been notified.");
+        throw new Error("Something went wrong with your request. please try again!");
     }
 };
 
@@ -650,7 +654,7 @@ export const listAllCampaignsForOrg = async (parent: any, args: any, context: { 
         return campaigns.map((x) => ({ id: x.id, name: x.name }));
     } catch (error) {
         SentryClient.captureException(error);
-        throw new Error("Something went wrong! But dont worry, Our team has been notified.");
+        throw new Error("Something went wrong with your request. please try again!");
     }
 };
 //! Dashboard Metrics
@@ -689,6 +693,6 @@ export const getDashboardMetrics = async (parent: any, { campaignId, skip, take 
         return { aggregatedCampaignMetrics: aggregaredMetrics, campaignMetrics };
     } catch (error) {
         SentryClient.captureException(error);
-        throw new Error("Something went wrong! But dont worry, Our team has been notified.");
+        throw new Error("Something went wrong with your request. please try again!");
     }
 };

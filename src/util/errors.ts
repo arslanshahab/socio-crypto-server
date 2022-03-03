@@ -26,6 +26,10 @@ export class FormattedError extends ApolloError {
         this.code = code;
         this.message = errorMessage;
     }
+
+    public static isFormatted = (code: string) => {
+        return code !== SOMETHING_WENT_WRONG;
+    };
 }
 
 export const SESSION_EXPIRED = "SESION_EXPIRED";
@@ -46,6 +50,16 @@ export const NO_TOKEN_PROVIDED = "NO_TOKEN_PROVIDED";
 export const ERROR_LINKING_TIKTOK = "ERROR_LINKING_TIKTOK";
 export const GLOBAL_CAMPAIGN_NOT_FOUND = "GLOBAL_CAMPAIGN_NOT_FOUND";
 export const VERIFICATION_TOKEN_EXPIRED = "VERIFICATION_TOKEN_EXPIRED";
+export const ORG_NOT_FOUND = "ORG_NOT_FOUND";
+export const ERROR_CALCULATING_TIER = "ERROR_CALCULATING_TIER";
+export const GLOBAL_CAMPAIGN_EXIST_FOR_CURRENCY = "GLOBAL_CAMPAIGN_EXIST_FOR_CURRENCY";
+export const RAFFLE_PRIZE_MISSING = "RAFFLE_PRIZE_MISSING";
+export const COMPANY_NOT_SPECIFIED = "COMPANY_NOT_SPECIFIED";
+export const CURRENCY_NOT_SUPPORTED = "CURRENCY_NOT_SUPPORTED";
+export const CURRENCY_NOT_FOUND = "CURRENCY_NOT_FOUND";
+export const CAMPAIGN_NAME_EXISTS = "CAMPAIGN_NAME_EXISTS";
+export const CAMPAIGN_NOT_FOUND = "CAMPAIGN_NOT_FOUND";
+export const CAMPAIGN_ORGANIZATION_MISSING = "CAMPAIGN_ORGANIZATION_MISSING";
 
 const errorMap: { [key: string]: string } = {
     SOMETHING_WENT_WRONG: "Something went wrong with your request. please try again!",
@@ -67,4 +81,14 @@ const errorMap: { [key: string]: string } = {
     ERROR_LINKING_TIKTOK: "There was an error linking your tiktok social account.",
     GLOBAL_CAMPAIGN_NOT_FOUND: "Global campaign doesn't exists.",
     VERIFICATION_TOKEN_EXPIRED: "Verification token expired.",
+    ORG_NOT_FOUND: "Organization not found.",
+    ERROR_CALCULATING_TIER: "Failure calculating current tier.",
+    GLOBAL_CAMPAIGN_EXIST_FOR_CURRENCY: "A global campaign already exists for this currency.",
+    RAFFLE_PRIZE_MISSING: "Must specify prize for raffle.",
+    COMPANY_NOT_SPECIFIED: "ADministrators need to specify a company in args.",
+    CURRENCY_NOT_SUPPORTED: "Currency is not supported.",
+    CURRENCY_NOT_FOUND: "Currency not found in wallet.",
+    CAMPAIGN_NAME_EXISTS: "A campaign already exists with this name.",
+    CAMPAIGN_NOT_FOUND: "Campaign not found.",
+    CAMPAIGN_ORGANIZATION_MISSING: "CAMPAIGN_ORGANIZATION_MISSING",
 };

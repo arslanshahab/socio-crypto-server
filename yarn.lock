@@ -6457,6 +6457,11 @@ graceful-fs@^4.2.0, graceful-fs@^4.2.2:
   resolved "https://registry.npmjs.org/graceful-readlink/-/graceful-readlink-1.0.1.tgz"
   integrity sha1-TK+tdrxi8C+gObL5Tpo906ORpyU=
 
+graphql-middleware-error-handler@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/graphql-middleware-error-handler/-/graphql-middleware-error-handler-1.0.1.tgz#9eb2002e55556e07ad5b1176d5f9da8daabd5efb"
+  integrity sha512-358JYKdtKhCauYfTvOZHIRO56uXHWJWNxOjG0+8LskGhfIZt3Xwa17u/e6DkOTskuVXYijtCTnmfctLVDf+y7A==
+
 graphql-middleware@^6.0.4:
   version "6.0.10"
   resolved "https://registry.yarnpkg.com/graphql-middleware/-/graphql-middleware-6.0.10.tgz#b4ff68da95b8fbed7b4f98ec43c5cf19ed0e46c5"

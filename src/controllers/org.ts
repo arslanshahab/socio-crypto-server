@@ -37,7 +37,7 @@ export const newOrg = async (
         return org;
     } catch (error) {
         SentryClient.captureException(error);
-        throw new Error("Something went wrong! But dont worry, Our team has been notified.");
+        throw new Error("Something went wrong with your request. please try again!");
     }
 };
 export const listOrgs = async (parent: any, args: { skip: number; take: number }, context: { user: any }) => {
@@ -48,7 +48,7 @@ export const listOrgs = async (parent: any, args: { skip: number; take: number }
         return orgs.map((org) => org.asV1());
     } catch (error) {
         SentryClient.captureException(error);
-        throw new Error("Something went wrong! But dont worry, Our team has been notified.");
+        throw new Error("Something went wrong with your request. please try again!");
     }
 };
 
@@ -60,7 +60,7 @@ export const getHourlyOrgMetrics = async (parent: any, args: any, context: { use
         return await HourlyCampaignMetric.getSortedByOrgId(org.id);
     } catch (error) {
         SentryClient.captureException(error);
-        throw new Error("Something went wrong! But dont worry, Our team has been notified.");
+        throw new Error("Something went wrong with your request. please try again!");
     }
 };
 
@@ -70,7 +70,7 @@ export const getOrgDetails = async (parent: any, args: any, context: { user: any
         return orgDetail;
     } catch (error) {
         SentryClient.captureException(error);
-        throw new Error("Something went wrong! But dont worry, Our team has been notified.");
+        throw new Error("Something went wrong with your request. please try again!");
     }
 };
 
@@ -117,6 +117,6 @@ export const listEmployees = async (parent: any, args: { skip: number; take: num
         return { adminsDetails, orgName };
     } catch (error) {
         SentryClient.captureException(error);
-        throw new Error("Something went wrong! But dont worry, Our team has been notified.");
+        throw new Error("Something went wrong with your request. please try again!");
     }
 };
