@@ -305,7 +305,7 @@ export class DailyParticipantMetric extends BaseEntity {
                 'SUM(CAST(metric."clickCount" AS int)) as "clickCount", SUM(CAST(metric."viewCount" AS int)) as "viewCount", SUM(CAST(metric."shareCount" as int)) as "shareCount", SUM(CAST(metric."participationScore" as int)) as "participationScore"'
             )
             .innerJoin("metric.campaign", "campaign", 'campaign.id = metric."campaignId"')
-            .addSelect("campaign.name")
+            .addSelect('campaign.name as "campaignName"')
             .where("metric.campaignId = :campaignId", { campaignId })
             .groupBy("campaign.name")
             .getRawOne();

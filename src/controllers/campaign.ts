@@ -673,6 +673,7 @@ export const getDashboardMetrics = async (parent: any, { campaignId, skip, take 
         if (!campaignId) throw new Error("Campaign Id not found");
         if (orgId && campaignId == "-1") {
             aggregatedCampaignMetrics = await DailyParticipantMetric.getAggregatedOrgMetrics(orgId);
+            aggregatedCampaignMetrics = { ...aggregatedCampaignMetrics, campaignName: "All" };
             campaignMetrics = await DailyParticipantMetric.getOrgMetrics(orgId);
             totalParticipants = await Participant.count({
                 where: {
