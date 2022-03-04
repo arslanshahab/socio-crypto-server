@@ -25,20 +25,15 @@ import { DailyParticipantMetric } from "./DailyParticipantMetric";
 import { NotificationSettings } from "./NotificationSettings";
 import { Admin } from "./Admin";
 import { ExternalAddress } from "./ExternalAddress";
-import { KycStatus } from "../types";
+import { KycStatus, RewardType } from "../types";
 import { VerificationApplication } from "./VerificationApplication";
 import { WalletCurrency } from "./WalletCurrency";
 import { differenceInMonths } from "date-fns";
 import { Transfer } from "./Transfer";
 import { JWTPayload } from "src/types";
 import { XoxodayOrder } from "./XoxodayOrder";
-import { COIIN } from "../util/constants";
+import { COIIN, LOGIN_REWARD_AMOUNT, PARTICIPATION_REWARD_AMOUNT, REGISTRATION_REWARD_AMOUNT } from "../util/constants";
 import { Campaign } from "./Campaign";
-
-export const LOGIN_REWARD_AMOUNT = 1;
-export const PARTICIPATION_REWARD_AMOUNT = 2;
-export const REGISTRATION_REWARD_AMOUNT = 15;
-type RewardType = "LOGIN_REWARD" | "PARTICIPATION_REWARD" | "REGISTRATION_REWARD";
 
 @Entity()
 export class User extends BaseEntity {
