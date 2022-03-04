@@ -1,10 +1,6 @@
 export const FEE_RATE = process.env.FEE_RATE ? parseFloat(process.env.FEE_RATE) : 0.1;
 export const COIIN = "COIIN";
 export const RAIINMAKER_ORG_NAME = "raiinmaker";
-export const LOGIN_REWARD_AMOUNT = 1;
-export const PARTICIPATION_REWARD_AMOUNT = 2;
-export const REGISTRATION_REWARD_AMOUNT = 15;
-export const SHARING_REWARD_AMOUNT = 1;
 export const CRYPTO_ICONS_BUCKET_URL = "https://rm-crypto-icons.s3.us-west-2.amazonaws.com";
 export const CRYPTO_ICONS_MAP: { [key: string]: string } = {
     COIIN: "coiin.png",
@@ -37,4 +33,14 @@ export const CRYPTO_ICONS_MAP: { [key: string]: string } = {
     WBTC: "wbtc-icon.png",
     XRP: "xrp-icon.png",
     XLM: "xlm-icon.png",
+};
+export const LOGIN_REWARD_AMOUNT = 1;
+export const PARTICIPATION_REWARD_AMOUNT = 2;
+export const REGISTRATION_REWARD_AMOUNT = 15;
+export const SHARING_REWARD_AMOUNT = 1;
+export const REWARD_AMOUNTS: { [key: string]: number } = {
+    LOGIN_REWARD: 1,
+    PARTICIPATION_REWARD: 2,
+    REGISTRATION_REWARD: 15,
+    SHARING_REWARD_AMOUNT: 1,
 };

@@ -32,7 +32,13 @@ import { differenceInMonths } from "date-fns";
 import { Transfer } from "./Transfer";
 import { JWTPayload } from "src/types";
 import { XoxodayOrder } from "./XoxodayOrder";
-import { COIIN, LOGIN_REWARD_AMOUNT, PARTICIPATION_REWARD_AMOUNT, REGISTRATION_REWARD_AMOUNT } from "../util/constants";
+import {
+    COIIN,
+    LOGIN_REWARD_AMOUNT,
+    PARTICIPATION_REWARD_AMOUNT,
+    REGISTRATION_REWARD_AMOUNT,
+    REWARD_AMOUNTS,
+} from "../util/constants";
 import { Campaign } from "./Campaign";
 
 @Entity()
@@ -267,12 +273,7 @@ export class User extends BaseEntity {
         if (type === "LOGIN_REWARD") accountAgeInHours = differenceInMonths(new Date(), new Date(user.createdAt));
         if (type === "LOGIN_REWARD" || type === "PARTICIPATION_REWARD")
             thisWeeksReward = await Transfer.getRewardForThisWeek(wallet, type);
-        const amount =
-            type === "REGISTRATION_REWARD"
-                ? REGISTRATION_REWARD_AMOUNT
-                : type === "PARTICIPATION_REWARD"
-                ? PARTICIPATION_REWARD_AMOUNT
-                : LOGIN_REWARD_AMOUNT;
+        const amount = REWARD_AMOUNTS[type] || 1;
         if (
             (type === "LOGIN_REWARD" && accountAgeInHours > 24 && !thisWeeksReward) ||
             (type === "PARTICIPATION_REWARD" && !thisWeeksReward) ||
