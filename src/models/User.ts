@@ -32,13 +32,7 @@ import { differenceInMonths } from "date-fns";
 import { Transfer } from "./Transfer";
 import { JWTPayload } from "src/types";
 import { XoxodayOrder } from "./XoxodayOrder";
-import {
-    COIIN,
-    LOGIN_REWARD_AMOUNT,
-    PARTICIPATION_REWARD_AMOUNT,
-    REGISTRATION_REWARD_AMOUNT,
-    REWARD_AMOUNTS,
-} from "../util/constants";
+import { COIIN, REWARD_AMOUNTS } from "../util/constants";
 import { Campaign } from "./Campaign";
 
 @Entity()
