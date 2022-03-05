@@ -56,7 +56,7 @@ export const participate = async (
         }
         const participant = Participant.createNewParticipant(user, campaign, args.email);
         if (!campaign.isGlobal) await user.transferReward({ type: "PARTICIPATION_REWARD", campaign });
-        return participant;
+        return await (await participant).asV2();
     } catch (e) {
         console.log(e);
         throw new Error(e.message);
