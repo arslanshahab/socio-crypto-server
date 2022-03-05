@@ -10,6 +10,7 @@ interface JWTPayload {
 }
 
 export type CustodialAddressChain = "ETH" | "MATIC" | "BSC" | "ONE" | "XDC";
+type RewardType = "LOGIN_REWARD" | "PARTICIPATION_REWARD" | "REGISTRATION_REWARD";
 
 export interface NewCampaignVariables {
     id?: string;

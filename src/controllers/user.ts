@@ -29,6 +29,7 @@ import { USER_NOT_FOUND, INCORRECT_PASSWORD, FormattedError, SAME_OLD_AND_NEW_PA
 import { addDays, endOfISOWeek, startOfDay } from "date-fns";
 import { Transfer } from "../models/Transfer";
 import { JWTPayload } from "src/types";
+import { SHARING_REWARD_AMOUNT } from "../util/constants";
 
 export const participate = async (
     parent: any,
@@ -463,6 +464,7 @@ export const getWeeklyRewardEstimation = async (parent: any, args: any, context:
             participationRedemptionDate: participationReward?.createdAt?.toString() || "",
             loginRedemptionDate: loginReward?.createdAt?.toString() || "",
             earnedToday: coiinEarnedToday || 0,
+            sharingReward: SHARING_REWARD_AMOUNT,
         };
     } catch (e) {
         console.log(e);
