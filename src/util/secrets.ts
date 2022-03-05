@@ -32,6 +32,7 @@ export class Secrets {
     public static acuantApiKey: string;
     public static tiktokClientKey: string;
     public static tiktokClientSecret: string;
+    public static sentryDSN: string;
 
     public static async initialize() {
         Secrets.firebaseProjectId =
@@ -101,5 +102,6 @@ export class Secrets {
             process.env.TIKTOK_CLIENT_KEY || (await readFilePromise("/var/secrets/tiktok/clientKey", "utf8"));
         Secrets.tiktokClientSecret =
             process.env.TIKTOK_CLIENT_SECRET || (await readFilePromise("/var/secrets/tiktok/clientSecret", "utf8"));
+        Secrets.sentryDSN = process.env.SENTRY_DSN || (await readFilePromise("/var/secrets/sentry/dsn", "utf8"));
     }
 }

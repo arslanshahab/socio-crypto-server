@@ -93,7 +93,7 @@ export class Participant extends BaseEntity {
             submissionCount: parseFloat(this.submissionCount.toString()),
             participationScore: parseFloat(this.participationScore.toString()),
             ...(this.campaign && { campaign: await this.campaign.asV2() }),
-            ...(this.user && { user: await this.user.asV2() }),
+            ...(this.user && { user: await this.user.asV2({ loadParticipantModel: true }) }),
         };
         return returnedValue;
     }

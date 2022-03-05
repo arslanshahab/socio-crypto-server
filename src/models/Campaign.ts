@@ -11,7 +11,13 @@ import {
 } from "typeorm";
 import { DateUtils } from "typeorm/util/DateUtils";
 import { Participant } from "./Participant";
-import { AlgorithmSpecs, CampaignAuditStatus, CampaignRequirementSpecs, CampaignStatus } from "../types";
+import {
+    AlgorithmSpecs,
+    CampaignAuditStatus,
+    CampaignRequirementSpecs,
+    CampaignStatus,
+    ListCampaignsVariables,
+} from "../types";
 import { SocialPost } from "./SocialPost";
 import { Transfer } from "./Transfer";
 import { StringifiedArrayTransformer, BigNumberEntityTransformer, AlgorithmTransformer } from "../util/transformers";
@@ -297,6 +303,31 @@ export class Campaign extends BaseEntity {
             )
             .skip(skip)
             .take(take)
+            .getManyAndCount();
+    }
+
+    public static async findCampaignsByStatusV2(params: ListCampaignsVariables) {
+        const now = DateUtils.mixedDateToUtcDatetimeString(new Date());
+        let where = "";
+        if (params.state === "OPEN") where = `("endDate" >= '${now}')`;
+        if (params.state === "CLOSED") where = `("endDate" <= '${now}')`;
+        let query = this.createQueryBuilder("campaign").where(where);
+        if (params.status) {
+            query = query.andWhere("campaign.status = :status", { status: params.status });
+        } else {
+            query = query.andWhere("campaign.status = :status", { status: "APPROVED" });
+        }
+        return query
+            .andWhere(`campaign."isGlobal" = :global`, { status: "APPROVED", global: false })
+            .leftJoinAndSelect("campaign.campaignMedia", "campaign_media", 'campaign_media."campaignId" = campaign.id')
+            .leftJoinAndSelect(
+                "campaign.campaignTemplates",
+                "campaign_template",
+                'campaign_template."campaignId" = campaign.id'
+            )
+            .orderBy("campaign.endDate", "DESC")
+            .skip(params.skip)
+            .take(params.take)
             .getManyAndCount();
     }
 

@@ -10,6 +10,46 @@ interface JWTPayload {
 }
 
 export type CustodialAddressChain = "ETH" | "MATIC" | "BSC" | "ONE" | "XDC";
+type RewardType = "LOGIN_REWARD" | "PARTICIPATION_REWARD" | "REGISTRATION_REWARD";
+
+export interface NewCampaignVariables {
+    id?: string;
+    name: string;
+    targetVideo?: string;
+    beginDate: string;
+    endDate: string;
+    coiinTotal: number;
+    target: string;
+    description: string;
+    instructions: string;
+    company: string;
+    algorithm: string;
+    imagePath: string;
+    tagline: string;
+    requirements: CampaignRequirementSpecs;
+    suggestedPosts: string[];
+    suggestedTags: string[];
+    keywords: string[];
+    type: string;
+    rafflePrize: RafflePrizeStructure;
+    symbol: string;
+    campaignType: string;
+    socialMediaType: string[];
+    campaignMedia: CampaignChannelMedia[];
+    campaignTemplates: CampaignChannelTemplate[];
+    isGlobal: boolean;
+    showUrl: boolean;
+}
+
+export interface ListCampaignsVariables {
+    open: boolean;
+    skip: number;
+    take: number;
+    scoped: boolean;
+    sort: boolean;
+    approved: boolean;
+    pendingAudit: boolean;
+}
 
 export interface XoxodayVoucher {
     productId: string;
@@ -270,9 +310,17 @@ export type TransferAction =
     | "XOXODAY_REDEMPTION";
 
 export type CampaignStatus = "ACTIVE" | "PENDING" | "INSUFFICIENT_FUNDS" | "CLOSED" | "APPROVED" | "DENIED";
+export type CampaignState = "ALL" | "OPEN" | "CLOSED";
 export type CampaignAuditStatus = "DEFAULT" | "AUDITED" | "PENDING";
 export type KycStatus = "APPROVED" | "PENDING" | "REJECTED" | "";
 export type VerificationType = "EMAIL" | "PASSWORD" | "WITHDRAW" | "";
+
+export interface ListCampaignsVariables {
+    skip: number;
+    take: number;
+    state: CampaignState;
+    status: CampaignStatus | "ALL";
+}
 
 export interface GraphApiInputParameters {
     fields?: string[] | string;
