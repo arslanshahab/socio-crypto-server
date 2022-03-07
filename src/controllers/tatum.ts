@@ -238,7 +238,7 @@ export const withdrawFunds = async (
         if (!userCurrency) throw new Error(`User wallet not found for currency ${symbol}`);
         const userAccountBalance = await TatumClient.getAccountBalance(userCurrency.tatumId);
         if (parseFloat(userAccountBalance.availableBalance) < amount)
-            throw new Error(`Not enough funds in user account`);
+            throw new Error("Not enough balance in user account to perform withdraw.");
         if (!userCurrency) throw new Error("Tatum account not found for user.");
         const custodialAddress = await CustodialAddress.findOne({
             where: {

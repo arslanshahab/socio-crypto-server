@@ -352,6 +352,8 @@ export class TatumClient {
             const payload = { ...wallet, ...data };
             const chain = TatumClient.getBaseChain(payload.currency.symbol);
             const { withdrawAbleAmount, fee } = await adjustWithdrawableAmount(payload);
+            if (parseFloat(withdrawAbleAmount) <= 0)
+                throw new Error("Not enough balance in user account to pay gas fee.");
             const body = {
                 ...payload,
                 amount: withdrawAbleAmount,

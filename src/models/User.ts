@@ -27,7 +27,6 @@ import { Admin } from "./Admin";
 import { ExternalAddress } from "./ExternalAddress";
 import { KycStatus, RewardType } from "../types";
 import { VerificationApplication } from "./VerificationApplication";
-import { WalletCurrency } from "./WalletCurrency";
 import { JWTPayload } from "src/types";
 import { XoxodayOrder } from "./XoxodayOrder";
 import { differenceInMonths } from "date-fns";
@@ -114,18 +113,14 @@ export class User extends BaseEntity {
     public static async initNewUser(email: string, password: string, username: string): Promise<User> {
         const user = new User();
         const wallet = new Wallet();
-        const coiinWallet = new WalletCurrency();
         const profile = new Profile();
         const notificationSettings = new NotificationSettings();
         user.email = email;
         user.password = password;
-        coiinWallet.type = "coiin";
-        coiinWallet.balance = new BN(0);
         await user.save();
         wallet.user = user;
         await wallet.save();
-        coiinWallet.wallet = wallet;
-        await coiinWallet.save();
+        await TatumClient.findOrCreateCurrency(COIIN, wallet);
         profile.username = username;
         profile.user = user;
         await profile.save();
