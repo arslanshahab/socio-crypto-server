@@ -32,13 +32,17 @@ export const get = async (parent: any, args: any, context: { user: any }) => {
         throw new Error(error.message);
     }
 };
-export const transectionHistory = async (parent: any, args: any, context: { user: any }) => {
-    const { user } = context;
-    const admin = await Admin.findOne({ where: { firebaseId: user.id }, relations: ["org"] });
-    if (!admin) throw new Error("Admin not found");
-    const orgId = admin.org.id;
-    const transfer = await Transfer.getTransectionHistory(orgId);
-    if (!transfer) throw new Error("Transfer not found");
-    const transection = transfer.map((result) => result.asV1());
-    return transection;
+export const transactionHistory = async (parent: any, args: any, context: { user: any }) => {
+    try {
+        const { user } = context;
+        const admin = await Admin.findOne({ where: { firebaseId: user.id }, relations: ["org"] });
+        if (!admin) throw new Error("Admin not found");
+        const orgId = admin.org.id;
+        const transfer = await Transfer.getTransactionHistory(orgId);
+        if (!transfer) throw new Error("Transfer not found");
+        const transection = transfer.map((result) => result.asV1());
+        return transection;
+    } catch (error) {
+        throw new Error("Something went wrong with your request. please try again!");
+    }
 };

@@ -180,6 +180,7 @@ export const typeDefs = gql`
             approved: Boolean
             pendingAudit: Boolean
         ): PaginatedCampaignResults
+        listCampaignsV2(skip: Int!, take: Int!, state: CampaignState!, status: CampaignStatus): PaginatedOpenCampaigns
         getUserParticipationKeywords: [String]
         getStoreVouchers(country: String, page: Int): [StoreVoucher]
         getCampaign(id: String): Campaign
@@ -194,6 +195,7 @@ export const typeDefs = gql`
         helloWorld: String
         isLastFactor: Boolean
         me(openCampaigns: Boolean): User
+        meV2: UserV2
         getKyc: KycApplicationResponse
         getWalletWithPendingBalance(tokenSymbol: String): Wallet
         getWithdrawals(status: String): [AdminWithdrawal]
@@ -235,7 +237,7 @@ export const typeDefs = gql`
         # downloadKyc(kycId: String!): [Factor]
         downloadKyc: KycApplicationResponse
         getDashboardMetrics(campaignId: String, skip: Int, take: Int): DashboardMetrics
-        transectionHistory: [Transfer]
+        transactionHistory: [Transfer]
         getCampaignParticipants(campaignId: String): [Participant]
     }
 
@@ -262,6 +264,22 @@ export const typeDefs = gql`
         EMAIL
         PASSWORD
         WITHDRAW
+    }
+
+    enum CampaignState {
+        ALL
+        OPEN
+        CLOSED
+    }
+
+    enum CampaignStatus {
+        ALL
+        ACTIVE
+        PENDING
+        INSUFFICIENT_FUNDS
+        CLOSED
+        APPROVED
+        DENIED
     }
 
     type KycApplicationResponse {
@@ -352,6 +370,7 @@ export const typeDefs = gql`
         participationRedemptionDate: String!
         loginRedemptionDate: String!
         earnedToday: Float!
+        sharingReward: Int!
     }
 
     type CampaignCreationResponse {
@@ -600,6 +619,28 @@ export const typeDefs = gql`
         orders: [JSON]
     }
 
+    type UserV2 {
+        id: String!
+        email: String!
+        username: String!
+        profilePicture: String
+        hasRecoveryCodeSet: Boolean
+        kycStatus: String!
+        socialLinks: [SocialLink]
+        ageRange: String
+        city: String
+        country: String
+        state: String
+        interests: [String]
+        values: [String]
+        participations: [ParticipationData]
+    }
+
+    type ParticipationData {
+        campaignId: String!
+        currentlyParticipating: Boolean!
+    }
+
     type KycUser {
         firstName: String
         lastName: String
@@ -657,6 +698,11 @@ export const typeDefs = gql`
     }
 
     type PaginatedCampaignResults {
+        results: [Campaign]!
+        total: Int!
+    }
+
+    type PaginatedOpenCampaigns {
         results: [Campaign]!
         total: Int!
     }

@@ -27,6 +27,8 @@ import { USER_NOT_FOUND, INCORRECT_PASSWORD, FormattedError, SAME_OLD_AND_NEW_PA
 import { addDays, endOfISOWeek, startOfDay } from "date-fns";
 import { Transfer } from "../models/Transfer";
 import { RAIINMAKER_ORG_NAME } from "../util/constants";
+import { JWTPayload } from "src/types";
+import { SHARING_REWARD_AMOUNT } from "../util/constants";
 
 export const participate = async (
     parent: any,
@@ -51,9 +53,9 @@ export const participate = async (
         if (await TatumClient.isCurrencySupported(campaign.symbol)) {
             await TatumClient.findOrCreateCurrency(campaign.symbol, user.wallet);
         }
-        const participant = Participant.createNewParticipant(user, campaign, args.email);
+        const participant = await Participant.createNewParticipant(user, campaign, args.email);
         if (!campaign.isGlobal) await user.transferCoiinReward({ type: "PARTICIPATION_REWARD", campaign });
-        return participant;
+        return await participant.asV2();
     } catch (e) {
         console.log(e);
         throw new Error(e.message);
@@ -133,7 +135,23 @@ export const me = async (
     } else if (args.openCampaigns !== null && args.openCampaigns === false) {
         user.campaigns = user.campaigns.filter((p) => !p.campaign.isOpen());
     }
-    return await user.asV2();
+    return await user.asV2({ loadParticipantModel: true });
+};
+
+export const meV2 = async (parent: any, args: any, context: { user: JWTPayload }, info: GraphQLResolveInfo) => {
+    let user = await User.findUserByContext(context.user, ["profile", "socialLinks"]);
+    if (!user) throw new Error("user not found");
+    user = await user.asV2({ loadParticipantModel: false });
+    const participations = await Participant.find({ where: { user }, relations: ["campaign"] });
+    return {
+        ...user,
+        participations: participations.map((item) => {
+            return {
+                campaignId: item.campaign.id,
+                currentlyParticipating: item.campaign.isOpen(),
+            };
+        }),
+    };
 };
 
 export const list = async (parent: any, args: { skip: number; take: number }, context: { user: any }) => {
@@ -429,6 +447,7 @@ export const getWeeklyRewardEstimation = async (parent: any, args: any, context:
             participationRedemptionDate: participationReward?.createdAt?.toString() || "",
             loginRedemptionDate: loginReward?.createdAt?.toString() || "",
             earnedToday: coiinEarnedToday || 0,
+            sharingReward: SHARING_REWARD_AMOUNT,
         };
     } catch (e) {
         console.log(e);

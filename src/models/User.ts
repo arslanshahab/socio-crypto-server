@@ -31,10 +31,10 @@ import { WalletCurrency } from "./WalletCurrency";
 import { JWTPayload } from "src/types";
 import { XoxodayOrder } from "./XoxodayOrder";
 import { differenceInMonths } from "date-fns";
-import { COIIN, REWARD_AMOUNTS } from "../util/constants";
 import { Transfer } from "./Transfer";
 import { TatumClient } from "../clients/tatumClient";
 import { Org } from "./Org";
+import { COIIN, REWARD_AMOUNTS } from "../util/constants";
 import { Campaign } from "./Campaign";
 
 @Entity()
@@ -167,7 +167,7 @@ export class User extends BaseEntity {
         return returnedUser;
     }
 
-    public async asV2() {
+    public async asV2(data: { loadParticipantModel: boolean }) {
         let { password, ...returnedUser }: any = { ...this };
         if (this.profile) {
             const { id, ...values } = this.profile;
@@ -189,7 +189,7 @@ export class User extends BaseEntity {
             if (this.wallet) {
                 returnedUser.wallet = this.wallet.asV1();
             }
-            if (this.campaigns && this.campaigns.length > 0) {
+            if (this.campaigns && this.campaigns.length > 0 && data.loadParticipantModel) {
                 returnedUser.campaigns = this.campaigns.map(async (participant) => await participant.asV2());
             }
         } catch (e) {

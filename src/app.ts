@@ -6,7 +6,6 @@ import { Connection, getConnectionOptions, createConnection } from "typeorm";
 import logger from "./util/logger";
 import { Secrets } from "./util/secrets";
 import { authenticateAdmin, authenticateUser } from "./middleware/authentication";
-import { errorHandler } from "./middleware/errorHandler";
 // import { Dragonchain } from "./clients/dragonchain";
 import { Firebase } from "./clients/firebase";
 import * as FactorController from "./controllers/factor";
@@ -37,6 +36,9 @@ import {
 } from "./controllers/tatum";
 import { kycWebhook } from "./controllers/kyc";
 import { GraphQLRequestContext } from "../node_modules/apollo-server-types/dist/index.d";
+import * as Sentry from "@sentry/node";
+import { FormattedError } from "./util/errors";
+
 const { NODE_ENV = "development" } = process.env;
 
 export class Application {
@@ -58,6 +60,12 @@ export class Application {
         await Firebase.initialize();
         // await Dragonchain.initialize();
         StripeAPI.initialize();
+        Sentry.init({
+            dsn: Secrets.sentryDSN,
+            debug: true,
+            environment: process.env.NODE_ENV || "staging",
+            tracesSampleRate: 1.0,
+        });
         this.app = express();
         const corsSettings = {
             origin: [
@@ -97,47 +105,81 @@ export class Application {
                 });
 
                 return {
-                    async didEncounterErrors(requestContext) {
-                        console.log(requestContext.errors);
+                    async didEncounterErrors(ctx) {
+                        for (const err of ctx.errors) {
+                            Sentry.withScope((scope) => {
+                                scope.setTag("kind", filterOperationName(requestContext));
+                                scope.setExtra("headers", JSON.stringify(ctx.request.http?.headers));
+                                scope.setExtra("context", ctx.context);
+                                scope.setExtra("query", ctx.request.query);
+                                scope.setExtra("variables", ctx.request.variables);
+                                scope.addBreadcrumb({
+                                    category: "query-path",
+                                    message: err?.path?.join(" > ") || "",
+                                    level: Sentry.Severity.Debug,
+                                });
+                                Sentry.captureException(err);
+                                if (!FormattedError.isFormatted(err.extensions?.code)) {
+                                    Sentry.captureMessage(
+                                        `Caught something Fatal - ${
+                                            ctx.operationName || filterOperationName(requestContext)
+                                        }`
+                                    );
+                                } else {
+                                    Sentry.captureMessage(
+                                        `Caught an Error - ${ctx.operationName || filterOperationName(requestContext)}`,
+                                        Sentry.Severity.Error
+                                    );
+                                }
+                            });
+                        }
                     },
                 };
             },
         };
+
         const server = new ApolloServer({
             typeDefs,
             resolvers,
             plugins: [requestPlugin],
             context: authenticateUser,
         });
+
         const serverAdmin = new ApolloServer({
             typeDefs,
             resolvers: adminResolvers,
             plugins: [requestPlugin],
             context: authenticateAdmin,
         });
+
         const serverPublic = new ApolloServer({
             typeDefs,
             plugins: [requestPlugin],
             resolvers: publicResolvers,
         });
+
         await server.start();
         await serverAdmin.start();
         await serverPublic.start();
+
         server.applyMiddleware({
             app: this.app,
             path: "/v1/graphql",
             cors: corsSettings,
         });
+
         serverAdmin.applyMiddleware({
             app: this.app,
             path: "/v1/admin/graphql",
             cors: corsSettings,
         });
+
         serverPublic.applyMiddleware({
             app: this.app,
             path: "/v1/public/graphql",
             cors: corsSettings,
         });
+
         this.app.get("/v1/health", (_req: express.Request, res: express.Response) =>
             res.send("I am alive and well, thank you!")
         );
@@ -178,7 +220,7 @@ export class Application {
             FactorController.recover
         );
         this.app.use("/v1/referral/:participantId", trackClickByLink);
-        this.app.use(errorHandler);
+        this.app.use(Sentry.Handlers.requestHandler());
     }
 
     public async startServer() {

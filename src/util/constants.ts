@@ -39,8 +39,10 @@ export const CRYPTO_ICONS_MAP: { [key: string]: string } = {
 export const LOGIN_REWARD_AMOUNT = 1;
 export const PARTICIPATION_REWARD_AMOUNT = 2;
 export const REGISTRATION_REWARD_AMOUNT = 15;
+export const SHARING_REWARD_AMOUNT = 1;
 export const REWARD_AMOUNTS: { [key: string]: number } = {
     LOGIN_REWARD: 1,
     PARTICIPATION_REWARD: 2,
     REGISTRATION_REWARD: 15,
+    SHARING_REWARD_AMOUNT: 1,
 };
