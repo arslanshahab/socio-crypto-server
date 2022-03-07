@@ -23,6 +23,7 @@ export const get = async (parent: any, args: any, context: { user: any }) => {
                 balance: balance.availableBalance,
                 type: currencyItem.symbol,
                 symbolImageUrl: getCryptoAssestImageUrl(currencyItem.symbol),
+                network: TatumClient.getBaseChain(currencyItem.symbol) || "",
             };
         });
         return {

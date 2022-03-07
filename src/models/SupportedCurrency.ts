@@ -8,9 +8,6 @@ export class SupportedCurrency extends BaseEntity {
     @Column({ nullable: false })
     public symbol: string;
 
-    @Column({ nullable: false })
-    public network: string;
-
     @Column({ nullable: false, default: "0x0000000000000000000000000000000000000000" })
     public contractAddress: string;
 
@@ -31,12 +28,10 @@ export class SupportedCurrency extends BaseEntity {
 
     public static async addSupportedCurrency(data: {
         symbol: string;
-        network: string;
         contractAddress: string;
     }): Promise<SupportedCurrency> {
-        let newSupportedCurrency = new SupportedCurrency();
+        const newSupportedCurrency = new SupportedCurrency();
         newSupportedCurrency.symbol = data.symbol;
-        newSupportedCurrency.network = data.network;
         newSupportedCurrency.contractAddress = data.contractAddress;
         return await SupportedCurrency.save(newSupportedCurrency);
     }
