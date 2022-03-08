@@ -29,7 +29,7 @@ import { KycStatus, RewardType } from "../types";
 import { VerificationApplication } from "./VerificationApplication";
 import { JWTPayload } from "src/types";
 import { XoxodayOrder } from "./XoxodayOrder";
-import { differenceInMonths } from "date-fns";
+import { differenceInHours } from "date-fns";
 import { Transfer } from "./Transfer";
 import { TatumClient } from "../clients/tatumClient";
 import { Org } from "./Org";
@@ -220,7 +220,7 @@ export class User extends BaseEntity {
         if (!wallet) throw new Error("User wallet not found");
         let accountAgeInHours = 0,
             thisWeeksReward;
-        if (type === "LOGIN_REWARD") accountAgeInHours = differenceInMonths(new Date(), new Date(user.createdAt));
+        if (type === "LOGIN_REWARD") accountAgeInHours = differenceInHours(new Date(), new Date(user.createdAt));
         if (type === "LOGIN_REWARD" || type === "PARTICIPATION_REWARD")
             thisWeeksReward = await Transfer.getRewardForThisWeek(wallet, type);
         const amount = REWARD_AMOUNTS[type] || 0;

@@ -11,7 +11,13 @@ import { DailyParticipantMetric } from "../models/DailyParticipantMetric";
 import { groupDailyMetricsByUser } from "./helpers";
 import { HourlyCampaignMetric } from "../models/HourlyCampaignMetric";
 import { In } from "typeorm";
-import { createPasswordHash, getCryptoAssestImageUrl, getUSDValueForCurrency, formatFloat } from "../util";
+import {
+    createPasswordHash,
+    getCryptoAssestImageUrl,
+    getUSDValueForCurrency,
+    formatFloat,
+    getMinWithdrawableAmount,
+} from "../util";
 import { TatumClient } from "../clients/tatumClient";
 import { Currency } from "../models/Currency";
 import { flatten } from "lodash";
@@ -344,7 +350,7 @@ export const getWalletBalances = async (parent: any, args: any, context: { user:
         return {
             balance: formatFloat(balance.availableBalance),
             symbol: currencyItem.symbol,
-            minWithdrawAmount: 0,
+            minWithdrawAmount: getMinWithdrawableAmount(currencyItem.symbol),
             usdBalance: getUSDValueForCurrency(currencyItem.symbol.toLowerCase(), balance.availableBalance),
             imageUrl: getCryptoAssestImageUrl(currencyItem.symbol),
             network: TatumClient.getBaseChain(currencyItem.symbol) || "",
