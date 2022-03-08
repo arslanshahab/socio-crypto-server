@@ -1,4 +1,4 @@
-import { Connection, ILike } from "typeorm";
+import { Connection, MoreThanOrEqual, ILike } from "typeorm";
 import { connectDatabase } from "../helpers";
 import * as dotenv from "dotenv";
 import { User } from "../../src/models/User";
@@ -8,7 +8,9 @@ import { Org } from "../../src/models/Org";
 import { COIIN } from "../../src/util/constants";
 import { BN } from "../../src/util";
 import { Secrets } from "../../src/util/secrets";
-import { differenceInMonths } from "date-fns";
+import { subMonths } from "date-fns";
+import { DateUtils } from "typeorm/util/DateUtils";
+import { initDateFromParams } from "../../src/util/date";
 dotenv.config();
 
 (async () => {
@@ -17,7 +19,12 @@ dotenv.config();
         await Secrets.initialize();
         console.log("api key", Secrets.tatumApiKey);
         const connection: Connection = await connectDatabase();
-        const users = await User.find({ relations: ["wallet"] });
+        let date = initDateFromParams({ date: subMonths(new Date(), 6), d: new Date().getDate(), h: 0, i: 0, s: 0 });
+        console.log(date);
+        const users = await User.find({
+            where: { lastLogin: MoreThanOrEqual(DateUtils.mixedDateToDatetimeString(date)) },
+            relations: ["wallet"],
+        });
         console.log("total users, ---- ", users.length);
         const raiinmakerCoiinAccount = await Org.getCurrencyForRaiinmaker(COIIN);
         const raiinmakerCoiinBalance = await TatumClient.getAccountBalance(raiinmakerCoiinAccount.tatumId);
@@ -28,7 +35,6 @@ dotenv.config();
                 where: { type: ILike(COIIN), wallet: user.wallet },
                 relations: ["wallet"],
             });
-            if (!user.lastLogin || differenceInMonths(new Date(), new Date(user.lastLogin)) < 4) continue;
             totalCoiinToTransfer = totalCoiinToTransfer.plus(walletCurrency?.balance || 0);
         }
         console.log("TOTAL COIIN TO TRANSFER --- ", totalCoiinToTransfer.toString());
