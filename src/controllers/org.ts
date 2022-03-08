@@ -7,6 +7,7 @@ import { SesClient } from "../clients/ses";
 import { FailureByDesign } from "../util/errors";
 import { WalletCurrency } from "../models/WalletCurrency";
 import { Wallet } from "../models/Wallet";
+import { RAIINMAKER_ORG_NAME } from "../util/constants";
 import { SentryClient } from "../clients/sentry";
 
 export const newOrg = async (
@@ -15,7 +16,7 @@ export const newOrg = async (
     context: { user: any }
 ) => {
     try {
-        if (context.user.company !== "raiinmaker") throw new Error("forbidden");
+        if (context.user.company !== RAIINMAKER_ORG_NAME) throw new Error("forbidden");
         const { orgName, email, name } = args;
         const orgNameToLower = orgName.toLowerCase();
         const password = Math.random().toString(16).substr(2, 15);

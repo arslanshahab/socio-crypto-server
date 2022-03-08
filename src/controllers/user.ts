@@ -11,16 +11,8 @@ import { DailyParticipantMetric } from "../models/DailyParticipantMetric";
 import { groupDailyMetricsByUser } from "./helpers";
 import { HourlyCampaignMetric } from "../models/HourlyCampaignMetric";
 import { In } from "typeorm";
-import {
-    createPasswordHash,
-    getCryptoAssestImageUrl,
-    getMinWithdrawableAmount,
-    getUSDValueForCurrency,
-    formatFloat,
-} from "../util";
+import { createPasswordHash, getCryptoAssestImageUrl, getUSDValueForCurrency, formatFloat } from "../util";
 import { TatumClient } from "../clients/tatumClient";
-import { WalletCurrency } from "../models/WalletCurrency";
-import { Wallet } from "../models/Wallet";
 import { Currency } from "../models/Currency";
 import { flatten } from "lodash";
 import { Verification } from "../models/Verification";
@@ -28,6 +20,7 @@ import { SesClient } from "../clients/ses";
 import { USER_NOT_FOUND, INCORRECT_PASSWORD, FormattedError, SAME_OLD_AND_NEW_PASSWORD } from "../util/errors";
 import { addDays, endOfISOWeek, startOfDay } from "date-fns";
 import { Transfer } from "../models/Transfer";
+import { RAIINMAKER_ORG_NAME } from "../util/constants";
 import { JWTPayload } from "src/types";
 import { SHARING_REWARD_AMOUNT } from "../util/constants";
 
@@ -54,9 +47,9 @@ export const participate = async (
         if (await TatumClient.isCurrencySupported(campaign.symbol)) {
             await TatumClient.findOrCreateCurrency(campaign.symbol, user.wallet);
         }
-        const participant = Participant.createNewParticipant(user, campaign, args.email);
-        if (!campaign.isGlobal) await user.transferReward({ type: "PARTICIPATION_REWARD", campaign });
-        return await (await participant).asV2();
+        const participant = await Participant.createNewParticipant(user, campaign, args.email);
+        if (!campaign.isGlobal) await user.transferCoiinReward({ type: "PARTICIPATION_REWARD", campaign });
+        return await participant.asV2();
     } catch (e) {
         console.log(e);
         throw new Error(e.message);
@@ -317,7 +310,7 @@ export const sendUserMessages = async (
     args: { usernames: string[]; title: string; message: string },
     context: { user: any }
 ) => {
-    checkPermissions({ hasRole: ["admin"], restrictCompany: "raiinmaker" }, context);
+    checkPermissions({ hasRole: ["admin"], restrictCompany: RAIINMAKER_ORG_NAME }, context);
     const { usernames, title, message } = args;
     if (usernames.length === 0) return false;
     const tokens = (await Profile.find({ where: { username: In(usernames) } })).reduce(
@@ -344,36 +337,19 @@ export const uploadProfilePicture = async (parent: any, args: { image: string },
 export const getWalletBalances = async (parent: any, args: any, context: { user: any }) => {
     const user = await User.findUserByContext(context.user, ["wallet"]);
     if (!user) throw new Error("user not found");
-    const coiinCurrency = await WalletCurrency.findOne({
-        where: { wallet: await Wallet.findOne({ where: { user: user } }), type: "coiin" },
-    });
     const currencies = await Currency.find({ where: { wallet: user.wallet } });
     const balances = await TatumClient.getBalanceForAccountList(currencies);
     let allCurrencies = currencies.map(async (currencyItem) => {
         const balance = balances.find((balanceItem) => currencyItem.tatumId === balanceItem.tatumId);
-        const minWithdrawAmount = await getMinWithdrawableAmount(currencyItem.symbol);
         return {
             balance: formatFloat(balance.availableBalance),
             symbol: currencyItem.symbol,
-            minWithdrawAmount,
+            minWithdrawAmount: 0,
             usdBalance: getUSDValueForCurrency(currencyItem.symbol.toLowerCase(), balance.availableBalance),
             imageUrl: getCryptoAssestImageUrl(currencyItem.symbol),
             network: TatumClient.getBaseChain(currencyItem.symbol) || "",
         };
     });
-    if (coiinCurrency) {
-        allCurrencies.unshift(
-            Promise.resolve({
-                symbol: coiinCurrency.type.toUpperCase() || "",
-                balance: formatFloat(coiinCurrency.balance.toNumber()),
-                minWithdrawAmount: coiinCurrency.balance.toNumber(),
-                usdBalance: getUSDValueForCurrency(coiinCurrency.type.toLowerCase(), coiinCurrency.balance.toNumber()),
-                imageUrl: getCryptoAssestImageUrl(coiinCurrency.type.toUpperCase()),
-                network: "BSC",
-            })
-        );
-    }
-    console.log(allCurrencies);
     return allCurrencies;
 };
 

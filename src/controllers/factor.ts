@@ -16,6 +16,7 @@ import { Profile } from "../models/Profile";
 import { NotificationSettings } from "../models/NotificationSettings";
 import { WalletCurrency } from "../models/WalletCurrency";
 import { JWTPayload } from "src/types";
+import { RAIINMAKER_ORG_NAME } from "../util/constants";
 
 export const registerFactorLink = async (
     parent: any,
@@ -25,7 +26,7 @@ export const registerFactorLink = async (
     const { identityId, factors } = await Dragonfactor.validateFactor({
         factorRequest: args.factor,
         acceptedFactors: ["email", "myfii-kyc"],
-        service: "raiinmaker",
+        service: RAIINMAKER_ORG_NAME,
     });
     const user = await User.findUserByContext(context.user, ["factorLinks"]);
     if (!user) throw new Error("user not found");

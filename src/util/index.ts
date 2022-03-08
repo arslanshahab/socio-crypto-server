@@ -35,7 +35,7 @@ export const isSupportedCurrency = async (symbol: string): Promise<boolean> => {
 
 export const getMinWithdrawableAmount = async (symbol: string) => {
     symbol = symbol.toLowerCase();
-    const minLimit = process.env.MIN_WITHDRAW_LIMIT ? parseFloat(process.env.MIN_WITHDRAW_LIMIT) : 250;
+    const minLimit = parseFloat(process?.env?.MIN_WITHDRAW_LIMIT || "100");
     const marketRate = await getExchangeRateForCrypto(symbol);
     return (1 / marketRate) * minLimit;
 };

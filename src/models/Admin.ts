@@ -9,6 +9,7 @@ import {
 } from "typeorm";
 import { User } from "./User";
 import { Org } from "./Org";
+import { RAIINMAKER_ORG_NAME } from "../util/constants";
 
 @Entity()
 export class Admin extends BaseEntity {
@@ -18,7 +19,7 @@ export class Admin extends BaseEntity {
     @Column()
     public firebaseId: string;
 
-    @Column({ nullable: false, default: "raiinmaker" })
+    @Column({ nullable: false, default: RAIINMAKER_ORG_NAME })
     public name: string;
 
     @ManyToOne((_type) => User, (user) => user.admins)

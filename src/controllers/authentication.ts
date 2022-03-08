@@ -94,7 +94,7 @@ export const registerUser = async (
         if (await Profile.findOne({ where: { username: ILike(username) } })) throw new Error(USERNAME_EXISTS);
         await Verification.verifyToken({ verificationToken, email });
         const user = await User.initNewUser(email, createPasswordHash({ email, password }), username);
-        await user.transferReward({ type: "REGISTRATION_REWARD" });
+        await user.transferCoiinReward({ type: "REGISTRATION_REWARD" });
         return { token: createSessionToken(user) };
     } catch (error) {
         throw new FormattedError(error);
@@ -109,7 +109,7 @@ export const loginUser = async (parent: any, args: { email: string; password: st
         if (!user) throw new Error(EMAIL_NOT_EXISTS);
         if (user.password !== createPasswordHash({ email, password })) throw new Error(INCORRECT_PASSWORD);
         await user.updateLastLogin();
-        await user.transferReward({ type: "LOGIN_REWARD" });
+        await user.transferCoiinReward({ type: "LOGIN_REWARD" });
         return { token: createSessionToken(user) };
     } catch (error) {
         return new FormattedError(error);

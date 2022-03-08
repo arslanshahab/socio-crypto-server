@@ -1,6 +1,6 @@
 {
     "name": "raiinmaker-server",
-    "version": "2.5.2",
+    "version": "2.5.3",
     "main": "index.js",
     "repository": "git@github.com:dragonchain-inc/raiinmaker-server.git",
     "author": "Alex Benedetto <alex061994@gmail.com>",
@@ -29,6 +29,7 @@
         "migration:generate": "yarn clean && yarn build && yarn typeorm:cli migration:generate",
         "metrics:generate": "NODE_ENV=script ts-node scripts/metrics/index.ts",
         "admin:generate": "NODE_ENV=script ts-node scripts/admin/index.ts",
+        "coiin:migrate": "AWS_PROFILE=raiinmaker TS_NODE_FILES=true NODE_ENV=development ts-node scripts/user/coiinMigrationToTatum.ts",
         "cron:watcher:run": "AWS_PROFILE=raiinmaker LOAD_ENV=true ts-node src/cron/coiinWatcher/index.ts",
         "cron:coiinMinter:run": "AWS_PROFILE=raiinmaker LOAD_ENV=true ts-node src/cron/coiinMinter/index.ts",
         "cron:campaignAudit:run": "AWS_PROFILE=raiinmaker LOAD_ENV=true ts-node src/cron/campaignAudit/index.ts",
@@ -36,9 +37,9 @@
     },
     "dependencies": {
         "@myfii-dev/dragonfactor-auth": "^0.0.12",
+        "@tatumio/tatum": "^1.32.0",
         "@sentry/node": "^6.18.0",
         "@sentry/tracing": "^6.18.0",
-        "@tatumio/tatum": "^1.30.9",
         "@types/lodash": "^4.14.170",
         "@types/websocket": "^1.0.5",
         "ajv": "^6.12.2",

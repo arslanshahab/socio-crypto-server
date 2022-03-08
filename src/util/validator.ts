@@ -1,4 +1,5 @@
 import Ajv from "ajv";
+import { RAIINMAKER_ORG_NAME } from "./constants";
 
 const factorAssociation = {
     type: "object",
@@ -14,7 +15,7 @@ const factorLoginSchema = {
     title: "dragonfactorLoginSchema",
     type: "object",
     properties: {
-        service: { type: "string", enum: ["raiinmaker"] },
+        service: { type: "string", enum: [RAIINMAKER_ORG_NAME] },
         factorType: { type: "string", enum: ["email"] },
         timestamp: { type: "string" },
         factor: { type: "string" },

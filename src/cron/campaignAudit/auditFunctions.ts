@@ -11,7 +11,7 @@ import { decrypt } from "../../util/crypto";
 import { getCurrentCampaignTier } from "../../controllers/campaign";
 import { BN } from "../../util";
 import { BigNumber } from "bignumber.js";
-import { FEE_RATE } from "../../util/constants";
+import { FEE_RATE, RAIINMAKER_ORG_NAME } from "../../util/constants";
 import { Currency } from "../../models/Currency";
 import { Org } from "../../models/Org";
 import { User } from "../../models/User";
@@ -66,7 +66,9 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
         totalRewardAmount = totalRewardAmount.minus(campaignFee);
         const raiinmakerAccount = await Currency.findOne({
             where: {
-                wallet: await Wallet.findOne({ where: { org: await Org.findOne({ where: { name: "raiinmaker" } }) } }),
+                wallet: await Wallet.findOne({
+                    where: { org: await Org.findOne({ where: { name: RAIINMAKER_ORG_NAME } }) },
+                }),
                 symbol: campaign.symbol,
             },
         });
@@ -101,12 +103,12 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
             });
             if (!userCurrency) throw new Error(`currency not found for user ${participant.user.id}`);
             promiseArray.push(
-                TatumClient.transferFunds(
-                    campaignAccount.tatumId,
-                    userCurrency.tatumId,
-                    usersRewards[participant.user.id].toString(),
-                    `${CAMPAIGN_REWARD}:${campaign.id}`
-                )
+                TatumClient.transferFunds({
+                    senderAccountId: campaignAccount.tatumId,
+                    recipientAccountId: userCurrency.tatumId,
+                    amount: usersRewards[participant.user.id].toString(),
+                    recipientNote: `${CAMPAIGN_REWARD}:${campaign.id}`,
+                })
             );
             transferDetails.push({
                 campaignAccount,
@@ -118,13 +120,13 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
         }
 
         // transfer campaign fee to raiinmaker tatum account
-        if (campaign.org.name !== "raiinmaker") {
-            await TatumClient.transferFunds(
-                campaignAccount.tatumId,
-                raiinmakerAccount.tatumId,
-                raiinmakerFee.toString(),
-                `${CAMPAIGN_FEE}:${campaign.id}`
-            );
+        if (campaign.org.name !== RAIINMAKER_ORG_NAME) {
+            await TatumClient.transferFunds({
+                senderAccountId: campaignAccount.tatumId,
+                recipientAccountId: raiinmakerAccount.tatumId,
+                amount: raiinmakerFee.toString(),
+                recipientNote: `${CAMPAIGN_FEE}:${campaign.id}`,
+            });
         }
         const responses = await Promise.allSettled(promiseArray);
         const transferRecords = [];
