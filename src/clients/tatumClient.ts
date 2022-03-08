@@ -392,10 +392,14 @@ export class TatumClient {
             };
             const withdrawTX = await callWithdrawMethod();
             if (TatumClient.isSubCustodialToken(data.currency.symbol)) {
-                await transferFundsToRaiinmaker({
-                    currency: payload.currency,
-                    amount: (parseFloat(data.amount) - parseFloat(withdrawAbleAmount)).toString(),
-                });
+                try {
+                    await transferFundsToRaiinmaker({
+                        currency: payload.currency,
+                        amount: (parseFloat(data.amount) - parseFloat(withdrawAbleAmount)).toFixed(2),
+                    });
+                } catch (error) {
+                    console.log(error);
+                }
             }
             return withdrawTX;
         } catch (error) {
@@ -488,10 +492,8 @@ export class TatumClient {
                 amount: data.amount,
                 fee: data.fee,
             });
-            console.log("ledger TX ---- ", ledgerTX);
             try {
                 const offchainTX = await TatumClient.prepareTransferFromCustodialWallet(data);
-                console.log("blockchain TX ---- ", offchainTX);
                 await offchainCompleteWithdrawal(ledgerTX.id, offchainTX.txId);
                 return offchainTX;
             } catch (error) {
