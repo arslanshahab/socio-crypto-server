@@ -1,4 +1,4 @@
-import { Connection } from "typeorm";
+import { Connection, ILike } from "typeorm";
 import { connectDatabase } from "../helpers";
 import * as dotenv from "dotenv";
 import { User } from "../../src/models/User";
@@ -8,6 +8,7 @@ import { Org } from "../../src/models/Org";
 import { COIIN } from "../../src/util/constants";
 import { BN } from "../../src/util";
 import { Secrets } from "../../src/util/secrets";
+import { differenceInMonths } from "date-fns";
 dotenv.config();
 
 (async () => {
@@ -24,29 +25,37 @@ dotenv.config();
         for (let index = 0; index < users.length; index++) {
             const user = users[index];
             const walletCurrency = await WalletCurrency.findOne({
-                where: { type: COIIN.toLowerCase(), wallet: user.wallet },
+                where: { type: ILike(COIIN), wallet: user.wallet },
+                relations: ["wallet"],
             });
+            if (!user.lastLogin || differenceInMonths(new Date(), new Date(user.lastLogin)) < 4) continue;
             totalCoiinToTransfer = totalCoiinToTransfer.plus(walletCurrency?.balance || 0);
         }
-        console.log("TOTAL COIIN TO TRANSFER --- ", totalCoiinToTransfer.toNumber());
+        console.log("TOTAL COIIN TO TRANSFER --- ", totalCoiinToTransfer.toString());
         console.log("AVAILABLE COIIN BALANCE --- ", raiinmakerCoiinBalance.availableBalance);
-        if (parseFloat(raiinmakerCoiinBalance.availableBalance) <= 0)
+        if (parseFloat(raiinmakerCoiinBalance?.availableBalance) <= 0)
             throw new Error("Not enough balance to initiate coiin transfer");
         for (let index = 0; index < users.length; index++) {
             const user = users[index];
             const userCoiinAccount = await TatumClient.findOrCreateCurrency(COIIN, user.wallet);
             const walletCurrency = await WalletCurrency.findOne({
-                where: { type: COIIN.toLowerCase(), wallet: user.wallet },
+                where: { type: ILike(COIIN), wallet: user.wallet },
+                relations: ["wallet"],
             });
             if (walletCurrency?.balance && walletCurrency.balance.toNumber() > 0) {
-                await TatumClient.transferFunds({
-                    senderAccountId: raiinmakerCoiinAccount.tatumId,
-                    recipientAccountId: userCoiinAccount.tatumId,
-                    amount: walletCurrency.balance.toString(),
-                    recipientNote: "COIIN_ADJUSTMENT_ON_TATUM",
-                });
-                user.updateCoiinBalance("SUBTRACT", walletCurrency.balance.toNumber());
-                console.log(`${walletCurrency.balance} coiin transferred to userID: ${user.id}`);
+                try {
+                    await TatumClient.transferFunds({
+                        senderAccountId: raiinmakerCoiinAccount.tatumId,
+                        recipientAccountId: userCoiinAccount.tatumId,
+                        amount: walletCurrency.balance.toString(),
+                        recipientNote: "COIIN_ADJUSTMENT_ON_TATUM",
+                    });
+                    console.log(`${walletCurrency.balance.toString()} coiin transferred to userID: ${user.id}`);
+                    walletCurrency.balance = new BN(0);
+                    await walletCurrency.save();
+                } catch (error) {
+                    console.log(error);
+                }
             }
         }
         await connection.close();
