@@ -158,6 +158,7 @@ export const kycUser = {
         billingCity: { type: "string" },
         billingCountry: { type: "string" },
         billingZip: { type: "number" },
+        zipCode: { type: "string" },
         gender: { type: "string" },
         dob: { type: "string" },
         phoneNumber: { type: "string" },

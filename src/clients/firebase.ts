@@ -4,6 +4,7 @@ import { Campaign } from "../models/Campaign";
 import { Secrets } from "../util/secrets";
 import { paginateList } from "../util";
 import { RequestData, doFetch } from "../util/fetchRequest";
+import { KycStatus } from "src/types";
 
 interface FirebaseUserLoginResponse {
     kind: string;
@@ -19,6 +20,17 @@ interface FirebaseUserLoginResponse {
 export class Firebase {
     public static adminClient: admin.app.App;
     public static baseUrl = "https://identitytoolkit.googleapis.com";
+    public static kycNotificationTitle: { [key: string]: string } = {
+        APPROVED: "Your KYC application has been approved!",
+        PENDING: "Your KYC application has been submitted!",
+        REJECTED: "Your KYC application has been rejected!",
+    };
+
+    public static kycNotificationBody: { [key: string]: string } = {
+        APPROVED: "You are now elligible for some extra features like withdraws above $600.",
+        PENDING: "We will update you once application's status changes.",
+        REJECTED: "You have to re-apply KYC with more precise details.",
+    };
 
     public static initialize() {
         Firebase.adminClient = admin.initializeApp({
@@ -235,6 +247,33 @@ export class Firebase {
         }
     }
 
+    public static async sendKycVerificationUpdate(token: string, status: KycStatus) {
+        const title = Firebase.kycNotificationTitle[status];
+        const body = Firebase.kycNotificationBody[status];
+        const message: admin.messaging.Message = {
+            notification: {
+                title,
+                body,
+            },
+            apns: {
+                payload: {
+                    aps: {
+                        contentAvailable: true,
+                        sound: "default",
+                        badge: 4,
+                        alert: {
+                            title,
+                            body,
+                        },
+                    },
+                },
+            },
+            data: { title, body, redirection: JSON.stringify({ to: "harvest" }) },
+            token,
+        };
+        await Firebase.adminClient.messaging().send(message);
+    }
+
     public static async sendKycApprovalNotification(token: string) {
         const title = "Your KYC has been approved!";
         const body = "You can now make withdrawals thru your Raiinmaker app";
@@ -319,45 +358,6 @@ export class Firebase {
     public static async sendWithdrawalRejectionNotification(token: string, amount: BigInt, symbol: string = "COIIN") {
         const title = "Your withdraw request has been rejected";
         const body = `Your request for ${amount.toString()} ${symbol.toUpperCase()} using has been rejected. Please attempt with a different amount`;
-        const message: admin.messaging.Message = {
-            notification: {
-                title,
-                body,
-            },
-            apns: {
-                payload: {
-                    aps: {
-                        contentAvailable: true,
-                        sound: "default",
-                        badge: 4,
-                        alert: {
-                            title,
-                            body,
-                        },
-                    },
-                },
-            },
-            data: { title, body, redirection: JSON.stringify({ to: "settings" }) },
-            token,
-        };
-        await Firebase.adminClient.messaging().send(message);
-    }
-
-    public static async sendKycVerificationUpdate(token: string, status: string) {
-        let title = "";
-        let body = "";
-        switch (status) {
-            case "ACCEPTED":
-                title = "Your KYC has been approved";
-                body = `Please go to your settings page to download the factors`;
-                break;
-            case "REJECTED":
-                title = "Your KYC was denied";
-                body = "Please resubmit your documents or contact support";
-                break;
-            default:
-                return;
-        }
         const message: admin.messaging.Message = {
             notification: {
                 title,
