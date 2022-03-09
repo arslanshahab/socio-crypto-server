@@ -305,7 +305,7 @@ export const typeDefs = gql`
         billingCity: String!
         billingCountry: String!
         billingZip: Int
-        zipCode: String!
+        zipCode: String
         gender: String!
         dob: String!
         phoneNumber: String!
