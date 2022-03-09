@@ -10,6 +10,7 @@ import {
 import { BigNumberEntityTransformer } from "../util/transformers";
 import BigNumber from "bignumber.js";
 import { Wallet } from "./Wallet";
+import { COIIN } from "../util/constants";
 
 @Entity()
 export class WalletCurrency extends BaseEntity {
@@ -62,5 +63,13 @@ export class WalletCurrency extends BaseEntity {
         if (wallet) currency.wallet = wallet;
         if (balance) currency.balance = new BigNumber(balance);
         return currency.save();
+    }
+
+    public static async getTotalCoiinBalance(ids: string[]) {
+        return await this.createQueryBuilder("model")
+            .select('SUM(model.balance::numeric) as "totalCoiins"')
+            .where('model."walletId" IN(:...ids)', { ids })
+            .andWhere(`model.type ilike '%' || :currency || '%'`, { currency: COIIN })
+            .getRawMany();
     }
 }
