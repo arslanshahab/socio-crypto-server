@@ -117,7 +117,6 @@ export class TatumClient {
             },
             headers: { "x-api-key": Secrets.tatumApiKey },
         };
-        console.log(requestData.payload);
         return await doFetch(requestData);
     };
 
