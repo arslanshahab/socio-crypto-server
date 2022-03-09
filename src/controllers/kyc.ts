@@ -10,10 +10,11 @@ import { AcuantApplication, AcuantClient } from "../clients/acuant";
 import { findKycApplication, getApplicationStatus, generateFactorsFromKYC, asyncHandler } from "../util";
 import { ApolloError } from "apollo-server-express";
 import { RAIINMAKER_ORG_NAME } from "../util/constants";
+import { KycApplication } from "../types.d";
 
 const validator = new Validator();
 
-export const verifyKyc = async (parent: any, args: any, context: { user: any }) => {
+export const verifyKyc = async (parent: any, args: { userKyc: KycApplication }, context: { user: any }) => {
     try {
         const user = await User.findUserByContext(context.user, ["profile"]);
         if (!user) throw new Error("user not found");
