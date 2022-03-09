@@ -65,7 +65,7 @@ export class AcuantClient {
             bln: vars.lastName,
             bsn: vars.billingStreetAddress,
             bco: vars.billingCountry,
-            bz: vars.billingZip,
+            bz: vars.zipCode,
             bc: vars.billingCity,
             bgd: vars.gender,
             dob: vars.dob,
