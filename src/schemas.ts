@@ -174,7 +174,6 @@ export const kycUser = {
         "billingStreetAddress",
         "billingCity",
         "billingCountry",
-        "billingZip",
         "gender",
         "dob",
         "phoneNumber",
