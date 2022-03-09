@@ -21,6 +21,7 @@ import { getTokenPriceInUsd } from "../clients/ethereum";
 import { CampaignMedia } from "../models/CampaignMedia";
 import { CampaignTemplate } from "../models/CampaignTemplate";
 import { addYears } from "date-fns";
+import { RAIINMAKER_ORG_NAME } from "../util/constants";
 import { SentryClient } from "../clients/sentry";
 import { JWTPayload } from "src/types";
 import {
@@ -335,7 +336,7 @@ export const adminUpdateCampaignStatus = async (
     context: { user: any }
 ) => {
     try {
-        checkPermissions({ restrictCompany: "raiinmaker" }, context);
+        checkPermissions({ restrictCompany: RAIINMAKER_ORG_NAME }, context);
         const { status, campaignId } = args;
         const campaign = await Campaign.findOne({
             where: { id: campaignId },
@@ -406,7 +407,7 @@ export const adminListPendingCampaigns = async (
     context: { user: any }
 ) => {
     try {
-        checkPermissions({ restrictCompany: "raiinmaker" }, context);
+        checkPermissions({ restrictCompany: RAIINMAKER_ORG_NAME }, context);
         const { skip = 0, take = 10 } = args;
         const [results, total] = await Campaign.adminListCampaignsByStatus(skip, take);
         return { results: results.map(async (result) => await result.asV1()), total };

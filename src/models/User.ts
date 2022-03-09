@@ -27,11 +27,12 @@ import { Admin } from "./Admin";
 import { ExternalAddress } from "./ExternalAddress";
 import { KycStatus, RewardType } from "../types";
 import { VerificationApplication } from "./VerificationApplication";
-import { WalletCurrency } from "./WalletCurrency";
-import { differenceInMonths } from "date-fns";
-import { Transfer } from "./Transfer";
 import { JWTPayload } from "src/types";
 import { XoxodayOrder } from "./XoxodayOrder";
+import { differenceInHours } from "date-fns";
+import { Transfer } from "./Transfer";
+import { TatumClient } from "../clients/tatumClient";
+import { Org } from "./Org";
 import { COIIN, REWARD_AMOUNTS } from "../util/constants";
 import { Campaign } from "./Campaign";
 
@@ -112,18 +113,14 @@ export class User extends BaseEntity {
     public static async initNewUser(email: string, password: string, username: string): Promise<User> {
         const user = new User();
         const wallet = new Wallet();
-        const coiinWallet = new WalletCurrency();
         const profile = new Profile();
         const notificationSettings = new NotificationSettings();
         user.email = email;
         user.password = password;
-        coiinWallet.type = "coiin";
-        coiinWallet.balance = new BN(0);
         await user.save();
         wallet.user = user;
         await wallet.save();
-        coiinWallet.wallet = wallet;
-        await coiinWallet.save();
+        await TatumClient.findOrCreateCurrency(COIIN, wallet);
         profile.username = username;
         profile.user = user;
         await profile.save();
@@ -197,19 +194,62 @@ export class User extends BaseEntity {
     }
 
     public async updateCoiinBalance(operation: "ADD" | "SUBTRACT", amount: number): Promise<any> {
-        let user: User | undefined = this;
-        if (!user.wallet || !user.wallet.walletCurrency) {
-            user = await User.findOne({ where: { id: this.id }, relations: ["wallet", "wallet.walletCurrency"] });
-        }
-        if (user) {
-            const coiinBalance = user.wallet.walletCurrency.find((item) => item.type.toLowerCase() === "coiin");
-            if (coiinBalance) {
-                coiinBalance.balance =
-                    operation === "ADD" ? coiinBalance.balance.plus(amount) : coiinBalance.balance.minus(amount);
-                return coiinBalance.save();
-            }
+        const user = this;
+        const wallet = await Wallet.findOne({ where: { user } });
+        if (!wallet) throw new Error("User wallet not found");
+        const raiinmakerCurrency = await Org.getCurrencyForRaiinmaker(COIIN);
+        const userCurrency = await TatumClient.findOrCreateCurrency(COIIN, wallet);
+        const senderId = operation === "ADD" ? raiinmakerCurrency.tatumId : userCurrency.tatumId;
+        const receipientId = operation === "ADD" ? userCurrency.tatumId : raiinmakerCurrency.tatumId;
+        try {
+            await TatumClient.transferFunds({
+                senderAccountId: senderId,
+                recipientAccountId: receipientId,
+                amount: amount.toString(),
+                recipientNote: "USER-BALANCE-UPDATES",
+            });
+        } catch (error) {
+            console.log(error);
         }
     }
+
+    public transferCoiinReward = async (data: { type: RewardType; campaign?: Campaign }): Promise<any> => {
+        const user = this;
+        const { type, campaign } = data;
+        const wallet = await Wallet.findOne({ where: { user } });
+        if (!wallet) throw new Error("User wallet not found");
+        let accountAgeInHours = 0,
+            thisWeeksReward;
+        if (type === "LOGIN_REWARD") accountAgeInHours = differenceInHours(new Date(), new Date(user.createdAt));
+        if (type === "LOGIN_REWARD" || type === "PARTICIPATION_REWARD")
+            thisWeeksReward = await Transfer.getRewardForThisWeek(wallet, type);
+        const amount = REWARD_AMOUNTS[type] || 0;
+        const raiinmakerCurrency = await Org.getCurrencyForRaiinmaker(COIIN);
+        const userCurrency = await TatumClient.findOrCreateCurrency(COIIN, wallet);
+        if (
+            (type === "LOGIN_REWARD" && accountAgeInHours > 24 && !thisWeeksReward) ||
+            (type === "PARTICIPATION_REWARD" && !thisWeeksReward) ||
+            type === "REGISTRATION_REWARD"
+        ) {
+            try {
+                await TatumClient.transferFunds({
+                    senderAccountId: raiinmakerCurrency.tatumId,
+                    recipientAccountId: userCurrency.tatumId,
+                    amount: amount.toString(),
+                    recipientNote: "WEEKLY-REWARD",
+                });
+            } catch (error) {
+                console.log(error);
+            }
+            await Transfer.newReward({
+                wallet,
+                type,
+                symbol: COIIN,
+                amount: new BN(amount),
+                campaign,
+            });
+        }
+    };
 
     public async updateKycStatus(status: KycStatus) {
         if (this.kycStatus !== status && this.kycStatus !== "APPROVED") {
@@ -256,33 +296,6 @@ export class User extends BaseEntity {
         }
         return user;
     }
-
-    public transferReward = async (data: { type: RewardType; campaign?: Campaign }): Promise<any> => {
-        const user = this;
-        const { type, campaign } = data;
-        const wallet = await Wallet.findOne({ where: { user } });
-        if (!wallet) throw new Error("User wallet not found");
-        let accountAgeInHours = 0,
-            thisWeeksReward;
-        if (type === "LOGIN_REWARD") accountAgeInHours = differenceInMonths(new Date(), new Date(user.createdAt));
-        if (type === "LOGIN_REWARD" || type === "PARTICIPATION_REWARD")
-            thisWeeksReward = await Transfer.getRewardForThisWeek(wallet, type);
-        const amount = REWARD_AMOUNTS[type] || 1;
-        if (
-            (type === "LOGIN_REWARD" && accountAgeInHours > 24 && !thisWeeksReward) ||
-            (type === "PARTICIPATION_REWARD" && !thisWeeksReward) ||
-            type === "REGISTRATION_REWARD"
-        ) {
-            await user.updateCoiinBalance("ADD", amount);
-            await Transfer.newReward({
-                wallet,
-                type,
-                symbol: COIIN,
-                amount: new BN(amount),
-                campaign,
-            });
-        }
-    };
 
     public static async getUsersForDailyMetricsCron(): Promise<User[]> {
         return await this.createQueryBuilder("user")

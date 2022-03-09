@@ -15,8 +15,8 @@ import { HourlyCampaignMetric } from "./HourlyCampaignMetric";
 import { CampaignStatus } from "../types";
 import { Wallet } from "./Wallet";
 import { TatumClient } from "../clients/tatumClient";
-import { WalletCurrency } from "./WalletCurrency";
 import { Currency } from "./Currency";
+import { RAIINMAKER_ORG_NAME } from "../util/constants";
 
 @Entity()
 export class Org extends BaseEntity {
@@ -153,13 +153,10 @@ export class Org extends BaseEntity {
         try {
             let org: Org | undefined = this;
             if (!org) throw new Error("org not found");
-            const wallet = await Wallet.findOne({ where: { org: org } });
-            const walletCurrency = await WalletCurrency.findOne({
-                where: { wallet, type: symbol.toLowerCase() },
+            const currency = await Currency.findOne({
+                where: { wallet: await Wallet.findOne({ where: { org: org } }), symbol },
             });
-            if (walletCurrency) return walletCurrency.balance.toNumber();
-            const currency = await Currency.findOne({ where: { wallet, symbol } });
-            if (!currency) throw new Error("Tatum account not found for org");
+            if (!currency) throw new Error("Tatum account not found for org.");
             const tatumBalance = await TatumClient.getAccountBalance(currency.tatumId);
             return parseFloat(tatumBalance.availableBalance || "0");
         } catch (error) {
@@ -167,4 +164,10 @@ export class Org extends BaseEntity {
             throw new Error(error.message);
         }
     }
+
+    public static getCurrencyForRaiinmaker = async (symbol: string) => {
+        const raiinmakerOrg = await Org.findOne({ where: { name: RAIINMAKER_ORG_NAME }, relations: ["wallet"] });
+        if (!raiinmakerOrg) throw new Error(`Org not found for ${RAIINMAKER_ORG_NAME}.`);
+        return await TatumClient.findOrCreateCurrency(symbol, raiinmakerOrg.wallet);
+    };
 }

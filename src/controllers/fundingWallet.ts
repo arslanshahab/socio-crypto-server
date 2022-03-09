@@ -1,6 +1,5 @@
 import { Admin } from "../models/Admin";
 import { TatumClient } from "../clients/tatumClient";
-import { WalletCurrency } from "../models/WalletCurrency";
 import { Wallet } from "../models/Wallet";
 import { Currency } from "../models/Currency";
 import { Transfer } from "../models/Transfer";
@@ -14,14 +13,9 @@ export const get = async (parent: any, args: any, context: { user: any }) => {
             relations: ["org"],
         });
         if (!admin) throw new Error("Admin not found");
-        const org = admin.org;
-        if (!org) throw Error("org not found");
-        const wallet = await Wallet.findOne({ where: { org: org } });
-        const coiinCurrency = await WalletCurrency.findOne({
-            where: { wallet: wallet, type: "coiin" },
-        });
+        if (!admin.org) throw Error("Org not found");
+        const wallet = await Wallet.findOne({ where: { org: admin.org } });
         const currencies = await Currency.find({ where: { wallet: wallet } });
-
         const balances = await TatumClient.getBalanceForAccountList(currencies);
         let allCurrencies = currencies.map((currencyItem) => {
             const balance = balances.find((balanceItem) => currencyItem.tatumId === balanceItem.tatumId);
@@ -29,20 +23,14 @@ export const get = async (parent: any, args: any, context: { user: any }) => {
                 balance: balance.availableBalance,
                 type: currencyItem.symbol,
                 symbolImageUrl: getCryptoAssestImageUrl(currencyItem.symbol),
+                network: TatumClient.getBaseChain(currencyItem.symbol) || "",
             };
         });
-        if (coiinCurrency) {
-            allCurrencies.unshift({
-                type: coiinCurrency.type.toUpperCase() || "",
-                balance: coiinCurrency.balance.toString() || "",
-                symbolImageUrl: getCryptoAssestImageUrl(coiinCurrency.type) || "COIIN",
-            });
-        }
         return {
             currency: allCurrencies,
         };
     } catch (error) {
-        throw new Error("Something went wrong with your request. please try again!");
+        throw new Error(error.message);
     }
 };
 export const transactionHistory = async (parent: any, args: any, context: { user: any }) => {

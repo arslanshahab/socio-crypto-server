@@ -12,6 +12,7 @@ import { CustodialAddress } from "../models/CustodialAddress";
 import { CustodialAddressChain } from "src/types";
 import { Wallet } from "../models/Wallet";
 import { Org } from "../models/Org";
+import { RAIINMAKER_ORG_NAME } from "../util/constants";
 import { Verification } from "../models/Verification";
 import { SentryClient } from "../clients/sentry";
 
@@ -171,7 +172,12 @@ export const transferBalance = asyncHandler(async (req: Request, res: Response) 
     try {
         const { toAccount, fromAccount, amount, note, token } = req.body;
         if (!token || token !== process.env.RAIINMAKER_DEV_TOKEN) throw new Error("Invalid Token");
-        const data = await TatumClient.transferFunds(fromAccount, toAccount, amount, note);
+        const data = await TatumClient.transferFunds({
+            senderAccountId: fromAccount,
+            recipientAccountId: toAccount,
+            amount: amount,
+            recipientNote: note,
+        });
         res.status(200).json(data);
     } catch (error) {
         SentryClient.captureException(error);
@@ -198,19 +204,17 @@ export const getDepositAddress = async (parent: any, args: { symbol: string }, c
         const { id } = context.user;
         const admin = await Admin.findOne({ where: { firebaseId: id }, relations: ["org", "org.wallet"] });
         if (!admin) throw new Error("Admin not found!");
-        let { symbol } = args;
-        symbol = symbol.toUpperCase();
-        if (!symbol) throw new Error("Currency not supported");
-        const fromTatum = await TatumClient.isCurrencySupported(symbol);
-        let ledgerAccount;
-        if (fromTatum) ledgerAccount = await TatumClient.findOrCreateCurrency(symbol, admin.org.wallet);
+        const symbol = args.symbol.toUpperCase();
+        if (!TatumClient.isCurrencySupported(symbol)) throw new Error("Currency not supported");
+        const ledgerAccount = await TatumClient.findOrCreateCurrency(symbol, admin.org.wallet);
+        if (!ledgerAccount) throw new Error("Ledger account not found.");
         return {
             symbol,
-            address: ledgerAccount?.depositAddress || process.env.ETHEREUM_DEPOSIT_ADDRESS,
-            fromTatum,
-            destinationTag: ledgerAccount?.destinationTag || "",
-            memo: ledgerAccount?.memo || "",
-            message: ledgerAccount?.message || "",
+            address: ledgerAccount.depositAddress,
+            fromTatum: TatumClient.isCurrencySupported(symbol),
+            destinationTag: ledgerAccount.destinationTag,
+            memo: ledgerAccount.memo,
+            message: ledgerAccount.message,
         };
     } catch (error) {
         SentryClient.captureException(error);
@@ -234,12 +238,14 @@ export const withdrawFunds = async (
         if (!userCurrency) throw new Error(`User wallet not found for currency ${symbol}`);
         const userAccountBalance = await TatumClient.getAccountBalance(userCurrency.tatumId);
         if (parseFloat(userAccountBalance.availableBalance) < amount)
-            throw new Error(`Not enough funds in user account`);
+            throw new Error("Not enough balance in user account to perform withdraw.");
         if (!userCurrency) throw new Error("Tatum account not found for user.");
         const custodialAddress = await CustodialAddress.findOne({
             where: {
                 chain: TatumClient.getBaseChain(symbol),
-                wallet: await Wallet.findOne({ where: { org: await Org.findOne({ where: { name: "raiinmaker" } }) } }),
+                wallet: await Wallet.findOne({
+                    where: { org: await Org.findOne({ where: { name: RAIINMAKER_ORG_NAME } }) },
+                }),
             },
         });
         if (TatumClient.isCustodialWallet(symbol) && !custodialAddress)

@@ -24,7 +24,7 @@ import { serverBaseUrl } from "../config";
 import { Request, Response, NextFunction } from "express";
 import { BigNumber } from "bignumber.js";
 import { Factor } from "../models/Factor";
-import { CRYPTO_ICONS_MAP, CRYPTO_ICONS_BUCKET_URL } from "./constants";
+import { CRYPTO_ICONS_MAP, CRYPTO_ICONS_BUCKET_URL, COIIN } from "./constants";
 
 // general helper functions start here
 export const isSupportedCurrency = async (symbol: string): Promise<boolean> => {
@@ -35,8 +35,11 @@ export const isSupportedCurrency = async (symbol: string): Promise<boolean> => {
 
 export const getMinWithdrawableAmount = async (symbol: string) => {
     symbol = symbol.toLowerCase();
-    const minLimit = process.env.MIN_WITHDRAW_LIMIT ? parseFloat(process.env.MIN_WITHDRAW_LIMIT) : 250;
-    const marketRate = await getExchangeRateForCrypto(symbol);
+    const minLimit = parseFloat(process?.env?.MIN_WITHDRAW_LIMIT || "100");
+    const marketRate =
+        symbol.toLocaleLowerCase() === COIIN.toLowerCase()
+            ? parseFloat(process.env.COIIN_VALUE || "0")
+            : await getExchangeRateForCrypto(symbol);
     return (1 / marketRate) * minLimit;
 };
 

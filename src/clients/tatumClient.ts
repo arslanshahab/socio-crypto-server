@@ -39,7 +39,7 @@ import { sleep } from "../controllers/helpers";
 import { Wallet } from "../models/Wallet";
 import { CustodialAddress } from "../models/CustodialAddress";
 import { formatFloat } from "../util/index";
-
+import { COIIN, MATIC } from "../util/constants";
 export const CAMPAIGN_CREATION_AMOUNT = "CAMPAIGN_CREATION_AMOUNT";
 export const CAMPAIGN_FEE = "CAMPAIGN_FEE";
 export const CAMPAIGN_REWARD = "CAMPAIGN_REWARD";
@@ -200,7 +200,7 @@ export class TatumClient {
         try {
             if (!TatumClient.isCurrencySupported(symbol)) throw new Error(`Currency ${symbol} is not supported`);
             if (TatumClient.isCustodialWallet(symbol)) symbol = TatumClient.getBaseChain(symbol);
-            return Boolean(await TatumWallet.findOne({ where: { currency: symbol, enabled: true } }));
+            return Boolean(await TatumWallet.findOne({ where: { currency: symbol } }));
         } catch (error) {
             console.log(error);
             throw new Error(error.message);
@@ -215,7 +215,7 @@ export class TatumClient {
             if (TatumClient.isCustodialWallet(symbol)) symbol = TatumClient.getBaseChain(symbol);
             const keys = await S3Client.getTatumWalletKeys(symbol);
             const walletKeys = { ...keys, walletAddress: keys.address };
-            const dbWallet = await TatumWallet.findOne({ where: { currency: symbol, enabled: true } });
+            const dbWallet = await TatumWallet.findOne({ where: { currency: symbol } });
             return { ...walletKeys, currency: dbWallet?.currency, xpub: dbWallet?.xpub, address: dbWallet?.address };
         } catch (error) {
             console.log(error);
@@ -236,8 +236,10 @@ export class TatumClient {
         try {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
             const wallet = await TatumClient.getWallet(currency);
+            if (currency === COIIN) currency = `${currency}_BSC`;
+            if (currency === MATIC) currency = `${currency}_ETH`;
             return await createAccount({
-                currency,
+                currency: currency === COIIN ? `${currency}_BSC` : currency,
                 ...(!isCustodial && { xpub: wallet?.xpub || wallet?.address }),
             });
         } catch (error) {
@@ -284,15 +286,15 @@ export class TatumClient {
         }
     };
 
-    public static transferFunds = async (
-        senderAccountId: string,
-        recipientAccountId: string,
-        amount: string,
-        recipientNote: string
-    ) => {
+    public static transferFunds = async (data: {
+        senderAccountId: string;
+        recipientAccountId: string;
+        amount: string;
+        recipientNote: string;
+    }) => {
         try {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
-            return await storeTransaction({ senderAccountId, recipientAccountId, amount, recipientNote });
+            return await storeTransaction(data);
         } catch (error) {
             console.log(error?.response?.data || error.message);
             throw new Error(error?.response?.data?.message || error.message);
@@ -350,6 +352,8 @@ export class TatumClient {
             const payload = { ...wallet, ...data };
             const chain = TatumClient.getBaseChain(payload.currency.symbol);
             const { withdrawAbleAmount, fee } = await adjustWithdrawableAmount(payload);
+            if (parseFloat(withdrawAbleAmount) <= 0)
+                throw new Error("Not enough balance in user account to pay gas fee.");
             const body = {
                 ...payload,
                 amount: withdrawAbleAmount,
@@ -388,10 +392,14 @@ export class TatumClient {
             };
             const withdrawTX = await callWithdrawMethod();
             if (TatumClient.isSubCustodialToken(data.currency.symbol)) {
-                await transferFundsToRaiinmaker({
-                    currency: payload.currency,
-                    amount: (parseFloat(data.amount) - parseFloat(withdrawAbleAmount)).toString(),
-                });
+                try {
+                    await transferFundsToRaiinmaker({
+                        currency: payload.currency,
+                        amount: (parseFloat(data.amount) - parseFloat(withdrawAbleAmount)).toFixed(2),
+                    });
+                } catch (error) {
+                    console.log(error);
+                }
             }
             return withdrawTX;
         } catch (error) {
@@ -484,10 +492,8 @@ export class TatumClient {
                 amount: data.amount,
                 fee: data.fee,
             });
-            console.log("ledger TX ---- ", ledgerTX);
             try {
                 const offchainTX = await TatumClient.prepareTransferFromCustodialWallet(data);
-                console.log("blockchain TX ---- ", offchainTX);
                 await offchainCompleteWithdrawal(ledgerTX.id, offchainTX.txId);
                 return offchainTX;
             } catch (error) {
@@ -544,6 +550,7 @@ export class TatumClient {
                 }
                 ledgerAccount = await Currency.addAccount({
                     ...newLedgerAccount,
+                    currency: symbol,
                     ...(newDepositAddress && { address: newDepositAddress.address }),
                     wallet,
                 });

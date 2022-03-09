@@ -138,7 +138,6 @@ export class Xoxoday {
                 headers: { Authorization: "Bearer " + authData.access_token },
             };
             const response = await doFetch(requestData);
-            console.log(response);
             return response?.data?.getVouchers?.data;
         } catch (error) {
             console.log(error);

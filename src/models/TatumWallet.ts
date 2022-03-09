@@ -9,9 +9,6 @@ export class TatumWallet extends BaseEntity {
     public currency: string;
 
     @Column({ nullable: false })
-    public enabled: boolean;
-
-    @Column({ nullable: false })
     public xpub: string;
 
     @Column({ nullable: false })
@@ -31,7 +28,6 @@ export class TatumWallet extends BaseEntity {
 
     public static async addTatumWallet(data: any): Promise<TatumWallet> {
         let account = new TatumWallet();
-        account.enabled = true;
         account.currency = data.currency || "";
         account.xpub = data.xpub || "";
         account.address = data.address || "";
