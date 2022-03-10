@@ -15,6 +15,7 @@ import { downloadMedia } from "../util";
 import { JWTPayload, SocialType } from "src/types";
 import { FormattedError, GLOBAL_CAMPAIGN_NOT_FOUND, USER_NOT_FOUND } from "../util/errors";
 import { TatumClient } from "../clients/tatumClient";
+import { COIIN } from "../util/constants";
 
 export const allowedSocialLinks = ["twitter", "facebook", "tiktok"];
 
@@ -235,7 +236,7 @@ export const postContentGlobally = async (
         const user = await User.findUserByContext(context.user, ["socialLinks", "wallet"]);
         if (!user) throw new Error(USER_NOT_FOUND);
         const globalCampaign = await Campaign.findOne({
-            where: { isGlobal: true, symbol: "COIIN" },
+            where: { isGlobal: true, symbol: COIIN },
             relations: ["org"],
         });
         if (!globalCampaign) throw new Error(GLOBAL_CAMPAIGN_NOT_FOUND);
