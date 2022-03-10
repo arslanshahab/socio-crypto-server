@@ -239,6 +239,7 @@ export const typeDefs = gql`
         getDashboardMetrics(campaignId: String, skip: Int, take: Int): DashboardMetrics
         transactionHistory: [Transfer]
         getCampaignParticipants(campaignId: String): [Participant]
+        getNotificationSettings: NotificationSettings
     }
 
     type DashboardMetrics {
@@ -451,10 +452,10 @@ export const typeDefs = gql`
     }
 
     type NotificationSettings {
-        kyc: Boolean
-        withdraw: Boolean
-        campaignCreate: Boolean
-        campaignUpdates: Boolean
+        kyc: Boolean!
+        withdraw: Boolean!
+        campaignCreate: Boolean!
+        campaignUpdates: Boolean!
     }
 
     type FundingWallet {
