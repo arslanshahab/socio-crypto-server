@@ -306,7 +306,7 @@ const generateDocumentValidityFactor = (docValidityEtr: Etr, docExpirationEtr: E
 };
 
 const generateAddressFactor = (addressEtr: Etr) => {
-    if (!addressEtr || addressEtr.test !== "dv:14") return null;
+    if (!addressEtr?.test || !addressEtr?.details || addressEtr.test !== "dv:14") return null;
     return addressEtr.details;
 };
 
