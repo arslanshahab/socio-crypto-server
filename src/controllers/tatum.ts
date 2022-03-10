@@ -216,6 +216,8 @@ export const withdrawFunds = async (
     try {
         const user = await User.findUserByContext(context.user, ["wallet"]);
         if (!user) throw new Error("User not found");
+        if (user.kycStatus !== "APPROVED")
+            throw new Error("You need to get your KYC approved before you can withdraw.");
         let { symbol, address, amount, verificationToken } = args;
         symbol = symbol.toUpperCase();
         if (!(await TatumClient.isCurrencySupported(symbol))) throw new Error(`currency ${symbol} is not supported`);
