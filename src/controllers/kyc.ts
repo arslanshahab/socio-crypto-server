@@ -62,14 +62,12 @@ export const downloadKyc = async (parent: any, args: any, context: { user: any }
 
 export const kycWebhook = asyncHandler(async (req: Request, res: Response) => {
     const kyc: AcuantApplication = req.body;
-    console.log("KYC CALLBACK EXECUTION - BODY: ", req.body);
-    console.log("KYC CALLBACK EXECUTION - QUERY: ", req.query);
     const status = getApplicationStatus(kyc);
     const verificationApplication = await VerificationApplication.findOne({ where: { applicationId: kyc.mtid } });
     if (!verificationApplication) throw new Error("application not found");
-    const user = await User.findOne({ where: { id: verificationApplication.user } });
+    const user = await User.findOne({ where: { id: verificationApplication.user.id } });
     if (!user) throw new Error("user not found");
-    if (status === "PENDING") res.json({ succes: false });
+    if (status === "PENDING") res.json({ success: false });
     if (status === "APPROVED") {
         await S3Client.uploadAcuantKyc(user.id, kyc);
         await verificationApplication.updateStatus(status);
