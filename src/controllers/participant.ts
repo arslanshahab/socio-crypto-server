@@ -14,7 +14,6 @@ import { getDatesBetweenDates, formatUTCDateForComparision } from "./helpers";
 import { HourlyCampaignMetric } from "../models/HourlyCampaignMetric";
 import { QualityScore } from "../models/QualityScore";
 import { limit } from "../util/rateLimiter";
-import { SentryClient } from "../clients/sentry";
 import { FormattedError } from "../util/errors";
 
 const { RATE_LIMIT_MAX = "3", RATE_LIMIT_WINDOW = "1m" } = process.env;
