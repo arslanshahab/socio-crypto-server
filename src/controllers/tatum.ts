@@ -14,7 +14,6 @@ import { Wallet } from "../models/Wallet";
 import { Org } from "../models/Org";
 import { RAIINMAKER_ORG_NAME } from "../util/constants";
 import { Verification } from "../models/Verification";
-import { SentryClient } from "../clients/sentry";
 
 export const initWallet = asyncHandler(async (req: Request, res: Response) => {
     try {
@@ -33,7 +32,6 @@ export const initWallet = asyncHandler(async (req: Request, res: Response) => {
         });
         res.status(200).json(wallet);
     } catch (error) {
-        SentryClient.captureException(error);
         res.status(403).json(error.message);
     }
 });
@@ -55,7 +53,6 @@ export const saveWallet = asyncHandler(async (req: Request, res: Response) => {
         });
         res.status(200).json(wallet);
     } catch (error) {
-        SentryClient.captureException(error);
         res.status(403).json(error.message);
     }
 });
@@ -70,7 +67,6 @@ export const generateCustodialAddresses = asyncHandler(async (req: Request, res:
         await CustodialAddress.saveAddresses(list, TatumClient.getBaseChain(currency) as CustodialAddressChain);
         res.status(200).json(list);
     } catch (error) {
-        SentryClient.captureException(error);
         res.status(403).json(error.message);
     }
 });
@@ -89,7 +85,6 @@ export const getAccountTransactions = asyncHandler(async (req: Request, res: Res
         );
         res.status(200).json(transactions);
     } catch (error) {
-        SentryClient.captureException(error);
         res.status(200).json(error.message);
     }
 });
@@ -101,7 +96,6 @@ export const getAccountBalance = asyncHandler(async (req: Request, res: Response
         const balance = await TatumClient.getAccountBalance(accountId);
         res.status(200).json(balance);
     } catch (error) {
-        SentryClient.captureException(error);
         res.status(200).json(error.message);
     }
 });
@@ -115,7 +109,6 @@ export const createTatumAccount = asyncHandler(async (req: Request, res: Respons
         const tatumCurrency = await TatumClient.findOrCreateCurrency(symbol, user.wallet);
         res.status(200).json(tatumCurrency);
     } catch (error) {
-        SentryClient.captureException(error);
         res.status(200).json(error.message);
     }
 });
@@ -127,7 +120,6 @@ export const listBlockedAmounts = asyncHandler(async (req: Request, res: Respons
         const list = await TatumClient.getBlockedBalanceForAccount(accountId, pageSize, offset);
         res.status(200).json(list);
     } catch (error) {
-        SentryClient.captureException(error);
         res.status(200).json(error.message);
     }
 });
@@ -139,7 +131,6 @@ export const unblockAccountBalance = asyncHandler(async (req: Request, res: Resp
         await TatumClient.unblockAccountBalance(id);
         res.status(200).json({ success: true });
     } catch (error) {
-        SentryClient.captureException(error);
         res.status(200).json(error.message);
     }
 });
@@ -151,7 +142,6 @@ export const blockAccountBalance = asyncHandler(async (req: Request, res: Respon
         const blockedAmount = await TatumClient.blockAccountBalance(id, amount, blockageKey);
         res.status(200).json(blockedAmount);
     } catch (error) {
-        SentryClient.captureException(error);
         res.status(200).json(error.message);
     }
 });
@@ -163,7 +153,6 @@ export const getAllWithdrawls = asyncHandler(async (req: Request, res: Response)
         const list = await TatumClient.listWithdrawls(status, currency, pageSize, offset);
         res.status(200).json(list);
     } catch (error) {
-        SentryClient.captureException(error);
         res.status(200).json(error.message);
     }
 });
@@ -180,7 +169,6 @@ export const transferBalance = asyncHandler(async (req: Request, res: Response) 
         });
         res.status(200).json(data);
     } catch (error) {
-        SentryClient.captureException(error);
         res.status(200).json(error.message);
     }
 });
@@ -194,7 +182,6 @@ export const getSupportedCurrencies = async (parent: any, args: any, context: { 
         supportedCurrencies.unshift("COIIN");
         return supportedCurrencies;
     } catch (error) {
-        SentryClient.captureException(error);
         throw new ApolloError(error.message);
     }
 };
@@ -217,7 +204,6 @@ export const getDepositAddress = async (parent: any, args: { symbol: string }, c
             message: ledgerAccount.message,
         };
     } catch (error) {
-        SentryClient.captureException(error);
         throw new ApolloError(error.message);
     }
 };
@@ -273,7 +259,6 @@ export const withdrawFunds = async (
             message: "Withdraw completed successfully",
         };
     } catch (error) {
-        SentryClient.captureException(error);
         throw new ApolloError(error.message);
     }
 };
