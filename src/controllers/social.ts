@@ -232,7 +232,7 @@ export const postContentGlobally = async (
     try {
         if (!allowedSocialLinks.includes(args.socialType))
             throw new ApolloError(`posting to ${args.socialType} is not allowed`);
-        const user = await User.findUserByContext(context.user, ["socialLinks"]);
+        const user = await User.findUserByContext(context.user, ["socialLinks", "wallet"]);
         if (!user) throw new Error(USER_NOT_FOUND);
         const globalCampaign = await Campaign.findOne({
             where: { isGlobal: true, symbol: "COIIN" },
