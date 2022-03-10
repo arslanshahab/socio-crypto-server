@@ -1,4 +1,13 @@
-import { BaseEntity, Column, Entity, ManyToOne, OneToMany, PrimaryColumn } from "typeorm";
+import {
+    BaseEntity,
+    Column,
+    Entity,
+    ManyToOne,
+    OneToMany,
+    PrimaryColumn,
+    CreateDateColumn,
+    UpdateDateColumn,
+} from "typeorm";
 import { User } from "./User";
 import { FactorLink } from "./FactorLink";
 import { KycStatus } from "src/types";
@@ -16,6 +25,12 @@ export class VerificationApplication extends BaseEntity {
 
     @OneToMany((_type) => FactorLink, (factor) => factor.verification)
     public factors: FactorLink[];
+
+    @CreateDateColumn()
+    public createdAt: Date;
+
+    @UpdateDateColumn()
+    public updatedAt: Date;
 
     public static async newApplication(id: string, status: KycStatus, user: User) {
         const app = new VerificationApplication();
