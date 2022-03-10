@@ -46,3 +46,22 @@ export const REWARD_AMOUNTS: { [key: string]: number } = {
     REGISTRATION_REWARD: REGISTRATION_REWARD_AMOUNT,
     SHARING_REWARD: SHARING_REWARD_AMOUNT,
 };
+export const KYC_APPROVAL_MESSAGE_TITLE = "Your KYC application has been approved!";
+export const KYC_PENDING_MESSAGE_TITLE = "Your KYC application has been submitted!";
+export const KYC_REJECTED_MESSAGE_TITLE = "Your KYC application has been rejected!";
+export const KYC_APPROVAL_MESSAGE_BODY = "You are now elligible for some extra features like withdraws above $600.";
+export const KYC_PENDING_MESSAGE_BODY = "We will update you once application's status changes.";
+export const KYC_REJECTED_MESSAGE_BODY =
+    "Please contact our support to find out reason. You will have to re-apply for KYC with more precise details.";
+
+export const KYC_NOTIFICATION_TITLE: { [key: string]: string } = {
+    APPROVED: KYC_APPROVAL_MESSAGE_TITLE,
+    PENDING: KYC_PENDING_MESSAGE_TITLE,
+    REJECTED: KYC_REJECTED_MESSAGE_TITLE,
+};
+
+export const KYC_NOTIFICATION_BODY: { [key: string]: string } = {
+    APPROVED: KYC_APPROVAL_MESSAGE_BODY,
+    PENDING: KYC_PENDING_MESSAGE_BODY,
+    REJECTED: KYC_REJECTED_MESSAGE_BODY,
+};

@@ -5,6 +5,7 @@ import { Secrets } from "../util/secrets";
 import { paginateList } from "../util";
 import { RequestData, doFetch } from "../util/fetchRequest";
 import { KycStatus } from "src/types";
+import { KYC_NOTIFICATION_TITLE, KYC_NOTIFICATION_BODY } from "../util/constants";
 
 interface FirebaseUserLoginResponse {
     kind: string;
@@ -20,17 +21,6 @@ interface FirebaseUserLoginResponse {
 export class Firebase {
     public static adminClient: admin.app.App;
     public static baseUrl = "https://identitytoolkit.googleapis.com";
-    public static kycNotificationTitle: { [key: string]: string } = {
-        APPROVED: "Your KYC application has been approved!",
-        PENDING: "Your KYC application has been submitted!",
-        REJECTED: "Your KYC application has been rejected!",
-    };
-
-    public static kycNotificationBody: { [key: string]: string } = {
-        APPROVED: "You are now elligible for some extra features like withdraws above $600.",
-        PENDING: "We will update you once application's status changes.",
-        REJECTED: "You have to re-apply KYC with more precise details.",
-    };
 
     public static initialize() {
         Firebase.adminClient = admin.initializeApp({
@@ -248,8 +238,8 @@ export class Firebase {
     }
 
     public static async sendKycVerificationUpdate(token: string, status: KycStatus) {
-        const title = Firebase.kycNotificationTitle[status];
-        const body = Firebase.kycNotificationBody[status];
+        const title = KYC_NOTIFICATION_TITLE[status];
+        const body = KYC_NOTIFICATION_BODY[status];
         const message: admin.messaging.Message = {
             notification: {
                 title,
