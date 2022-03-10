@@ -10,26 +10,30 @@ import { AcuantApplication, AcuantClient } from "../clients/acuant";
 import { findKycApplication, getApplicationStatus, generateFactorsFromKYC, asyncHandler } from "../util";
 import { ApolloError } from "apollo-server-express";
 import { RAIINMAKER_ORG_NAME } from "../util/constants";
+import { KycApplication } from "../types.d";
 
 const validator = new Validator();
 
-export const verifyKyc = async (parent: any, args: any, context: { user: any }) => {
+export const verifyKyc = async (parent: any, args: { userKyc: KycApplication }, context: { user: any }) => {
     try {
         const user = await User.findUserByContext(context.user, ["profile"]);
         if (!user) throw new Error("user not found");
-        if (user.kycStatus === "APPROVED") throw new Error("user is already kyc verified");
         const currentKycApplication = await findKycApplication(user);
-        if (currentKycApplication) return currentKycApplication;
-        const { userKyc } = args;
-        validator.validateKycRegistration(userKyc);
-        const newAcuantApplication = await AcuantClient.submitApplication(userKyc);
-        console.log(newAcuantApplication);
+        if (user.kycStatus === "APPROVED" || currentKycApplication) return currentKycApplication;
+        validator.validateKycRegistration(args.userKyc);
+        const newAcuantApplication = await AcuantClient.submitApplication(args.userKyc);
+        const status = getApplicationStatus(newAcuantApplication);
+        if (status === "REJECTED") {
+            Firebase.sendKycVerificationUpdate(user?.profile?.deviceToken || "", status);
+            return { kycId: newAcuantApplication.mtid, status };
+        }
         const verificationApplication = await VerificationApplication.newApplication(
             newAcuantApplication.mtid,
-            getApplicationStatus(newAcuantApplication),
+            status,
             user
         );
         await user.updateKycStatus(verificationApplication.status);
+        Firebase.sendKycVerificationUpdate(user?.profile?.deviceToken || "", status);
         return { kycId: verificationApplication.applicationId, status: verificationApplication.status };
     } catch (error) {
         console.log("KYC_ERROR", error);
@@ -73,7 +77,7 @@ export const kycWebhook = asyncHandler(async (req: Request, res: Response) => {
         await VerificationApplication.remove(verificationApplication);
         await user.updateKycStatus("");
     }
-    await Firebase.sendKycVerificationUpdate(user.profile.deviceToken, status);
+    await Firebase.sendKycVerificationUpdate(user?.profile?.deviceToken || "", status);
     res.json({ success: true });
 });
 

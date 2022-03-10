@@ -22,7 +22,6 @@ import { CampaignMedia } from "../models/CampaignMedia";
 import { CampaignTemplate } from "../models/CampaignTemplate";
 import { addYears } from "date-fns";
 import { RAIINMAKER_ORG_NAME } from "../util/constants";
-import { SentryClient } from "../clients/sentry";
 import { JWTPayload } from "src/types";
 import {
     ERROR_CALCULATING_TIER,
@@ -390,7 +389,6 @@ export const listCampaigns = async (parent: any, args: ListCampaignsVariables, c
         const data = results.map(async (result) => await result.asV2());
         return { results: data, total };
     } catch (error) {
-        SentryClient.captureException(error);
         throw new Error("Something went wrong with your request. please try again!");
     }
 };
@@ -412,7 +410,6 @@ export const adminListPendingCampaigns = async (
         const [results, total] = await Campaign.adminListCampaignsByStatus(skip, take);
         return { results: results.map(async (result) => await result.asV1()), total };
     } catch (error) {
-        SentryClient.captureException(error);
         throw new Error("Something went wrong with your request. please try again!");
     }
 };
@@ -452,7 +449,6 @@ export const deleteCampaign = async (parent: any, args: { id: string }, context:
         await campaign.remove();
         return campaign.asV1();
     } catch (error) {
-        SentryClient.captureException(error);
         throw new Error("Something went wrong with your request. please try again!");
     }
 };
@@ -471,7 +467,6 @@ export const get = async (parent: any, args: { id: string }) => {
         });
         return campaign.asV2();
     } catch (error) {
-        SentryClient.captureException(error);
         throw new Error("Something went wrong with your request. please try again!");
     }
 };
@@ -483,7 +478,6 @@ export const publicGet = async (parent: any, args: { campaignId: string }) => {
         if (!campaign) throw new Error("campaign not found");
         return campaign.asV1();
     } catch (error) {
-        SentryClient.captureException(error);
         throw new Error("Something went wrong with your request. please try again!");
     }
 };
@@ -496,7 +490,6 @@ export const adminGetCampaignMetrics = async (parent: any, args: { campaignId: s
         if (!campaign) throw new Error("campaign not found");
         return await Campaign.getCampaignMetrics(campaignId);
     } catch (error) {
-        SentryClient.captureException(error);
         throw new Error("Something went wrong with your request. please try again!");
     }
 };
@@ -507,7 +500,6 @@ export const adminGetPlatformMetrics = async (parent: any, args: any, context: {
         const metrics = await Campaign.getPlatformMetrics();
         return metrics;
     } catch (error) {
-        SentryClient.captureException(error);
         throw new Error("Something went wrong with your request. please try again!");
     }
 };
@@ -536,7 +528,6 @@ export const adminGetHourlyCampaignMetrics = async (
         const metrics = await HourlyCampaignMetric.getDateGroupedMetrics(filter, startDate, endDate, campaign.id);
         return HourlyCampaignMetric.parseHourlyCampaignMetrics(metrics, filter, currentTotal);
     } catch (error) {
-        SentryClient.captureException(error);
         throw new Error("Something went wrong with your request. please try again!");
     }
 };
@@ -553,7 +544,6 @@ export const adminGetHourlyPlatformMetrics = async (
         const metrics = await HourlyCampaignMetric.getDateGroupedMetrics(filter, startDate, endDate);
         return HourlyCampaignMetric.parseHourlyPlatformMetrics(metrics, filter);
     } catch (error) {
-        SentryClient.captureException(error);
         throw new Error("Something went wrong with your request. please try again!");
     }
 };
@@ -620,7 +610,6 @@ export const generateCampaignAuditReport = async (
         }
         return auditReport;
     } catch (error) {
-        SentryClient.captureException(error);
         throw new Error("Something went wrong with your request. please try again!");
     }
 };
@@ -640,7 +629,6 @@ export const payoutCampaignRewards = async (parent: any, args: { campaignId: str
             message: "Campaign has been submitted for auditting",
         };
     } catch (error) {
-        SentryClient.captureException(error);
         throw new Error("Something went wrong with your request. please try again!");
     }
 };
@@ -654,7 +642,6 @@ export const listAllCampaignsForOrg = async (parent: any, args: any, context: { 
         const campaigns = await Campaign.find({ where: { org: admin.org } });
         return campaigns.map((x) => ({ id: x.id, name: x.name }));
     } catch (error) {
-        SentryClient.captureException(error);
         throw new Error("Something went wrong with your request. please try again!");
     }
 };
@@ -694,7 +681,6 @@ export const getDashboardMetrics = async (parent: any, { campaignId, skip, take 
         const aggregaredMetrics = { ...aggregatedCampaignMetrics, totalParticipants };
         return { aggregatedCampaignMetrics: aggregaredMetrics, campaignMetrics };
     } catch (error) {
-        SentryClient.captureException(error);
         throw new Error("Something went wrong with your request. please try again!");
     }
 };

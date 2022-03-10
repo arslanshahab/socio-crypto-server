@@ -363,6 +363,7 @@ export interface KycApplication {
     billingCity?: string;
     billingCountry?: string;
     billingZip?: number;
+    zipCode?: string;
     gender?: string;
     dob?: string;
     phoneNumber?: string;
