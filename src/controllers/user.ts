@@ -29,6 +29,7 @@ import { Transfer } from "../models/Transfer";
 import { RAIINMAKER_ORG_NAME } from "../util/constants";
 import { JWTPayload } from "src/types";
 import { SHARING_REWARD_AMOUNT } from "../util/constants";
+import { NotificationSettings } from "../models/NotificationSettings";
 
 export const participate = async (
     parent: any,
@@ -286,6 +287,14 @@ export const getPreviousDayMetrics = async (_parent: any, args: any, context: { 
         metrics = await groupDailyMetricsByUser(user.id, allDailyMetrics);
     }
     return metrics;
+};
+
+export const getNotificationSettings = async (parent: any, args: any, context: { user: any }) => {
+    const user = await User.findUserByContext(context.user);
+    if (!user) throw new Error("User not found.");
+    const settings = await NotificationSettings.findOne({ where: { user } });
+    if (!settings) throw new Error("No settings defined for user.");
+    return settings;
 };
 
 export const updateNotificationSettings = async (

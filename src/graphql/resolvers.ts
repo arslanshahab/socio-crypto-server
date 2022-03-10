@@ -56,6 +56,7 @@ export const resolvers = {
         getTransferHistoryV2: transferController.getTransferHistoryV2,
         downloadKyc: kycController.downloadKyc,
         getCampaignParticipants: participantController.getCampaignParticipants,
+        getNotificationSettings: userController.getNotificationSettings,
     },
     Mutation: {
         generateFactorsFromKyc: factorController.generateFactors,
