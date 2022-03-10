@@ -190,7 +190,6 @@ export const trackClickByLink = asyncHandler(async (req: Request, res: Response)
         }
         return res.redirect(campaign.target);
     } catch (error) {
-        SentryClient.captureException(error);
         throw new FormattedError(error);
     }
 });
