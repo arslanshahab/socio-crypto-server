@@ -8,7 +8,6 @@ import { FailureByDesign } from "../util/errors";
 import { WalletCurrency } from "../models/WalletCurrency";
 import { Wallet } from "../models/Wallet";
 import { RAIINMAKER_ORG_NAME } from "../util/constants";
-import { SentryClient } from "../clients/sentry";
 
 export const newOrg = async (
     parent: any,
@@ -37,7 +36,6 @@ export const newOrg = async (
         await SesClient.sendNewOrgConfirmationEmail(orgName, email, password);
         return org;
     } catch (error) {
-        SentryClient.captureException(error);
         throw new Error("Something went wrong with your request. please try again!");
     }
 };
@@ -48,7 +46,6 @@ export const listOrgs = async (parent: any, args: { skip: number; take: number }
         const orgs = await Org.listOrgs(skip, take);
         return orgs.map((org) => org.asV1());
     } catch (error) {
-        SentryClient.captureException(error);
         throw new Error("Something went wrong with your request. please try again!");
     }
 };
@@ -60,7 +57,6 @@ export const getHourlyOrgMetrics = async (parent: any, args: any, context: { use
         if (!org) throw new Error("org not found");
         return await HourlyCampaignMetric.getSortedByOrgId(org.id);
     } catch (error) {
-        SentryClient.captureException(error);
         throw new Error("Something went wrong with your request. please try again!");
     }
 };
@@ -70,7 +66,6 @@ export const getOrgDetails = async (parent: any, args: any, context: { user: any
         const orgDetail = await Org.orgDetails();
         return orgDetail;
     } catch (error) {
-        SentryClient.captureException(error);
         throw new Error("Something went wrong with your request. please try again!");
     }
 };
@@ -117,7 +112,6 @@ export const listEmployees = async (parent: any, args: { skip: number; take: num
         });
         return { adminsDetails, orgName };
     } catch (error) {
-        SentryClient.captureException(error);
         throw new Error("Something went wrong with your request. please try again!");
     }
 };
