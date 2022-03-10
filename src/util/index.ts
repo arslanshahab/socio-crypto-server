@@ -279,7 +279,7 @@ export const supportedCountries = (): Array<SupportedCountryType> => {
 
 // KYC helpers start here
 const generateAgeFactor = (dobEtr: Etr) => {
-    if (!dobEtr.test || !dobEtr?.details || dobEtr.test !== "dv:15") return null;
+    if (!dobEtr?.test || !dobEtr?.details || dobEtr.test !== "dv:15") return null;
     const dob = new Date(dobEtr.details.toString());
     const today = new Date();
     let age = today.getFullYear() - dob.getFullYear();
@@ -289,13 +289,13 @@ const generateAgeFactor = (dobEtr: Etr) => {
 };
 
 const generateNameFactor = (nameEtr: Etr) => {
-    if (!nameEtr?.details || !nameEtr?.test || nameEtr?.test !== "dv:13") return null;
+    if (!nameEtr?.test || !nameEtr?.details || nameEtr?.test !== "dv:13") return null;
     return nameEtr.details;
 };
 
 const generateDocumentValidityFactor = (docValidityEtr: Etr, docExpirationEtr: Etr, docTypeEtr: Etr) => {
     if (!docExpirationEtr?.test || !docExpirationEtr?.details || docExpirationEtr?.test !== "dv:17") return null;
-    if (!docValidityEtr || docValidityEtr?.test !== "dv:11") return null;
+    if (!docValidityEtr?.test || docValidityEtr?.test !== "dv:11") return null;
     if (!docTypeEtr?.test || !docTypeEtr?.details || docTypeEtr?.test !== "dv:19") return null;
     if (!docValidityEtr?.details || docValidityEtr?.details !== "false") return null;
     return {
