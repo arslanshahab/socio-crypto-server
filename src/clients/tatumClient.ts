@@ -556,7 +556,7 @@ export class TatumClient {
             }
             return ledgerAccount;
         } catch (error) {
-            console.log(error?.response?.data || error.message);
+            console.log(error);
             throw new Error(error?.response?.data?.message || error.message);
         }
     };
