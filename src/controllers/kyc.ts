@@ -62,6 +62,8 @@ export const downloadKyc = async (parent: any, args: any, context: { user: any }
 
 export const kycWebhook = asyncHandler(async (req: Request, res: Response) => {
     const kyc: AcuantApplication = req.body;
+    console.log("KYC CALLBACK EXECUTION - BODY: ", req.body);
+    console.log("KYC CALLBACK EXECUTION - QUERY: ", req.query);
     const status = getApplicationStatus(kyc);
     const verificationApplication = await VerificationApplication.findOne({ where: { applicationId: kyc.mtid } });
     if (!verificationApplication) throw new Error("application not found");
