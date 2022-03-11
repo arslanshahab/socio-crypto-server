@@ -238,7 +238,7 @@ export const typeDefs = gql`
         downloadKyc: KycApplicationResponse
         getDashboardMetrics(campaignId: String, skip: Int, take: Int): DashboardMetrics
         transactionHistory: [Transfer]
-        getCampaignParticipants(campaignId: String): [Participant]
+        getCampaignParticipants(campaignId: String!, skip: Int!, take: Int!): PaginatedCampaignParticipants
         getNotificationSettings: NotificationSettings
         getAccumulatedParticipantMetrics(campaignId: String!): AccumulatedParticipantMetric
     }
@@ -321,6 +321,11 @@ export const typeDefs = gql`
     type PaginatedTransferHistory {
         total: Int!
         results: [Transfer]
+    }
+
+    type PaginatedCampaignParticipants {
+        total: Int!
+        results: [Participant]
     }
 
     type DepostAddressObject {

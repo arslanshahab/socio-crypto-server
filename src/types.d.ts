@@ -322,6 +322,12 @@ export interface ListCampaignsVariables {
     status: CampaignStatus | "ALL";
 }
 
+export interface GetCampaignsParticipantsVariables {
+    campaignId: string;
+    skip: number;
+    take: number;
+}
+
 export interface GraphApiInputParameters {
     fields?: string[] | string;
     metric?: string[] | string;
