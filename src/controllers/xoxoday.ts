@@ -2,14 +2,14 @@ import { Request, Response } from "express";
 import { Xoxoday } from "../clients/xoxoday";
 import { generateRandomId, supportedCountries, asyncHandler, BN } from "../util";
 import { XoxodayOrder, XoxodayVoucher } from "src/types";
-import { getExchangeRateForCurrency } from "../util/exchangeRate";
+import { getExchangeRateForCurrency, getSymbolValueInUSD } from "../util/exchangeRate";
 import { User } from "../models/User";
 import { getSocialClient } from "./social";
 import { S3Client } from "../clients/s3";
 import { Transfer } from "../models/Transfer";
 import { XoxodayOrder as XoxodayOrderModel } from "../models/XoxodayOrder";
 import { TatumClient } from "../clients/tatumClient";
-import { COIIN } from "../util/constants";
+import { AMOUNT_LIMIT_FOR_KYC_IN_XOXODAY, COIIN } from "../util/constants";
 
 export const initXoxoday = asyncHandler(async (req: Request, res: Response) => {
     try {
@@ -160,6 +160,13 @@ const prepareOrderList = async (list: Array<any>, email: string): Promise<Array<
 };
 
 const ifUserCanRedeem = async (user: User, totalCoiinSpent: number) => {
+    const { total: previousStoreSpendingInUSD } = await XoxodayOrderModel.getPastSpendingInUSD(user.id);
+    const currentSpendingInUSD = await getSymbolValueInUSD("COIIN", totalCoiinSpent);
+    if (
+        parseFloat(previousStoreSpendingInUSD) + currentSpendingInUSD > AMOUNT_LIMIT_FOR_KYC_IN_XOXODAY &&
+        user.kycStatus !== "APPROVED"
+    )
+        throw new Error("You need to get your KYC approved before you can redeem vouchers.");
     const twitterAccount = user.socialLinks.find((item) => item.type === "twitter");
     if (!twitterAccount) throw new Error("You need to link your twitter account before you redeem!");
     const socialClient = getSocialClient("twitter");
