@@ -53,7 +53,7 @@ export class XoxodayOrder extends BaseEntity {
         };
     }
 
-    public static async saveOrderList(list: any, user: User): Promise<XoxodayOrder[]> {
+    public static saveOrderList = async (list: any, user: User): Promise<XoxodayOrder[]> => {
         let orders: XoxodayOrder[] = [];
         list.forEach((item: any) => {
             let order = new XoxodayOrder();
@@ -69,5 +69,12 @@ export class XoxodayOrder extends BaseEntity {
             orders.push(order);
         });
         return await XoxodayOrder.save(orders);
+    };
+
+    public static async getPastSpendingInUSD(userId: string) {
+        return await this.createQueryBuilder("model")
+            .select('SUM(model."orderTotal"::numeric) as total')
+            .where('model."userId" = :id', { id: userId })
+            .getRawOne();
     }
 }
