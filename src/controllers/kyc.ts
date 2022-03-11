@@ -22,6 +22,9 @@ export const verifyKyc = async (parent: any, args: { userKyc: KycApplication }, 
         if (user.kycStatus === "APPROVED" || currentKycApplication) return currentKycApplication;
         validator.validateKycRegistration(args.userKyc);
         const newAcuantApplication = await AcuantClient.submitApplication(args.userKyc);
+        console.log("ER-OBJECT: ", newAcuantApplication?.ednaScoreCard?.er);
+        console.log("ETR-OBJECT: ", newAcuantApplication?.ednaScoreCard?.etr);
+        console.log("SC-OBJECT: ", newAcuantApplication?.ednaScoreCard?.sc);
         const status = getApplicationStatus(newAcuantApplication);
         if (status === "REJECTED") {
             Firebase.sendKycVerificationUpdate(user?.profile?.deviceToken || "", status);
@@ -77,9 +80,13 @@ export const kycWebhook = asyncHandler(async (req: Request, res: Response) => {
         await user.updateKycStatus(status);
     }
     if (status === "REJECTED") {
+        console.log("ER-OBJECT: ", kyc?.ednaScoreCard?.er);
+        console.log("ETR-OBJECT: ", kyc?.ednaScoreCard?.etr);
+        console.log("SC-OBJECT: ", kyc?.ednaScoreCard?.sc);
         await VerificationApplication.remove(verificationApplication);
         await user.updateKycStatus("");
     }
+
     await Firebase.sendKycVerificationUpdate(user?.profile?.deviceToken || "", status);
     res.json({ success: true });
 });
