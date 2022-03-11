@@ -10,11 +10,18 @@ import { getTweetById } from "../controllers/social";
 import { getRedis } from "../clients/redis";
 import { BN, asyncHandler, calculateQualityMultiplier } from "../util";
 import { DailyParticipantMetric } from "../models/DailyParticipantMetric";
-import { getDatesBetweenDates, formatUTCDateForComparision } from "./helpers";
+import {
+    getDatesBetweenDates,
+    formatUTCDateForComparision,
+    calculateTier,
+    calculateParticipantPayout,
+} from "./helpers";
 import { HourlyCampaignMetric } from "../models/HourlyCampaignMetric";
 import { QualityScore } from "../models/QualityScore";
 import { limit } from "../util/rateLimiter";
 import { FormattedError } from "../util/errors";
+import { JWTPayload } from "src/types";
+import { TatumClient } from "../clients/tatumClient";
 
 const { RATE_LIMIT_MAX = "3", RATE_LIMIT_WINDOW = "1m" } = process.env;
 
@@ -155,6 +162,31 @@ export const getParticipantMetrics = async (parent: any, args: { participantId: 
         }
     }
     return metrics.concat(additionalRows).map((metric) => metric.asV1());
+};
+
+export const getAccumulatedParticipantMetrics = async (
+    parent: any,
+    args: { campaignId: string },
+    context: { user: JWTPayload }
+) => {
+    const user = await User.findUserByContext(context.user);
+    if (!user) throw new Error("User not found.");
+    const campaign = await Campaign.findOne({ id: args.campaignId });
+    if (!campaign) throw new Error("Campaign not found.");
+    const participant = await Participant.findOne({ where: { user } });
+    if (!participant) throw new Error("Participant not found.");
+    const counts = await DailyParticipantMetric.getAccumulatedParticipantMetrics(participant.id);
+    const { currentTotal } = calculateTier(campaign.totalParticipationScore, campaign.algorithm.tiers);
+    const participantShare = await calculateParticipantPayout(new BN(currentTotal), campaign, participant);
+    return {
+        ...counts,
+        currentTotal: currentTotal.toNumber(),
+        participantShare: participantShare.toNumber(),
+        symbol: campaign.symbol,
+        network: TatumClient.getBaseChain(campaign.symbol),
+        campaignId: campaign.id,
+        participantId: participant.id,
+    };
 };
 
 export const trackClickByLink = asyncHandler(async (req: Request, res: Response) => {
