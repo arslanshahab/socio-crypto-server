@@ -320,6 +320,13 @@ export interface ListCampaignsVariables {
     take: number;
     state: CampaignState;
     status: CampaignStatus | "ALL";
+    userRelated: boolean;
+}
+
+export interface GetCampaignsParticipantsVariables {
+    campaignId?: string;
+    skip: number;
+    take: number;
 }
 
 export interface GraphApiInputParameters {
