@@ -80,6 +80,7 @@ export const kycWebhook = asyncHandler(async (req: Request, res: Response) => {
         await VerificationApplication.remove(verificationApplication);
         await user.updateKycStatus("");
     }
+
     await Firebase.sendKycVerificationUpdate(user?.profile?.deviceToken || "", status);
     res.json({ success: true });
 });

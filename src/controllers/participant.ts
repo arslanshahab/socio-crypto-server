@@ -8,13 +8,20 @@ import { Participant } from "../models/Participant";
 import { SocialPost } from "../models/SocialPost";
 import { getTweetById } from "../controllers/social";
 import { getRedis } from "../clients/redis";
-import { BN, asyncHandler, calculateQualityMultiplier } from "../util";
+import { BN, asyncHandler, calculateQualityMultiplier, getCryptoAssestImageUrl } from "../util";
 import { DailyParticipantMetric } from "../models/DailyParticipantMetric";
-import { getDatesBetweenDates, formatUTCDateForComparision } from "./helpers";
+import {
+    getDatesBetweenDates,
+    formatUTCDateForComparision,
+    calculateTier,
+    calculateParticipantPayout,
+} from "./helpers";
 import { HourlyCampaignMetric } from "../models/HourlyCampaignMetric";
 import { QualityScore } from "../models/QualityScore";
 import { limit } from "../util/rateLimiter";
 import { FormattedError } from "../util/errors";
+import { JWTPayload } from "src/types";
+import { getSymbolValueInUSD } from "../util/exchangeRate";
 
 const { RATE_LIMIT_MAX = "3", RATE_LIMIT_WINDOW = "1m" } = process.env;
 
@@ -155,6 +162,38 @@ export const getParticipantMetrics = async (parent: any, args: { participantId: 
         }
     }
     return metrics.concat(additionalRows).map((metric) => metric.asV1());
+};
+
+export const getAccumulatedParticipantMetrics = async (
+    parent: any,
+    args: { campaignId: string },
+    context: { user: JWTPayload }
+) => {
+    const user = await User.findUserByContext(context.user);
+    if (!user) throw new Error("User not found.");
+    const campaign = await Campaign.findOne({ id: args.campaignId });
+    if (!campaign) throw new Error("Campaign not found.");
+    const participant = await Participant.findOne({ where: { user } });
+    if (!participant) throw new Error("Participant not found.");
+    const counts = await DailyParticipantMetric.getAccumulatedParticipantMetrics(participant.id);
+    const { currentTotal } = calculateTier(campaign.totalParticipationScore, campaign.algorithm.tiers);
+    const participantShare = await calculateParticipantPayout(new BN(currentTotal), campaign, participant);
+    return {
+        clickCount: counts.clickCount || 0,
+        likeCount: counts.likeCount || 0,
+        shareCount: counts.shareCount || 0,
+        viewCount: counts.viewCount || 0,
+        submissionCount: counts.submissionCount || 0,
+        commentCount: counts.commentCount || 0,
+        participationScore: counts.participationScore || 0,
+        currentTotal: currentTotal.toNumber(),
+        participantShare: participantShare.toNumber() || 0,
+        participantShareUSD: await getSymbolValueInUSD(campaign.symbol, parseFloat(participantShare.toString() || "0")),
+        symbol: campaign.symbol,
+        symbolImageUrl: getCryptoAssestImageUrl(campaign.symbol),
+        campaignId: campaign.id,
+        participantId: participant.id,
+    };
 };
 
 export const trackClickByLink = asyncHandler(async (req: Request, res: Response) => {
