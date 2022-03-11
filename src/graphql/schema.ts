@@ -511,9 +511,10 @@ export const typeDefs = gql`
         participationScore: Float!
         participantId: String!
         symbol: String!
-        network: String!
+        symbolImageUrl: String!
         currentTotal: Float!
         participantShare: Float!
+        participantShareUSD: Float!
     }
 
     type AdminCampaignMetrics {

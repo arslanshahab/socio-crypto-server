@@ -8,7 +8,7 @@ import { Participant } from "../models/Participant";
 import { SocialPost } from "../models/SocialPost";
 import { getTweetById } from "../controllers/social";
 import { getRedis } from "../clients/redis";
-import { BN, asyncHandler, calculateQualityMultiplier } from "../util";
+import { BN, asyncHandler, calculateQualityMultiplier, getCryptoAssestImageUrl } from "../util";
 import { DailyParticipantMetric } from "../models/DailyParticipantMetric";
 import {
     getDatesBetweenDates,
@@ -21,7 +21,7 @@ import { QualityScore } from "../models/QualityScore";
 import { limit } from "../util/rateLimiter";
 import { FormattedError } from "../util/errors";
 import { JWTPayload } from "src/types";
-import { TatumClient } from "../clients/tatumClient";
+import { getSymbolValueInUSD } from "../util/exchangeRate";
 
 const { RATE_LIMIT_MAX = "3", RATE_LIMIT_WINDOW = "1m" } = process.env;
 
@@ -185,10 +185,12 @@ export const getAccumulatedParticipantMetrics = async (
         viewCount: counts.viewCount || 0,
         submissionCount: counts.submissionCount || 0,
         commentCount: counts.commentCount || 0,
+        participationScore: counts.participationScore || 0,
         currentTotal: currentTotal.toNumber(),
         participantShare: participantShare.toNumber() || 0,
+        participantShareUSD: await getSymbolValueInUSD(campaign.symbol, parseFloat(participantShare.toString() || "0")),
         symbol: campaign.symbol,
-        network: TatumClient.getBaseChain(campaign.symbol),
+        symbolImageUrl: getCryptoAssestImageUrl(campaign.symbol),
         campaignId: campaign.id,
         participantId: participant.id,
     };
