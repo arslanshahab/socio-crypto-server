@@ -179,9 +179,14 @@ export const getAccumulatedParticipantMetrics = async (
     const { currentTotal } = calculateTier(campaign.totalParticipationScore, campaign.algorithm.tiers);
     const participantShare = await calculateParticipantPayout(new BN(currentTotal), campaign, participant);
     return {
-        ...counts,
+        clickCount: counts.clickCount || 0,
+        likeCount: counts.likeCount || 0,
+        shareCount: counts.shareCount || 0,
+        viewCount: counts.viewCount || 0,
+        submissionCount: counts.submissionCount || 0,
+        commentCount: counts.commentCount || 0,
         currentTotal: currentTotal.toNumber(),
-        participantShare: participantShare.toNumber(),
+        participantShare: participantShare.toNumber() || 0,
         symbol: campaign.symbol,
         network: TatumClient.getBaseChain(campaign.symbol),
         campaignId: campaign.id,
