@@ -37,6 +37,7 @@ import {
 import { kycWebhook } from "./controllers/kyc";
 import { GraphQLRequestContext } from "../node_modules/apollo-server-types/dist/index.d";
 import * as Sentry from "@sentry/node";
+import * as Tracing from "@sentry/tracing";
 import { FormattedError } from "./util/errors";
 
 const { NODE_ENV = "development" } = process.env;
@@ -60,13 +61,18 @@ export class Application {
         await Firebase.initialize();
         // await Dragonchain.initialize();
         StripeAPI.initialize();
+        this.app = express();
         Sentry.init({
             dsn: Secrets.sentryDSN,
             debug: true,
             environment: process.env.NODE_ENV || "staging",
-            tracesSampleRate: 1.0,
+            tracesSampleRate: 1.0, // todo reduce this for production after performance issues are resolved
+            integrations: [
+                // enable HTTP calls tracing
+                new Sentry.Integrations.Http({ tracing: true }),
+                new Tracing.Integrations.Express({ app: this.app }),
+            ],
         });
-        this.app = express();
         const corsSettings = {
             origin: [
                 "https://raiinmaker.dragonchain.com",
@@ -84,6 +90,8 @@ export class Application {
         if (NODE_ENV !== "production") {
             corsSettings.origin.push("http://localhost:3000");
         }
+        this.app.use(Sentry.Handlers.requestHandler());
+        this.app.use(Sentry.Handlers.tracingHandler());
         this.app.use(cookieParser());
         this.app.use(cors(corsSettings));
         this.app.post("/v1/payments", bodyParser.raw({ type: "application/json" }), stripeWebhook);
@@ -220,7 +228,7 @@ export class Application {
             FactorController.recover
         );
         this.app.use("/v1/referral/:participantId", trackClickByLink);
-        this.app.use(Sentry.Handlers.requestHandler());
+        this.app.use(Sentry.Handlers.errorHandler());
     }
 
     public async startServer() {
