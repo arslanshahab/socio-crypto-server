@@ -57,6 +57,7 @@ export const resolvers = {
         downloadKyc: kycController.downloadKyc,
         getCampaignParticipants: participantController.getCampaignParticipants,
         getNotificationSettings: userController.getNotificationSettings,
+        getAccumulatedParticipantMetrics: participantController.getAccumulatedParticipantMetrics,
     },
     Mutation: {
         generateFactorsFromKyc: factorController.generateFactors,

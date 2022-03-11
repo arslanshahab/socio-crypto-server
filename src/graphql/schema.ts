@@ -240,6 +240,7 @@ export const typeDefs = gql`
         transactionHistory: [Transfer]
         getCampaignParticipants(campaignId: String): [Participant]
         getNotificationSettings: NotificationSettings
+        getAccumulatedParticipantMetrics(campaignId: String!): AccumulatedParticipantMetric
     }
 
     type DashboardMetrics {
@@ -497,6 +498,23 @@ export const typeDefs = gql`
         participantId: String
         createdAt: String
         updatedAt: String
+    }
+
+    type AccumulatedParticipantMetric {
+        campaignId: String!
+        clickCount: Int!
+        viewCount: Int!
+        submissionCount: Int!
+        likeCount: Int!
+        shareCount: Int!
+        commentCount: Int!
+        participationScore: Float!
+        participantId: String!
+        symbol: String!
+        symbolImageUrl: String!
+        currentTotal: Float!
+        participantShare: Float!
+        participantShareUSD: Float!
     }
 
     type AdminCampaignMetrics {
