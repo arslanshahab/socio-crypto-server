@@ -80,9 +80,13 @@ export const kycWebhook = asyncHandler(async (req: Request, res: Response) => {
         await user.updateKycStatus(status);
     }
     if (status === "REJECTED") {
+        console.log("ER-OBJECT: ", kyc?.ednaScoreCard?.er);
+        console.log("ETR-OBJECT: ", kyc?.ednaScoreCard?.etr);
+        console.log("SC-OBJECT: ", kyc?.ednaScoreCard?.sc);
         await VerificationApplication.remove(verificationApplication);
         await user.updateKycStatus("");
     }
+
     await Firebase.sendKycVerificationUpdate(user?.profile?.deviceToken || "", status);
     res.json({ success: true });
 });
