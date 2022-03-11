@@ -180,7 +180,13 @@ export const typeDefs = gql`
             approved: Boolean
             pendingAudit: Boolean
         ): PaginatedCampaignResults
-        listCampaignsV2(skip: Int!, take: Int!, state: CampaignState!, status: CampaignStatus): PaginatedOpenCampaigns
+        listCampaignsV2(
+            skip: Int!
+            take: Int!
+            state: CampaignState!
+            status: CampaignStatus
+            userRelated: Boolean!
+        ): PaginatedOpenCampaigns
         getUserParticipationKeywords: [String]
         getStoreVouchers(country: String, page: Int): [StoreVoucher]
         getCampaign(id: String): Campaign
@@ -238,7 +244,7 @@ export const typeDefs = gql`
         downloadKyc: KycApplicationResponse
         getDashboardMetrics(campaignId: String, skip: Int, take: Int): DashboardMetrics
         transactionHistory: [Transfer]
-        getCampaignParticipants(campaignId: String!, skip: Int!, take: Int!): PaginatedCampaignParticipants
+        getCampaignParticipants(campaignId: String, skip: Int!, take: Int!): PaginatedCampaignParticipants
         getNotificationSettings: NotificationSettings
         getAccumulatedParticipantMetrics(campaignId: String!): AccumulatedParticipantMetric
     }
