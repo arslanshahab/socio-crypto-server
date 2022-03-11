@@ -308,7 +308,6 @@ export class Campaign extends BaseEntity {
     }
 
     public static async findCampaignsByStatusV2(params: ListCampaignsVariables, user?: User) {
-        console.log(user);
         const now = DateUtils.mixedDateToUtcDatetimeString(new Date());
         let where = "";
         if (params.state === "OPEN") where = `("endDate" >= '${now}')`;
