@@ -185,7 +185,7 @@ export const typeDefs = gql`
             take: Int!
             state: CampaignState!
             status: CampaignStatus
-            userRelated: Boolean!
+            userRelated: Boolean
         ): PaginatedOpenCampaigns
         getUserParticipationKeywords: [String]
         getStoreVouchers(country: String, page: Int): [StoreVoucher]
