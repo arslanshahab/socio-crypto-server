@@ -14,6 +14,7 @@ import { Wallet } from "../models/Wallet";
 import { Org } from "../models/Org";
 import { RAIINMAKER_ORG_NAME } from "../util/constants";
 import { Verification } from "../models/Verification";
+import { COIIN } from "src/util/constants";
 
 export const initWallet = asyncHandler(async (req: Request, res: Response) => {
     try {
@@ -220,6 +221,10 @@ export const withdrawFunds = async (
             throw new Error("You need to get your KYC approved before you can withdraw.");
         let { symbol, address, amount, verificationToken } = args;
         symbol = symbol.toUpperCase();
+        if (symbol === COIIN)
+            throw new Error(
+                "Coiin withdraws are currently disabled, please contact our support for further information."
+            );
         if (!(await TatumClient.isCurrencySupported(symbol))) throw new Error(`currency ${symbol} is not supported`);
         await Verification.verifyToken({ verificationToken });
         const userCurrency = await Currency.findOne({ where: { wallet: user.wallet, symbol } });
