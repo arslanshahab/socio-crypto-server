@@ -669,8 +669,10 @@ export const typeDefs = gql`
     }
 
     type ParticipationData {
+        participantId: String!
         campaignId: String!
         currentlyParticipating: Boolean!
+        link: String!
     }
 
     type KycUser {
