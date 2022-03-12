@@ -233,6 +233,7 @@ export const trackClickByLink = asyncHandler(async (req: Request, res: Response)
         }
         return res.redirect(campaign.target);
     } catch (error) {
-        throw new FormattedError(error);
+        console.log(error);
+        throw new Error(error.message);
     }
 });
