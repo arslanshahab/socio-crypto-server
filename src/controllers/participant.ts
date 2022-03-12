@@ -19,7 +19,6 @@ import {
 import { HourlyCampaignMetric } from "../models/HourlyCampaignMetric";
 import { QualityScore } from "../models/QualityScore";
 import { limit } from "../util/rateLimiter";
-import { FormattedError } from "../util/errors";
 import { JWTPayload } from "src/types";
 import { getSymbolValueInUSD } from "../util/exchangeRate";
 import { GetCampaignsParticipantsVariables } from "../types.d";
