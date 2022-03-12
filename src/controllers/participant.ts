@@ -22,6 +22,7 @@ import { limit } from "../util/rateLimiter";
 import { FormattedError } from "../util/errors";
 import { JWTPayload } from "src/types";
 import { getSymbolValueInUSD } from "../util/exchangeRate";
+import { GetCampaignsParticipantsVariables } from "../types.d";
 
 const { RATE_LIMIT_MAX = "3", RATE_LIMIT_WINDOW = "1m" } = process.env;
 
@@ -101,15 +102,19 @@ export const getParticipant = async (parent: any, args: { id: string }) => {
     return participant.asV1();
 };
 
-export const getCampaignParticipants = async (parent: any, args: { campaignId: string }) => {
-    const { campaignId } = args;
-    const campaignParticipants = await Participant.find({
+export const getCampaignParticipants = async (parent: any, args: GetCampaignsParticipantsVariables) => {
+    const { campaignId, skip, take } = args;
+    const [results, total] = await Participant.findAndCount({
         where: { campaign: await Campaign.findOne({ where: { id: campaignId } }) },
         relations: ["user", "campaign"],
+        skip,
+        take,
     });
-    if (!campaignParticipants) throw new Error("participant not found");
-    const data = campaignParticipants.map(async (result) => await result.asV2());
-    return data;
+    const data = results.map(async (result) => await result.asV2());
+    return {
+        total,
+        results: data,
+    };
 };
 
 export const getPosts = async (parent: any, args: { id: string }, context: any) => {

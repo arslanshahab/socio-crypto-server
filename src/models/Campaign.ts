@@ -307,7 +307,7 @@ export class Campaign extends BaseEntity {
             .getManyAndCount();
     }
 
-    public static async findCampaignsByStatusV2(params: ListCampaignsVariables) {
+    public static async findCampaignsByStatusV2(params: ListCampaignsVariables, user?: User) {
         const now = DateUtils.mixedDateToUtcDatetimeString(new Date());
         let where = "";
         if (params.state === "OPEN") where = `("endDate" >= '${now}')`;
@@ -317,6 +317,11 @@ export class Campaign extends BaseEntity {
             query = query.andWhere("campaign.status = :status", { status: params.status });
         } else {
             query = query.andWhere("campaign.status = :status", { status: "APPROVED" });
+        }
+        if (params.userRelated) {
+            query = query
+                .leftJoin("campaign.participants", "participant", 'participant."campaignId" = campaign.id')
+                .andWhere('participant."userId" = :id', { id: user?.id });
         }
         return query
             .andWhere(`campaign."isGlobal" = :global`, { status: "APPROVED", global: false })

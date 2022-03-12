@@ -180,7 +180,13 @@ export const typeDefs = gql`
             approved: Boolean
             pendingAudit: Boolean
         ): PaginatedCampaignResults
-        listCampaignsV2(skip: Int!, take: Int!, state: CampaignState!, status: CampaignStatus): PaginatedOpenCampaigns
+        listCampaignsV2(
+            skip: Int!
+            take: Int!
+            state: CampaignState!
+            status: CampaignStatus
+            userRelated: Boolean!
+        ): PaginatedOpenCampaigns
         getUserParticipationKeywords: [String]
         getStoreVouchers(country: String, page: Int): [StoreVoucher]
         getCampaign(id: String): Campaign
@@ -238,7 +244,7 @@ export const typeDefs = gql`
         downloadKyc: KycApplicationResponse
         getDashboardMetrics(campaignId: String, skip: Int, take: Int): DashboardMetrics
         transactionHistory: [Transfer]
-        getCampaignParticipants(campaignId: String): [Participant]
+        getCampaignParticipants(campaignId: String, skip: Int!, take: Int!): PaginatedCampaignParticipants
         getNotificationSettings: NotificationSettings
         getAccumulatedParticipantMetrics(campaignId: String!): AccumulatedParticipantMetric
     }
@@ -321,6 +327,11 @@ export const typeDefs = gql`
     type PaginatedTransferHistory {
         total: Int!
         results: [Transfer]
+    }
+
+    type PaginatedCampaignParticipants {
+        total: Int!
+        results: [Participant]
     }
 
     type DepostAddressObject {
@@ -658,8 +669,10 @@ export const typeDefs = gql`
     }
 
     type ParticipationData {
+        participantId: String!
         campaignId: String!
         currentlyParticipating: Boolean!
+        link: String!
     }
 
     type KycUser {

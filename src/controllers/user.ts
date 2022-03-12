@@ -148,8 +148,10 @@ export const meV2 = async (parent: any, args: any, context: { user: JWTPayload }
         ...user,
         participations: participations.map((item) => {
             return {
+                participantId: item.id,
                 campaignId: item.campaign.id,
                 currentlyParticipating: item.campaign.isOpen(),
+                link: item.link,
             };
         }),
     };

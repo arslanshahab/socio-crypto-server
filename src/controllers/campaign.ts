@@ -394,7 +394,8 @@ export const listCampaigns = async (parent: any, args: ListCampaignsVariables, c
 };
 
 export const listCampaignsV2 = async (parent: any, args: ListCampaignsVariables, context: { user: JWTPayload }) => {
-    const [results, total] = await Campaign.findCampaignsByStatusV2(args);
+    const user = await User.findUserByContext(context.user);
+    const [results, total] = await Campaign.findCampaignsByStatusV2(args, user);
     const data = results.map(async (result) => await result.asV2());
     return { results: data, total };
 };
