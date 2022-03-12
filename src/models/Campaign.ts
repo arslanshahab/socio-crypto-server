@@ -318,7 +318,7 @@ export class Campaign extends BaseEntity {
         } else {
             query = query.andWhere("campaign.status = :status", { status: "APPROVED" });
         }
-        if (params.userRelated) {
+        if (params.userRelated !== null && params.userRelated) {
             query = query
                 .leftJoin("campaign.participants", "participant", 'participant."campaignId" = campaign.id')
                 .andWhere('participant."userId" = :id', { id: user?.id });
