@@ -14,7 +14,7 @@ import { Wallet } from "../models/Wallet";
 import { Org } from "../models/Org";
 import { RAIINMAKER_ORG_NAME } from "../util/constants";
 import { Verification } from "../models/Verification";
-import { COIIN } from "src/util/constants";
+import { COIIN } from "../util/constants";
 
 export const initWallet = asyncHandler(async (req: Request, res: Response) => {
     try {
