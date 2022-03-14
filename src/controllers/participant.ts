@@ -8,7 +8,7 @@ import { Participant } from "../models/Participant";
 import { SocialPost } from "../models/SocialPost";
 import { getTweetById } from "../controllers/social";
 import { getRedis } from "../clients/redis";
-import { BN, asyncHandler, calculateQualityMultiplier, getCryptoAssestImageUrl } from "../util";
+import { BN, asyncHandler, calculateQualityMultiplier, getCryptoAssestImageUrl, formatFloat } from "../util";
 import { DailyParticipantMetric } from "../models/DailyParticipantMetric";
 import {
     getDatesBetweenDates,
@@ -197,6 +197,35 @@ export const getAccumulatedParticipantMetrics = async (
         symbolImageUrl: getCryptoAssestImageUrl(campaign.symbol),
         campaignId: campaign.id,
         participantId: participant.id,
+    };
+};
+
+export const getAccumulatedUserMetrics = async (parent: any, args: any, context: { user: JWTPayload }) => {
+    const user = await User.findUserByContext(context.user);
+    if (!user) throw new Error("User not found.");
+    const participations = await Participant.find({ where: { user }, relations: ["campaign"] });
+    const ids = participations.map((item) => item.id);
+    const counts = await DailyParticipantMetric.getAccumulatedUserMetrics(ids);
+    let participantShare = new BN(0);
+
+    for (let index = 0; index < participations.length; index++) {
+        const campaign = participations[index].campaign;
+        const participant = participations[index];
+        const { currentTotal } = calculateTier(campaign.totalParticipationScore, campaign.algorithm.tiers);
+        const share = await calculateParticipantPayout(new BN(currentTotal), campaign, participant);
+        const usdValue = await getSymbolValueInUSD(campaign.symbol, parseFloat(share.toString() || "0"));
+        participantShare = participantShare.plus(usdValue);
+    }
+
+    return {
+        clickCount: counts.clickCount || 0,
+        likeCount: counts.likeCount || 0,
+        shareCount: counts.shareCount || 0,
+        viewCount: counts.viewCount || 0,
+        submissionCount: counts.submissionCount || 0,
+        commentCount: counts.commentCount || 0,
+        totalScore: counts.participationScore || 0,
+        totalShareUSD: formatFloat(participantShare.toNumber()),
     };
 };
 
