@@ -104,7 +104,7 @@ export const getParticipant = async (parent: any, args: { id: string }) => {
 export const getCampaignParticipants = async (parent: any, args: GetCampaignsParticipantsVariables) => {
     const { campaignId, skip, take } = args;
     const [results, total] = await Participant.findAndCount({
-        where: { campaign: await Campaign.findOne({ where: { id: campaignId } }) },
+        where: { ...(campaignId && { campaign: await Campaign.findOne({ where: { id: campaignId } }) }) },
         relations: ["user", "campaign"],
         skip,
         take,
