@@ -177,7 +177,7 @@ export const getAccumulatedParticipantMetrics = async (
     if (!user) throw new Error("User not found.");
     const campaign = await Campaign.findOne({ id: args.campaignId });
     if (!campaign) throw new Error("Campaign not found.");
-    const participant = await Participant.findOne({ where: { user } });
+    const participant = await Participant.findOne({ where: { user, campaign } });
     if (!participant) throw new Error("Participant not found.");
     const counts = await DailyParticipantMetric.getAccumulatedParticipantMetrics(participant.id);
     const { currentTotal } = calculateTier(campaign.totalParticipationScore, campaign.algorithm.tiers);
