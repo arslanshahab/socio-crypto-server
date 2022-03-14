@@ -208,10 +208,15 @@ export const trackClickByLink = asyncHandler(async (req: Request, res: Response)
         const shouldRateLimit = await limit(`${ipAddress}-${participantId}-click`, Number(RATE_LIMIT_MAX), "minute");
         if (!participantId)
             return res.status(400).json({ code: "MALFORMED_INPUT", message: "missing participant ID in request" });
-        const participant = await Participant.findOne({
-            where: { id: participantId },
-            relations: ["campaign", "user"],
-        });
+        let participant;
+        try {
+            participant = await Participant.findOne({
+                where: { id: participantId },
+                relations: ["campaign", "user"],
+            });
+        } catch (error) {
+            return res.status(404).json({ code: "NOT_FOUND", message: "participant not found" });
+        }
         if (!participant) return res.status(404).json({ code: "NOT_FOUND", message: "participant not found" });
         const campaign = await Campaign.findOne({ where: { id: participant.campaign.id }, relations: ["org"] });
         if (!campaign) return res.status(404).json({ code: "NOT_FOUND", message: "campaign not found" });
