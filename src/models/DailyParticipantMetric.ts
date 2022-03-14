@@ -363,4 +363,13 @@ export class DailyParticipantMetric extends BaseEntity {
             .where('metric."participantId" = :id', { id: participantId })
             .getRawOne();
     }
+
+    public static async getAccumulatedUserMetrics(participantIds: string[]) {
+        return await this.createQueryBuilder("metric")
+            .select(
+                'SUM(CAST(metric."clickCount" AS int)) as "clickCount", SUM(CAST(metric."commentCount" AS int)) as "commentCount", SUM(CAST(metric."viewCount" AS int)) as "viewCount", SUM(CAST(metric."shareCount" as int)) as "shareCount", SUM(CAST(metric."likeCount" AS int)) as "likeCount", SUM(CAST(metric."submissionCount" AS int)) as "submissionCount", SUM(CAST(metric."participationScore" as int)) as "participationScore"'
+            )
+            .where('metric."participantId" IN (:...ids)', { ids: participantIds })
+            .getRawOne();
+    }
 }
