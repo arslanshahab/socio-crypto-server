@@ -247,6 +247,7 @@ export const typeDefs = gql`
         getCampaignParticipants(campaignId: String, skip: Int!, take: Int!): PaginatedCampaignParticipants
         getNotificationSettings: NotificationSettings
         getAccumulatedParticipantMetrics(campaignId: String!): AccumulatedParticipantMetric
+        getAccumulatedUserMetrics: AccumulatedUserMetric
     }
 
     type DashboardMetrics {
@@ -526,6 +527,17 @@ export const typeDefs = gql`
         currentTotal: Float!
         participantShare: Float!
         participantShareUSD: Float!
+    }
+
+    type AccumulatedUserMetric {
+        clickCount: Int!
+        viewCount: Int!
+        submissionCount: Int!
+        likeCount: Int!
+        shareCount: Int!
+        commentCount: Int!
+        totalScore: Float!
+        totalShareUSD: Float!
     }
 
     type AdminCampaignMetrics {
