@@ -31,7 +31,6 @@ export const SYMBOL_TO_CHAIN: { [key: string]: string } = {
     ADA: "ADA",
     QTUM: "QTUM",
     BNB: "BNB",
-    BSC: "BSC",
     DOGE: "DOGE",
     VET: "VET",
     ONE: "ONE",
