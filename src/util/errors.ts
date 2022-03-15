@@ -60,6 +60,7 @@ export const CURRENCY_NOT_FOUND = "CURRENCY_NOT_FOUND";
 export const CAMPAIGN_NAME_EXISTS = "CAMPAIGN_NAME_EXISTS";
 export const CAMPAIGN_NOT_FOUND = "CAMPAIGN_NOT_FOUND";
 export const CAMPAIGN_ORGANIZATION_MISSING = "CAMPAIGN_ORGANIZATION_MISSING";
+export const ADMIN_NOT_FOUND = "ADMIN_NOT_FOUND";
 
 const errorMap: { [key: string]: string } = {
     SOMETHING_WENT_WRONG: "Something went wrong with your request. please try again!",
@@ -91,4 +92,5 @@ const errorMap: { [key: string]: string } = {
     CAMPAIGN_NAME_EXISTS: "A campaign already exists with this name.",
     CAMPAIGN_NOT_FOUND: "Campaign not found.",
     CAMPAIGN_ORGANIZATION_MISSING: "CAMPAIGN_ORGANIZATION_MISSING",
+    ADMIN_NOT_FOUND: "ADMIN_NOT_FOUND",
 };
