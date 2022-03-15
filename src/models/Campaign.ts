@@ -188,6 +188,9 @@ export class Campaign extends BaseEntity {
     @ManyToOne((_type) => Org, (org) => org.campaigns)
     public org: Org;
 
+    @ManyToOne((_type) => Currency, (currency) => currency.campaign)
+    public currency: Currency;
+
     @OneToOne((_type) => RafflePrize, (prize) => prize.campaign)
     public prize: RafflePrize;
 

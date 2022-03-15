@@ -6,8 +6,11 @@ import {
     UpdateDateColumn,
     Column,
     ManyToOne,
+    OneToMany,
 } from "typeorm";
 import { Wallet } from "./Wallet";
+import { Token } from "./Token";
+import { Campaign } from "./Campaign";
 
 @Entity()
 export class Currency extends BaseEntity {
@@ -35,8 +38,14 @@ export class Currency extends BaseEntity {
     @Column({ nullable: true })
     public derivationKey: number;
 
+    @OneToMany((_type) => Campaign, (campaign) => campaign.currency)
+    public campaign: Campaign[];
+
     @ManyToOne((_type) => Wallet, (wallet) => wallet.currency)
     public wallet: Wallet;
+
+    @ManyToOne((_type) => Token, (token) => token.currency)
+    public token: Token;
 
     @CreateDateColumn()
     public createdAt: Date;
