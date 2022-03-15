@@ -11,7 +11,7 @@ dotenv.config();
 
 (async () => {
     try {
-        console.log("Starting coiin migration to tatum");
+        console.log("Starting currency migration to tatum");
         await Secrets.initialize();
         const connection: Connection = await connectDatabase();
         const symbols = Object.keys(SYMBOL_TO_CHAIN);
