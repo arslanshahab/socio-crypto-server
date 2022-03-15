@@ -18,7 +18,7 @@ import {
     PARTICIPANT_NOT_FOUND,
     WALLET_CURRENCY_NOT_FOUND,
     WALLET_NOT_FOUND,
-} from "src/util/errors";
+} from "../util/errors";
 
 export const feeMultiplier = () => new BN(1).minus(FEE_RATE);
 
