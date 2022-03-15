@@ -69,6 +69,7 @@ export const PARTICIPANT_NOT_FOUND = "PARTICIPANT_NOT_FOUND";
 export const WALLET_CURRENCY_NOT_FOUND = "WALLET_CURRENCY_NOT_FOUND";
 export const KYC_NOT_FOUND = "KYC_NOT_FOUND";
 export const VERIFICATION_NOT_FOUND = "VERIFICATION_NOT_FOUND";
+export const INVALID_USER_COMPANY = "INVALID_USER_COMPANY";
 
 const errorMap: { [key: string]: string } = {
     SOMETHING_WENT_WRONG: "Something went wrong with your request. please try again!",
@@ -108,5 +109,6 @@ const errorMap: { [key: string]: string } = {
     PARTICIPANT_NOT_FOUND: "PARTICIPANT_NOT_FOUND",
     WALLET_CURRENCY_NOT_FOUND: "WALLET_CURRENCY_NOT_FOUND",
     KYC_NOT_FOUND: "kyc data not found for user",
-    VERIFICATION_NOT_FOUND:"verification application not found"
+    VERIFICATION_NOT_FOUND: "verification application not found",
+    INVALID_USER_COMPANY: "INVALID_USER_COMPANY",
 };
