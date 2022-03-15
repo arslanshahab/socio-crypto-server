@@ -66,7 +66,9 @@ export const ESCROW_NOT_FOUND = "ESCROW_NOT_FOUND";
 export const WALLET_NOT_FOUND = "WALLET_NOT_FOUND";
 export const AMOUNT_IN_POSITIVE = "AMOUNT_IN_POSITIVE";
 export const PARTICIPANT_NOT_FOUND = "PARTICIPANT_NOT_FOUND";
-export const WALLET_CURRENCY_NOT_FOUND="WALLET_CURRENCY_NOT_FOUND"
+export const WALLET_CURRENCY_NOT_FOUND = "WALLET_CURRENCY_NOT_FOUND";
+export const KYC_NOT_FOUND = "KYC_NOT_FOUND";
+export const VERIFICATION_NOT_FOUND = "VERIFICATION_NOT_FOUND";
 
 const errorMap: { [key: string]: string } = {
     SOMETHING_WENT_WRONG: "Something went wrong with your request. please try again!",
@@ -104,5 +106,7 @@ const errorMap: { [key: string]: string } = {
     WALLET_NOT_FOUND: "WALLET_NOT_FOUND",
     AMOUNT_IN_POSITIVE: "Amount must be a positive number",
     PARTICIPANT_NOT_FOUND: "PARTICIPANT_NOT_FOUND",
-    WALLET_CURRENCY_NOT_FOUND:"WALLET_CURRENCY_NOT_FOUND"
+    WALLET_CURRENCY_NOT_FOUND: "WALLET_CURRENCY_NOT_FOUND",
+    KYC_NOT_FOUND: "kyc data not found for user",
+    VERIFICATION_NOT_FOUND:"verification application not found"
 };
