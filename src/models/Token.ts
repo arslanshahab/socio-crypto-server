@@ -10,7 +10,7 @@ import {
 import { Currency } from "./Currency";
 
 @Entity()
-export class SupportedToken extends BaseEntity {
+export class Token extends BaseEntity {
     @PrimaryGeneratedColumn("uuid")
     public id: string;
 
@@ -35,21 +35,9 @@ export class SupportedToken extends BaseEntity {
     @UpdateDateColumn()
     public updatedAt: Date;
 
-    public asV1(): SupportedToken {
+    public asV1(): Token {
         return {
             ...this,
         };
-    }
-
-    public static async addSupportedCurrency(data: {
-        symbol: string;
-        network: string;
-        contractAddress: string;
-    }): Promise<SupportedToken> {
-        const newSupportedCurrency = new SupportedToken();
-        newSupportedCurrency.symbol = data.symbol;
-        newSupportedCurrency.network = data.network;
-        newSupportedCurrency.contractAddress = data.contractAddress;
-        return await SupportedToken.save(newSupportedCurrency);
     }
 }

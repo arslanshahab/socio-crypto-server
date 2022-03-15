@@ -9,7 +9,7 @@ import {
     OneToMany,
 } from "typeorm";
 import { Wallet } from "./Wallet";
-import { SupportedToken } from "./SupportedToken";
+import { Token } from "./Token";
 import { Campaign } from "./Campaign";
 
 @Entity()
@@ -44,8 +44,8 @@ export class Currency extends BaseEntity {
     @ManyToOne((_type) => Wallet, (wallet) => wallet.currency)
     public wallet: Wallet;
 
-    @ManyToOne((_type) => SupportedToken, (token) => token.currency)
-    public token: SupportedToken;
+    @ManyToOne((_type) => Token, (token) => token.currency)
+    public token: Token;
 
     @CreateDateColumn()
     public createdAt: Date;

@@ -3,7 +3,7 @@ import { connectDatabase } from "../helpers";
 import * as dotenv from "dotenv";
 import { Secrets } from "../../src/util/secrets";
 import { SYMBOL_TO_CHAIN, SYMBOL_TO_CONTRACT } from "../../src/util/tatumHelper";
-import { SupportedToken } from "../../src/models/SupportedToken";
+import { Token } from "../../src/models/Token";
 import { Currency } from "../../src/models/Currency";
 import { Campaign } from "../../src/models/Campaign";
 import { Wallet } from "../../src/models/Wallet";
@@ -18,7 +18,7 @@ dotenv.config();
 
         for (let index = 0; index < symbols.length; index++) {
             const item = symbols[index];
-            const sp = new SupportedToken();
+            const sp = new Token();
             sp.symbol = item;
             sp.network = SYMBOL_TO_CHAIN[item];
             sp.contractAddress = SYMBOL_TO_CONTRACT[item];
@@ -28,7 +28,7 @@ dotenv.config();
         const currencies = await Currency.find();
         for (let index = 0; index < currencies.length; index++) {
             const currency = currencies[index];
-            const token = await SupportedToken.findOne({ where: { symbol: currency.symbol } });
+            const token = await Token.findOne({ where: { symbol: currency.symbol } });
             if (token) {
                 currency.token = token;
                 await currency.save();
