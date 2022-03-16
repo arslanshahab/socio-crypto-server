@@ -5,7 +5,7 @@ import { User } from "../../src/models/User";
 import { TatumClient } from "../../src/clients/tatumClient";
 import { WalletCurrency } from "../../src/models/WalletCurrency";
 import { Org } from "../../src/models/Org";
-import { COIIN } from "../../src/util/constants";
+import { BSC, COIIN } from "../../src/util/constants";
 import { BN } from "../../src/util";
 import { Secrets } from "../../src/util/secrets";
 dotenv.config();
@@ -19,7 +19,7 @@ dotenv.config();
             relations: ["wallet", "wallet.walletCurrency", "wallet.currency"],
         });
         console.log("TOTAL USERS, ---- ", users.length);
-        const raiinmakerCoiinAccount = await Org.getCurrencyForRaiinmaker(COIIN);
+        const raiinmakerCoiinAccount = await Org.getCurrencyForRaiinmaker({ symbol: COIIN, network: BSC });
         const raiinmakerCoiinBalance = await TatumClient.getAccountBalance(raiinmakerCoiinAccount.tatumId);
         let totalCoiinToTransfer = new BN(0);
         const walletIds = users.map((user) => user.wallet.id);
@@ -35,7 +35,9 @@ dotenv.config();
             const user = users[index];
             const coiinCurrency = user.wallet.currency.find((item) => item.symbol.toUpperCase() === COIIN);
             if (!coiinCurrency) {
-                legderPromises.push(TatumClient.findOrCreateCurrency(COIIN, user.wallet));
+                legderPromises.push(
+                    TatumClient.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet: user.wallet })
+                );
                 console.log("creating legder account promise", index, user.id);
             }
         }

@@ -33,8 +33,6 @@ import { CryptoCurrency } from "./CryptoCurrency";
 import { CampaignMedia } from "./CampaignMedia";
 import { CampaignTemplate } from "./CampaignTemplate";
 import { TatumClient, CAMPAIGN_CREATION_AMOUNT } from "../clients/tatumClient";
-import { WalletCurrency } from "./WalletCurrency";
-import { Wallet } from "./Wallet";
 import { Currency } from "./Currency";
 import { getCryptoAssestImageUrl, BN } from "../util";
 import { initDateFromParams } from "../util/date";
@@ -547,25 +545,13 @@ export class Campaign extends BaseEntity {
 
     public async blockCampaignAmount(): Promise<string> {
         try {
-            let campaign: Campaign | undefined = this;
+            const campaign = await Campaign.findOne({
+                where: { id: this.id },
+                relations: ["currency"],
+            });
             if (!campaign) throw new Error("campaign now found");
             if (!campaign.org) throw new Error("org not found for campaign");
-            const wallet = await Wallet.findOne({ where: { org: campaign.org } });
-            const walletCurrency = await WalletCurrency.findOne({
-                where: {
-                    wallet: wallet,
-                    type: campaign.symbol.toLowerCase(),
-                },
-            });
-            if (walletCurrency) {
-                const escrow = Escrow.newCampaignEscrow(campaign, campaign.org.wallet);
-                await campaign.org.updateBalance(campaign.symbol, "subtract", campaign.coiinTotal.toNumber());
-                await escrow.save();
-                return escrow.id;
-            }
-            const currency = await Currency.findOne({
-                where: { wallet: wallet, symbol: campaign.symbol },
-            });
+            const currency = await Currency.findOne({ where: { id: campaign.currency.id } });
             if (!currency) throw new Error("currency not found for campaign");
             const blockageKey = `${CAMPAIGN_CREATION_AMOUNT}:${campaign.id}`;
             const blockedAmount = await TatumClient.blockAccountBalance(

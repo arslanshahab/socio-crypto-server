@@ -168,8 +168,8 @@ export const typeDefs = gql`
 
     type Query {
         getCurrentCampaignTier(campaignId: String!): CurrentTier
-        getDepositAddressForSymbol(symbol: String): DepostAddressObject
-        getSupportedCurrencies: [String]
+        getDepositAddressForSymbol(symbol: String!, network: String!): DepostAddressObject
+        getSupportedCurrencies: [SupportedCurrencyObject]
         usernameExists(username: String!): UserExistence
         listCampaigns(
             open: Boolean
@@ -248,6 +248,11 @@ export const typeDefs = gql`
         getNotificationSettings: NotificationSettings
         getAccumulatedParticipantMetrics(campaignId: String!): AccumulatedParticipantMetric
         getAccumulatedUserMetrics: AccumulatedUserMetric
+    }
+
+    type SupportedCurrencyObject {
+        symbol: String!
+        network: String!
     }
 
     type DashboardMetrics {

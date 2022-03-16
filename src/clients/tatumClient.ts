@@ -27,19 +27,16 @@ import {
 } from "@tatumio/tatum";
 import { TatumWallet } from "../models/TatumWallet";
 import { S3Client } from "./s3";
-import {
-    adjustWithdrawableAmount,
-    SYMBOL_TO_CHAIN,
-    SYMBOL_TO_CONTRACT,
-    transferFundsToRaiinmaker,
-} from "../util/tatumHelper";
+import { adjustWithdrawableAmount, transferFundsToRaiinmaker } from "../util/tatumHelper";
 import { Currency } from "../models/Currency";
 import { RequestData, doFetch } from "../util/fetchRequest";
 import { sleep } from "../controllers/helpers";
 import { Wallet } from "../models/Wallet";
 import { CustodialAddress } from "../models/CustodialAddress";
 import { formatFloat } from "../util/index";
-import { COIIN, MATIC } from "../util/constants";
+import { BSC, COIIN, ETH, MATIC } from "../util/constants";
+import { Token } from "../models/Token";
+import { SymbolNetworkParams } from "../types.d";
 export const CAMPAIGN_CREATION_AMOUNT = "CAMPAIGN_CREATION_AMOUNT";
 export const CAMPAIGN_FEE = "CAMPAIGN_FEE";
 export const CAMPAIGN_REWARD = "CAMPAIGN_REWARD";
@@ -102,14 +99,14 @@ export class TatumClient {
     private static prepareTransferFromCustodialWallet = async (
         data: WithdrawPayload & WalletKeys
     ): Promise<{ txId: string }> => {
-        const isSubCustodialToken = TatumClient.isSubCustodialToken(data.currency.symbol);
+        const isSubCustodialToken = TatumClient.isSubCustodialToken(data.currency.token);
         const requestData: RequestData = {
             method: "POST",
             url: `${TatumClient.baseUrl}/blockchain/sc/custodial/transfer`,
             payload: {
-                chain: TatumClient.getBaseChain(data.currency.symbol) as TatumCurrency,
+                chain: data.currency.token.network as TatumCurrency,
                 custodialAddress: data?.custodialAddress?.address,
-                tokenAddress: TatumClient.getContractAddress(data.currency.symbol),
+                tokenAddress: data.currency.token.contractAddress,
                 contractType: isSubCustodialToken ? 0 : 3,
                 recipient: data.address,
                 amount: data.amount,
@@ -120,85 +117,69 @@ export class TatumClient {
         return await doFetch(requestData);
     };
 
-    public static getAllCurrencies = (): string[] => {
+    public static getAllCurrencies = async (): Promise<{ symbol: string; network: string }[]> => {
         try {
-            return Object.keys(SYMBOL_TO_CHAIN);
+            const tokens = await Token.find({ where: { enabled: true } });
+            return tokens.map((item) => ({ symbol: item.symbol, network: item.network }));
         } catch (error) {
             console.log(error);
             throw new Error(error.message);
         }
     };
 
-    public static isCurrencySupported = (symbol: string): boolean => {
+    public static isCurrencySupported = async (data: SymbolNetworkParams): Promise<Token | undefined> => {
         try {
-            return Boolean(Object.keys(SYMBOL_TO_CHAIN).includes(symbol.toUpperCase()));
+            return await Token.findOne({
+                where: { symbol: data.symbol.toUpperCase(), network: data.network.toUpperCase() },
+            });
         } catch (error) {
             console.log(error);
             throw new Error(error.message);
         }
     };
 
-    public static isCustodialWallet = (symbol: string): boolean => {
+    public static isCustodialWallet = (data: SymbolNetworkParams): boolean => {
         try {
-            const chain = TatumClient.getBaseChain(symbol);
-            return chain === "ETH" || chain === "BSC";
+            return data.network === "ETH" || data.network === "BSC";
         } catch (error) {
             console.log(error);
             throw new Error(error.message);
         }
     };
 
-    public static isERC20 = (symbol: string): boolean => {
+    public static isERC20 = (data: SymbolNetworkParams): boolean => {
         try {
-            const chain = TatumClient.getBaseChain(symbol);
-            return chain === "ETH";
+            return data.network === ETH;
         } catch (error) {
             console.log(error);
             throw new Error(error.message);
         }
     };
 
-    public static isBEP20 = (symbol: string): boolean => {
+    public static isBEP20 = (data: SymbolNetworkParams): boolean => {
         try {
-            const chain = TatumClient.getBaseChain(symbol);
-            return chain === "BSC";
+            return data.network === BSC;
         } catch (error) {
             console.log(error);
             throw new Error(error.message);
         }
     };
 
-    public static isSubCustodialToken = (symbol: string): boolean => {
+    public static isSubCustodialToken = (data: SymbolNetworkParams): boolean => {
         try {
-            return TatumClient.isCustodialWallet(symbol) && symbol !== TatumClient.getBaseChain(symbol);
+            return TatumClient.isCustodialWallet(data) && data.symbol !== data.network;
         } catch (error) {
             console.log(error);
             throw new Error(error.message);
         }
     };
 
-    public static getBaseChain = (symbol: string): string => {
+    public static ifWalletExists = async (data: SymbolNetworkParams): Promise<boolean> => {
         try {
-            return SYMBOL_TO_CHAIN[symbol];
-        } catch (error) {
-            console.log(error);
-            throw new Error(error.message);
-        }
-    };
-
-    public static getContractAddress = (symbol: string): string => {
-        try {
-            return SYMBOL_TO_CONTRACT[symbol];
-        } catch (error) {
-            console.log(error);
-            throw new Error(error.message);
-        }
-    };
-
-    public static ifWalletExists = async (symbol: string): Promise<boolean> => {
-        try {
-            if (!TatumClient.isCurrencySupported(symbol)) throw new Error(`Currency ${symbol} is not supported`);
-            if (TatumClient.isCustodialWallet(symbol)) symbol = TatumClient.getBaseChain(symbol);
+            let { symbol, network } = data;
+            if (!(await TatumClient.isCurrencySupported(data)))
+                throw new Error(`Currency ${data.symbol} is not supported.`);
+            if (TatumClient.isCustodialWallet(data)) symbol = network;
             return Boolean(await TatumWallet.findOne({ where: { currency: symbol } }));
         } catch (error) {
             console.log(error);
@@ -207,11 +188,13 @@ export class TatumClient {
     };
 
     public static getWallet = async (
-        symbol: string
+        data: SymbolNetworkParams
     ): Promise<WalletKeys & { xpub: string; address: string; currency: string }> => {
         try {
-            if (!TatumClient.isCurrencySupported(symbol)) throw new Error(`Currency ${symbol} is not supported`);
-            if (TatumClient.isCustodialWallet(symbol)) symbol = TatumClient.getBaseChain(symbol);
+            let { symbol, network } = data;
+            if (!(await TatumClient.isCurrencySupported(data)))
+                throw new Error(`Currency ${data.symbol} is not supported`);
+            if (TatumClient.isCustodialWallet(data)) symbol = network;
             const keys = await S3Client.getTatumWalletKeys(symbol);
             const walletKeys = { ...keys, walletAddress: keys.address };
             const dbWallet = await TatumWallet.findOne({ where: { currency: symbol } });
@@ -231,14 +214,15 @@ export class TatumClient {
         }
     };
 
-    public static createLedgerAccount = async (currency: string, isCustodial: boolean) => {
+    public static createLedgerAccount = async (data: { symbol: string; network: string; isCustodial: boolean }) => {
         try {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
-            const wallet = await TatumClient.getWallet(currency);
-            if (currency === COIIN) currency = `${currency}_BSC`;
-            if (currency === MATIC) currency = `${currency}_ETH`;
+            let { symbol, network, isCustodial } = data;
+            const wallet = await TatumClient.getWallet({ symbol: data.symbol, network: data.network });
+            if (symbol === COIIN && network === BSC) symbol = `${symbol}_${BSC}`;
+            if (symbol === MATIC && network === ETH) symbol = `${symbol}_${ETH}`;
             return await createAccount({
-                currency: currency === COIIN ? `${currency}_BSC` : currency,
+                currency: symbol,
                 ...(!isCustodial && { xpub: wallet?.xpub || wallet?.address }),
             });
         } catch (error) {
@@ -347,9 +331,12 @@ export class TatumClient {
     public static withdrawFundsToBlockchain = async (data: WithdrawPayload) => {
         try {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
-            const wallet = await TatumClient.getWallet(data.currency.symbol);
+            const wallet = await TatumClient.getWallet({
+                symbol: data.currency.token.symbol,
+                network: data.currency.token.network,
+            });
             const payload = { ...wallet, ...data };
-            const chain = TatumClient.getBaseChain(payload.currency.symbol);
+            const chain = payload.currency.token.network;
             const { withdrawAbleAmount, fee } = await adjustWithdrawableAmount(payload);
             if (parseFloat(withdrawAbleAmount) <= 0)
                 throw new Error("Not enough balance in user account to pay gas fee.");
@@ -386,11 +373,13 @@ export class TatumClient {
                     case "DOGE":
                         return await sendDogecoinOffchainTransaction(false, body as any);
                     default:
-                        throw new Error(`Withdraws for ${body.currency.symbol} are not supported at this moment.`);
+                        throw new Error(
+                            `Withdraws for ${body.currency.token.symbol} are not supported at this moment.`
+                        );
                 }
             };
             const withdrawTX = await callWithdrawMethod();
-            if (TatumClient.isSubCustodialToken(data.currency.symbol)) {
+            if (TatumClient.isSubCustodialToken(data.currency.token)) {
                 try {
                     await transferFundsToRaiinmaker({
                         currency: payload.currency,
@@ -419,7 +408,7 @@ export class TatumClient {
 
     public static estimateLedgerToBlockchainFee = async (data: WithdrawPayload) => {
         try {
-            const wallet = await TatumClient.getWallet(data.currency.symbol);
+            const wallet = await TatumClient.getWallet(data.currency.token);
             const endpoint = `${TatumClient.baseUrl}/offchain/blockchain/estimate`;
             const requestData: RequestData = {
                 method: "POST",
@@ -442,19 +431,18 @@ export class TatumClient {
 
     public static estimateCustodialWithdrawFee = async (data: WithdrawPayload) => {
         const endpoint = `${TatumClient.baseUrl}/blockchain/estimate`;
-        const chain = TatumClient.getBaseChain(data.currency.symbol);
-        const isSubCustodialToken = TatumClient.isSubCustodialToken(data.currency.symbol);
-        const wallet = await TatumClient.getWallet(chain);
+        const isSubCustodialToken = TatumClient.isSubCustodialToken(data.currency.token);
+        const wallet = await TatumClient.getWallet(data.currency.token);
         const requestData: RequestData = {
             method: "POST",
             url: endpoint,
             payload: {
-                chain: chain,
+                chain: data.currency.token.network,
                 type: "TRANSFER_CUSTODIAL",
                 amount: formatFloat(data.amount),
                 sender: wallet.walletAddress,
                 recipient: data.address,
-                contractAddress: TatumClient.getContractAddress(data.currency.symbol),
+                contractAddress: data.currency.token.contractAddress,
                 custodialAddress: data?.custodialAddress?.address,
                 tokenType: isSubCustodialToken ? 0 : 3,
             },
@@ -467,7 +455,7 @@ export class TatumClient {
 
     public static sendTokenOffchainTransaction = async (data: WithdrawPayload & WalletKeys) => {
         try {
-            const endpoint = `${TatumClient.baseUrl}/offchain/${data.currency.symbol.toLowerCase()}/transfer`;
+            const endpoint = `${TatumClient.baseUrl}/offchain/${data.currency.token.symbol.toLowerCase()}/transfer`;
             const requestData: RequestData = {
                 method: "POST",
                 url: endpoint,
@@ -505,53 +493,52 @@ export class TatumClient {
         }
     };
 
-    public static generateCustodialAddresses = async (symbol: string): Promise<string[]> => {
+    public static generateCustodialAddresses = async (data: SymbolNetworkParams): Promise<string[]> => {
         try {
-            if (!TatumClient.isCustodialWallet(symbol)) throw new Error("Operation not supported.");
-            const chain = TatumClient.getBaseChain(symbol);
-            const wallet = await TatumClient.getWallet(chain);
+            if (!TatumClient.isCustodialWallet(data)) throw new Error("Operation not supported.");
+            const wallet = await TatumClient.getWallet(data);
             const txResp = await TatumClient.createCustodialAddresses({
                 owner: wallet?.walletAddress || "",
                 batchCount: 1,
                 fromPrivateKey: wallet?.privateKey || "",
-                chain,
+                chain: data.network,
             });
             if (txResp.failed) throw new Error("There was an error creating custodial addresses.");
             await sleep(20000);
-            return await TatumClient.getCustodialAddresses({ chain, txId: txResp.txId });
+            return await TatumClient.getCustodialAddresses({ chain: data.network, txId: txResp.txId });
         } catch (error) {
             console.log(error);
             throw new Error(error?.response?.data?.message || error.message);
         }
     };
 
-    public static findOrCreateCurrency = async (symbol: string, wallet: Wallet): Promise<Currency> => {
+    public static findOrCreateCurrency = async (data: SymbolNetworkParams & { wallet: Wallet }): Promise<Currency> => {
         try {
-            if (!TatumClient.isCurrencySupported(symbol)) throw new Error(`Currency ${symbol} is not supported`);
-            const foundWallet = await Wallet.findOne({ where: { id: wallet.id }, relations: ["user", "org"] });
-            const chain = TatumClient.getBaseChain(symbol);
-            const isCustodial = TatumClient.isCustodialWallet(symbol);
-            let ledgerAccount = await Currency.findOne({ where: { wallet, symbol } });
+            const token = await TatumClient.isCurrencySupported(data);
+            if (!token) throw new Error(`Currency ${data.symbol} is not supported.`);
+            const foundWallet = await Wallet.findOne({ where: { id: data.wallet.id }, relations: ["user", "org"] });
+            const isCustodial = TatumClient.isCustodialWallet(data);
+            let ledgerAccount = await Currency.findOne({ where: { wallet: data.wallet, token } });
             let newDepositAddress;
             if (!ledgerAccount) {
-                const newLedgerAccount = await TatumClient.createLedgerAccount(symbol, isCustodial);
+                const newLedgerAccount = await TatumClient.createLedgerAccount({ ...data, isCustodial });
                 if (isCustodial) {
                     if (foundWallet?.org) {
-                        const availableAddress = await CustodialAddress.getAvailableAddress(chain, wallet);
+                        const availableAddress = await CustodialAddress.getAvailableAddress(data.network, data.wallet);
                         if (!availableAddress) throw new Error("No custodial address available.");
                         await assignDepositAddress(newLedgerAccount.id, availableAddress.address);
                         newDepositAddress = availableAddress;
                         await availableAddress.changeAvailability(false);
-                        await availableAddress.assignWallet(wallet);
+                        await availableAddress.assignWallet(data.wallet);
                     }
                 } else {
                     newDepositAddress = await TatumClient.generateDepositAddress(newLedgerAccount.id);
                 }
                 ledgerAccount = await Currency.addAccount({
                     ...newLedgerAccount,
-                    currency: symbol,
+                    token,
                     ...(newDepositAddress && { address: newDepositAddress.address }),
-                    wallet,
+                    wallet: data.wallet,
                 });
             }
             return ledgerAccount;

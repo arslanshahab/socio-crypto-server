@@ -9,6 +9,11 @@ interface JWTPayload {
     role: string;
 }
 
+export interface SymbolNetworkParams {
+    symbol: string;
+    network: string;
+}
+
 export type CustodialAddressChain = "ETH" | "MATIC" | "BSC" | "ONE" | "XDC";
 export type RewardType = "LOGIN_REWARD" | "PARTICIPATION_REWARD" | "REGISTRATION_REWARD";
 
@@ -33,6 +38,7 @@ export interface NewCampaignVariables {
     type: string;
     rafflePrize: RafflePrizeStructure;
     symbol: string;
+    network: string;
     campaignType: string;
     socialMediaType: string[];
     campaignMedia: CampaignChannelMedia[];

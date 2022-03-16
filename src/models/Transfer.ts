@@ -302,6 +302,7 @@ export class Transfer extends BaseEntity {
     public static initTatumTransfer(data: {
         txId?: string;
         symbol: string;
+        network: string;
         campaign?: Campaign;
         amount: BigNumber;
         tatumId: string;

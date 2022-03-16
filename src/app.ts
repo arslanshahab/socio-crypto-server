@@ -31,7 +31,7 @@ import {
     blockAccountBalance,
     getAllWithdrawls,
     transferBalance,
-    generateCustodialAddresses,
+    // generateCustodialAddresses,
     createTatumAccount,
 } from "./controllers/tatum";
 import { kycWebhook } from "./controllers/kyc";
@@ -207,7 +207,6 @@ export class Application {
         this.app.post("/v1/tatum/balance", getAccountBalance);
         this.app.post("/v1/tatum/list-withdraws", getAllWithdrawls);
         this.app.post("/v1/tatum/transfer", transferBalance);
-        this.app.post("/v1/tatum/custodialAddress", generateCustodialAddresses);
         this.app.get("/v1/xoxoday/filters", getXoxodayFilters);
         this.app.post("/v1/kyc/webhook", kycWebhook);
         this.app.use(

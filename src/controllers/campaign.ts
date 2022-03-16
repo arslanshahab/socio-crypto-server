@@ -10,7 +10,7 @@ import { SocialPost } from "../models/SocialPost";
 import { Firebase } from "../clients/firebase";
 import { calculateParticipantPayout, calculateParticipantSocialScore, calculateTier } from "./helpers";
 import { Transfer } from "../models/Transfer";
-import { BN, isSupportedCurrency } from "../util";
+import { BN } from "../util";
 import { Validator } from "../schemas";
 import { Org } from "../models/Org";
 import { HourlyCampaignMetric } from "../models/HourlyCampaignMetric";
@@ -29,13 +29,13 @@ import {
     GLOBAL_CAMPAIGN_EXIST_FOR_CURRENCY,
     RAFFLE_PRIZE_MISSING,
     COMPANY_NOT_SPECIFIED,
-    CURRENCY_NOT_SUPPORTED,
     CAMPAIGN_NAME_EXISTS,
-    CURRENCY_NOT_FOUND,
     CAMPAIGN_NOT_FOUND,
     CAMPAIGN_ORGANIZATION_MISSING,
 } from "../util/errors";
 import { ORG_NOT_FOUND } from "../util/errors";
+import { TatumClient } from "../clients/tatumClient";
+import { Wallet } from "../models/Wallet";
 
 const validator = new Validator();
 
@@ -98,6 +98,7 @@ export const createNewCampaign = async (parent: any, args: NewCampaignVariables,
             type = "crypto",
             rafflePrize,
             symbol,
+            network,
             campaignType,
             socialMediaType,
             campaignMedia,
@@ -125,11 +126,10 @@ export const createNewCampaign = async (parent: any, args: NewCampaignVariables,
             relations: ["wallet", "wallet.walletCurrency"],
         });
         if (!org) throw new Error(ORG_NOT_FOUND);
+        const wallet = await Wallet.findOne({ where: { org } });
+        if (!wallet) throw new Error("Wallet not found.");
         if (type === "crypto") {
-            const isCurrencySupported = await isSupportedCurrency(symbol);
-            if (!isCurrencySupported) throw new Error(CURRENCY_NOT_SUPPORTED);
-            const isWalletAvailable = await org.isCurrencyAdded(symbol);
-            if (!isWalletAvailable) throw new Error(CURRENCY_NOT_FOUND);
+            await TatumClient.findOrCreateCurrency({ symbol, network, wallet });
         }
         if (await Campaign.findOne({ name: ILike(name) })) return new Error(CAMPAIGN_NAME_EXISTS);
         const campaign = Campaign.newCampaign(
@@ -226,7 +226,6 @@ export const updateCampaign = async (parent: any, args: NewCampaignVariables, co
             socialMediaType,
             campaignMedia,
             campaignTemplates,
-            symbol,
             showUrl,
         } = args;
         validator.validateAlgorithmCreateSchema(JSON.parse(algorithm));
@@ -241,12 +240,6 @@ export const updateCampaign = async (parent: any, args: NewCampaignVariables, co
             relations: ["wallet", "wallet.walletCurrency"],
         });
         if (!org) throw new Error(ORG_NOT_FOUND);
-        if (type === "crypto") {
-            const isCurrencySupported = await isSupportedCurrency(symbol);
-            if (!isCurrencySupported) throw new Error(CURRENCY_NOT_SUPPORTED);
-            const isWalletAvailable = await org.isCurrencyAdded(symbol);
-            if (!isWalletAvailable) throw new Error(CURRENCY_NOT_FOUND);
-        }
         const campaign = await Campaign.findOne({ where: { id: id }, relations: ["campaignTemplates"] });
         if (!campaign) throw new Error(CAMPAIGN_NOT_FOUND);
         let campaignImageSignedURL = "";
@@ -339,7 +332,7 @@ export const adminUpdateCampaignStatus = async (
         const { status, campaignId } = args;
         const campaign = await Campaign.findOne({
             where: { id: campaignId },
-            relations: ["org"],
+            relations: ["org", "currency", "currency.token"],
         });
         if (!campaign) throw new Error(CAMPAIGN_NOT_FOUND);
         if (!campaign.org) throw new Error(CAMPAIGN_ORGANIZATION_MISSING);
@@ -349,7 +342,7 @@ export const adminUpdateCampaignStatus = async (
                     campaign.status = "APPROVED";
                     break;
                 }
-                const walletBalance = await campaign.org.getAvailableBalance(campaign.symbol);
+                const walletBalance = await campaign.org.getAvailableBalance(campaign.currency.token);
                 if (walletBalance < campaign.coiinTotal.toNumber()) {
                     campaign.status = "INSUFFICIENT_FUNDS";
                     break;
