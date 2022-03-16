@@ -128,8 +128,9 @@ export const createNewCampaign = async (parent: any, args: NewCampaignVariables,
         if (!org) throw new Error(ORG_NOT_FOUND);
         const wallet = await Wallet.findOne({ where: { org } });
         if (!wallet) throw new Error("Wallet not found.");
+        let currency;
         if (type === "crypto") {
-            await TatumClient.findOrCreateCurrency({ symbol, network, wallet });
+            currency = await TatumClient.findOrCreateCurrency({ symbol, network, wallet });
         }
         if (await Campaign.findOne({ name: ILike(name) })) return new Error(CAMPAIGN_NAME_EXISTS);
         const campaign = Campaign.newCampaign(
@@ -155,7 +156,8 @@ export const createNewCampaign = async (parent: any, args: NewCampaignVariables,
             isGlobal,
             showUrl,
             targetVideo,
-            org
+            org,
+            currency
         );
         await campaign.save();
         await CampaignMedia.saveMultipleMedias(campaignMedia, campaign);
@@ -453,7 +455,7 @@ export const get = async (parent: any, args: { id: string }) => {
         const where: { [key: string]: string } = { id };
         const campaign = await Campaign.findOne({
             where,
-            relations: ["participants", "prize", "campaignMedia", "campaignTemplates"],
+            relations: ["participants", "prize", "campaignMedia", "campaignTemplates", "currency", "currency.token"],
         });
         if (!campaign) throw new Error("campaign not found");
         campaign.participants.sort((a, b) => {

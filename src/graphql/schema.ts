@@ -13,11 +13,12 @@ export const typeDefs = gql`
             endDate: String!
             description: String
             instructions: String
-            symbol: String
+            symbol: String!
+            network: String!
             company: String
             algorithm: String!
             requirements: JSON
-            imagePath: String
+            imagePath: String!
             campaignType: String
             socialMediaType: [String]
             tagline: String
@@ -41,7 +42,6 @@ export const typeDefs = gql`
             endDate: String!
             description: String
             instructions: String
-            symbol: String
             isGlobal: Boolean
             showUrl: Boolean!
             company: String
@@ -771,6 +771,7 @@ export const typeDefs = gql`
         coiinTotalUSD: Float!
         status: String!
         symbol: String!
+        network: String!
         isGlobal: Boolean
         showUrl: Boolean!
         symbolImageUrl: String!
