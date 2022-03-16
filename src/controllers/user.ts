@@ -23,7 +23,21 @@ import { Currency } from "../models/Currency";
 import { flatten } from "lodash";
 import { Verification } from "../models/Verification";
 import { SesClient } from "../clients/ses";
-import { USER_NOT_FOUND, INCORRECT_PASSWORD, FormattedError, SAME_OLD_AND_NEW_PASSWORD } from "../util/errors";
+import {
+    USER_NOT_FOUND,
+    INCORRECT_PASSWORD,
+    FormattedError,
+    SAME_OLD_AND_NEW_PASSWORD,
+    CAMPAIGN_NOT_FOUND,
+    MISSING_PARAMS,
+    CAMPAIGN_CLOSED,
+    USERNAME_EXISTS,
+    PARTICIPANT_NOT_FOUND,
+    PROFILE_NOT_FOUND,
+    NOTIFICATION_SETTING_NOT_FOUND,
+    EMAIL_EXISTS,
+    INVALID_TOKEN,
+} from "../util/errors";
 import { addDays, endOfISOWeek, startOfDay } from "date-fns";
 import { Transfer } from "../models/Transfer";
 import { RAIINMAKER_ORG_NAME } from "../util/constants";
@@ -38,18 +52,17 @@ export const participate = async (
 ): Promise<Participant> => {
     try {
         const user = await User.findUserByContext(context.user, ["campaigns", "wallet"]);
-        if (!user) throw new Error("user not found");
+        if (!user) throw new Error(USER_NOT_FOUND);
         const campaign = await Campaign.findOne({
             where: { id: args.campaignId },
             relations: ["org"],
         });
-        if (!campaign) throw new Error("campaign not found");
+        if (!campaign) throw new Error(CAMPAIGN_NOT_FOUND);
 
-        if (campaign.type === "raffle" && !args.email) throw new Error("raffle campaigns require an email");
-        if (!campaign.isOpen()) throw new Error("campaign is not open for participation");
+        if (campaign.type === "raffle" && !args.email) throw new Error(MISSING_PARAMS);
+        if (!campaign.isOpen()) throw new Error(CAMPAIGN_CLOSED);
 
-        if (await Participant.findOne({ where: { campaign, user } }))
-            throw new Error("user already participating in this campaign");
+        if (await Participant.findOne({ where: { campaign, user } })) throw new Error(USERNAME_EXISTS);
 
         if (await TatumClient.isCurrencySupported(campaign.symbol)) {
             await TatumClient.findOrCreateCurrency(campaign.symbol, user.wallet);
@@ -57,9 +70,8 @@ export const participate = async (
         const participant = await Participant.createNewParticipant(user, campaign, args.email);
         if (!campaign.isGlobal) await user.transferCoiinReward({ type: "PARTICIPATION_REWARD", campaign });
         return await participant.asV2();
-    } catch (e) {
-        console.log(e);
-        throw new Error(e.message);
+    } catch (error) {
+        throw new FormattedError(error);
     }
 };
 
@@ -77,13 +89,13 @@ export const promotePermissions = async (
     const where: { [key: string]: string } = {};
     if (args.userId) where["id"] = args.userId;
     else if (args.email) where["email"] = args.email;
-    else throw new Error("Either userId or email must be provided");
+    else throw new Error(MISSING_PARAMS);
     const user = await User.findOne({ where });
-    if (!user) throw new Error("user not found");
+    if (!user) throw new Error(USER_NOT_FOUND);
     if (role === "manager") {
         await Firebase.adminClient.auth().setCustomUserClaims(user.id, { role: "manager", company });
     } else {
-        if (!args.role) throw new Error("administrators must specify a role to promote user to");
+        if (!args.role) throw new Error(MISSING_PARAMS);
         await Firebase.adminClient.auth().setCustomUserClaims(user.id, {
             role: args.role,
             company: args.company || company,
@@ -94,16 +106,16 @@ export const promotePermissions = async (
 
 export const removeParticipation = async (parent: any, args: { campaignId: string }, context: { user: any }) => {
     const user = await await User.findUserByContext(context.user, ["campaigns", "wallet"]);
-    if (!user) throw new Error("user not found");
+    if (!user) throw new Error(USER_NOT_FOUND);
     const campaign = await Campaign.findOne({
         where: { id: args.campaignId },
         relations: ["org"],
     });
-    if (!campaign) throw new Error("campaign not found");
+    if (!campaign) throw new Error(CAMPAIGN_NOT_FOUND);
     const participation = await Participant.findOne({
         where: { user, campaign },
     });
-    if (!participation) throw new Error("user was not participating in campaign");
+    if (!participation) throw new Error(PARTICIPANT_NOT_FOUND);
     await HourlyCampaignMetric.upsert(campaign, campaign.org, "removeParticipant");
     await participation.remove();
     return user.asV1();
@@ -130,7 +142,7 @@ export const me = async (
     const { id, userId } = context.user;
     const query = info.fieldNodes.find((field) => field.name.value === info.fieldName);
     const user = await User.getUser({ identityId: id, userId }, query);
-    if (!user) throw new Error("user not found");
+    if (!user) throw new Error(USER_NOT_FOUND);
     if (args.openCampaigns !== null && args.openCampaigns === true) {
         user.campaigns = user.campaigns.filter((p) => p.campaign.isOpen());
     } else if (args.openCampaigns !== null && args.openCampaigns === false) {
@@ -141,7 +153,7 @@ export const me = async (
 
 export const meV2 = async (parent: any, args: any, context: { user: JWTPayload }, info: GraphQLResolveInfo) => {
     let user = await User.findUserByContext(context.user, ["profile", "socialLinks"]);
-    if (!user) throw new Error("user not found");
+    if (!user) throw new Error(USER_NOT_FOUND);
     user = await user.asV2({ loadParticipantModel: false });
     const participations = await Participant.find({ where: { user }, relations: ["campaign"] });
     return {
@@ -167,7 +179,7 @@ export const list = async (parent: any, args: { skip: number; take: number }, co
 export const setDevice = async (parent: any, args: { deviceToken: string }, context: { user: any }) => {
     const { deviceToken } = args;
     const user = await User.findUserByContext(context.user);
-    if (!user) throw new Error("User not found");
+    if (!user) throw new Error(USER_NOT_FOUND);
     user.profile.deviceToken = deviceToken;
     await user.profile.save();
     return true;
@@ -175,9 +187,8 @@ export const setDevice = async (parent: any, args: { deviceToken: string }, cont
 
 export const updateUsername = async (parent: any, args: { username: string }, context: { user: any }) => {
     const user = await User.findUserByContext(context.user);
-    if (!user) throw new Error("User not found");
-    if (await Profile.findOne({ where: { username: args.username } }))
-        throw new Error("username is already registered");
+    if (!user) throw new Error(USER_NOT_FOUND);
+    if (await Profile.findOne({ where: { username: args.username } })) throw new Error(USERNAME_EXISTS);
     user.profile.username = args.username;
     await user.profile.save();
     return user.asV1();
@@ -185,7 +196,7 @@ export const updateUsername = async (parent: any, args: { username: string }, co
 
 export const setRecoveryCode = async (parent: any, args: { code: number }, context: { user: any }) => {
     const user = await User.findUserByContext(context.user, ["profile"]);
-    if (!user) throw new Error("user not found");
+    if (!user) throw new Error(USER_NOT_FOUND);
     user.profile.recoveryCode = sha256Hash(args.code.toString());
     await user.profile.save();
     return user.asV1();
@@ -205,7 +216,7 @@ export const updateProfileInterests = async (
 ) => {
     const { ageRange, city, state, interests, values, country } = args;
     const user = await User.findUserByContext(context.user);
-    if (!user) throw new Error("user not found");
+    if (!user) throw new Error(USER_NOT_FOUND);
     const profile = user.profile;
     if (ageRange) profile.ageRange = ageRange;
     if (city) profile.city = city;
@@ -231,9 +242,9 @@ export const removeProfileInterests = async (
 ) => {
     const { interest, value, ageRange, city, state, country } = args;
     const user = await User.findUserByContext(context.user, ["profile"]);
-    if (!user) throw new Error("user not found");
+    if (!user) throw new Error(USER_NOT_FOUND);
     const profile = await Profile.findOne({ where: { user } });
-    if (!profile) throw new Error("profile not found");
+    if (!profile) throw new Error(PROFILE_NOT_FOUND);
     if (ageRange) profile.ageRange = null;
     if (city) profile.city = null;
     if (state) profile.state = null;
@@ -253,13 +264,13 @@ export const removeProfileInterests = async (
 export const getUserMetrics = async (parent: any, args: { today: boolean }, context: { user: any }) => {
     const { today = false } = args;
     const user = await User.findUserByContext(context.user);
-    if (!user) throw new Error("user not found");
+    if (!user) throw new Error(USER_NOT_FOUND);
     return (await DailyParticipantMetric.getSortedByUser(user, today)).map((metric) => metric.asV1());
 };
 
 export const getUserParticipationKeywords = async (parent: any, args: { id: string }, context: { user: any }) => {
     const user = await User.findUserByContext(context.user);
-    if (!user) throw new Error("user not found");
+    if (!user) throw new Error(USER_NOT_FOUND);
     const participations = await Participant.find({
         where: { user: user },
         relations: ["campaign"],
@@ -275,7 +286,7 @@ export const getUserParticipationKeywords = async (parent: any, args: { id: stri
 export const getPreviousDayMetrics = async (_parent: any, args: any, context: { user: any }) => {
     let metrics: { [key: string]: any } = {};
     const user = await User.findUserByContext(context.user, ["campaigns", "campaigns.campaign"]);
-    if (!user) throw new Error("user not found");
+    if (!user) throw new Error(USER_NOT_FOUND);
     if (user.campaigns.length > 0) {
         for (let i = 0; i < user.campaigns.length; i++) {
             const participant = user.campaigns[i];
@@ -293,9 +304,9 @@ export const getPreviousDayMetrics = async (_parent: any, args: any, context: { 
 
 export const getNotificationSettings = async (parent: any, args: any, context: { user: any }) => {
     const user = await User.findUserByContext(context.user);
-    if (!user) throw new Error("User not found.");
+    if (!user) throw new Error();
     const settings = await NotificationSettings.findOne({ where: { user } });
-    if (!settings) throw new Error("No settings defined for user.");
+    if (!settings) throw new Error(NOTIFICATION_SETTING_NOT_FOUND);
     return settings;
 };
 
@@ -311,7 +322,7 @@ export const updateNotificationSettings = async (
 ) => {
     const { kyc, withdraw, campaignCreate, campaignUpdates } = args;
     const user = await User.findUserByContext(context.user, ["notificationSettings"]);
-    if (!user) throw new Error("user not found");
+    if (!user) throw new Error(USER_NOT_FOUND);
     const notificationSettings = user.notificationSettings;
     if (kyc !== null && kyc !== undefined) notificationSettings.kyc = kyc;
     if (withdraw !== null && withdraw !== undefined) notificationSettings.withdraw = withdraw;
@@ -344,7 +355,7 @@ export const sendUserMessages = async (
 export const uploadProfilePicture = async (parent: any, args: { image: string }, context: { user: any }) => {
     const { image } = args;
     const user = await await User.findUserByContext(context.user);
-    if (!user) throw new Error("user not found");
+    if (!user) throw new Error(USER_NOT_FOUND);
     const filename = await S3Client.uploadProfilePicture("profilePicture", user.id, image);
     user.profile.profilePicture = filename;
     user.profile.save();
@@ -353,7 +364,7 @@ export const uploadProfilePicture = async (parent: any, args: { image: string },
 
 export const getWalletBalances = async (parent: any, args: any, context: { user: any }) => {
     const user = await User.findUserByContext(context.user, ["wallet"]);
-    if (!user) throw new Error("user not found");
+    if (!user) throw new Error(USER_NOT_FOUND);
     const currencies = await Currency.find({ where: { wallet: user.wallet } });
     const balances = await TatumClient.getBalanceForAccountList(currencies);
     let allCurrencies = currencies.map(async (currencyItem) => {
@@ -398,9 +409,9 @@ export const startEmailVerification = async (parent: any, args: { email: string 
     try {
         const { email } = args;
         const user = await User.findUserByContext(context.user, ["profile"]);
-        if (!user) throw new Error("user not found");
-        if (!email) throw new Error("email not provided");
-        if (user.profile.email === email) throw new Error("email already exists");
+        if (!user) throw new Error(USER_NOT_FOUND);
+        if (!email) throw new Error(MISSING_PARAMS);
+        if (user.profile.email === email) throw new Error(EMAIL_EXISTS);
         let verificationData = await Verification.generateVerification({ email, type: "EMAIL" });
         await SesClient.emailAddressVerificationEmail(email, verificationData.getDecryptedCode());
         return {
@@ -420,13 +431,12 @@ export const completeEmailVerification = async (
     try {
         const { email, token } = args;
         const user = await User.findUserByContext(context.user, ["profile"]);
-        if (!user) throw new Error("user not found");
-        if (!email || !token) throw new Error("email or token missing");
+        if (!user) throw new Error(USER_NOT_FOUND);
+        if (!email || !token) throw new Error(MISSING_PARAMS);
         if ((await User.findOne({ where: { email } })) || (await Profile.findOne({ where: { email } })))
-            throw new Error("Email already exists");
+            throw new Error(EMAIL_EXISTS);
         const verificationData = await Verification.findOne({ where: { email, verified: false } });
-        if (!verificationData || decrypt(verificationData.code) !== token)
-            throw new Error("invalid token or verfication not initialized");
+        if (!verificationData || decrypt(verificationData.code) !== token) throw new Error(INVALID_TOKEN);
         await user.updateEmail(email);
         await verificationData.updateVerificationStatus(true);
         return {
@@ -441,7 +451,7 @@ export const completeEmailVerification = async (
 export const getWeeklyRewardEstimation = async (parent: any, args: any, context: any) => {
     try {
         const user = await User.findUserByContext(context.user, ["wallet"]);
-        if (!user) throw new Error("user not found");
+        if (!user) throw new Error(USER_NOT_FOUND);
         const loginReward = await Transfer.getRewardForThisWeek(user.wallet, "LOGIN_REWARD");
         const participationReward = await Transfer.getRewardForThisWeek(user.wallet, "PARTICIPATION_REWARD");
         const nextReward = startOfDay(addDays(endOfISOWeek(user.lastLogin), 1));
@@ -460,7 +470,6 @@ export const getWeeklyRewardEstimation = async (parent: any, args: any, context:
             sharingReward: SHARING_REWARD_AMOUNT,
         };
     } catch (e) {
-        console.log(e);
-        return null;
+        throw new FormattedError(e);
     }
 };

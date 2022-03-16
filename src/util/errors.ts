@@ -74,6 +74,8 @@ export const CAMPAIGN_CLOSED = "CAMPAIGN_CLOSED";
 export const SOICIAL_LINKING_ERROR = "SOICIAL_LINKING_ERROR";
 export const POST_ID_NOT_FOUND = "POST_ID_NOT_FOUND";
 export const SOCIAL_LINK_NOT_FOUND = "SOCIAL_LINK_NOT_FOUND";
+export const PROFILE_NOT_FOUND = "PROFILE_NOT_FOUND";
+export const NOTIFICATION_SETTING_NOT_FOUND = "NOTIFICATION_SETTING_NOT_FOUND";
 
 const errorMap: { [key: string]: string } = {
     SOMETHING_WENT_WRONG: "Something went wrong with your request. please try again!",
@@ -119,4 +121,6 @@ const errorMap: { [key: string]: string } = {
     SOICIAL_LINKING_ERROR: "no client for this social link type",
     POST_ID_NOT_FOUND: "POST_ID_NOT_FOUND",
     SOCIAL_LINK_NOT_FOUND: "SOCIAL_LINK_NOT_FOUND",
+    PROFILE_NOT_FOUND: "PROFILE_NOT_FOUND",
+    NOTIFICATION_SETTING_NOT_FOUND: "NOTIFICATION_SETTING_NOT_FOUND",
 };
