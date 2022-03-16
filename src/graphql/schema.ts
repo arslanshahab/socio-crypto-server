@@ -13,11 +13,12 @@ export const typeDefs = gql`
             endDate: String!
             description: String
             instructions: String
-            symbol: String
+            symbol: String!
+            network: String!
             company: String
             algorithm: String!
             requirements: JSON
-            imagePath: String
+            imagePath: String!
             campaignType: String
             socialMediaType: [String]
             tagline: String
@@ -41,7 +42,6 @@ export const typeDefs = gql`
             endDate: String!
             description: String
             instructions: String
-            symbol: String
             isGlobal: Boolean
             showUrl: Boolean!
             company: String
@@ -168,8 +168,8 @@ export const typeDefs = gql`
 
     type Query {
         getCurrentCampaignTier(campaignId: String!): CurrentTier
-        getDepositAddressForSymbol(symbol: String): DepostAddressObject
-        getSupportedCurrencies: [String]
+        getDepositAddressForSymbol(symbol: String!, network: String!): DepostAddressObject
+        getSupportedCurrencies: [SupportedCurrencyObject]
         usernameExists(username: String!): UserExistence
         listCampaigns(
             open: Boolean
@@ -248,6 +248,13 @@ export const typeDefs = gql`
         getNotificationSettings: NotificationSettings
         getAccumulatedParticipantMetrics(campaignId: String!): AccumulatedParticipantMetric
         getAccumulatedUserMetrics: AccumulatedUserMetric
+        getCoiinAddressForUser: SupportedCurrencyObject
+    }
+
+    type SupportedCurrencyObject {
+        symbol: String!
+        network: String!
+        address: String
     }
 
     type DashboardMetrics {
@@ -766,6 +773,7 @@ export const typeDefs = gql`
         coiinTotalUSD: Float!
         status: String!
         symbol: String!
+        network: String!
         isGlobal: Boolean
         showUrl: Boolean!
         symbolImageUrl: String!

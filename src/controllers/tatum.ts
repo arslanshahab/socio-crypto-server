@@ -9,18 +9,18 @@ import { Currency } from "../models/Currency";
 import { Transfer } from "../models/Transfer";
 import { ApolloError } from "apollo-server-express";
 import { CustodialAddress } from "../models/CustodialAddress";
-import { CustodialAddressChain } from "src/types";
 import { Wallet } from "../models/Wallet";
 import { Org } from "../models/Org";
-import { RAIINMAKER_ORG_NAME } from "../util/constants";
-import { Verification } from "../models/Verification";
-import { COIIN } from "../util/constants";
+import { BSC, COIIN, RAIINMAKER_ORG_NAME } from "../util/constants";
+// import { Verification } from "../models/Verification";
+import { JWTPayload } from "src/types";
+import { createSubscriptionUrl } from "../util/tatumHelper";
 
 export const initWallet = asyncHandler(async (req: Request, res: Response) => {
     try {
-        let { currency } = req.body;
-        currency = currency.toUpperCase();
-        if (await TatumClient.ifWalletExists(currency))
+        let { currency, network } = req.body;
+        if (!currency || !network) throw new Error("Missing required parameters");
+        if (await TatumClient.ifWalletExists({ symbol: currency, network }))
             throw new Error(`Wallet already exists for currency: ${currency}`);
         const wallet: any = await TatumClient.createWallet(currency);
         await S3Client.setTatumWalletKeys(currency, {
@@ -58,20 +58,6 @@ export const saveWallet = asyncHandler(async (req: Request, res: Response) => {
     }
 });
 
-export const generateCustodialAddresses = asyncHandler(async (req: Request, res: Response) => {
-    try {
-        let { currency, token } = req.body;
-        currency = currency.toUpperCase();
-        if (!token || token !== process.env.RAIINMAKER_DEV_TOKEN) throw new Error("Invalid Token");
-        if (!TatumClient.isCurrencySupported(currency)) throw new Error(`Currency ${currency} is not supported`);
-        const list = await TatumClient.generateCustodialAddresses(currency);
-        await CustodialAddress.saveAddresses(list, TatumClient.getBaseChain(currency) as CustodialAddressChain);
-        res.status(200).json(list);
-    } catch (error) {
-        res.status(403).json(error.message);
-    }
-});
-
 export const getAccountTransactions = asyncHandler(async (req: Request, res: Response) => {
     try {
         const { accountId, token, pageSize, offset } = req.body;
@@ -103,11 +89,12 @@ export const getAccountBalance = asyncHandler(async (req: Request, res: Response
 
 export const createTatumAccount = asyncHandler(async (req: Request, res: Response) => {
     try {
-        const { userId, symbol, token } = req.body;
+        const { userId, symbol, network, token } = req.body;
         if (!token || token !== process.env.RAIINMAKER_DEV_TOKEN) throw new Error("Invalid Token");
+        if (!userId || !symbol || !network) throw new Error("Missing required parameters");
         const user = await User.findOne({ where: { id: userId }, relations: ["wallet"] });
         if (!user) throw new Error("User not found.");
-        const tatumCurrency = await TatumClient.findOrCreateCurrency(symbol, user.wallet);
+        const tatumCurrency = await TatumClient.findOrCreateCurrency({ symbol, network, wallet: user.wallet });
         res.status(200).json(tatumCurrency);
     } catch (error) {
         res.status(200).json(error.message);
@@ -179,30 +166,62 @@ export const getSupportedCurrencies = async (parent: any, args: any, context: { 
         const { id } = context.user;
         const admin = await Admin.findOne({ where: { firebaseId: id } });
         if (!admin) throw new Error("Admin not found!");
-        const supportedCurrencies = await TatumClient.getAllCurrencies();
-        supportedCurrencies.unshift("COIIN");
-        return supportedCurrencies;
+        return await TatumClient.getAllCurrencies();
     } catch (error) {
         throw new ApolloError(error.message);
     }
 };
 
-export const getDepositAddress = async (parent: any, args: { symbol: string }, context: { user: any }) => {
+export const getDepositAddress = async (
+    parent: any,
+    args: { symbol: string; network: string },
+    context: { user: any }
+) => {
     try {
         const { id } = context.user;
+        if (!args.symbol || !args.network) throw new Error("Missing required params.");
         const admin = await Admin.findOne({ where: { firebaseId: id }, relations: ["org", "org.wallet"] });
         if (!admin) throw new Error("Admin not found!");
-        const symbol = args.symbol.toUpperCase();
-        if (!TatumClient.isCurrencySupported(symbol)) throw new Error("Currency not supported");
-        const ledgerAccount = await TatumClient.findOrCreateCurrency(symbol, admin.org.wallet);
+        const token = await TatumClient.isCurrencySupported(args);
+        if (!token) throw new Error("Currency not supported");
+        const ledgerAccount = await TatumClient.findOrCreateCurrency({ ...args, wallet: admin.org.wallet });
         if (!ledgerAccount) throw new Error("Ledger account not found.");
         return {
-            symbol,
+            symbol: token.symbol,
             address: ledgerAccount.depositAddress,
-            fromTatum: TatumClient.isCurrencySupported(symbol),
+            fromTatum: true,
             destinationTag: ledgerAccount.destinationTag,
             memo: ledgerAccount.memo,
             message: ledgerAccount.message,
+        };
+    } catch (error) {
+        throw new ApolloError(error.message);
+    }
+};
+
+export const getCoiinAddressForUser = async (parent: any, args: any, context: { user: any }) => {
+    try {
+        const user = await User.findUserByContext(context.user, ["wallet"]);
+        if (!user) throw new Error("User not found.");
+        let currency = await TatumClient.findOrCreateCurrency({
+            symbol: COIIN,
+            network: BSC,
+            wallet: user.wallet,
+        });
+        if (!currency) throw new Error("Currency not found for user.");
+        if (!currency.depositAddress) {
+            const newDepositAddress = await TatumClient.generateCustodialAddress({ symbol: COIIN, network: BSC });
+            await TatumClient.assignAddressToAccount({ accountId: currency.tatumId, address: newDepositAddress });
+            await TatumClient.createAccountIncomingSubscription({
+                accountId: currency.tatumId,
+                url: createSubscriptionUrl({ userId: user.id, accountId: currency.tatumId }),
+            });
+            currency = await currency.updateDepositAddress(newDepositAddress);
+        }
+        return {
+            symbol: COIIN,
+            network: BSC,
+            address: currency.depositAddress,
         };
     } catch (error) {
         throw new ApolloError(error.message);
@@ -219,29 +238,24 @@ export const withdrawFunds = async (
         if (!user) throw new Error("User not found");
         if (user.kycStatus !== "APPROVED")
             throw new Error("You need to get your KYC approved before you can withdraw.");
-        let { symbol, address, amount, verificationToken } = args;
-        symbol = symbol.toUpperCase();
-        if (symbol === COIIN)
-            throw new Error(
-                "Coiin withdraws are currently disabled, please contact our support for further information."
-            );
-        if (!(await TatumClient.isCurrencySupported(symbol))) throw new Error(`currency ${symbol} is not supported`);
-        await Verification.verifyToken({ verificationToken });
-        const userCurrency = await Currency.findOne({ where: { wallet: user.wallet, symbol } });
+        let { symbol, network, address, amount } = args;
+        const token = await TatumClient.isCurrencySupported({ symbol, network });
+        if (!token) throw new Error(`Currency ${symbol} on ${network} network is not supported`);
+        // await Verification.verifyToken({ verificationToken });
+        const userCurrency = await Currency.findOne({ where: { wallet: user.wallet, token }, relations: ["token"] });
         if (!userCurrency) throw new Error(`User wallet not found for currency ${symbol}`);
         const userAccountBalance = await TatumClient.getAccountBalance(userCurrency.tatumId);
         if (parseFloat(userAccountBalance.availableBalance) < amount)
-            throw new Error("Not enough balance in user account to perform withdraw.");
-        if (!userCurrency) throw new Error("Tatum account not found for user.");
+            throw new Error("Not enough balance in user account to perform this withdraw.");
         const custodialAddress = await CustodialAddress.findOne({
             where: {
-                chain: TatumClient.getBaseChain(symbol),
+                chain: token.network,
                 wallet: await Wallet.findOne({
                     where: { org: await Org.findOne({ where: { name: RAIINMAKER_ORG_NAME } }) },
                 }),
             },
         });
-        if (TatumClient.isCustodialWallet(symbol) && !custodialAddress)
+        if (TatumClient.isCustodialWallet({ symbol, network }) && !custodialAddress)
             throw new Error("No custodial address available for raiinmaker");
         const withdrawResp = await TatumClient.withdrawFundsToBlockchain({
             senderAccountId: userCurrency.tatumId,
@@ -254,7 +268,8 @@ export const withdrawFunds = async (
         });
         const newTransfer = Transfer.initTatumTransfer({
             txId: withdrawResp?.txId,
-            symbol,
+            symbol: token.symbol,
+            network: token.network,
             amount: new BN(amount),
             action: "WITHDRAW",
             wallet: user.wallet,
@@ -269,3 +284,17 @@ export const withdrawFunds = async (
         throw new ApolloError(error.message);
     }
 };
+
+export const trackCoiinTransactionForUser = asyncHandler(async (req: Request, res: Response) => {
+    try {
+        const { userId, accountId } = req.params;
+        const user = await User.findUserByContext({ userId } as JWTPayload, ["wallet"]);
+        if (!user) throw new Error("User not found.");
+        const currency = await Currency.findOne({ where: { tatumId: accountId, wallet: user.wallet } });
+        console.log("CURRENCY: ", currency);
+        console.log("REQUEST BODY: ", req.body);
+        res.status(200).json({ success: true });
+    } catch (error) {
+        res.status(200).json(error.message);
+    }
+});

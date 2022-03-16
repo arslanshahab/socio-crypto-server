@@ -37,7 +37,7 @@ export const participate = async (
     context: { user: any }
 ): Promise<Participant> => {
     try {
-        const user = await User.findUserByContext(context.user, ["campaigns", "wallet"]);
+        const user = await User.findUserByContext(context.user, ["campaigns", "wallet", "currency", "currency.token"]);
         if (!user) throw new Error("user not found");
         const campaign = await Campaign.findOne({
             where: { id: args.campaignId },
@@ -50,10 +50,7 @@ export const participate = async (
 
         if (await Participant.findOne({ where: { campaign, user } }))
             throw new Error("user already participating in this campaign");
-
-        if (await TatumClient.isCurrencySupported(campaign.symbol)) {
-            await TatumClient.findOrCreateCurrency(campaign.symbol, user.wallet);
-        }
+        await TatumClient.findOrCreateCurrency({ ...campaign.currency.token, wallet: user.wallet });
         const participant = await Participant.createNewParticipant(user, campaign, args.email);
         if (!campaign.isGlobal) await user.transferCoiinReward({ type: "PARTICIPATION_REWARD", campaign });
         return await participant.asV2();
@@ -354,17 +351,18 @@ export const uploadProfilePicture = async (parent: any, args: { image: string },
 export const getWalletBalances = async (parent: any, args: any, context: { user: any }) => {
     const user = await User.findUserByContext(context.user, ["wallet"]);
     if (!user) throw new Error("user not found");
-    const currencies = await Currency.find({ where: { wallet: user.wallet } });
+    const currencies = await Currency.find({ where: { wallet: user.wallet }, relations: ["token"] });
     const balances = await TatumClient.getBalanceForAccountList(currencies);
     let allCurrencies = currencies.map(async (currencyItem) => {
         const balance = balances.find((balanceItem) => currencyItem.tatumId === balanceItem.tatumId);
+        const symbol = currencyItem.token.symbol;
         return {
             balance: formatFloat(balance.availableBalance),
-            symbol: currencyItem.symbol,
-            minWithdrawAmount: getMinWithdrawableAmount(currencyItem.symbol),
-            usdBalance: getUSDValueForCurrency(currencyItem.symbol.toLowerCase(), balance.availableBalance),
-            imageUrl: getCryptoAssestImageUrl(currencyItem.symbol),
-            network: TatumClient.getBaseChain(currencyItem.symbol) || "",
+            symbol: symbol,
+            minWithdrawAmount: getMinWithdrawableAmount(symbol),
+            usdBalance: getUSDValueForCurrency(symbol.toLowerCase(), balance.availableBalance),
+            imageUrl: getCryptoAssestImageUrl(symbol),
+            network: currencyItem.token.network,
         };
     });
     return allCurrencies;
@@ -462,5 +460,14 @@ export const getWeeklyRewardEstimation = async (parent: any, args: any, context:
     } catch (e) {
         console.log(e);
         return null;
+    }
+};
+
+export const generateCoiinDepositAddress = async (parent: any, args: any, context: any) => {
+    try {
+        const user = await User.findUserByContext(context.user, ["wallet"]);
+        if (!user) throw new Error("user not found");
+    } catch (error) {
+        throw new Error(error.message);
     }
 };
