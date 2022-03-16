@@ -24,19 +24,21 @@ import {
     sendTronOffchainTransaction,
     offchainCompleteWithdrawal,
     offchainCancelWithdrawal,
+    createNewSubscription,
+    SubscriptionType,
 } from "@tatumio/tatum";
 import { TatumWallet } from "../models/TatumWallet";
 import { S3Client } from "./s3";
 import { adjustWithdrawableAmount, transferFundsToRaiinmaker } from "../util/tatumHelper";
 import { Currency } from "../models/Currency";
 import { RequestData, doFetch } from "../util/fetchRequest";
-import { sleep } from "../controllers/helpers";
 import { Wallet } from "../models/Wallet";
 import { CustodialAddress } from "../models/CustodialAddress";
 import { formatFloat } from "../util/index";
 import { BSC, COIIN, ETH, MATIC } from "../util/constants";
 import { Token } from "../models/Token";
 import { SymbolNetworkParams } from "../types.d";
+import { sleep } from "../controllers/helpers";
 export const CAMPAIGN_CREATION_AMOUNT = "CAMPAIGN_CREATION_AMOUNT";
 export const CAMPAIGN_FEE = "CAMPAIGN_FEE";
 export const CAMPAIGN_REWARD = "CAMPAIGN_REWARD";
@@ -73,7 +75,7 @@ export interface WalletKeys {
 export class TatumClient {
     public static baseUrl = "https://api-eu1.tatum.io/v3";
 
-    private static createCustodialAddresses = async (
+    private static createCustodialAddress = async (
         data: CustodialAddressPayload
     ): Promise<{ txId: string; failed: boolean }> => {
         const endpoint = `${TatumClient.baseUrl}/blockchain/sc/custodial/batch`;
@@ -193,7 +195,7 @@ export class TatumClient {
         try {
             let { symbol, network } = data;
             if (!(await TatumClient.isCurrencySupported(data)))
-                throw new Error(`Currency ${data.symbol} is not supported`);
+                throw new Error(`Currency ${data.symbol} is not supported.`);
             if (TatumClient.isCustodialWallet(data)) symbol = network;
             const keys = await S3Client.getTatumWalletKeys(symbol);
             const walletKeys = { ...keys, walletAddress: keys.address };
@@ -247,6 +249,29 @@ export class TatumClient {
             return await getAccountBalance(accountId);
         } catch (error) {
             console.log(error?.response?.data || error.message);
+            throw new Error(error?.response?.data?.message || error.message);
+        }
+    };
+
+    public static assignAddressToAccount = async (data: { accountId: string; address: string }) => {
+        try {
+            process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
+            return await assignDepositAddress(data.accountId, data.address);
+        } catch (error) {
+            console.log(error?.response?.data || error.message);
+            throw new Error(error?.response?.data?.message || error.message);
+        }
+    };
+
+    public static createAccountIncomingSubscription = async (data: { accountId: string; url: string }) => {
+        try {
+            process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
+            await createNewSubscription({
+                type: SubscriptionType.ACCOUNT_INCOMING_BLOCKCHAIN_TRANSACTION,
+                attr: { id: data.accountId, url: data.url },
+            });
+        } catch (error) {
+            console.log(error);
             throw new Error(error?.response?.data?.message || error.message);
         }
     };
@@ -493,19 +518,49 @@ export class TatumClient {
         }
     };
 
-    public static generateCustodialAddresses = async (data: SymbolNetworkParams): Promise<string[]> => {
+    public static generateCustodialAddressList = async (data: SymbolNetworkParams, count = 1): Promise<string[]> => {
         try {
             if (!TatumClient.isCustodialWallet(data)) throw new Error("Operation not supported.");
             const wallet = await TatumClient.getWallet(data);
-            const txResp = await TatumClient.createCustodialAddresses({
+            const txResp = await TatumClient.createCustodialAddress({
+                owner: wallet?.walletAddress || "",
+                batchCount: count,
+                fromPrivateKey: wallet?.privateKey || "",
+                chain: data.network,
+            });
+            if (txResp.failed) throw new Error("There was an error creating custodial addresses.");
+            return await TatumClient.getCustodialAddresses({ chain: data.network, txId: txResp.txId });
+        } catch (error) {
+            console.log(error);
+            throw new Error(error?.response?.data?.message || error.message);
+        }
+    };
+
+    public static generateCustodialAddress = async (data: SymbolNetworkParams): Promise<string> => {
+        try {
+            if (!TatumClient.isCustodialWallet(data)) throw new Error("Operation not supported.");
+            const wallet = await TatumClient.getWallet(data);
+            const txResp = await TatumClient.createCustodialAddress({
                 owner: wallet?.walletAddress || "",
                 batchCount: 1,
                 fromPrivateKey: wallet?.privateKey || "",
                 chain: data.network,
             });
-            if (txResp.failed) throw new Error("There was an error creating custodial addresses.");
-            await sleep(20000);
-            return await TatumClient.getCustodialAddresses({ chain: data.network, txId: txResp.txId });
+            if (!txResp.txId || txResp.failed) throw new Error("There was an error creating custodial addresses.");
+            let addressAvailable = false;
+            let address = "";
+            while (!addressAvailable) {
+                try {
+                    const list = await TatumClient.getCustodialAddresses({ chain: data.network, txId: txResp.txId });
+                    if (list.length) {
+                        address = list[0];
+                        addressAvailable = true;
+                    }
+                } catch (error) {
+                    sleep(1000);
+                }
+            }
+            return address;
         } catch (error) {
             console.log(error);
             throw new Error(error?.response?.data?.message || error.message);
@@ -526,7 +581,10 @@ export class TatumClient {
                     if (foundWallet?.org) {
                         const availableAddress = await CustodialAddress.getAvailableAddress(data.network, data.wallet);
                         if (!availableAddress) throw new Error("No custodial address available.");
-                        await assignDepositAddress(newLedgerAccount.id, availableAddress.address);
+                        await TatumClient.assignAddressToAccount({
+                            accountId: newLedgerAccount.id,
+                            address: availableAddress.address,
+                        });
                         newDepositAddress = availableAddress;
                         await availableAddress.changeAvailability(false);
                         await availableAddress.assignWallet(data.wallet);

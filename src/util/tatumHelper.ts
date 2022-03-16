@@ -5,6 +5,7 @@ import { Org } from "../models/Org";
 import { Transfer } from "../models/Transfer";
 import { formatFloat } from "./index";
 import { getExchangeRateForCrypto } from "./exchangeRate";
+import { serverBaseUrl } from "../config";
 
 interface WithdrawFeeData {
     withdrawAbleAmount: string;
@@ -92,4 +93,8 @@ export const transferFundsToRaiinmaker = async (data: { currency: Currency; amou
         tatumId: raiinmakerCurrency.tatumId,
     });
     newTransfer.save();
+};
+
+export const createSubscriptionUrl = (data: { userId: string; accountId: string }) => {
+    return `${serverBaseUrl}/v1/tatum/subscription/${data.userId}/${data.accountId}`;
 };

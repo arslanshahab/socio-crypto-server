@@ -70,6 +70,11 @@ export class Currency extends BaseEntity {
         };
     }
 
+    public async updateDepositAddress(address: string) {
+        this.depositAddress = address;
+        return await this.save();
+    }
+
     public static async addAccount(data: NewCurrencyVars): Promise<Currency> {
         let account = new Currency();
         account.tatumId = data.id;

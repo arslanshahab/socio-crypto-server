@@ -31,8 +31,8 @@ import {
     blockAccountBalance,
     getAllWithdrawls,
     transferBalance,
-    // generateCustodialAddresses,
     createTatumAccount,
+    trackCoiinTransactionForUser,
 } from "./controllers/tatum";
 import { kycWebhook } from "./controllers/kyc";
 import { GraphQLRequestContext } from "../node_modules/apollo-server-types/dist/index.d";
@@ -227,6 +227,7 @@ export class Application {
             FactorController.recover
         );
         this.app.use("/v1/referral/:participantId", trackClickByLink);
+        this.app.use("/v1/tatum/subscription/:userId/:accountId", trackCoiinTransactionForUser);
         this.app.use(Sentry.Handlers.errorHandler());
     }
 

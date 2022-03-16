@@ -248,11 +248,13 @@ export const typeDefs = gql`
         getNotificationSettings: NotificationSettings
         getAccumulatedParticipantMetrics(campaignId: String!): AccumulatedParticipantMetric
         getAccumulatedUserMetrics: AccumulatedUserMetric
+        getCoiinAddressForUser: SupportedCurrencyObject
     }
 
     type SupportedCurrencyObject {
         symbol: String!
         network: String!
+        address: String
     }
 
     type DashboardMetrics {
