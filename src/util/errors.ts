@@ -48,6 +48,7 @@ export const USER_NOT_FOUND = "USER_NOT_FOUND";
 export const INCORRECT_CODE_OR_EMAIL = "INCORRECT_CODE_OR_EMAIL";
 export const NO_TOKEN_PROVIDED = "NO_TOKEN_PROVIDED";
 export const ERROR_LINKING_TIKTOK = "ERROR_LINKING_TIKTOK";
+export const ERROR_LINKING_TWITTER = "ERROR_LINKING_TWITTER";
 export const GLOBAL_CAMPAIGN_NOT_FOUND = "GLOBAL_CAMPAIGN_NOT_FOUND";
 export const VERIFICATION_TOKEN_EXPIRED = "VERIFICATION_TOKEN_EXPIRED";
 export const ORG_NOT_FOUND = "ORG_NOT_FOUND";
@@ -95,6 +96,7 @@ const errorMap: { [key: string]: string } = {
     INCORRECT_CODE_OR_EMAIL: "Invalid code or verification not initialized",
     SAME_OLD_AND_NEW_PASSWORD: "Current pass and old password cannot be same, please set a different password",
     ERROR_LINKING_TIKTOK: "There was an error linking your tiktok social account.",
+    ERROR_LINKING_TWITTER: "You need to link your twitter account before you redeem!",
     GLOBAL_CAMPAIGN_NOT_FOUND: "Global campaign doesn't exists.",
     VERIFICATION_TOKEN_EXPIRED: "Verification token expired.",
     ORG_NOT_FOUND: "Organization not found.",
