@@ -71,6 +71,9 @@ export const KYC_NOT_FOUND = "KYC_NOT_FOUND";
 export const VERIFICATION_NOT_FOUND = "VERIFICATION_NOT_FOUND";
 export const INVALID_USER_COMPANY = "INVALID_USER_COMPANY";
 export const CAMPAIGN_CLOSED = "CAMPAIGN_CLOSED";
+export const SOICIAL_LINKING_ERROR = "SOICIAL_LINKING_ERROR";
+export const POST_ID_NOT_FOUND = "POST_ID_NOT_FOUND";
+export const SOCIAL_LINK_NOT_FOUND = "SOCIAL_LINK_NOT_FOUND";
 
 const errorMap: { [key: string]: string } = {
     SOMETHING_WENT_WRONG: "Something went wrong with your request. please try again!",
@@ -113,4 +116,7 @@ const errorMap: { [key: string]: string } = {
     VERIFICATION_NOT_FOUND: "verification application not found",
     INVALID_USER_COMPANY: "INVALID_USER_COMPANY",
     CAMPAIGN_CLOSED: "campaign is closed",
+    SOICIAL_LINKING_ERROR: "no client for this social link type",
+    POST_ID_NOT_FOUND: "POST_ID_NOT_FOUND",
+    SOCIAL_LINK_NOT_FOUND: "SOCIAL_LINK_NOT_FOUND",
 };
