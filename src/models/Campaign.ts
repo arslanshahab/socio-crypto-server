@@ -338,6 +338,7 @@ export class Campaign extends BaseEntity {
                 "campaign_template",
                 'campaign_template."campaignId" = campaign.id'
             )
+            .leftJoinAndSelect("campaign.currency", "currency", 'campaign."currencyId" = currency.id')
             .orderBy("campaign.endDate", "DESC")
             .skip(params.skip)
             .take(params.take)
