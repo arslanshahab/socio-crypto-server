@@ -12,7 +12,7 @@ import { CustodialAddress } from "../models/CustodialAddress";
 import { Wallet } from "../models/Wallet";
 import { Org } from "../models/Org";
 import { BSC, COIIN, RAIINMAKER_ORG_NAME } from "../util/constants";
-// import { Verification } from "../models/Verification";
+import { Verification } from "../models/Verification";
 import { JWTPayload } from "src/types";
 import { createSubscriptionUrl } from "../util/tatumHelper";
 
@@ -238,10 +238,10 @@ export const withdrawFunds = async (
         if (!user) throw new Error("User not found");
         if (user.kycStatus !== "APPROVED")
             throw new Error("You need to get your KYC approved before you can withdraw.");
-        let { symbol, network, address, amount } = args;
+        let { symbol, network, address, amount, verificationToken } = args;
         const token = await TatumClient.isCurrencySupported({ symbol, network });
         if (!token) throw new Error(`Currency ${symbol} on ${network} network is not supported`);
-        // await Verification.verifyToken({ verificationToken });
+        await Verification.verifyToken({ verificationToken });
         const userCurrency = await Currency.findOne({ where: { wallet: user.wallet, token }, relations: ["token"] });
         if (!userCurrency) throw new Error(`User wallet not found for currency ${symbol}`);
         const userAccountBalance = await TatumClient.getAccountBalance(userCurrency.tatumId);
