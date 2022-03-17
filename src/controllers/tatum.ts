@@ -247,15 +247,8 @@ export const withdrawFunds = async (
         const userAccountBalance = await TatumClient.getAccountBalance(userCurrency.tatumId);
         if (parseFloat(userAccountBalance.availableBalance) < amount)
             throw new Error("Not enough balance in user account to perform this withdraw.");
-        const custodialAddress = await CustodialAddress.findOne({
-            where: {
-                chain: token.network,
-                wallet: await Wallet.findOne({
-                    where: { org: await Org.findOne({ where: { name: RAIINMAKER_ORG_NAME } }) },
-                }),
-            },
-        });
-        if (TatumClient.isCustodialWallet({ symbol, network }) && !custodialAddress)
+        const raiinmakerCurrency = await Org.getCurrencyForRaiinmaker(userCurrency.token);
+        if (TatumClient.isCustodialWallet({ symbol, network }) && !raiinmakerCurrency.depositAddress)
             throw new Error("No custodial address available for raiinmaker");
         const withdrawResp = await TatumClient.withdrawFundsToBlockchain({
             senderAccountId: userCurrency.tatumId,
@@ -264,7 +257,7 @@ export const withdrawFunds = async (
             address,
             amount: amount.toString(),
             currency: userCurrency,
-            custodialAddress,
+            custodialAddress: raiinmakerCurrency?.depositAddress,
         });
         const newTransfer = Transfer.initTatumTransfer({
             txId: withdrawResp?.txId,
@@ -275,7 +268,7 @@ export const withdrawFunds = async (
             wallet: user.wallet,
             tatumId: address,
         });
-        newTransfer.save();
+        await newTransfer.save();
         return {
             success: true,
             message: "Withdraw completed successfully",
@@ -290,9 +283,32 @@ export const trackCoiinTransactionForUser = asyncHandler(async (req: Request, re
         const { userId, accountId } = req.params;
         const user = await User.findUserByContext({ userId } as JWTPayload, ["wallet"]);
         if (!user) throw new Error("User not found.");
-        const currency = await Currency.findOne({ where: { tatumId: accountId, wallet: user.wallet } });
-        console.log("CURRENCY: ", currency);
-        console.log("REQUEST BODY: ", req.body);
+        const userCurrency = await Currency.findOne({
+            where: { tatumId: accountId, wallet: user.wallet },
+            relations: ["token"],
+        });
+        if (!userCurrency) throw new Error("Currency not found.");
+        const { amount, currency, txId } = req.body;
+        const raiinmakerCurrency = await Org.getCurrencyForRaiinmaker(userCurrency.token);
+        await TatumClient.transferUserDepositedCoiin({
+            currency: userCurrency,
+            senderAccountId: accountId,
+            custodialAddress: currency?.depositAddress,
+            amount,
+            paymentId: "",
+            senderNote: "",
+            address: raiinmakerCurrency.depositAddress,
+        });
+        const newTransfer = Transfer.initTatumTransfer({
+            txId: txId,
+            symbol: userCurrency.token.symbol,
+            network: userCurrency.token.network,
+            amount: new BN(amount),
+            action: "DEPOSIT",
+            wallet: user.wallet,
+            tatumId: userCurrency.tatumId,
+        });
+        await newTransfer.save();
         res.status(200).json({ success: true });
     } catch (error) {
         res.status(200).json(error.message);

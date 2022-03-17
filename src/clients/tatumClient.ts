@@ -55,7 +55,7 @@ export interface WithdrawPayload {
     fee?: string;
     index?: number;
     currency: Currency;
-    custodialAddress?: CustodialAddress;
+    custodialAddress?: string;
 }
 
 export interface CustodialAddressPayload {
@@ -107,7 +107,7 @@ export class TatumClient {
             url: `${TatumClient.baseUrl}/blockchain/sc/custodial/transfer`,
             payload: {
                 chain: data.currency.token.network as TatumCurrency,
-                custodialAddress: data?.custodialAddress?.address,
+                custodialAddress: data?.custodialAddress,
                 tokenAddress: data.currency.token.contractAddress,
                 contractType: isSubCustodialToken ? 0 : 3,
                 recipient: data.address,
@@ -468,7 +468,7 @@ export class TatumClient {
                 sender: wallet.walletAddress,
                 recipient: data.address,
                 contractAddress: data.currency.token.contractAddress,
-                custodialAddress: data?.custodialAddress?.address,
+                custodialAddress: data?.custodialAddress,
                 tokenType: isSubCustodialToken ? 0 : 3,
             },
             headers: { "x-api-key": Secrets.tatumApiKey },
@@ -516,6 +516,15 @@ export class TatumClient {
             console.log(error);
             throw new Error(error?.response?.data?.message || error.message);
         }
+    };
+
+    public static transferUserDepositedCoiin = async (data: WithdrawPayload) => {
+        const wallet = await TatumClient.getWallet({
+            symbol: data.currency.token.symbol,
+            network: data.currency.token.network,
+        });
+        const payload = { ...wallet, ...data };
+        await TatumClient.prepareTransferFromCustodialWallet(payload);
     };
 
     public static generateCustodialAddressList = async (data: SymbolNetworkParams, count = 1): Promise<string[]> => {
