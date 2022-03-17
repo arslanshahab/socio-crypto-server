@@ -240,7 +240,7 @@ export const withdrawFunds = async (
             throw new Error("You need to get your KYC approved before you can withdraw.");
         let { symbol, network, address, amount, verificationToken } = args;
         const token = await TatumClient.isCurrencySupported({ symbol, network });
-        if (!token) throw new Error(`Currency ${symbol} on ${network} network is not supported`);
+        if (!token) throw new Error(`Currency "${symbol}" is not supported`);
         await Verification.verifyToken({ verificationToken });
         const userCurrency = await Currency.findOne({ where: { wallet: user.wallet, token }, relations: ["token"] });
         if (!userCurrency) throw new Error(`User wallet not found for currency ${symbol}`);
