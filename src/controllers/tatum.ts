@@ -286,12 +286,12 @@ export const trackCoiinTransactionForUser = asyncHandler(async (req: Request, re
             relations: ["token"],
         });
         if (!userCurrency) throw new Error("Currency not found.");
-        const { amount, currency, txId } = req.body;
+        const { amount, txId } = req.body;
         const raiinmakerCurrency = await Org.getCurrencyForRaiinmaker(userCurrency.token);
         await TatumClient.transferUserDepositedCoiin({
             currency: userCurrency,
             senderAccountId: accountId,
-            custodialAddress: currency?.depositAddress,
+            custodialAddress: userCurrency?.depositAddress,
             amount,
             paymentId: "",
             senderNote: "",
