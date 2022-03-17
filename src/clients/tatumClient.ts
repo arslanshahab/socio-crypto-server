@@ -132,7 +132,7 @@ export class TatumClient {
     public static isCurrencySupported = async (data: SymbolNetworkParams): Promise<Token | undefined> => {
         try {
             return await Token.findOne({
-                where: { symbol: data.symbol.toUpperCase(), network: data.network.toUpperCase() },
+                where: { symbol: data.symbol.toUpperCase(), network: data.network.toUpperCase(), enabled: true },
             });
         } catch (error) {
             console.log(error);
