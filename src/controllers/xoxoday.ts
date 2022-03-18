@@ -9,8 +9,8 @@ import { S3Client } from "../clients/s3";
 import { Transfer } from "../models/Transfer";
 import { XoxodayOrder as XoxodayOrderModel } from "../models/XoxodayOrder";
 import { TatumClient } from "../clients/tatumClient";
-import { AMOUNT_LIMIT_FOR_KYC_IN_XOXODAY, COIIN } from "../util/constants";
 import { MISSING_PARAMS, USER_NOT_FOUND, FormattedError, INVALID_TOKEN, ERROR_LINKING_TWITTER } from "../util/errors";
+import { AMOUNT_LIMIT_FOR_KYC_IN_XOXODAY, BSC, COIIN } from "../util/constants";
 
 export const initXoxoday = asyncHandler(async (req: Request, res: Response) => {
     try {
@@ -174,7 +174,7 @@ const ifUserCanRedeem = async (user: User, totalCoiinSpent: number) => {
     if (!user.campaigns.length) throw new Error("You need to participate in atleast one campaign in order to redeem!");
     const recentOrder = await Transfer.getLast24HourRedemption(user.wallet, "XOXODAY_REDEMPTION");
     if (recentOrder) throw new Error("You need to wait for few hours before you can redeem again!");
-    const userCurrency = await TatumClient.findOrCreateCurrency(COIIN, user.wallet);
+    const userCurrency = await TatumClient.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet: user.wallet });
     const coiinBalance = new BN((await TatumClient.getAccountBalance(userCurrency.tatumId)).availableBalance);
     if (coiinBalance.isLessThanOrEqualTo(0) || coiinBalance.isLessThan(totalCoiinSpent))
         throw new Error("Not enough coiin balance to proceed with this transaction!");

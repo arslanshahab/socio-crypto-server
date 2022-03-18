@@ -1,5 +1,6 @@
 import { ApolloError } from "apollo-server-express";
 import { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
+import { WITHDRAW_LIMIT } from "./constants";
 
 export class FailureByDesign extends Error {
     public code: string;
@@ -77,8 +78,9 @@ export const POST_ID_NOT_FOUND = "POST_ID_NOT_FOUND";
 export const SOCIAL_LINK_NOT_FOUND = "SOCIAL_LINK_NOT_FOUND";
 export const PROFILE_NOT_FOUND = "PROFILE_NOT_FOUND";
 export const NOTIFICATION_SETTING_NOT_FOUND = "NOTIFICATION_SETTING_NOT_FOUND";
+export const GLOBAL_WITHDRAW_LIMIT = "GLOBAL_WITHDRAW_LIMIT";
 
-const errorMap: { [key: string]: string } = {
+export const errorMap: { [key: string]: string } = {
     SOMETHING_WENT_WRONG: "Something went wrong with your request. please try again!",
     NO_TOKEN_PROVIDED: "Access token is missing.",
     MISSING_PARAMS: "Missing required parameters.",
@@ -125,4 +127,5 @@ const errorMap: { [key: string]: string } = {
     SOCIAL_LINK_NOT_FOUND: "SOCIAL_LINK_NOT_FOUND",
     PROFILE_NOT_FOUND: "PROFILE_NOT_FOUND",
     NOTIFICATION_SETTING_NOT_FOUND: "NOTIFICATION_SETTING_NOT_FOUND",
+    GLOBAL_WITHDRAW_LIMIT: `Withdraw limit reached! Withdraws above $${WITHDRAW_LIMIT} are restricted. Please contact our support for further assistance.`,
 };

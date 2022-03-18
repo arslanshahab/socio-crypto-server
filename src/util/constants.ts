@@ -1,6 +1,9 @@
 export const FEE_RATE = process.env.FEE_RATE ? parseFloat(process.env.FEE_RATE) : 0.1;
 export const COIIN = "COIIN";
 export const MATIC = "MATIC";
+export const BSC = "BSC";
+export const ETH = "ETH";
+export const WITHDRAW_LIMIT = 1000;
 export const RAIINMAKER_ORG_NAME = "raiinmaker";
 export const AMOUNT_LIMIT_FOR_KYC_IN_XOXODAY = 100;
 export const CRYPTO_ICONS_BUCKET_URL = "https://rm-crypto-icons.s3.us-west-2.amazonaws.com";

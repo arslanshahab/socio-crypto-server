@@ -59,6 +59,7 @@ export const resolvers = {
         getNotificationSettings: userController.getNotificationSettings,
         getAccumulatedParticipantMetrics: participantController.getAccumulatedParticipantMetrics,
         getAccumulatedUserMetrics: participantController.getAccumulatedUserMetrics,
+        getCoiinAddressForUser: tatumController.getCoiinAddressForUser,
     },
     Mutation: {
         generateFactorsFromKyc: factorController.generateFactors,

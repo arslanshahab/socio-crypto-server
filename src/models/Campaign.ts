@@ -8,6 +8,7 @@ import {
     UpdateDateColumn,
     ManyToOne,
     OneToOne,
+    Index,
 } from "typeorm";
 import { DateUtils } from "typeorm/util/DateUtils";
 import { Participant } from "./Participant";
@@ -33,8 +34,6 @@ import { CryptoCurrency } from "./CryptoCurrency";
 import { CampaignMedia } from "./CampaignMedia";
 import { CampaignTemplate } from "./CampaignTemplate";
 import { TatumClient, CAMPAIGN_CREATION_AMOUNT } from "../clients/tatumClient";
-import { WalletCurrency } from "./WalletCurrency";
-import { Wallet } from "./Wallet";
 import { Currency } from "./Currency";
 import { getCryptoAssestImageUrl, BN } from "../util";
 import { initDateFromParams } from "../util/date";
@@ -49,12 +48,15 @@ export class Campaign extends BaseEntity {
     @Column({ nullable: false })
     public name: string;
 
+    @Index()
     @Column({ type: "timestamptz", nullable: false })
     public beginDate: Date;
 
+    @Index()
     @Column({ type: "timestamptz", nullable: false })
     public endDate: Date;
 
+    @Index()
     @Column({ nullable: false, default: "DEFAULT" })
     public status: CampaignStatus;
 
@@ -125,6 +127,7 @@ export class Campaign extends BaseEntity {
     @Column({ type: "jsonb", nullable: true })
     public requirements: CampaignRequirementSpecs;
 
+    @Index()
     @Column({ nullable: false, default: false })
     public isGlobal: boolean;
 
@@ -159,6 +162,7 @@ export class Campaign extends BaseEntity {
     public type: string;
 
     public symbolImageUrl = "";
+    public network = "";
 
     @OneToMany(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -248,7 +252,6 @@ export class Campaign extends BaseEntity {
         if (this.posts && this.posts.length > 0) returnedCampaign.posts = this.posts.map((post) => post.asV1());
         if (this.org) returnedCampaign.org = this.org.asV1();
         if (this.crypto) returnedCampaign.crypto = this.crypto.asV1();
-        if (this.symbol) returnedCampaign.symbolImageUrl = getCryptoAssestImageUrl(this.symbol);
         return returnedCampaign;
     }
 
@@ -258,6 +261,12 @@ export class Campaign extends BaseEntity {
             campaign.symbol,
             parseFloat(campaign?.coiinTotal?.toString() || "0")
         );
+        if (this.currency) {
+            const currency = await Currency.findOne({ where: { id: this.currency.id }, relations: ["token"] });
+            campaign.network = currency?.token?.network || "";
+            campaign.symbol = currency?.token?.symbol || "";
+            campaign.symbolImageUrl = getCryptoAssestImageUrl(currency?.token?.symbol || "");
+        }
         return campaign;
     }
 
@@ -334,6 +343,7 @@ export class Campaign extends BaseEntity {
                 "campaign_template",
                 'campaign_template."campaignId" = campaign.id'
             )
+            .leftJoinAndSelect("campaign.currency", "currency", 'campaign."currencyId" = currency.id')
             .orderBy("campaign.endDate", "DESC")
             .skip(params.skip)
             .take(params.take)
@@ -514,10 +524,12 @@ export class Campaign extends BaseEntity {
         isGlobal: boolean,
         showUrl: boolean,
         targetVideo?: string,
-        org?: Org
+        org?: Org,
+        currency?: Currency
     ): Campaign {
         const campaign = new Campaign();
         if (org) campaign.org = org;
+        if (currency) campaign.currency = currency;
         campaign.name = name;
         campaign.coiinTotal = new BN(coiinTotal);
         campaign.target = target;
@@ -547,25 +559,12 @@ export class Campaign extends BaseEntity {
 
     public async blockCampaignAmount(): Promise<string> {
         try {
-            let campaign: Campaign | undefined = this;
+            const campaign = await Campaign.findOne({
+                where: { id: this.id },
+                relations: ["currency"],
+            });
             if (!campaign) throw new Error("campaign now found");
-            if (!campaign.org) throw new Error("org not found for campaign");
-            const wallet = await Wallet.findOne({ where: { org: campaign.org } });
-            const walletCurrency = await WalletCurrency.findOne({
-                where: {
-                    wallet: wallet,
-                    type: campaign.symbol.toLowerCase(),
-                },
-            });
-            if (walletCurrency) {
-                const escrow = Escrow.newCampaignEscrow(campaign, campaign.org.wallet);
-                await campaign.org.updateBalance(campaign.symbol, "subtract", campaign.coiinTotal.toNumber());
-                await escrow.save();
-                return escrow.id;
-            }
-            const currency = await Currency.findOne({
-                where: { wallet: wallet, symbol: campaign.symbol },
-            });
+            const currency = await Currency.findOne({ where: { id: campaign.currency.id } });
             if (!currency) throw new Error("currency not found for campaign");
             const blockageKey = `${CAMPAIGN_CREATION_AMOUNT}:${campaign.id}`;
             const blockedAmount = await TatumClient.blockAccountBalance(

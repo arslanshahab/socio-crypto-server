@@ -10,7 +10,7 @@ import { SocialPost } from "../models/SocialPost";
 import { Firebase } from "../clients/firebase";
 import { calculateParticipantPayout, calculateParticipantSocialScore, calculateTier } from "./helpers";
 import { Transfer } from "../models/Transfer";
-import { BN, isSupportedCurrency } from "../util";
+import { BN } from "../util";
 import { Validator } from "../schemas";
 import { Org } from "../models/Org";
 import { HourlyCampaignMetric } from "../models/HourlyCampaignMetric";
@@ -29,15 +29,15 @@ import {
     GLOBAL_CAMPAIGN_EXIST_FOR_CURRENCY,
     RAFFLE_PRIZE_MISSING,
     COMPANY_NOT_SPECIFIED,
-    CURRENCY_NOT_SUPPORTED,
     CAMPAIGN_NAME_EXISTS,
-    CURRENCY_NOT_FOUND,
     CAMPAIGN_NOT_FOUND,
     CAMPAIGN_ORGANIZATION_MISSING,
     ORG_NOT_FOUND,
     MISSING_PARAMS,
     ADMIN_NOT_FOUND,
 } from "../util/errors";
+import { TatumClient } from "../clients/tatumClient";
+import { Wallet } from "../models/Wallet";
 
 const validator = new Validator();
 
@@ -100,6 +100,7 @@ export const createNewCampaign = async (parent: any, args: NewCampaignVariables,
             type = "crypto",
             rafflePrize,
             symbol,
+            network,
             campaignType,
             socialMediaType,
             campaignMedia,
@@ -127,11 +128,11 @@ export const createNewCampaign = async (parent: any, args: NewCampaignVariables,
             relations: ["wallet", "wallet.walletCurrency"],
         });
         if (!org) throw new Error(ORG_NOT_FOUND);
+        const wallet = await Wallet.findOne({ where: { org } });
+        if (!wallet) throw new Error("Wallet not found.");
+        let currency;
         if (type === "crypto") {
-            const isCurrencySupported = await isSupportedCurrency(symbol);
-            if (!isCurrencySupported) throw new Error(CURRENCY_NOT_SUPPORTED);
-            const isWalletAvailable = await org.isCurrencyAdded(symbol);
-            if (!isWalletAvailable) throw new Error(CURRENCY_NOT_FOUND);
+            currency = await TatumClient.findOrCreateCurrency({ symbol, network, wallet });
         }
         if (await Campaign.findOne({ name: ILike(name) })) return new Error(CAMPAIGN_NAME_EXISTS);
         const campaign = Campaign.newCampaign(
@@ -157,7 +158,8 @@ export const createNewCampaign = async (parent: any, args: NewCampaignVariables,
             isGlobal,
             showUrl,
             targetVideo,
-            org
+            org,
+            currency
         );
         await campaign.save();
         await CampaignMedia.saveMultipleMedias(campaignMedia, campaign);
@@ -228,7 +230,6 @@ export const updateCampaign = async (parent: any, args: NewCampaignVariables, co
             socialMediaType,
             campaignMedia,
             campaignTemplates,
-            symbol,
             showUrl,
         } = args;
         validator.validateAlgorithmCreateSchema(JSON.parse(algorithm));
@@ -243,12 +244,6 @@ export const updateCampaign = async (parent: any, args: NewCampaignVariables, co
             relations: ["wallet", "wallet.walletCurrency"],
         });
         if (!org) throw new Error(ORG_NOT_FOUND);
-        if (type === "crypto") {
-            const isCurrencySupported = await isSupportedCurrency(symbol);
-            if (!isCurrencySupported) throw new Error(CURRENCY_NOT_SUPPORTED);
-            const isWalletAvailable = await org.isCurrencyAdded(symbol);
-            if (!isWalletAvailable) throw new Error(CURRENCY_NOT_FOUND);
-        }
         const campaign = await Campaign.findOne({ where: { id: id }, relations: ["campaignTemplates"] });
         if (!campaign) throw new Error(CAMPAIGN_NOT_FOUND);
         let campaignImageSignedURL = "";
@@ -341,7 +336,7 @@ export const adminUpdateCampaignStatus = async (
         const { status, campaignId } = args;
         const campaign = await Campaign.findOne({
             where: { id: campaignId },
-            relations: ["org"],
+            relations: ["org", "currency", "currency.token"],
         });
         if (!campaign) throw new Error(CAMPAIGN_NOT_FOUND);
         if (!campaign.org) throw new Error(CAMPAIGN_ORGANIZATION_MISSING);
@@ -351,7 +346,7 @@ export const adminUpdateCampaignStatus = async (
                     campaign.status = "APPROVED";
                     break;
                 }
-                const walletBalance = await campaign.org.getAvailableBalance(campaign.symbol);
+                const walletBalance = await campaign.org.getAvailableBalance(campaign.currency.token);
                 if (walletBalance < campaign.coiinTotal.toNumber()) {
                     campaign.status = "INSUFFICIENT_FUNDS";
                     break;
@@ -462,7 +457,7 @@ export const get = async (parent: any, args: { id: string }) => {
         const where: { [key: string]: string } = { id };
         const campaign = await Campaign.findOne({
             where,
-            relations: ["participants", "prize", "campaignMedia", "campaignTemplates"],
+            relations: ["participants", "prize", "campaignMedia", "campaignTemplates", "currency", "currency.token"],
         });
         if (!campaign) throw new Error(CAMPAIGN_NOT_FOUND);
         campaign.participants.sort((a, b) => {
