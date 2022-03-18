@@ -4,7 +4,7 @@ import { Wallet } from "../models/Wallet";
 import { Currency } from "../models/Currency";
 import { Transfer } from "../models/Transfer";
 import { getCryptoAssestImageUrl } from "../util";
-import { ADMIN_NOT_FOUND, FormattedError, ORG_NOT_FOUND, TRANSFER_NOT_FOUND } from "../util/errors";
+import { ADMIN_NOT_FOUND, FormattedError, ORG_NOT_FOUND } from "../util/errors";
 
 export const get = async (parent: any, args: any, context: { user: any }) => {
     try {
