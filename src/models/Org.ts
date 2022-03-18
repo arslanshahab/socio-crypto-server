@@ -17,6 +17,8 @@ import { Wallet } from "./Wallet";
 import { TatumClient } from "../clients/tatumClient";
 import { Currency } from "./Currency";
 import { RAIINMAKER_ORG_NAME } from "../util/constants";
+import { SymbolNetworkParams } from "../types.d";
+import { Token } from "./Token";
 
 @Entity()
 export class Org extends BaseEntity {
@@ -107,28 +109,6 @@ export class Org extends BaseEntity {
             .getRawMany();
     }
 
-    public async isCurrencyAdded(symbol: string): Promise<boolean> {
-        try {
-            let org: Org | undefined = this;
-            if (!org.wallet) {
-                org = await Org.findOne({
-                    where: { id: this.id },
-                    relations: ["wallet"],
-                });
-            }
-            if (org) {
-                const walletCurrency = org.wallet.walletCurrency.find((item) => item.type === symbol.toLowerCase());
-                if (walletCurrency) return true;
-                const currency = await Currency.findOne({ where: { symbol, wallet: org.wallet } });
-                if (currency) return true;
-            }
-            return false;
-        } catch (error) {
-            console.log(error.message);
-            throw new Error(error.message);
-        }
-    }
-
     public async updateBalance(currency: string, operation: "add" | "subtract", amount: number): Promise<any> {
         try {
             let org: Org | undefined = this;
@@ -149,14 +129,12 @@ export class Org extends BaseEntity {
         }
     }
 
-    public async getAvailableBalance(symbol: string): Promise<number> {
+    public async getAvailableBalance(token: Token): Promise<number> {
         try {
-            let org: Org | undefined = this;
-            if (!org) throw new Error("org not found");
             const currency = await Currency.findOne({
-                where: { wallet: await Wallet.findOne({ where: { org: org } }), symbol },
+                where: { wallet: await Wallet.findOne({ where: { org: this } }), token },
             });
-            if (!currency) throw new Error("Tatum account not found for org.");
+            if (!currency) throw new Error("Currency not found for org.");
             const tatumBalance = await TatumClient.getAccountBalance(currency.tatumId);
             return parseFloat(tatumBalance.availableBalance || "0");
         } catch (error) {
@@ -165,9 +143,9 @@ export class Org extends BaseEntity {
         }
     }
 
-    public static getCurrencyForRaiinmaker = async (symbol: string) => {
+    public static getCurrencyForRaiinmaker = async (data: SymbolNetworkParams) => {
         const raiinmakerOrg = await Org.findOne({ where: { name: RAIINMAKER_ORG_NAME }, relations: ["wallet"] });
         if (!raiinmakerOrg) throw new Error(`Org not found for ${RAIINMAKER_ORG_NAME}.`);
-        return await TatumClient.findOrCreateCurrency(symbol, raiinmakerOrg.wallet);
+        return await TatumClient.findOrCreateCurrency({ ...data, wallet: raiinmakerOrg.wallet });
     };
 }

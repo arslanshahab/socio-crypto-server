@@ -71,10 +71,12 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
                 }),
                 symbol: campaign.symbol,
             },
+            relations: ["token"],
         });
         if (!raiinmakerAccount) throw new Error("currency not found for raiinmaker");
         const campaignAccount = await Currency.findOne({
             where: { wallet: campaign.org.wallet, symbol: campaign.symbol },
+            relations: ["token"],
         });
         if (!campaignAccount) throw new Error("currency not found for campaign");
         for (let index = 0; index < participants.length; index++) {
@@ -138,6 +140,7 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
                 if (!wallet) throw new Error("wallet not found for user.");
                 const newTransfer = Transfer.initTatumTransfer({
                     symbol: transferData.campaign.symbol,
+                    network: "",
                     campaign: transferData.campaign,
                     amount: transferData.amount,
                     tatumId: transferData.userCurrency.tatumId,

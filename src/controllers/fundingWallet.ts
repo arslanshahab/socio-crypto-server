@@ -15,15 +15,16 @@ export const get = async (parent: any, args: any, context: { user: any }) => {
         if (!admin) throw new Error("Admin not found");
         if (!admin.org) throw Error("Org not found");
         const wallet = await Wallet.findOne({ where: { org: admin.org } });
-        const currencies = await Currency.find({ where: { wallet: wallet } });
+        const currencies = await Currency.find({ where: { wallet: wallet }, relations: ["token"] });
         const balances = await TatumClient.getBalanceForAccountList(currencies);
         let allCurrencies = currencies.map((currencyItem) => {
             const balance = balances.find((balanceItem) => currencyItem.tatumId === balanceItem.tatumId);
+            const symbol = currencyItem?.token?.symbol || "";
             return {
                 balance: balance.availableBalance,
-                type: currencyItem.symbol,
-                symbolImageUrl: getCryptoAssestImageUrl(currencyItem.symbol),
-                network: TatumClient.getBaseChain(currencyItem.symbol) || "",
+                type: symbol,
+                symbolImageUrl: getCryptoAssestImageUrl(symbol),
+                network: currencyItem?.token?.network || "",
             };
         });
         return {

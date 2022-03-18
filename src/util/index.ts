@@ -1,5 +1,3 @@
-import { CryptoCurrency } from "../models/CryptoCurrency";
-import { TatumClient } from "../clients/tatumClient";
 import { getExchangeRateForCrypto } from "./exchangeRate";
 // eslint-disable-next-line
 // @ts-ignore
@@ -27,12 +25,6 @@ import { Factor } from "../models/Factor";
 import { CRYPTO_ICONS_MAP, CRYPTO_ICONS_BUCKET_URL, COIIN } from "./constants";
 
 // general helper functions start here
-export const isSupportedCurrency = async (symbol: string): Promise<boolean> => {
-    const crypto = await CryptoCurrency.findOne({ where: { type: symbol.toLowerCase() } });
-    if (crypto) return true;
-    return await TatumClient.isCurrencySupported(symbol);
-};
-
 export const getMinWithdrawableAmount = async (symbol: string) => {
     symbol = symbol.toLowerCase();
     const minLimit = parseFloat(process?.env?.MIN_WITHDRAW_LIMIT || "100");

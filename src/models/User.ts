@@ -33,7 +33,7 @@ import { differenceInHours } from "date-fns";
 import { Transfer } from "./Transfer";
 import { TatumClient } from "../clients/tatumClient";
 import { Org } from "./Org";
-import { COIIN, REWARD_AMOUNTS } from "../util/constants";
+import { BSC, COIIN, REWARD_AMOUNTS } from "../util/constants";
 import { Campaign } from "./Campaign";
 
 @Entity()
@@ -120,7 +120,7 @@ export class User extends BaseEntity {
         await user.save();
         wallet.user = user;
         await wallet.save();
-        await TatumClient.findOrCreateCurrency(COIIN, wallet);
+        await TatumClient.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet: user.wallet });
         profile.username = username;
         profile.user = user;
         await profile.save();
@@ -197,8 +197,12 @@ export class User extends BaseEntity {
         const user = this;
         const wallet = await Wallet.findOne({ where: { user } });
         if (!wallet) throw new Error("User wallet not found");
-        const raiinmakerCurrency = await Org.getCurrencyForRaiinmaker(COIIN);
-        const userCurrency = await TatumClient.findOrCreateCurrency(COIIN, wallet);
+        const raiinmakerCurrency = await Org.getCurrencyForRaiinmaker({ symbol: COIIN, network: BSC });
+        const userCurrency = await TatumClient.findOrCreateCurrency({
+            symbol: COIIN,
+            network: BSC,
+            wallet: user.wallet,
+        });
         const senderId = operation === "ADD" ? raiinmakerCurrency.tatumId : userCurrency.tatumId;
         const receipientId = operation === "ADD" ? userCurrency.tatumId : raiinmakerCurrency.tatumId;
         try {
@@ -224,8 +228,12 @@ export class User extends BaseEntity {
         if (type === "LOGIN_REWARD" || type === "PARTICIPATION_REWARD")
             thisWeeksReward = await Transfer.getRewardForThisWeek(wallet, type);
         const amount = REWARD_AMOUNTS[type] || 0;
-        const raiinmakerCurrency = await Org.getCurrencyForRaiinmaker(COIIN);
-        const userCurrency = await TatumClient.findOrCreateCurrency(COIIN, wallet);
+        const raiinmakerCurrency = await Org.getCurrencyForRaiinmaker({ symbol: COIIN, network: BSC });
+        const userCurrency = await TatumClient.findOrCreateCurrency({
+            symbol: COIIN,
+            network: BSC,
+            wallet: user.wallet,
+        });
         if (
             (type === "LOGIN_REWARD" && accountAgeInHours > 24 && !thisWeeksReward) ||
             (type === "PARTICIPATION_REWARD" && !thisWeeksReward) ||
