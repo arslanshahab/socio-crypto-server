@@ -1,5 +1,6 @@
 import { ApolloError } from "apollo-server-express";
 import { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
+import { WITHDRAW_LIMIT } from "./constants";
 
 export class FailureByDesign extends Error {
     public code: string;
@@ -60,8 +61,9 @@ export const CURRENCY_NOT_FOUND = "CURRENCY_NOT_FOUND";
 export const CAMPAIGN_NAME_EXISTS = "CAMPAIGN_NAME_EXISTS";
 export const CAMPAIGN_NOT_FOUND = "CAMPAIGN_NOT_FOUND";
 export const CAMPAIGN_ORGANIZATION_MISSING = "CAMPAIGN_ORGANIZATION_MISSING";
+export const GLOBAL_WITHDRAW_LIMIT = "GLOBAL_WITHDRAW_LIMIT";
 
-const errorMap: { [key: string]: string } = {
+export const errorMap: { [key: string]: string } = {
     SOMETHING_WENT_WRONG: "Something went wrong with your request. please try again!",
     NO_TOKEN_PROVIDED: "Access token is missing.",
     MISSING_PARAMS: "Missing required parameters.",
@@ -91,4 +93,5 @@ const errorMap: { [key: string]: string } = {
     CAMPAIGN_NAME_EXISTS: "A campaign already exists with this name.",
     CAMPAIGN_NOT_FOUND: "Campaign not found.",
     CAMPAIGN_ORGANIZATION_MISSING: "CAMPAIGN_ORGANIZATION_MISSING",
+    GLOBAL_WITHDRAW_LIMIT: `Withdraw limit reached! Withdraws above $${WITHDRAW_LIMIT} are restricted. Please contact our support for further assistance.`,
 };
