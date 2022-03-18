@@ -9,10 +9,12 @@ import { Currency } from "../models/Currency";
 import { Transfer } from "../models/Transfer";
 import { ApolloError } from "apollo-server-express";
 import { Org } from "../models/Org";
-import { BSC, COIIN } from "../util/constants";
+import { BSC, COIIN, WITHDRAW_LIMIT } from "../util/constants";
 import { Verification } from "../models/Verification";
 import { JWTPayload } from "src/types";
 import { createSubscriptionUrl } from "../util/tatumHelper";
+import { getSymbolValueInUSD } from "../util/exchangeRate";
+import { errorMap, GLOBAL_WITHDRAW_LIMIT } from "../util/errors";
 
 export const initWallet = asyncHandler(async (req: Request, res: Response) => {
     try {
@@ -245,6 +247,8 @@ export const withdrawFunds = async (
         const userAccountBalance = await TatumClient.getAccountBalance(userCurrency.tatumId);
         if (parseFloat(userAccountBalance.availableBalance) < amount)
             throw new Error("Not enough balance in user account to perform this withdraw.");
+        if ((await getSymbolValueInUSD(symbol, amount)) >= WITHDRAW_LIMIT)
+            throw new Error(errorMap[GLOBAL_WITHDRAW_LIMIT]);
         const raiinmakerCurrency = await Org.getCurrencyForRaiinmaker(userCurrency.token);
         if (TatumClient.isCustodialWallet({ symbol, network }) && !raiinmakerCurrency.depositAddress)
             throw new Error("No custodial address available for raiinmaker");
