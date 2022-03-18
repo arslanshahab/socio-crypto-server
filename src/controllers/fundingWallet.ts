@@ -4,7 +4,7 @@ import { Wallet } from "../models/Wallet";
 import { Currency } from "../models/Currency";
 import { Transfer } from "../models/Transfer";
 import { getCryptoAssestImageUrl } from "../util";
-import { ADMIN_NOT_FOUND, FormattedError, ORG_NOT_FOUND, TRANSFER_NOT_FOUND } from "src/util/errors";
+import { ADMIN_NOT_FOUND, FormattedError, ORG_NOT_FOUND, TRANSFER_NOT_FOUND } from "../util/errors";
 
 export const get = async (parent: any, args: any, context: { user: any }) => {
     try {
@@ -42,7 +42,6 @@ export const transactionHistory = async (parent: any, args: any, context: { user
         if (!admin) throw new Error(ADMIN_NOT_FOUND);
         const orgId = admin.org.id;
         const transfer = await Transfer.getTransactionHistory(orgId);
-        if (!transfer) throw new Error(TRANSFER_NOT_FOUND);
         const transection = transfer.map((result) => result.asV1());
         return transection;
     } catch (error) {
