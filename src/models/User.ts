@@ -10,6 +10,7 @@ import {
     BeforeInsert,
     BeforeUpdate,
     ILike,
+    Index,
 } from "typeorm";
 import { Participant } from "./Participant";
 import { Wallet } from "./Wallet";
@@ -41,6 +42,7 @@ export class User extends BaseEntity {
     @PrimaryGeneratedColumn("uuid")
     public id: string;
 
+    @Index()
     @Column({ nullable: true })
     public identityId: string;
 
