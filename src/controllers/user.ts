@@ -51,14 +51,13 @@ export const participate = async (
     context: { user: any }
 ): Promise<Participant> => {
     try {
-        const user = await User.findUserByContext(context.user, ["campaigns", "wallet", "currency", "currency.token"]);
+        const user = await User.findUserByContext(context.user, ["wallet"]);
         if (!user) throw new Error(USER_NOT_FOUND);
         const campaign = await Campaign.findOne({
             where: { id: args.campaignId },
-            relations: ["org"],
+            relations: ["org", "currenct", "currency.token"],
         });
         if (!campaign) throw new Error(CAMPAIGN_NOT_FOUND);
-
         if (campaign.type === "raffle" && !args.email) throw new Error(MISSING_PARAMS);
         if (!campaign.isOpen()) throw new Error(CAMPAIGN_CLOSED);
 
