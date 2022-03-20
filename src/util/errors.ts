@@ -79,6 +79,7 @@ export const SOCIAL_LINK_NOT_FOUND = "SOCIAL_LINK_NOT_FOUND";
 export const PROFILE_NOT_FOUND = "PROFILE_NOT_FOUND";
 export const NOTIFICATION_SETTING_NOT_FOUND = "NOTIFICATION_SETTING_NOT_FOUND";
 export const GLOBAL_WITHDRAW_LIMIT = "GLOBAL_WITHDRAW_LIMIT";
+export const ALREADY_PARTICIPATING = "ALREADY_PARTICIPATING";
 
 export const errorMap: { [key: string]: string } = {
     SOMETHING_WENT_WRONG: "Something went wrong with your request. please try again!",
@@ -104,6 +105,7 @@ export const errorMap: { [key: string]: string } = {
     ORG_NOT_FOUND: "Organization not found.",
     ERROR_CALCULATING_TIER: "Failure calculating current tier.",
     GLOBAL_CAMPAIGN_EXIST_FOR_CURRENCY: "A global campaign already exists for this currency.",
+    ALREADY_PARTICIPATING: "User already participating in this campaign.",
     RAFFLE_PRIZE_MISSING: "Must specify prize for raffle.",
     COMPANY_NOT_SPECIFIED: "ADministrators need to specify a company in args.",
     CURRENCY_NOT_SUPPORTED: "Currency is not supported.",
