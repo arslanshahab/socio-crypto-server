@@ -37,6 +37,7 @@ import {
     NOTIFICATION_SETTING_NOT_FOUND,
     EMAIL_EXISTS,
     INVALID_TOKEN,
+    ALREADY_PARTICIPATING,
 } from "../util/errors";
 import { addDays, endOfISOWeek, startOfDay } from "date-fns";
 import { Transfer } from "../models/Transfer";
@@ -51,18 +52,17 @@ export const participate = async (
     context: { user: any }
 ): Promise<Participant> => {
     try {
-        const user = await User.findUserByContext(context.user, ["campaigns", "wallet", "currency", "currency.token"]);
+        const user = await User.findUserByContext(context.user, ["wallet"]);
         if (!user) throw new Error(USER_NOT_FOUND);
         const campaign = await Campaign.findOne({
             where: { id: args.campaignId },
-            relations: ["org"],
+            relations: ["org", "currency", "currency.token"],
         });
         if (!campaign) throw new Error(CAMPAIGN_NOT_FOUND);
-
         if (campaign.type === "raffle" && !args.email) throw new Error(MISSING_PARAMS);
         if (!campaign.isOpen()) throw new Error(CAMPAIGN_CLOSED);
 
-        if (await Participant.findOne({ where: { campaign, user } })) throw new Error(USERNAME_EXISTS);
+        if (await Participant.findOne({ where: { campaign, user } })) throw new Error(ALREADY_PARTICIPATING);
         await TatumClient.findOrCreateCurrency({ ...campaign.currency.token, wallet: user.wallet });
         const participant = await Participant.createNewParticipant(user, campaign, args.email);
         if (!campaign.isGlobal) await user.transferCoiinReward({ type: "PARTICIPATION_REWARD", campaign });
