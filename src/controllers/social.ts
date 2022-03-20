@@ -58,10 +58,14 @@ export const registerSocialLink = async (
     const user = await User.findUserByContext(context.user, ["socialLinks"]);
     if (!user) throw new Error(USER_NOT_FOUND);
     const { type, apiKey, apiSecret } = args;
+<<<<<<< Updated upstream
     console.log("args received", args);
     console.log("user data", context.user);
     console.log("user found", user);
     if (!allowedSocialLinks.includes(type)) throw new Error(MISSING_PARAMS);
+=======
+    if (!allowedSocialLinks.includes(type)) throw new Error("the type must exist as a predefined type");
+>>>>>>> Stashed changes
     await SocialLink.addTwitterLink(user, { apiKey, apiSecret });
     return true;
 };
