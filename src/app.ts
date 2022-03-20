@@ -66,7 +66,12 @@ export class Application {
             dsn: Secrets.sentryDSN,
             debug: true,
             environment: process.env.NODE_ENV || "staging",
-            tracesSampleRate: 1.0, // todo reduce this for production after performance issues are resolved
+            tracesSampler: (context) => {
+                if (context.request?.url?.endsWith("/v1/health")) return 0;
+
+                // default sample rate
+                return 1; // todo reduce this for production after performance issues are resolved
+            },
             integrations: [
                 // enable HTTP calls tracing
                 new Sentry.Integrations.Http({ tracing: true }),

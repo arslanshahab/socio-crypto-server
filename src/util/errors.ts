@@ -49,6 +49,7 @@ export const USER_NOT_FOUND = "USER_NOT_FOUND";
 export const INCORRECT_CODE_OR_EMAIL = "INCORRECT_CODE_OR_EMAIL";
 export const NO_TOKEN_PROVIDED = "NO_TOKEN_PROVIDED";
 export const ERROR_LINKING_TIKTOK = "ERROR_LINKING_TIKTOK";
+export const ERROR_LINKING_TWITTER = "ERROR_LINKING_TWITTER";
 export const GLOBAL_CAMPAIGN_NOT_FOUND = "GLOBAL_CAMPAIGN_NOT_FOUND";
 export const VERIFICATION_TOKEN_EXPIRED = "VERIFICATION_TOKEN_EXPIRED";
 export const ORG_NOT_FOUND = "ORG_NOT_FOUND";
@@ -61,6 +62,22 @@ export const CURRENCY_NOT_FOUND = "CURRENCY_NOT_FOUND";
 export const CAMPAIGN_NAME_EXISTS = "CAMPAIGN_NAME_EXISTS";
 export const CAMPAIGN_NOT_FOUND = "CAMPAIGN_NOT_FOUND";
 export const CAMPAIGN_ORGANIZATION_MISSING = "CAMPAIGN_ORGANIZATION_MISSING";
+export const ADMIN_NOT_FOUND = "ADMIN_NOT_FOUND";
+export const TRANSFER_NOT_FOUND = "TRANSFER_NOT_FOUND";
+export const ESCROW_NOT_FOUND = "ESCROW_NOT_FOUND";
+export const WALLET_NOT_FOUND = "WALLET_NOT_FOUND";
+export const AMOUNT_IN_POSITIVE = "AMOUNT_IN_POSITIVE";
+export const PARTICIPANT_NOT_FOUND = "PARTICIPANT_NOT_FOUND";
+export const WALLET_CURRENCY_NOT_FOUND = "WALLET_CURRENCY_NOT_FOUND";
+export const KYC_NOT_FOUND = "KYC_NOT_FOUND";
+export const VERIFICATION_NOT_FOUND = "VERIFICATION_NOT_FOUND";
+export const INVALID_USER_COMPANY = "INVALID_USER_COMPANY";
+export const CAMPAIGN_CLOSED = "CAMPAIGN_CLOSED";
+export const SOICIAL_LINKING_ERROR = "SOICIAL_LINKING_ERROR";
+export const POST_ID_NOT_FOUND = "POST_ID_NOT_FOUND";
+export const SOCIAL_LINK_NOT_FOUND = "SOCIAL_LINK_NOT_FOUND";
+export const PROFILE_NOT_FOUND = "PROFILE_NOT_FOUND";
+export const NOTIFICATION_SETTING_NOT_FOUND = "NOTIFICATION_SETTING_NOT_FOUND";
 export const GLOBAL_WITHDRAW_LIMIT = "GLOBAL_WITHDRAW_LIMIT";
 
 export const errorMap: { [key: string]: string } = {
@@ -81,6 +98,7 @@ export const errorMap: { [key: string]: string } = {
     INCORRECT_CODE_OR_EMAIL: "Invalid code or verification not initialized",
     SAME_OLD_AND_NEW_PASSWORD: "Current pass and old password cannot be same, please set a different password",
     ERROR_LINKING_TIKTOK: "There was an error linking your tiktok social account.",
+    ERROR_LINKING_TWITTER: "You need to link your twitter account before you redeem!",
     GLOBAL_CAMPAIGN_NOT_FOUND: "Global campaign doesn't exists.",
     VERIFICATION_TOKEN_EXPIRED: "Verification token expired.",
     ORG_NOT_FOUND: "Organization not found.",
@@ -93,5 +111,21 @@ export const errorMap: { [key: string]: string } = {
     CAMPAIGN_NAME_EXISTS: "A campaign already exists with this name.",
     CAMPAIGN_NOT_FOUND: "Campaign not found.",
     CAMPAIGN_ORGANIZATION_MISSING: "CAMPAIGN_ORGANIZATION_MISSING",
+    ADMIN_NOT_FOUND: "ADMIN_NOT_FOUND",
+    TRANSFER_NOT_FOUND: "TRANSFER_NOT_FOUND",
+    ESCROW_NOT_FOUND: "ESCROW_NOT_FOUND",
+    WALLET_NOT_FOUND: "WALLET_NOT_FOUND",
+    AMOUNT_IN_POSITIVE: "Amount must be a positive number",
+    PARTICIPANT_NOT_FOUND: "PARTICIPANT_NOT_FOUND",
+    WALLET_CURRENCY_NOT_FOUND: "WALLET_CURRENCY_NOT_FOUND",
+    KYC_NOT_FOUND: "kyc data not found for user",
+    VERIFICATION_NOT_FOUND: "verification application not found",
+    INVALID_USER_COMPANY: "INVALID_USER_COMPANY",
+    CAMPAIGN_CLOSED: "campaign is closed",
+    SOICIAL_LINKING_ERROR: "no client for this social link type",
+    POST_ID_NOT_FOUND: "POST_ID_NOT_FOUND",
+    SOCIAL_LINK_NOT_FOUND: "SOCIAL_LINK_NOT_FOUND",
+    PROFILE_NOT_FOUND: "PROFILE_NOT_FOUND",
+    NOTIFICATION_SETTING_NOT_FOUND: "NOTIFICATION_SETTING_NOT_FOUND",
     GLOBAL_WITHDRAW_LIMIT: `Withdraw limit reached! Withdraws above $${WITHDRAW_LIMIT} are restricted. Please contact our support for further assistance.`,
 };

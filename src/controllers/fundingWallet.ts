@@ -4,6 +4,7 @@ import { Wallet } from "../models/Wallet";
 import { Currency } from "../models/Currency";
 import { Transfer } from "../models/Transfer";
 import { getCryptoAssestImageUrl } from "../util";
+import { ADMIN_NOT_FOUND, FormattedError, ORG_NOT_FOUND } from "../util/errors";
 
 export const get = async (parent: any, args: any, context: { user: any }) => {
     try {
@@ -12,8 +13,8 @@ export const get = async (parent: any, args: any, context: { user: any }) => {
             where: { firebaseId: id },
             relations: ["org"],
         });
-        if (!admin) throw new Error("Admin not found");
-        if (!admin.org) throw Error("Org not found");
+        if (!admin) throw new Error(ADMIN_NOT_FOUND);
+        if (!admin.org) throw Error(ORG_NOT_FOUND);
         const wallet = await Wallet.findOne({ where: { org: admin.org } });
         const currencies = await Currency.find({ where: { wallet: wallet }, relations: ["token"] });
         const balances = await TatumClient.getBalanceForAccountList(currencies);
@@ -31,20 +32,19 @@ export const get = async (parent: any, args: any, context: { user: any }) => {
             currency: allCurrencies,
         };
     } catch (error) {
-        throw new Error(error.message);
+        throw new FormattedError(error);
     }
 };
 export const transactionHistory = async (parent: any, args: any, context: { user: any }) => {
     try {
         const { user } = context;
         const admin = await Admin.findOne({ where: { firebaseId: user.id }, relations: ["org"] });
-        if (!admin) throw new Error("Admin not found");
+        if (!admin) throw new Error(ADMIN_NOT_FOUND);
         const orgId = admin.org.id;
         const transfer = await Transfer.getTransactionHistory(orgId);
-        if (!transfer) throw new Error("Transfer not found");
         const transection = transfer.map((result) => result.asV1());
         return transection;
     } catch (error) {
-        throw new Error("Something went wrong with your request. please try again!");
+        throw new FormattedError(error);
     }
 };

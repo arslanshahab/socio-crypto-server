@@ -4,7 +4,7 @@ import { Org } from "../models/Org";
 import { checkPermissions } from "../middleware/authentication";
 import { HourlyCampaignMetric } from "../models/HourlyCampaignMetric";
 import { SesClient } from "../clients/ses";
-import { FailureByDesign } from "../util/errors";
+import { FormattedError, INVALID_USER_COMPANY, ORG_NOT_FOUND } from "../util/errors";
 import { WalletCurrency } from "../models/WalletCurrency";
 import { Wallet } from "../models/Wallet";
 import { RAIINMAKER_ORG_NAME } from "../util/constants";
@@ -15,7 +15,7 @@ export const newOrg = async (
     context: { user: any }
 ) => {
     try {
-        if (context.user.company !== RAIINMAKER_ORG_NAME) throw new Error("forbidden");
+        if (context.user.company !== RAIINMAKER_ORG_NAME) throw new Error(INVALID_USER_COMPANY);
         const { orgName, email, name } = args;
         const orgNameToLower = orgName.toLowerCase();
         const password = Math.random().toString(16).substr(2, 15);
@@ -36,17 +36,17 @@ export const newOrg = async (
         await SesClient.sendNewOrgConfirmationEmail(orgName, email, password);
         return org;
     } catch (error) {
-        throw new Error("Something went wrong with your request. please try again!");
+        throw new FormattedError(error);
     }
 };
 export const listOrgs = async (parent: any, args: { skip: number; take: number }, context: { user: any }) => {
     try {
-        if (context.user.company !== "raiinmaker") throw new Error("forbidden");
+        if (context.user.company !== "raiinmaker") throw new Error(INVALID_USER_COMPANY);
         const { skip = 0, take = 10 } = args;
         const orgs = await Org.listOrgs(skip, take);
         return orgs.map((org) => org.asV1());
     } catch (error) {
-        throw new Error("Something went wrong with your request. please try again!");
+        throw new FormattedError(error);
     }
 };
 
@@ -54,10 +54,10 @@ export const getHourlyOrgMetrics = async (parent: any, args: any, context: { use
     try {
         const { company } = checkPermissions({ hasRole: ["admin"] }, context);
         const org = await Org.findOne({ where: { name: company } });
-        if (!org) throw new Error("org not found");
+        if (!org) throw new Error(ORG_NOT_FOUND);
         return await HourlyCampaignMetric.getSortedByOrgId(org.id);
     } catch (error) {
-        throw new Error("Something went wrong with your request. please try again!");
+        throw new FormattedError(error);
     }
 };
 
@@ -66,7 +66,7 @@ export const getOrgDetails = async (parent: any, args: any, context: { user: any
         const orgDetail = await Org.orgDetails();
         return orgDetail;
     } catch (error) {
-        throw new Error("Something went wrong with your request. please try again!");
+        throw new FormattedError(error);
     }
 };
 
@@ -80,7 +80,7 @@ export const newUser = async (
     const password = Math.random().toString(16).substr(2, 15);
     try {
         const org = await Org.findOne({ where: { name: company } });
-        if (!org) throw new FailureByDesign("NOT_FOUND", "org not found");
+        if (!org) throw new Error(ORG_NOT_FOUND);
         const user = await Firebase.createNewUser(email, password);
         const userRole = role === "admin" ? "admin" : "manager";
         await Firebase.setCustomUserClaims(user.uid, company, userRole, true);
@@ -90,8 +90,8 @@ export const newUser = async (
         admin.name = name;
         await admin.save();
         console.log(await SesClient.sendNewUserConfirmationEmail(org.name, email, password));
-    } catch (e) {
-        throw new FailureByDesign(e.code, e.message);
+    } catch (error) {
+        throw new FormattedError(error);
     }
     return true;
 };
@@ -101,7 +101,7 @@ export const listEmployees = async (parent: any, args: { skip: number; take: num
         const { company } = checkPermissions({ hasRole: ["admin"] }, context);
         const { skip = 0, take = 10 } = args;
         const org = await Org.findOne({ where: { name: company } });
-        if (!org) throw new Error("org not found");
+        if (!org) throw new Error(ORG_NOT_FOUND);
         const admins = await Admin.listAdminsByOrg(org.id, skip, take);
         const orgName = org?.name;
         const adminsDetails = admins.map((admin) => {
@@ -112,6 +112,6 @@ export const listEmployees = async (parent: any, args: { skip: number; take: num
         });
         return { adminsDetails, orgName };
     } catch (error) {
-        throw new Error("Something went wrong with your request. please try again!");
+        throw new FormattedError(error);
     }
 };

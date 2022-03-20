@@ -9,12 +9,13 @@ import { S3Client } from "../clients/s3";
 import { Transfer } from "../models/Transfer";
 import { XoxodayOrder as XoxodayOrderModel } from "../models/XoxodayOrder";
 import { TatumClient } from "../clients/tatumClient";
+import { MISSING_PARAMS, USER_NOT_FOUND, FormattedError, INVALID_TOKEN, ERROR_LINKING_TWITTER } from "../util/errors";
 import { AMOUNT_LIMIT_FOR_KYC_IN_XOXODAY, BSC, COIIN } from "../util/constants";
 
 export const initXoxoday = asyncHandler(async (req: Request, res: Response) => {
     try {
         const { code, token } = req.body;
-        if (!token || token !== process.env.RAIINMAKER_DEV_TOKEN) throw new Error("Invalid Token");
+        if (!token || token !== process.env.RAIINMAKER_DEV_TOKEN) throw new Error(INVALID_TOKEN);
         const data = await Xoxoday.getAuthData(code);
         res.status(200).json(data);
     } catch (error) {
@@ -25,7 +26,7 @@ export const initXoxoday = asyncHandler(async (req: Request, res: Response) => {
 export const uploadXoxodayTokens = asyncHandler(async (req: Request, res: Response) => {
     try {
         const authData = req.body;
-        if (!req.body.token || req.body.token !== process.env.RAIINMAKER_DEV_TOKEN) throw new Error("Invalid Token");
+        if (!req.body.token || req.body.token !== process.env.RAIINMAKER_DEV_TOKEN) throw new Error(INVALID_TOKEN);
         const augmentedAuthData = Xoxoday.adjustTokenExpiry(authData);
         await S3Client.refreshXoxodayAuthData(augmentedAuthData);
         res.status(200).json({ success: true });
@@ -46,7 +47,7 @@ export const getXoxodayFilters = asyncHandler(async (req: Request, res: Response
 export const getVouchers = async (parent: any, args: { country: string; page: number }, context: { user: any }) => {
     try {
         const { country, page } = args;
-        if (!country) throw new Error("No country provided");
+        if (!country) throw new Error(MISSING_PARAMS);
         const found = supportedCountries().find(
             (item) => item.name.toLowerCase() === country.toLowerCase() && item.enabled
         );
@@ -62,15 +63,15 @@ export const getVouchers = async (parent: any, args: { country: string; page: nu
 export const placeOrder = async (parent: any, args: { cart: Array<any>; email: string }, context: { user: any }) => {
     try {
         const { cart, email } = args;
-        if (!email) throw new Error("No email provided");
+        if (!email) throw new Error(MISSING_PARAMS);
         const user = await User.findUserByContext(context.user, [
             "wallet",
             "wallet.walletCurrency",
             "campaigns",
             "socialLinks",
         ]);
-        if (!user) throw new Error("No user found");
-        if (!cart || !cart.length) throw new Error("Please provide some items to place an order.");
+        if (!user) throw new Error(USER_NOT_FOUND);
+        if (!cart || !cart.length) throw new Error(MISSING_PARAMS);
         const totalCoiinSpent = cart.reduce((a, b) => a + (b.coiinPrice || 0), 0);
         await ifUserCanRedeem(user, totalCoiinSpent);
         const ordersData = await prepareOrderList(cart, email);
@@ -85,8 +86,7 @@ export const placeOrder = async (parent: any, args: { cart: Array<any>; email: s
         });
         return { success: true };
     } catch (error) {
-        console.log(error);
-        return error;
+        throw new FormattedError(error);
     }
 };
 
@@ -102,7 +102,7 @@ const prepareOrderEntities = async (cart: Array<any>, statusList: Array<any>): P
 export const redemptionRequirements = async (parent: any, args: {}, context: { user: any }) => {
     try {
         const user = await User.findUserByContext(context.user, ["campaigns", "socialLinks"]);
-        if (!user) throw new Error("No user found");
+        if (!user) throw new Error(USER_NOT_FOUND);
         const recentOrder = await Transfer.getLast24HourRedemption(user.wallet, "XOXODAY_REDEMPTION");
         const twitterAccount = user.socialLinks.find((item) => item.type === "twitter");
         const socialClient = getSocialClient("twitter");
@@ -117,8 +117,7 @@ export const redemptionRequirements = async (parent: any, args: {}, context: { u
             orderLimitForTwentyFourHoursReached: Boolean(recentOrder),
         };
     } catch (error) {
-        console.log(error);
-        return error;
+        throw new FormattedError(error);
     }
 };
 
@@ -168,7 +167,7 @@ const ifUserCanRedeem = async (user: User, totalCoiinSpent: number) => {
     )
         throw new Error("You need to get your KYC approved before you can redeem vouchers.");
     const twitterAccount = user.socialLinks.find((item) => item.type === "twitter");
-    if (!twitterAccount) throw new Error("You need to link your twitter account before you redeem!");
+    if (!twitterAccount) throw new Error(ERROR_LINKING_TWITTER);
     const socialClient = getSocialClient("twitter");
     const twitterFollowers = await socialClient.getTotalFollowers(twitterAccount, twitterAccount.id);
     if (twitterFollowers < 20) throw new Error("You need to have atleast 20 followers on twitter before you redeem!");
