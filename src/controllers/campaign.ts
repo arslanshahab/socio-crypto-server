@@ -32,8 +32,10 @@ import {
     CAMPAIGN_NAME_EXISTS,
     CAMPAIGN_NOT_FOUND,
     CAMPAIGN_ORGANIZATION_MISSING,
+    ORG_NOT_FOUND,
+    MISSING_PARAMS,
+    ADMIN_NOT_FOUND,
 } from "../util/errors";
-import { ORG_NOT_FOUND } from "../util/errors";
 import { TatumClient } from "../clients/tatumClient";
 import { Wallet } from "../models/Wallet";
 
@@ -384,7 +386,7 @@ export const listCampaigns = async (parent: any, args: ListCampaignsVariables, c
         const data = results.map(async (result) => await result.asV2());
         return { results: data, total };
     } catch (error) {
-        throw new Error("Something went wrong with your request. please try again!");
+        throw new FormattedError(error);
     }
 };
 
@@ -406,7 +408,7 @@ export const adminListPendingCampaigns = async (
         const [results, total] = await Campaign.adminListCampaignsByStatus(skip, take);
         return { results: results.map(async (result) => await result.asV1()), total };
     } catch (error) {
-        throw new Error("Something went wrong with your request. please try again!");
+        throw new FormattedError(error);
     }
 };
 
@@ -429,7 +431,7 @@ export const deleteCampaign = async (parent: any, args: { id: string }, context:
                 "campaignMedia",
             ],
         });
-        if (!campaign) throw new Error("campaign not found");
+        if (!campaign) throw new Error(CAMPAIGN_NOT_FOUND);
         if (campaign.posts.length > 0)
             await SocialPost.delete({
                 id: In(campaign.posts.map((p: any) => p.id)),
@@ -445,7 +447,7 @@ export const deleteCampaign = async (parent: any, args: { id: string }, context:
         await campaign.remove();
         return campaign.asV1();
     } catch (error) {
-        throw new Error("Something went wrong with your request. please try again!");
+        throw new FormattedError(error);
     }
 };
 
@@ -457,13 +459,13 @@ export const get = async (parent: any, args: { id: string }) => {
             where,
             relations: ["participants", "prize", "campaignMedia", "campaignTemplates", "currency", "currency.token"],
         });
-        if (!campaign) throw new Error("campaign not found");
+        if (!campaign) throw new Error(CAMPAIGN_NOT_FOUND);
         campaign.participants.sort((a, b) => {
             return parseFloat(b.participationScore.minus(a.participationScore).toString());
         });
         return campaign.asV2();
     } catch (error) {
-        throw new Error("Something went wrong with your request. please try again!");
+        throw new FormattedError(error);
     }
 };
 
@@ -471,10 +473,10 @@ export const publicGet = async (parent: any, args: { campaignId: string }) => {
     try {
         const { campaignId } = args;
         const campaign = await Campaign.findOne({ where: { id: campaignId } });
-        if (!campaign) throw new Error("campaign not found");
+        if (!campaign) throw new Error(CAMPAIGN_NOT_FOUND);
         return campaign.asV1();
     } catch (error) {
-        throw new Error("Something went wrong with your request. please try again!");
+        throw new FormattedError(error);
     }
 };
 
@@ -483,10 +485,10 @@ export const adminGetCampaignMetrics = async (parent: any, args: { campaignId: s
         checkPermissions({ hasRole: ["admin"] }, context);
         const { campaignId } = args;
         const campaign = await Campaign.findOne({ where: { id: campaignId } });
-        if (!campaign) throw new Error("campaign not found");
+        if (!campaign) throw new Error(CAMPAIGN_NOT_FOUND);
         return await Campaign.getCampaignMetrics(campaignId);
     } catch (error) {
-        throw new Error("Something went wrong with your request. please try again!");
+        throw new FormattedError(error);
     }
 };
 
@@ -496,7 +498,7 @@ export const adminGetPlatformMetrics = async (parent: any, args: any, context: {
         const metrics = await Campaign.getPlatformMetrics();
         return metrics;
     } catch (error) {
-        throw new Error("Something went wrong with your request. please try again!");
+        throw new FormattedError(error);
     }
 };
 export const adminGetHourlyCampaignMetrics = async (
@@ -514,17 +516,17 @@ export const adminGetHourlyCampaignMetrics = async (
         HourlyCampaignMetric.validate.validateHourlyMetricsArgs(args);
         const { campaignId, filter, startDate, endDate } = args;
         const org = await Org.findOne({ where: { name: company } });
-        if (!org) throw new Error("org not found");
+        if (!org) throw new Error(ORG_NOT_FOUND);
         const campaign = await Campaign.findOne({
             where: { id: campaignId, org },
             relations: ["org"],
         });
-        if (!campaign) throw new Error("campaign not found");
+        if (!campaign) throw new Error(CAMPAIGN_NOT_FOUND);
         const { currentTotal } = calculateTier(campaign.totalParticipationScore, campaign.algorithm.tiers);
         const metrics = await HourlyCampaignMetric.getDateGroupedMetrics(filter, startDate, endDate, campaign.id);
         return HourlyCampaignMetric.parseHourlyCampaignMetrics(metrics, filter, currentTotal);
     } catch (error) {
-        throw new Error("Something went wrong with your request. please try again!");
+        throw new FormattedError(error);
     }
 };
 
@@ -540,7 +542,7 @@ export const adminGetHourlyPlatformMetrics = async (
         const metrics = await HourlyCampaignMetric.getDateGroupedMetrics(filter, startDate, endDate);
         return HourlyCampaignMetric.parseHourlyPlatformMetrics(metrics, filter);
     } catch (error) {
-        throw new Error("Something went wrong with your request. please try again!");
+        throw new FormattedError(error);
     }
 };
 
@@ -553,7 +555,7 @@ export const generateCampaignAuditReport = async (
         const { company } = checkPermissions({ hasRole: ["admin", "manager"] }, context);
         const { campaignId } = args;
         const campaign = await Campaign.findCampaignById(campaignId, company);
-        if (!campaign) throw new Error("Campaign not found");
+        if (!campaign) throw new Error(CAMPAIGN_NOT_FOUND);
         const { currentTotal } = await getCurrentCampaignTier(null, { campaign });
         const bigNumTotal = new BN(campaign.type !== "coiin" ? 0 : currentTotal);
         const auditReport: CampaignAuditReport = {
@@ -606,7 +608,7 @@ export const generateCampaignAuditReport = async (
         }
         return auditReport;
     } catch (error) {
-        throw new Error("Something went wrong with your request. please try again!");
+        throw new FormattedError(error);
     }
 };
 
@@ -617,7 +619,7 @@ export const payoutCampaignRewards = async (parent: any, args: { campaignId: str
         const campaign = await Campaign.findOneOrFail({
             where: { id: campaignId, company },
         });
-        if (!campaign) throw new Error("Campaign not found");
+        if (!campaign) throw new Error(CAMPAIGN_NOT_FOUND);
         campaign.auditStatus = "PENDING";
         await campaign.save();
         return {
@@ -625,7 +627,7 @@ export const payoutCampaignRewards = async (parent: any, args: { campaignId: str
             message: "Campaign has been submitted for auditting",
         };
     } catch (error) {
-        throw new Error("Something went wrong with your request. please try again!");
+        throw new FormattedError(error);
     }
 };
 
@@ -634,11 +636,11 @@ export const listAllCampaignsForOrg = async (parent: any, args: any, context: { 
         const userId = context.user.id;
         checkPermissions({ hasRole: ["admin"] }, context);
         const admin = await Admin.findOne({ where: { firebaseId: userId }, relations: ["org"] });
-        if (!admin) throw new Error("Admin not found");
+        if (!admin) throw new Error(ADMIN_NOT_FOUND);
         const campaigns = await Campaign.find({ where: { org: admin.org } });
         return campaigns.map((x) => ({ id: x.id, name: x.name }));
     } catch (error) {
-        throw new Error("Something went wrong with your request. please try again!");
+        throw new FormattedError(error);
     }
 };
 //! Dashboard Metrics
@@ -647,14 +649,14 @@ export const getDashboardMetrics = async (parent: any, { campaignId, skip, take 
         const userId = context.user.id;
         checkPermissions({ hasRole: ["admin"] }, context);
         const admin = await Admin.findOne({ where: { firebaseId: userId }, relations: ["org"] });
-        if (!admin) throw new Error("Admin not found");
+        if (!admin) throw new Error(ADMIN_NOT_FOUND);
         const { org } = admin;
-        if (!org) throw new Error("Organization not found");
+        if (!org) throw new Error(ORG_NOT_FOUND);
         const orgId = await admin.org.id;
         let campaignMetrics;
         let aggregatedCampaignMetrics;
         let totalParticipants;
-        if (!campaignId) throw new Error("Campaign Id not found");
+        if (!campaignId) throw new Error(MISSING_PARAMS);
         if (orgId && campaignId == "-1") {
             aggregatedCampaignMetrics = await DailyParticipantMetric.getAggregatedOrgMetrics(orgId);
             aggregatedCampaignMetrics = { ...aggregatedCampaignMetrics, campaignName: "All" };
@@ -677,6 +679,6 @@ export const getDashboardMetrics = async (parent: any, { campaignId, skip, take 
         const aggregaredMetrics = { ...aggregatedCampaignMetrics, totalParticipants };
         return { aggregatedCampaignMetrics: aggregaredMetrics, campaignMetrics };
     } catch (error) {
-        throw new Error("Something went wrong with your request. please try again!");
+        throw new FormattedError(error);
     }
 };

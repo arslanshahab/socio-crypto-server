@@ -22,6 +22,14 @@ import { limit } from "../util/rateLimiter";
 import { JWTPayload } from "src/types";
 import { getSymbolValueInUSD } from "../util/exchangeRate";
 import { GetCampaignsParticipantsVariables } from "../types.d";
+import {
+    FormattedError,
+    CAMPAIGN_CLOSED,
+    CAMPAIGN_NOT_FOUND,
+    MISSING_PARAMS,
+    PARTICIPANT_NOT_FOUND,
+    USER_NOT_FOUND,
+} from "../util/errors";
 
 const { RATE_LIMIT_MAX = "3", RATE_LIMIT_WINDOW = "1m" } = process.env;
 
@@ -51,15 +59,15 @@ export const trackAction = async (
         { max: Number(RATE_LIMIT_MAX), window: RATE_LIMIT_WINDOW }
     );
     if (errorMessage) throw new Error(errorMessage);
-    if (!["views", "submissions"].includes(args.action)) throw new Error("invalid metric specified");
+    if (!["views", "submissions"].includes(args.action)) throw new Error(MISSING_PARAMS);
     const participant = await Participant.findOne({
         where: { id: args.participantId },
         relations: ["campaign", "campaign.org", "user"],
     });
-    if (!participant) throw new Error("participant not found");
+    if (!participant) throw new Error(PARTICIPANT_NOT_FOUND);
     const campaign = participant.campaign;
-    if (!campaign) throw new Error("campaign not found");
-    if (!participant.campaign.isOpen()) throw new Error("campaign is closed");
+    if (!campaign) throw new Error(CAMPAIGN_NOT_FOUND);
+    if (!participant.campaign.isOpen()) throw new Error(CAMPAIGN_CLOSED);
     let qualityScore = await QualityScore.findOne({ where: { participantId: participant.id } });
     if (!qualityScore) qualityScore = QualityScore.newQualityScore(participant.id);
     let multiplier;
@@ -97,7 +105,7 @@ export const getParticipant = async (parent: any, args: { id: string }) => {
     const { id } = args;
     const where: { [key: string]: string } = { id };
     const participant = await Participant.findOne({ where, relations: ["user", "campaign"] });
-    if (!participant) throw new Error("participant not found");
+    if (!participant) throw new Error(PARTICIPANT_NOT_FOUND);
     return participant.asV1();
 };
 
@@ -122,7 +130,7 @@ export const getPosts = async (parent: any, args: { id: string }, context: any) 
         const results: Promise<any>[] = [];
         const where: { [key: string]: string } = { id };
         const participant = await Participant.findOne({ where });
-        if (!participant) throw new Error("participant not found");
+        if (!participant) throw new Error(PARTICIPANT_NOT_FOUND);
         const posts = await SocialPost.find({ where: { participantId: participant.id } });
         for (let i = 0; i < posts.length; i++) {
             const post = posts[i];
@@ -132,11 +140,8 @@ export const getPosts = async (parent: any, args: { id: string }, context: any) 
             } catch (_) {}
         }
         return results;
-    } catch (e) {
-        console.log("Error: ");
-        console.log(e);
-        console.log("____");
-        return false;
+    } catch (error) {
+        throw new FormattedError(error);
     }
 };
 
@@ -144,9 +149,9 @@ export const getParticipantMetrics = async (parent: any, args: { participantId: 
     const { participantId } = args;
     const additionalRows = [];
     const user = await User.findUserByContext(context.user);
-    if (!user) throw new Error("user not found");
+    if (!user) throw new Error(USER_NOT_FOUND);
     const participant = await Participant.findOne({ where: { id: participantId, user }, relations: ["campaign"] });
-    if (!participant) throw new Error("participant not found");
+    if (!participant) throw new Error(PARTICIPANT_NOT_FOUND);
     const metrics = await DailyParticipantMetric.getSortedByParticipantId(participantId);
     if (
         metrics.length > 0 &&
@@ -174,11 +179,11 @@ export const getAccumulatedParticipantMetrics = async (
     context: { user: JWTPayload }
 ) => {
     const user = await User.findUserByContext(context.user);
-    if (!user) throw new Error("User not found.");
+    if (!user) throw new Error(USER_NOT_FOUND);
     const campaign = await Campaign.findOne({ id: args.campaignId });
-    if (!campaign) throw new Error("Campaign not found.");
+    if (!campaign) throw new Error(CAMPAIGN_NOT_FOUND);
     const participant = await Participant.findOne({ where: { user, campaign } });
-    if (!participant) throw new Error("Participant not found.");
+    if (!participant) throw new Error(PARTICIPANT_NOT_FOUND);
     const counts = await DailyParticipantMetric.getAccumulatedParticipantMetrics(participant.id);
     const { currentTotal } = calculateTier(campaign.totalParticipationScore, campaign.algorithm.tiers);
     const participantShare = await calculateParticipantPayout(new BN(currentTotal), campaign, participant);
@@ -202,7 +207,7 @@ export const getAccumulatedParticipantMetrics = async (
 
 export const getAccumulatedUserMetrics = async (parent: any, args: any, context: { user: JWTPayload }) => {
     const user = await User.findUserByContext(context.user);
-    if (!user) throw new Error("User not found.");
+    if (!user) throw new Error(USER_NOT_FOUND);
     const participations = await Participant.find({ where: { user }, relations: ["campaign"] });
     const ids = participations.map((item) => item.id);
     let counts;
@@ -269,7 +274,6 @@ export const trackClickByLink = asyncHandler(async (req: Request, res: Response)
         }
         return res.redirect(campaign.target);
     } catch (error) {
-        console.log(error);
-        throw new Error(error.message);
+        throw new FormattedError(error);
     }
 });
