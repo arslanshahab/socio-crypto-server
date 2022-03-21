@@ -89,7 +89,7 @@ export const registerUser = async (
 ) => {
     try {
         const { email, password, username, verificationToken } = args;
-        if (!email || !password || !username || verificationToken) throw new Error(MISSING_PARAMS);
+        if (!email || !password || !username || !verificationToken) throw new Error(MISSING_PARAMS);
         if (await User.findOne({ where: { email: ILike(email) } })) throw new Error(EMAIL_EXISTS);
         if (await Profile.findOne({ where: { username: ILike(username) } })) throw new Error(USERNAME_EXISTS);
         await Verification.verifyToken({ verificationToken, email });
