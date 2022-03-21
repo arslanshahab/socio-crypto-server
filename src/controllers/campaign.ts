@@ -676,7 +676,14 @@ export const getDashboardMetrics = async (parent: any, { campaignId, skip, take 
                 },
             });
         }
-        const aggregaredMetrics = { ...aggregatedCampaignMetrics, totalParticipants };
+        const aggregaredMetrics = {
+            clickCount: aggregatedCampaignMetrics?.clickCount || 0,
+            viewCount: aggregatedCampaignMetrics?.viewCount || 0,
+            shareCount: aggregatedCampaignMetrics?.shareCount || 0,
+            participationScore: aggregatedCampaignMetrics?.participationScore || 0,
+            campaignName: aggregatedCampaignMetrics?.campaignName || "",
+            totalParticipants: totalParticipants || 0,
+        };
         return { aggregatedCampaignMetrics: aggregaredMetrics, campaignMetrics };
     } catch (error) {
         throw new FormattedError(error);
