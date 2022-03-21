@@ -2,6 +2,7 @@ import { User } from "../models/User";
 import { Transfer } from "../models/Transfer";
 import { TransferAction } from "src/types";
 import { ILike } from "typeorm";
+import { USER_NOT_FOUND } from "../util/errors";
 
 export const getTransferHistory = async (
     parent: any,
@@ -10,7 +11,7 @@ export const getTransferHistory = async (
 ) => {
     let { symbol, skip = 0, take = 20 } = args;
     const user = await User.findUserByContext(context.user, ["wallet"]);
-    if (!user) throw new Error("user not found");
+    if (!user) throw new Error(USER_NOT_FOUND);
     const [data, count] = await Transfer.findAndCount({
         where: { ...(symbol && { currency: ILike(symbol) }), wallet: user.wallet },
         relations: ["wallet", "campaign"],
@@ -31,7 +32,7 @@ export const getTransferHistoryV2 = async (
 ) => {
     let { symbol, type, skip = 0, take = 20 } = args;
     const user = await User.findUserByContext(context.user, ["wallet"]);
-    if (!user) throw new Error("user not found");
+    if (!user) throw new Error(USER_NOT_FOUND);
     const [data, count] = await Transfer.findAndCount({
         where: {
             wallet: user.wallet,

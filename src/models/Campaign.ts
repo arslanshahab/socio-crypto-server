@@ -8,6 +8,7 @@ import {
     UpdateDateColumn,
     ManyToOne,
     OneToOne,
+    Index,
 } from "typeorm";
 import { DateUtils } from "typeorm/util/DateUtils";
 import { Participant } from "./Participant";
@@ -47,12 +48,15 @@ export class Campaign extends BaseEntity {
     @Column({ nullable: false })
     public name: string;
 
+    @Index()
     @Column({ type: "timestamptz", nullable: false })
     public beginDate: Date;
 
+    @Index()
     @Column({ type: "timestamptz", nullable: false })
     public endDate: Date;
 
+    @Index()
     @Column({ nullable: false, default: "DEFAULT" })
     public status: CampaignStatus;
 
@@ -123,6 +127,7 @@ export class Campaign extends BaseEntity {
     @Column({ type: "jsonb", nullable: true })
     public requirements: CampaignRequirementSpecs;
 
+    @Index()
     @Column({ nullable: false, default: false })
     public isGlobal: boolean;
 

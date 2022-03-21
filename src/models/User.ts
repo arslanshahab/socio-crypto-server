@@ -10,6 +10,7 @@ import {
     BeforeInsert,
     BeforeUpdate,
     ILike,
+    Index,
 } from "typeorm";
 import { Participant } from "./Participant";
 import { Wallet } from "./Wallet";
@@ -41,6 +42,7 @@ export class User extends BaseEntity {
     @PrimaryGeneratedColumn("uuid")
     public id: string;
 
+    @Index()
     @Column({ nullable: true })
     public identityId: string;
 
@@ -110,17 +112,16 @@ export class User extends BaseEntity {
         this.email = this.email ? this.email.toLowerCase() : this.email;
     }
 
-    public static async initNewUser(email: string, password: string, username: string): Promise<User> {
+    public static async initNewUser(email: string, password: string, username: string): Promise<string> {
         const user = new User();
-        const wallet = new Wallet();
+        let wallet = new Wallet();
         const profile = new Profile();
         const notificationSettings = new NotificationSettings();
         user.email = email;
         user.password = password;
         await user.save();
         wallet.user = user;
-        await wallet.save();
-        await TatumClient.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet: user.wallet });
+        wallet = await wallet.save();
         profile.username = username;
         profile.user = user;
         await profile.save();
@@ -128,7 +129,9 @@ export class User extends BaseEntity {
         await notificationSettings.save();
         user.profile = profile;
         user.notificationSettings = notificationSettings;
-        return await user.save();
+        await user.save();
+        await TatumClient.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet });
+        return user.id;
     }
 
     public asV1() {
