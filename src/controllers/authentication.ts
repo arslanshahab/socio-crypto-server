@@ -4,7 +4,7 @@ import { ILike } from "typeorm";
 import { Verification } from "../models/Verification";
 import { SesClient } from "../clients/ses";
 import { User } from "../models/User";
-import { VerificationType } from "src/types";
+import { JWTPayload, VerificationType } from "src/types";
 import { createSessionToken, createPasswordHash, asyncHandler } from "../util";
 import { Profile } from "../models/Profile";
 import {
@@ -12,7 +12,7 @@ import {
     MISSING_PARAMS,
     USERNAME_EXISTS,
     EMAIL_EXISTS,
-    // INCORRECT_PASSWORD,
+    INCORRECT_PASSWORD,
     EMAIL_NOT_EXISTS,
     USERNAME_NOT_EXISTS,
     INCORRECT_CODE,
@@ -93,7 +93,9 @@ export const registerUser = async (
         if (await User.findOne({ where: { email: ILike(email) } })) throw new Error(EMAIL_EXISTS);
         if (await Profile.findOne({ where: { username: ILike(username) } })) throw new Error(USERNAME_EXISTS);
         await Verification.verifyToken({ verificationToken, email });
-        const user = await User.initNewUser(email, createPasswordHash({ email, password }), username);
+        const userId = await User.initNewUser(email, createPasswordHash({ email, password }), username);
+        const user = await User.findUserByContext({ userId } as JWTPayload, ["wallet"]);
+        if (!user) throw new Error(USER_NOT_FOUND);
         await user.transferCoiinReward({ type: "REGISTRATION_REWARD" });
         return { token: createSessionToken(user) };
     } catch (error) {
@@ -107,7 +109,7 @@ export const loginUser = async (parent: any, args: { email: string; password: st
         if (!email || !password) throw new Error(MISSING_PARAMS);
         const user = await User.findOne({ where: { email: ILike(email) }, relations: ["wallet"] });
         if (!user) throw new Error(EMAIL_NOT_EXISTS);
-        // if (user.password !== createPasswordHash({ email, password })) throw new Error(INCORRECT_PASSWORD);
+        if (user.password !== createPasswordHash({ email, password })) throw new Error(INCORRECT_PASSWORD);
         await user.updateLastLogin();
         await user.transferCoiinReward({ type: "LOGIN_REWARD" });
         return { token: createSessionToken(user) };

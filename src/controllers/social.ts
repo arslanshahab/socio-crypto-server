@@ -25,6 +25,7 @@ import {
     SOCIAL_LINK_NOT_FOUND,
     SOICIAL_LINKING_ERROR,
     USER_NOT_FOUND,
+    MEDIA_NOT_FOUND,
 } from "../util/errors";
 import { TatumClient } from "../clients/tatumClient";
 import { BSC, COIIN } from "../util/constants";
@@ -135,7 +136,7 @@ export const postToSocial = async (
         if (defaultMedia) {
             console.log(`downloading media with mediaID ----- ${mediaId}`);
             const selectedMedia = await CampaignMedia.findOne({ where: { id: mediaId } });
-            if (!selectedMedia) throw new Error(MISSING_PARAMS);
+            if (!selectedMedia) throw new Error(MEDIA_NOT_FOUND);
             const mediaUrl = `${assetUrl}/campaign/${campaign.id}/${selectedMedia.media}`;
             const downloaded = await downloadMedia(mediaType, mediaUrl, selectedMedia.mediaFormat);
             media = downloaded;
