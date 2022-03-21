@@ -11,8 +11,16 @@ import { Org } from "../models/Org";
 import { Escrow } from "../models/Escrow";
 import { WalletCurrency } from "../models/WalletCurrency";
 import { FEE_RATE } from "../util/constants";
+import {
+    AMOUNT_IN_POSITIVE,
+    CURRENCY_NOT_FOUND,
+    ESCROW_NOT_FOUND,
+    PARTICIPANT_NOT_FOUND,
+    WALLET_CURRENCY_NOT_FOUND,
+    WALLET_NOT_FOUND,
+} from "../util/errors";
 
-export const feeMultiplier = (() => new BN(1).minus(FEE_RATE));
+export const feeMultiplier = () => new BN(1).minus(FEE_RATE);
 
 export const updateOrgCampaignsStatusOnDeposit = async (wallet: Wallet) => {
     const org = await Org.listOrgCampaignsByWalletIdAndStatus(wallet.id, "INSUFFICIENT_FUNDS");
@@ -49,7 +57,7 @@ export const calculateRaffleWinner = (
     participants: Participant[],
     currentRun = 1
 ): Participant => {
-    if (participants.length === 0) throw new Error("no participants found");
+    if (participants.length === 0) throw new Error(PARTICIPANT_NOT_FOUND);
     if (participants.length === 1) return participants[0];
     if (currentRun > 5) throw new Error("no winner found in 5 runs. Try again");
     const sumOfWeights = totalParticipationScore;
@@ -149,21 +157,21 @@ export const performCurrencyTransfer = async (
     amount: string,
     isEscrow: boolean = false
 ) => {
-    if (new BN(amount).lte(0)) throw new Error("Amount must be a positive number");
+    if (new BN(amount).lte(0)) throw new Error(AMOUNT_IN_POSITIVE);
     return getConnection().transaction(async (transactionalEntityManager) => {
         let from, to;
         if (isEscrow) {
             from = await transactionalEntityManager.findOne(Escrow, {
                 where: { id: fromId },
             });
-            if (!from) throw new Error("escrow not found");
+            if (!from) throw new Error(ESCROW_NOT_FOUND);
             from.amount = from.amount.minus(amount);
         } else {
             from = await transactionalEntityManager.findOne(WalletCurrency, {
                 where: { type: currencyType, wallet: { id: fromId } },
                 relations: ["wallet"],
             });
-            if (!from) throw Error("from wallet currency not found");
+            if (!from) throw Error(CURRENCY_NOT_FOUND);
             if (from.balance.minus(amount).lt(0))
                 throw new Error("wallet does not have the necessary funds to complete this action");
             from.balance = from.balance.minus(amount);
@@ -193,12 +201,12 @@ export const performCurrencyAction = async (
     amount: string,
     action: "credit" | "debit"
 ) => {
-    if (new BN(amount).lte(0)) throw new Error("Amount must be a positive number");
+    if (new BN(amount).lte(0)) throw new Error(AMOUNT_IN_POSITIVE);
     return getConnection().transaction(async (transactionalEntityManager) => {
         const wallet = await transactionalEntityManager.findOne(Wallet, {
             where: { id: walletId },
         });
-        if (!wallet) throw new Error("wallet not found");
+        if (!wallet) throw new Error(WALLET_NOT_FOUND);
         let walletCurrency = await transactionalEntityManager.findOne(WalletCurrency, {
             where: { type: currencyType, wallet },
         });
@@ -214,7 +222,7 @@ export const performCurrencyAction = async (
                 walletCurrency.balance = walletCurrency.balance.plus(amount);
                 break;
             case "debit":
-                if (!walletCurrency) throw new Error("wallet currency not found");
+                if (!walletCurrency) throw new Error(WALLET_CURRENCY_NOT_FOUND);
                 walletCurrency.balance = walletCurrency.balance.minus(amount);
                 if (walletCurrency.balance.lt(0))
                     throw new Error("wallet does not have the necessary funds to complete this action");

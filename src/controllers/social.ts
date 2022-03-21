@@ -13,7 +13,20 @@ import { ApolloError } from "apollo-server-express";
 import { TikTokClient } from "../clients/tiktok";
 import { downloadMedia } from "../util";
 import { JWTPayload, SocialType } from "src/types";
-import { FormattedError, GLOBAL_CAMPAIGN_NOT_FOUND, USER_NOT_FOUND } from "../util/errors";
+import {
+    CAMPAIGN_CLOSED,
+    CAMPAIGN_NOT_FOUND,
+    FormattedError,
+    GLOBAL_CAMPAIGN_NOT_FOUND,
+    MISSING_PARAMS,
+    NO_TOKEN_PROVIDED,
+    PARTICIPANT_NOT_FOUND,
+    POST_ID_NOT_FOUND,
+    SOCIAL_LINK_NOT_FOUND,
+    SOICIAL_LINKING_ERROR,
+    USER_NOT_FOUND,
+    MEDIA_NOT_FOUND,
+} from "../util/errors";
 import { TatumClient } from "../clients/tatumClient";
 import { BSC, COIIN } from "../util/constants";
 
@@ -31,10 +44,10 @@ export const getSocialClient = (type: string, accessToken?: string): any => {
         case "tiktok":
             return TikTokClient;
         case "facebook":
-            if (!accessToken) throw new Error("access token required");
+            if (!accessToken) throw new Error(NO_TOKEN_PROVIDED);
             return FacebookClient.getClient(accessToken);
         default:
-            throw new Error("no client for this social link type");
+            throw new Error(SOICIAL_LINKING_ERROR);
     }
 };
 
@@ -44,11 +57,8 @@ export const registerSocialLink = async (
     context: { user: any }
 ) => {
     const user = await User.findUserByContext(context.user, ["socialLinks"]);
-    if (!user) throw new Error("User not found");
+    if (!user) throw new Error(USER_NOT_FOUND);
     const { type, apiKey, apiSecret } = args;
-    console.log("args received", args);
-    console.log("user data", context.user);
-    console.log("user found", user);
     if (!allowedSocialLinks.includes(type)) throw new Error("the type must exist as a predefined type");
     await SocialLink.addTwitterLink(user, { apiKey, apiSecret });
     return true;
@@ -81,8 +91,8 @@ export const registerTiktokSocialLink = async (
 export const removeSocialLink = async (parent: any, args: { type: string }, context: { user: any }) => {
     const { type } = args;
     const user = await User.findUserByContext(context.user, ["socialLinks"]);
-    if (!user) throw new Error("User not found");
-    if (!allowedSocialLinks.includes(type)) throw new Error("the type must exist as a predefined type");
+    if (!user) throw new Error(USER_NOT_FOUND);
+    if (!allowedSocialLinks.includes(type)) throw new Error(MISSING_PARAMS);
     const existingType = user.socialLinks.find((link) => link.type === type);
     if (existingType) await existingType.remove();
     return true;
@@ -113,20 +123,20 @@ export const postToSocial = async (
             where: { id: participantId, user },
             relations: ["campaign"],
         });
-        if (!participant) throw new ApolloError("Participant not found");
-        if (!participant.campaign.isOpen()) throw new ApolloError("campaign is closed");
+        if (!participant) throw new Error(PARTICIPANT_NOT_FOUND);
+        if (!participant.campaign.isOpen()) throw new Error(CAMPAIGN_CLOSED);
         const socialLink = await SocialLink.findOne({ where: { user, type: socialType }, relations: ["user"] });
         if (!socialLink) throw new ApolloError(`you have not linked ${socialType} as a social platform`);
         const campaign = await Campaign.findOne({
             where: { id: participant.campaign.id },
             relations: ["org", "campaignMedia"],
         });
-        if (!campaign) throw new ApolloError("campaign not found");
+        if (!campaign) throw new Error(CAMPAIGN_NOT_FOUND);
         const client = getSocialClient(socialType);
         if (defaultMedia) {
             console.log(`downloading media with mediaID ----- ${mediaId}`);
             const selectedMedia = await CampaignMedia.findOne({ where: { id: mediaId } });
-            if (!selectedMedia) throw new ApolloError(`Provided mediaId doesn't exist`);
+            if (!selectedMedia) throw new Error(MEDIA_NOT_FOUND);
             const mediaUrl = `${assetUrl}/campaign/${campaign.id}/${selectedMedia.media}`;
             const downloaded = await downloadMedia(mediaType, mediaUrl, selectedMedia.mediaFormat);
             media = downloaded;
@@ -138,7 +148,7 @@ export const postToSocial = async (
         } else {
             postId = await client.post(participant, socialLink, text);
         }
-        if (!postId) throw new ApolloError("There was an error posting to twitter.");
+        if (!postId) throw new Error(POST_ID_NOT_FOUND);
         await HourlyCampaignMetric.upsert(campaign, campaign.org, "post");
         await participant.campaign.save();
         const socialPost = await SocialPost.newSocialPost(
@@ -161,7 +171,7 @@ export const getTotalFollowers = async (parent: any, args: any, context: { user:
     let client;
     const followerTotals: { [key: string]: number } = {};
     const user = await User.findUserByContext(context.user);
-    if (!user) throw new Error("User not found");
+    if (!user) throw new Error(USER_NOT_FOUND);
     const socialLinks = await SocialLink.find({ where: { user } });
     for (const link of socialLinks) {
         switch (link.type) {
@@ -199,9 +209,9 @@ export const getTotalFollowers = async (parent: any, args: any, context: { user:
 export const getTweetById = async (parent: any, args: { id: string; type: string }, context: { user: any }) => {
     const { id, type } = args;
     const user = await User.findUserByContext(context.user, ["socialLinks"]);
-    if (!user) throw new Error("User not found");
+    if (!user) throw new Error(USER_NOT_FOUND);
     const socialLink = user.socialLinks.find((link) => link.type === "twitter");
-    if (!socialLink) throw new Error(`you have not linked twitter as a social platform`);
+    if (!socialLink) throw new Error(SOCIAL_LINK_NOT_FOUND);
     const client = getSocialClient(type);
     return client.get(socialLink, id);
 };
@@ -209,7 +219,7 @@ export const getTweetById = async (parent: any, args: { id: string; type: string
 export const getParticipantSocialMetrics = async (parent: any, args: { id: string }, context: { user: any }) => {
     const { id } = args;
     const participant = await Participant.findOne({ where: { id }, relations: ["campaign"] });
-    if (!participant) throw new Error("participant not found");
+    if (!participant) throw new Error(PARTICIPANT_NOT_FOUND);
     const metrics = await calculateParticipantSocialScore(participant, participant.campaign);
     return {
         totalLikes: parseFloat(metrics.totalLikes.toString()),

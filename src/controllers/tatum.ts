@@ -239,6 +239,10 @@ export const withdrawFunds = async (
         if (user.kycStatus !== "APPROVED")
             throw new Error("You need to get your KYC approved before you can withdraw.");
         let { symbol, network, address, amount, verificationToken } = args;
+        if (symbol.toUpperCase() === COIIN)
+            throw new Error(
+                `${symbol} withdrawls are currently disabled. Please contact our support for further assistance.`
+            );
         const token = await TatumClient.isCurrencySupported({ symbol, network });
         if (!token) throw new Error(`Currency "${symbol}" is not supported`);
         await Verification.verifyToken({ verificationToken });
