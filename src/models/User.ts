@@ -112,16 +112,16 @@ export class User extends BaseEntity {
         this.email = this.email ? this.email.toLowerCase() : this.email;
     }
 
-    public static async initNewUser(email: string, password: string, username: string): Promise<User> {
+    public static async initNewUser(email: string, password: string, username: string): Promise<string> {
         const user = new User();
-        const wallet = new Wallet();
+        let wallet = new Wallet();
         const profile = new Profile();
         const notificationSettings = new NotificationSettings();
         user.email = email;
         user.password = password;
         await user.save();
         wallet.user = user;
-        await wallet.save();
+        wallet = await wallet.save();
         profile.username = username;
         profile.user = user;
         await profile.save();
@@ -131,7 +131,7 @@ export class User extends BaseEntity {
         user.notificationSettings = notificationSettings;
         await user.save();
         await TatumClient.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet });
-        return user;
+        return user.id;
     }
 
     public asV1() {
