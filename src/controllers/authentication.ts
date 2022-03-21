@@ -4,7 +4,7 @@ import { ILike } from "typeorm";
 import { Verification } from "../models/Verification";
 import { SesClient } from "../clients/ses";
 import { User } from "../models/User";
-import { VerificationType } from "src/types";
+import { JWTPayload, VerificationType } from "src/types";
 import { createSessionToken, createPasswordHash, asyncHandler } from "../util";
 import { Profile } from "../models/Profile";
 import {
@@ -89,11 +89,13 @@ export const registerUser = async (
 ) => {
     try {
         const { email, password, username, verificationToken } = args;
-        if (!email || !password || !username || !verificationToken) throw new Error(MISSING_PARAMS);
+        if (!email || !password || !username || verificationToken) throw new Error(MISSING_PARAMS);
         if (await User.findOne({ where: { email: ILike(email) } })) throw new Error(EMAIL_EXISTS);
         if (await Profile.findOne({ where: { username: ILike(username) } })) throw new Error(USERNAME_EXISTS);
         await Verification.verifyToken({ verificationToken, email });
-        const user = await User.initNewUser(email, createPasswordHash({ email, password }), username);
+        const userId = await User.initNewUser(email, createPasswordHash({ email, password }), username);
+        const user = await User.findUserByContext({ userId } as JWTPayload, ["wallet"]);
+        if (!user) throw new Error(USER_NOT_FOUND);
         await user.transferCoiinReward({ type: "REGISTRATION_REWARD" });
         return { token: createSessionToken(user) };
     } catch (error) {
