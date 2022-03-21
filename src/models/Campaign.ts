@@ -12,13 +12,7 @@ import {
 } from "typeorm";
 import { DateUtils } from "typeorm/util/DateUtils";
 import { Participant } from "./Participant";
-import {
-    AlgorithmSpecs,
-    CampaignAuditStatus,
-    CampaignRequirementSpecs,
-    CampaignStatus,
-    ListCampaignsVariables,
-} from "../types";
+import { AlgorithmSpecs, CampaignAuditStatus, CampaignRequirementSpecs, ListCampaignsVariablesV2 } from "../types";
 import { SocialPost } from "./SocialPost";
 import { Transfer } from "./Transfer";
 import { StringifiedArrayTransformer, BigNumberEntityTransformer, AlgorithmTransformer } from "../util/transformers";
@@ -37,7 +31,7 @@ import { TatumClient, CAMPAIGN_CREATION_AMOUNT } from "../clients/tatumClient";
 import { Currency } from "./Currency";
 import { getCryptoAssestImageUrl, BN } from "../util";
 import { initDateFromParams } from "../util/date";
-import { RAIINMAKER_ORG_NAME } from "../util/constants";
+import { CampaignStatus, RAIINMAKER_ORG_NAME } from "../util/constants";
 import { getSymbolValueInUSD } from "../util/exchangeRate";
 
 @Entity()
@@ -319,7 +313,7 @@ export class Campaign extends BaseEntity {
             .getManyAndCount();
     }
 
-    public static async findCampaignsByStatusV2(params: ListCampaignsVariables, user?: User) {
+    public static async findCampaignsByStatusV2(params: ListCampaignsVariablesV2, user?: User) {
         const now = DateUtils.mixedDateToUtcDatetimeString(new Date());
         let where = "";
         if (params.state === "OPEN") where = `("endDate" >= '${now}')`;
@@ -534,7 +528,7 @@ export class Campaign extends BaseEntity {
         campaign.coiinTotal = new BN(coiinTotal);
         campaign.target = target;
         campaign.company = company;
-        campaign.status = isGlobal ? "APPROVED" : "PENDING";
+        campaign.status = isGlobal ? CampaignStatus.APPROVED : CampaignStatus.PENDING;
         campaign.symbol = symbol.toUpperCase();
         campaign.beginDate = new Date(beginDate);
         campaign.endDate = new Date(endDate);
