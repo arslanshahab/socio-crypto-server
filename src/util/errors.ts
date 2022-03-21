@@ -80,6 +80,7 @@ export const PROFILE_NOT_FOUND = "PROFILE_NOT_FOUND";
 export const NOTIFICATION_SETTING_NOT_FOUND = "NOTIFICATION_SETTING_NOT_FOUND";
 export const GLOBAL_WITHDRAW_LIMIT = "GLOBAL_WITHDRAW_LIMIT";
 export const ALREADY_PARTICIPATING = "ALREADY_PARTICIPATING";
+export const MEDIA_NOT_FOUND = "MEDIA_NOT_FOUND";
 
 export const errorMap: { [key: string]: string } = {
     SOMETHING_WENT_WRONG: "Something went wrong with your request. please try again!",
@@ -130,4 +131,5 @@ export const errorMap: { [key: string]: string } = {
     PROFILE_NOT_FOUND: "PROFILE_NOT_FOUND",
     NOTIFICATION_SETTING_NOT_FOUND: "NOTIFICATION_SETTING_NOT_FOUND",
     GLOBAL_WITHDRAW_LIMIT: `Withdraw limit reached! Withdraws above $${WITHDRAW_LIMIT} are restricted. Please contact our support for further assistance.`,
+    MEDIA_NOT_FOUND: "Media not found.",
 };
