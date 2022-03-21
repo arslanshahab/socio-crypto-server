@@ -122,7 +122,6 @@ export class User extends BaseEntity {
         await user.save();
         wallet.user = user;
         await wallet.save();
-        await TatumClient.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet: user.wallet });
         profile.username = username;
         profile.user = user;
         await profile.save();
@@ -130,7 +129,9 @@ export class User extends BaseEntity {
         await notificationSettings.save();
         user.profile = profile;
         user.notificationSettings = notificationSettings;
-        return await user.save();
+        await user.save();
+        await TatumClient.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet });
+        return user;
     }
 
     public asV1() {
