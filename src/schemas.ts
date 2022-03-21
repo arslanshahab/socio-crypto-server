@@ -1,4 +1,4 @@
-import Ajv from "ajv";
+import Ajv, { ValidateFunction } from "ajv";
 
 export const algorithmCreateSchema = {
     type: "object",
@@ -111,17 +111,23 @@ export const campaignRequirementsSchema = {
             type: "array",
             items: {
                 type: "object",
-                city: { type: "string" },
-                state: { type: "string" },
-                country: { type: "string" },
+                properties: {
+                    city: { type: "string" },
+                    state: { type: "string" },
+                    country: { type: "string" },
+                },
             },
         },
         socialFollowing: {
             type: "object",
-            twitter: {
-                type: "object",
-                minFollower: {
-                    type: "string",
+            properties: {
+                twitter: {
+                    type: "object",
+                    properties: {
+                        minFollower: {
+                            type: "string",
+                        },
+                    },
                 },
             },
         },
@@ -196,15 +202,15 @@ const rafflePrizeSchema = {
 };
 
 export class Validator {
-    private ajv: Ajv.Ajv;
-    private validateAlgorithmCreatePayload: Ajv.ValidateFunction;
-    private validateCampaignRequirementsPayload: Ajv.ValidateFunction;
-    private validateKycUser: Ajv.ValidateFunction;
-    private validateHourlyMetrics: Ajv.ValidateFunction;
-    private validateRafflePrizePayload: Ajv.ValidateFunction;
+    private ajv: Ajv;
+    private validateAlgorithmCreatePayload: ValidateFunction;
+    private validateCampaignRequirementsPayload: ValidateFunction;
+    private validateKycUser: ValidateFunction;
+    private validateHourlyMetrics: ValidateFunction;
+    private validateRafflePrizePayload: ValidateFunction;
 
     public constructor() {
-        this.ajv = new Ajv({ schemaId: "auto" });
+        this.ajv = new Ajv();
         this.validateAlgorithmCreatePayload = this.ajv.compile(algorithmCreateSchema);
         this.validateCampaignRequirementsPayload = this.ajv.compile(campaignRequirementsSchema);
         this.validateKycUser = this.ajv.compile(kycUser);
