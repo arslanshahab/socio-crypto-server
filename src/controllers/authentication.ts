@@ -12,7 +12,7 @@ import {
     MISSING_PARAMS,
     USERNAME_EXISTS,
     EMAIL_EXISTS,
-    // INCORRECT_PASSWORD,
+    INCORRECT_PASSWORD,
     EMAIL_NOT_EXISTS,
     USERNAME_NOT_EXISTS,
     INCORRECT_CODE,
@@ -107,7 +107,7 @@ export const loginUser = async (parent: any, args: { email: string; password: st
         if (!email || !password) throw new Error(MISSING_PARAMS);
         const user = await User.findOne({ where: { email: ILike(email) }, relations: ["wallet"] });
         if (!user) throw new Error(EMAIL_NOT_EXISTS);
-        // if (user.password !== createPasswordHash({ email, password })) throw new Error(INCORRECT_PASSWORD);
+        if (user.password !== createPasswordHash({ email, password })) throw new Error(INCORRECT_PASSWORD);
         await user.updateLastLogin();
         await user.transferCoiinReward({ type: "LOGIN_REWARD" });
         return { token: createSessionToken(user) };
