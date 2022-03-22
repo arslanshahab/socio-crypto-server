@@ -6,6 +6,7 @@ ARG NPM_TOKEN
 COPY .npmrc .
 COPY package.json .
 COPY yarn.lock .
+COPY prisma/schema.prisma ./prisma/schema.prisma
 RUN yarn --frozen-lockfile --non-interactive
 COPY . .
 # Build and trim node_modules dependencies
