@@ -23,7 +23,7 @@ const { NODE_ENV = "development" } = process.env;
         "/v1": [`./src/controllers/v1/**/*.[jt]s`],
     },
     swagger:
-        NODE_ENV === "development"
+        NODE_ENV !== "production"
             ? [
                   {
                       path: "/v1/docs",
