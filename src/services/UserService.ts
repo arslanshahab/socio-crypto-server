@@ -17,10 +17,10 @@ export class UserService {
      * @param include additional relations to include with the user query
      * @returns the user object, with the requested relations included
      */
-    public async findUserByContext<T extends (keyof Prisma.userInclude)[] | undefined>(data: JWTPayload, include?: T) {
+    public async findUserByContext<T extends (keyof Prisma.UserInclude)[] | undefined>(data: JWTPayload, include?: T) {
         const { id, userId } = data;
         return this.prismaService.user.findUnique<{
-            where: Prisma.userWhereUniqueInput;
+            where: Prisma.UserWhereUniqueInput;
             // this type allows adding additional relations to result tpe
             include: Array2TrueMap<T>;
         }>({
