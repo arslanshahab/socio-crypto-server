@@ -10,7 +10,7 @@ import { DailyParticipantMetric } from "../models/DailyParticipantMetric";
 import { Org } from "../models/Org";
 import { Escrow } from "../models/Escrow";
 import { WalletCurrency } from "../models/WalletCurrency";
-import { FEE_RATE } from "../util/constants";
+import { CampaignStatus, FEE_RATE } from "../util/constants";
 import {
     AMOUNT_IN_POSITIVE,
     CURRENCY_NOT_FOUND,
@@ -23,7 +23,7 @@ import {
 export const feeMultiplier = () => new BN(1).minus(FEE_RATE);
 
 export const updateOrgCampaignsStatusOnDeposit = async (wallet: Wallet) => {
-    const org = await Org.listOrgCampaignsByWalletIdAndStatus(wallet.id, "INSUFFICIENT_FUNDS");
+    const org = await Org.listOrgCampaignsByWalletIdAndStatus(wallet.id, CampaignStatus.INSUFFICIENT_FUNDS);
     if (!org) return;
     const now = new Date();
     const escrows: Escrow[] = [];
@@ -33,7 +33,7 @@ export const updateOrgCampaignsStatusOnDeposit = async (wallet: Wallet) => {
         totalCost = totalCost.plus(campaign.coiinTotal);
         const walletCurrency = await WalletCurrency.getFundingWalletCurrency(campaign.crypto.type, org.wallet);
         if (walletCurrency.balance.gte(totalCost)) {
-            campaign.status = campaign.beginDate <= now ? "ACTIVE" : "APPROVED";
+            campaign.status = campaign.beginDate <= now ? CampaignStatus.ACTIVE : CampaignStatus.APPROVED;
             escrows.push(Escrow.newCampaignEscrow(campaign, org.wallet));
             campaigns.push(campaign);
             await performCurrencyAction(wallet.id, campaign.crypto.type, totalCost.toString(), "debit");
