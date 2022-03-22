@@ -6,7 +6,7 @@
     "author": "Alex Benedetto <alex061994@gmail.com>",
     "license": "MIT",
     "scripts": {
-        "dev": "nodemon",
+        "dev": "cross-env PORT=4000 AWS_PROFILE=raiinmaker NODE_ENV=development ts-node-dev src/index.ts",
         "start": "PORT=4000 AWS_PROFILE=raiinmaker TS_NODE_FILES=true NODE_ENV=development ts-node src/index.ts",
         "build": "tsc",
         "clean": "rm -rf dist/",
@@ -129,6 +129,7 @@
         "@types/winston": "^2.4.4",
         "artillery": "^1.6.1",
         "chai": "^4.2.0",
+        "cross-env": "^7.0.3",
         "dotenv": "^8.2.0",
         "easygraphql-load-tester": "^2.0.3",
         "gql-query-builder": "^3.4.0",
@@ -137,6 +138,7 @@
         "sinon": "^9.0.2",
         "supertest": "^4.0.2",
         "ts-node": "^8.8.2",
+        "ts-node-dev": "^1.1.8",
         "typescript": "^4.6.2",
         "unique-names-generator": "^4.3.1"
     },
