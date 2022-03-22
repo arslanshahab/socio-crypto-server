@@ -5,7 +5,7 @@ import "@tsed/swagger";
 import { Inject } from "@tsed/di";
 import { PlatformApplication } from "@tsed/common";
 import { UserAuthMiddleware } from "./middleware/UserAuthMiddleware";
-import "./middleware/HttpExceptionFilter";
+import "./services/PrismaService";
 // import * as bodyParser from "body-parser";
 // import * as compress from "compression";
 // import * as cookieParser from "cookie-parser";

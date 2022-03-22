@@ -1,10 +1,13 @@
 import { Prisma, user as User } from "@prisma/client";
-import { Injectable } from "@tsed/di";
-import { prisma } from "../clients/prisma";
+import { Inject, Injectable } from "@tsed/di";
+import { PrismaService } from ".prisma/client/entities";
 import { ListCampaignsVariablesV2 } from "../types";
 
 @Injectable()
 export class CampaignService {
+    @Inject()
+    private prismaService: PrismaService;
+
     /**
      * Retrieves a paginated list of campaigns
      *
@@ -22,8 +25,8 @@ export class CampaignService {
             isGlobal: false,
         };
 
-        return prisma.$transaction([
-            prisma.campaign.findMany({
+        return this.prismaService.$transaction([
+            this.prismaService.campaign.findMany({
                 where,
                 include: {
                     participant: params.userRelated
@@ -46,7 +49,7 @@ export class CampaignService {
                 skip: params.skip,
                 take: params.take,
             }),
-            prisma.campaign.count({ where }),
+            this.prismaService.campaign.count({ where }),
         ]);
     }
 }

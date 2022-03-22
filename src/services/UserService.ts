@@ -1,12 +1,15 @@
 import { Prisma } from "@prisma/client";
-import { Injectable } from "@tsed/di";
-import { prisma } from "../clients/prisma";
+import { Inject, Injectable } from "@tsed/di";
+import { PrismaService } from ".prisma/client/entities";
 import { JWTPayload } from "../types";
 
 type Array2TrueMap<T> = T extends string[] ? { [idx in T[number]]: true } : undefined;
 
 @Injectable()
 export class UserService {
+    @Inject()
+    private prismaService: PrismaService;
+
     /**
      * Retrieves a user object from a JWTPayload
      *
@@ -16,7 +19,7 @@ export class UserService {
      */
     public async findUserByContext<T extends (keyof Prisma.userInclude)[] | undefined>(data: JWTPayload, include?: T) {
         const { id, userId } = data;
-        return prisma.user.findUnique<{
+        return this.prismaService.user.findUnique<{
             where: Prisma.userWhereUniqueInput;
             // this type allows adding additional relations to result tpe
             include: Array2TrueMap<T>;
