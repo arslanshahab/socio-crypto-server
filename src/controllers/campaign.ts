@@ -435,14 +435,14 @@ export const deleteCampaign = async (parent: any, args: { id: string }, context:
             await SocialPost.delete({
                 id: In(socialPost.map((p: any) => p.id)),
             });
-        if (rafflePrize) await RafflePrize.remove(rafflePrize);
-        if (payouts) await Transfer.remove(payouts);
-        if (escrow) await Escrow.remove(escrow);
-        if (participants) await Participant.remove(participants);
-        if (dailyParticipantMetrics) await DailyParticipantMetric.remove(dailyParticipantMetrics);
-        if (hourlyMetrics) await HourlyCampaignMetric.remove(hourlyMetrics);
-        if (campaignTemplates) await CampaignTemplate.remove(campaignTemplates);
-        if (campaignMedia) await CampaignMedia.remove(campaignMedia);
+        await RafflePrize.remove(rafflePrize);
+        await Transfer.remove(payouts);
+        await Escrow.remove(escrow);
+        await Participant.remove(participants);
+        await DailyParticipantMetric.remove(dailyParticipantMetrics);
+        await HourlyCampaignMetric.remove(hourlyMetrics);
+        await CampaignTemplate.remove(campaignTemplates);
+        await CampaignMedia.remove(campaignMedia);
         await campaign.remove();
         return campaign.asV1();
     } catch (error) {
