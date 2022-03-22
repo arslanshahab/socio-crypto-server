@@ -93,6 +93,7 @@
         "secp256k1": "^4.0.2",
         "sodium-native": "^3.3.0",
         "stripe": "^8.128.0",
+        "ts-node": "^10.7.0",
         "twitter": "^1.7.1",
         "typeorm": "^0.2.24",
         "uuid": "^3.3.3",
@@ -117,6 +118,7 @@
         "@types/graphql-type-json": "^0.3.2",
         "@types/jsonwebtoken": "^8.5.0",
         "@types/mocha": "^7.0.2",
+        "@types/multer": "^1.4.7",
         "@types/node-fetch": "^2.5.7",
         "@types/pg": "^7.14.2",
         "@types/redis": "^2.8.18",
@@ -136,7 +138,6 @@
         "prettier": "2.3.1",
         "sinon": "^9.0.2",
         "supertest": "^4.0.2",
-        "ts-node": "^8.8.2",
         "typescript": "^4.6.2",
         "unique-names-generator": "^4.3.1"
     },
