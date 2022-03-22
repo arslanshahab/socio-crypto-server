@@ -435,11 +435,6 @@ export const deleteCampaign = async (parent: any, args: { id: string }, context:
             await SocialPost.delete({
                 id: In(socialPost.map((p: any) => p.id)),
             });
-        console.log("Raffel prize........../", rafflePrize);
-        // if (rafflePrize.length > 0)
-        //     await RafflePrize.delete({
-        //         id: In(rafflePrize.map((p: any) => p.id)),
-        //     });
         await Transfer.remove(payouts);
         await RafflePrize.remove(rafflePrize);
         await Escrow.remove(escrow);
