@@ -31,7 +31,7 @@ export class Validator {
     private validateDragonfactorLoginPayload: (payload: object) => boolean;
 
     public constructor() {
-        this.ajv = new Ajv({ schemaId: "auto" });
+        this.ajv = new Ajv({ schemaId: "id" });
         this.validateDragonfactorLoginPayload = this.ajv.compile(factorLoginSchema);
     }
 
