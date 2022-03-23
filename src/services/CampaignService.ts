@@ -1,4 +1,4 @@
-import { Prisma, user as User } from "@prisma/client";
+import { Prisma, User } from "@prisma/client";
 import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
 import { ListCampaignsVariablesV2 } from "../types";
@@ -18,7 +18,7 @@ export class CampaignService {
     public async findCampaignsByStatus(params: ListCampaignsVariablesV2, user?: User) {
         const now = new Date();
 
-        const where: Prisma.campaignWhereInput = {
+        const where: Prisma.CampaignWhereInput = {
             ...(params.state === "OPEN" ? { endDate: { gte: now } } : {}),
             ...(params.state === "CLOSED" ? { endDate: { lte: now } } : {}),
             status: params.status || "APPROVED",
