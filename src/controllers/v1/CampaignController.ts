@@ -15,6 +15,7 @@ class ListCampaignsVariablesModel {
     @Property() @Enum(CampaignStatus, "ALL") public readonly status: CampaignStatus | "ALL" | undefined;
     @Property() public readonly userRelated: boolean | undefined;
 }
+
 @Controller("/campaign")
 export class CampaignController {
     @Inject()
