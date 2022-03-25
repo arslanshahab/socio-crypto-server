@@ -20,9 +20,11 @@ export class FormattedError extends ApolloError {
     public constructor(error: any) {
         let code = SOMETHING_WENT_WRONG;
         if (error.name === TokenExpiredError.name || error.name === JsonWebTokenError.name) code = SESSION_EXPIRED;
-        if (error.name === Error.name) code = errorMap[error.message] ? error.message : SOMETHING_WENT_WRONG;
+        if (error.name === Error.name || error.name === ApolloError.name)
+            code = errorMap[error.message] ? error.message : SOMETHING_WENT_WRONG;
         if (code === SOMETHING_WENT_WRONG) console.log(error);
-        let errorMessage = error instanceof ApolloError ? error.message : errorMap[code];
+        let errorMessage =
+            error instanceof ApolloError || code === SOMETHING_WENT_WRONG ? error.message : errorMap[code];
         super(errorMessage, code);
         this.code = code;
         this.message = errorMessage;
@@ -81,6 +83,7 @@ export const NOTIFICATION_SETTING_NOT_FOUND = "NOTIFICATION_SETTING_NOT_FOUND";
 export const GLOBAL_WITHDRAW_LIMIT = "GLOBAL_WITHDRAW_LIMIT";
 export const ALREADY_PARTICIPATING = "ALREADY_PARTICIPATING";
 export const MEDIA_NOT_FOUND = "MEDIA_NOT_FOUND";
+export const TWITTER_TOKEN_EXPIRED = "TWITTER_TOKEN_EXPIRED";
 
 export const errorMap: { [key: string]: string } = {
     SOMETHING_WENT_WRONG: "Something went wrong with your request. please try again!",
@@ -132,4 +135,5 @@ export const errorMap: { [key: string]: string } = {
     NOTIFICATION_SETTING_NOT_FOUND: "NOTIFICATION_SETTING_NOT_FOUND",
     GLOBAL_WITHDRAW_LIMIT: `Withdraw limit reached! Withdraws above $${WITHDRAW_LIMIT} are restricted. Please contact our support for further assistance.`,
     MEDIA_NOT_FOUND: "Media not found.",
+    TWITTER_TOKEN_EXPIRED: "Access token expired for twitter, please link your twitter again.",
 };
