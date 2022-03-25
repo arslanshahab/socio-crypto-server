@@ -347,15 +347,16 @@ export const getKycStatusDetails = (kycApplication: AcuantApplication): string =
     return details?.split("[Fired] ")[1] || "";
 };
 
-export const findKycApplication = async (user: User) => {
+export const findKycApplication = async (
+    user: User
+): Promise<{ kyc: VerificationApplication; factors?: AcuantApplicationExtractedDetails } | null> => {
     const recordedApplication = await VerificationApplication.findOne({ where: { user } });
-    if (!recordedApplication || recordedApplication.status === "REJECTED") return null;
+    if (!recordedApplication) return null;
     let kycApplication;
     if (recordedApplication.status === "APPROVED") {
         kycApplication = await S3Client.getAcuantKyc(user.id);
         return {
-            kycId: recordedApplication.applicationId,
-            status: recordedApplication.status,
+            kyc: recordedApplication,
             factors: generateFactorsFromKYC(kycApplication),
         };
     }
@@ -370,9 +371,9 @@ export const findKycApplication = async (user: User) => {
         }
         await recordedApplication.updateStatus(status);
         await recordedApplication.updateReason(reason);
-        return { kycId: recordedApplication.applicationId, status: status, factors };
+        return { kyc: recordedApplication, factors };
     }
-    return null;
+    return { kyc: recordedApplication };
 };
 // Kyc herlpers end here
 

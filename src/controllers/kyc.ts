@@ -25,18 +25,25 @@ export const verifyKyc = async (parent: any, args: { userKyc: KycApplication }, 
         const user = await User.findUserByContext(context.user, ["profile"]);
         if (!user) throw new Error(USER_NOT_FOUND);
         const currentKycApplication = await findKycApplication(user);
-        if (currentKycApplication) return currentKycApplication;
-        validator.validateKycRegistration(args.userKyc);
-        const newAcuantApplication = await AcuantClient.submitApplication(args.userKyc);
-        const status = getApplicationStatus(newAcuantApplication);
-        const verificationApplication = await VerificationApplication.newApplication({
-            id: newAcuantApplication.mtid,
-            status,
-            user,
-            reason: getKycStatusDetails(newAcuantApplication),
-        });
-        Firebase.sendKycVerificationUpdate(user?.profile?.deviceToken || "", status);
-        return { kycId: verificationApplication.applicationId, status: verificationApplication.status };
+        let verificationApplication;
+        let factors;
+        if (!currentKycApplication || currentKycApplication.kyc.status === "REJECTED") {
+            validator.validateKycRegistration(args.userKyc);
+            const newAcuantApplication = await AcuantClient.submitApplication(args.userKyc);
+            const status = getApplicationStatus(newAcuantApplication);
+
+            Firebase.sendKycVerificationUpdate(user?.profile?.deviceToken || "", status);
+            verificationApplication = await VerificationApplication.newApplication({
+                id: newAcuantApplication.mtid,
+                status,
+                user,
+                reason: getKycStatusDetails(newAcuantApplication),
+            });
+        } else {
+            verificationApplication = currentKycApplication.kyc;
+            factors = currentKycApplication.factors;
+        }
+        return { kycId: verificationApplication?.applicationId, status: verificationApplication?.status, factors };
     } catch (error) {
         throw new FormattedError(error);
     }
