@@ -342,6 +342,11 @@ export const getApplicationStatus = (kycApplication: AcuantApplication): KycStat
     }
 };
 
+export const getKycStatusDetails = (kycApplication: AcuantApplication): string => {
+    const details = kycApplication?.ednaScoreCard?.er?.reportedRule?.details;
+    return details?.split("[Fired]")[1] || "";
+};
+
 export const findKycApplication = async (user: User) => {
     const recordedApplication = await VerificationApplication.findOne({ where: { user } });
     if (!recordedApplication) return null;
@@ -358,13 +363,16 @@ export const findKycApplication = async (user: User) => {
             await S3Client.uploadAcuantKyc(user.id, kycApplication);
             const factors = generateFactorsFromKYC(kycApplication);
             await recordedApplication.updateStatus(status);
-            await user.updateKycStatus(status);
+            await recordedApplication.updateReason(getKycStatusDetails(kycApplication));
             return { kycId: recordedApplication.applicationId, status: status, factors: factors };
         }
-        if (status === "PENDING") return { kycId: recordedApplication.applicationId, status: status };
+        if (status === "PENDING") {
+            await recordedApplication.updateReason(getKycStatusDetails(kycApplication));
+            return { kycId: recordedApplication.applicationId, status: status };
+        }
         if (status === "REJECTED") {
-            await VerificationApplication.remove(recordedApplication);
-            await user.updateKycStatus("");
+            await recordedApplication.updateStatus(status);
+            await recordedApplication.updateReason(getKycStatusDetails(kycApplication));
             return { kycId: recordedApplication.applicationId, status: status };
         }
     }

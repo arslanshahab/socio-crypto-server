@@ -7,7 +7,13 @@ import { Request, Response } from "express";
 import { VerificationApplication } from "../models/VerificationApplication";
 import { Validator } from "../schemas";
 import { AcuantApplication, AcuantClient } from "../clients/acuant";
-import { findKycApplication, getApplicationStatus, generateFactorsFromKYC, asyncHandler } from "../util";
+import {
+    findKycApplication,
+    getApplicationStatus,
+    generateFactorsFromKYC,
+    asyncHandler,
+    getKycStatusDetails,
+} from "../util";
 import { RAIINMAKER_ORG_NAME } from "../util/constants";
 import { KycApplication } from "../types.d";
 import { FormattedError, KYC_NOT_FOUND, USER_NOT_FOUND, VERIFICATION_NOT_FOUND } from "../util/errors";
@@ -19,20 +25,16 @@ export const verifyKyc = async (parent: any, args: { userKyc: KycApplication }, 
         const user = await User.findUserByContext(context.user, ["profile"]);
         if (!user) throw new Error(USER_NOT_FOUND);
         const currentKycApplication = await findKycApplication(user);
-        if (user.kycStatus === "APPROVED" || currentKycApplication) return currentKycApplication;
+        if (currentKycApplication) return currentKycApplication;
         validator.validateKycRegistration(args.userKyc);
         const newAcuantApplication = await AcuantClient.submitApplication(args.userKyc);
         const status = getApplicationStatus(newAcuantApplication);
-        if (status === "REJECTED") {
-            Firebase.sendKycVerificationUpdate(user?.profile?.deviceToken || "", status);
-            return { kycId: newAcuantApplication.mtid, status };
-        }
-        const verificationApplication = await VerificationApplication.newApplication(
-            newAcuantApplication.mtid,
+        const verificationApplication = await VerificationApplication.newApplication({
+            id: newAcuantApplication.mtid,
             status,
-            user
-        );
-        await user.updateKycStatus(verificationApplication.status);
+            user,
+            reason: getKycStatusDetails(newAcuantApplication),
+        });
         Firebase.sendKycVerificationUpdate(user?.profile?.deviceToken || "", status);
         return { kycId: verificationApplication.applicationId, status: verificationApplication.status };
     } catch (error) {
@@ -72,14 +74,9 @@ export const kycWebhook = asyncHandler(async (req: Request, res: Response) => {
     if (status === "PENDING") res.json({ success: false });
     if (status === "APPROVED") {
         await S3Client.uploadAcuantKyc(user.id, kyc);
-        await verificationApplication.updateStatus(status);
-        await user.updateKycStatus(status);
     }
-    if (status === "REJECTED") {
-        await VerificationApplication.remove(verificationApplication);
-        await user.updateKycStatus("");
-    }
-
+    await verificationApplication.updateStatus(status);
+    await verificationApplication.updateReason(getKycStatusDetails(kyc));
     await Firebase.sendKycVerificationUpdate(user?.profile?.deviceToken || "", status);
     res.json({ success: true });
 });
@@ -122,7 +119,6 @@ export const updateKyc = async (parent: any, args: { user: KycUser }, context: {
         delete args.user.addressProof;
         args.user.hasAddressProof = true;
     }
-    user.kycStatus = "PENDING";
     await user.save();
     return S3Client.updateUserInfo(user.id, args.user);
 };
@@ -139,10 +135,9 @@ export const updateKycStatus = async (
         relations: ["profile", "notificationSettings"],
     });
     if (!user) throw new Error(USER_NOT_FOUND);
-    user.kycStatus = args.status == "APPROVED" ? "APPROVED" : "REJECTED";
     await user.save();
     if (user.notificationSettings.kyc) {
-        if (user.kycStatus === "APPROVED") await Firebase.sendKycApprovalNotification(user.profile.deviceToken);
+        if (args.status === "APPROVED") await Firebase.sendKycApprovalNotification(user.profile.deviceToken);
         else await Firebase.sendKycRejectionNotification(user.profile.deviceToken);
     }
     return user.asV1();
