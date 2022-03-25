@@ -20,6 +20,20 @@ export class SuccessResult<T> {
 }
 
 @Generics("T")
+export class SuccessArrayResult<T> {
+    @Required() @Property() public success: boolean;
+    @OnSerialize((v) => serialize(v, { type: serializationMap.get(v) }))
+    @Property("T")
+    public data: T[];
+
+    public constructor(data: T[], clazz: { new (...args: any[]): T }) {
+        this.success = true;
+        this.data = data;
+        serializationMap.set(data, clazz);
+    }
+}
+
+@Generics("T")
 export class Pagination<T> {
     @OnSerialize((v) => serialize(v, { type: serializationMap.get(v) }))
     @CollectionOf("T")

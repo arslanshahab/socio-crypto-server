@@ -5,7 +5,7 @@ import { BadRequest } from "@tsed/exceptions";
 import { NotificationSettings, Participant, Profile, SocialLink, User, Wallet, XoxodayOrder } from "@prisma/client";
 import { TatumClient } from "../../clients/tatumClient";
 import { UserService } from "../../services/UserService";
-import { PaginatedVariablesModel, Pagination, SuccessResult } from "../../util/entities";
+import { PaginatedVariablesModel, Pagination, SuccessArrayResult, SuccessResult } from "../../util/entities";
 import { USER_NOT_FOUND } from "../../util/errors";
 import { getCryptoAssestImageUrl, getUSDValueForCurrency, formatFloat, getMinWithdrawableAmount } from "../../util";
 import { UserResultModel } from "../../models/RestModels";
@@ -69,7 +69,7 @@ export class UserController {
     }
 
     @Get("/me/participation-keywords")
-    @(Returns(200, SuccessResult).Of(Array).Nested(String))
+    @(Returns(200, SuccessArrayResult).Of(String))
     public async getParticipationKeywords(@Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"), {
             participant: {
@@ -91,7 +91,7 @@ export class UserController {
     }
 
     @Get("/me/balances")
-    @(Returns(200, SuccessResult).Of(Array).Nested(BalanceResultModel))
+    @(Returns(200, SuccessArrayResult).Of(BalanceResultModel))
     public async getBalances(@Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"), {
             wallet: { include: { currency: { include: { token: true } } } },
