@@ -2,6 +2,8 @@ import { CollectionOf, Nullable, Property } from "@tsed/schema";
 
 export class CampaignMediaResultModel {
     @Property() public readonly id: string;
+    @Property(Date) public readonly createdAt: Date;
+    @Property(Date) public readonly updatedAt: Date;
     @Nullable(String) public readonly channel: string | null;
     @Nullable(String) public readonly media: string | null;
     @Nullable(String) public readonly mediaFormat: string | null;
@@ -10,6 +12,8 @@ export class CampaignMediaResultModel {
 
 export class CampaignTemplateResultModel {
     @Property() public readonly id: string;
+    @Property(Date) public readonly createdAt: Date;
+    @Property(Date) public readonly updatedAt: Date;
     @Nullable(String) public readonly channel: string | null;
     @Nullable(String) public readonly post: string | null;
 }
@@ -17,8 +21,8 @@ export class CampaignTemplateResultModel {
 export class CampaignResultModel {
     @Property() public readonly id: string;
     @Property() public readonly name: string;
-    @Property() public readonly beginDate: Date;
-    @Property() public readonly endDate: Date;
+    @Property(Date) public readonly beginDate: Date;
+    @Property(Date) public readonly endDate: Date;
     @Property() public readonly coiinTotal: string;
     @Property() public readonly status: string;
     @Property() public readonly symbol: string;
@@ -26,6 +30,8 @@ export class CampaignResultModel {
     @Property() public readonly showUrl: boolean;
     @Property() public readonly totalParticipationScore: string;
     @Property() public readonly target: string;
+    @Property(Date) public readonly createdAt: Date;
+    @Property(Date) public readonly updatedAt: Date;
     @Nullable(String) public readonly description: string | null;
     @Nullable(String) public readonly instructions: string | null;
     @Property() public readonly company: string;
@@ -96,6 +102,8 @@ export class TransferResultModel {
     @Property() public readonly id: string;
     @Property() public readonly amount: string;
     @Property() public readonly action: string;
+    @Property(Date) public readonly createdAt: Date;
+    @Property(Date) public readonly updatedAt: Date;
     @Nullable(String) public readonly status: string | null;
     @Nullable(String) public readonly usdAmount: string | null;
     @Nullable(String) public readonly ethAddress: string | null;
