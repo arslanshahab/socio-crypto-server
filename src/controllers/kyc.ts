@@ -94,7 +94,7 @@ export const getKyc = async (_parent: any, args: any, context: { user: any }) =>
         if (!user) throw new Error(USER_NOT_FOUND);
         const application = await findKycApplication(user);
         if (!application) throw new Error(KYC_NOT_FOUND);
-        return application;
+        return { kycId: application.kyc?.applicationId, status: application.kyc?.status, factors: application.factors };
     } catch (error) {
         throw new FormattedError(error);
     }
