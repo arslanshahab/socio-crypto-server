@@ -70,7 +70,7 @@ export const kycWebhook = asyncHandler(async (req: Request, res: Response) => {
     });
     if (!verificationApplication) throw new Error(VERIFICATION_NOT_FOUND);
     const user = await User.findOne({ where: { id: verificationApplication.user.id } });
-    if (!user) throw new Error("User not found.");
+    if (!user) throw new Error(USER_NOT_FOUND);
     if (status === "PENDING") res.json({ success: false });
     if (status === "APPROVED") {
         await S3Client.uploadAcuantKyc(user.id, kyc);

@@ -344,39 +344,35 @@ export const getApplicationStatus = (kycApplication: AcuantApplication): KycStat
 
 export const getKycStatusDetails = (kycApplication: AcuantApplication): string => {
     const details = kycApplication?.ednaScoreCard?.er?.reportedRule?.details;
-    return details?.split("[Fired]")[1] || "";
+    return details?.split("[Fired] ")[1] || "";
 };
 
 export const findKycApplication = async (user: User) => {
     const recordedApplication = await VerificationApplication.findOne({ where: { user } });
-    if (!recordedApplication) return null;
+    if (!recordedApplication || recordedApplication.status === "REJECTED") return null;
     let kycApplication;
     if (recordedApplication.status === "APPROVED") {
         kycApplication = await S3Client.getAcuantKyc(user.id);
-        const factors = generateFactorsFromKYC(kycApplication);
-        return { kycId: recordedApplication.applicationId, status: recordedApplication.status, factors: factors };
+        return {
+            kycId: recordedApplication.applicationId,
+            status: recordedApplication.status,
+            factors: generateFactorsFromKYC(kycApplication),
+        };
     }
     if (recordedApplication.status === "PENDING") {
         kycApplication = await AcuantClient.getApplication(recordedApplication.applicationId);
         const status = getApplicationStatus(kycApplication);
+        const reason = getKycStatusDetails(kycApplication);
+        let factors;
         if (status === "APPROVED") {
             await S3Client.uploadAcuantKyc(user.id, kycApplication);
-            const factors = generateFactorsFromKYC(kycApplication);
-            await recordedApplication.updateStatus(status);
-            await recordedApplication.updateReason(getKycStatusDetails(kycApplication));
-            return { kycId: recordedApplication.applicationId, status: status, factors: factors };
+            factors = generateFactorsFromKYC(kycApplication);
         }
-        if (status === "PENDING") {
-            await recordedApplication.updateReason(getKycStatusDetails(kycApplication));
-            return { kycId: recordedApplication.applicationId, status: status };
-        }
-        if (status === "REJECTED") {
-            await recordedApplication.updateStatus(status);
-            await recordedApplication.updateReason(getKycStatusDetails(kycApplication));
-            return { kycId: recordedApplication.applicationId, status: status };
-        }
+        await recordedApplication.updateStatus(status);
+        await recordedApplication.updateReason(reason);
+        return { kycId: recordedApplication.applicationId, status: status, factors };
     }
-    return { kycId: recordedApplication.applicationId, status: recordedApplication.status };
+    return null;
 };
 // Kyc herlpers end here
 
