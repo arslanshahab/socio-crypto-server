@@ -1,11 +1,13 @@
-import { Get, Returns } from "@tsed/schema";
+import { Get, Property, Returns } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
 import { Context, QueryParams } from "@tsed/common";
 import { BadRequest } from "@tsed/exceptions";
 import { NotificationSettings, Participant, Profile, SocialLink, User, Wallet, XoxodayOrder } from "@prisma/client";
+import { TatumClient } from "../../clients/tatumClient";
 import { UserService } from "../../services/UserService";
 import { PaginatedVariablesModel, Pagination, SuccessResult } from "../../util/entities";
 import { USER_NOT_FOUND } from "../../util/errors";
+import { getCryptoAssestImageUrl, getUSDValueForCurrency, formatFloat, getMinWithdrawableAmount } from "../../util";
 import { UserResultModel } from "../../models/RestModels";
 
 const userResultRelations = [
@@ -33,19 +35,19 @@ function getUserResultModel(
     return userResult;
 }
 
+class BalanceResultModel {
+    @Property() public readonly balance: string;
+    @Property() public readonly symbol: string;
+    @Property() public readonly minWithdrawAmount: number;
+    @Property() public readonly usdBalance: number;
+    @Property() public readonly imageUrl: string;
+    @Property() public readonly network: string;
+}
+
 @Controller("/user")
 export class UserController {
     @Inject()
     private userService: UserService;
-
-    @Get("/me")
-    @(Returns(200, SuccessResult).Of(UserResultModel))
-    public async me(@Context() context: Context) {
-        const user = await this.userService.findUserByContext(context.get("user"), userResultRelations);
-        if (!user) throw new BadRequest(USER_NOT_FOUND);
-
-        return new SuccessResult(getUserResultModel(user), UserResultModel);
-    }
 
     @Get("/")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserResultModel))
@@ -57,7 +59,16 @@ export class UserController {
         return new SuccessResult(new Pagination(results.map(getUserResultModel), total, UserResultModel), Pagination);
     }
 
-    @Get("/participation-keywords")
+    @Get("/me")
+    @(Returns(200, SuccessResult).Of(UserResultModel))
+    public async me(@Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"), userResultRelations);
+        if (!user) throw new BadRequest(USER_NOT_FOUND);
+
+        return new SuccessResult(getUserResultModel(user), UserResultModel);
+    }
+
+    @Get("/me/participation-keywords")
     @(Returns(200, SuccessResult).Of(Array).Nested(String))
     public async getParticipationKeywords(@Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"), {
@@ -76,6 +87,40 @@ export class UserController {
         } catch (e) {
             context.logger.error(e);
         }
-        return [...keywords];
+        return new SuccessResult([...keywords], Array);
+    }
+
+    @Get("/me/balances")
+    @(Returns(200, SuccessResult).Of(Array).Nested(BalanceResultModel))
+    public async getBalances(@Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"), {
+            wallet: { include: { currency: { include: { token: true } } } },
+        });
+        if (!user) throw new BadRequest(USER_NOT_FOUND);
+
+        const currencies = await Promise.all(
+            user.wallet?.currency.map(async (currencyItem): Promise<BalanceResultModel | null> => {
+                if (!currencyItem.token) return null;
+
+                const balance = await TatumClient.getAccountBalance(currencyItem.tatumId);
+                const symbol = currencyItem.token.symbol;
+                return {
+                    balance: formatFloat(balance.availableBalance),
+                    symbol: symbol,
+                    minWithdrawAmount: await getMinWithdrawableAmount(symbol),
+                    usdBalance: await getUSDValueForCurrency(
+                        symbol.toLowerCase(),
+                        parseFloat(balance.availableBalance)
+                    ),
+                    imageUrl: getCryptoAssestImageUrl(symbol),
+                    network: currencyItem.token.network,
+                };
+            }) || []
+        );
+
+        return new SuccessResult(
+            currencies.filter(<T>(r: T | null): r is T => !!r),
+            Array
+        );
     }
 }
