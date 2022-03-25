@@ -56,4 +56,26 @@ export class UserController {
 
         return new SuccessResult(new Pagination(results.map(getUserResultModel), total, UserResultModel), Pagination);
     }
+
+    @Get("/participation-keywords")
+    @(Returns(200, SuccessResult).Of(Array).Nested(String))
+    public async getParticipationKeywords(@Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"), {
+            participant: {
+                include: {
+                    campaign: true,
+                },
+            },
+        });
+        if (!user) throw new Error(USER_NOT_FOUND);
+        const keywords = new Set<string>();
+        try {
+            user.participant.forEach((p) =>
+                (JSON.parse(p.campaign.keywords) as string[]).forEach((k) => keywords.add(k))
+            );
+        } catch (e) {
+            context.logger.error(e);
+        }
+        return [...keywords];
+    }
 }

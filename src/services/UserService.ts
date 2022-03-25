@@ -3,6 +3,7 @@ import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
 import { JWTPayload } from "../types";
 import { Forbidden } from "@tsed/exceptions";
+import { isArray } from "lodash";
 
 type Array2TrueMap<T> = T extends string[] ? { [idx in T[number]]: true } : undefined;
 
@@ -18,18 +19,23 @@ export class UserService {
      * @param include additional relations to include with the user query
      * @returns the user object, with the requested relations included
      */
-    public async findUserByContext<T extends (keyof Prisma.UserInclude)[] | undefined>(data: JWTPayload, include?: T) {
+    public async findUserByContext<T extends (keyof Prisma.UserInclude)[] | Prisma.UserInclude | undefined>(
+        data: JWTPayload,
+        include?: T
+    ) {
         const { id, userId } = data;
         return this.prismaService.user.findUnique<{
             where: Prisma.UserWhereUniqueInput;
             // this type allows adding additional relations to result tpe
-            include: Array2TrueMap<T>;
+            include: T extends unknown[] ? Array2TrueMap<T> : T;
         }>({
             where: {
                 ...(id && { identityId: id }),
                 ...(userId && { id: userId }),
             },
-            include: include?.reduce((acc, relation) => ({ ...acc, [relation]: true }), {}) as Array2TrueMap<T>,
+            include: (isArray(include)
+                ? include?.reduce((acc, relation) => ({ ...acc, [relation]: true }), {})
+                : include) as T extends unknown[] ? Array2TrueMap<T> : T,
         });
     }
 
@@ -40,13 +46,20 @@ export class UserService {
      * @param include additional relations to include with the user query
      * @returns the user object, with the requested relations included
      */
-    public async findUsers<T extends (keyof Prisma.UserInclude)[] | undefined>(
+    public async findUsers<T extends (keyof Prisma.UserInclude)[] | Prisma.UserInclude | undefined>(
         params: { skip: number; take: number },
         include?: T
     ) {
         return this.prismaService.$transaction([
-            this.prismaService.user.findMany<{ include: Array2TrueMap<T>; skip: number; take: number }>({
-                include: include?.reduce((acc, relation) => ({ ...acc, [relation]: true }), {}) as Array2TrueMap<T>,
+            this.prismaService.user.findMany<{
+                skip: number;
+                take: number;
+                // this type allows adding additional relations to result tpe
+                include: T extends unknown[] ? Array2TrueMap<T> : T;
+            }>({
+                include: (isArray(include)
+                    ? include?.reduce((acc, relation) => ({ ...acc, [relation]: true }), {})
+                    : include) as T extends unknown[] ? Array2TrueMap<T> : T,
                 skip: params.skip,
                 take: params.take,
             }),
