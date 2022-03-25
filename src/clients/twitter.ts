@@ -33,6 +33,7 @@ export class TwitterClient {
                 if (data?.code === 89) {
                     throw new Error(TWITTER_TOKEN_EXPIRED);
                 }
+                throw new Error(data?.message || "");
             }
             throw new Error(error.message);
         }
@@ -94,6 +95,7 @@ export class TwitterClient {
                 if (data?.code === 89) {
                     throw new Error(TWITTER_TOKEN_EXPIRED);
                 }
+                throw new Error(data?.message || "");
             }
             throw new Error(error.message);
         }
@@ -127,6 +129,7 @@ export class TwitterClient {
                 if (data?.code === 89) {
                     throw new Error(TWITTER_TOKEN_EXPIRED);
                 }
+                throw new Error(data?.message || "");
             }
             throw new Error(error.message);
         }
@@ -152,6 +155,7 @@ export class TwitterClient {
                     await socialLink.remove();
                     throw new FormattedError(new Error(TWITTER_TOKEN_EXPIRED));
                 }
+                throw new Error(data?.message || "");
             }
             throw new Error(error.message);
         }
