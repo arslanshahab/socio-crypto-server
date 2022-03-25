@@ -58,6 +58,8 @@ export class User extends BaseEntity {
     @Column({ nullable: true, default: "" })
     public kycStatus: KycStatus;
 
+    public kycStatusDetails: string;
+
     @OneToMany((_type) => SocialPost, (posts) => posts.user)
     public posts: SocialPost[];
 
@@ -82,8 +84,8 @@ export class User extends BaseEntity {
     @OneToMany((_type) => SocialLink, (link) => link.user)
     public socialLinks: SocialLink[];
 
-    @OneToMany((_type) => VerificationApplication, (verification) => verification.user)
-    public identityVerifications: VerificationApplication[];
+    @OneToOne((_type) => VerificationApplication, (verification) => verification.user)
+    public identityVerification: VerificationApplication;
 
     @OneToMany((_type) => FactorLink, (link) => link.user)
     public factorLinks: FactorLink[];
@@ -144,6 +146,8 @@ export class User extends BaseEntity {
                 email: returnedUser.email,
                 hasRecoveryCodeSet: Boolean(this.profile.recoveryCode),
                 username: this.profile.username || "",
+                kycStatus: this?.identityVerification?.status || "",
+                kycStatusDetails: this?.identityVerification?.reason || "",
             };
         }
         try {
@@ -177,6 +181,11 @@ export class User extends BaseEntity {
                 username: this.profile.username || "",
             };
         }
+        returnedUser = {
+            ...returnedUser,
+            kycStatus: this?.identityVerification?.status || "",
+            kycStatusDetails: this?.identityVerification?.reason || "",
+        };
         try {
             if (this.posts && this.posts.length > 0) {
                 returnedUser.posts = this.posts.map((post) => post.asV1());
@@ -261,14 +270,6 @@ export class User extends BaseEntity {
             });
         }
     };
-
-    public async updateKycStatus(status: KycStatus) {
-        if (this.kycStatus !== status && this.kycStatus !== "APPROVED") {
-            this.kycStatus = status;
-            return await this.save();
-        }
-        return this;
-    }
 
     public async updateLastLogin() {
         this.lastLogin = new Date();

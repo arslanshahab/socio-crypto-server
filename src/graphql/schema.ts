@@ -657,6 +657,7 @@ export const typeDefs = gql`
         hasRecoveryCodeSet: Boolean
         identityId: String
         kycStatus: String!
+        kycStatusDetails: String
         socialLinks: [SocialLink]
         factorLinks: [FactorLink]
         twentyFourHourMetrics: [TwentyFourHourMetric]
@@ -677,6 +678,7 @@ export const typeDefs = gql`
         profilePicture: String
         hasRecoveryCodeSet: Boolean
         kycStatus: String!
+        kycStatusDetails: String
         socialLinks: [SocialLink]
         ageRange: String
         city: String
