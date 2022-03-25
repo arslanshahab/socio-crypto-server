@@ -162,6 +162,7 @@ export const postToSocial = async (
         const endTime = new Date().getTime();
         const timeTaken = (endTime - startTime) / 1000;
         console.log("number of seconds taken for this upload", timeTaken);
+        await user.transferCoiinReward({ type: "SHARING_REWARD", campaign });
         return socialPost.id;
     } catch (error) {
         console.log(error);
