@@ -46,6 +46,11 @@ export class VerificationApplication extends BaseEntity {
         return await app.save();
     }
 
+    public async updateAppId(appId: string) {
+        this.applicationId = appId;
+        return await this.save();
+    }
+
     public async updateStatus(newStatus: KycStatus) {
         if (this.status !== newStatus && this.status !== "APPROVED") {
             this.status = newStatus;
