@@ -69,3 +69,17 @@ export const KYC_NOTIFICATION_BODY: { [key: string]: string } = {
     PENDING: KYC_PENDING_MESSAGE_BODY,
     REJECTED: KYC_REJECTED_MESSAGE_BODY,
 };
+
+export enum CampaignStatus {
+    ACTIVE = "ACTIVE",
+    PENDING = "PENDING",
+    INSUFFICIENT_FUNDS = "INSUFFICIENT_FUNDS",
+    CLOSED = "CLOSED",
+    APPROVED = "APPROVED",
+    DENIED = "DENIED",
+}
+export enum CampaignState {
+    ALL = "ALL",
+    OPEN = "OPEN",
+    CLOSED = "CLOSED",
+}
