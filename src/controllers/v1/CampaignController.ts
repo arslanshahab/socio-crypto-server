@@ -4,14 +4,11 @@ import { Context, QueryParams } from "@tsed/common";
 import { CampaignService } from "../../services/CampaignService";
 import { UserService } from "../../services/UserService";
 import { CampaignState, CampaignStatus } from "../../util/constants";
-import { Pagination, SuccessResult } from "../../util/entities";
+import { PaginatedVariablesModel, Pagination, SuccessResult } from "../../util/entities";
 import { CampaignResultModel } from "../../models/RestModels";
 
-class ListCampaignsVariablesModel {
-    @Required() public readonly skip: number;
-    @Required() public readonly take: number;
+class ListCampaignsVariablesModel extends PaginatedVariablesModel {
     @Required() @Enum(CampaignState) public readonly state: CampaignState;
-
     @Property() @Enum(CampaignStatus, "ALL") public readonly status: CampaignStatus | "ALL" | undefined;
     @Property() public readonly userRelated: boolean | undefined;
 }

@@ -32,3 +32,8 @@ export class Pagination<T> {
         serializationMap.set(items, clazz);
     }
 }
+
+export class PaginatedVariablesModel {
+    @Required() public readonly skip: number;
+    @Required() public readonly take: number;
+}
