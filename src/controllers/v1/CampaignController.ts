@@ -6,6 +6,10 @@ import { CampaignService } from "../../services/CampaignService";
 import { UserService } from "../../services/UserService";
 import { CampaignState, CampaignStatus } from "../../util/constants";
 import { Pagination, SuccessResult } from "../../util/entities";
+import { calculateTier } from "../helpers";
+import { BN } from "../../util";
+import { getTokenPriceInUsd } from "../../clients/ethereum";
+import { ERROR_CALCULATING_TIER } from "../../util/errors";
 
 class ListCampaignsVariablesModel {
     @Required() public readonly skip: number;
@@ -13,6 +17,11 @@ class ListCampaignsVariablesModel {
     @Required() @Enum(CampaignState) public readonly state: CampaignState;
 
     @Property() @Enum(CampaignStatus, "ALL") public readonly status: CampaignStatus | "ALL" | undefined;
+    @Property() public readonly userRelated: boolean | undefined;
+}
+class ListCurrentCampaignVariablesModel {
+    @Property() public readonly campaignId: string;
+    @Property() public readonly campaign: CampaignModel;
     @Property() public readonly userRelated: boolean | undefined;
 }
 
@@ -30,5 +39,52 @@ export class CampaignController {
         const user = await this.userService.findUserByContext(context.get("user"));
         const [items, total] = await this.campaignService.findCampaignsByStatus(query, user || undefined);
         return new SuccessResult(new Pagination(items, total));
+    }
+}
+
+@Controller("/currentCampaignTier")
+export class CurrentCampaignTier {
+    @Inject()
+    private campaignService: CampaignService;
+    @Inject()
+    private userService: UserService;
+
+    @Get()
+    @(Returns(200, SuccessResult).Of(Pagination).Nested(CampaignModel))
+    public async list(@QueryParams() query: ListCurrentCampaignVariablesModel, @Context() context: Context) {
+        let { campaignId, campaign } = query;
+        let currentTierSummary;
+        let currentCampaign: any;
+        let cryptoPriceUsd;
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (campaignId) {
+            currentCampaign = await this.campaignService.findCurrentCampaignTier(query, user || undefined);
+            if (!currentCampaign) throw new Error("campaign not found");
+            if (currentCampaign.type == "raffle") return { currentTier: -1, currentTotal: 0 };
+            currentTierSummary = calculateTier(
+                new BN(currentCampaign.totalParticipationScore),
+                currentCampaign?.algorithm?.tiers
+            );
+            const cryptoCurrency = await this.campaignService.findCryptoCurrencyById(currentCampaign.cryptoId);
+            const cryptoCurrencyType = cryptoCurrency?.type;
+            if (cryptoCurrencyType) cryptoPriceUsd = await getTokenPriceInUsd(cryptoCurrencyType);
+        } else if (campaign) {
+            if (campaign?.type == "raffle") return { currentTier: -1, currentTotal: 0 };
+            currentTierSummary = calculateTier(
+                new BN(currentCampaign.totalParticipationScore),
+                campaign.algorithm.tiers
+            );
+            //add campaign.crypto here...
+        }
+        if (!currentTierSummary) throw new Error(ERROR_CALCULATING_TIER);
+        let body: any = {
+            currentTier: currentTierSummary.currentTier,
+            currentTotal: parseFloat(currentTierSummary.currentTotal.toString()),
+        };
+        if (campaign) body.campaignType = campaign.type;
+        if (currentCampaign) body.campaignType = currentCampaign.type;
+        if (cryptoPriceUsd) body.tokenValueUsd = cryptoPriceUsd.toString();
+        if (cryptoPriceUsd) body.tokenValueCoiin = cryptoPriceUsd.times(10).toString();
+        return new SuccessResult(body);
     }
 }
