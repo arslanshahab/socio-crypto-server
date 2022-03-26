@@ -425,31 +425,30 @@ export const deleteCampaign = async (parent: any, args: { id: string }, context:
         if (role === "manager") where["company"] = company;
         const campaign = await Campaign.findOne({
             where,
-            relations: [
-                "participants",
-                "posts",
-                "dailyMetrics",
-                "hourlyMetrics",
-                "prize",
-                "payouts",
-                "escrow",
-                "campaignTemplates",
-                "campaignMedia",
-            ],
         });
         if (!campaign) throw new Error(CAMPAIGN_NOT_FOUND);
-        if (campaign.posts.length > 0)
+
+        const participants = await Participant.find({ where: { campaign } });
+        const dailyParticipantMetrics = await DailyParticipantMetric.find({ where: { campaign } });
+        const campaignTemplates = await CampaignTemplate.find({ where: { campaign } });
+        const hourlyMetrics = await HourlyCampaignMetric.find({ where: { campaign } });
+        const campaignMedia = await CampaignMedia.find({ where: { campaign } });
+        const rafflePrize = await RafflePrize.find({ where: { campaign } });
+        const payouts = await Transfer.find({ where: { campaign } });
+        const escrow = await Escrow.find({ where: { campaign } });
+        const socialPost = await SocialPost.find({ where: { campaign } });
+        if (socialPost.length > 0)
             await SocialPost.delete({
-                id: In(campaign.posts.map((p: any) => p.id)),
+                id: In(socialPost.map((p: any) => p.id)),
             });
-        if (campaign.prize) await RafflePrize.remove(campaign.prize);
-        if (campaign.payouts) await Transfer.remove(campaign.payouts);
-        if (campaign.escrow) await Escrow.remove(campaign.escrow);
-        await Participant.remove(campaign.participants);
-        await DailyParticipantMetric.remove(campaign.dailyMetrics);
-        await HourlyCampaignMetric.remove(campaign.hourlyMetrics);
-        await CampaignTemplate.remove(campaign.campaignTemplates);
-        await CampaignMedia.remove(campaign.campaignMedia);
+        await Transfer.remove(payouts);
+        await RafflePrize.remove(rafflePrize);
+        await Escrow.remove(escrow);
+        await Participant.remove(participants);
+        await DailyParticipantMetric.remove(dailyParticipantMetrics);
+        await HourlyCampaignMetric.remove(hourlyMetrics);
+        await CampaignTemplate.remove(campaignTemplates);
+        await CampaignMedia.remove(campaignMedia);
         await campaign.remove();
         return campaign.asV1();
     } catch (error) {

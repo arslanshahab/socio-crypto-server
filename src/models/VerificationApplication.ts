@@ -2,11 +2,12 @@ import {
     BaseEntity,
     Column,
     Entity,
-    ManyToOne,
     OneToMany,
     PrimaryColumn,
     CreateDateColumn,
     UpdateDateColumn,
+    OneToOne,
+    JoinColumn,
 } from "typeorm";
 import { User } from "./User";
 import { FactorLink } from "./FactorLink";
@@ -20,7 +21,11 @@ export class VerificationApplication extends BaseEntity {
     @Column()
     public status: KycStatus;
 
-    @ManyToOne((_type) => User, (user) => user.identityVerifications)
+    @Column({ nullable: true })
+    public reason: string;
+
+    @OneToOne((_type) => User, (user) => user.identityVerification)
+    @JoinColumn()
     public user: User;
 
     @OneToMany((_type) => FactorLink, (factor) => factor.verification)
@@ -32,12 +37,18 @@ export class VerificationApplication extends BaseEntity {
     @UpdateDateColumn()
     public updatedAt: Date;
 
-    public static async newApplication(id: string, status: KycStatus, user: User) {
+    public static async newApplication(data: { id: string; status: KycStatus; user: User; reason: string }) {
         const app = new VerificationApplication();
-        app.applicationId = id;
-        app.status = status;
-        app.user = user;
+        app.applicationId = data.id;
+        app.status = data.status;
+        app.user = data.user;
+        app.reason = data.reason;
         return await app.save();
+    }
+
+    public async updateAppId(appId: string) {
+        this.applicationId = appId;
+        return await this.save();
     }
 
     public async updateStatus(newStatus: KycStatus) {
@@ -46,5 +57,10 @@ export class VerificationApplication extends BaseEntity {
             return await this.save();
         }
         return this;
+    }
+
+    public async updateReason(reason: string) {
+        this.reason = reason;
+        return await this.save();
     }
 }

@@ -6,6 +6,8 @@ import { extractVideoData, chunkVideo, sleep } from "../controllers/helpers";
 import { Participant } from "../models/Participant";
 import { SocialLink } from "../models/SocialLink";
 import { TwitterLinkCredentials } from "src/types";
+import { TWITTER_TOKEN_EXPIRED, FormattedError } from "../util/errors";
+import { isArray } from "lodash";
 
 export class TwitterClient {
     public static textLimit = 280;
@@ -19,11 +21,22 @@ export class TwitterClient {
     }
 
     public static postImage = async (client: Twitter, photo: string, format: string | undefined): Promise<string> => {
-        console.log("posting image to twitter");
-        const options = { media_category: "tweet_image", media_data: photo, media_type: format };
-        const response = await client.post("/media/upload", options);
-        console.log(response);
-        return response.media_id_string;
+        try {
+            console.log("posting image to twitter");
+            const options = { media_category: "tweet_image", media_data: photo, media_type: format };
+            const response = await client.post("/media/upload", options);
+            console.log(response);
+            return response.media_id_string;
+        } catch (error) {
+            if (isArray(error)) {
+                const [data] = error;
+                if (data?.code === 89) {
+                    throw new Error(TWITTER_TOKEN_EXPIRED);
+                }
+                throw new Error(data?.message || "");
+            }
+            throw new Error(error.message);
+        }
     };
 
     public static checkUploadStatus = async (client: Twitter, mediaId: string) => {
@@ -77,7 +90,13 @@ export class TwitterClient {
             }
             return mediaId;
         } catch (error) {
-            console.log(error);
+            if (isArray(error)) {
+                const [data] = error;
+                if (data?.code === 89) {
+                    throw new Error(TWITTER_TOKEN_EXPIRED);
+                }
+                throw new Error(data?.message || "");
+            }
             throw new Error(error.message);
         }
     };
@@ -105,23 +124,41 @@ export class TwitterClient {
             const response = await client.post("/statuses/update", options);
             return response.id_str;
         } catch (error) {
-            console.log(error);
-            return error.message;
+            if (isArray(error)) {
+                const [data] = error;
+                if (data?.code === 89) {
+                    throw new Error(TWITTER_TOKEN_EXPIRED);
+                }
+                throw new Error(data?.message || "");
+            }
+            throw new Error(error.message);
         }
     };
 
     public static getTotalFollowers = async (socialLink: SocialLink, id: string, cached = true) => {
-        logger.info(`getting follower count`);
-        let cacheKey = `twitterFollowerCount:${id}`;
-        if (cached) {
-            const cachedResponse = await getRedis().get(cacheKey);
-            if (cachedResponse) return cachedResponse;
+        try {
+            logger.info(`getting follower count`);
+            let cacheKey = `twitterFollowerCount:${id}`;
+            if (cached) {
+                const cachedResponse = await getRedis().get(cacheKey);
+                if (cachedResponse) return cachedResponse;
+            }
+            const client = TwitterClient.getClient(socialLink.getTwitterCreds());
+            const response = await client.get("/account/verify_credentials", { include_entities: false });
+            const followerCount = response["followers_count"];
+            await getRedis().set(cacheKey, JSON.stringify(followerCount), "EX", 900);
+            return followerCount;
+        } catch (error) {
+            if (isArray(error)) {
+                const [data] = error;
+                if (data?.code === 89) {
+                    await socialLink.remove();
+                    throw new FormattedError(new Error(TWITTER_TOKEN_EXPIRED));
+                }
+                throw new Error(data?.message || "");
+            }
+            throw new Error(error.message);
         }
-        const client = TwitterClient.getClient(socialLink.getTwitterCreds());
-        const response = await client.get("/account/verify_credentials", { include_entities: false });
-        const followerCount = response["followers_count"];
-        await getRedis().set(cacheKey, JSON.stringify(followerCount), "EX", 900);
-        return followerCount;
     };
 
     public static get = async (socialLink: SocialLink, id: string, cached = true): Promise<string> => {

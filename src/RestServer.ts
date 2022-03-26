@@ -20,7 +20,7 @@ const { NODE_ENV = "development" } = process.env;
     acceptMimes: ["application/json"],
     port: process.env.PORT || 8080,
     mount: {
-        "/v1": [`./src/controllers/v1/**/*.[jt]s`],
+        "/v1": [`${__dirname}/controllers/v1/**/*.[jt]s`],
     },
     swagger:
         NODE_ENV !== "production"
