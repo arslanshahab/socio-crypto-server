@@ -52,7 +52,7 @@ export class CampaignService {
             this.prismaService.campaign.count({ where }),
         ]);
     }
-    public async findCurrentCampaignTier(params: FindCampaignById, user?: User) {
+    public async findCampaignById(params: FindCampaignById, user?: User) {
         return this.prismaService.campaign.findFirst({
             where: {
                 id: {

@@ -58,7 +58,7 @@ export class CurrentCampaignTier {
         let cryptoPriceUsd;
         const user = await this.userService.findUserByContext(context.get("user"));
         if (campaignId) {
-            currentCampaign = await this.campaignService.findCurrentCampaignTier(query, user || undefined);
+            currentCampaign = await this.campaignService.findCampaignById(query, user || undefined);
             if (!currentCampaign) throw new Error("campaign not found");
             if (currentCampaign.type == "raffle") return { currentTier: -1, currentTotal: 0 };
             currentTierSummary = calculateTier(

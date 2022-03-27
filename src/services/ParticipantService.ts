@@ -1,7 +1,7 @@
 import { User } from "@prisma/client";
 import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
-import { FindParticipantById } from "../types";
+import { FindCampaignById, FindParticipantById } from "../types";
 
 @Injectable()
 export class ParticipantService {
@@ -23,6 +23,22 @@ export class ParticipantService {
             },
             where: {
                 id: params.id,
+            },
+        });
+    }
+    public async findParticipantByCampaignId(params: FindCampaignById, user?: User) {
+        console.log("response from params.................../", params);
+        return this.prismaService.participant.findFirst({
+            include: {
+                user: {
+                    include: {
+                        profile: true,
+                    },
+                },
+                campaign: true,
+            },
+            where: {
+                campaignId: params.campaignId,
             },
         });
     }
