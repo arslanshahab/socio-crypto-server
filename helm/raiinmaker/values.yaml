@@ -65,6 +65,7 @@ data:
 
 postgresql:
     existingSecret: "raiinmaker"
+    host: "staging-database.cluster-custom-cuqkwt1n17k6.us-west-1.rds.amazonaws.com"
     persistence:
         storageClass: gp2
         accessMode: ReadWriteOnce
