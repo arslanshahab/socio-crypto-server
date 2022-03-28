@@ -12,11 +12,10 @@ import { Campaign } from "./Campaign";
 import { Transfer } from "./Transfer";
 import { Admin } from "./Admin";
 import { HourlyCampaignMetric } from "./HourlyCampaignMetric";
-import { CampaignStatus } from "../types";
 import { Wallet } from "./Wallet";
 import { TatumClient } from "../clients/tatumClient";
 import { Currency } from "./Currency";
-import { RAIINMAKER_ORG_NAME } from "../util/constants";
+import { CampaignStatus, RAIINMAKER_ORG_NAME } from "../util/constants";
 import { SymbolNetworkParams } from "../types.d";
 import { Token } from "./Token";
 

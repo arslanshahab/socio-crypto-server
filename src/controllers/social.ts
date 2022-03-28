@@ -26,6 +26,7 @@ import {
     SOICIAL_LINKING_ERROR,
     USER_NOT_FOUND,
     MEDIA_NOT_FOUND,
+    TWITTER_TOKEN_EXPIRED,
 } from "../util/errors";
 import { TatumClient } from "../clients/tatumClient";
 import { BSC, COIIN } from "../util/constants";
@@ -161,8 +162,17 @@ export const postToSocial = async (
         const endTime = new Date().getTime();
         const timeTaken = (endTime - startTime) / 1000;
         console.log("number of seconds taken for this upload", timeTaken);
+        await user.transferCoiinReward({ type: "SHARING_REWARD", campaign });
         return socialPost.id;
     } catch (error) {
+        console.log(error);
+        if (error.message === TWITTER_TOKEN_EXPIRED) {
+            const socialLink = await SocialLink.findOne({
+                where: { user: await User.findUserByContext(context.user), type: args.socialType },
+                relations: ["user"],
+            });
+            await socialLink?.remove();
+        }
         throw new FormattedError(error);
     }
 };

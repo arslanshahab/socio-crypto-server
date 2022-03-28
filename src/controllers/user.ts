@@ -149,7 +149,7 @@ export const me = async (
 };
 
 export const meV2 = async (parent: any, args: any, context: { user: JWTPayload }, info: GraphQLResolveInfo) => {
-    let user = await User.findUserByContext(context.user, ["profile", "socialLinks"]);
+    let user = await User.findUserByContext(context.user, ["profile", "socialLinks", "identityVerification"]);
     if (!user) throw new Error(USER_NOT_FOUND);
     user = await user.asV2({ loadParticipantModel: false });
     const participations = await Participant.find({ where: { user }, relations: ["campaign"] });
@@ -160,7 +160,7 @@ export const meV2 = async (parent: any, args: any, context: { user: JWTPayload }
                 participantId: item.id,
                 campaignId: item.campaign.id,
                 currentlyParticipating: item.campaign.isOpen(),
-                link: item.link,
+                link: item.link || "",
             };
         }),
     };

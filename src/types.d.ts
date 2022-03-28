@@ -1,12 +1,14 @@
 import express, { Request } from "express";
 import { BigNumber } from "bignumber.js";
 import { Stripe } from "stripe";
+import { CampaignState, CampaignStatus } from "./util/constants";
 
 interface JWTPayload {
     email: string;
     userId: string;
     id: string;
     role: string;
+    company?: string;
 }
 
 export interface SymbolNetworkParams {
@@ -15,7 +17,7 @@ export interface SymbolNetworkParams {
 }
 
 export type CustodialAddressChain = "ETH" | "MATIC" | "BSC" | "ONE" | "XDC";
-export type RewardType = "LOGIN_REWARD" | "PARTICIPATION_REWARD" | "REGISTRATION_REWARD";
+export type RewardType = "LOGIN_REWARD" | "PARTICIPATION_REWARD" | "REGISTRATION_REWARD" | "SHARING_REWARD";
 
 export interface NewCampaignVariables {
     id?: string;
@@ -311,22 +313,21 @@ export type TransferAction =
     | "LOGIN_REWARD"
     | "REGISTRATION_REWARD"
     | "PARTICIPATION_REWARD"
+    | "SHARING_REWARD"
     | "CAMPAIGN_REWARD"
     | "NETWORK_REWARD"
     | "XOXODAY_REDEMPTION";
 
-export type CampaignStatus = "ACTIVE" | "PENDING" | "INSUFFICIENT_FUNDS" | "CLOSED" | "APPROVED" | "DENIED";
-export type CampaignState = "ALL" | "OPEN" | "CLOSED";
 export type CampaignAuditStatus = "DEFAULT" | "AUDITED" | "PENDING";
 export type KycStatus = "APPROVED" | "PENDING" | "REJECTED" | "";
 export type VerificationType = "EMAIL" | "PASSWORD" | "WITHDRAW" | "";
 
-export interface ListCampaignsVariables {
+export interface ListCampaignsVariablesV2 {
     skip: number;
     take: number;
     state: CampaignState;
-    status: CampaignStatus | "ALL";
-    userRelated: boolean;
+    status?: CampaignStatus | "ALL";
+    userRelated?: boolean;
 }
 
 export interface GetCampaignsParticipantsVariables {

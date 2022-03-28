@@ -1,4 +1,10 @@
-import { CampaignAuditReport, CampaignStatus, DateTrunc, NewCampaignVariables, ListCampaignsVariables } from "../types";
+import {
+    CampaignAuditReport,
+    DateTrunc,
+    NewCampaignVariables,
+    ListCampaignsVariables,
+    ListCampaignsVariablesV2,
+} from "../types";
 import { Campaign } from "../models/Campaign";
 import { Admin } from "../models/Admin";
 import { checkPermissions } from "../middleware/authentication";
@@ -21,7 +27,7 @@ import { getTokenPriceInUsd } from "../clients/ethereum";
 import { CampaignMedia } from "../models/CampaignMedia";
 import { CampaignTemplate } from "../models/CampaignTemplate";
 import { addYears } from "date-fns";
-import { RAIINMAKER_ORG_NAME } from "../util/constants";
+import { CampaignStatus, RAIINMAKER_ORG_NAME } from "../util/constants";
 import { JWTPayload } from "src/types";
 import {
     ERROR_CALCULATING_TIER,
@@ -343,22 +349,22 @@ export const adminUpdateCampaignStatus = async (
         switch (status) {
             case "APPROVED":
                 if (campaign.type === "raffle") {
-                    campaign.status = "APPROVED";
+                    campaign.status = CampaignStatus.APPROVED;
                     break;
                 }
                 const walletBalance = await campaign.org.getAvailableBalance(campaign.currency.token);
                 if (walletBalance < campaign.coiinTotal.toNumber()) {
-                    campaign.status = "INSUFFICIENT_FUNDS";
+                    campaign.status = CampaignStatus.INSUFFICIENT_FUNDS;
                     break;
                 }
-                campaign.status = "APPROVED";
+                campaign.status = CampaignStatus.APPROVED;
                 const blockageId = await campaign.blockCampaignAmount();
                 if (campaign.symbol.toLowerCase() !== "coiin") {
                     campaign.tatumBlockageId = blockageId;
                 }
                 break;
             case "DENIED":
-                campaign.status = "DENIED";
+                campaign.status = CampaignStatus.DENIED;
                 break;
         }
         await campaign.save();
@@ -390,7 +396,7 @@ export const listCampaigns = async (parent: any, args: ListCampaignsVariables, c
     }
 };
 
-export const listCampaignsV2 = async (parent: any, args: ListCampaignsVariables, context: { user: JWTPayload }) => {
+export const listCampaignsV2 = async (parent: any, args: ListCampaignsVariablesV2, context: { user: JWTPayload }) => {
     const user = await User.findUserByContext(context.user);
     const [results, total] = await Campaign.findCampaignsByStatusV2(args, user);
     const data = results.map(async (result) => await result.asV2());
@@ -419,31 +425,30 @@ export const deleteCampaign = async (parent: any, args: { id: string }, context:
         if (role === "manager") where["company"] = company;
         const campaign = await Campaign.findOne({
             where,
-            relations: [
-                "participants",
-                "posts",
-                "dailyMetrics",
-                "hourlyMetrics",
-                "prize",
-                "payouts",
-                "escrow",
-                "campaignTemplates",
-                "campaignMedia",
-            ],
         });
         if (!campaign) throw new Error(CAMPAIGN_NOT_FOUND);
-        if (campaign.posts.length > 0)
+
+        const participants = await Participant.find({ where: { campaign } });
+        const dailyParticipantMetrics = await DailyParticipantMetric.find({ where: { campaign } });
+        const campaignTemplates = await CampaignTemplate.find({ where: { campaign } });
+        const hourlyMetrics = await HourlyCampaignMetric.find({ where: { campaign } });
+        const campaignMedia = await CampaignMedia.find({ where: { campaign } });
+        const rafflePrize = await RafflePrize.find({ where: { campaign } });
+        const payouts = await Transfer.find({ where: { campaign } });
+        const escrow = await Escrow.find({ where: { campaign } });
+        const socialPost = await SocialPost.find({ where: { campaign } });
+        if (socialPost.length > 0)
             await SocialPost.delete({
-                id: In(campaign.posts.map((p: any) => p.id)),
+                id: In(socialPost.map((p: any) => p.id)),
             });
-        if (campaign.prize) await RafflePrize.remove(campaign.prize);
-        if (campaign.payouts) await Transfer.remove(campaign.payouts);
-        if (campaign.escrow) await Escrow.remove(campaign.escrow);
-        await Participant.remove(campaign.participants);
-        await DailyParticipantMetric.remove(campaign.dailyMetrics);
-        await HourlyCampaignMetric.remove(campaign.hourlyMetrics);
-        await CampaignTemplate.remove(campaign.campaignTemplates);
-        await CampaignMedia.remove(campaign.campaignMedia);
+        await Transfer.remove(payouts);
+        await RafflePrize.remove(rafflePrize);
+        await Escrow.remove(escrow);
+        await Participant.remove(participants);
+        await DailyParticipantMetric.remove(dailyParticipantMetrics);
+        await HourlyCampaignMetric.remove(hourlyMetrics);
+        await CampaignTemplate.remove(campaignTemplates);
+        await CampaignMedia.remove(campaignMedia);
         await campaign.remove();
         return campaign.asV1();
     } catch (error) {
@@ -676,7 +681,14 @@ export const getDashboardMetrics = async (parent: any, { campaignId, skip, take 
                 },
             });
         }
-        const aggregaredMetrics = { ...aggregatedCampaignMetrics, totalParticipants };
+        const aggregaredMetrics = {
+            clickCount: aggregatedCampaignMetrics?.clickCount || 0,
+            viewCount: aggregatedCampaignMetrics?.viewCount || 0,
+            shareCount: aggregatedCampaignMetrics?.shareCount || 0,
+            participationScore: aggregatedCampaignMetrics?.participationScore || 0,
+            campaignName: aggregatedCampaignMetrics?.campaignName || "",
+            totalParticipants: totalParticipants || 0,
+        };
         return { aggregatedCampaignMetrics: aggregaredMetrics, campaignMetrics };
     } catch (error) {
         throw new FormattedError(error);

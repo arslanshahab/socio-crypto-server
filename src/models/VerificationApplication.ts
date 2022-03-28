@@ -2,11 +2,12 @@ import {
     BaseEntity,
     Column,
     Entity,
-    ManyToOne,
     OneToMany,
-    PrimaryColumn,
+    PrimaryGeneratedColumn,
     CreateDateColumn,
     UpdateDateColumn,
+    OneToOne,
+    JoinColumn,
 } from "typeorm";
 import { User } from "./User";
 import { FactorLink } from "./FactorLink";
@@ -14,13 +15,20 @@ import { KycStatus } from "src/types";
 
 @Entity()
 export class VerificationApplication extends BaseEntity {
-    @PrimaryColumn()
+    @PrimaryGeneratedColumn("uuid")
+    public id: string;
+
+    @Column()
     public applicationId: string;
 
     @Column()
     public status: KycStatus;
 
-    @ManyToOne((_type) => User, (user) => user.identityVerifications)
+    @Column({ nullable: true })
+    public reason: string;
+
+    @OneToOne((_type) => User, (user) => user.identityVerification)
+    @JoinColumn()
     public user: User;
 
     @OneToMany((_type) => FactorLink, (factor) => factor.verification)
@@ -32,12 +40,27 @@ export class VerificationApplication extends BaseEntity {
     @UpdateDateColumn()
     public updatedAt: Date;
 
-    public static async newApplication(id: string, status: KycStatus, user: User) {
-        const app = new VerificationApplication();
-        app.applicationId = id;
-        app.status = status;
-        app.user = user;
+    public static async upsert(data: {
+        record?: VerificationApplication;
+        appId: string;
+        status: KycStatus;
+        user: User;
+        reason: string;
+    }) {
+        let app = await VerificationApplication.findOne({ where: { id: data.record?.id } });
+        if (!app) {
+            app = new VerificationApplication();
+        }
+        app.applicationId = data.appId;
+        app.status = data.status;
+        app.user = data.user;
+        app.reason = data.reason;
         return await app.save();
+    }
+
+    public async updateAppId(appId: string) {
+        this.applicationId = appId;
+        return await this.save();
     }
 
     public async updateStatus(newStatus: KycStatus) {
@@ -46,5 +69,10 @@ export class VerificationApplication extends BaseEntity {
             return await this.save();
         }
         return this;
+    }
+
+    public async updateReason(reason: string) {
+        this.reason = reason;
+        return await this.save();
     }
 }

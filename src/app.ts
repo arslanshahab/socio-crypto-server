@@ -1,8 +1,9 @@
 import express from "express";
 import cors from "cors";
-import { Server } from "http";
 import bodyParser from "body-parser";
 import { Connection, getConnectionOptions, createConnection } from "typeorm";
+import { PlatformExpress } from "@tsed/platform-express";
+import { PlatformBuilder } from "@tsed/common";
 import logger from "./util/logger";
 import { Secrets } from "./util/secrets";
 import { authenticateAdmin, authenticateUser } from "./middleware/authentication";
@@ -39,12 +40,13 @@ import { GraphQLRequestContext } from "../node_modules/apollo-server-types/dist/
 import * as Sentry from "@sentry/node";
 import * as Tracing from "@sentry/tracing";
 import { FormattedError } from "./util/errors";
+import { RestServer } from "./RestServer";
 
 const { NODE_ENV = "development" } = process.env;
 
 export class Application {
-    public app: express.Application;
-    public runningServer: Server;
+    private app: express.Application;
+    private platform: PlatformBuilder;
     public databaseConnection: Connection;
 
     public async connectDatabase() {
@@ -233,15 +235,17 @@ export class Application {
         );
         this.app.use("/v1/referral/:participantId", trackClickByLink);
         this.app.use("/v1/tatum/subscription/:userId/:accountId", trackCoiinTransactionForUser);
+
+        this.platform = await PlatformExpress.bootstrap(RestServer, {
+            express: { app: this.app },
+        });
+
         this.app.use(Sentry.Handlers.errorHandler());
     }
 
     public async startServer() {
-        this.runningServer = this.app.listen(this.app.get("port"), "0.0.0.0", () => {
-            this.runningServer.timeout = 1000000;
-            this.runningServer.keepAliveTimeout = 90000;
-            logger.info(`App is running at http://localhost:${this.app.get("port")} in ${this.app.get("env")} mode`);
-            logger.info("Press CTRL-C to stop\n");
-        });
+        await this.platform.listen();
+        logger.info(`App is running at http://localhost:${this.app.get("port")} in ${this.app.get("env")} mode`);
+        logger.info("Press CTRL-C to stop\n");
     }
 }
