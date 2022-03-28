@@ -7,7 +7,13 @@ import { Request, Response } from "express";
 import { VerificationApplication } from "../models/VerificationApplication";
 import { Validator } from "../schemas";
 import { AcuantApplication, AcuantClient } from "../clients/acuant";
-import { findKycApplication, getApplicationStatus, generateFactorsFromKYC, asyncHandler } from "../util";
+import {
+    findKycApplication,
+    getApplicationStatus,
+    generateFactorsFromKYC,
+    asyncHandler,
+    getKycStatusDetails,
+} from "../util";
 import { RAIINMAKER_ORG_NAME } from "../util/constants";
 import { KycApplication } from "../types.d";
 import { FormattedError, KYC_NOT_FOUND, USER_NOT_FOUND, VERIFICATION_NOT_FOUND } from "../util/errors";
@@ -19,22 +25,27 @@ export const verifyKyc = async (parent: any, args: { userKyc: KycApplication }, 
         const user = await User.findUserByContext(context.user, ["profile"]);
         if (!user) throw new Error(USER_NOT_FOUND);
         const currentKycApplication = await findKycApplication(user);
-        if (user.kycStatus === "APPROVED" || currentKycApplication) return currentKycApplication;
-        validator.validateKycRegistration(args.userKyc);
-        const newAcuantApplication = await AcuantClient.submitApplication(args.userKyc);
-        const status = getApplicationStatus(newAcuantApplication);
-        if (status === "REJECTED") {
+        let verificationApplication;
+        let factors;
+        if (!currentKycApplication || currentKycApplication.kyc.status === "REJECTED") {
+            validator.validateKycRegistration(args.userKyc);
+            const newAcuantApplication = await AcuantClient.submitApplication(args.userKyc);
+            const status = getApplicationStatus(newAcuantApplication);
+            verificationApplication = await VerificationApplication.upsert({
+                appId: newAcuantApplication.mtid,
+                status,
+                user,
+                reason: getKycStatusDetails(newAcuantApplication),
+                record: currentKycApplication?.kyc,
+            });
             Firebase.sendKycVerificationUpdate(user?.profile?.deviceToken || "", status);
-            return { kycId: newAcuantApplication.mtid, status };
+        } else {
+            verificationApplication = currentKycApplication.kyc;
+            factors = currentKycApplication.factors;
         }
-        const verificationApplication = await VerificationApplication.newApplication(
-            newAcuantApplication.mtid,
-            status,
-            user
-        );
-        await user.updateKycStatus(verificationApplication.status);
-        Firebase.sendKycVerificationUpdate(user?.profile?.deviceToken || "", status);
-        return { kycId: verificationApplication.applicationId, status: verificationApplication.status };
+
+        console.log(verificationApplication);
+        return { kycId: verificationApplication?.applicationId, status: verificationApplication?.status, factors };
     } catch (error) {
         throw new FormattedError(error);
     }
@@ -61,6 +72,12 @@ export const downloadKyc = async (parent: any, args: any, context: { user: any }
 
 export const kycWebhook = asyncHandler(async (req: Request, res: Response) => {
     const kyc: AcuantApplication = req.body;
+    console.log("user", kyc?.user);
+    console.log("upr", kyc?.upr);
+    console.log("rcd", kyc?.rcd);
+    console.log("erd", kyc?.erd);
+    console.log("res", kyc?.res);
+    console.log("ar", kyc?.ednaScoreCard.ar);
     const status = getApplicationStatus(kyc);
     const verificationApplication = await VerificationApplication.findOne({
         where: { applicationId: kyc.mtid },
@@ -68,18 +85,13 @@ export const kycWebhook = asyncHandler(async (req: Request, res: Response) => {
     });
     if (!verificationApplication) throw new Error(VERIFICATION_NOT_FOUND);
     const user = await User.findOne({ where: { id: verificationApplication.user.id } });
-    if (!user) throw new Error("User not found.");
+    if (!user) throw new Error(USER_NOT_FOUND);
     if (status === "PENDING") res.json({ success: false });
     if (status === "APPROVED") {
         await S3Client.uploadAcuantKyc(user.id, kyc);
-        await verificationApplication.updateStatus(status);
-        await user.updateKycStatus(status);
     }
-    if (status === "REJECTED") {
-        await VerificationApplication.remove(verificationApplication);
-        await user.updateKycStatus("");
-    }
-
+    await verificationApplication.updateStatus(status);
+    await verificationApplication.updateReason(getKycStatusDetails(kyc));
     await Firebase.sendKycVerificationUpdate(user?.profile?.deviceToken || "", status);
     res.json({ success: true });
 });
@@ -90,7 +102,7 @@ export const getKyc = async (_parent: any, args: any, context: { user: any }) =>
         if (!user) throw new Error(USER_NOT_FOUND);
         const application = await findKycApplication(user);
         if (!application) throw new Error(KYC_NOT_FOUND);
-        return application;
+        return { kycId: application.kyc?.applicationId, status: application.kyc?.status, factors: application.factors };
     } catch (error) {
         throw new FormattedError(error);
     }
@@ -122,7 +134,6 @@ export const updateKyc = async (parent: any, args: { user: KycUser }, context: {
         delete args.user.addressProof;
         args.user.hasAddressProof = true;
     }
-    user.kycStatus = "PENDING";
     await user.save();
     return S3Client.updateUserInfo(user.id, args.user);
 };
@@ -139,10 +150,9 @@ export const updateKycStatus = async (
         relations: ["profile", "notificationSettings"],
     });
     if (!user) throw new Error(USER_NOT_FOUND);
-    user.kycStatus = args.status == "APPROVED" ? "APPROVED" : "REJECTED";
     await user.save();
     if (user.notificationSettings.kyc) {
-        if (user.kycStatus === "APPROVED") await Firebase.sendKycApprovalNotification(user.profile.deviceToken);
+        if (args.status === "APPROVED") await Firebase.sendKycApprovalNotification(user.profile.deviceToken);
         else await Firebase.sendKycRejectionNotification(user.profile.deviceToken);
     }
     return user.asV1();

@@ -17,7 +17,7 @@ export interface SymbolNetworkParams {
 }
 
 export type CustodialAddressChain = "ETH" | "MATIC" | "BSC" | "ONE" | "XDC";
-export type RewardType = "LOGIN_REWARD" | "PARTICIPATION_REWARD" | "REGISTRATION_REWARD";
+export type RewardType = "LOGIN_REWARD" | "PARTICIPATION_REWARD" | "REGISTRATION_REWARD" | "SHARING_REWARD";
 
 export interface NewCampaignVariables {
     id?: string;
@@ -313,6 +313,7 @@ export type TransferAction =
     | "LOGIN_REWARD"
     | "REGISTRATION_REWARD"
     | "PARTICIPATION_REWARD"
+    | "SHARING_REWARD"
     | "CAMPAIGN_REWARD"
     | "NETWORK_REWARD"
     | "XOXODAY_REDEMPTION";

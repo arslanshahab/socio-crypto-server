@@ -125,7 +125,7 @@ export const campaignRequirementsSchema = {
                     type: "object",
                     properties: {
                         minFollower: {
-                            type: "string",
+                            type: "number",
                         },
                     },
                 },
