@@ -31,24 +31,20 @@ export const verifyKyc = async (parent: any, args: { userKyc: KycApplication }, 
             validator.validateKycRegistration(args.userKyc);
             const newAcuantApplication = await AcuantClient.submitApplication(args.userKyc);
             const status = getApplicationStatus(newAcuantApplication);
-            if (currentKycApplication?.kyc.status === "REJECTED") {
-                currentKycApplication.kyc.updateAppId(newAcuantApplication.mtid);
-                currentKycApplication.kyc.updateStatus(status);
-                currentKycApplication.kyc.updateReason(getKycStatusDetails(newAcuantApplication));
-                verificationApplication = currentKycApplication.kyc;
-            } else {
-                verificationApplication = await VerificationApplication.newApplication({
-                    id: newAcuantApplication.mtid,
-                    status,
-                    user,
-                    reason: getKycStatusDetails(newAcuantApplication),
-                });
-            }
+            verificationApplication = await VerificationApplication.upsert({
+                appId: newAcuantApplication.mtid,
+                status,
+                user,
+                reason: getKycStatusDetails(newAcuantApplication),
+                record: currentKycApplication?.kyc,
+            });
             Firebase.sendKycVerificationUpdate(user?.profile?.deviceToken || "", status);
         } else {
             verificationApplication = currentKycApplication.kyc;
             factors = currentKycApplication.factors;
         }
+
+        console.log(verificationApplication);
         return { kycId: verificationApplication?.applicationId, status: verificationApplication?.status, factors };
     } catch (error) {
         throw new FormattedError(error);
