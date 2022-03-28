@@ -72,6 +72,12 @@ export const downloadKyc = async (parent: any, args: any, context: { user: any }
 
 export const kycWebhook = asyncHandler(async (req: Request, res: Response) => {
     const kyc: AcuantApplication = req.body;
+    console.log("user", kyc?.user);
+    console.log("upr", kyc?.upr);
+    console.log("rcd", kyc?.rcd);
+    console.log("erd", kyc?.erd);
+    console.log("res", kyc?.res);
+    console.log("ar", kyc?.ednaScoreCard.ar);
     const status = getApplicationStatus(kyc);
     const verificationApplication = await VerificationApplication.findOne({
         where: { applicationId: kyc.mtid },
