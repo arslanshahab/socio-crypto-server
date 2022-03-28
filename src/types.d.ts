@@ -335,6 +335,8 @@ export interface FindParticipantById {
 export interface FindCampaignById {
     campaignId: string;
     userRelated?: boolean;
+    skip?: number;
+    take?: number;
 }
 
 export interface GetCampaignsParticipantsVariables {

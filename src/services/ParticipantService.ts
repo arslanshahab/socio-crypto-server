@@ -2,6 +2,7 @@ import { User } from "@prisma/client";
 import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
 import { FindCampaignById, FindParticipantById } from "../types";
+import { decrypt } from "../util/crypto";
 
 @Injectable()
 export class ParticipantService {
@@ -18,17 +19,25 @@ export class ParticipantService {
     public async findParticipantById(params: FindParticipantById, user?: User) {
         return this.prismaService.participant.findFirst({
             include: {
-                user: true,
+                user: {
+                    include: {
+                        profile: true,
+                    },
+                },
+
                 campaign: true,
             },
             where: {
                 id: params.id,
+                userId: user?.id,
             },
         });
     }
     public async findParticipantByCampaignId(params: FindCampaignById, user?: User) {
-        console.log("response from params.................../", params);
         return this.prismaService.participant.findFirst({
+            where: {
+                campaignId: params?.campaignId,
+            },
             include: {
                 user: {
                     include: {
@@ -37,9 +46,43 @@ export class ParticipantService {
                 },
                 campaign: true,
             },
+        });
+    }
+    public async findCampaignParticipants(params: FindCampaignById, user?: User) {
+        const { campaignId, skip, take } = params;
+        return this.prismaService.$transaction([
+            this.prismaService.participant.findMany({
+                where: {
+                    campaignId,
+                },
+                include: {
+                    user: true,
+                    campaign: true,
+                },
+                skip,
+                take,
+            }),
+            this.prismaService.participant.count({ where: { campaignId } }),
+        ]);
+    }
+    public async findSocialPosts(params: any) {
+        return this.prismaService.socialPost.findMany({
             where: {
-                campaignId: params.campaignId,
+                participantId: params,
             },
         });
+    }
+    public async findSocialLinkByUserId(userId: string, type: string) {
+        let response: any = this.prismaService.socialLink.findFirst({
+            where: {
+                userId,
+                type,
+            },
+        });
+        let socialLink = await response;
+        let apiKey = decrypt(socialLink.apiKey);
+        let apiSecret = decrypt(socialLink.apiSecret);
+        socialLink = { ...socialLink, apiKey, apiSecret };
+        return socialLink;
     }
 }
