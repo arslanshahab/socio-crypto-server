@@ -9,7 +9,6 @@ import { TwitterClient } from "../../clients/twitter";
 import { TikTokClient } from "../../clients/tiktok";
 import { FacebookClient } from "../../clients/facebook";
 import { NO_TOKEN_PROVIDED, SOICIAL_LINKING_ERROR } from "../../util/errors";
-// import { decrypt } from "../../util/crypto";
 
 class ListParticipantVariablesModel {
     @Property() public readonly id: string;

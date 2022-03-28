@@ -21,7 +21,6 @@ class ListCampaignsVariablesModel {
 }
 class ListCurrentCampaignVariablesModel {
     @Property() public readonly campaignId: string;
-    @Property() public readonly campaign: CampaignModel;
     @Property() public readonly userRelated: boolean | undefined;
 }
 
@@ -52,7 +51,7 @@ export class CurrentCampaignTier {
     @Get()
     @(Returns(200, SuccessResult).Of(Pagination).Nested(CampaignModel))
     public async list(@QueryParams() query: ListCurrentCampaignVariablesModel, @Context() context: Context) {
-        let { campaignId, campaign } = query;
+        let { campaignId } = query;
         let currentTierSummary;
         let currentCampaign: any;
         let cryptoPriceUsd;
@@ -68,20 +67,12 @@ export class CurrentCampaignTier {
             const cryptoCurrency = await this.campaignService.findCryptoCurrencyById(currentCampaign.cryptoId);
             const cryptoCurrencyType = cryptoCurrency?.type;
             if (cryptoCurrencyType) cryptoPriceUsd = await getTokenPriceInUsd(cryptoCurrencyType);
-        } else if (campaign) {
-            if (campaign?.type == "raffle") return { currentTier: -1, currentTotal: 0 };
-            currentTierSummary = calculateTier(
-                new BN(currentCampaign.totalParticipationScore),
-                campaign.algorithm.tiers
-            );
-            //add campaign.crypto here...
         }
         if (!currentTierSummary) throw new Error(ERROR_CALCULATING_TIER);
         let body: any = {
             currentTier: currentTierSummary.currentTier,
             currentTotal: parseFloat(currentTierSummary.currentTotal.toString()),
         };
-        if (campaign) body.campaignType = campaign.type;
         if (currentCampaign) body.campaignType = currentCampaign.type;
         if (cryptoPriceUsd) body.tokenValueUsd = cryptoPriceUsd.toString();
         if (cryptoPriceUsd) body.tokenValueCoiin = cryptoPriceUsd.times(10).toString();
