@@ -3,7 +3,7 @@ import {
     Column,
     Entity,
     OneToMany,
-    PrimaryColumn,
+    PrimaryGeneratedColumn,
     CreateDateColumn,
     UpdateDateColumn,
     OneToOne,
@@ -15,7 +15,10 @@ import { KycStatus } from "src/types";
 
 @Entity()
 export class VerificationApplication extends BaseEntity {
-    @PrimaryColumn()
+    @PrimaryGeneratedColumn("uuid")
+    public id: string;
+
+    @Column()
     public applicationId: string;
 
     @Column()
@@ -37,13 +40,27 @@ export class VerificationApplication extends BaseEntity {
     @UpdateDateColumn()
     public updatedAt: Date;
 
-    public static async newApplication(data: { id: string; status: KycStatus; user: User; reason: string }) {
-        const app = new VerificationApplication();
-        app.applicationId = data.id;
+    public static async upsert(data: {
+        record?: VerificationApplication;
+        appId: string;
+        status: KycStatus;
+        user: User;
+        reason: string;
+    }) {
+        let app = await VerificationApplication.findOne({ where: { id: data.record?.id } });
+        if (!app) {
+            app = new VerificationApplication();
+        }
+        app.applicationId = data.appId;
         app.status = data.status;
         app.user = data.user;
         app.reason = data.reason;
         return await app.save();
+    }
+
+    public async updateAppId(appId: string) {
+        this.applicationId = appId;
+        return await this.save();
     }
 
     public async updateStatus(newStatus: KycStatus) {

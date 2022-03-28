@@ -31,14 +31,14 @@ export const verifyKyc = async (parent: any, args: { userKyc: KycApplication }, 
             validator.validateKycRegistration(args.userKyc);
             const newAcuantApplication = await AcuantClient.submitApplication(args.userKyc);
             const status = getApplicationStatus(newAcuantApplication);
-
-            Firebase.sendKycVerificationUpdate(user?.profile?.deviceToken || "", status);
-            verificationApplication = await VerificationApplication.newApplication({
-                id: newAcuantApplication.mtid,
+            verificationApplication = await VerificationApplication.upsert({
+                appId: newAcuantApplication.mtid,
                 status,
                 user,
                 reason: getKycStatusDetails(newAcuantApplication),
+                record: currentKycApplication?.kyc,
             });
+            Firebase.sendKycVerificationUpdate(user?.profile?.deviceToken || "", status);
         } else {
             verificationApplication = currentKycApplication.kyc;
             factors = currentKycApplication.factors;
@@ -70,6 +70,12 @@ export const downloadKyc = async (parent: any, args: any, context: { user: any }
 
 export const kycWebhook = asyncHandler(async (req: Request, res: Response) => {
     const kyc: AcuantApplication = req.body;
+    console.log("user", kyc?.user);
+    console.log("upr", kyc?.upr);
+    console.log("rcd", kyc?.rcd);
+    console.log("erd", kyc?.erd);
+    console.log("res", kyc?.res);
+    console.log("ar", kyc?.ednaScoreCard.ar);
     const status = getApplicationStatus(kyc);
     const verificationApplication = await VerificationApplication.findOne({
         where: { applicationId: kyc.mtid },
