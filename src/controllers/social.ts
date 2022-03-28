@@ -118,7 +118,7 @@ export const postToSocial = async (
         const startTime = new Date().getTime();
         let { socialType, text, mediaType, mediaFormat, media, participantId, defaultMedia, mediaId } = args;
         if (!allowedSocialLinks.includes(socialType)) throw new ApolloError(`posting to ${socialType} is not allowed`);
-        const user = await User.findUserByContext(context.user);
+        const user = await User.findUserByContext(context.user, ["wallet"]);
         if (!user) throw new Error(USER_NOT_FOUND);
         const participant = await Participant.findOne({
             where: { id: participantId, user },
