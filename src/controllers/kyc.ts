@@ -43,8 +43,6 @@ export const verifyKyc = async (parent: any, args: { userKyc: KycApplication }, 
             verificationApplication = currentKycApplication.kyc;
             factors = currentKycApplication.factors;
         }
-
-        console.log(verificationApplication);
         return { kycId: verificationApplication?.applicationId, status: verificationApplication?.status, factors };
     } catch (error) {
         throw new FormattedError(error);
