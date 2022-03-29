@@ -30,6 +30,7 @@ import {
 } from "../util/errors";
 import { TatumClient } from "../clients/tatumClient";
 import { BSC, COIIN } from "../util/constants";
+import { ILike } from "typeorm";
 
 export const allowedSocialLinks = ["twitter", "facebook", "tiktok"];
 
@@ -118,7 +119,7 @@ export const postToSocial = async (
         const startTime = new Date().getTime();
         let { socialType, text, mediaType, mediaFormat, media, participantId, defaultMedia, mediaId } = args;
         if (!allowedSocialLinks.includes(socialType)) throw new ApolloError(`posting to ${socialType} is not allowed`);
-        const user = await User.findUserByContext(context.user);
+        const user = await User.findUserByContext(context.user, ["wallet"]);
         if (!user) throw new Error(USER_NOT_FOUND);
         const participant = await Participant.findOne({
             where: { id: participantId, user },
@@ -136,10 +137,15 @@ export const postToSocial = async (
         const client = getSocialClient(socialType);
         if (defaultMedia) {
             console.log(`downloading media with mediaID ----- ${mediaId}`);
-            const selectedMedia = await CampaignMedia.findOne({ where: { id: mediaId } });
+            let selectedMedia = await CampaignMedia.findOne({
+                where: [
+                    { campaign, id: mediaId },
+                    { campaign, channel: ILike(socialType) },
+                ],
+            });
             if (!selectedMedia) throw new Error(MEDIA_NOT_FOUND);
-            const mediaUrl = `${assetUrl}/campaign/${campaign.id}/${selectedMedia.media}`;
-            const downloaded = await downloadMedia(mediaType, mediaUrl, selectedMedia.mediaFormat);
+            const mediaUrl = `${assetUrl}/campaign/${campaign.id}/${selectedMedia?.media}`;
+            const downloaded = await downloadMedia(mediaType, mediaUrl, selectedMedia?.mediaFormat);
             media = downloaded;
             mediaFormat = selectedMedia.mediaFormat;
         }

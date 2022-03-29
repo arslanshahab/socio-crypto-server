@@ -1,21 +1,18 @@
 import { Get, Property, Required, Enum, Returns } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
 import { Context, QueryParams } from "@tsed/common";
-import { CampaignModel } from ".prisma/client/entities";
 import { CampaignService } from "../../services/CampaignService";
 import { UserService } from "../../services/UserService";
 import { CampaignState, CampaignStatus } from "../../util/constants";
-import { Pagination, SuccessResult } from "../../util/entities";
 import { calculateTier } from "../helpers";
 import { BN } from "../../util";
 import { getTokenPriceInUsd } from "../../clients/ethereum";
 import { ERROR_CALCULATING_TIER } from "../../util/errors";
+import { PaginatedVariablesModel, Pagination, SuccessResult } from "../../util/entities";
+import { CampaignResultModel } from "../../models/RestModels";
 
-class ListCampaignsVariablesModel {
-    @Required() public readonly skip: number;
-    @Required() public readonly take: number;
+class ListCampaignsVariablesModel extends PaginatedVariablesModel {
     @Required() @Enum(CampaignState) public readonly state: CampaignState;
-
     @Property() @Enum(CampaignStatus, "ALL") public readonly status: CampaignStatus | "ALL" | undefined;
     @Property() public readonly userRelated: boolean | undefined;
 }
@@ -33,11 +30,11 @@ export class CampaignController {
     private userService: UserService;
 
     @Get()
-    @(Returns(200, SuccessResult).Of(Pagination).Nested(CampaignModel))
+    @(Returns(200, SuccessResult).Of(Pagination).Nested(CampaignResultModel))
     public async list(@QueryParams() query: ListCampaignsVariablesModel, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         const [items, total] = await this.campaignService.findCampaignsByStatus(query, user || undefined);
-        return new SuccessResult(new Pagination(items, total));
+        return new SuccessResult(new Pagination(items, total, CampaignResultModel), Pagination);
     }
 }
 
@@ -49,7 +46,7 @@ export class CurrentCampaignTier {
     private userService: UserService;
 
     @Get()
-    @(Returns(200, SuccessResult).Of(Pagination).Nested(CampaignModel))
+    @(Returns(200, SuccessResult).Of(Pagination).Nested(CampaignResultModel))
     public async list(@QueryParams() query: ListCurrentCampaignVariablesModel, @Context() context: Context) {
         let { campaignId } = query;
         let currentTierSummary;
@@ -76,6 +73,6 @@ export class CurrentCampaignTier {
         if (currentCampaign) body.campaignType = currentCampaign.type;
         if (cryptoPriceUsd) body.tokenValueUsd = cryptoPriceUsd.toString();
         if (cryptoPriceUsd) body.tokenValueCoiin = cryptoPriceUsd.times(10).toString();
-        return new SuccessResult(body);
+        return new SuccessResult(body, Pagination);
     }
 }

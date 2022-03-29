@@ -344,7 +344,7 @@ export const getApplicationStatus = (kycApplication: AcuantApplication): KycStat
 
 export const getKycStatusDetails = (kycApplication: AcuantApplication): string => {
     const details = kycApplication?.ednaScoreCard?.er?.reportedRule?.details;
-    return details?.split("[Fired] ")[1] || "";
+    return details?.split("[Fired] ")[1] || kycApplication?.erd || "";
 };
 
 export const findKycApplication = async (

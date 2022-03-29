@@ -13,7 +13,7 @@ data:
   AWS_SECRET_ACCESS_KEY: "{{ .Values.aws.secret_key }}"
   AWS_DEFAULT_REGION: "{{ .Values.aws.region }}"
   {{- end }}
-  PG_HOST: "{{ .Release.Name }}-postgresql"
+  PG_HOST: "{{ .Values.postgresql.host }}"
   PG_DATABASE: "postgres"
   PG_PORT: "5432"
   PG_USER: "postgres"

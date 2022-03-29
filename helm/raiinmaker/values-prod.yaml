@@ -28,3 +28,6 @@ data:
         COIIN_VALUE: "0.5"
         FIREBASE_API_KEY: "AIzaSyAAXv6aKS3xdrnTLf5hVVJgW60h26vFJok"
         SENTRY_DSN: "https://aedcc11778fe4bbdb489d4ad55eb08de@o1155640.ingest.sentry.io/6237600"
+
+postgresql:
+    host: "raiinmaker-api-postgresql"

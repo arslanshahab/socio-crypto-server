@@ -50,13 +50,18 @@ export const REWARD_AMOUNTS: { [key: string]: number } = {
     REGISTRATION_REWARD: REGISTRATION_REWARD_AMOUNT,
     SHARING_REWARD: SHARING_REWARD_AMOUNT,
 };
-export const KYC_APPROVAL_MESSAGE_TITLE = "Your KYC application has been approved!";
-export const KYC_PENDING_MESSAGE_TITLE = "Your KYC application has been submitted!";
-export const KYC_REJECTED_MESSAGE_TITLE = "Your KYC application has been rejected!";
+export const KYC_APPROVAL_MESSAGE_TITLE = "Your KYC application has been APPROVED!";
+export const KYC_PENDING_MESSAGE_TITLE = "Your KYC application has been SUBMITTED!";
+export const KYC_REJECTED_MESSAGE_TITLE = "Your KYC Application has been REJECTED!";
 export const KYC_APPROVAL_MESSAGE_BODY = "You are now elligible for some extra features like withdraws above $600.";
 export const KYC_PENDING_MESSAGE_BODY = "We will update you once application's status changes.";
 export const KYC_REJECTED_MESSAGE_BODY =
     "Please contact our support to find out reason. You will have to re-apply for KYC with more precise details.";
+
+export const TRANSACTION_WITHDRAW_MESSAGE_TITLE = "Withdraw Request Completed!";
+export const TRANSACTION_DEPOST_MESSAGE_TITLE = "Deposit Received!";
+export const TRANSACTION_WITHDRAW_MESSAGE_BODY = "You request to withdraw funds has been initiated.";
+export const TRANSACTION_DEPOSIT_MESSAGE_BODY = "You have successfully deposited funds in your raiinmaker wallet.";
 
 export const KYC_NOTIFICATION_TITLE: { [key: string]: string } = {
     APPROVED: KYC_APPROVAL_MESSAGE_TITLE,
@@ -68,6 +73,16 @@ export const KYC_NOTIFICATION_BODY: { [key: string]: string } = {
     APPROVED: KYC_APPROVAL_MESSAGE_BODY,
     PENDING: KYC_PENDING_MESSAGE_BODY,
     REJECTED: KYC_REJECTED_MESSAGE_BODY,
+};
+
+export const TRANSACTION_NOTIFICATION_TITLE: { [key: string]: string } = {
+    WITHDRAW: TRANSACTION_WITHDRAW_MESSAGE_TITLE,
+    DEPOSIT: TRANSACTION_DEPOST_MESSAGE_TITLE,
+};
+
+export const TRANSACTION_NOTIFICATION_BODY: { [key: string]: string } = {
+    WITHDRAW: TRANSACTION_WITHDRAW_MESSAGE_BODY,
+    DEPOSIT: TRANSACTION_DEPOSIT_MESSAGE_BODY,
 };
 
 export enum CampaignStatus {

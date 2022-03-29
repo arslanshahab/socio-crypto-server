@@ -4,7 +4,8 @@ import { KycApplication } from "../types.d";
 
 const acuantUrls: { [key: string]: string } = {
     // development: "https://sandbox.identitymind.com",
-    staging: "https://staging.identitymind.com",
+    // staging: "https://staging.identitymind.com",
+    staging: "https://sandbox.identitymind.com",
     production: "https://edna.identitymind.com",
 };
 
@@ -26,6 +27,12 @@ export interface AcuantApplication {
     ednaScoreCard: {
         sc: any[];
         etr: Etr[];
+        ar: {
+            result: string;
+            ruleId: string;
+            ruleName: string;
+            ruleDescription: string;
+        };
         er: {
             profile: string;
             reportedRule: {
@@ -44,6 +51,11 @@ export interface AcuantApplication {
     mtid: string;
     state: string;
     tid: string;
+    user: string;
+    upr: string;
+    erd: string;
+    res: string;
+    rcd: string;
 }
 
 const validateImageSizeInMB = (title: string, img: string, maxSizeMB = 5) => {
