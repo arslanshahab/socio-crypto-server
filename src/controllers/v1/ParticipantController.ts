@@ -48,7 +48,7 @@ export class ParticipantController {
         const user = await this.userService.findUserByContext(context.get("user"));
         const participant = await this.participantService.findParticipantById(query, user || undefined);
         if (!participant) throw new Error("Participant not found");
-        return new SuccessResult(participant);
+        return new SuccessResult(participant, ParticipantModel);
     }
 }
 @Controller("/participantPosts")
@@ -90,7 +90,7 @@ export class ParticipantByCampaignId {
         const user = await this.userService.findUserByContext(context.get("user"));
         const participant = await this.participantService.findParticipantByCampaignId(query, user || undefined);
         if (!participant) throw new Error("Participant not found");
-        return new SuccessResult(participant);
+        return new SuccessResult(participant, ParticipantModel);
     }
 }
 @Controller("/campaignParticipants")
@@ -105,6 +105,6 @@ export class CampaignParticipants {
     public async list(@QueryParams() query: ListCampaignParticipantVariablesModel, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         const [items, count] = await this.participantService.findCampaignParticipants(query, user || undefined);
-        return new SuccessResult(new Pagination(items, count));
+        return new SuccessResult(new Pagination(items, count, ParticipantModel), Pagination);
     }
 }
