@@ -4,8 +4,13 @@ import { Campaign } from "../models/Campaign";
 import { Secrets } from "../util/secrets";
 import { paginateList } from "../util";
 import { RequestData, doFetch } from "../util/fetchRequest";
-import { KycStatus } from "src/types";
-import { KYC_NOTIFICATION_TITLE, KYC_NOTIFICATION_BODY } from "../util/constants";
+import { KycStatus, TransferAction } from "src/types";
+import {
+    KYC_NOTIFICATION_TITLE,
+    KYC_NOTIFICATION_BODY,
+    TRANSACTION_NOTIFICATION_TITLE,
+    TRANSACTION_NOTIFICATION_BODY,
+} from "../util/constants";
 
 interface FirebaseUserLoginResponse {
     kind: string;
@@ -240,6 +245,33 @@ export class Firebase {
     public static async sendKycVerificationUpdate(token: string, status: KycStatus) {
         const title = KYC_NOTIFICATION_TITLE[status];
         const body = KYC_NOTIFICATION_BODY[status];
+        const message: admin.messaging.Message = {
+            notification: {
+                title,
+                body,
+            },
+            apns: {
+                payload: {
+                    aps: {
+                        contentAvailable: true,
+                        sound: "default",
+                        badge: 4,
+                        alert: {
+                            title,
+                            body,
+                        },
+                    },
+                },
+            },
+            data: { title, body, redirection: JSON.stringify({ to: "harvest" }) },
+            token,
+        };
+        await Firebase.adminClient.messaging().send(message);
+    }
+
+    public static async sendUserTransactionUpdate(token: string, status: TransferAction) {
+        const title = TRANSACTION_NOTIFICATION_TITLE[status];
+        const body = TRANSACTION_NOTIFICATION_BODY[status];
         const message: admin.messaging.Message = {
             notification: {
                 title,

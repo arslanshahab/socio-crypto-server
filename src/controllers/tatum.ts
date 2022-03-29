@@ -15,6 +15,7 @@ import { JWTPayload } from "src/types";
 import { createSubscriptionUrl } from "../util/tatumHelper";
 import { getSymbolValueInUSD } from "../util/exchangeRate";
 import { errorMap, GLOBAL_WITHDRAW_LIMIT } from "../util/errors";
+import { Firebase } from "../clients/firebase";
 
 export const initWallet = asyncHandler(async (req: Request, res: Response) => {
     try {
@@ -291,7 +292,7 @@ export const trackCoiinTransactionForUser = asyncHandler(async (req: Request, re
         if (!user) throw new Error("User not found.");
         const userCurrency = await Currency.findOne({
             where: { tatumId: accountId, wallet: user.wallet },
-            relations: ["token"],
+            relations: ["token", "profile"],
         });
         if (!userCurrency) throw new Error("Currency not found.");
         const { amount, txId } = req.body;
@@ -315,6 +316,7 @@ export const trackCoiinTransactionForUser = asyncHandler(async (req: Request, re
             tatumId: userCurrency.tatumId,
         });
         await newTransfer.save();
+        await Firebase.sendUserTransactionUpdate(user.profile.deviceToken, "DEPOSIT");
         res.status(200).json({ success: true });
     } catch (error) {
         res.status(200).json(error.message);
