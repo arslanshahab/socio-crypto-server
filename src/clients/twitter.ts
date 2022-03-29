@@ -173,4 +173,15 @@ export class TwitterClient {
         await getRedis().set(cacheKey, JSON.stringify(twitterResponse), "EX", 900); // cache for 15 minutes
         return JSON.stringify(twitterResponse);
     };
+    public static getTwitterPost = async (socialLink: any, id: string, cached = true): Promise<string> => {
+        let cacheKey = `twitter:${id}`;
+        if (cached) {
+            const cachedResponse = await getRedis().get(cacheKey);
+            if (cachedResponse) return cachedResponse;
+        }
+        const client = TwitterClient.getClient({ apiKey: socialLink.apiKey, apiSecret: socialLink.apiSecret });
+        const twitterResponse = await client.get("/statuses/show", { id });
+        await getRedis().set(cacheKey, JSON.stringify(twitterResponse), "EX", 900); // cache for 15 minutes
+        return JSON.stringify(twitterResponse);
+    };
 }

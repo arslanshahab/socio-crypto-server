@@ -24,7 +24,6 @@ export class ParticipantService {
                         profile: true,
                     },
                 },
-
                 campaign: true,
             },
             where: {
@@ -65,10 +64,10 @@ export class ParticipantService {
             this.prismaService.participant.count({ where: { campaignId } }),
         ]);
     }
-    public async findSocialPosts(params: any) {
+    public async findSocialPosts(participantId: string) {
         return this.prismaService.socialPost.findMany({
             where: {
-                participantId: params,
+                participantId: participantId,
             },
         });
     }

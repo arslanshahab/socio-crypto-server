@@ -62,23 +62,19 @@ export class ParticipantPosts {
     @Get()
     @(Returns(200, SuccessResult).Of(Pagination).Nested(ParticipantModel))
     public async list(@QueryParams() query: ListParticipantVariablesModel, @Context() context: Context) {
-        // const results: Promise<any>[] = [];
+        const results: Promise<any>[] = [];
         const user = await this.userService.findUserByContext(context.get("user"));
         const participant = await this.participantService.findParticipantById(query, user || undefined);
         if (!participant) throw new Error("Participant not found");
         const posts = await this.participantService.findSocialPosts(participant.id);
-        const socialLink = await this.participantService.findSocialLinkByUserId(user?.id || "", "twitter");
-        const client = getSocialClient("twitter");
-        console.log(posts, socialLink, client);
-
-        // for (let i = 0; i < posts.length; i++) {
-        //     const post = posts[i];
-        //     let a = await client.get(socialLink, post.id);
-        //     console.log("client......................................../4*", a);
-        //     results.push(a);
-        // }
-
-        return "This endpoint is in progress...!";
+        for (let i = 0; i < posts.length; i++) {
+            const post = posts[i];
+            const socialLink = await this.participantService.findSocialLinkByUserId(user?.id || "", "twitter");
+            const client = getSocialClient("twitter");
+            const response = await client.getTwitterPost(socialLink, post.id);
+            results.push(response);
+        }
+        return results;
     }
 }
 @Controller("/participantByCampaignId")
