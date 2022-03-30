@@ -786,6 +786,7 @@ export const typeDefs = gql`
         company: String
         algorithm: JSON!
         audited: Boolean!
+        auditStatus: String
         targetVideo: String
         imagePath: String!
         campaignType: String!
