@@ -7,9 +7,10 @@ import { CampaignState, CampaignStatus } from "../../util/constants";
 import { calculateTier } from "../helpers";
 import { BN } from "../../util";
 import { getTokenPriceInUsd } from "../../clients/ethereum";
-import { ERROR_CALCULATING_TIER } from "../../util/errors";
+import { ERROR_CALCULATING_TIER, USER_NOT_FOUND } from "../../util/errors";
 import { PaginatedVariablesModel, Pagination, SuccessResult } from "../../util/entities";
 import { CampaignResultModel } from "../../models/RestModels";
+import { BadRequest } from "@tsed/exceptions";
 
 class ListCampaignsVariablesModel extends PaginatedVariablesModel {
     @Required() @Enum(CampaignState) public readonly state: CampaignState;
@@ -33,7 +34,8 @@ export class CampaignController {
     @(Returns(200, SuccessResult).Of(Pagination).Nested(CampaignResultModel))
     public async list(@QueryParams() query: ListCampaignsVariablesModel, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
-        const [items, total] = await this.campaignService.findCampaignsByStatus(query, user || undefined);
+        if (!user) throw new BadRequest(USER_NOT_FOUND);
+        const [items, total] = await this.campaignService.findCampaignsByStatus(query, user);
         return new SuccessResult(new Pagination(items, total, CampaignResultModel), Pagination);
     }
     @Get("/currentCampaignTier")
@@ -47,8 +49,9 @@ export class CampaignController {
         let currentCampaign: any;
         let cryptoPriceUsd;
         const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new BadRequest(USER_NOT_FOUND);
         if (campaignId) {
-            currentCampaign = await this.campaignService.findCampaignById(query, user || undefined);
+            currentCampaign = await this.campaignService.findCampaignById(query, user);
             if (!currentCampaign) throw new Error("campaign not found");
             if (currentCampaign.type == "raffle") return { currentTier: -1, currentTotal: 0 };
             currentTierSummary = calculateTier(

@@ -8,7 +8,8 @@ import { Pagination, SuccessResult } from "../../util/entities";
 import { TwitterClient } from "../../clients/twitter";
 import { TikTokClient } from "../../clients/tiktok";
 import { FacebookClient } from "../../clients/facebook";
-import { NO_TOKEN_PROVIDED, SOICIAL_LINKING_ERROR } from "../../util/errors";
+import { NO_TOKEN_PROVIDED, SOICIAL_LINKING_ERROR, USER_NOT_FOUND } from "../../util/errors";
+import { BadRequest } from "@tsed/exceptions";
 
 class ListParticipantVariablesModel {
     @Property() public readonly id: string;
@@ -46,7 +47,8 @@ export class ParticipantController {
     @(Returns(200, SuccessResult).Of(Pagination).Nested(ParticipantModel))
     public async list(@QueryParams() query: ListParticipantVariablesModel, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
-        const participant = await this.participantService.findParticipantById(query, user || undefined);
+        if (!user) throw new BadRequest(USER_NOT_FOUND);
+        const participant = await this.participantService.findParticipantById(query, user);
         if (!participant) throw new Error("Participant not found");
         return new SuccessResult(participant, ParticipantModel);
     }
@@ -55,7 +57,8 @@ export class ParticipantController {
     public async participantPosts(@QueryParams() query: ListParticipantVariablesModel, @Context() context: Context) {
         const results: Promise<any>[] = [];
         const user = await this.userService.findUserByContext(context.get("user"));
-        const participant = await this.participantService.findParticipantById(query, user || undefined);
+        if (!user) throw new BadRequest(USER_NOT_FOUND);
+        const participant = await this.participantService.findParticipantById(query, user);
         if (!participant) throw new Error("Participant not found");
         const posts = await this.participantService.findSocialPosts(participant.id);
         for (let i = 0; i < posts.length; i++) {
@@ -76,7 +79,8 @@ export class ParticipantController {
         @Context() context: Context
     ) {
         const user = await this.userService.findUserByContext(context.get("user"));
-        const participant = await this.participantService.findParticipantByCampaignId(query, user || undefined);
+        if (!user) throw new BadRequest(USER_NOT_FOUND);
+        const participant = await this.participantService.findParticipantByCampaignId(query, user);
         if (!participant) throw new Error("Participant not found");
         return new SuccessResult(participant, ParticipantModel);
     }
@@ -87,7 +91,8 @@ export class ParticipantController {
         @Context() context: Context
     ) {
         const user = await this.userService.findUserByContext(context.get("user"));
-        const [items, count] = await this.participantService.findCampaignParticipants(query, user || undefined);
+        if (!user) throw new BadRequest(USER_NOT_FOUND);
+        const [items, count] = await this.participantService.findCampaignParticipants(query, user);
         return new SuccessResult(new Pagination(items, count, ParticipantModel), Pagination);
     }
 }
