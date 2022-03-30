@@ -36,18 +36,12 @@ export class CampaignController {
         const [items, total] = await this.campaignService.findCampaignsByStatus(query, user || undefined);
         return new SuccessResult(new Pagination(items, total, CampaignResultModel), Pagination);
     }
-}
-
-@Controller("/currentCampaignTier")
-export class CurrentCampaignTier {
-    @Inject()
-    private campaignService: CampaignService;
-    @Inject()
-    private userService: UserService;
-
-    @Get()
+    @Get("/currentCampaignTier")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(CampaignResultModel))
-    public async list(@QueryParams() query: ListCurrentCampaignVariablesModel, @Context() context: Context) {
+    public async currentCampaignTier(
+        @QueryParams() query: ListCurrentCampaignVariablesModel,
+        @Context() context: Context
+    ) {
         let { campaignId } = query;
         let currentTierSummary;
         let currentCampaign: any;
@@ -61,9 +55,12 @@ export class CurrentCampaignTier {
                 new BN(currentCampaign.totalParticipationScore),
                 currentCampaign?.algorithm?.tiers
             );
-            const cryptoCurrency = await this.campaignService.findCryptoCurrencyById(currentCampaign.cryptoId);
-            const cryptoCurrencyType = cryptoCurrency?.type;
-            if (cryptoCurrencyType) cryptoPriceUsd = await getTokenPriceInUsd(cryptoCurrencyType);
+            if (currentCampaign.cryptoId) {
+                const cryptoCurrency = await this.campaignService.findCryptoCurrencyById(currentCampaign.cryptoId);
+                const cryptoCurrencyType = cryptoCurrency?.type;
+                if (!cryptoCurrencyType) throw new Error("crypto currency not found");
+                cryptoPriceUsd = await getTokenPriceInUsd(cryptoCurrencyType);
+            }
         }
         if (!currentTierSummary) throw new Error(ERROR_CALCULATING_TIER);
         let body: any = {
@@ -73,6 +70,6 @@ export class CurrentCampaignTier {
         if (currentCampaign) body.campaignType = currentCampaign.type;
         if (cryptoPriceUsd) body.tokenValueUsd = cryptoPriceUsd.toString();
         if (cryptoPriceUsd) body.tokenValueCoiin = cryptoPriceUsd.times(10).toString();
-        return new SuccessResult(body, Pagination);
+        return new SuccessResult(body, Object);
     }
 }
