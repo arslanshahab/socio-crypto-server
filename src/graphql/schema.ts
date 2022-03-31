@@ -86,7 +86,6 @@ export const typeDefs = gql`
             media: String
         ): SuccessResponse
         setDevice(deviceToken: String!): Boolean
-        registerFactorLink(factor: JSON): User
         updateUsername(username: String!): User
         removeFactorLink(factorId: String!): User
         verifyKyc(userKyc: KycApplication): KycApplicationResponse

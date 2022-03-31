@@ -1,6 +1,6 @@
 import { Response } from "express";
 import jwt from "jsonwebtoken";
-import * as Dragonfactor from "@myfii-dev/dragonfactor-auth";
+// import * as Dragonfactor from "@myfii-dev/dragonfactor-auth";
 import { asyncHandler, extractFactor, generateRandomNumber, createFactorsFromKycData, BN } from "../util";
 import { AuthRequest, FactorGeneration } from "../types";
 import { FactorLink } from "../models/FactorLink";
@@ -16,36 +16,36 @@ import { Profile } from "../models/Profile";
 import { NotificationSettings } from "../models/NotificationSettings";
 import { WalletCurrency } from "../models/WalletCurrency";
 import { JWTPayload } from "src/types";
-import { RAIINMAKER_ORG_NAME } from "../util/constants";
+// import { RAIINMAKER_ORG_NAME } from "../util/constants";
 
-export const registerFactorLink = async (
-    parent: any,
-    args: { factor: Dragonfactor.FactorLoginRequest },
-    context: { user: any }
-) => {
-    const { identityId, factors } = await Dragonfactor.validateFactor({
-        factorRequest: args.factor,
-        acceptedFactors: ["email", "myfii-kyc"],
-        service: RAIINMAKER_ORG_NAME,
-    });
-    const user = await User.findUserByContext(context.user, ["factorLinks"]);
-    if (!user) throw new Error("user not found");
-    for (let i = 0; i < factors.length; i++) {
-        const { providerId, id, type, name } = factors[i];
-        if (await FactorLink.findOne({ where: { factorId: id, providerId } }))
-            throw new Error("factor link is already registered");
-        const factorLink = new FactorLink();
-        factorLink.factorId = id;
-        factorLink.providerId = providerId;
-        factorLink.identityId = identityId;
-        factorLink.user = user;
-        factorLink.type = type;
-        if (name) factorLink.name = name;
-        await factorLink.save();
-        user.factorLinks = [...user.factorLinks, factorLink];
-    }
-    return user.asV1();
-};
+// export const registerFactorLink = async (
+//     parent: any,
+//     args: { factor: Dragonfactor.FactorLoginRequest },
+//     context: { user: any }
+// ) => {
+//     const { identityId, factors } = await Dragonfactor.validateFactor({
+//         factorRequest: args.factor,
+//         acceptedFactors: ["email", "myfii-kyc"],
+//         service: RAIINMAKER_ORG_NAME,
+//     });
+//     const user = await User.findUserByContext(context.user, ["factorLinks"]);
+//     if (!user) throw new Error("user not found");
+//     for (let i = 0; i < factors.length; i++) {
+//         const { providerId, id, type, name } = factors[i];
+//         if (await FactorLink.findOne({ where: { factorId: id, providerId } }))
+//             throw new Error("factor link is already registered");
+//         const factorLink = new FactorLink();
+//         factorLink.factorId = id;
+//         factorLink.providerId = providerId;
+//         factorLink.identityId = identityId;
+//         factorLink.user = user;
+//         factorLink.type = type;
+//         if (name) factorLink.name = name;
+//         await factorLink.save();
+//         user.factorLinks = [...user.factorLinks, factorLink];
+//     }
+//     return user.asV1();
+// };
 
 export const removeFactorLink = async (parent: any, args: { factorId: string }, context: { user: any }) => {
     const user = await User.findUserByContext(context.user, ["factorLinks"]);
