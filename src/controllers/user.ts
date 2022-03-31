@@ -472,10 +472,17 @@ export const getWeeklyRewardEstimation = async (parent: any, args: any, context:
     }
 };
 
-export const generateCoiinDepositAddress = async (parent: any, args: any, context: any) => {
+export const rewardUserForSharing = async (parent: any, args: { participantId: string }, context: any) => {
     try {
         const user = await User.findUserByContext(context.user, ["wallet"]);
         if (!user) throw new Error(USER_NOT_FOUND);
+        const participant = await Participant.findOne({
+            where: { id: args.participantId, user },
+            relations: ["campaign"],
+        });
+        if (!participant) throw new Error(PARTICIPANT_NOT_FOUND);
+        await user.transferCoiinReward({ campaign: participant.campaign, type: "SHARING_REWARD" });
+        return { success: true };
     } catch (error) {
         throw new Error(error.message);
     }
