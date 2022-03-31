@@ -74,10 +74,7 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
             relations: ["token"],
         });
         if (!raiinmakerAccount) throw new Error("currency not found for raiinmaker");
-        const campaignAccount = await Currency.findOne({
-            where: { wallet: campaign.org.wallet, symbol: campaign.symbol },
-            relations: ["token"],
-        });
+        const campaignAccount = campaign.currency;
         if (!campaignAccount) throw new Error("currency not found for campaign");
         for (let index = 0; index < participants.length; index++) {
             const participant = participants[index];
@@ -93,10 +90,10 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
             }
         }
 
-        if (!campaign.tatumBlockageId) throw new Error(`no blockage Id found for campaign--- ${campaign.id}`);
+        if (!campaign.tatumBlockageId) throw new Error(`No blockage Id found for campaign--- ${campaign.id}`);
         await TatumClient.unblockAccountBalance(campaign.tatumBlockageId);
 
-        let promiseArray = [];
+        const promiseArray = [];
         const transferDetails = [];
         for (let index = 0; index < participants.length; index++) {
             const participant = participants[index];
@@ -119,6 +116,13 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
                 participant,
                 amount: usersRewards[participant.user.id],
             });
+            console.log(
+                "TRANSFER PREPARED ---- ",
+                participant.id,
+                usersRewards[participant.user.id].toString(),
+                campaignAccount.tatumId,
+                userCurrency.tatumId
+            );
         }
 
         // transfer campaign fee to raiinmaker tatum account

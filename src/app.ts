@@ -9,8 +9,8 @@ import { Secrets } from "./util/secrets";
 import { authenticateAdmin, authenticateUser } from "./middleware/authentication";
 // import { Dragonchain } from "./clients/dragonchain";
 import { Firebase } from "./clients/firebase";
-import * as FactorController from "./controllers/factor";
-import * as Dragonfactor from "@myfii-dev/dragonfactor-auth";
+// import * as FactorController from "./controllers/factor";
+// import * as Dragonfactor from "@myfii-dev/dragonfactor-auth";
 import { paypalWebhook } from "./controllers/withdraw";
 import { adminResolvers, publicResolvers, resolvers } from "./graphql/resolvers";
 import { adminLogin, adminLogout, updateUserPassword } from "./controllers/authentication";
@@ -216,23 +216,23 @@ export class Application {
         this.app.post("/v1/tatum/transfer", transferBalance);
         this.app.get("/v1/xoxoday/filters", getXoxodayFilters);
         this.app.post("/v1/kyc/webhook", kycWebhook);
-        this.app.use(
-            "/v1/dragonfactor/login",
-            Dragonfactor.expressMiddleware({
-                service: "raiinmaker",
-                acceptedFactors: ["email"],
-                timeVariance: 5000,
-            }),
-            FactorController.login
-        );
-        this.app.use(
-            "/v1/dragonfactor/recover",
-            Dragonfactor.accountRecoveryMiddleware({
-                service: "raiinmaker",
-                timeVariance: 5000,
-            }),
-            FactorController.recover
-        );
+        // this.app.use(
+        //     "/v1/dragonfactor/login",
+        //     Dragonfactor.expressMiddleware({
+        //         service: "raiinmaker",
+        //         acceptedFactors: ["email"],
+        //         timeVariance: 5000,
+        //     }),
+        //     FactorController.login
+        // );
+        // this.app.use(
+        //     "/v1/dragonfactor/recover",
+        //     Dragonfactor.accountRecoveryMiddleware({
+        //         service: "raiinmaker",
+        //         timeVariance: 5000,
+        //     }),
+        //     FactorController.recover
+        // );
         this.app.use("/v1/referral/:participantId", trackClickByLink);
         this.app.use("/v1/tatum/subscription/:userId/:accountId", trackCoiinTransactionForUser);
 

@@ -75,7 +75,6 @@ export const resolvers = {
         removeSocialLink: socialController.removeSocialLink,
         generateCampaignAuditReport: campaignController.generateCampaignAuditReport,
         payoutCampaignRewards: campaignController.payoutCampaignRewards,
-        registerFactorLink: factorController.registerFactorLink,
         removeFactorLink: factorController.removeFactorLink,
         updateUsername: userController.updateUsername,
         verifyKyc: kycController.verifyKyc,
