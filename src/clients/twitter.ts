@@ -6,7 +6,7 @@ import { extractVideoData, chunkVideo, sleep } from "../controllers/helpers";
 import { Participant } from "../models/Participant";
 import { SocialLink } from "../models/SocialLink";
 import { TwitterLinkCredentials } from "src/types";
-import { TWITTER_TOKEN_EXPIRED, FormattedError } from "../util/errors";
+import { TWITTER_LINK_EXPIRED, FormattedError } from "../util/errors";
 import { isArray } from "lodash";
 
 export class TwitterClient {
@@ -25,13 +25,12 @@ export class TwitterClient {
             console.log("posting image to twitter");
             const options = { media_category: "tweet_image", media_data: photo, media_type: format };
             const response = await client.post("/media/upload", options);
-            console.log(response);
             return response.media_id_string;
         } catch (error) {
             if (isArray(error)) {
                 const [data] = error;
                 if (data?.code === 89) {
-                    throw new Error(TWITTER_TOKEN_EXPIRED);
+                    throw new Error(TWITTER_LINK_EXPIRED);
                 }
                 throw new Error(data?.message || "");
             }
@@ -93,7 +92,7 @@ export class TwitterClient {
             if (isArray(error)) {
                 const [data] = error;
                 if (data?.code === 89) {
-                    throw new Error(TWITTER_TOKEN_EXPIRED);
+                    throw new Error(TWITTER_LINK_EXPIRED);
                 }
                 throw new Error(data?.message || "");
             }
@@ -127,7 +126,7 @@ export class TwitterClient {
             if (isArray(error)) {
                 const [data] = error;
                 if (data?.code === 89) {
-                    throw new Error(TWITTER_TOKEN_EXPIRED);
+                    throw new Error(TWITTER_LINK_EXPIRED);
                 }
                 throw new Error(data?.message || "");
             }
@@ -153,7 +152,7 @@ export class TwitterClient {
                 const [data] = error;
                 if (data?.code === 89) {
                     await socialLink.remove();
-                    throw new FormattedError(new Error(TWITTER_TOKEN_EXPIRED));
+                    throw new FormattedError(new Error(TWITTER_LINK_EXPIRED));
                 }
                 throw new Error(data?.message || "");
             }

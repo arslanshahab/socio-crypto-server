@@ -4,7 +4,8 @@ import { KycApplication } from "../types.d";
 
 const acuantUrls: { [key: string]: string } = {
     // development: "https://sandbox.identitymind.com",
-    staging: "https://staging.identitymind.com",
+    // staging: "https://staging.identitymind.com",
+    staging: "https://sandbox.identitymind.com",
     production: "https://edna.identitymind.com",
 };
 
