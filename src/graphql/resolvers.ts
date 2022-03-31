@@ -98,6 +98,7 @@ export const resolvers = {
         updateUserPassword: userController.updateUserPassword,
         registerTiktokSocialLink: socialController.registerTiktokSocialLink,
         postContentGlobally: socialController.postContentGlobally,
+        rewardUserForSharing: userController.rewardUserForSharing,
     },
 };
 
