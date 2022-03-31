@@ -484,6 +484,6 @@ export const rewardUserForSharing = async (parent: any, args: { participantId: s
         await user.transferCoiinReward({ campaign: participant.campaign, type: "SHARING_REWARD" });
         return { success: true };
     } catch (error) {
-        throw new Error(error.message);
+        throw new FormattedError(error);
     }
 };
