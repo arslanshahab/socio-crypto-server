@@ -53,9 +53,9 @@ export class CampaignResultModel {
 export class CurrentCampaignModel {
     @Property() public currentTier: number;
     @Property() public currentTotal: number;
-    @Property() public campaignType: string | null;
-    @Property() public tokenValueUsd: string | null;
-    @Property() public tokenValueCoiin: string | null;
+    @Nullable(String) public campaignType: string | null;
+    @Nullable(String) public tokenValueUsd: string | null;
+    @Nullable(String) public tokenValueCoiin: string | null;
 }
 export class ParticipantPostModel {
     @Property() public readonly results: string[];

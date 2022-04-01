@@ -172,7 +172,8 @@ export class TwitterClient {
         await getRedis().set(cacheKey, JSON.stringify(twitterResponse), "EX", 900); // cache for 15 minutes
         return JSON.stringify(twitterResponse);
     };
-    public static getTwitterPost = async (
+
+    public static getPost = async (
         socialLink: SocialLinkVariables,
         id: string,
         cached = true
