@@ -15,11 +15,16 @@ import {
     AMOUNT_IN_POSITIVE,
     CURRENCY_NOT_FOUND,
     ESCROW_NOT_FOUND,
+    NO_TOKEN_PROVIDED,
     PARTICIPANT_NOT_FOUND,
+    SOICIAL_LINKING_ERROR,
     WALLET_CURRENCY_NOT_FOUND,
     WALLET_NOT_FOUND,
 } from "../util/errors";
 import { getExchangeRateForCurrency } from "../util/exchangeRate";
+import { TwitterClient } from "../clients/twitter";
+import { TikTokClient } from "../clients/tiktok";
+import { FacebookClient } from "../clients/facebook";
 
 export const feeMultiplier = () => new BN(1).minus(FEE_RATE);
 
@@ -366,4 +371,18 @@ export const prepareVouchersList = async (list: Array<VouchersListVariables>): P
             valueDenominations: item.valueDenominations.split(","),
         };
     });
+};
+
+export const getSocialClient = (type: string, accessToken?: string): any => {
+    switch (type) {
+        case "twitter":
+            return TwitterClient;
+        case "tiktok":
+            return TikTokClient;
+        case "facebook":
+            if (!accessToken) throw new Error(NO_TOKEN_PROVIDED);
+            return FacebookClient.getClient(accessToken);
+        default:
+            throw new Error(SOICIAL_LINKING_ERROR);
+    }
 };
