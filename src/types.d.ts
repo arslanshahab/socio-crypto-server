@@ -70,6 +70,35 @@ export interface XoxodayVoucher {
     valueDenominations: Array<string>;
 }
 
+export interface VouchersListVariables {
+    productId: string;
+    name: string;
+    description: string;
+    termsAndConditionsInstructions: string;
+    expiryAndValidity: string;
+    redemptionInstructions: string;
+    categories: string;
+    lastUpdateDate: string;
+    imageUrl: string;
+    currencyCode: string;
+    currencyName: string;
+    countryName: string;
+    countryCode: string;
+    countries: JSON | JSON[] | undefined;
+    exchangeRateRule: number;
+    valueType: string;
+    maxValue: number;
+    minValue: number;
+    valueDenominations: string;
+    tatInDays: number;
+    usageType: string;
+    deliveryType: string;
+    isCommon: string;
+    fee: number;
+    discount: number;
+    exchangeRate: number | string | null;
+}
+
 export interface XoxodayOrder {
     poNumber: string;
     productId: string;

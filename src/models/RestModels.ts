@@ -130,7 +130,16 @@ export class XoxodayOrderResultModel {
     @Property() public readonly quantity: number;
     @Property() public readonly denomination: number;
 }
-
+export class XoxodayVoucherResultModel {
+    @Property() public readonly productId: string;
+    @Property() public readonly name: string;
+    @Property() public readonly imageUrl: string;
+    @Property() public readonly countryName: string;
+    @Property() public readonly countryCode: string;
+    @Property() public readonly currencyCode: string;
+    @Property() public readonly exchangeRate: string;
+    @Property() public readonly valueDenominations: Array<string>;
+}
 export class UserResultModel {
     @Property() public readonly id: string;
     @Property() public readonly email: string;

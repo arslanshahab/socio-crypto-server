@@ -1,5 +1,5 @@
 import { SocialPost } from "../models/SocialPost";
-import { Tiers, AggregateDailyMetrics } from "../types";
+import { Tiers, AggregateDailyMetrics, VouchersListVariables, XoxodayVoucher } from "../types";
 import { Participant } from "../models/Participant";
 import { Campaign } from "../models/Campaign";
 import { getConnection } from "typeorm";
@@ -19,6 +19,7 @@ import {
     WALLET_CURRENCY_NOT_FOUND,
     WALLET_NOT_FOUND,
 } from "../util/errors";
+import { getExchangeRateForCurrency } from "../util/exchangeRate";
 
 export const feeMultiplier = () => new BN(1).minus(FEE_RATE);
 
@@ -345,4 +346,24 @@ export const formatUTCDateForComparision = (date: Date): string => {
         currentDate.getUTCMonth() + 1 < 10 ? `0${currentDate.getUTCMonth() + 1}` : currentDate.getUTCMonth() + 1;
     const day = currentDate.getUTCDate() < 10 ? `0${currentDate.getUTCDate()}` : currentDate.getUTCDate();
     return `${currentDate.getUTCFullYear()}-${month}-${day}`;
+};
+
+export const prepareVouchersList = async (list: Array<VouchersListVariables>): Promise<Array<XoxodayVoucher>> => {
+    let exchangeRate = "0";
+    const currency = list.length ? list[0].currencyCode : "USD";
+    if (list.length) {
+        exchangeRate = await getExchangeRateForCurrency(currency);
+    }
+    return list.map((item: VouchersListVariables) => {
+        return {
+            productId: item.productId,
+            name: item.name.replace("&amp;", "&"),
+            imageUrl: item.imageUrl,
+            countryName: item.countryName,
+            countryCode: item.countryCode,
+            currencyCode: item.currencyCode,
+            exchangeRate: exchangeRate,
+            valueDenominations: item.valueDenominations.split(","),
+        };
+    });
 };
