@@ -74,10 +74,7 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
             relations: ["token"],
         });
         if (!raiinmakerAccount) throw new Error("currency not found for raiinmaker");
-        const campaignAccount = await Currency.findOne({
-            where: { wallet: campaign.org.wallet, symbol: campaign.symbol },
-            relations: ["token"],
-        });
+        const campaignAccount = campaign.currency;
         if (!campaignAccount) throw new Error("currency not found for campaign");
         for (let index = 0; index < participants.length; index++) {
             const participant = participants[index];
@@ -93,10 +90,15 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
             }
         }
 
-        if (!campaign.tatumBlockageId) throw new Error(`no blockage Id found for campaign--- ${campaign.id}`);
+        // if (usersRewards && userDeviceIds) {
+        //     console.log(usersRewards);
+        //     return;
+        // }
+
+        if (!campaign.tatumBlockageId) throw new Error(`No blockage Id found for campaign--- ${campaign.id}`);
         await TatumClient.unblockAccountBalance(campaign.tatumBlockageId);
 
-        let promiseArray = [];
+        const promiseArray = [];
         const transferDetails = [];
         for (let index = 0; index < participants.length; index++) {
             const participant = participants[index];
@@ -104,21 +106,30 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
                 where: { wallet: await Wallet.findOne({ where: { user: participant.user } }), symbol: campaign.symbol },
             });
             if (!userCurrency) throw new Error(`currency not found for user ${participant.user.id}`);
-            promiseArray.push(
-                TatumClient.transferFunds({
-                    senderAccountId: campaignAccount.tatumId,
-                    recipientAccountId: userCurrency.tatumId,
-                    amount: usersRewards[participant.user.id].toString(),
-                    recipientNote: `${CAMPAIGN_REWARD}:${campaign.id}`,
-                })
-            );
-            transferDetails.push({
-                campaignAccount,
-                userCurrency,
-                campaign,
-                participant,
-                amount: usersRewards[participant.user.id],
-            });
+            if (usersRewards[participant.user.id]) {
+                promiseArray.push(
+                    TatumClient.transferFunds({
+                        senderAccountId: campaignAccount.tatumId,
+                        recipientAccountId: userCurrency.tatumId,
+                        amount: usersRewards[participant.user.id]?.toString(),
+                        recipientNote: `${CAMPAIGN_REWARD}:${campaign.id}`,
+                    })
+                );
+                transferDetails.push({
+                    campaignAccount,
+                    userCurrency,
+                    campaign,
+                    participant,
+                    amount: usersRewards[participant.user.id],
+                });
+                console.log(
+                    "TRANSFER PREPARED ---- ",
+                    participant.id,
+                    usersRewards[participant.user.id]?.toString(),
+                    campaignAccount.tatumId,
+                    userCurrency.tatumId
+                );
+            }
         }
 
         // transfer campaign fee to raiinmaker tatum account
@@ -126,7 +137,7 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
             await TatumClient.transferFunds({
                 senderAccountId: campaignAccount.tatumId,
                 recipientAccountId: raiinmakerAccount.tatumId,
-                amount: raiinmakerFee.toString(),
+                amount: raiinmakerFee?.toString(),
                 recipientNote: `${CAMPAIGN_FEE}:${campaign.id}`,
             });
         }
@@ -241,7 +252,7 @@ export const payoutCoiinCampaignRewards = async (
                     escrow.id,
                     currentWallet.id,
                     campaign.crypto.type,
-                    payout.toString(),
+                    payout?.toString(),
                     true
                 );
                 const transfer = Transfer.newFromCampaignPayout(currentWallet, campaign, payout);
@@ -261,7 +272,7 @@ export const payoutCoiinCampaignRewards = async (
             escrow.id,
             escrow.wallet.id,
             campaign.crypto.type,
-            escrow.amount.toString(),
+            escrow.amount?.toString(),
             true
         );
         const transfer = Transfer.newFromCampaignPayoutRefund(escrow.wallet, campaign, escrow.amount);
