@@ -163,7 +163,7 @@ export const typeDefs = gql`
             refresh_token: String!
             refresh_expires_in: Int!
         ): SuccessResponse
-        rewardUserForSharing(participantId: String!): SuccessResponse
+        rewardUserForSharing(participantId: String, isGlobal: Boolean!): SuccessResponse
     }
 
     type Query {
