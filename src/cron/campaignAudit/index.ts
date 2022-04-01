@@ -38,11 +38,12 @@ const app = new Application();
             if (!campaign) throw new Error("Campaign not found.");
             console.log(
                 "CAMPAIGN DATA ---",
-                campaign.id,
-                campaign.name,
+                index,
+                campaign?.id,
+                campaign?.name,
                 campaign?.currency?.symbol,
-                campaign.coiinTotal.toString(),
-                campaign.tatumBlockageId
+                campaign?.coiinTotal?.toString(),
+                campaign?.tatumBlockageId
             );
             let deviceIds;
             switch (campaign.type.toLowerCase()) {
