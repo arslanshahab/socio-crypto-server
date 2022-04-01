@@ -1,4 +1,3 @@
-import logger from "../../util/logger";
 import { Secrets } from "../../util/secrets";
 import { Application } from "../../app";
 import * as dotenv from "dotenv";
@@ -15,6 +14,7 @@ const app = new Application();
 (async () => {
     console.log("Starting campaign audit.");
     await Secrets.initialize();
+    await Firebase.initialize();
     const connection = await app.connectDatabase();
     console.log("Secrets and connection initialized.");
     try {
@@ -27,7 +27,7 @@ const app = new Application();
             },
         });
         const entityManager = new EntityManager(connection);
-        console.log(`TOTAL CAMPAIGNS TO BE AUDITED--- ${campaigns.length}`);
+        console.log(`TOTAL CAMPAIGNS TO BE AUDITED--- ${campaigns.map((item) => item.id)}`);
         for (let index = 0; index < campaigns.length; index++) {
             const campaign = await Campaign.findOne({
                 where: {
@@ -42,6 +42,7 @@ const app = new Application();
                 campaign?.id,
                 campaign?.name,
                 campaign?.currency?.symbol,
+                campaign?.currency?.tatumId,
                 campaign?.coiinTotal?.toString(),
                 campaign?.tatumBlockageId
             );
@@ -56,10 +57,13 @@ const app = new Application();
                 default:
                     throw new Error("campaign type is invalid");
             }
-            if (deviceIds) await Firebase.sendCampaignCompleteNotifications(Object.values(deviceIds), campaign.name);
+            try {
+                if (deviceIds?.length)
+                    await Firebase.sendCampaignCompleteNotifications(Object.values(deviceIds), campaign.name);
+            } catch (error) {}
         }
     } catch (error) {
-        logger.error(`ERROR---: ${error.message || JSON.stringify(error)}`);
+        console.log(error);
     }
     await connection.close();
     process.exit(0);
