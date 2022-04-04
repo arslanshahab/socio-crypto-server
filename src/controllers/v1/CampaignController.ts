@@ -9,8 +9,10 @@ import { BN } from "../../util";
 import { getTokenPriceInUsd } from "../../clients/ethereum";
 import { CAMPAIGN_NOT_FOUND, ERROR_CALCULATING_TIER, USER_NOT_FOUND } from "../../util/errors";
 import { PaginatedVariablesModel, Pagination, SuccessResult } from "../../util/entities";
-import { CampaignResultModel, CurrentCampaignModel } from "../../models/RestModels";
+import { CampaignMetricsResultModel, CampaignResultModel, CurrentCampaignModel } from "../../models/RestModels";
 import { BadRequest, NotFound } from "@tsed/exceptions";
+import { ParticipantService } from "../../services/ParticipantService";
+import { SocialPostService } from "../../services/SocialPostService";
 
 class ListCampaignsVariablesModel extends PaginatedVariablesModel {
     @Required() @Enum(CampaignState) public readonly state: CampaignState;
@@ -26,7 +28,10 @@ class ListCurrentCampaignVariablesModel {
 export class CampaignController {
     @Inject()
     private campaignService: CampaignService;
-
+    @Inject()
+    private participantService: ParticipantService;
+    @Inject()
+    private socialPostService: SocialPostService;
     @Inject()
     private userService: UserService;
 
@@ -73,5 +78,30 @@ export class CampaignController {
         if (cryptoPriceUsd) body.tokenValueUsd = cryptoPriceUsd.toString();
         if (cryptoPriceUsd) body.tokenValueCoiin = cryptoPriceUsd.times(10).toString();
         return new SuccessResult(body, CurrentCampaignModel);
+    }
+    @Get("/campaign-metrics")
+    @(Returns(200, SuccessResult).Of(CampaignMetricsResultModel))
+    public async getCampaignMetrics(
+        @QueryParams() query: ListCurrentCampaignVariablesModel,
+        @Context() context: Context
+    ) {
+        const { campaignId } = query;
+        const campaign = await this.campaignService.findCampaignById(query);
+        if (!campaign) throw new Error(CAMPAIGN_NOT_FOUND);
+        const { _sum, _count } = await this.participantService.findPaticipantMetricsById(campaignId);
+        const { postSum, postCount } = await this.socialPostService.findSocialPostMetricsById(campaignId);
+        const metrics = {
+            clickCount: _sum.clickCount,
+            viewCount: _sum.viewCount,
+            submissionCount: _sum.submissionCount,
+            participantCount: _count,
+            likeCount: postSum.likes,
+            commentCount: postSum.comments,
+            shareCount: postSum.shares,
+            postCount,
+        };
+        console.log("get campaign metrics.................../", metrics);
+        return new SuccessResult(metrics, CampaignMetricsResultModel);
+        // this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
     }
 }

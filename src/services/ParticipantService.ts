@@ -91,4 +91,15 @@ export class ParticipantService {
             },
         });
     }
+    public async findPaticipantMetricsById(campaignId: string) {
+        return this.prismaService.participant.aggregate({
+            where: { campaignId },
+            _sum: {
+                clickCount: true,
+                submissionCount: true,
+                viewCount: true,
+            },
+            _count: true,
+        });
+    }
 }

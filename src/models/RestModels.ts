@@ -171,3 +171,14 @@ export class RedemptionRequirementsModel {
     @Property() public readonly participation: boolean;
     @Property() public readonly orderLimitForTwentyFourHoursReached: boolean;
 }
+
+export class CampaignMetricsResultModel {
+    @Property() public readonly clickCount: number;
+    @Property() public readonly viewCount: number;
+    @Property() public readonly submissionCount: number;
+    @Property() public readonly participantCount: number;
+    @Property() public readonly likeCount: number;
+    @Property() public readonly commentCount: number;
+    @Property() public readonly shareCount: number;
+    @Property() public readonly postCount: number;
+}

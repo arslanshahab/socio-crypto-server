@@ -319,10 +319,10 @@ model Org {
 
 model Participant {
   id                 String   @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
-  clickCount         String   @default(dbgenerated("0")) @db.VarChar
+  clickCount         Int
   campaignId         String   @db.Uuid
-  viewCount          String   @default(dbgenerated("0")) @db.VarChar
-  submissionCount    String   @default(dbgenerated("0")) @db.VarChar
+  viewCount          Int
+  submissionCount    Int
   participationScore String   @default(dbgenerated("0")) @db.VarChar
   link               String?  @db.VarChar
   createdAt          DateTime @default(now()) @db.Timestamp(6)
@@ -420,9 +420,9 @@ model SocialLink {
 model SocialPost {
   id            String   @db.VarChar
   type          String   @default("twitter") @db.VarChar
-  likes         String   @default(dbgenerated("0")) @db.VarChar
-  shares        String   @default(dbgenerated("0")) @db.VarChar
-  comments      String   @default(dbgenerated("0")) @db.VarChar
+  likes         Int
+  shares        Int
+  comments      Int
   participantId String   @db.VarChar
   campaignId    String   @db.Uuid
   createdAt     DateTime @default(now()) @db.Timestamp(6)
