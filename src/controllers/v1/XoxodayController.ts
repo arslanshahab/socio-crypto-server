@@ -10,6 +10,7 @@ import { supportedCountries } from "../../util";
 import { Xoxoday } from "../../clients/xoxoday";
 import { RedemptionRequirementsModel, XoxodayVoucherResultModel } from "../../models/RestModels";
 import { getSocialClient, prepareVouchersList } from "../helpers";
+import { ParticipantService } from "../../services/ParticipantService";
 
 const userResultRelations = ["social_link" as const];
 class ListXoxoVariablesModel {
@@ -22,6 +23,8 @@ class ListXoxoVariablesModel {
 export class ParticipantController {
     @Inject()
     private xoxodayService: XoxodayService;
+    @Inject()
+    private participantService: ParticipantService;
     @Inject()
     private userService: UserService;
 
@@ -54,11 +57,12 @@ export class ParticipantController {
         const twitterFollowers = twitterAccount
             ? await socialClient.getTotalFollowersV1(twitterAccount, twitterAccount.id)
             : 0;
+        const participants = await this.participantService.findParticipantsCountByUserId(user.id);
         const result = {
             twitterLinked: twitterAccount ? true : false,
             twitterfollowers: twitterFollowers,
             twitterfollowersRequirement: 20,
-            // participation: Boolean(user.campaigns.length),
+            participation: Boolean(participants),
             orderLimitForTwentyFourHoursReached: Boolean(recentOrder),
         };
         return new SuccessResult(result, RedemptionRequirementsModel);

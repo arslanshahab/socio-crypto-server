@@ -84,4 +84,11 @@ export class ParticipantService {
         socialLink = { ...socialLink, apiKey, apiSecret };
         return socialLink;
     }
+    public async findParticipantsCountByUserId(userId: string) {
+        return this.prismaService.participant.count({
+            where: {
+                userId,
+            },
+        });
+    }
 }

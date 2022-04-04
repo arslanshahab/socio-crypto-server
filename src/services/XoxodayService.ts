@@ -22,7 +22,7 @@ export class XoxodayService {
             where: {
                 action: type,
                 createdAt: {
-                    gt: new Date(date),
+                    gt: date,
                 },
             },
         });
