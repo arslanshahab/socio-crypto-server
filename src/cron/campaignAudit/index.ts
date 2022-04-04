@@ -1,4 +1,3 @@
-import logger from "../../util/logger";
 import { Secrets } from "../../util/secrets";
 import { Application } from "../../app";
 import * as dotenv from "dotenv";
@@ -6,15 +5,18 @@ import { Campaign } from "../../models/Campaign";
 import { LessThan, EntityManager } from "typeorm";
 import { initDateFromParams } from "../../util/date";
 import { DateUtils } from "typeorm/util/DateUtils";
-import { payoutCoiinCampaignRewards, payoutCryptoCampaignRewards, payoutRaffleCampaignRewards } from "./auditFunctions";
+import { payoutCryptoCampaignRewards, payoutRaffleCampaignRewards } from "./auditFunctions";
 import { Firebase } from "../../clients/firebase";
 
 dotenv.config();
 const app = new Application();
 
 (async () => {
+    console.log("Starting campaign audit.");
     await Secrets.initialize();
+    await Firebase.initialize();
     const connection = await app.connectDatabase();
+    console.log("Secrets and connection initialized.");
     try {
         let date = initDateFromParams({ date: new Date(), d: new Date().getDate(), h: 0, i: 0, s: 0 });
         const campaigns = await Campaign.find({
@@ -23,22 +25,31 @@ const app = new Application();
                 auditStatus: "PENDING",
                 endDate: LessThan(DateUtils.mixedDateToDatetimeString(date)),
             },
-            relations: ["participants", "prize", "org", "org.wallet", "escrow", "crypto"],
         });
         const entityManager = new EntityManager(connection);
-        console.log(`TOTAL CAMPAIGNS TO BE AUDITED--- ${campaigns.length}`);
+        console.log(`TOTAL CAMPAIGNS TO BE AUDITED--- ${campaigns.map((item) => item.id)}`);
         for (let index = 0; index < campaigns.length; index++) {
-            const campaign = campaigns[index];
+            const campaign = await Campaign.findOne({
+                where: {
+                    id: campaigns[index].id,
+                },
+                relations: ["participants", "prize", "currency", "org"],
+            });
+            if (!campaign) throw new Error("Campaign not found.");
+            console.log(
+                "CAMPAIGN DATA ---",
+                index,
+                campaign?.id,
+                campaign?.name,
+                campaign?.currency?.symbol,
+                campaign?.currency?.tatumId,
+                campaign?.coiinTotal?.toString(),
+                campaign?.tatumBlockageId
+            );
             let deviceIds;
             switch (campaign.type.toLowerCase()) {
                 case "crypto":
-                    const symbol = campaign?.crypto?.type || campaign?.symbol;
-                    if (!symbol) throw new Error("campaign symbol not defined");
-                    if (symbol.toLowerCase() === "coiin") {
-                        deviceIds = await payoutCoiinCampaignRewards(entityManager, campaign, []);
-                    } else {
-                        deviceIds = await payoutCryptoCampaignRewards(campaign);
-                    }
+                    deviceIds = await payoutCryptoCampaignRewards(campaign);
                     break;
                 case "raffle":
                     deviceIds = await payoutRaffleCampaignRewards(entityManager, campaign, []);
@@ -46,10 +57,13 @@ const app = new Application();
                 default:
                     throw new Error("campaign type is invalid");
             }
-            if (deviceIds) await Firebase.sendCampaignCompleteNotifications(Object.values(deviceIds), campaign.name);
+            try {
+                if (deviceIds?.length)
+                    await Firebase.sendCampaignCompleteNotifications(Object.values(deviceIds), campaign.name);
+            } catch (error) {}
         }
     } catch (error) {
-        logger.error(`ERROR---: ${error.message || JSON.stringify(error)}`);
+        console.log(error);
     }
     await connection.close();
     process.exit(0);

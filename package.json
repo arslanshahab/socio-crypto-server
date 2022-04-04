@@ -1,6 +1,6 @@
 {
     "name": "raiinmaker-server",
-    "version": "3.3.1",
+    "version": "3.3.5",
     "main": "index.js",
     "repository": "git@github.com:dragonchain-inc/raiinmaker-server.git",
     "author": "Alex Benedetto <alex061994@gmail.com>",
@@ -39,7 +39,6 @@
         "cron:social:run": "AWS_PROFILE=raiinmaker LOAD_ENV=true ts-node src/cron/social/index.ts"
     },
     "dependencies": {
-        "@myfii-dev/dragonfactor-auth": "^0.0.12",
         "@prisma/client": "^3.11.0",
         "@sentry/node": "^6.18.0",
         "@sentry/tracing": "^6.18.0",
