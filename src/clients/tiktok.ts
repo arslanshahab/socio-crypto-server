@@ -4,7 +4,7 @@ import fs from "fs";
 import { doFetch, RequestData } from "../util/fetchRequest";
 import { SocialLink } from "../models/SocialLink";
 import { Secrets } from "../util/secrets";
-import { TiktokLinkCredentials } from "src/types";
+import { SocialLinkVariables, TiktokLinkCredentials } from "src/types";
 import path from "path";
 
 export class TikTokClient {
@@ -134,5 +134,9 @@ export class TikTokClient {
 
     public static getFolowers = async () => {
         return 1;
+    };
+
+    public static getPost = async (socialLink: SocialLinkVariables, id: string, cached = true) => {
+        return "There is no post found on tiktok";
     };
 }

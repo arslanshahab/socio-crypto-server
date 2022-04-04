@@ -5,7 +5,7 @@ import { getRedis } from "./redis";
 import { extractVideoData, chunkVideo, sleep } from "../controllers/helpers";
 import { Participant } from "../models/Participant";
 import { SocialLink } from "../models/SocialLink";
-import { TwitterLinkCredentials } from "src/types";
+import { SocialLinkVariables, TwitterLinkCredentials } from "../types";
 import { TWITTER_LINK_EXPIRED, FormattedError } from "../util/errors";
 import { isArray } from "lodash";
 import { decrypt } from "../util/crypto";
@@ -199,7 +199,12 @@ export class TwitterClient {
         await getRedis().set(cacheKey, JSON.stringify(twitterResponse), "EX", 900); // cache for 15 minutes
         return JSON.stringify(twitterResponse);
     };
-    public static getTwitterPost = async (socialLink: any, id: string, cached = true): Promise<string> => {
+
+    public static getPost = async (
+        socialLink: SocialLinkVariables,
+        id: string,
+        cached = true
+    ): Promise<string> => {
         let cacheKey = `twitter:${id}`;
         if (cached) {
             const cachedResponse = await getRedis().get(cacheKey);

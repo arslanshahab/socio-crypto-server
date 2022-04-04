@@ -90,11 +90,6 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
             }
         }
 
-        // if (usersRewards && userDeviceIds) {
-        //     console.log(usersRewards);
-        //     return;
-        // }
-
         if (!campaign.tatumBlockageId) throw new Error(`No blockage Id found for campaign--- ${campaign.id}`);
         await TatumClient.unblockAccountBalance(campaign.tatumBlockageId);
 

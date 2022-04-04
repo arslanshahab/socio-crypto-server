@@ -50,6 +50,16 @@ export class CampaignResultModel {
     @CollectionOf(CampaignMediaResultModel) public readonly campaign_media: CampaignMediaResultModel[];
     @CollectionOf(CampaignTemplateResultModel) public readonly campaign_template: CampaignTemplateResultModel[];
 }
+export class CurrentCampaignModel {
+    @Property() public currentTier: number;
+    @Property() public currentTotal: number;
+    @Nullable(String) public campaignType: string | null;
+    @Nullable(String) public tokenValueUsd: string | null;
+    @Nullable(String) public tokenValueCoiin: string | null;
+}
+export class ParticipantPostModel {
+    @Property() public readonly results: string[];
+}
 
 export class NotificationSettingsResultModel {
     @Property() public readonly id: string;

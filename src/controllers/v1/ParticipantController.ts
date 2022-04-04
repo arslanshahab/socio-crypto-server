@@ -4,12 +4,12 @@ import { Context, QueryParams } from "@tsed/common";
 import { ParticipantModel } from ".prisma/client/entities";
 import { ParticipantService } from "../../services/ParticipantService";
 import { UserService } from "../../services/UserService";
-import { Pagination, SuccessResult } from "../../util/entities";
+import { Pagination, SuccessArrayResult, SuccessResult } from "../../util/entities";
 import { TwitterClient } from "../../clients/twitter";
 import { TikTokClient } from "../../clients/tiktok";
 import { FacebookClient } from "../../clients/facebook";
-import { NO_TOKEN_PROVIDED, SOICIAL_LINKING_ERROR, USER_NOT_FOUND } from "../../util/errors";
-import { BadRequest } from "@tsed/exceptions";
+import { PARTICIPANT_NOT_FOUND, SOICIAL_LINKING_ERROR, USER_NOT_FOUND } from "../../util/errors";
+import { BadRequest, NotFound } from "@tsed/exceptions";
 
 class ListParticipantVariablesModel {
     @Property() public readonly id: string;
@@ -29,51 +29,48 @@ export const getSocialClient = (type: string, accessToken?: string): any => {
         case "tiktok":
             return TikTokClient;
         case "facebook":
-            if (!accessToken) throw new Error(NO_TOKEN_PROVIDED);
-            return FacebookClient.getClient(accessToken);
+            return FacebookClient;
         default:
             throw new Error(SOICIAL_LINKING_ERROR);
     }
 };
+
 @Controller("/participant")
 export class ParticipantController {
     @Inject()
     private participantService: ParticipantService;
-
     @Inject()
     private userService: UserService;
 
     @Get()
-    @(Returns(200, SuccessResult).Of(Pagination).Nested(ParticipantModel))
+    @(Returns(200, SuccessResult).Of(ParticipantModel))
     public async list(@QueryParams() query: ListParticipantVariablesModel, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
         const participant = await this.participantService.findParticipantById(query, user);
-        if (!participant) throw new Error("Participant not found");
+        if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
         return new SuccessResult(participant, ParticipantModel);
     }
-    @Get("/participantPosts")
-    @(Returns(200, SuccessResult).Of(Pagination).Nested(ParticipantModel))
+    @Get("/participant-posts")
+    @Returns(200, SuccessArrayResult)
     public async participantPosts(@QueryParams() query: ListParticipantVariablesModel, @Context() context: Context) {
-        const results: Promise<any>[] = [];
+        const results = [];
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
         const participant = await this.participantService.findParticipantById(query, user);
-        if (!participant) throw new Error("Participant not found");
+        if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
         const posts = await this.participantService.findSocialPosts(participant.id);
         for (let i = 0; i < posts.length; i++) {
             const post = posts[i];
-            if (post.type === "twitter") {
-                const socialLink = await this.participantService.findSocialLinkByUserId(user?.id || "", "twitter");
-                const client = getSocialClient("twitter");
-                const response = await client.getTwitterPost(socialLink, post.id);
-                results.push(response);
-            }
+            const socialLink = await this.participantService.findSocialLinkByUserId(user?.id || "", "twitter");
+            const client = getSocialClient(post.type);
+            const response = await client?.getPost(socialLink, post.id);
+            results.push(response);
         }
-        return new SuccessResult(results, Array);
+        return new SuccessArrayResult(results, Array);
     }
-    @Get("/participantByCampaignId")
-    @(Returns(200, SuccessResult).Of(Pagination).Nested(ParticipantModel))
+    @Get("/participant-by-campaign-id")
+    @(Returns(200, SuccessResult).Of(ParticipantModel))
     public async participantByCampaignId(
         @QueryParams() query: ListParticipantVariablesModel,
         @Context() context: Context
@@ -81,10 +78,10 @@ export class ParticipantController {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
         const participant = await this.participantService.findParticipantByCampaignId(query, user);
-        if (!participant) throw new Error("Participant not found");
+        if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
         return new SuccessResult(participant, ParticipantModel);
     }
-    @Get("/campaignParticipants")
+    @Get("/campaign-participants")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(ParticipantModel))
     public async campaignParticipants(
         @QueryParams() query: ListCampaignParticipantVariablesModel,

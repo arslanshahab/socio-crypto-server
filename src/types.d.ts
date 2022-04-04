@@ -368,6 +368,25 @@ export interface FindCampaignById {
     skip?: number;
     take?: number;
 }
+export interface SocialLinkVariables {
+    id: string;
+    type: string;
+    apiKey: string;
+    apiSecret: string;
+    createdAt: Date;
+    updatedAt: Date;
+    userId: string;
+    followerCount: number;
+    accessToken: string | null;
+    refreshToken: string | null;
+    openId: string | null;
+    accessTokenExpiry: string | null;
+    refreshTokenExpiry: string | null;
+}
+export interface AlgorithmJsonValueType {
+    tiers: { [key: string]: { threshold: string; totalCoiins: string } };
+    pointValues: JSON;
+}
 
 export interface GetCampaignsParticipantsVariables {
     campaignId?: string;
