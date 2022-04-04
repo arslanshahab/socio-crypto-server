@@ -39,12 +39,11 @@ export const getSocialClient = (type: string, accessToken?: string): any => {
 export class ParticipantController {
     @Inject()
     private participantService: ParticipantService;
-
     @Inject()
     private userService: UserService;
 
     @Get()
-    @(Returns(200, SuccessResult).Of(Pagination).Nested(ParticipantModel))
+    @(Returns(200, SuccessResult).Of(ParticipantModel))
     public async list(@QueryParams() query: ListParticipantVariablesModel, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
@@ -53,7 +52,7 @@ export class ParticipantController {
         return new SuccessResult(participant, ParticipantModel);
     }
     @Get("/participant-posts")
-    @(Returns(200, SuccessResult).Of(Pagination).Nested(Array))
+    @Returns(200, SuccessArrayResult)
     public async participantPosts(@QueryParams() query: ListParticipantVariablesModel, @Context() context: Context) {
         const results = [];
         const user = await this.userService.findUserByContext(context.get("user"));
@@ -71,7 +70,7 @@ export class ParticipantController {
         return new SuccessArrayResult(results, Array);
     }
     @Get("/participant-by-campaign-id")
-    @(Returns(200, SuccessResult).Of(Pagination).Nested(ParticipantModel))
+    @(Returns(200, SuccessResult).Of(ParticipantModel))
     public async participantByCampaignId(
         @QueryParams() query: ListParticipantVariablesModel,
         @Context() context: Context

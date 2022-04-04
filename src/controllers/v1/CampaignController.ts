@@ -38,7 +38,7 @@ export class CampaignController {
         return new SuccessResult(new Pagination(items, total, CampaignResultModel), Pagination);
     }
     @Get("/current-campaign-tier")
-    @(Returns(200, SuccessResult).Of(Pagination).Nested(CurrentCampaignModel))
+    @(Returns(200, SuccessResult).Of(CurrentCampaignModel))
     public async currentCampaignTier(
         @QueryParams() query: ListCurrentCampaignVariablesModel,
         @Context() context: Context
