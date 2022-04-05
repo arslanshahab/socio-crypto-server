@@ -169,13 +169,13 @@ model CustodialAddress {
 
 model DailyParticipantMetric {
   id                      String    @id(map: "PK_2941b85aab0073a60a1319ec3b4") @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
-  clickCount              String    @default(dbgenerated("0")) @db.VarChar
-  viewCount               String    @default(dbgenerated("0")) @db.VarChar
-  submissionCount         String    @default(dbgenerated("0")) @db.VarChar
-  likeCount               String    @default(dbgenerated("0")) @db.VarChar
-  shareCount              String    @default(dbgenerated("0")) @db.VarChar
-  commentCount            String    @default(dbgenerated("0")) @db.VarChar
-  participationScore      String    @default(dbgenerated("0")) @db.VarChar
+  clickCount              Int
+  viewCount               Int
+  submissionCount         Int
+  likeCount               Int
+  shareCount              Int
+  commentCount            Int
+  participationScore      Int
   totalParticipationScore String    @default(dbgenerated("0")) @db.VarChar
   participantId           String    @db.VarChar
   createdAt               DateTime  @default(now()) @db.Timestamp(6)

@@ -1,4 +1,4 @@
-import { Get, Property, Required, Returns } from "@tsed/schema";
+import { Get, Property, Returns } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
 import { Context, QueryParams } from "@tsed/common";
 import { ParticipantModel } from ".prisma/client/entities";
@@ -8,23 +8,25 @@ import { Pagination, SuccessArrayResult, SuccessResult } from "../../util/entiti
 import { TwitterClient } from "../../clients/twitter";
 import { TikTokClient } from "../../clients/tiktok";
 import { FacebookClient } from "../../clients/facebook";
-import { PARTICIPANT_NOT_FOUND, SOICIAL_LINKING_ERROR, USER_NOT_FOUND } from "../../util/errors";
+import { CAMPAIGN_NOT_FOUND, PARTICIPANT_NOT_FOUND, SOICIAL_LINKING_ERROR, USER_NOT_FOUND } from "../../util/errors";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 import { formatUTCDateForComparision, getDatesBetweenDates } from "../helpers";
 import { ParticipantMetricsResultModel } from "../../models/RestModels";
+import { CampaignService } from "../../services/CampaignService";
+import { calculateParticipantPayout, calculateTier } from "../helpers";
+import { BN, getCryptoAssestImageUrl } from "../../util";
+import { getSymbolValueInUSD } from "../../util/exchangeRate";
+import { Campaign, Participant } from "@prisma/client";
 
 class ListParticipantVariablesModel {
     @Property() public readonly id: string;
     @Property() public readonly campaignId: string;
     @Property() public readonly userRelated: boolean | undefined;
+    @Property() public readonly skip: number;
+    @Property() public readonly take: number;
 }
-class ListCampaignParticipantVariablesModel {
-    @Required() public readonly skip: number;
-    @Required() public readonly take: number;
-    @Property() public campaignId: string;
-    @Property() public readonly userRelated: boolean | undefined;
-}
+
 export const getSocialClient = (type: string, accessToken?: string): any => {
     switch (type) {
         case "twitter":
@@ -44,6 +46,8 @@ export class ParticipantController {
     private participantService: ParticipantService;
     @Inject()
     private dailyParticipantMetricService: DailyParticipantMetricService;
+    @Inject()
+    private campaignService: CampaignService;
     @Inject()
     private userService: UserService;
 
@@ -89,7 +93,7 @@ export class ParticipantController {
     @Get("/campaign-participants")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(ParticipantModel))
     public async campaignParticipants(
-        @QueryParams() query: ListCampaignParticipantVariablesModel,
+        @QueryParams() query: ListParticipantVariablesModel,
         @Context() context: Context
     ) {
         const user = await this.userService.findUserByContext(context.get("user"));
@@ -131,5 +135,42 @@ export class ParticipantController {
             new Pagination(metricsResult, metricsResult.length, ParticipantMetricsResultModel),
             Pagination
         );
+    }
+    @Get("/accumulated-participant-metrics")
+    @(Returns(200, SuccessResult).Of(ParticipantMetricsResultModel))
+    public async getAccumulatedParticipantMetrics(
+        @QueryParams() query: ListParticipantVariablesModel,
+        @Context() context: Context
+    ) {
+        const { campaignId } = query;
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new BadRequest(USER_NOT_FOUND);
+        const campaign: Campaign | any = await this.campaignService.findCampaignById(campaignId);
+        if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
+        const participant: Participant | any = await this.participantService.findParticipantByCampaignId(query, user);
+        if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
+        const { _sum } = await this.dailyParticipantMetricService.getAccumulatedParticipantMetrics(participant.id);
+        const { currentTotal } = calculateTier(new BN(campaign.totalParticipationScore), campaign.algorithm.tiers);
+        const participantShare = await calculateParticipantPayout(new BN(currentTotal), campaign, participant);
+        const result = {
+            clickCount: _sum?.clickCount || 0,
+            likeCount: _sum?.likeCount || 0,
+            shareCount: _sum?.shareCount || 0,
+            viewCount: _sum?.viewCount || 0,
+            submissionCount: _sum?.submissionCount || 0,
+            commentCount: _sum?.commentCount || 0,
+            participationScore: _sum?.participationScore || 0,
+            currentTotal: parseInt(currentTotal.toString()),
+            participantShare: participantShare.toNumber() || 0,
+            participantShareUSD: await getSymbolValueInUSD(
+                campaign.symbol,
+                parseFloat(participantShare.toString() || "0")
+            ),
+            symbol: campaign.symbol,
+            symbolImageUrl: getCryptoAssestImageUrl(campaign.symbol),
+            campaignId: campaign.id,
+            participantId: participant.id,
+        };
+        return new SuccessResult(result, ParticipantMetricsResultModel);
     }
 }

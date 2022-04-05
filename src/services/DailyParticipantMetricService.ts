@@ -38,8 +38,28 @@ export class DailyParticipantMetricService {
                 participantId: participant.id,
                 campaignId: campaign.id,
                 userId: user.id,
-                participationScore: "0",
+                participationScore: 0,
                 totalParticipationScore: lastParticipationScore,
+                clickCount: 0,
+                likeCount: 0,
+                shareCount: 0,
+                submissionCount: 0,
+                viewCount: 0,
+                commentCount: 0,
+            },
+        });
+    }
+    public async getAccumulatedParticipantMetrics(participantId: string) {
+        return this.prismaService.dailyParticipantMetric.aggregate({
+            where: { participantId },
+            _sum: {
+                clickCount: true,
+                commentCount: true,
+                likeCount: true,
+                shareCount: true,
+                submissionCount: true,
+                viewCount: true,
+                participationScore: true,
             },
         });
     }

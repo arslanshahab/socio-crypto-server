@@ -135,6 +135,8 @@ export const calculateParticipantPayout = async (
     campaign: Campaign,
     participant: Participant
 ) => {
+    if (typeof campaign.totalParticipationScore === "string")
+        campaign.totalParticipationScore = new BN(campaign.totalParticipationScore);
     if (campaign.totalParticipationScore.eq(new BN(0))) return new BN(0);
     const percentageOfTotalParticipation = new BN(participant.participationScore).div(campaign.totalParticipationScore);
     return currentCampaignTierTotal.multipliedBy(percentageOfTotalParticipation);

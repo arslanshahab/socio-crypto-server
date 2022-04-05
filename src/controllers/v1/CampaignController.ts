@@ -54,7 +54,7 @@ export class CampaignController {
         let cryptoPriceUsd;
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
-        currentCampaign = await this.campaignService.findCampaignById(query, user);
+        currentCampaign = await this.campaignService.findCampaignById(campaignId);
         if (campaignId) {
             if (!currentCampaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
             if (currentCampaign.type == "raffle") return { currentTier: -1, currentTotal: 0 };
