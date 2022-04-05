@@ -1567,18 +1567,6 @@
   resolved "https://registry.yarnpkg.com/@multiformats/base-x/-/base-x-4.0.1.tgz#95ff0fa58711789d53aefb2590a8b7a4e715d121"
   integrity sha512-eMk0b9ReBbV23xXU693TAIrLyeO5iTgBZGSJfpqriG8UkYvr/hC9u9pyMlAakDNHWmbhMZCDs6KQO0jzKD8OTw==
 
-"@myfii-dev/dragonfactor-auth@^0.0.12":
-  version "0.0.12"
-  resolved "https://registry.npmjs.org/@myfii-dev/dragonfactor-auth/-/dragonfactor-auth-0.0.12.tgz"
-  integrity sha512-jW8gB0/uGa4WVwoIdhWVzdv/7J5UqfjYHYStQeQZ0nZU9xbUJHQN7kMwpA2faTF6JCF2MzNUxgkyIX0F5M95sg==
-  dependencies:
-    ajv "^6.12.2"
-    bs58 "^4.0.1"
-    express "^4.17.1"
-    js-sha3 "^0.8.0"
-    node-fetch "^2.6.0"
-    secp256k1 "^4.0.1"
-
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"
   resolved "https://registry.npmjs.org/@nodelib/fs.scandir/-/fs.scandir-2.1.5.tgz"
@@ -3696,7 +3684,7 @@ ajv@^5.0.1:
     fast-json-stable-stringify "^2.0.0"
     json-schema-traverse "^0.3.0"
 
-ajv@^6.10.2, ajv@^6.12.2, ajv@^6.12.3, ajv@^6.12.5:
+ajv@^6.10.2, ajv@^6.12.3, ajv@^6.12.5:
   version "6.12.6"
   resolved "https://registry.yarnpkg.com/ajv/-/ajv-6.12.6.tgz#baf5a62e802b07d977034586f8c3baf5adf26df4"
   integrity sha512-j3fVLgvTo527anyYyJOGTYJbG+vnnQYvE0m5mmkc1TK+nxAppkCLMIL0aZ4dblVCNoGShhm+kzE4ZUykBoMg4g==

@@ -86,7 +86,6 @@ export const typeDefs = gql`
             media: String
         ): SuccessResponse
         setDevice(deviceToken: String!): Boolean
-        registerFactorLink(factor: JSON): User
         updateUsername(username: String!): User
         removeFactorLink(factorId: String!): User
         verifyKyc(userKyc: KycApplication): KycApplicationResponse
@@ -164,6 +163,7 @@ export const typeDefs = gql`
             refresh_token: String!
             refresh_expires_in: Int!
         ): SuccessResponse
+        rewardUserForSharing(participantId: String, isGlobal: Boolean!): SuccessResponse
     }
 
     type Query {
@@ -786,6 +786,7 @@ export const typeDefs = gql`
         company: String
         algorithm: JSON!
         audited: Boolean!
+        auditStatus: String
         targetVideo: String
         imagePath: String!
         campaignType: String!
