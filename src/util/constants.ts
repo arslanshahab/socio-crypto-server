@@ -3,6 +3,13 @@ export const COIIN = "COIIN";
 export const MATIC = "MATIC";
 export const BSC = "BSC";
 export const ETH = "ETH";
+export const BNB = "BNB";
+export const NETWORK_TO_NATIVE_TOKEN: { [key: string]: string } = {
+    BSC: BNB,
+    ETH: ETH,
+    MATIC: MATIC,
+};
+export const CUSTODIAL_NETWORKS = [MATIC, ETH, BSC];
 export const WITHDRAW_LIMIT = 1000;
 export const RAIINMAKER_ORG_NAME = "raiinmaker";
 export const AMOUNT_LIMIT_FOR_KYC_IN_XOXODAY = 100;
