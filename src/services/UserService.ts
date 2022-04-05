@@ -31,7 +31,7 @@ export class UserService {
         }>({
             where: {
                 ...(id && { identityId: id }),
-                ...(userId && { id: userId }),
+                ...(userId && !id && { id: userId }),
             },
             include: (isArray(include)
                 ? include?.reduce((acc, relation) => ({ ...acc, [relation]: true }), {})
