@@ -182,3 +182,35 @@ export class CampaignMetricsResultModel {
     @Property() public readonly shareCount: number;
     @Property() public readonly postCount: number;
 }
+
+export class ParticipantMetricsResultModel {
+    @Property() public readonly id: string;
+    @Property() public readonly clickCount: string;
+    @Property() public readonly viewCount: string;
+    @Property() public readonly submissionCount: string;
+    @Property() public readonly likeCount: string;
+    @Property() public readonly shareCount: string;
+    @Property() public readonly commentCount: string;
+    @Property() public readonly participationScore: string;
+    @Property() public readonly totalParticipationScore: string;
+    @Property() public readonly participantId: string;
+    @Property() public readonly userId: string;
+    @Property() public readonly campaignId: string;
+    @Property() public readonly createdAt: Date;
+    @Property() public readonly updatedAt: Date;
+};
+
+// id: '667cc76b-de4d-4e54-bedd-b2d725401366',
+//     clickCount: '0',
+//     viewCount: '0',
+//     submissionCount: '0',
+//     likeCount: '0',
+//     shareCount: '0',
+//     commentCount: '0',
+//     participationScore: '0',
+//     totalParticipationScore: '41',
+//     participantId: 'f532f94b-0795-4611-b154-2815b319645a',
+//     createdAt: 2021-08-07T02:41:49.000Z,
+//     updatedAt: 2021-08-07T02:41:49.000Z,
+//     userId: '0839b8eb-47cb-4317-b6d9-ba1611252dfc',
+//     campaignId: '46ac37aa-2d08-44d4-a78a-3dbc71a16dc2'

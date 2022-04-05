@@ -10,6 +10,9 @@ import { TikTokClient } from "../../clients/tiktok";
 import { FacebookClient } from "../../clients/facebook";
 import { PARTICIPANT_NOT_FOUND, SOICIAL_LINKING_ERROR, USER_NOT_FOUND } from "../../util/errors";
 import { BadRequest, NotFound } from "@tsed/exceptions";
+import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
+import { formatUTCDateForComparision, getDatesBetweenDates } from "../helpers";
+import { ParticipantMetricsResultModel } from "../../models/RestModels";
 
 class ListParticipantVariablesModel {
     @Property() public readonly id: string;
@@ -39,6 +42,8 @@ export const getSocialClient = (type: string, accessToken?: string): any => {
 export class ParticipantController {
     @Inject()
     private participantService: ParticipantService;
+    @Inject()
+    private dailyParticipantMetricService: DailyParticipantMetricService;
     @Inject()
     private userService: UserService;
 
@@ -91,5 +96,40 @@ export class ParticipantController {
         if (!user) throw new BadRequest(USER_NOT_FOUND);
         const [items, count] = await this.participantService.findCampaignParticipants(query, user);
         return new SuccessResult(new Pagination(items, count, ParticipantModel), Pagination);
+    }
+    @Get("/participant-metrics")
+    @(Returns(200, SuccessResult).Of(ParticipantMetricsResultModel))
+    public async getParticipantMetrics(
+        @QueryParams() query: ListParticipantVariablesModel,
+        @Context() context: Context
+    ) {
+        const additionalRows = [];
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new BadRequest(USER_NOT_FOUND);
+        const participant = await this.participantService.findParticipantById(query, user);
+        if (!participant) throw new Error(PARTICIPANT_NOT_FOUND);
+        const metrics = await this.dailyParticipantMetricService.getSortedByParticipantId(query.id);
+        if (
+            metrics.length > 0 &&
+            formatUTCDateForComparision(metrics[metrics.length - 1].createdAt) !==
+                formatUTCDateForComparision(new Date())
+        ) {
+            const datesInBetween = getDatesBetweenDates(new Date(metrics[metrics.length - 1].createdAt), new Date());
+            for (let i = 0; i < datesInBetween.length; i++) {
+                const response = await this.dailyParticipantMetricService.createPlaceholderRow(
+                    datesInBetween[i],
+                    metrics[metrics.length - 1].totalParticipationScore,
+                    participant.campaign,
+                    user,
+                    participant
+                );
+                additionalRows.push(response);
+            }
+        }
+        const metricsResult = metrics.concat(additionalRows);
+        return new SuccessResult(
+            new Pagination(metricsResult, metricsResult.length, ParticipantMetricsResultModel),
+            Pagination
+        );
     }
 }

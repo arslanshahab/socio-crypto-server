@@ -85,9 +85,8 @@ export class CampaignController {
         @QueryParams() query: ListCurrentCampaignVariablesModel,
         @Context() context: Context
     ) {
+        // this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const { campaignId } = query;
-        const campaign = await this.campaignService.findCampaignById(query);
-        if (!campaign) throw new Error(CAMPAIGN_NOT_FOUND);
         const { _sum, _count } = await this.participantService.findPaticipantMetricsById(campaignId);
         const { postSum, postCount } = await this.socialPostService.findSocialPostMetricsById(campaignId);
         const metrics = {
@@ -100,8 +99,6 @@ export class CampaignController {
             shareCount: postSum.shares,
             postCount,
         };
-        console.log("get campaign metrics.................../", metrics);
         return new SuccessResult(metrics, CampaignMetricsResultModel);
-        // this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
     }
 }
