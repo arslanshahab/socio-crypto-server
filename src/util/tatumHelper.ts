@@ -6,6 +6,8 @@ import { Transfer } from "../models/Transfer";
 import { formatFloat } from "./index";
 import { getExchangeRateForCrypto } from "./exchangeRate";
 import { serverBaseUrl } from "../config";
+import { SymbolNetworkParams } from "../types.d";
+import { BSC, NETWORK_TO_NATIVE_TOKEN, COIIN, ETH, MATIC } from "./constants";
 
 interface WithdrawFeeData {
     withdrawAbleAmount: string;
@@ -48,6 +50,8 @@ export const offchainEstimateFee = async (data: WithdrawPayload): Promise<number
             return await TatumClient.estimateCustodialWithdrawFee(data);
         case "BSC":
             return await TatumClient.estimateCustodialWithdrawFee(data);
+        case "MATIC":
+            return await TatumClient.estimateCustodialWithdrawFee(data);
         default:
             throw new Error("There was an error calculating withdraw fee.");
     }
@@ -62,7 +66,7 @@ export const getFeeInSymbol = async (base: string, symbol: string, amount: numbe
 
 export const adjustWithdrawableAmount = async (data: WithdrawPayload): Promise<WithdrawFeeData> => {
     let adjustedAmount = parseFloat(formatFloat(data.amount));
-    const base = TatumClient.isERC20(data.currency.token) ? "ETH" : "BNB";
+    const base = NETWORK_TO_NATIVE_TOKEN[data.currency.token.network];
     let fee = await offchainEstimateFee(data);
     if (TatumClient.isSubCustodialToken(data.currency.token)) {
         fee = await getFeeInSymbol(base, data.currency.token.symbol, fee);
@@ -97,4 +101,11 @@ export const transferFundsToRaiinmaker = async (data: { currency: Currency; amou
 
 export const createSubscriptionUrl = (data: { userId: string; accountId: string }) => {
     return `${serverBaseUrl}/v1/tatum/subscription/${data.userId}/${data.accountId}`;
+};
+
+export const getCurrencyForTatum = (data: SymbolNetworkParams) => {
+    let { symbol, network } = data;
+    if (symbol === COIIN && network === BSC) symbol = `${symbol}_${BSC}`;
+    if (symbol === MATIC && network === ETH) symbol = `${symbol}_${ETH}`;
+    return symbol;
 };
