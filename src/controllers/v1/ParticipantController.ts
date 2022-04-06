@@ -15,7 +15,7 @@ import { formatUTCDateForComparision, getDatesBetweenDates } from "../helpers";
 import { ParticipantMetricsResultModel } from "../../models/RestModels";
 import { CampaignService } from "../../services/CampaignService";
 import { calculateParticipantPayout, calculateTier } from "../helpers";
-import { BN, getCryptoAssestImageUrl } from "../../util";
+import { BN, formatFloat, getCryptoAssestImageUrl } from "../../util";
 import { getSymbolValueInUSD } from "../../util/exchangeRate";
 import { Campaign, Participant } from "@prisma/client";
 
@@ -170,6 +170,44 @@ export class ParticipantController {
             symbolImageUrl: getCryptoAssestImageUrl(campaign.symbol),
             campaignId: campaign.id,
             participantId: participant.id,
+        };
+        return new SuccessResult(result, ParticipantMetricsResultModel);
+    }
+    @Get("/accumulated-user-metrics")
+    @(Returns(200, SuccessResult).Of(ParticipantMetricsResultModel))
+    public async getAccumulatedUserMetrics(
+        @QueryParams() query: ListParticipantVariablesModel,
+        @Context() context: Context
+    ) {
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new BadRequest(USER_NOT_FOUND);
+        const participations = await this.participantService.findParticipantByUser(user.id);
+        const ids = participations.map((p) => p.id);
+        let counts;
+        let participantShare = 0;
+        if (ids.length) {
+            counts = await this.dailyParticipantMetricService.getAccumulatedMetricsByParticipantIds(ids);
+            for (let index = 0; index < participations.length; index++) {
+                const campaign: Campaign | any = participations[index].campaign;
+                const participant: ParticipantModel | any = participations[index];
+                const { currentTotal } = calculateTier(
+                    new BN(campaign.totalParticipationScore),
+                    campaign.algorithm.tiers
+                );
+                const share = await calculateParticipantPayout(new BN(currentTotal), campaign, participant);
+                const usdValue = await getSymbolValueInUSD(campaign.symbol, parseFloat(share.toString() || "0"));
+                participantShare = participantShare + usdValue;
+            }
+        }
+        const result = {
+            clickCount: counts?._sum?.clickCount || 0,
+            likeCount: counts?._sum?.likeCount || 0,
+            shareCount: counts?._sum?.shareCount || 0,
+            viewCount: counts?._sum?.viewCount || 0,
+            submissionCount: counts?._sum?.submissionCount || 0,
+            commentCount: counts?._sum?.commentCount || 0,
+            totalScore: counts?._sum?.participationScore || 0,
+            totalShareUSD: parseFloat(formatFloat(participantShare)) || 0,
         };
         return new SuccessResult(result, ParticipantMetricsResultModel);
     }

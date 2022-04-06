@@ -50,6 +50,7 @@ export class CampaignResultModel {
     @CollectionOf(CampaignMediaResultModel) public readonly campaign_media: CampaignMediaResultModel[];
     @CollectionOf(CampaignTemplateResultModel) public readonly campaign_template: CampaignTemplateResultModel[];
 }
+
 export class CurrentCampaignModel {
     @Property() public currentTier: number;
     @Property() public currentTotal: number;
@@ -203,6 +204,8 @@ export class ParticipantMetricsResultModel {
     @Property() public readonly participantShareUSD: number;
     @Property() public readonly symbol: string;
     @Property() public readonly symbolImageUrl: string;
+    @Property() public readonly totalShareUSD: number;
+    @Property() public readonly totalScore: number;
 }
 
 export class SocialMetricsResultModel {
@@ -211,3 +214,19 @@ export class SocialMetricsResultModel {
     @Property() public readonly likesScore: number;
     @Property() public readonly shareScore: number;
 }
+
+// export class ParticipantModel {
+//     @Property() public readonly id: string;
+//     @Property() public readonly clickCount: number;
+//     @Property() public readonly campaignId: string;
+//     @Property() public readonly viewCount: number;
+//     @Property() public readonly submissionCount: number;
+//     @Property() public readonly participationScore: string;
+//     @Nullable(String) public readonly link: string | null;
+//     @Property() public readonly createdAt: Date;
+//     @Property() public readonly updatedAt: Date;
+//     @Property() public readonly userId: string;
+//     @Nullable(String) public readonly email: string | null;
+//     @Nullable(CampaignResultModel) public readonly campaign: CampaignResultModel[] | null;
+//     @Nullable(UserResultModel) public readonly user: UserResultModel[] | null;
+// }

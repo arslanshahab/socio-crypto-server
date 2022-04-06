@@ -63,4 +63,22 @@ export class DailyParticipantMetricService {
             },
         });
     }
+    public async getAccumulatedMetricsByParticipantIds(participantIds: string[]) {
+        return this.prismaService.dailyParticipantMetric.aggregate({
+            where: {
+                participantId: {
+                    in: participantIds,
+                },
+            },
+            _sum: {
+                clickCount: true,
+                commentCount: true,
+                likeCount: true,
+                shareCount: true,
+                submissionCount: true,
+                viewCount: true,
+                participationScore: true,
+            },
+        });
+    }
 }
