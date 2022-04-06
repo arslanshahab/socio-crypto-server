@@ -20,7 +20,7 @@ class ListXoxoVariablesModel {
 }
 
 @Controller("/xoxoday")
-export class ParticipantController {
+export class XoxodayController {
     @Inject()
     private xoxodayService: XoxodayService;
     @Inject()

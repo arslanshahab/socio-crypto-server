@@ -1,5 +1,5 @@
 import { SocialPost } from "../models/SocialPost";
-import { Tiers, AggregateDailyMetrics, VouchersListVariables, XoxodayVoucher } from "../types";
+import { Tiers, AggregateDailyMetrics, VouchersListVariables, XoxodayVoucher, SocialPostVariablesType } from "../types";
 import { Participant } from "../models/Participant";
 import { Campaign } from "../models/Campaign";
 import { getConnection } from "typeorm";
@@ -25,6 +25,7 @@ import { getExchangeRateForCurrency } from "../util/exchangeRate";
 import { TwitterClient } from "../clients/twitter";
 import { TikTokClient } from "../clients/tiktok";
 import { FacebookClient } from "../clients/facebook";
+import { Campaign as Campaign2 } from "@prisma/client";
 
 export const feeMultiplier = () => new BN(1).minus(FEE_RATE);
 
@@ -95,6 +96,23 @@ export const calculateParticipantSocialScore = async (participant: Participant, 
         totalShares,
         likesScore: totalLikes.multipliedBy(campaign.algorithm.pointValues.likes),
         shareScore: totalShares.multipliedBy(campaign.algorithm.pointValues.shares),
+    };
+};
+export const calculateParticipantSocialScoreV2 = async (
+    socialPosts: SocialPostVariablesType[],
+    campaign: Campaign2 | any
+) => {
+    let totalLikes = 0;
+    let totalShares = 0;
+    socialPosts?.forEach((post: { likes: number; shares: number }) => {
+        totalLikes = totalLikes + post?.likes;
+        totalShares = totalShares + post.shares;
+    });
+    return {
+        totalLikes,
+        totalShares,
+        likesScore: totalLikes * campaign.algorithm.pointValues.likes,
+        shareScore: totalShares * campaign.algorithm.pointValues.shares,
     };
 };
 

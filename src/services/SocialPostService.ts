@@ -26,4 +26,9 @@ export class SocialPostService {
         const { _sum, _count } = await response;
         return { postSum: _sum, postCount: _count };
     }
+    public async findSocialPostByParticipantId(participantId: string) {
+        return this.prismaService.socialPost.findMany({
+            where: { participantId },
+        });
+    }
 }

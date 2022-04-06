@@ -470,3 +470,16 @@ interface AcuantApplicationExtractedDetails {
     documentDetails: string | null;
     documentExpiry: Date | null;
 }
+
+interface SocialPostVariablesType {
+    id: string;
+    type: string;
+    likes: number;
+    shares: number;
+    comments: number;
+    participantId: string;
+    campaignId: string;
+    createdAt: Date;
+    updatedAt: Date;
+    userId: string;
+}

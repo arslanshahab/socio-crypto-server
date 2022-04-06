@@ -204,3 +204,10 @@ export class ParticipantMetricsResultModel {
     @Property() public readonly symbol: string;
     @Property() public readonly symbolImageUrl: string;
 }
+
+export class SocialMetricsResultModel {
+    @Property() public readonly totalLikes: number;
+    @Property() public readonly totalShares: number;
+    @Property() public readonly likesScore: number;
+    @Property() public readonly shareScore: number;
+}
