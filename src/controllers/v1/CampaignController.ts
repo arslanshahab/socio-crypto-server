@@ -11,6 +11,7 @@ import { CAMPAIGN_NOT_FOUND, ERROR_CALCULATING_TIER, USER_NOT_FOUND } from "../.
 import { PaginatedVariablesModel, Pagination, SuccessResult } from "../../util/entities";
 import { CampaignResultModel, CurrentCampaignModel } from "../../models/RestModels";
 import { BadRequest, NotFound } from "@tsed/exceptions";
+import { CryptoCurrencyService } from "../../services/CryptoCurrencyService";
 
 class ListCampaignsVariablesModel extends PaginatedVariablesModel {
     @Required() @Enum(CampaignState) public readonly state: CampaignState;
@@ -26,7 +27,8 @@ class ListCurrentCampaignVariablesModel {
 export class CampaignController {
     @Inject()
     private campaignService: CampaignService;
-
+    @Inject()
+    private cryptoCurrencyService: CryptoCurrencyService;
     @Inject()
     private userService: UserService;
 
@@ -49,7 +51,7 @@ export class CampaignController {
         let cryptoPriceUsd;
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
-        currentCampaign = await this.campaignService.findCampaignById(query, user);
+        currentCampaign = await this.campaignService.findCampaignById(campaignId);
         if (campaignId) {
             if (!currentCampaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
             if (currentCampaign.type == "raffle") return { currentTier: -1, currentTotal: 0 };
@@ -58,7 +60,7 @@ export class CampaignController {
                 currentCampaign?.algorithm?.tiers
             );
             if (currentCampaign.cryptoId) {
-                const cryptoCurrency = await this.campaignService.findCryptoCurrencyById(currentCampaign.cryptoId);
+                const cryptoCurrency = await this.cryptoCurrencyService.findCryptoCurrencyById(currentCampaign.cryptoId);
                 const cryptoCurrencyType = cryptoCurrency?.type;
                 if (!cryptoCurrencyType) throw new NotFound("Crypto currency not found");
                 cryptoPriceUsd = await getTokenPriceInUsd(cryptoCurrencyType);

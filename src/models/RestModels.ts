@@ -154,3 +154,6 @@ export class UserResultModel {
     @Nullable(WalletResultModel) public readonly wallet: Partial<WalletResultModel> | null;
     @CollectionOf(XoxodayOrderResultModel) public readonly xoxoday_order: Partial<XoxodayOrderResultModel>[];
 }
+export class ParticipantPostsModel {
+    @Property() public readonly results: string;
+}

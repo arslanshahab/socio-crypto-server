@@ -1,39 +1,22 @@
-import { Get, Property, Required, Returns } from "@tsed/schema";
+import { Get, Property, Returns } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
 import { Context, QueryParams } from "@tsed/common";
 import { ParticipantModel } from ".prisma/client/entities";
 import { ParticipantService } from "../../services/ParticipantService";
 import { UserService } from "../../services/UserService";
 import { Pagination, SuccessArrayResult, SuccessResult } from "../../util/entities";
-import { TwitterClient } from "../../clients/twitter";
-import { TikTokClient } from "../../clients/tiktok";
-import { FacebookClient } from "../../clients/facebook";
-import { PARTICIPANT_NOT_FOUND, SOICIAL_LINKING_ERROR, USER_NOT_FOUND } from "../../util/errors";
+import { PARTICIPANT_NOT_FOUND, USER_NOT_FOUND } from "../../util/errors";
 import { BadRequest, NotFound } from "@tsed/exceptions";
+import { getSocialClient } from "../helpers";
+import { ParticipantPostsModel } from "../../models/RestModels";
 
 class ListParticipantVariablesModel {
     @Property() public readonly id: string;
     @Property() public readonly campaignId: string;
+    @Property() public readonly skip: number;
+    @Property() public readonly take: number;
     @Property() public readonly userRelated: boolean | undefined;
 }
-class ListCampaignParticipantVariablesModel {
-    @Required() public readonly skip: number;
-    @Required() public readonly take: number;
-    @Property() public campaignId: string;
-    @Property() public readonly userRelated: boolean | undefined;
-}
-export const getSocialClient = (type: string, accessToken?: string): any => {
-    switch (type) {
-        case "twitter":
-            return TwitterClient;
-        case "tiktok":
-            return TikTokClient;
-        case "facebook":
-            return FacebookClient;
-        default:
-            throw new Error(SOICIAL_LINKING_ERROR);
-    }
-};
 
 @Controller("/participant")
 export class ParticipantController {
@@ -52,7 +35,7 @@ export class ParticipantController {
         return new SuccessResult(participant, ParticipantModel);
     }
     @Get("/participant-posts")
-    @Returns(200, SuccessArrayResult)
+    @(Returns(200, SuccessArrayResult).Of(ParticipantPostsModel))
     public async participantPosts(@QueryParams() query: ListParticipantVariablesModel, @Context() context: Context) {
         const results = [];
         const user = await this.userService.findUserByContext(context.get("user"));
@@ -67,7 +50,7 @@ export class ParticipantController {
             const response = await client?.getPost(socialLink, post.id);
             results.push(response);
         }
-        return new SuccessArrayResult(results, Array);
+        return new SuccessArrayResult(results, ParticipantPostsModel);
     }
     @Get("/participant-by-campaign-id")
     @(Returns(200, SuccessResult).Of(ParticipantModel))
@@ -84,12 +67,12 @@ export class ParticipantController {
     @Get("/campaign-participants")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(ParticipantModel))
     public async campaignParticipants(
-        @QueryParams() query: ListCampaignParticipantVariablesModel,
+        @QueryParams() query: ListParticipantVariablesModel,
         @Context() context: Context
     ) {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
-        const [items, count] = await this.participantService.findCampaignParticipants(query, user);
+        const [items, count] = await this.participantService.findCampaignParticipants(query);
         return new SuccessResult(new Pagination(items, count, ParticipantModel), Pagination);
     }
 }

@@ -1,7 +1,7 @@
 import { Prisma, User } from "@prisma/client";
 import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
-import { ListCampaignsVariablesV2, FindCampaignById } from "../types";
+import { ListCampaignsVariablesV2 } from "../types";
 
 @Injectable()
 export class CampaignService {
@@ -52,11 +52,11 @@ export class CampaignService {
             this.prismaService.campaign.count({ where }),
         ]);
     }
-    public async findCampaignById(params: FindCampaignById, user?: User) {
+    public async findCampaignById(campaignId: string) {
         return this.prismaService.campaign.findFirst({
             where: {
                 id: {
-                    equals: params.campaignId,
+                    equals: campaignId,
                 },
             },
         });
