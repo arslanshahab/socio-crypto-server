@@ -10,7 +10,7 @@ import { CampaignResultModel } from "../../models/RestModels";
 class ListCampaignsVariablesModel extends PaginatedVariablesModel {
     @Required() @Enum(CampaignState) public readonly state: CampaignState;
     @Property() @Enum(CampaignStatus, "ALL") public readonly status: CampaignStatus | "ALL" | undefined;
-    @Property() public readonly userRelated: boolean | undefined;
+    @Property(Boolean) public readonly userRelated: boolean | undefined;
 }
 
 @Controller("/campaign")
