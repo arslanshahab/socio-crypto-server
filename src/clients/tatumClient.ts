@@ -26,16 +26,17 @@ import {
     offchainCancelWithdrawal,
     createNewSubscription,
     SubscriptionType,
+    getAccountById,
 } from "@tatumio/tatum";
 import { TatumWallet } from "../models/TatumWallet";
 import { S3Client } from "./s3";
-import { adjustWithdrawableAmount, transferFundsToRaiinmaker } from "../util/tatumHelper";
+import { adjustWithdrawableAmount, getCurrencyForTatum, transferFundsToRaiinmaker } from "../util/tatumHelper";
 import { Currency } from "../models/Currency";
 import { RequestData, doFetch } from "../util/fetchRequest";
 import { Wallet } from "../models/Wallet";
 import { CustodialAddress } from "../models/CustodialAddress";
 import { formatFloat } from "../util/index";
-import { BSC, COIIN, ETH, MATIC } from "../util/constants";
+import { BSC, CUSTODIAL_NETWORKS, ETH } from "../util/constants";
 import { Token } from "../models/Token";
 import { SymbolNetworkParams } from "../types.d";
 import { sleep } from "../controllers/helpers";
@@ -142,7 +143,7 @@ export class TatumClient {
 
     public static isCustodialWallet = (data: SymbolNetworkParams): boolean => {
         try {
-            return data.network === "ETH" || data.network === "BSC";
+            return CUSTODIAL_NETWORKS.includes(data.network);
         } catch (error) {
             console.log(error);
             throw new Error(error.message);
@@ -219,10 +220,9 @@ export class TatumClient {
     public static createLedgerAccount = async (data: { symbol: string; network: string; isCustodial: boolean }) => {
         try {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
-            let { symbol, network, isCustodial } = data;
+            let { symbol, isCustodial } = data;
             const wallet = await TatumClient.getWallet({ symbol: data.symbol, network: data.network });
-            if (symbol === COIIN && network === BSC) symbol = `${symbol}_${BSC}`;
-            if (symbol === MATIC && network === ETH) symbol = `${symbol}_${ETH}`;
+            symbol = getCurrencyForTatum(data);
             return await createAccount({
                 currency: symbol,
                 ...(!isCustodial && { xpub: wallet?.xpub || wallet?.address }),
@@ -237,6 +237,16 @@ export class TatumClient {
         try {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
             return await generateDepositAddress(accountId);
+        } catch (error) {
+            console.log(error?.response?.data || error.message);
+            throw new Error(error?.response?.data?.message || error.message);
+        }
+    };
+
+    public static getAccountDetails = async (accountId: string) => {
+        try {
+            process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
+            return await getAccountById(accountId);
         } catch (error) {
             console.log(error?.response?.data || error.message);
             throw new Error(error?.response?.data?.message || error.message);
@@ -367,7 +377,7 @@ export class TatumClient {
                 throw new Error("Not enough balance in user account to pay gas fee.");
             const body = {
                 ...payload,
-                amount: withdrawAbleAmount,
+                amount: data.amount,
                 ...(payload.currency.derivationKey && { index: payload.currency.derivationKey }),
                 fee,
             };
@@ -394,6 +404,8 @@ export class TatumClient {
                     case "ETH":
                         return await TatumClient.sendOffchainTransactionFromCustodial(body);
                     case "BSC":
+                        return await TatumClient.sendOffchainTransactionFromCustodial(body);
+                    case "MATIC":
                         return await TatumClient.sendOffchainTransactionFromCustodial(body);
                     case "DOGE":
                         return await sendDogecoinOffchainTransaction(false, body as any);
@@ -588,15 +600,13 @@ export class TatumClient {
                 const newLedgerAccount = await TatumClient.createLedgerAccount({ ...data, isCustodial });
                 if (isCustodial) {
                     if (foundWallet?.org) {
-                        const availableAddress = await CustodialAddress.getAvailableAddress(data.network, data.wallet);
+                        const availableAddress = await CustodialAddress.getAvailableAddress(data);
                         if (!availableAddress) throw new Error("No custodial address available.");
                         await TatumClient.assignAddressToAccount({
                             accountId: newLedgerAccount.id,
                             address: availableAddress.address,
                         });
                         newDepositAddress = availableAddress;
-                        await availableAddress.changeAvailability(false);
-                        await availableAddress.assignWallet(data.wallet);
                     }
                 } else {
                     newDepositAddress = await TatumClient.generateDepositAddress(newLedgerAccount.id);
@@ -604,6 +614,7 @@ export class TatumClient {
                 ledgerAccount = await Currency.addAccount({
                     ...newLedgerAccount,
                     token,
+                    symbol: getCurrencyForTatum(data),
                     ...(newDepositAddress && { address: newDepositAddress.address }),
                     wallet: data.wallet,
                 });

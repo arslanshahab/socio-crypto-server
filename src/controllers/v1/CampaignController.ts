@@ -16,7 +16,7 @@ import { CryptoCurrencyService } from "../../services/CryptoCurrencyService";
 class ListCampaignsVariablesModel extends PaginatedVariablesModel {
     @Required() @Enum(CampaignState) public readonly state: CampaignState;
     @Property() @Enum(CampaignStatus, "ALL") public readonly status: CampaignStatus | "ALL" | undefined;
-    @Property() public readonly userRelated: boolean | undefined;
+    @Property(Boolean) public readonly userRelated: boolean | undefined;
 }
 class ListCurrentCampaignVariablesModel {
     @Property() public readonly campaignId: string;
