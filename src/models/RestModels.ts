@@ -46,6 +46,7 @@ export class CampaignResultModel {
     @Property() public readonly suggestedPosts: string;
     @Property() public readonly keywords: string;
     @Property() public readonly suggestedTags: string;
+    @Nullable(String) public readonly cryptoId: string | null;
     @Nullable(String) public readonly type: string | null;
     @CollectionOf(CampaignMediaResultModel) public readonly campaign_media: CampaignMediaResultModel[];
     @CollectionOf(CampaignTemplateResultModel) public readonly campaign_template: CampaignTemplateResultModel[];

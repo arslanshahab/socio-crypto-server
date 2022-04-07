@@ -60,16 +60,21 @@ export class CampaignController {
                 currentCampaign?.algorithm?.tiers
             );
             if (currentCampaign.cryptoId) {
-                const cryptoCurrency = await this.cryptoCurrencyService.findCryptoCurrencyById(currentCampaign.cryptoId);
+                const cryptoCurrency = await this.cryptoCurrencyService.findCryptoCurrencyById(
+                    currentCampaign.cryptoId
+                );
                 const cryptoCurrencyType = cryptoCurrency?.type;
                 if (!cryptoCurrencyType) throw new NotFound("Crypto currency not found");
                 cryptoPriceUsd = await getTokenPriceInUsd(cryptoCurrencyType);
             }
         }
         if (!currentTierSummary) throw new BadRequest(ERROR_CALCULATING_TIER);
-        let body: any = {
+        let body: CurrentCampaignModel = {
             currentTier: currentTierSummary.currentTier,
             currentTotal: parseFloat(currentTierSummary.currentTotal.toString()),
+            campaignType: null,
+            tokenValueCoiin: null,
+            tokenValueUsd: null,
         };
         if (currentCampaign) body.campaignType = currentCampaign.type;
         if (cryptoPriceUsd) body.tokenValueUsd = cryptoPriceUsd.toString();
