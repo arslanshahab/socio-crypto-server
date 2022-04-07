@@ -1,3 +1,4 @@
+import { Campaign, CampaignMedia, CampaignTemplate, CryptoCurrency, Participant } from "@prisma/client";
 import { Get, Property, Required, Enum, Returns } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
 import { Context, QueryParams } from "@tsed/common";
@@ -12,6 +13,7 @@ import { PaginatedVariablesModel, Pagination, SuccessResult } from "../../util/e
 import { CampaignResultModel, CurrentCampaignModel } from "../../models/RestModels";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { CryptoCurrencyService } from "../../services/CryptoCurrencyService";
+import { getSymbolValueInUSD } from "../../util/exchangeRate";
 
 class ListCampaignsVariablesModel extends PaginatedVariablesModel {
     @Required() @Enum(CampaignState) public readonly state: CampaignState;
@@ -21,6 +23,25 @@ class ListCampaignsVariablesModel extends PaginatedVariablesModel {
 class ListCurrentCampaignVariablesModel {
     @Property() public readonly campaignId: string;
     @Property() public readonly userRelated: boolean | undefined;
+}
+
+async function getCampaignResultModel(
+    campaign: Campaign & {
+        participant: Participant[];
+        crypto_currency: CryptoCurrency | null;
+        campaign_media: CampaignMedia[];
+        campaign_template: CampaignTemplate[];
+    }
+) {
+    const result: CampaignResultModel = campaign;
+    if (result.coiinTotal) {
+        const value = await getSymbolValueInUSD(campaign.symbol, parseFloat(campaign.coiinTotal.toString()));
+        result.coiinTotalUSD = value.toFixed(2);
+    } else {
+        result.coiinTotalUSD = "0";
+    }
+
+    return result;
 }
 
 @Controller("/campaign")
@@ -37,7 +58,8 @@ export class CampaignController {
     public async list(@QueryParams() query: ListCampaignsVariablesModel, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         const [items, total] = await this.campaignService.findCampaignsByStatus(query, user || undefined);
-        return new SuccessResult(new Pagination(items, total, CampaignResultModel), Pagination);
+        const modelItems = await Promise.all(items.map((i) => getCampaignResultModel(i)));
+        return new SuccessResult(new Pagination(modelItems, total, CampaignResultModel), Pagination);
     }
     @Get("/current-campaign-tier")
     @(Returns(200, SuccessResult).Of(CurrentCampaignModel))

@@ -30,4 +30,4 @@ data:
         SENTRY_DSN: "https://aedcc11778fe4bbdb489d4ad55eb08de@o1155640.ingest.sentry.io/6237600"
 
 postgresql:
-    host: "raiinmaker-api-postgresql"
+    host: "prod-database.cluster-cuqkwt1n17k6.us-west-1.rds.amazonaws.com"
