@@ -1,6 +1,7 @@
 import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
 import { Campaign, User, Participant } from "@prisma/client";
+// import { MoreThan } from "typeorm";
 
 @Injectable()
 export class DailyParticipantMetricService {
@@ -80,5 +81,51 @@ export class DailyParticipantMetricService {
                 participationScore: true,
             },
         });
+    }
+    public async getSortedByUserId(user: any, today: Boolean) {
+        let where: { [key: string]: any } = { user };
+        let reqDate: Date | string = new Date();
+        if (today) {
+            const currentDate = new Date();
+            const month =
+                currentDate.getUTCMonth() + 1 < 10
+                    ? `0${currentDate.getUTCMonth() + 1}`
+                    : currentDate.getUTCMonth() + 1;
+            const day = currentDate.getUTCDate() < 10 ? `0${currentDate.getUTCDate()}` : currentDate.getUTCDate();
+            const yyymmdd = `${currentDate.getUTCFullYear()}-${month}-${day}`;
+            reqDate = yyymmdd;
+
+            // where["createdAt"] = MoreThan(`${yyymmdd} 00:00:00`);
+        }
+
+        console.log("where........../", where);
+        if (today) {
+            return this.prismaService.dailyParticipantMetric.findMany({
+                where: {
+                    userId: where.user.id,
+                    createdAt: {
+                        gt: new Date(reqDate),
+                    },
+                },
+                orderBy: {
+                    createdAt: "asc",
+                },
+                include: {
+                    campaign: true,
+                },
+            });
+        } else {
+            return this.prismaService.dailyParticipantMetric.findMany({
+                where: {
+                    userId: where.user.id,
+                },
+                orderBy: {
+                    createdAt: "asc",
+                },
+                include: {
+                    campaign: true,
+                },
+            });
+        }
     }
 }

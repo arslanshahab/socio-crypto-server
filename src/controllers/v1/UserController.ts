@@ -8,8 +8,14 @@ import { UserService } from "../../services/UserService";
 import { PaginatedVariablesModel, Pagination, SuccessArrayResult, SuccessResult } from "../../util/entities";
 import { NOTIFICATION_SETTING_NOT_FOUND, USER_NOT_FOUND } from "../../util/errors";
 import { getCryptoAssestImageUrl, getUSDValueForCurrency, formatFloat, getMinWithdrawableAmount } from "../../util";
-import { NotificationSettingsResultModel, UserResultModel } from "../../models/RestModels";
+import {
+    DailyParticipantMetricResultModel,
+    NotificationSettingsResultModel,
+    UserResultModel,
+} from "../../models/RestModels";
 import { NotificationService } from "../../services/NotificationService";
+import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
+// import { ParticipantService } from "../../services/ParticipantService";
 
 const userResultRelations = [
     "profile" as const,
@@ -44,11 +50,18 @@ class BalanceResultModel {
     @Property() public readonly imageUrl: string;
     @Property() public readonly network: string;
 }
+class UserQueryVariables {
+    @Property() public readonly today: boolean;
+    // @Property() public readonly userRelated: boolean;
+}
 
 @Controller("/user")
 export class UserController {
     @Inject()
     private userService: UserService;
+    @Inject()
+    private dailyParticipantMetricService: DailyParticipantMetricService;
+    // private participantService: ParticipantService;
     @Inject()
     private notificationService: NotificationService;
 
@@ -135,4 +148,27 @@ export class UserController {
         if (!settings) throw new NotFound(NOTIFICATION_SETTING_NOT_FOUND);
         return new SuccessResult(settings, NotificationSettingsResultModel);
     }
+    @Get("/user-metrics")
+    @(Returns(200, SuccessResult).Of(DailyParticipantMetricResultModel))
+    public async getUserMetrics(@QueryParams() query: UserQueryVariables, @Context() context: Context) {
+        const { today } = query;
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new BadRequest(USER_NOT_FOUND);
+        const result = await this.dailyParticipantMetricService.getSortedByUserId(user, today);
+        return new SuccessResult(new Pagination(result, result.length, DailyParticipantMetricResultModel), Pagination);
+    }
+    // @Get("/previous-day-metrics")
+    // @(Returns(200, SuccessResult).Of(UserResultModel))
+    // public async getPreviousDayMetrics(@Context() context: Context) {
+    //     let metrics: { [key: string]: any } = {};
+    //     const user = await this.userService.findUserByContext(context.get("user"));
+    //     if (!user) throw new BadRequest(USER_NOT_FOUND);
+    //     const campaign = await this.participantService.findCampaignByUserId(user.id);
+    //     console.log("campaign response by user id............./", campaign.length, user.id);
+    //     if (campaign.length > 0) {
+    //         for (let i = 0; i < campaign.length; i++) {
+    //             const participant = campaign[i];
+    //         }
+    //     }
+    // }
 }

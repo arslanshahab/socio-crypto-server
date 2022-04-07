@@ -214,7 +214,22 @@ export class SocialMetricsResultModel {
     @Property() public readonly likesScore: number;
     @Property() public readonly shareScore: number;
 }
-
+export class DailyParticipantMetricResultModel {
+    @Property() public readonly id: string;
+    @Property() public readonly clickCount: number;
+    @Property() public readonly viewCount: number;
+    @Property() public readonly submissionCount: number;
+    @Property() public readonly likeCount: number;
+    @Property() public readonly shareCount: number;
+    @Property() public readonly commentCount: number;
+    @Property() public readonly participationScore: number;
+    @Property() public readonly totalParticipationScore: string;
+    @Property() public readonly participantId: string;
+    @Property() public readonly createdAt: Date;
+    @Property() public readonly updatedAt: Date;
+    @Nullable(String) public readonly userId: string | null;
+    @Nullable(String) public readonly campaignId: string | null;
+}
 // export class ParticipantModel {
 //     @Property() public readonly id: string;
 //     @Property() public readonly clickCount: number;
