@@ -154,7 +154,7 @@ export class UserController {
         const { today } = query;
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
-        const result = await this.dailyParticipantMetricService.getSortedByUserId(user, today);
+        const result = await this.dailyParticipantMetricService.getSortedByUserId(user.id, today);
         return new SuccessResult(new Pagination(result, result.length, DailyParticipantMetricResultModel), Pagination);
     }
     // @Get("/previous-day-metrics")

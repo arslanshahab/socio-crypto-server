@@ -82,48 +82,35 @@ export class DailyParticipantMetricService {
             },
         });
     }
-    public async getSortedByUserId(user: any, today: Boolean) {
-        let where: { [key: string]: any } = { user };
-        let reqDate: Date | string = new Date();
+    public async getSortedByUserId(userId: string, today: Boolean) {
         if (today) {
-            const currentDate = new Date();
+            let currentDate: Date | string = new Date();
             const month =
                 currentDate.getUTCMonth() + 1 < 10
                     ? `0${currentDate.getUTCMonth() + 1}`
                     : currentDate.getUTCMonth() + 1;
             const day = currentDate.getUTCDate() < 10 ? `0${currentDate.getUTCDate()}` : currentDate.getUTCDate();
             const yyymmdd = `${currentDate.getUTCFullYear()}-${month}-${day}`;
-            reqDate = yyymmdd;
+            currentDate = `${yyymmdd} 00:00:00`;
 
-            // where["createdAt"] = MoreThan(`${yyymmdd} 00:00:00`);
-        }
-
-        console.log("where........../", where);
-        if (today) {
             return this.prismaService.dailyParticipantMetric.findMany({
                 where: {
-                    userId: where.user.id,
+                    userId,
                     createdAt: {
-                        gt: new Date(reqDate),
+                        gt: new Date(currentDate),
                     },
                 },
                 orderBy: {
                     createdAt: "asc",
                 },
-                include: {
-                    campaign: true,
-                },
             });
         } else {
             return this.prismaService.dailyParticipantMetric.findMany({
                 where: {
-                    userId: where.user.id,
+                    userId,
                 },
                 orderBy: {
                     createdAt: "asc",
-                },
-                include: {
-                    campaign: true,
                 },
             });
         }
