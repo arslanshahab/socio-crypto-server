@@ -49,6 +49,8 @@ export class CampaignResultModel {
     @Nullable(String) public readonly type: string | null;
     @CollectionOf(CampaignMediaResultModel) public readonly campaign_media: CampaignMediaResultModel[];
     @CollectionOf(CampaignTemplateResultModel) public readonly campaign_template: CampaignTemplateResultModel[];
+
+    @Property() public coiinTotalUSD?: string;
 }
 
 export class NotificationSettingsResultModel {
