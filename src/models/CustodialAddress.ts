@@ -1,3 +1,4 @@
+import { TatumClient } from "../clients/tatumClient";
 import { CustodialAddressChain } from "src/types";
 import {
     PrimaryGeneratedColumn,
@@ -45,26 +46,37 @@ export class CustodialAddress extends BaseEntity {
     }
 
     public async assignWallet(wallet: Wallet) {
-        if (!this.wallet) this.wallet = wallet;
+        if (!this.wallet) {
+            this.wallet = wallet;
+            this.available = false;
+        }
         return await this.save();
     }
 
-    public static getAvailableAddress = async (chain: string, wallet: Wallet) => {
-        let data = await CustodialAddress.findOne({ where: { chain, wallet } });
-        if (!data) {
-            data = await CustodialAddress.findOne({ where: { chain, available: true } });
+    public static saveAddress = async (data: { address: string; network: CustodialAddressChain; wallet?: Wallet }) => {
+        const address = new CustodialAddress();
+        address.address = data.address;
+        address.chain = data.network;
+        if (data.wallet) {
+            address.wallet = data.wallet;
+            address.available = false;
         }
-        return data;
+        return await address.save();
     };
 
-    public static async saveAddresses(list: string[], chain: CustodialAddressChain): Promise<CustodialAddress[]> {
-        const addresses: CustodialAddress[] = [];
-        list.forEach((item: string) => {
-            const newAddress = new CustodialAddress();
-            newAddress.address = item;
-            newAddress.chain = chain;
-            addresses.push(newAddress);
-        });
-        return await CustodialAddress.save(addresses);
-    }
+    public static getAvailableAddress = async (data: { symbol: string; network: string; wallet: Wallet }) => {
+        let found = await CustodialAddress.findOne({ where: { chain: data.network, wallet: data.wallet } });
+        if (!found) {
+            found = await CustodialAddress.findOne({ where: { chain: data.network, available: true } });
+        }
+        if (!found) {
+            const newaAddress = await TatumClient.generateCustodialAddress(data);
+            found = await CustodialAddress.saveAddress({
+                address: newaAddress,
+                network: data.network as CustodialAddressChain,
+                wallet: data.wallet,
+            });
+        }
+        return found;
+    };
 }
