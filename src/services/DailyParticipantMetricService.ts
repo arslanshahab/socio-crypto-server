@@ -1,6 +1,7 @@
 import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
 import { Campaign, User, Participant } from "@prisma/client";
+// import { DateUtils } from "typeorm/util/DateUtils";
 // import { MoreThan } from "typeorm";
 
 @Injectable()
@@ -114,5 +115,38 @@ export class DailyParticipantMetricService {
                 },
             });
         }
+    }
+    public async getPreviousDayMetricsForAllCampaigns(campaignId: string[]) {
+        const yesterdayDate = new Date();
+        yesterdayDate.setDate(new Date().getDate() - 1);
+        yesterdayDate.setHours(0);
+        yesterdayDate.setMinutes(0);
+        yesterdayDate.setSeconds(0);
+        yesterdayDate.setMilliseconds(0);
+        const yesterday = yesterdayDate.toISOString();
+        const todayDate = new Date();
+        todayDate.setHours(0);
+        todayDate.setMinutes(0);
+        todayDate.setSeconds(0);
+        todayDate.setMilliseconds(0);
+        const today = todayDate.toISOString();
+
+        const response = this.prismaService.dailyParticipantMetric.findMany({
+            where: {
+                createdAt: { lt: new Date(today) },
+                // createdAt: { lt: new Date(today), gte: new Date(yesterday) },
+                campaign: {
+                    id: {
+                        in: campaignId,
+                    },
+                    endDate: { gte: new Date(yesterday) },
+                },
+            },
+            include: { campaign: true, user: true },
+            orderBy: {
+                createdAt: "asc",
+            },
+        });
+        return response;
     }
 }

@@ -110,4 +110,14 @@ export class ParticipantService {
             },
         });
     }
+    public async findCampaignByUserId(userId: string) {
+        return this.prismaService.participant.findMany({
+            where: {
+                userId,
+            },
+            include: {
+                campaign: true,
+            },
+        });
+    }
 }

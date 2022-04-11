@@ -15,7 +15,8 @@ import {
 } from "../../models/RestModels";
 import { NotificationService } from "../../services/NotificationService";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
-// import { ParticipantService } from "../../services/ParticipantService";
+import { ParticipantService } from "../../services/ParticipantService";
+// import { groupDailyMetricsByUser } from "../helpers";
 
 const userResultRelations = [
     "profile" as const,
@@ -61,7 +62,8 @@ export class UserController {
     private userService: UserService;
     @Inject()
     private dailyParticipantMetricService: DailyParticipantMetricService;
-    // private participantService: ParticipantService;
+    @Inject()
+    private participantService: ParticipantService;
     @Inject()
     private notificationService: NotificationService;
 
@@ -157,18 +159,23 @@ export class UserController {
         const result = await this.dailyParticipantMetricService.getSortedByUserId(user.id, today);
         return new SuccessResult(new Pagination(result, result.length, DailyParticipantMetricResultModel), Pagination);
     }
-    // @Get("/previous-day-metrics")
-    // @(Returns(200, SuccessResult).Of(UserResultModel))
-    // public async getPreviousDayMetrics(@Context() context: Context) {
-    //     let metrics: { [key: string]: any } = {};
-    //     const user = await this.userService.findUserByContext(context.get("user"));
-    //     if (!user) throw new BadRequest(USER_NOT_FOUND);
-    //     const campaign = await this.participantService.findCampaignByUserId(user.id);
-    //     console.log("campaign response by user id............./", campaign.length, user.id);
-    //     if (campaign.length > 0) {
-    //         for (let i = 0; i < campaign.length; i++) {
-    //             const participant = campaign[i];
-    //         }
-    //     }
-    // }
+    @Get("/previous-day-metrics")
+    @(Returns(200, SuccessResult).Of(UserResultModel))
+    public async getPreviousDayMetrics(@Context() context: Context) {
+        let metrics: { [key: string]: any } = {};
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new BadRequest(USER_NOT_FOUND);
+        const campaigns = await this.participantService.findCampaignByUserId(user.id);
+        if (campaigns.length > 0) {
+            const allParticipatingCampaigns = campaigns.map((participant) => participant.campaign.id);
+            const allDailyMetrics =
+                allParticipatingCampaigns.length > 0
+                    ? await this.dailyParticipantMetricService.getPreviousDayMetricsForAllCampaigns(
+                          allParticipatingCampaigns
+                      )
+                    : [];
+            // metrics = await groupDailyMetricsByUser(user.id, allDailyMetrics);
+            console.log(allDailyMetrics, metrics);
+        }
+    }
 }
