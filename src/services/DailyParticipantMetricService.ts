@@ -133,8 +133,8 @@ export class DailyParticipantMetricService {
 
         const response = this.prismaService.dailyParticipantMetric.findMany({
             where: {
-                createdAt: { lt: new Date(today) },
-                // createdAt: { lt: new Date(today), gte: new Date(yesterday) },
+                // createdAt: { lt: new Date(today) },
+                createdAt: { lt: new Date(today), gte: new Date(yesterday) },
                 campaign: {
                     id: {
                         in: campaignId,
@@ -144,7 +144,7 @@ export class DailyParticipantMetricService {
             },
             include: { campaign: true, user: true },
             orderBy: {
-                createdAt: "asc",
+                createdAt: "desc",
             },
         });
         return response;

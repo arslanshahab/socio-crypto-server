@@ -16,6 +16,7 @@ import {
 import { NotificationService } from "../../services/NotificationService";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 import { ParticipantService } from "../../services/ParticipantService";
+// import { groupDailyMetricsByUserV1 } from "../helpers";
 // import { groupDailyMetricsByUser } from "../helpers";
 
 const userResultRelations = [
@@ -162,20 +163,23 @@ export class UserController {
     @Get("/previous-day-metrics")
     @(Returns(200, SuccessResult).Of(UserResultModel))
     public async getPreviousDayMetrics(@Context() context: Context) {
-        let metrics: { [key: string]: any } = {};
+        // let metrics: { [key: string]: any } |any= {};
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
         const campaigns = await this.participantService.findCampaignByUserId(user.id);
         if (campaigns.length > 0) {
             const allParticipatingCampaigns = campaigns.map((participant) => participant.campaign.id);
+            
             const allDailyMetrics =
                 allParticipatingCampaigns.length > 0
                     ? await this.dailyParticipantMetricService.getPreviousDayMetricsForAllCampaigns(
                           allParticipatingCampaigns
                       )
                     : [];
-            // metrics = await groupDailyMetricsByUser(user.id, allDailyMetrics);
-            console.log(allDailyMetrics, metrics);
+            console.log("allParticipatingCampaigns-------------------------------------11",allDailyMetrics);
+
+            // metrics = await groupDailyMetricsByUserV1(user.id, allDailyMetrics);
+            // console.log( metrics);
         }
     }
 }
