@@ -84,37 +84,28 @@ export class DailyParticipantMetricService {
         });
     }
     public async getSortedByUserId(userId: string, today: Boolean) {
-        if (today) {
-            let currentDate: Date | string = new Date();
-            const month =
-                currentDate.getUTCMonth() + 1 < 10
-                    ? `0${currentDate.getUTCMonth() + 1}`
-                    : currentDate.getUTCMonth() + 1;
-            const day = currentDate.getUTCDate() < 10 ? `0${currentDate.getUTCDate()}` : currentDate.getUTCDate();
-            const yyymmdd = `${currentDate.getUTCFullYear()}-${month}-${day}`;
-            currentDate = `${yyymmdd} 00:00:00`;
-
-            return this.prismaService.dailyParticipantMetric.findMany({
-                where: {
-                    userId,
-                    createdAt: {
-                        gt: new Date(currentDate),
-                    },
-                },
-                orderBy: {
-                    createdAt: "asc",
-                },
-            });
-        } else {
-            return this.prismaService.dailyParticipantMetric.findMany({
-                where: {
-                    userId,
-                },
-                orderBy: {
-                    createdAt: "asc",
-                },
-            });
-        }
+        let currentDate: Date | string = new Date();
+        const month =
+            currentDate.getUTCMonth() + 1 < 10 ? `0${currentDate.getUTCMonth() + 1}` : currentDate.getUTCMonth() + 1;
+        const day = currentDate.getUTCDate() < 10 ? `0${currentDate.getUTCDate()}` : currentDate.getUTCDate();
+        const yyymmdd = `${currentDate.getUTCFullYear()}-${month}-${day}`;
+        currentDate = `${yyymmdd} 00:00:00`;
+        const filter = today
+            ? {
+                  userId,
+                  createdAt: {
+                      gt: new Date(currentDate),
+                  },
+              }
+            : {
+                  userId,
+              };
+        return this.prismaService.dailyParticipantMetric.findMany({
+            where: filter,
+            orderBy: {
+                createdAt: "asc",
+            },
+        });
     }
     public async getPreviousDayMetricsForAllCampaigns(campaignId: string[]) {
         const yesterdayDate = new Date();
