@@ -1,4 +1,12 @@
-import { Campaign, CampaignMedia, CampaignTemplate, CryptoCurrency, Participant } from "@prisma/client";
+import {
+    Campaign,
+    CampaignMedia,
+    CampaignTemplate,
+    CryptoCurrency,
+    Currency,
+    Participant,
+    Token,
+} from "@prisma/client";
 import { Get, Property, Required, Enum, Returns } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
 import { Context, QueryParams } from "@tsed/common";
@@ -8,6 +16,7 @@ import { CampaignState, CampaignStatus } from "../../util/constants";
 import { PaginatedVariablesModel, Pagination, SuccessResult } from "../../util/entities";
 import { CampaignResultModel } from "../../models/RestModels";
 import { getSymbolValueInUSD } from "../../util/exchangeRate";
+import { getCryptoAssestImageUrl } from "../../util";
 
 class ListCampaignsVariablesModel extends PaginatedVariablesModel {
     @Required() @Enum(CampaignState) public readonly state: CampaignState;
@@ -18,6 +27,7 @@ class ListCampaignsVariablesModel extends PaginatedVariablesModel {
 async function getCampaignResultModel(
     campaign: Campaign & {
         participant: Participant[];
+        currency: (Currency & { token: Token | null }) | null;
         crypto_currency: CryptoCurrency | null;
         campaign_media: CampaignMedia[];
         campaign_template: CampaignTemplate[];
@@ -29,6 +39,12 @@ async function getCampaignResultModel(
         result.coiinTotalUSD = value.toFixed(2);
     } else {
         result.coiinTotalUSD = "0";
+    }
+
+    if (campaign.currency) {
+        result.network = campaign.currency.token?.network || "";
+        result.symbol = campaign.currency.token?.symbol || "";
+        result.symbolImageUrl = getCryptoAssestImageUrl(campaign.currency?.token?.symbol || "");
     }
 
     return result;
