@@ -15,7 +15,6 @@ import {
     AMOUNT_IN_POSITIVE,
     CURRENCY_NOT_FOUND,
     ESCROW_NOT_FOUND,
-    NO_TOKEN_PROVIDED,
     PARTICIPANT_NOT_FOUND,
     SOICIAL_LINKING_ERROR,
     WALLET_CURRENCY_NOT_FOUND,
@@ -400,8 +399,7 @@ export const getSocialClient = (type: string, accessToken?: string): any => {
         case "tiktok":
             return TikTokClient;
         case "facebook":
-            if (!accessToken) throw new Error(NO_TOKEN_PROVIDED);
-            return FacebookClient.getClient(accessToken);
+            return FacebookClient;
         default:
             throw new Error(SOICIAL_LINKING_ERROR);
     }

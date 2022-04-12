@@ -46,9 +46,12 @@ export class CampaignResultModel {
     @Property() public readonly suggestedPosts: string;
     @Property() public readonly keywords: string;
     @Property() public readonly suggestedTags: string;
+    @Nullable(String) public readonly cryptoId: string | null;
     @Nullable(String) public readonly type: string | null;
     @CollectionOf(CampaignMediaResultModel) public readonly campaign_media: CampaignMediaResultModel[];
     @CollectionOf(CampaignTemplateResultModel) public readonly campaign_template: CampaignTemplateResultModel[];
+
+    @Property() public coiinTotalUSD?: string;
 }
 
 export class CurrentCampaignModel {
@@ -245,3 +248,6 @@ export class DailyParticipantMetricResultModel {
 //     @Nullable(CampaignResultModel) public readonly campaign: CampaignResultModel[] | null;
 //     @Nullable(UserResultModel) public readonly user: UserResultModel[] | null;
 // }
+export class ParticipantPostsModel {
+    @Property() public readonly results: string;
+}

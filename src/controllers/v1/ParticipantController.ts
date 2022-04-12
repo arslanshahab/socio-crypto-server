@@ -5,11 +5,7 @@ import { ParticipantModel } from ".prisma/client/entities";
 import { ParticipantService } from "../../services/ParticipantService";
 import { UserService } from "../../services/UserService";
 import { Pagination, SuccessArrayResult, SuccessResult } from "../../util/entities";
-import { TwitterClient } from "../../clients/twitter";
-import { TikTokClient } from "../../clients/tiktok";
-import { FacebookClient } from "../../clients/facebook";
-import { CAMPAIGN_NOT_FOUND, PARTICIPANT_NOT_FOUND, SOICIAL_LINKING_ERROR, USER_NOT_FOUND } from "../../util/errors";
-import { BadRequest, NotFound } from "@tsed/exceptions";
+import { CAMPAIGN_NOT_FOUND, PARTICIPANT_NOT_FOUND, USER_NOT_FOUND } from "../../util/errors";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 import { formatUTCDateForComparision, getDatesBetweenDates } from "../helpers";
 import { ParticipantMetricsResultModel } from "../../models/RestModels";
@@ -18,27 +14,17 @@ import { calculateParticipantPayout, calculateTier } from "../helpers";
 import { BN, formatFloat, getCryptoAssestImageUrl } from "../../util";
 import { getSymbolValueInUSD } from "../../util/exchangeRate";
 import { Campaign, Participant } from "@prisma/client";
+import { BadRequest, NotFound } from "@tsed/exceptions";
+import { getSocialClient } from "../helpers";
+import { ParticipantPostsModel } from "../../models/RestModels";
 
 class ListParticipantVariablesModel {
     @Property() public readonly id: string;
     @Property() public readonly campaignId: string;
-    @Property() public readonly userRelated: boolean | undefined;
     @Property() public readonly skip: number;
     @Property() public readonly take: number;
+    @Property() public readonly userRelated: boolean | undefined;
 }
-
-export const getSocialClient = (type: string, accessToken?: string): any => {
-    switch (type) {
-        case "twitter":
-            return TwitterClient;
-        case "tiktok":
-            return TikTokClient;
-        case "facebook":
-            return FacebookClient;
-        default:
-            throw new Error(SOICIAL_LINKING_ERROR);
-    }
-};
 
 @Controller("/participant")
 export class ParticipantController {
@@ -61,7 +47,7 @@ export class ParticipantController {
         return new SuccessResult(participant, ParticipantModel);
     }
     @Get("/participant-posts")
-    @Returns(200, SuccessArrayResult)
+    @(Returns(200, SuccessArrayResult).Of(ParticipantPostsModel))
     public async participantPosts(@QueryParams() query: ListParticipantVariablesModel, @Context() context: Context) {
         const results = [];
         const user = await this.userService.findUserByContext(context.get("user"));
@@ -76,7 +62,7 @@ export class ParticipantController {
             const response = await client?.getPost(socialLink, post.id);
             results.push(response);
         }
-        return new SuccessArrayResult(results, Array);
+        return new SuccessArrayResult(results, ParticipantPostsModel);
     }
     @Get("/participant-by-campaign-id")
     @(Returns(200, SuccessResult).Of(ParticipantModel))
@@ -98,7 +84,7 @@ export class ParticipantController {
     ) {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
-        const [items, count] = await this.participantService.findCampaignParticipants(query, user);
+        const [items, count] = await this.participantService.findCampaignParticipants(query);
         return new SuccessResult(new Pagination(items, count, ParticipantModel), Pagination);
     }
     @Get("/participant-metrics")

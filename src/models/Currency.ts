@@ -14,6 +14,7 @@ import { Campaign } from "./Campaign";
 
 export interface NewCurrencyVars {
     id: string;
+    symbol: string;
     token: Token;
     wallet: Wallet;
     address?: string;
@@ -78,7 +79,7 @@ export class Currency extends BaseEntity {
     public static async addAccount(data: NewCurrencyVars): Promise<Currency> {
         let account = new Currency();
         account.tatumId = data.id;
-        account.symbol = data.token.symbol;
+        account.symbol = data.symbol;
         account.token = data.token;
         account.wallet = data.wallet;
         if (data.address) account.depositAddress = data.address;

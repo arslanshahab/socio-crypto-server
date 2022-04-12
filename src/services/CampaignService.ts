@@ -61,11 +61,4 @@ export class CampaignService {
             },
         });
     }
-    public async findCryptoCurrencyById(cryptoId: string) {
-        return this.prismaService.cryptoCurrency.findFirst({
-            where: {
-                id: cryptoId,
-            },
-        });
-    }
 }

@@ -23,16 +23,12 @@ export class UserService {
         data: JWTPayload,
         include?: T
     ) {
-        const { id, userId } = data;
         return this.prismaService.user.findUnique<{
             where: Prisma.UserWhereUniqueInput;
             // this type allows adding additional relations to result tpe
             include: T extends unknown[] ? Array2TrueMap<T> : T;
         }>({
-            where: {
-                ...(id && { identityId: id }),
-                ...(userId && { id: userId }),
-            },
+            where: { id: data.userId },
             include: (isArray(include)
                 ? include?.reduce((acc, relation) => ({ ...acc, [relation]: true }), {})
                 : include) as T extends unknown[] ? Array2TrueMap<T> : T,

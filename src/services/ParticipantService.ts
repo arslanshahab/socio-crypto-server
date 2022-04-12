@@ -47,7 +47,7 @@ export class ParticipantService {
             },
         });
     }
-    public async findCampaignParticipants(params: FindCampaignById, user?: User) {
+    public async findCampaignParticipants(params: FindCampaignById) {
         const { campaignId, skip, take } = params;
         return this.prismaService.$transaction([
             this.prismaService.participant.findMany({
