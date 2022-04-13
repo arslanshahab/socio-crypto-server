@@ -2,7 +2,7 @@ import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
 
 @Injectable()
-export class OrganizationService {
+export class WalletService {
     @Inject()
     private prismaService: PrismaService;
 
@@ -13,17 +13,10 @@ export class OrganizationService {
      * @param include additional relations to include with the user query
      * @returns the user object, with the requested relations included
      */
-    public async findOrganizationByCompanyName(companyName: string) {
-        return this.prismaService.org.findFirst({
+    public async findWalletByOrgId(orgId: string) {
+        return this.prismaService.wallet.findFirst({
             where: {
-                name: companyName,
-            },
-            include: {
-                wallet: {
-                    include: {
-                        wallet_currency: true,
-                    },
-                },
+                orgId,
             },
         });
     }
