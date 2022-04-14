@@ -44,6 +44,7 @@ export class CampaignService {
                     crypto_currency: true,
                     campaign_media: true,
                     campaign_template: true,
+                    currency: { include: { token: true } },
                 },
                 orderBy: { endDate: "desc" },
                 skip: params.skip,

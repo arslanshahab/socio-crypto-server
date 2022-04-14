@@ -25,7 +25,6 @@ export class CampaignResultModel {
     @Property(Date) public readonly endDate: Date;
     @Property() public readonly coiinTotal: string;
     @Property() public readonly status: string;
-    @Property() public readonly symbol: string;
     @Property() public readonly isGlobal: boolean;
     @Property() public readonly showUrl: boolean;
     @Property() public readonly totalParticipationScore: string;
@@ -49,6 +48,11 @@ export class CampaignResultModel {
     @Nullable(String) public readonly type: string | null;
     @CollectionOf(CampaignMediaResultModel) public readonly campaign_media: CampaignMediaResultModel[];
     @CollectionOf(CampaignTemplateResultModel) public readonly campaign_template: CampaignTemplateResultModel[];
+
+    @Property() public coiinTotalUSD?: string;
+    @Property() public network?: string;
+    @Property() public symbol?: string;
+    @Property() public symbolImageUrl?: string;
 }
 
 export class NotificationSettingsResultModel {
