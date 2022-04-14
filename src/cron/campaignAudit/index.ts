@@ -1,15 +1,26 @@
+console.log("IMPORT #1");
 import { Secrets } from "../../util/secrets";
+console.log("IMPORT #2");
 import { Application } from "../../app";
+console.log("IMPORT #3");
 import * as dotenv from "dotenv";
+console.log("IMPORT #4");
 import { Campaign } from "../../models/Campaign";
+console.log("IMPORT #5");
 import { LessThan, EntityManager } from "typeorm";
+console.log("IMPORT #6");
 import { initDateFromParams } from "../../util/date";
+console.log("IMPORT #7");
 import { DateUtils } from "typeorm/util/DateUtils";
+console.log("IMPORT #8");
 import { payoutCryptoCampaignRewards, payoutRaffleCampaignRewards } from "./auditFunctions";
+console.log("IMPORT #9");
 import { Firebase } from "../../clients/firebase";
+console.log("IMPORT #10");
 
 dotenv.config();
 const app = new Application();
+console.log("APP instance created.");
 
 (async () => {
     console.log("Starting campaign audit.");
