@@ -12,7 +12,7 @@ export class HttpExceptionFilter implements ExceptionFilterMethods {
         const error = this.mapError(exception);
         const headers = this.getHeaders(exception);
 
-        logger.error({ error });
+        logger.error({ exception });
 
         response.setHeaders(headers).status(error.status).body(error);
     }
