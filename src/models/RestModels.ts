@@ -235,21 +235,17 @@ export class DailyParticipantMetricResultModel {
     @Nullable(String) public readonly userId: string | null;
     @Nullable(String) public readonly campaignId: string | null;
 }
-// export class ParticipantModel {
-//     @Property() public readonly id: string;
-//     @Property() public readonly clickCount: number;
-//     @Property() public readonly campaignId: string;
-//     @Property() public readonly viewCount: number;
-//     @Property() public readonly submissionCount: number;
-//     @Property() public readonly participationScore: string;
-//     @Nullable(String) public readonly link: string | null;
-//     @Property() public readonly createdAt: Date;
-//     @Property() public readonly updatedAt: Date;
-//     @Property() public readonly userId: string;
-//     @Nullable(String) public readonly email: string | null;
-//     @Nullable(CampaignResultModel) public readonly campaign: CampaignResultModel[] | null;
-//     @Nullable(UserResultModel) public readonly user: UserResultModel[] | null;
-// }
 export class ParticipantPostsModel {
     @Property() public readonly results: string;
+}
+export class MediaUrlsModel {
+    @Property() public readonly name: string;
+    @Nullable(String) public readonly channel: string|null;
+    @Property() public readonly signedUrl: string;
+}
+export class CreateCampaignResultModel {
+    @Property() public readonly campaignId: string;
+    @Property() public readonly campaignImageSignedURL: string;
+    @Property() public readonly raffleImageSignedURL: string;
+    @CollectionOf(MediaUrlsModel) public readonly mediaUrls: Partial<MediaUrlsModel>[];
 }

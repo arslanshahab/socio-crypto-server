@@ -77,4 +77,33 @@ export class UserService {
         if (role === "manager" && !company) throw new Forbidden("Forbidden, company not specified");
         return { role, company };
     }
+
+    public async getAllDeviceTokens(action?: "campaignCreate" | "campaignUpdates") {
+        const campaignType = action === "campaignCreate" ? { campaignCreate: true } : { campaignUpdates: true };
+        const response = await this.prismaService.user.findMany({
+            select: {
+                profile: {
+                    select: { deviceToken: true },
+                },
+            },
+            where: {
+                profile: {
+                    AND: [
+                        {
+                            deviceToken: { not: null },
+                        },
+                        {
+                            deviceToken: { not: undefined },
+                        },
+                        {
+                            deviceToken: { not: "" },
+                        },
+                    ],
+                },
+                notification_settings: campaignType,
+            },
+        });
+        const result = response.map((x) => x.profile?.deviceToken);
+        return result;
+    }
 }

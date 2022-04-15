@@ -2,6 +2,7 @@ import express, { Request } from "express";
 import { BigNumber } from "bignumber.js";
 import { Stripe } from "stripe";
 import { CampaignState, CampaignStatus } from "./util/constants";
+import { CampaignMedia, CampaignTemplate, RafflePrize } from "@prisma/client";
 
 interface JWTPayload {
     email: string;
@@ -385,7 +386,13 @@ export interface SocialLinkVariables {
 }
 export interface AlgorithmJsonValueType {
     tiers: { [key: string]: { threshold: string; totalCoiins: string } };
-    pointValues: JSON;
+    pointValues: {
+        clicks: string;
+        views: string;
+        submissions: string;
+        likes: string;
+        shares: string;
+    };
 }
 
 export interface GetCampaignsParticipantsVariables {
@@ -482,4 +489,60 @@ interface SocialPostVariablesType {
     createdAt: Date;
     updatedAt: Date;
     userId: string;
+}
+
+export interface CampaignMediaVariableTypes {
+    channel: string;
+    media: string;
+    mediaFormat: string;
+    isDefault: boolean;
+}
+
+export interface CampaignRequirementTypes {
+    version: string;
+    location: {
+        city: string;
+        country: string;
+    }[];
+    values: string[];
+    ageRange: {
+        [key: string]: boolean;
+    };
+    interests: string[];
+    email: boolean;
+    socialFollowing: {
+        [key: string]: { minFollower: number };
+    };
+}
+// export interface CampaignTemplateTypes {
+//     channel: string;
+//     post: string;
+// }
+export interface CampaignCreateTypes {
+    name: string;
+    beginDate: Date;
+    endDate: Date;
+    coiinTotal: string;
+    target: string;
+    description: string;
+    instructions: string;
+    algorithm: AlgorithmJsonValueType;
+    targetVideo: string;
+    imagePath: string;
+    tagline: string;
+    requirements: CampaignRequirementTypes;
+    suggestedPosts: string[];
+    suggestedTags: string[];
+    keywords: string[];
+    type: string;
+    raffle_prize: RafflePrize;
+    symbol: string;
+    network: string;
+    campaignType: string;
+    socialMediaType: string[];
+    campaignMedia: CampaignMedia[];
+    campaignTemplates: CampaignTemplate;
+    isGlobal: boolean;
+    showUrl: boolean;
+    company: string;
 }

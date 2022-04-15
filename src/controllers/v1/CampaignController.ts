@@ -23,26 +23,34 @@ import {
     COMPANY_NOT_SPECIFIED,
     ERROR_CALCULATING_TIER,
     ORG_NOT_FOUND,
+    RAFFLE_PRIZE_MISSING,
     USER_NOT_FOUND,
     WALLET_NOT_FOUND,
 } from "../../util/errors";
 import { PaginatedVariablesModel, Pagination, SuccessResult } from "../../util/entities";
-import { CampaignMetricsResultModel, CampaignResultModel, CurrentCampaignModel } from "../../models/RestModels";
+import {
+    CampaignMetricsResultModel,
+    CampaignResultModel,
+    CreateCampaignResultModel,
+    CurrentCampaignModel,
+    MediaUrlsModel,
+} from "../../models/RestModels";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { ParticipantService } from "../../services/ParticipantService";
 import { SocialPostService } from "../../services/SocialPostService";
 import { CryptoCurrencyService } from "../../services/CryptoCurrencyService";
 import { getSymbolValueInUSD } from "../../util/exchangeRate";
 import { getCryptoAssestImageUrl } from "../../util";
-import { Tiers } from "../../types";
+import { CampaignCreateTypes, Tiers } from "../../types";
 import { addYears } from "date-fns";
 import { Validator } from "../../schemas";
 import { OrganizationService } from "../../services/OrganizationService";
 import { WalletService } from "../../services/WalletService";
 import { TatumClient } from "../../clients/tatumClient";
-// import { S3Client } from "../../clients/s3";
-// import { User } from "../../models/User";
-// import { Firebase } from "../../clients/firebase";
+import { S3Client } from "../../clients/s3";
+import { User } from "../../models/User";
+import { Firebase } from "../../clients/firebase";
+import { RafflePrizeService } from "../../services/RafflePrizeService";
 
 const validator = new Validator();
 
@@ -96,6 +104,8 @@ export class CampaignController {
     private organizationService: OrganizationService;
     @Inject()
     private walletService: WalletService;
+    @Inject()
+    private rafflePrizeService: RafflePrizeService;
     @Inject()
     private userService: UserService;
 
@@ -173,8 +183,8 @@ export class CampaignController {
     }
 
     @Post("/create-campaign")
-    @(Returns(200, SuccessResult).Of(CampaignResultModel))
-    public async createCampaign(@BodyParams() body: Campaign | any, @Context() context: Context) {
+    @(Returns(200, SuccessResult).Of(CreateCampaignResultModel))
+    public async createCampaign(@BodyParams() body: CampaignCreateTypes, @Context() context: Context) {
         const { role, company = "raiinmaker" } = this.userService.checkPermissions(
             { hasRole: ["admin", "manager"] },
             context.get("user")
@@ -197,7 +207,7 @@ export class CampaignController {
             suggestedTags,
             keywords,
             type = "crypto",
-            // raffle_prize,
+            raffle_prize,
             symbol,
             network,
             campaignType,
@@ -213,17 +223,17 @@ export class CampaignController {
                 throw new BadRequest("Global campaign already exists");
             endDate = addYears(new Date(endDate), 100);
         }
-        validator.validateAlgorithmCreateSchema(algorithm as Prisma.JsonObject);
-        if (!!requirements) validator.validateCampaignRequirementsSchema(requirements as Prisma.JsonObject);
-        // if (type === "raffle") {
-        //     if (!raffle_prize) throw new BadRequest(RAFFLE_PRIZE_MISSING);
-        //     validator.validateRafflePrizeSchema(raffle_prize);
-        // }
+        validator.validateAlgorithmCreateSchema(algorithm);
+        if (!!requirements) validator.validateCampaignRequirementsSchema(requirements);
+        if (type === "raffle") {
+            if (!raffle_prize) throw new BadRequest(RAFFLE_PRIZE_MISSING);
+            validator.validateRafflePrizeSchema(raffle_prize);
+        }
         if (role === "admin" && !body.company) throw new Error(COMPANY_NOT_SPECIFIED);
         const campaignCompany = role === "admin" ? body.company : company;
         const org = await this.organizationService.findOrganizationByCompanyName(company);
         if (!org) throw new NotFound(ORG_NOT_FOUND);
-        const wallet = await this.walletService.findWalletByOrgId(org.id);
+        const wallet:any = await this.walletService.findWalletByOrgId(org.id);
         if (!wallet) throw new NotFound(WALLET_NOT_FOUND);
         let currency;
         if (type === "crypto") {
@@ -231,7 +241,6 @@ export class CampaignController {
         }
         const existingCampaign = await this.campaignService.findCampaingByName(name);
         if (existingCampaign) throw new BadRequest(CAMPAIGN_NAME_EXISTS);
-
         const campaign = await this.campaignService.createCampaign(
             name,
             beginDate,
@@ -260,36 +269,47 @@ export class CampaignController {
             campaignMedia,
             campaignTemplates
         );
-        console.log("campaign................................/", campaign);
-
-        // let campaignImageSignedURL = "";
-        // // let raffleImageSignedURL = "";
-        // let mediaUrls: any = [];
-        // if (imagePath) {
-        //     campaignImageSignedURL = await S3Client.generateCampaignSignedURL(`campaign/${campaign?.id}/${imagePath}`);
-        // }
-        // //! Raffer prize code ---
-        // if (campaignMedia.length) {
-        //     campaignMedia.forEach(async (item: any) => {
-        //         if (item.media && item.mediaFormat) {
-        //             let urlObject = { name: "", channel: "", signedUrl: "" };
-        //             urlObject.signedUrl = await S3Client.generateCampaignSignedURL(
-        //                 `campaign/${campaign.id}/${item.media}`
-        //             );
-        //             urlObject.name = item.media;
-        //             urlObject.channel = item.channel;
-        //             mediaUrls.push(urlObject);
-        //         }
-        //     });
-        // }
-        // const deviceTokens = await User.getAllDeviceTokens("campaignCreate");
-        // if (deviceTokens.length > 0) await Firebase.sendCampaignCreatedNotifications(deviceTokens, campaign);
-        // let result = {
-        //     campaignId: campaign.id,
-        //     campaignImageSignedURL: campaignImageSignedURL,
-        //     // raffleImageSignedURL: raffleImageSignedURL,
-        //     mediaUrls: mediaUrls,
-        // };
-        // console.log("result.......................", result);
+        let campaignImageSignedURL = "";
+        let raffleImageSignedURL = "";
+        let mediaUrls: MediaUrlsModel[] = [];
+        if (imagePath) {
+            campaignImageSignedURL = await S3Client.generateCampaignSignedURL(`campaign/${campaign?.id}/${imagePath}`);
+        }
+        if (type === "raffle") {
+            const prize = await this.rafflePrizeService.createRafflePrize(campaign, raffle_prize);
+            if (raffle_prize.image) {
+                raffleImageSignedURL = await S3Client.generateCampaignSignedURL(
+                    `rafflePrize/${campaign.id}/${prize.id}`
+                );
+            }
+        }
+        campaignMedia;
+        if (campaignMedia.length) {
+            campaignMedia.forEach(async (item: CampaignMedia) => {
+                if (item.media && item.mediaFormat) {
+                    let urlObject: {
+                        name: string;
+                        channel: string | null;
+                        signedUrl: string;
+                    } = { name: "", channel: "", signedUrl: "" };
+                    urlObject.signedUrl = await S3Client.generateCampaignSignedURL(
+                        `campaign/${campaign.id}/${item.media}`
+                    );
+                    urlObject.name = item.media;
+                    urlObject.channel = item.channel;
+                    mediaUrls.push(urlObject);
+                }
+            });
+        }
+        // const deviceTokens = await this.userService.getAllDeviceTokens("campaignCreate");
+        const deviceTokens = await User.getAllDeviceTokens("campaignCreate");
+        if (deviceTokens.length > 0) await Firebase.sendCampaignCreatedNotifications(deviceTokens, campaign);
+        const result = {
+            campaignId: campaign.id,
+            campaignImageSignedURL: campaignImageSignedURL,
+            raffleImageSignedURL: raffleImageSignedURL,
+            mediaUrls: mediaUrls,
+        };
+        return new SuccessResult(result, CreateCampaignResultModel);
     }
 }

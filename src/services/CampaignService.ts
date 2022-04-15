@@ -105,15 +105,14 @@ export class CampaignService {
         targetVideo: string,
         org: any,
         currency: Currency | any,
-        campaignMedia: CampaignMedia,
+        campaignMedia: CampaignMedia[],
         campaignTemplates: CampaignTemplate
     ) {
-        console.log("campaign media............................../", campaignMedia);
-
-        let response = await this.prismaService.campaign.create({
-            include: {
-                campaign_media: true,
-            },
+        const response = await this.prismaService.campaign.create({
+            // include: {
+            //     campaign_media: true,
+            //     campaign_template: true,
+            // },
             data: {
                 name: name,
                 beginDate: new Date(beginDate),

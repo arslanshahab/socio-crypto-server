@@ -20,4 +20,15 @@ export class WalletService {
             },
         });
     }
+    public async findWalletById(id: string) {
+        return this.prismaService.wallet.findFirst({
+            where: {
+                id,
+            },
+            include: {
+                user: true,
+                org: true,
+            },
+        });
+    }
 }
