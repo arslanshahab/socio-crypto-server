@@ -163,7 +163,7 @@ const ifUserCanRedeem = async (user: User, totalCoiinSpent: number) => {
     const currentSpendingInUSD = await getSymbolValueInUSD("COIIN", totalCoiinSpent);
     if (
         parseFloat(previousStoreSpendingInUSD) + currentSpendingInUSD > AMOUNT_LIMIT_FOR_KYC_IN_XOXODAY &&
-        user.kycStatus !== "APPROVED"
+        !(await user.hasKycApproved())
     )
         throw new Error("You need to get your KYC approved before you can redeem vouchers.");
     const twitterAccount = user.socialLinks.find((item) => item.type === "twitter");
