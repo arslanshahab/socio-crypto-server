@@ -192,7 +192,7 @@ export const generateFactors = async (parent: any, args: { factors: FactorGenera
     if (!factors) throw new Error("must provide factor association IDs");
     const user = await User.findUserByContext(context.user);
     if (!user) throw new Error("user not found");
-    if (user.kycStatus !== "APPROVED") throw new Error("you can only generate factors with an approved KYC");
+    if (!(await user.hasKycApproved())) throw new Error("you can only generate factors with an approved KYC");
     const kycData = await S3Client.getUserObject(user.id);
     return createFactorsFromKycData(kycData, factors);
 };
