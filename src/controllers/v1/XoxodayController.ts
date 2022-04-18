@@ -9,9 +9,10 @@ import { USER_NOT_FOUND, MISSING_PARAMS } from "../../util/errors";
 import { supportedCountries } from "../../util";
 import { Xoxoday } from "../../clients/xoxoday";
 import { RedemptionRequirementsModel, XoxodayVoucherResultModel } from "../../models/RestModels";
-import { getSocialClient, prepareVouchersList } from "../helpers";
+import { prepareVouchersList } from "../helpers";
 import { ParticipantService } from "../../services/ParticipantService";
 import { SocialClientType } from "../../util/constants";
+import { TwitterClient } from "../../clients/twitter";
 
 const userResultRelations = ["social_link" as const];
 class ListXoxoVariablesModel {
@@ -55,9 +56,8 @@ export class XoxodayController {
         if (!user) throw new BadRequest(USER_NOT_FOUND);
         const recentOrder = await this.xoxodayService.getLast24HourRedemption("XOXODAY_REDEMPTION");
         const twitterAccount = user.social_link.find((item) => item.type === TWITTER);
-        const socialClient = getSocialClient(TWITTER);        
         const twitterFollowers = twitterAccount
-            ? await socialClient.getTotalFollowersV1(twitterAccount, twitterAccount.id)
+            ? await TwitterClient.getTotalFollowersV1(twitterAccount, twitterAccount.id)
             : 0;
         const participants = await this.participantService.findParticipantsCountByUserId(user.id);
         const result = {
