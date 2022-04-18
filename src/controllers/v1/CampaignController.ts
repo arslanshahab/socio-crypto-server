@@ -5,6 +5,7 @@ import {
     CryptoCurrency,
     Currency,
     Participant,
+    Prisma,
     Token,
 } from "@prisma/client";
 import { Get, Property, Required, Enum, Returns } from "@tsed/schema";
@@ -25,6 +26,7 @@ import { SocialPostService } from "../../services/SocialPostService";
 import { CryptoCurrencyService } from "../../services/CryptoCurrencyService";
 import { getSymbolValueInUSD } from "../../util/exchangeRate";
 import { getCryptoAssestImageUrl } from "../../util";
+import { Tiers } from "../../types";
 
 class ListCampaignsVariablesModel extends PaginatedVariablesModel {
     @Required() @Enum(CampaignState) public readonly state: CampaignState;
@@ -91,7 +93,7 @@ export class CampaignController {
     ) {
         let { campaignId } = query;
         let currentTierSummary;
-        let currentCampaign: any;
+        let currentCampaign: Campaign | null;
         let cryptoPriceUsd;
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
@@ -101,7 +103,7 @@ export class CampaignController {
             if (currentCampaign.type == "raffle") return { currentTier: -1, currentTotal: 0 };
             currentTierSummary = calculateTier(
                 new BN(currentCampaign.totalParticipationScore),
-                currentCampaign?.algorithm?.tiers
+                (currentCampaign.algorithm as Prisma.JsonObject).tiers as Prisma.JsonObject as unknown as Tiers
             );
             if (currentCampaign.cryptoId) {
                 const cryptoCurrency = await this.cryptoCurrencyService.findCryptoCurrencyById(

@@ -2,6 +2,7 @@ import express, { Request } from "express";
 import { BigNumber } from "bignumber.js";
 import { Stripe } from "stripe";
 import { CampaignState, CampaignStatus } from "./util/constants";
+import { CampaignMedia, CampaignTemplate, RafflePrize, Participant, Profile, User, Campaign } from "@prisma/client";
 
 interface JWTPayload {
     email: string;
@@ -385,7 +386,13 @@ export interface SocialLinkVariables {
 }
 export interface AlgorithmJsonValueType {
     tiers: { [key: string]: { threshold: string; totalCoiins: string } };
-    pointValues: JSON;
+    pointValues: {
+        clicks: number;
+        views: number;
+        submissions: number;
+        likes: number;
+        shares: number;
+    };
 }
 
 export interface GetCampaignsParticipantsVariables {
@@ -482,4 +489,12 @@ interface SocialPostVariablesType {
     createdAt: Date;
     updatedAt: Date;
     userId: string;
+}
+
+export interface PointValueTypes {
+    clicks: number;
+    views: number;
+    submissions: number;
+    likes: number;
+    shares: number;
 }

@@ -13,10 +13,11 @@ import { CampaignService } from "../../services/CampaignService";
 import { calculateParticipantPayout, calculateTier } from "../helpers";
 import { BN, formatFloat, getCryptoAssestImageUrl } from "../../util";
 import { getSymbolValueInUSD } from "../../util/exchangeRate";
-import { Campaign, Participant } from "@prisma/client";
+import { Campaign, Participant, Prisma } from "@prisma/client";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { getSocialClient } from "../helpers";
 import { ParticipantPostsModel } from "../../models/RestModels";
+import { Tiers } from "../../types";
 
 class ListParticipantVariablesModel {
     @Property() public readonly id: string;
@@ -131,12 +132,15 @@ export class ParticipantController {
         const { campaignId } = query;
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
-        const campaign: Campaign | any = await this.campaignService.findCampaignById(campaignId);
+        const campaign: Campaign | null = await this.campaignService.findCampaignById(campaignId);
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
-        const participant: Participant | any = await this.participantService.findParticipantByCampaignId(query, user);
+        const participant: Participant | null = await this.participantService.findParticipantByCampaignId(query, user);
         if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
         const { _sum } = await this.dailyParticipantMetricService.getAccumulatedParticipantMetrics(participant.id);
-        const { currentTotal } = calculateTier(new BN(campaign.totalParticipationScore), campaign.algorithm.tiers);
+        const { currentTotal } = calculateTier(
+            new BN(campaign.totalParticipationScore),
+            (campaign.algorithm as Prisma.JsonObject).tiers as Prisma.JsonObject as unknown as Tiers
+        );
         const participantShare = await calculateParticipantPayout(new BN(currentTotal), campaign, participant);
         const result = {
             clickCount: _sum?.clickCount || 0,
@@ -174,11 +178,11 @@ export class ParticipantController {
         if (ids.length) {
             counts = await this.dailyParticipantMetricService.getAccumulatedMetricsByParticipantIds(ids);
             for (let index = 0; index < participations.length; index++) {
-                const campaign: Campaign | any = participations[index].campaign;
-                const participant: ParticipantModel | any = participations[index];
+                const campaign: Campaign = participations[index].campaign;
+                const participant: Participant = participations[index];
                 const { currentTotal } = calculateTier(
                     new BN(campaign.totalParticipationScore),
-                    campaign.algorithm.tiers
+                    (campaign.algorithm as Prisma.JsonObject).tiers as Prisma.JsonObject as unknown as Tiers
                 );
                 const share = await calculateParticipantPayout(new BN(currentTotal), campaign, participant);
                 const usdValue = await getSymbolValueInUSD(campaign.symbol, parseFloat(share.toString() || "0"));

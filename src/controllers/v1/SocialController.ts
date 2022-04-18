@@ -9,6 +9,8 @@ import { ParticipantService } from "../../services/ParticipantService";
 import { SocialPostService } from "../../services/SocialPostService";
 import { calculateParticipantSocialScoreV2 } from "../helpers";
 import { SocialMetricsResultModel } from "../../models/RestModels";
+import { Campaign, Participant, Prisma, Profile, User } from "@prisma/client";
+import { PointValueTypes } from "../../types";
 
 class ListSocialVariablesModel {
     @Property() public readonly id: string;
@@ -29,10 +31,15 @@ export class SocialController {
     public async getSocialMetrics(@QueryParams() query: ListSocialVariablesModel, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
-        const participant = await this.participantService.findParticipantById(query, user);
+        const participant: (Participant & { user: User & { profile: Profile | null }; campaign: Campaign }) | null =
+            await this.participantService.findParticipantById(query, user);
         if (!participant) throw new Error(PARTICIPANT_NOT_FOUND);
         const socialPost = await this.socialPostService.findSocialPostByParticipantId(participant.id);
-        const metrics = await calculateParticipantSocialScoreV2(socialPost, participant.campaign);
+        const metrics = await calculateParticipantSocialScoreV2(
+            socialPost,
+            (participant.campaign.algorithm as Prisma.JsonObject)
+                .pointValues as Prisma.JsonObject as unknown as PointValueTypes
+        );
         const result = {
             totalLikes: metrics.totalLikes,
             totalShares: metrics.totalShares,

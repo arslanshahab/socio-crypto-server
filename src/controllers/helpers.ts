@@ -1,5 +1,12 @@
 import { SocialPost } from "../models/SocialPost";
-import { Tiers, AggregateDailyMetrics, VouchersListVariables, XoxodayVoucher, SocialPostVariablesType } from "../types";
+import {
+    Tiers,
+    AggregateDailyMetrics,
+    VouchersListVariables,
+    XoxodayVoucher,
+    SocialPostVariablesType,
+    PointValueTypes,
+} from "../types";
 import { Participant } from "../models/Participant";
 import { Campaign } from "../models/Campaign";
 import { getConnection } from "typeorm";
@@ -24,7 +31,7 @@ import { getExchangeRateForCurrency } from "../util/exchangeRate";
 import { TwitterClient } from "../clients/twitter";
 import { TikTokClient } from "../clients/tiktok";
 import { FacebookClient } from "../clients/facebook";
-import { Campaign as Campaign2 } from "@prisma/client";
+import { Campaign as PrismaCampaign, Participant as PrismaParticipant } from "@prisma/client";
 
 export const feeMultiplier = () => new BN(1).minus(FEE_RATE);
 
@@ -99,7 +106,7 @@ export const calculateParticipantSocialScore = async (participant: Participant, 
 };
 export const calculateParticipantSocialScoreV2 = async (
     socialPosts: SocialPostVariablesType[],
-    campaign: Campaign2 | any
+    pointValues: PointValueTypes
 ) => {
     let totalLikes = 0;
     let totalShares = 0;
@@ -110,8 +117,8 @@ export const calculateParticipantSocialScoreV2 = async (
     return {
         totalLikes,
         totalShares,
-        likesScore: totalLikes * campaign.algorithm.pointValues.likes,
-        shareScore: totalShares * campaign.algorithm.pointValues.shares,
+        likesScore: totalLikes * pointValues.likes,
+        shareScore: totalShares * pointValues.shares,
     };
 };
 
@@ -149,8 +156,8 @@ export const calculateTier = (totalParticipation: BigNumber, tiers: Tiers) => {
 
 export const calculateParticipantPayout = async (
     currentCampaignTierTotal: BigNumber,
-    campaign: Campaign,
-    participant: Participant
+    campaign: Campaign | PrismaCampaign,
+    participant: Participant | PrismaParticipant
 ) => {
     if (typeof campaign.totalParticipationScore === "string")
         campaign.totalParticipationScore = new BN(campaign.totalParticipationScore);

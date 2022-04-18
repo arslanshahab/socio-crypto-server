@@ -15,9 +15,6 @@ import {
 } from "../../models/RestModels";
 import { NotificationService } from "../../services/NotificationService";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
-import { ParticipantService } from "../../services/ParticipantService";
-// import { groupDailyMetricsByUserV1 } from "../helpers";
-// import { groupDailyMetricsByUser } from "../helpers";
 
 const userResultRelations = [
     "profile" as const,
@@ -54,7 +51,6 @@ class BalanceResultModel {
 }
 class UserQueryVariables {
     @Property() public readonly today: boolean;
-    // @Property() public readonly userRelated: boolean;
 }
 
 @Controller("/user")
@@ -63,8 +59,6 @@ export class UserController {
     private userService: UserService;
     @Inject()
     private dailyParticipantMetricService: DailyParticipantMetricService;
-    @Inject()
-    private participantService: ParticipantService;
     @Inject()
     private notificationService: NotificationService;
 
@@ -151,6 +145,7 @@ export class UserController {
         if (!settings) throw new NotFound(NOTIFICATION_SETTING_NOT_FOUND);
         return new SuccessResult(settings, NotificationSettingsResultModel);
     }
+    
     @Get("/user-metrics")
     @(Returns(200, SuccessResult).Of(DailyParticipantMetricResultModel))
     public async getUserMetrics(@QueryParams() query: UserQueryVariables, @Context() context: Context) {
@@ -159,27 +154,5 @@ export class UserController {
         if (!user) throw new BadRequest(USER_NOT_FOUND);
         const result = await this.dailyParticipantMetricService.getSortedByUserId(user.id, today);
         return new SuccessResult(new Pagination(result, result.length, DailyParticipantMetricResultModel), Pagination);
-    }
-    @Get("/previous-day-metrics")
-    @(Returns(200, SuccessResult).Of(UserResultModel))
-    public async getPreviousDayMetrics(@Context() context: Context) {
-        // let metrics: { [key: string]: any } |any= {};
-        const user = await this.userService.findUserByContext(context.get("user"));
-        if (!user) throw new BadRequest(USER_NOT_FOUND);
-        const campaigns = await this.participantService.findCampaignByUserId(user.id);
-        if (campaigns.length > 0) {
-            const allParticipatingCampaigns = campaigns.map((participant) => participant.campaign.id);
-            
-            const allDailyMetrics =
-                allParticipatingCampaigns.length > 0
-                    ? await this.dailyParticipantMetricService.getPreviousDayMetricsForAllCampaigns(
-                          allParticipatingCampaigns
-                      )
-                    : [];
-            console.log("allParticipatingCampaigns-------------------------------------11",allDailyMetrics);
-
-            // metrics = await groupDailyMetricsByUserV1(user.id, allDailyMetrics);
-            // console.log( metrics);
-        }
     }
 }
