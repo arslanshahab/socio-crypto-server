@@ -53,4 +53,13 @@ export class CampaignService {
             this.prismaService.campaign.count({ where }),
         ]);
     }
+    public async findCampaignById(campaignId: string) {
+        return this.prismaService.campaign.findFirst({
+            where: {
+                id: {
+                    equals: campaignId,
+                },
+            },
+        });
+    }
 }
