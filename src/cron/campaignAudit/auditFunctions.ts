@@ -88,6 +88,7 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
             if (participantShare.isGreaterThan(0)) {
                 usersRewards[userData.id] = participantShare;
             }
+            console.log("REWARD CALCULATED FRO USER --- ", userData.id, participant.id, participantShare.toString());
         }
 
         if (!campaign.tatumBlockageId) throw new Error(`No blockage Id found for campaign--- ${campaign.id}`);

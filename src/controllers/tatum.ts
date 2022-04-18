@@ -16,6 +16,7 @@ import { createSubscriptionUrl } from "../util/tatumHelper";
 import { getSymbolValueInUSD } from "../util/exchangeRate";
 import { errorMap, GLOBAL_WITHDRAW_LIMIT } from "../util/errors";
 import { Firebase } from "../clients/firebase";
+import { CustodialAddress } from "../models/CustodialAddress";
 
 export const initWallet = asyncHandler(async (req: Request, res: Response) => {
     try {
@@ -40,10 +41,10 @@ export const initWallet = asyncHandler(async (req: Request, res: Response) => {
 
 export const saveWallet = asyncHandler(async (req: Request, res: Response) => {
     try {
-        let { mnemonic, secret, privateKey, xpub, address, currency, token } = req.body;
+        let { mnemonic, secret, privateKey, xpub, address, currency, network, token } = req.body;
         if (!token || token !== process.env.RAIINMAKER_DEV_TOKEN) throw new Error("Invalid Token");
         currency = currency.toUpperCase();
-        if (await TatumClient.ifWalletExists(currency))
+        if (await TatumClient.ifWalletExists({ symbol: currency, network }))
             throw new Error(`Wallet already exists for currency: ${currency}`);
         const wallet = await TatumWallet.addTatumWallet({ xpub, address, currency });
         await S3Client.setTatumWalletKeys(currency, {
@@ -72,6 +73,17 @@ export const getAccountTransactions = asyncHandler(async (req: Request, res: Res
             offset
         );
         res.status(200).json(transactions);
+    } catch (error) {
+        res.status(200).json(error.message);
+    }
+});
+
+export const getAccountDetails = asyncHandler(async (req: Request, res: Response) => {
+    try {
+        const { accountId, token } = req.body;
+        if (!token || token !== process.env.RAIINMAKER_DEV_TOKEN) throw new Error("Invalid Token");
+        const details = await TatumClient.getAccountDetails(accountId);
+        res.status(200).json(details);
     } catch (error) {
         res.status(200).json(error.message);
     }
@@ -211,13 +223,21 @@ export const getCoiinAddressForUser = async (parent: any, args: any, context: { 
         });
         if (!currency) throw new Error("Currency not found for user.");
         if (!currency.depositAddress) {
-            const newDepositAddress = await TatumClient.generateCustodialAddress({ symbol: COIIN, network: BSC });
-            await TatumClient.assignAddressToAccount({ accountId: currency.tatumId, address: newDepositAddress });
+            const availableAddress = await CustodialAddress.getAvailableAddress({
+                symbol: COIIN,
+                network: BSC,
+                wallet: user.wallet,
+            });
+            if (!availableAddress) throw new Error("No custodial address available.");
+            await TatumClient.assignAddressToAccount({
+                accountId: currency.tatumId,
+                address: availableAddress.address,
+            });
             await TatumClient.createAccountIncomingSubscription({
                 accountId: currency.tatumId,
                 url: createSubscriptionUrl({ userId: user.id, accountId: currency.tatumId }),
             });
-            currency = await currency.updateDepositAddress(newDepositAddress);
+            currency = await currency.updateDepositAddress(availableAddress.address);
         }
         return {
             symbol: COIIN,
@@ -237,7 +257,7 @@ export const withdrawFunds = async (
     try {
         const user = await User.findUserByContext(context.user, ["wallet"]);
         if (!user) throw new Error("User not found");
-        if (user.kycStatus !== "APPROVED")
+        if (!(await user.hasKycApproved()))
             throw new Error("You need to get your KYC approved before you can withdraw.");
         let { symbol, network, address, amount, verificationToken } = args;
         if (symbol.toUpperCase() === COIIN)

@@ -133,7 +133,7 @@ export const typeDefs = gql`
         addCryptoToWallet(contractAddress: String!): WalletCurrency
         deleteCryptoFromWallet(id: String!): String
         removePaymentMethod(paymentMethodId: String): Boolean
-        placeStoreOrder(cart: [JSON], email: String): SuccessResponse
+        placeStoreOrder(cart: [JSON], email: String): Boolean
         withdrawFunds(
             symbol: String!
             network: String!

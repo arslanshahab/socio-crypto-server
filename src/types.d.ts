@@ -376,7 +376,7 @@ export interface SocialLinkVariables {
     createdAt: Date;
     updatedAt: Date;
     userId: string;
-    followerCount: number;
+    followerCount: number | null;
     accessToken: string | null;
     refreshToken: string | null;
     openId: string | null;

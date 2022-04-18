@@ -205,6 +205,11 @@ export class User extends BaseEntity {
         return returnedUser;
     }
 
+    public async hasKycApproved(): Promise<boolean> {
+        const va = await VerificationApplication.findOne({ where: { user: this } });
+        return !va || va.status !== "APPROVED" ? false : true;
+    }
+
     public async updateCoiinBalance(operation: "ADD" | "SUBTRACT", amount: number): Promise<any> {
         const user = this;
         const wallet = await Wallet.findOne({ where: { user } });
