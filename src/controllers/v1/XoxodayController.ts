@@ -11,6 +11,7 @@ import { Xoxoday } from "../../clients/xoxoday";
 import { RedemptionRequirementsModel, XoxodayVoucherResultModel } from "../../models/RestModels";
 import { getSocialClient, prepareVouchersList } from "../helpers";
 import { ParticipantService } from "../../services/ParticipantService";
+import { SocialClientType } from "../../util/constants";
 
 const userResultRelations = ["social_link" as const];
 class ListXoxoVariablesModel {
@@ -20,7 +21,7 @@ class ListXoxoVariablesModel {
 }
 
 @Controller("/xoxoday")
-export class ParticipantController {
+export class XoxodayController {
     @Inject()
     private xoxodayService: XoxodayService;
     @Inject()
@@ -49,11 +50,12 @@ export class ParticipantController {
     @Get("/redemption-requirements")
     @(Returns(200, SuccessResult).Of(RedemptionRequirementsModel))
     public async getRedemptionRequirements(@Context() context: Context) {
+        const { TWITTER } = SocialClientType;
         const user = await this.userService.findUserByContext(context.get("user"), userResultRelations);
         if (!user) throw new BadRequest(USER_NOT_FOUND);
         const recentOrder = await this.xoxodayService.getLast24HourRedemption("XOXODAY_REDEMPTION");
-        const twitterAccount = user.social_link.find((item) => item.type === "twitter");
-        const socialClient = getSocialClient("twitter");
+        const twitterAccount = user.social_link.find((item) => item.type === TWITTER);
+        const socialClient = getSocialClient(TWITTER);        
         const twitterFollowers = twitterAccount
             ? await socialClient.getTotalFollowersV1(twitterAccount, twitterAccount.id)
             : 0;
