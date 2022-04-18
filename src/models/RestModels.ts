@@ -65,16 +65,6 @@ export class CurrentCampaignModel {
 export class ParticipantPostModel {
     @Property() public readonly results: string[];
 }
-export class CurrentCampaignModel {
-    @Property() public currentTier: number;
-    @Property() public currentTotal: number;
-    @Nullable(String) public campaignType: string | null;
-    @Nullable(String) public tokenValueUsd: string | null;
-    @Nullable(String) public tokenValueCoiin: string | null;
-}
-export class ParticipantPostModel {
-    @Property() public readonly results: string[];
-}
 
 export class NotificationSettingsResultModel {
     @Property() public readonly id: string;
