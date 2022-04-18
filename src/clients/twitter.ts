@@ -200,11 +200,7 @@ export class TwitterClient {
         return JSON.stringify(twitterResponse);
     };
 
-    public static getPost = async (
-        socialLink: SocialLinkVariables,
-        id: string,
-        cached = true
-    ): Promise<string> => {
+    public static getPost = async (socialLink: SocialLinkVariables, id: string, cached = true): Promise<string> => {
         let cacheKey = `twitter:${id}`;
         if (cached) {
             const cachedResponse = await getRedis().get(cacheKey);
