@@ -222,16 +222,12 @@ export class User extends BaseEntity {
         });
         const senderId = operation === "ADD" ? raiinmakerCurrency.tatumId : userCurrency.tatumId;
         const receipientId = operation === "ADD" ? userCurrency.tatumId : raiinmakerCurrency.tatumId;
-        try {
-            await TatumClient.transferFunds({
-                senderAccountId: senderId,
-                recipientAccountId: receipientId,
-                amount: amount.toString(),
-                recipientNote: "USER-BALANCE-UPDATES",
-            });
-        } catch (error) {
-            console.log(error);
-        }
+        await TatumClient.transferFunds({
+            senderAccountId: senderId,
+            recipientAccountId: receipientId,
+            amount: amount.toString(),
+            recipientNote: "USER-BALANCE-UPDATES",
+        });
     }
 
     public transferCoiinReward = async (data: { type: RewardType; campaign?: Campaign }): Promise<any> => {
@@ -257,6 +253,7 @@ export class User extends BaseEntity {
             type === "REGISTRATION_REWARD" ||
             type === "SHARING_REWARD"
         ) {
+            let transferStatus = true;
             try {
                 await TatumClient.transferFunds({
                     senderAccountId: raiinmakerCurrency.tatumId,
@@ -265,11 +262,12 @@ export class User extends BaseEntity {
                     recipientNote: "WEEKLY-REWARD",
                 });
             } catch (error) {
-                console.log(error);
+                transferStatus = false;
             }
             await Transfer.newReward({
                 wallet,
-                type,
+                action: type,
+                status: transferStatus ? "SUCCEEDED" : "FAILED",
                 symbol: COIIN,
                 amount: new BN(amount),
                 campaign,

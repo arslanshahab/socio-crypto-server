@@ -141,21 +141,20 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
         const transferRecords = [];
         for (let index = 0; index < responses.length; index++) {
             const resp = responses[index];
-            if (resp.status === "fulfilled") {
-                const transferData = transferDetails[index];
-                const wallet = await Wallet.findOne({ where: { user: transferData.participant.user } });
-                if (!wallet) throw new Error("wallet not found for user.");
-                const newTransfer = Transfer.initTatumTransfer({
-                    symbol: transferData.campaign.symbol,
-                    network: "",
-                    campaign: transferData.campaign,
-                    amount: transferData.amount,
-                    tatumId: transferData.userCurrency.tatumId,
-                    wallet,
-                    action: "CAMPAIGN_REWARD",
-                });
-                transferRecords.push(newTransfer);
-            }
+            const transferData = transferDetails[index];
+            const wallet = await Wallet.findOne({ where: { user: transferData.participant.user } });
+            if (!wallet) throw new Error("wallet not found for user.");
+            const newTransfer = Transfer.initTatumTransfer({
+                symbol: transferData.campaign.symbol,
+                network: "",
+                campaign: transferData.campaign,
+                amount: transferData.amount,
+                tatumId: transferData.userCurrency.tatumId,
+                wallet,
+                action: "CAMPAIGN_REWARD",
+                status: resp.status === "fulfilled" ? "SUCCEEDED" : "FAILED",
+            });
+            transferRecords.push(newTransfer);
         }
         await Transfer.save(transferRecords);
         campaign.auditStatus = "AUDITED";
