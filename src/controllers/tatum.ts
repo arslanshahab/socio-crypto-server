@@ -294,6 +294,7 @@ export const withdrawFunds = async (
             action: "WITHDRAW",
             wallet: user.wallet,
             tatumId: address,
+            status: "SUCCEEDED",
         });
         await newTransfer.save();
         return {
@@ -334,6 +335,7 @@ export const trackCoiinTransactionForUser = asyncHandler(async (req: Request, re
             action: "DEPOSIT",
             wallet: user.wallet,
             tatumId: userCurrency.tatumId,
+            status: "SUCCEEDED",
         });
         await newTransfer.save();
         await Firebase.sendUserTransactionUpdate(user.profile.deviceToken, "DEPOSIT");
