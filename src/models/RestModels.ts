@@ -1,4 +1,4 @@
-import { CollectionOf, Nullable, Property } from "@tsed/schema";
+import { ArrayOf, CollectionOf, Nullable, Property } from "@tsed/schema";
 
 export class CampaignMediaResultModel {
     @Property() public readonly id: string;
@@ -27,7 +27,6 @@ export class CampaignResultModel {
     @Property() public readonly status: string;
     @Property() public readonly isGlobal: boolean;
     @Property() public readonly showUrl: boolean;
-    @Property() public readonly totalParticipationScore: string;
     @Property() public readonly target: string;
     @Property(Date) public readonly createdAt: Date;
     @Property(Date) public readonly updatedAt: Date;
@@ -39,12 +38,8 @@ export class CampaignResultModel {
     @Nullable(String) public readonly targetVideo: string | null;
     @Nullable(String) public readonly imagePath: string | null;
     @Nullable(String) public readonly campaignType: string | null;
-    @Property() public readonly socialMediaType: string;
     @Nullable(String) public readonly tagline: string | null;
     @Nullable(Object) public readonly requirements: any | null;
-    @Property() public readonly suggestedPosts: string;
-    @Property() public readonly keywords: string;
-    @Property() public readonly suggestedTags: string;
     @Nullable(String) public readonly cryptoId: string | null;
     @Nullable(String) public readonly type: string | null;
     @CollectionOf(CampaignMediaResultModel) public readonly campaign_media: CampaignMediaResultModel[];
@@ -54,6 +49,13 @@ export class CampaignResultModel {
     @Property() public network?: string;
     @Property() public symbol?: string;
     @Property() public symbolImageUrl?: string;
+
+    @Property(Number) public totalParticipationScore: string | number; // this property is stored as a string in the db, but is parsed into a number when returned from the API
+    // these properties are stored as a string in the db, but are parsed into an array when returned from the API
+    @ArrayOf(String) public socialMediaType?: string | string[];
+    @ArrayOf(String) public keywords?: string | string[];
+    @ArrayOf(String) public suggestedPosts?: string | string[];
+    @ArrayOf(String) public suggestedTags?: string | string[];
 }
 export class CurrentCampaignModel {
     @Property() public currentTier: number;

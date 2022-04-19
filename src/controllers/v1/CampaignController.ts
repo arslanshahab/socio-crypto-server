@@ -6,7 +6,7 @@ import {
     Currency,
     Participant,
     Token,
-    Prisma
+    Prisma,
 } from "@prisma/client";
 import { Get, Property, Required, Enum, Returns } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
@@ -58,6 +58,12 @@ async function getCampaignResultModel(
         result.symbol = campaign.currency.token?.symbol || "";
         result.symbolImageUrl = getCryptoAssestImageUrl(campaign.currency?.token?.symbol || "");
     }
+
+    result.totalParticipationScore = parseInt(campaign.totalParticipationScore);
+    if (campaign.socialMediaType) result.socialMediaType = JSON.parse(campaign.socialMediaType);
+    if (campaign.keywords) result.keywords = JSON.parse(campaign.keywords);
+    if (campaign.suggestedPosts) result.suggestedPosts = JSON.parse(campaign.suggestedPosts);
+    if (campaign.suggestedTags) result.suggestedTags = JSON.parse(campaign.suggestedTags);
 
     return result;
 }
