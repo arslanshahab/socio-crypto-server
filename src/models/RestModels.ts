@@ -1,4 +1,4 @@
-import { CollectionOf, Nullable, Property } from "@tsed/schema";
+import { ArrayOf, CollectionOf, Nullable, Property } from "@tsed/schema";
 
 export class CampaignMediaResultModel {
     @Property() public readonly id: string;
@@ -153,7 +153,7 @@ export class XoxodayVoucherResultModel {
     @Property() public readonly countryCode: string;
     @Property() public readonly currencyCode: string;
     @Property() public readonly exchangeRate: string;
-    @Property() public readonly valueDenominations: Array<string>;
+    @ArrayOf(String) public readonly valueDenominations: Array<string>;
 }
 export class UserResultModel {
     @Property() public readonly id: string;

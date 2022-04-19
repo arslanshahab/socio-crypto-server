@@ -32,7 +32,7 @@ export class XoxodayController {
 
     @Get("/voucher")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(XoxodayVoucherResultModel))
-    public async list(@QueryParams() query: ListXoxoVariablesModel, @Context() context: Context) {
+    public async getStoreVouchers(@QueryParams() query: ListXoxoVariablesModel, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
         const { country, page } = query;
@@ -42,7 +42,7 @@ export class XoxodayController {
         );
         if (!found) return [];
         const vouchers = await Xoxoday.getVouchers(found.filterValue, page);
-        const responseList = await prepareVouchersList(vouchers);
+        const responseList = await prepareVouchersList(vouchers);        
         return new SuccessResult(
             new Pagination(responseList, responseList.length, XoxodayVoucherResultModel),
             Pagination
