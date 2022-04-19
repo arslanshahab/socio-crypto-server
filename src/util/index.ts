@@ -265,6 +265,7 @@ export const supportedCountries = (): Array<SupportedCountryType> => {
         { name: "Morocco", currency: "MAD", enabled: true, filterValue: "morocco" },
         { name: "Saudi Arabia", currency: "SAR", enabled: true, filterValue: "saudi_arabia" },
         { name: "United Arab, Emirates", currency: "AED", enabled: true, filterValue: "uae" },
+        { name: "Pakistan", currency: "PKR", enabled: true, filterValue: "pakistan" },
     ];
 };
 //general helper functions end here
