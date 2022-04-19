@@ -542,8 +542,21 @@ export interface CampaignCreateTypes {
     campaignType: string;
     socialMediaType: string[];
     campaignMedia: CampaignMedia[];
-    campaignTemplates: CampaignTemplate;
+    campaignTemplates: CampaignTemplate[];
     isGlobal: boolean;
     showUrl: boolean;
     company: string;
+}
+
+export interface CurrencyResultType {
+    id: string;
+    tatumId: string;
+    symbol: string;
+    depositAddress: string;
+    memo: string | null;
+    message: string | null;
+    destinationTag: number;
+    derivationKey: number;
+    createdAt: Date;
+    updatedAt: Date;
 }

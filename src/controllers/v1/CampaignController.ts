@@ -353,7 +353,48 @@ export class CampaignController {
         if (role === "admin" && !body.company) throw new NotFound(COMPANY_NOT_SPECIFIED);
         const org = await this.organizationService.findOrganizationByCompanyName(company);
         if (!org) throw new NotFound(ORG_NOT_FOUND);
-        const campaign = await this.campaignService.updateCampaign(
+        const campaign: Campaign | null = await this.campaignService.findCampaignById(id);
+        if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
+        let campaignImageSignedURL = "";
+        const raffleImageSignedURL = "";
+        const mediaUrls: { name: string | null; channel: string | null; signedUrl: string }[] = [];
+        if (imagePath && campaign.imagePath !== imagePath) {
+            imagePath;
+            campaignImageSignedURL = await S3Client.generateCampaignSignedURL(`campaign/${campaign.id}/${imagePath}`);
+        }
+        if (campaignTemplates) {
+            for (let i = 0; i < campaignTemplates.length; i++) {
+                const receivedTemplate = campaignTemplates[i];
+                const foundTemplate = await this.campaignService.findCampaignTemplateById(receivedTemplate.id);
+                if (foundTemplate) {
+                    await this.campaignService.updateCampaignTemplate(receivedTemplate);
+                } else {
+                    await this.campaignService.updateNewCampaignTemplate(receivedTemplate, campaign.id);
+                }
+            }
+        }
+        if (campaignMedia) {
+            for (let i = 0; i < campaignMedia.length; i++) {
+                const receivedMedia = campaignMedia[i];
+                const foundMedia = await this.campaignService.findCampaignMediaById(receivedMedia.id);
+                if (foundMedia && foundMedia.media !== receivedMedia.media) {
+                    await this.campaignService.updateCampaignMedia(receivedMedia);
+                    const urlObject = { name: receivedMedia.media, channel: receivedMedia.channel, signedUrl: "" };
+                    urlObject.signedUrl = await S3Client.generateCampaignSignedURL(
+                        `campaign/${campaign.id}/${receivedMedia.media}`
+                    );
+                    mediaUrls.push(urlObject);
+                } else {
+                    const urlObject = { name: receivedMedia.media, channel: receivedMedia.channel, signedUrl: "" };
+                    urlObject.signedUrl = await S3Client.generateCampaignSignedURL(
+                        `campaign/${campaign.id}/${receivedMedia.media}`
+                    );
+                    mediaUrls.push(urlObject);
+                    await this.campaignService.updateNewCampaignMedia(receivedMedia, campaign.id);
+                }
+            }
+        }
+        await this.campaignService.updateCampaign(
             id,
             name,
             beginDate,
@@ -371,20 +412,14 @@ export class CampaignController {
             keywords,
             campaignType,
             socialMediaType,
-            campaignMedia,
-            campaignTemplates,
             showUrl
         );
-        // const campaignTemplate= await this.campaignService.updateCampaignTemplate(campaignTemplates)
-        console.log("updated campaign", campaign, "-----------------");
-        if (campaignMedia) {
-            for (let i = 0; i < campaignMedia.length; i++) {
-                const receivedMedia = campaignMedia[i];
-                await this.campaignService.updateCampaignMedia(receivedMedia);
-            }
-        }
-        // let campaignImageSignedURL = "";
-        // let raffleImageSignedURL = "";
-        // let mediaUrls: MediaUrlsModel[] = [];
+        const result = {
+            campaignId: campaign.id,
+            campaignImageSignedURL,
+            raffleImageSignedURL,
+            mediaUrls,
+        };
+        console.log("result after response----------------------/", result);
     }
 }

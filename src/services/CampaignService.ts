@@ -1,7 +1,7 @@
-import { CampaignMedia, CampaignTemplate, Currency, Prisma, User } from "@prisma/client";
+import { CampaignMedia, CampaignTemplate, Org, Prisma, User } from "@prisma/client";
 import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
-import { ListCampaignsVariablesV2 } from "../types";
+import { CurrencyResultType, ListCampaignsVariablesV2 } from "../types";
 
 @Injectable()
 export class CampaignService {
@@ -103,10 +103,10 @@ export class CampaignService {
         isGlobal: boolean,
         showUrl: boolean,
         targetVideo: string,
-        org: any,
-        currency: Currency | any,
+        org: Org,
+        currency: CurrencyResultType | undefined,
         campaignMedia: CampaignMedia[],
-        campaignTemplates: CampaignTemplate
+        campaignTemplates: CampaignTemplate[]
     ) {
         const response = await this.prismaService.campaign.create({
             data: {
@@ -133,7 +133,7 @@ export class CampaignService {
                 showUrl,
                 targetVideo,
                 orgId: org.id,
-                currencyId: currency.id,
+                currencyId: currency?.id,
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 campaign_media: {
@@ -165,8 +165,6 @@ export class CampaignService {
         keywords: string[],
         campaignType: string,
         socialMediaType: string[],
-        campaignMedia: CampaignMedia[],
-        campaignTemplates: CampaignTemplate,
         showUrl: boolean
     ) {
         return await this.prismaService.campaign.update({
@@ -189,13 +187,17 @@ export class CampaignService {
                 campaignType,
                 socialMediaType: socialMediaType.toString(),
                 showUrl,
+                updatedAt: new Date(),
             },
         });
     }
     public async updateCampaignTemplate(campaignTemplates: CampaignTemplate) {
-        return await this.prismaService.campaignTemplate.updateMany({
+        return await this.prismaService.campaignTemplate.update({
             where: { id: campaignTemplates.id },
-            data: {},
+            data: {
+                post: campaignTemplates.post,
+                updatedAt: new Date(),
+            },
         });
     }
     public async updateCampaignMedia(campaignMedia: CampaignMedia) {
@@ -208,7 +210,41 @@ export class CampaignService {
                 media: campaignMedia.media,
                 mediaFormat: campaignMedia.mediaFormat,
                 isDefault: campaignMedia.isDefault,
+                updatedAt: new Date(),
             },
+        });
+    }
+    public async updateNewCampaignTemplate(campaignTemplate: CampaignTemplate, campaignId: string) {
+        return await this.prismaService.campaignTemplate.create({
+            data: {
+                channel: campaignTemplate.channel,
+                post: campaignTemplate.post,
+                campaignId,
+                updatedAt: new Date(),
+            },
+        });
+    }
+    public async updateNewCampaignMedia(campaignMedia: CampaignMedia, campaignId: string) {
+        return await this.prismaService.campaignMedia.create({
+            data: {
+                channel: campaignMedia.channel,
+                media: campaignMedia.media,
+                mediaFormat: campaignMedia.mediaFormat,
+                isDefault: campaignMedia.isDefault,
+                campaignId,
+                updatedAt: new Date(),
+            },
+        });
+    }
+    public async findCampaignMediaById(campaignMediaId: string) {
+        return this.prismaService.campaignMedia.findFirst({
+            where: { id: campaignMediaId },
+        });
+    }
+
+    public async findCampaignTemplateById(campaignTemplateId: string) {
+        return this.prismaService.campaignTemplate.findFirst({
+            where: { id: campaignTemplateId },
         });
     }
 }
