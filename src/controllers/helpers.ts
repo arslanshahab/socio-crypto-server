@@ -16,9 +16,13 @@ import {
     CURRENCY_NOT_FOUND,
     ESCROW_NOT_FOUND,
     PARTICIPANT_NOT_FOUND,
+    SOICIAL_LINKING_ERROR,
     WALLET_CURRENCY_NOT_FOUND,
     WALLET_NOT_FOUND,
 } from "../util/errors";
+import { TwitterClient } from "../clients/twitter";
+import { TikTokClient } from "../clients/tiktok";
+import { FacebookClient } from "../clients/facebook";
 
 export const feeMultiplier = () => new BN(1).minus(FEE_RATE);
 
@@ -345,4 +349,17 @@ export const formatUTCDateForComparision = (date: Date): string => {
         currentDate.getUTCMonth() + 1 < 10 ? `0${currentDate.getUTCMonth() + 1}` : currentDate.getUTCMonth() + 1;
     const day = currentDate.getUTCDate() < 10 ? `0${currentDate.getUTCDate()}` : currentDate.getUTCDate();
     return `${currentDate.getUTCFullYear()}-${month}-${day}`;
+};
+
+export const getSocialClient = (type: string) => {
+    switch (type) {
+        case "twitter":
+            return TwitterClient;
+        case "tiktok":
+            return TikTokClient;
+        case "facebook":
+            return FacebookClient;
+        default:
+            throw new Error(SOICIAL_LINKING_ERROR);
+    }
 };
