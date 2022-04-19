@@ -11,6 +11,7 @@ export const NETWORK_TO_NATIVE_TOKEN: { [key: string]: string } = {
 };
 export const CUSTODIAL_NETWORKS = [MATIC, ETH, BSC];
 export const WITHDRAW_LIMIT = 1000;
+export const SHARING_REWARD_LIMIT_PER_DAY = 25;
 export const RAIINMAKER_ORG_NAME = "raiinmaker";
 export const AMOUNT_LIMIT_FOR_KYC_IN_XOXODAY = 100;
 export const CRYPTO_ICONS_BUCKET_URL = "https://rm-crypto-icons.s3.us-west-2.amazonaws.com";
