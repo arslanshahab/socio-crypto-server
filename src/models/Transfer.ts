@@ -184,7 +184,7 @@ export class Transfer extends BaseEntity {
     public static async getLast24HourRedemption(wallet: Wallet, type: TransferAction) {
         const date = initDateFromParams({ date: new Date(), d: new Date().getDate() - 1, h: 0, i: 0, s: 0 });
         return await Transfer.findOne({
-            where: { action: type, createdAt: MoreThan(DateUtils.mixedDateToUtcDatetimeString(date)) },
+            where: { wallet, action: type, createdAt: MoreThan(DateUtils.mixedDateToUtcDatetimeString(date)) },
         });
     }
 
