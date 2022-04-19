@@ -92,7 +92,7 @@ export class CampaignService {
         symbol: string,
         algorithm: object,
         tagline: string,
-        requirements: any,
+        requirements: object,
         suggestedPosts: string[],
         suggestedTags: string[],
         keywords: string[],
@@ -109,10 +109,6 @@ export class CampaignService {
         campaignTemplates: CampaignTemplate
     ) {
         const response = await this.prismaService.campaign.create({
-            // include: {
-            //     campaign_media: true,
-            //     campaign_template: true,
-            // },
             data: {
                 name: name,
                 beginDate: new Date(beginDate),
@@ -146,18 +142,73 @@ export class CampaignService {
                 campaign_template: {
                     create: campaignTemplates,
                 },
-                // campaign_template: {
-                //     create: [
-                //         {
-                //             channel: campaignTemplates.channel,
-                //             post: campaignTemplates.post,
-                //             createdAt: new Date(),
-                //             updatedAt: new Date(),
-                //         },
-                //     ],
-                // },
             },
         });
         return await response;
+    }
+
+    public async updateCampaign(
+        id: string,
+        name: string,
+        beginDate: Date,
+        endDate: Date,
+        target: string,
+        description: string,
+        instructions: string,
+        algorithm: object,
+        targetVideo: string,
+        imagePath: string,
+        tagline: string,
+        requirements: object,
+        suggestedPosts: string[],
+        suggestedTags: string[],
+        keywords: string[],
+        campaignType: string,
+        socialMediaType: string[],
+        campaignMedia: CampaignMedia[],
+        campaignTemplates: CampaignTemplate,
+        showUrl: boolean
+    ) {
+        return await this.prismaService.campaign.update({
+            where: { id },
+            data: {
+                name,
+                beginDate,
+                endDate,
+                target,
+                description,
+                instructions,
+                algorithm,
+                targetVideo,
+                imagePath,
+                tagline,
+                requirements,
+                suggestedPosts: suggestedPosts.toString(),
+                suggestedTags: suggestedTags.toString(),
+                keywords: keywords.toString(),
+                campaignType,
+                socialMediaType: socialMediaType.toString(),
+                showUrl,
+            },
+        });
+    }
+    public async updateCampaignTemplate(campaignTemplates: CampaignTemplate) {
+        return await this.prismaService.campaignTemplate.updateMany({
+            where: { id: campaignTemplates.id },
+            data: {},
+        });
+    }
+    public async updateCampaignMedia(campaignMedia: CampaignMedia) {
+        return await this.prismaService.campaignMedia.update({
+            where: {
+                id: campaignMedia.id,
+            },
+            data: {
+                channel: campaignMedia.channel,
+                media: campaignMedia.media,
+                mediaFormat: campaignMedia.mediaFormat,
+                isDefault: campaignMedia.isDefault,
+            },
+        });
     }
 }

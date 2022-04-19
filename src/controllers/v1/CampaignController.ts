@@ -229,11 +229,11 @@ export class CampaignController {
             if (!raffle_prize) throw new BadRequest(RAFFLE_PRIZE_MISSING);
             validator.validateRafflePrizeSchema(raffle_prize);
         }
-        if (role === "admin" && !body.company) throw new Error(COMPANY_NOT_SPECIFIED);
+        if (role === "admin" && !body.company) throw new NotFound(COMPANY_NOT_SPECIFIED);
         const campaignCompany = role === "admin" ? body.company : company;
         const org = await this.organizationService.findOrganizationByCompanyName(company);
         if (!org) throw new NotFound(ORG_NOT_FOUND);
-        const wallet:any = await this.walletService.findWalletByOrgId(org.id);
+        const wallet: any = await this.walletService.findWalletByOrgId(org.id);
         if (!wallet) throw new NotFound(WALLET_NOT_FOUND);
         let currency;
         if (type === "crypto") {
@@ -311,5 +311,80 @@ export class CampaignController {
             mediaUrls: mediaUrls,
         };
         return new SuccessResult(result, CreateCampaignResultModel);
+    }
+
+    @Post("/update-campaign")
+    @(Returns(200, SuccessResult).Of(CreateCampaignResultModel))
+    public async updateCampaign(@BodyParams() body: CampaignCreateTypes, @Context() context: Context) {
+        const { role, company = "raiinmaker" } = this.userService.checkPermissions(
+            { hasRole: ["admin", "manager"] },
+            context.get("user")
+        );
+        let {
+            id,
+            name,
+            beginDate,
+            endDate,
+            target,
+            description,
+            instructions,
+            algorithm,
+            targetVideo,
+            imagePath,
+            tagline,
+            requirements,
+            suggestedPosts,
+            suggestedTags,
+            keywords,
+            type = "crypto",
+            raffle_prize,
+            campaignType,
+            socialMediaType,
+            campaignMedia,
+            campaignTemplates,
+            showUrl,
+        } = body;
+        validator.validateAlgorithmCreateSchema(algorithm);
+        if (!!requirements) validator.validateCampaignRequirementsSchema(requirements);
+        if (type === "raffle") {
+            if (!raffle_prize) throw new BadRequest(RAFFLE_PRIZE_MISSING);
+            validator.validateRafflePrizeSchema(raffle_prize);
+        }
+        if (role === "admin" && !body.company) throw new NotFound(COMPANY_NOT_SPECIFIED);
+        const org = await this.organizationService.findOrganizationByCompanyName(company);
+        if (!org) throw new NotFound(ORG_NOT_FOUND);
+        const campaign = await this.campaignService.updateCampaign(
+            id,
+            name,
+            beginDate,
+            endDate,
+            target,
+            description,
+            instructions,
+            algorithm,
+            targetVideo,
+            imagePath,
+            tagline,
+            requirements,
+            suggestedPosts,
+            suggestedTags,
+            keywords,
+            campaignType,
+            socialMediaType,
+            campaignMedia,
+            campaignTemplates,
+            showUrl
+        );
+        // const campaignTemplate= await this.campaignService.updateCampaignTemplate(campaignTemplates)
+        console.log("updated campaign", campaign, "-----------------");
+        if (campaignMedia) {
+            for (let i = 0; i < campaignMedia.length; i++) {
+                const receivedMedia = campaignMedia[i];
+                await this.campaignService.updateCampaignMedia(receivedMedia);
+            }
+        }
+        // let campaignImageSignedURL = "";
+        // let raffleImageSignedURL = "";
+        // let mediaUrls: MediaUrlsModel[] = [];
     }
 }

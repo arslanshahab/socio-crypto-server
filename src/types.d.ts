@@ -519,6 +519,7 @@ export interface CampaignRequirementTypes {
 //     post: string;
 // }
 export interface CampaignCreateTypes {
+    id: string;
     name: string;
     beginDate: Date;
     endDate: Date;
