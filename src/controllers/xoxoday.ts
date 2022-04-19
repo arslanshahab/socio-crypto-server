@@ -179,7 +179,7 @@ const ifUserCanRedeem = async (user: User, totalCoiinSpent: number) => {
     if (twitterFollowers < 20) throw new Error("You need to have atleast 20 followers on twitter before you redeem!");
     if (!user.campaigns.length) throw new Error("You need to participate in atleast one campaign in order to redeem!");
     const recentOrder = await Transfer.getLast24HourRedemption(user.wallet, "XOXODAY_REDEMPTION");
-    if (recentOrder) throw new Error("You need to wait for few hours before you can redeem again!");
+    if (Boolean(recentOrder)) throw new Error("You can only redeeom once in 24 hours!");
     const userCurrency = await TatumClient.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet: user.wallet });
     const coiinBalance = new BN((await TatumClient.getAccountBalance(userCurrency.tatumId)).availableBalance);
     if (coiinBalance.isLessThanOrEqualTo(0) || coiinBalance.isLessThan(totalCoiinSpent))

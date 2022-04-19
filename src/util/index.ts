@@ -30,14 +30,14 @@ export const getMinWithdrawableAmount = async (symbol: string) => {
     const minLimit = parseFloat(process?.env?.MIN_WITHDRAW_LIMIT || "100");
     const marketRate =
         symbol.toLocaleLowerCase() === COIIN.toLowerCase()
-            ? parseFloat(process.env.COIIN_VALUE || "0")
+            ? parseFloat(process.env.COIIN_VALUE || "0.2")
             : await getExchangeRateForCrypto(symbol);
     return (1 / marketRate) * minLimit;
 };
 
 export const getUSDValueForCurrency = async (symbol: string, amount: number) => {
     if (symbol.toLowerCase() === "coiin") {
-        return parseFloat(process.env.COIIN_VALUE || "0") * amount;
+        return parseFloat(process.env.COIIN_VALUE || "0.2") * amount;
     }
     const marketRate = await getExchangeRateForCrypto(symbol);
     return marketRate * amount;

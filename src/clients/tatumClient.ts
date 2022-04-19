@@ -377,7 +377,7 @@ export class TatumClient {
                 throw new Error("Not enough balance in user account to pay gas fee.");
             const body = {
                 ...payload,
-                amount: data.amount,
+                amount: withdrawAbleAmount,
                 ...(payload.currency.derivationKey && { index: payload.currency.derivationKey }),
                 fee,
             };
