@@ -90,7 +90,7 @@ export const placeOrder = async (parent: any, args: { cart: Array<any>; email: s
             action: "XOXODAY_REDEMPTION",
             status: transferStatus ? "SUCCEEDED" : "FAILED",
         });
-        return { success: true };
+        return true;
     } catch (error) {
         throw new FormattedError(error);
     }
