@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { Xoxoday } from "../clients/xoxoday";
 import { generateRandomId, supportedCountries, asyncHandler, BN } from "../util";
 import { XoxodayOrder, XoxodayVoucher } from "src/types";
-import { getExchangeRateForCurrency, getSymbolValueInUSD } from "../util/exchangeRate";
+import { getExchangeRateForCurrency } from "../util/exchangeRate";
 import { User } from "../models/User";
 import { getSocialClient } from "./social";
 import { S3Client } from "../clients/s3";
@@ -10,7 +10,7 @@ import { Transfer } from "../models/Transfer";
 import { XoxodayOrder as XoxodayOrderModel } from "../models/XoxodayOrder";
 import { TatumClient } from "../clients/tatumClient";
 import { MISSING_PARAMS, USER_NOT_FOUND, FormattedError, INVALID_TOKEN, ERROR_LINKING_TWITTER } from "../util/errors";
-import { AMOUNT_LIMIT_FOR_KYC_IN_XOXODAY, BSC, COIIN } from "../util/constants";
+import { BSC, COIIN } from "../util/constants";
 
 export const initXoxoday = asyncHandler(async (req: Request, res: Response) => {
     try {
@@ -75,7 +75,6 @@ export const placeOrder = async (parent: any, args: { cart: Array<any>; email: s
         const totalCoiinSpent = cart.reduce((a, b) => a + (b.coiinPrice || 0), 0);
         await ifUserCanRedeem(user, totalCoiinSpent);
         const ordersData = await prepareOrderList(cart, email);
-        if (args) return true;
         const orderStatusList = await Xoxoday.placeOrder(ordersData);
         let transferStatus = true;
         try {
@@ -166,12 +165,7 @@ const prepareOrderList = async (list: Array<any>, email: string): Promise<Array<
 };
 
 const ifUserCanRedeem = async (user: User, totalCoiinSpent: number) => {
-    const { total: previousStoreSpendingInUSD } = await XoxodayOrderModel.getPastSpendingInUSD(user.id);
-    const currentSpendingInUSD = await getSymbolValueInUSD("COIIN", totalCoiinSpent);
-    if (
-        parseFloat(previousStoreSpendingInUSD) + currentSpendingInUSD > AMOUNT_LIMIT_FOR_KYC_IN_XOXODAY &&
-        !(await user.hasKycApproved())
-    )
+    if (!(await user.hasKycApproved()))
         throw new Error("You need to get your KYC approved before you can redeem vouchers.");
     const twitterAccount = user.socialLinks.find((item) => item.type === "twitter");
     if (!twitterAccount) throw new Error(ERROR_LINKING_TWITTER);
