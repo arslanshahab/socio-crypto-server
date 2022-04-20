@@ -75,6 +75,7 @@ export const placeOrder = async (parent: any, args: { cart: Array<any>; email: s
         const totalCoiinSpent = cart.reduce((a, b) => a + (b.coiinPrice || 0), 0);
         await ifUserCanRedeem(user, totalCoiinSpent);
         const ordersData = await prepareOrderList(cart, email);
+        if (args) return true;
         const orderStatusList = await Xoxoday.placeOrder(ordersData);
         let transferStatus = true;
         try {
