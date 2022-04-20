@@ -17,6 +17,7 @@ import {
     USERNAME_NOT_EXISTS,
     INCORRECT_CODE,
     USER_NOT_FOUND,
+    ACCOUNT_RESTRICTED,
 } from "../util/errors";
 
 const isSecure = process.env.NODE_ENV === "production";
@@ -109,6 +110,7 @@ export const loginUser = async (parent: any, args: { email: string; password: st
         if (!email || !password) throw new Error(MISSING_PARAMS);
         const user = await User.findOne({ where: { email: ILike(email) }, relations: ["wallet"] });
         if (!user) throw new Error(EMAIL_NOT_EXISTS);
+        if (!user.active) throw new Error(ACCOUNT_RESTRICTED);
         if (user.password !== createPasswordHash({ email, password })) throw new Error(INCORRECT_PASSWORD);
         await user.updateLastLogin();
         await user.transferCoiinReward({ type: "LOGIN_REWARD" });
