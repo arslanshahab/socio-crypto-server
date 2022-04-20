@@ -76,19 +76,14 @@ export const placeOrder = async (parent: any, args: { cart: Array<any>; email: s
         await ifUserCanRedeem(user, totalCoiinSpent);
         const ordersData = await prepareOrderList(cart, email);
         const orderStatusList = await Xoxoday.placeOrder(ordersData);
-        let transferStatus = true;
-        try {
-            await user.updateCoiinBalance("SUBTRACT", totalCoiinSpent);
-        } catch (error) {
-            transferStatus = false;
-        }
+        await user.updateCoiinBalance("SUBTRACT", totalCoiinSpent);
         XoxodayOrderModel.saveOrderList(await prepareOrderEntities(cart, orderStatusList), user);
         await Transfer.newReward({
             wallet: user.wallet,
             symbol: "COIIN",
             amount: totalCoiinSpent,
             action: "XOXODAY_REDEMPTION",
-            status: transferStatus ? "SUCCEEDED" : "FAILED",
+            status: "SUCCEEDED",
         });
         return true;
     } catch (error) {
