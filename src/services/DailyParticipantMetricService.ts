@@ -133,7 +133,6 @@ export class DailyParticipantMetricService {
 
         const response = this.prismaService.dailyParticipantMetric.findMany({
             where: {
-                // createdAt: { lt: new Date(today) },
                 createdAt: { lt: new Date(today), gte: new Date(yesterday) },
                 campaign: {
                     id: {
@@ -148,5 +147,17 @@ export class DailyParticipantMetricService {
             },
         });
         return response;
+    }
+
+    public async deleteDailyParticipantMetrics(campaignId: string) {
+        return await this.prismaService.dailyParticipantMetric.deleteMany({
+            where: { campaignId },
+        });
+    }
+
+    public async findDailyParticipantByCampaignId(campaignId: string) {
+        return this.prismaService.dailyParticipantMetric.findMany({
+            where: { campaignId },
+        });
     }
 }

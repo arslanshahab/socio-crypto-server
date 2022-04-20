@@ -25,4 +25,16 @@ export class RafflePrizeService {
         });
         return response;
     }
+
+    public async findRafflePrizeByCampaignId(campaignId: string) {
+        return await this.prismaService.rafflePrize.findMany({
+            where: { campaignId },
+        });
+    }
+
+    public async deleteRafflePrize(campaignId: string) {
+        return await this.prismaService.rafflePrize.deleteMany({
+            where: { campaignId },
+        });
+    }
 }

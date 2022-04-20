@@ -240,12 +240,23 @@ export class ParticipantPostsModel {
 }
 export class MediaUrlsModel {
     @Property() public readonly name: string;
-    @Nullable(String) public readonly channel: string|null;
+    @Nullable(String) public readonly channel: string | null;
     @Property() public readonly signedUrl: string;
 }
 export class CreateCampaignResultModel {
     @Property() public readonly campaignId: string;
     @Property() public readonly campaignImageSignedURL: string;
     @Property() public readonly raffleImageSignedURL: string;
-    @CollectionOf(MediaUrlsModel) public readonly mediaUrls: Partial<MediaUrlsModel>[];
+    @CollectionOf(MediaUrlsModel) public readonly mediaUrls: MediaUrlsModel[];
+}
+export class UpdateCampaignResultModel {
+    @Property() public readonly campaignId: string;
+    @Property() public readonly campaignImageSignedURL: string;
+    @Property() public readonly raffleImageSignedURL: string;
+    @CollectionOf(MediaUrlsModel) public readonly mediaUrls: MediaUrlsModel[];
+}
+
+export class DeleteCampaignResultModel {
+    @Property() public readonly campaignId: string;
+    @Property() public readonly name: string;
 }

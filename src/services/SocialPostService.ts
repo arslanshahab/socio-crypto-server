@@ -31,4 +31,16 @@ export class SocialPostService {
             where: { participantId },
         });
     }
+
+    public async findSocialPostByCampaignId(campaignId: string) {
+        return this.prismaService.socialPost.findMany({
+            where: { campaignId },
+        });
+    }
+
+    public async deleteSocialPost(campaignId: string) {
+        return await this.prismaService.socialPost.deleteMany({
+            where: { campaignId },
+        });
+    }
 }

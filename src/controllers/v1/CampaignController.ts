@@ -33,7 +33,9 @@ import {
     CampaignResultModel,
     CreateCampaignResultModel,
     CurrentCampaignModel,
+    DeleteCampaignResultModel,
     MediaUrlsModel,
+    UpdateCampaignResultModel,
 } from "../../models/RestModels";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { ParticipantService } from "../../services/ParticipantService";
@@ -51,6 +53,12 @@ import { S3Client } from "../../clients/s3";
 import { User } from "../../models/User";
 import { Firebase } from "../../clients/firebase";
 import { RafflePrizeService } from "../../services/RafflePrizeService";
+import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
+import { CampaignMediaService } from "../../services/CampaignMediaService";
+import { HourlyCampaignMetricsService } from "../../services/HourlyCampaignMetricsService";
+import { TransferService } from "../../services/TransferService";
+import { EscrowService } from "../../services/EscrowService";
+import { CampaignTemplateService } from "../../services/CampaignTemplateService";
 
 const validator = new Validator();
 
@@ -106,6 +114,18 @@ export class CampaignController {
     private walletService: WalletService;
     @Inject()
     private rafflePrizeService: RafflePrizeService;
+    @Inject()
+    private dailyParticipantMetricService: DailyParticipantMetricService;
+    @Inject()
+    private campaignMediaservice: CampaignMediaService;
+    @Inject()
+    private hourlyCampaignMetricsService: HourlyCampaignMetricsService;
+    @Inject()
+    private transferService: TransferService;
+    @Inject()
+    private escrowService: EscrowService;
+    @Inject()
+    private campaignTemplateService: CampaignTemplateService;
     @Inject()
     private userService: UserService;
 
@@ -314,7 +334,7 @@ export class CampaignController {
     }
 
     @Post("/update-campaign")
-    @(Returns(200, SuccessResult).Of(CreateCampaignResultModel))
+    @(Returns(200, SuccessResult).Of(UpdateCampaignResultModel))
     public async updateCampaign(@BodyParams() body: CampaignCreateTypes, @Context() context: Context) {
         const { role, company = "raiinmaker" } = this.userService.checkPermissions(
             { hasRole: ["admin", "manager"] },
@@ -378,7 +398,7 @@ export class CampaignController {
                 const receivedMedia = campaignMedia[i];
                 const foundMedia = await this.campaignService.findCampaignMediaById(receivedMedia.id);
                 if (foundMedia && foundMedia.media !== receivedMedia.media) {
-                    await this.campaignService.updateCampaignMedia(receivedMedia);
+                    await this.campaignService.updateNewCampaignMedia(receivedMedia, campaign.id);
                     const urlObject = { name: receivedMedia.media, channel: receivedMedia.channel, signedUrl: "" };
                     urlObject.signedUrl = await S3Client.generateCampaignSignedURL(
                         `campaign/${campaign.id}/${receivedMedia.media}`
@@ -390,7 +410,7 @@ export class CampaignController {
                         `campaign/${campaign.id}/${receivedMedia.media}`
                     );
                     mediaUrls.push(urlObject);
-                    await this.campaignService.updateNewCampaignMedia(receivedMedia, campaign.id);
+                    await this.campaignService.updateCampaignMedia(receivedMedia);
                 }
             }
         }
@@ -420,6 +440,43 @@ export class CampaignController {
             raffleImageSignedURL,
             mediaUrls,
         };
-        console.log("result after response----------------------/", result);
+        return new SuccessResult(result, UpdateCampaignResultModel);
+    }
+
+    @Post("/delete-campaign")
+    @(Returns(200, SuccessResult).Of(DeleteCampaignResultModel))
+    public async deleteCampaign(@QueryParams() query: { campaignId: string }, @Context() context: Context) {
+        const { campaignId } = query;
+        // const { role, company = "raiinmaker" } = this.userService.checkPermissions(
+        //     { hasRole: ["admin", "manager"] },
+        //     context.get("user")
+        // );
+        const socialPost = await this.socialPostService.findSocialPostByCampaignId(campaignId);
+        if (socialPost.length > 0) this.socialPostService.deleteSocialPost(campaignId);
+        const payouts = await this.transferService.findTransferByCampaignId(campaignId);
+        if (payouts.length > 0) this.transferService.deleteTransferPayouts(campaignId);
+        const rafflePrize = await this.rafflePrizeService.findRafflePrizeByCampaignId(campaignId);
+        if (rafflePrize.length > 0) this.rafflePrizeService.deleteRafflePrize(campaignId);
+        const escrow = await this.escrowService.findEscrowByCampaignId(campaignId);
+        if (escrow.length > 0) this.escrowService.deleteEscrow(campaignId);
+        const participant = await this.participantService.findParticipantByCampaignId(query);
+        if (participant) this.participantService.deleteParticipant(campaignId);
+        const dailyParticipantMetrics = await this.dailyParticipantMetricService.findDailyParticipantByCampaignId(
+            campaignId
+        );
+        if (dailyParticipantMetrics) this.dailyParticipantMetricService.deleteDailyParticipantMetrics(campaignId);
+        const hourlyMetrics = await this.hourlyCampaignMetricsService.findCampaignHourlyMetricsByCampaignId(campaignId);
+        if (hourlyMetrics.length > 0) this.hourlyCampaignMetricsService.deleteCampaignHourlyMetrics(campaignId);
+        const campaignTemplate = await this.campaignTemplateService.findCampaignTemplateByCampaignId(campaignId);
+        if (campaignTemplate.length > 0) this.campaignTemplateService.deleteCampaignTemplate(campaignId);
+        const campaignMedia = await this.campaignMediaservice.findCampaignMediaByCampaignId(campaignId);
+        if (campaignMedia.length > 0) this.campaignMediaservice.deleteCampaignMedia(campaignId);
+        const campaign = await this.campaignService.findCampaignById(campaignId);
+        if (campaign) this.campaignService.deleteCampaign(campaignId);
+        const result = {
+            campaignId: campaign?.id,
+            name: campaign?.name,
+        };
+        return new SuccessResult(result, DeleteCampaignResultModel);
     }
 }

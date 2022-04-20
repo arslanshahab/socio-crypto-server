@@ -247,4 +247,10 @@ export class CampaignService {
             where: { id: campaignTemplateId },
         });
     }
+
+    public async deleteCampaign(campaignId: string) {
+        return await this.prismaService.campaign.delete({
+            where: { id: campaignId },
+        });
+    }
 }
