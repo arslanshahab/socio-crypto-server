@@ -72,7 +72,9 @@ export const placeOrder = async (parent: any, args: { cart: Array<any>; email: s
         ]);
         if (!user) throw new Error(USER_NOT_FOUND);
         if (!cart || !cart.length) throw new Error(MISSING_PARAMS);
-        const totalCoiinSpent = cart.reduce((a, b) => a + (b.coiinPrice || 0), 0);
+        const totalUSDValue = cart.reduce((a, b) => a + (b.denomination || 0), 0);
+        const totalCoiinSpent = parseFloat(totalUSDValue) / parseFloat(process.env.COIIN_VALUE || "0.2");
+        console.log(totalCoiinSpent);
         await ifUserCanRedeem(user, totalCoiinSpent);
         const ordersData = await prepareOrderList(cart, email);
         const orderStatusList = await Xoxoday.placeOrder(ordersData);
@@ -81,7 +83,7 @@ export const placeOrder = async (parent: any, args: { cart: Array<any>; email: s
         await Transfer.newReward({
             wallet: user.wallet,
             symbol: "COIIN",
-            amount: totalCoiinSpent,
+            amount: new BN(totalCoiinSpent),
             action: "XOXODAY_REDEMPTION",
             status: "SUCCEEDED",
         });
