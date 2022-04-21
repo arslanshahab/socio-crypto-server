@@ -95,15 +95,11 @@ export class UserService {
     public findUsersRecord(skip: number, take: number) {
         return this.prismaService.$transaction([
             this.prismaService.user.findMany({
-                // select:{
-                //     email:true,
-                //     kycStatus:true
-
-                // },
                 select: {
+                    id: true,
                     email: true,
                     kycStatus: true,
-                    // createdAt:true,
+                    createdAt: true,
                     profile: {
                         select: {
                             username: true,
@@ -113,8 +109,8 @@ export class UserService {
                         },
                     },
                 },
-                skip,
                 take,
+                skip,
             }),
             this.prismaService.user.count({}),
         ]);

@@ -151,6 +151,7 @@ export class XoxodayOrderResultModel {
 export class UserResultModel {
     @Property() public readonly id: string;
     @Property() public readonly email: string;
+    @Property() public readonly createdAt: Date;
     @Nullable(String) public readonly identityId: string | null;
     @Nullable(String) public readonly kycStatus: string | null;
     @Nullable(ProfileResultModel) public readonly profile: ProfileResultModel | null;
