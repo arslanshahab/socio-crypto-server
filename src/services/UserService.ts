@@ -91,4 +91,32 @@ export class UserService {
         if (role === "manager" && !company) throw new Forbidden("Forbidden, company not specified");
         return { role, company };
     }
+
+    public findUsersRecord(skip: number, take: number) {
+        return this.prismaService.$transaction([
+            this.prismaService.user.findMany({
+                // select:{
+                //     email:true,
+                //     kycStatus:true
+
+                // },
+                select: {
+                    email: true,
+                    kycStatus: true,
+                    // createdAt:true,
+                    profile: {
+                        select: {
+                            username: true,
+                            city: true,
+                            state: true,
+                            country: true,
+                        },
+                    },
+                },
+                skip,
+                take,
+            }),
+            this.prismaService.user.count({}),
+        ]);
+    }
 }
