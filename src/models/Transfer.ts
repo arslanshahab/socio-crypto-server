@@ -333,6 +333,7 @@ export class Transfer extends BaseEntity {
         const transfer = new Transfer();
         transfer.amount = data.amount;
         transfer.action = data.action;
+        transfer.status = data.status;
         transfer.currency = data.symbol;
         transfer.wallet = data.wallet;
         if (data.campaign) transfer.campaign = data.campaign;
