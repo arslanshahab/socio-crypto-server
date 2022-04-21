@@ -318,7 +318,7 @@ export class Transfer extends BaseEntity {
         newTransfer.action = data.action;
         newTransfer.ethAddress = data.tatumId;
         newTransfer.wallet = data.wallet;
-        newTransfer.status = "SUCCEEDED";
+        newTransfer.status = data.status;
         return newTransfer;
     }
 
