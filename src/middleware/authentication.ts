@@ -2,7 +2,8 @@ import { Firebase } from "../clients/firebase";
 import { AuthenticationError } from "apollo-server-express";
 import express from "express";
 import { verifySessionToken } from "../util";
-import { FormattedError, NO_TOKEN_PROVIDED } from "../util/errors";
+import { ACCOUNT_RESTRICTED, FormattedError, NO_TOKEN_PROVIDED } from "../util/errors";
+import { User } from "../models/User";
 
 export const authenticateAdmin = async ({ req }: { req: express.Request }) => {
     try {
@@ -32,6 +33,8 @@ export const authenticateUser = async ({ req }: { req: express.Request }) => {
         const token = req.headers.authorization || "";
         if (!token) throw new Error(NO_TOKEN_PROVIDED);
         const user = verifySessionToken(token);
+        const userData = await User.findUserByContext(user);
+        if (!userData?.active) throw new Error(ACCOUNT_RESTRICTED);
         return { user };
     } catch (error) {
         throw new FormattedError(error);

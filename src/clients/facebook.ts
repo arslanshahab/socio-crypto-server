@@ -1,3 +1,4 @@
+import { SocialLinkVariables } from "src/types";
 import { FacebookGraphApi } from "./facebookApi";
 
 export class FacebookClient {
@@ -16,4 +17,11 @@ export class FacebookClient {
         payload.friends = data["friends"]["summary"]["total_count"];
         return payload;
     }
+
+    public static getPost = async (
+        socialLink: SocialLinkVariables,
+        id: string,
+        cached = true
+    ) => {
+    };
 }

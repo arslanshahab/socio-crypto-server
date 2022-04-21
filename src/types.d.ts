@@ -329,6 +329,35 @@ export interface ListCampaignsVariablesV2 {
     status?: CampaignStatus | "ALL";
     userRelated?: boolean;
 }
+export interface FindParticipantById {
+    id: string;
+    userRelated?: boolean;
+}
+export interface FindCampaignById {
+    campaignId: string;
+    userRelated?: boolean;
+    skip?: number;
+    take?: number;
+}
+export interface SocialLinkVariables {
+    id: string;
+    type: string;
+    apiKey: string;
+    apiSecret: string;
+    createdAt: Date;
+    updatedAt: Date;
+    userId: string;
+    followerCount: number | null;
+    accessToken: string | null;
+    refreshToken: string | null;
+    openId: string | null;
+    accessTokenExpiry: string | null;
+    refreshTokenExpiry: string | null;
+}
+export interface AlgorithmJsonValueType {
+    tiers: { [key: string]: { threshold: string; totalCoiins: string } };
+    pointValues: JSON;
+}
 
 export interface GetCampaignsParticipantsVariables {
     campaignId?: string;

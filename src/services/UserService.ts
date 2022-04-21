@@ -23,12 +23,26 @@ export class UserService {
         data: JWTPayload,
         include?: T
     ) {
+        return this.findUserById(data.userId, include);
+    }
+
+    /**
+     * Retrieves a user object by its id
+     *
+     * @param data the jwt payload
+     * @param include additional relations to include with the user query
+     * @returns the user object, with the requested relations included
+     */
+    public async findUserById<T extends (keyof Prisma.UserInclude)[] | Prisma.UserInclude | undefined>(
+        userId: string,
+        include?: T
+    ) {
         return this.prismaService.user.findUnique<{
             where: Prisma.UserWhereUniqueInput;
             // this type allows adding additional relations to result tpe
             include: T extends unknown[] ? Array2TrueMap<T> : T;
         }>({
-            where: { id: data.userId },
+            where: { id: userId },
             include: (isArray(include)
                 ? include?.reduce((acc, relation) => ({ ...acc, [relation]: true }), {})
                 : include) as T extends unknown[] ? Array2TrueMap<T> : T,
@@ -36,7 +50,7 @@ export class UserService {
     }
 
     /**
-     * Retrieves a user object from a JWTPayload
+     * Retrieves all user objects
      *
      * @param data the jwt payload
      * @param include additional relations to include with the user query

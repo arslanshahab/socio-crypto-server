@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { Xoxoday } from "../clients/xoxoday";
 import { generateRandomId, supportedCountries, asyncHandler, BN } from "../util";
 import { XoxodayOrder, XoxodayVoucher } from "src/types";
-import { getExchangeRateForCurrency, getSymbolValueInUSD } from "../util/exchangeRate";
+import { getExchangeRateForCurrency } from "../util/exchangeRate";
 import { User } from "../models/User";
 import { getSocialClient } from "./social";
 import { S3Client } from "../clients/s3";
@@ -10,7 +10,7 @@ import { Transfer } from "../models/Transfer";
 import { XoxodayOrder as XoxodayOrderModel } from "../models/XoxodayOrder";
 import { TatumClient } from "../clients/tatumClient";
 import { MISSING_PARAMS, USER_NOT_FOUND, FormattedError, INVALID_TOKEN, ERROR_LINKING_TWITTER } from "../util/errors";
-import { AMOUNT_LIMIT_FOR_KYC_IN_XOXODAY, BSC, COIIN } from "../util/constants";
+import { BSC, COIIN } from "../util/constants";
 
 export const initXoxoday = asyncHandler(async (req: Request, res: Response) => {
     try {
@@ -82,9 +82,10 @@ export const placeOrder = async (parent: any, args: { cart: Array<any>; email: s
             wallet: user.wallet,
             symbol: "COIIN",
             amount: totalCoiinSpent,
-            type: "XOXODAY_REDEMPTION",
+            action: "XOXODAY_REDEMPTION",
+            status: "SUCCEEDED",
         });
-        return { success: true };
+        return true;
     } catch (error) {
         throw new FormattedError(error);
     }
@@ -159,12 +160,7 @@ const prepareOrderList = async (list: Array<any>, email: string): Promise<Array<
 };
 
 const ifUserCanRedeem = async (user: User, totalCoiinSpent: number) => {
-    const { total: previousStoreSpendingInUSD } = await XoxodayOrderModel.getPastSpendingInUSD(user.id);
-    const currentSpendingInUSD = await getSymbolValueInUSD("COIIN", totalCoiinSpent);
-    if (
-        parseFloat(previousStoreSpendingInUSD) + currentSpendingInUSD > AMOUNT_LIMIT_FOR_KYC_IN_XOXODAY &&
-        user.kycStatus !== "APPROVED"
-    )
+    if (!(await user.hasKycApproved()))
         throw new Error("You need to get your KYC approved before you can redeem vouchers.");
     const twitterAccount = user.socialLinks.find((item) => item.type === "twitter");
     if (!twitterAccount) throw new Error(ERROR_LINKING_TWITTER);
@@ -173,7 +169,7 @@ const ifUserCanRedeem = async (user: User, totalCoiinSpent: number) => {
     if (twitterFollowers < 20) throw new Error("You need to have atleast 20 followers on twitter before you redeem!");
     if (!user.campaigns.length) throw new Error("You need to participate in atleast one campaign in order to redeem!");
     const recentOrder = await Transfer.getLast24HourRedemption(user.wallet, "XOXODAY_REDEMPTION");
-    if (recentOrder) throw new Error("You need to wait for few hours before you can redeem again!");
+    if (Boolean(recentOrder)) throw new Error("You can only redeem once in 24 hours!");
     const userCurrency = await TatumClient.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet: user.wallet });
     const coiinBalance = new BN((await TatumClient.getAccountBalance(userCurrency.tatumId)).availableBalance);
     if (coiinBalance.isLessThanOrEqualTo(0) || coiinBalance.isLessThan(totalCoiinSpent))

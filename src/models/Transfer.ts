@@ -183,8 +183,8 @@ export class Transfer extends BaseEntity {
 
     public static async getLast24HourRedemption(wallet: Wallet, type: TransferAction) {
         const date = initDateFromParams({ date: new Date(), d: new Date().getDate() - 1, h: 0, i: 0, s: 0 });
-        return await Transfer.findOne({
-            where: { action: type, createdAt: MoreThan(DateUtils.mixedDateToUtcDatetimeString(date)) },
+        return await Transfer.count({
+            where: { wallet, action: type, createdAt: MoreThan(DateUtils.mixedDateToUtcDatetimeString(date)) },
         });
     }
 
@@ -308,6 +308,7 @@ export class Transfer extends BaseEntity {
         tatumId: string;
         wallet: Wallet;
         action: TransferAction;
+        status: TransferStatus;
     }) {
         const newTransfer = new Transfer();
         newTransfer.currency = data.symbol;
@@ -325,12 +326,13 @@ export class Transfer extends BaseEntity {
         wallet: Wallet;
         amount: BigNumber;
         symbol: string;
-        type: TransferAction;
+        action: TransferAction;
+        status: TransferStatus;
         campaign?: Campaign;
     }) {
         const transfer = new Transfer();
         transfer.amount = data.amount;
-        transfer.action = data.type;
+        transfer.action = data.action;
         transfer.currency = data.symbol;
         transfer.wallet = data.wallet;
         if (data.campaign) transfer.campaign = data.campaign;
