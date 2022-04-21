@@ -6,7 +6,7 @@
     "author": "Alex Benedetto <alex061994@gmail.com>",
     "license": "MIT",
     "scripts": {
-        "dev": "cross-env PORT=4000 AWS_PROFILE=raiinmaker NODE_ENV=development ts-node-dev src/index.ts",
+        "dev": "cross-env PORT=4000 AWS_PROFILE=raiinmaker NODE_ENV=development ts-node-dev --respawn src/index.ts",
         "start": "PORT=4000 AWS_PROFILE=raiinmaker TS_NODE_FILES=true NODE_ENV=development ts-node src/index.ts",
         "build": "tsc",
         "clean": "rm -rf dist/",
