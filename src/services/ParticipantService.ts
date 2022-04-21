@@ -87,4 +87,12 @@ export class ParticipantService {
         if (!slUserId) throw new InternalServerError("Invalid Social Link");
         return { ...socialLink, apiKey, apiSecret, userId: slUserId };
     }
+
+    public async findParticipantsCountByUserId(userId: string) {
+        return this.prismaService.participant.count({
+            where: {
+                userId,
+            },
+        });
+    }
 }
