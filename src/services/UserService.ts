@@ -92,7 +92,28 @@ export class UserService {
         return { role, company };
     }
 
-    public findUsersRecord(skip: number, take: number) {
+    public findUsersRecord(skip: number, take: number, filter: string) {
+        const filterRecord: any = filter
+            ? {
+                  OR: [
+                      {
+                          email: { contains: filter, mode: "insensitive" },
+                      },
+                      {
+                          profile: {
+                              OR: [
+                                  {
+                                      username: { contains: filter, mode: "insensitive" },
+                                  },
+                                  {
+                                      email: { contains: filter, mode: "insensitive" },
+                                  },
+                              ],
+                          },
+                      },
+                  ],
+              }
+            : {};
         return this.prismaService.$transaction([
             this.prismaService.user.findMany({
                 select: {
@@ -109,8 +130,10 @@ export class UserService {
                         },
                     },
                 },
-                take,
+                where: filterRecord,
+
                 skip,
+                take,
             }),
             this.prismaService.user.count({}),
         ]);

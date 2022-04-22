@@ -124,13 +124,13 @@ export class UserController {
         );
     }
 
-    @Get("/user-record")
+    @Get("/users-record")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserResultModel))
-    public async getUserRecord(@QueryParams() query: PaginatedVariablesModel, @Context() context: Context) {
-        const { skip = 0, take = 10 } = query;
+    public async getUsersRecord(@QueryParams() query: PaginatedVariablesModel, @Context() context: Context) {
+        const { skip = 0, take = 10, filter } = query;
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
-        const [users, count] = await this.userService.findUsersRecord(skip, take);
+        const [users, count] = await this.userService.findUsersRecord(skip, take, filter);
         return new SuccessResult(new Pagination(users, count, UserResultModel), Pagination);
     }
 }
