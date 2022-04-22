@@ -106,3 +106,8 @@ export enum CampaignState {
     OPEN = "OPEN",
     CLOSED = "CLOSED",
 }
+export enum SocialClientType {
+    FACEBOOK = "facebook",
+    TWITTER = "twitter",
+    TIKTOK = "tiktok",
+}

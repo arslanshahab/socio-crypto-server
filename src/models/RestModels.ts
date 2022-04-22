@@ -147,7 +147,16 @@ export class XoxodayOrderResultModel {
     @Property() public readonly quantity: number;
     @Property() public readonly denomination: number;
 }
-
+export class XoxodayVoucherResultModel {
+    @Property() public readonly productId: string;
+    @Property() public readonly name: string;
+    @Property() public readonly imageUrl: string;
+    @Property() public readonly countryName: string;
+    @Property() public readonly countryCode: string;
+    @Property() public readonly currencyCode: string;
+    @Property() public readonly exchangeRate: string;
+    @ArrayOf(String) public readonly valueDenominations: Array<string>;
+}
 export class UserResultModel {
     @Property() public readonly id: string;
     @Property() public readonly email: string;
@@ -160,4 +169,12 @@ export class UserResultModel {
     public readonly notification_settings: Partial<NotificationSettingsResultModel> | null;
     @Nullable(WalletResultModel) public readonly wallet: Partial<WalletResultModel> | null;
     @CollectionOf(XoxodayOrderResultModel) public readonly xoxoday_order: Partial<XoxodayOrderResultModel>[];
+}
+
+export class RedemptionRequirementsModel {
+    @Property() public readonly twitterLinked: boolean;
+    @Property() public readonly twitterfollowers: number;
+    @Property() public readonly twitterfollowersRequirement: number;
+    @Property() public readonly participation: boolean;
+    @Property() public readonly orderLimitForTwentyFourHoursReached: boolean;
 }
