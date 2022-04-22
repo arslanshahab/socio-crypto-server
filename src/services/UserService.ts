@@ -121,6 +121,11 @@ export class UserService {
                     email: true,
                     kycStatus: true,
                     createdAt: true,
+                    lastLogin: true,
+                    active: true,
+                    social_post: {
+                        select: { id: true, userId: true },
+                    },
                     profile: {
                         select: {
                             username: true,

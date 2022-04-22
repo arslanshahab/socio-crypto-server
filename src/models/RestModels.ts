@@ -162,3 +162,12 @@ export class UserResultModel {
     @Nullable(WalletResultModel) public readonly wallet: Partial<WalletResultModel> | null;
     @CollectionOf(XoxodayOrderResultModel) public readonly xoxoday_order: Partial<XoxodayOrderResultModel>[];
 }
+
+export class UserWalletResultModel {
+    @Property() public readonly symbol: string;
+    @Property() public readonly balance: string;
+    @Property() public readonly minWithdrawAmount: number;
+    @Property() public readonly usdBalance: number;
+    @Property() public readonly imageUrl: string;
+    @Property() public readonly network: string;
+}

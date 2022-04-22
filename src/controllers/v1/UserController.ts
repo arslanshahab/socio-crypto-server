@@ -8,7 +8,8 @@ import { UserService } from "../../services/UserService";
 import { PaginatedVariablesModel, Pagination, SuccessArrayResult, SuccessResult } from "../../util/entities";
 import { USER_NOT_FOUND } from "../../util/errors";
 import { getCryptoAssestImageUrl, getUSDValueForCurrency, formatFloat, getMinWithdrawableAmount } from "../../util";
-import { UserResultModel } from "../../models/RestModels";
+import { UserResultModel, UserWalletResultModel } from "../../models/RestModels";
+import { CurrencyService } from "../../services/CurrencyService";
 
 const userResultRelations = [
     "profile" as const,
@@ -48,6 +49,8 @@ class BalanceResultModel {
 export class UserController {
     @Inject()
     private userService: UserService;
+    @Inject()
+    private currencyService: CurrencyService;
 
     @Get("/")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserResultModel))
@@ -131,6 +134,30 @@ export class UserController {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
         const [users, count] = await this.userService.findUsersRecord(skip, take, filter);
-        return new SuccessResult(new Pagination(users, count, UserResultModel), Pagination);
+        return new SuccessResult(new Pagination(users, count, Object), Pagination);
+    }
+
+    @Get("/wallet-balances")
+    @(Returns(200, SuccessResult).Of(UserWalletResultModel))
+    public async getUserWalletBalances(@QueryParams() query: { userId: string }, @Context() context: Context) {
+        const { userId } = query;
+        const currencies = await this.currencyService.getCurrenciesByUserId(userId);
+        const balances = await TatumClient.getBalanceForAccountList(currencies);
+        const allCurrencies = currencies.map(async (x) => {
+            const balance = balances.find((y) => y.tatumId === x.tatumId)?.availableBalance;
+            const symbol = x.token?.symbol || "";
+            const usdBalance = await getUSDValueForCurrency(symbol.toLowerCase(), balance);
+            const minWithdrawAmount = await getMinWithdrawableAmount(symbol);
+            return {
+                symbol: symbol,
+                balance: formatFloat(balance),
+                minWithdrawAmount: minWithdrawAmount,
+                usdBalance: usdBalance,
+                imageUrl: getCryptoAssestImageUrl(symbol),
+                network: x.token?.network,
+            };
+        });
+        const result = await Promise.all(allCurrencies);
+        return new SuccessArrayResult(result, UserWalletResultModel);
     }
 }
