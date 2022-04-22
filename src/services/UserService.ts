@@ -93,29 +93,29 @@ export class UserService {
     }
 
     public findUsersRecord(skip: number, take: number, filter: string) {
-        const filterRecord: any = filter
-            ? {
-                  OR: [
-                      {
-                          email: { contains: filter, mode: "insensitive" },
-                      },
-                      {
-                          profile: {
-                              OR: [
-                                  {
-                                      username: { contains: filter, mode: "insensitive" },
-                                  },
-                                  {
-                                      email: { contains: filter, mode: "insensitive" },
-                                  },
-                              ],
-                          },
-                      },
-                  ],
-              }
-            : {};
         return this.prismaService.$transaction([
             this.prismaService.user.findMany({
+                where: filter
+                    ? {
+                          OR: [
+                              {
+                                  email: { contains: filter, mode: "insensitive" },
+                              },
+                              {
+                                  profile: {
+                                      OR: [
+                                          {
+                                              username: { contains: filter, mode: "insensitive" },
+                                          },
+                                          {
+                                              email: { contains: filter, mode: "insensitive" },
+                                          },
+                                      ],
+                                  },
+                              },
+                          ],
+                      }
+                    : {},
                 select: {
                     id: true,
                     email: true,
@@ -130,8 +130,6 @@ export class UserService {
                         },
                     },
                 },
-                where: filterRecord,
-
                 skip,
                 take,
             }),
