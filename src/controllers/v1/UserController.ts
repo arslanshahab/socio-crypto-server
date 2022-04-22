@@ -1,6 +1,6 @@
-import { Get, Property, Returns } from "@tsed/schema";
+import { Get, Property, Put, Returns } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
-import { Context, QueryParams } from "@tsed/common";
+import { BodyParams, Context, QueryParams } from "@tsed/common";
 import { BadRequest } from "@tsed/exceptions";
 import { NotificationSettings, Participant, Profile, SocialLink, User, Wallet, XoxodayOrder } from "@prisma/client";
 import { TatumClient } from "../../clients/tatumClient";
@@ -159,5 +159,16 @@ export class UserController {
         });
         const result = await Promise.all(allCurrencies);
         return new SuccessArrayResult(result, UserWalletResultModel);
+    }
+
+    @Put("/update-user-status")
+    @Returns(200, SuccessResult)
+    public async updateUserStatus(
+        @BodyParams() body: { id: string; activeStatus: boolean },
+        @Context() context: Context
+    ) {
+        const { id, activeStatus } = body;
+        await this.userService.updateUserStatus(id, activeStatus);
+        return "User status updated successfully";
     }
 }

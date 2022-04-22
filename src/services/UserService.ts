@@ -141,4 +141,10 @@ export class UserService {
             this.prismaService.user.count({}),
         ]);
     }
+    public async updateUserStatus(userId: string, activeStatus: boolean) {
+        return await this.prismaService.user.update({
+            where: { id: userId },
+            data: { active: activeStatus },
+        });
+    }
 }
