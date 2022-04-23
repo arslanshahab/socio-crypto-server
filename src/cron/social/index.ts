@@ -4,7 +4,6 @@ import { SocialPost } from "../../models/SocialPost";
 import { getConnection, MoreThan } from "typeorm";
 import { Secrets } from "../../util/secrets";
 import { Application } from "../../app";
-import logger from "../../util/logger";
 import { SocialLink } from "../../models/SocialLink";
 import { Participant } from "../../models/Participant";
 import { BigNumber } from "bignumber.js";
@@ -72,10 +71,10 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
 };
 
 (async () => {
-    logger.info("Starting Cron.");
+    console.log("Starting Cron.");
     await Secrets.initialize();
     const connection = await app.connectDatabase();
-    logger.info("Database connected");
+    console.log("Database connected");
     let postsToSave: SocialPost[] = [];
     const campaigns = await Campaign.find({
         where: {
@@ -84,23 +83,20 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
             auditStatus: "DEFAULT",
         },
     });
-    for (const campaign of campaigns) {
-        console.log("FETCHING METRICS FOR CAMPAIGN: ", campaign.id, campaign.name);
-        const take = 10;
+    for (let campaignIndex = 0; campaignIndex < campaigns.length; campaignIndex++) {
+        const campaign = campaigns[campaignIndex];
+        const take = 100;
         let skip = 0;
         const totalPosts = await SocialPost.count({ where: { campaign }, relations: ["user", "campaign"] });
-        console.log("TOTAL POSTS: ", totalPosts);
         const loop = Math.ceil(totalPosts / take);
         for (let postIndex = 0; postIndex < loop; postIndex++) {
-            const posts = await SocialPost.find({ where: { campaign }, relations: ["user", "campaign"], take, skip });
+            let posts = await SocialPost.find({ where: { campaign }, relations: ["user", "campaign"], take, skip });
             for (const post of posts) {
                 const socialLink = await SocialLink.findOne({
                     where: { user: post.user, type: post.type },
                     relations: ["user"],
                 });
-                if (!socialLink) {
-                    logger.error(`participant ${post.user.id} has not linked ${post.type} as a social platform`);
-                } else {
+                if (socialLink) {
                     try {
                         if (socialLink?.type === "twitter") {
                             const response = await TwitterClient.get(socialLink, post.id, false);
@@ -110,7 +106,6 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                                 new BN(responseJSON["retweet_count"]),
                                 post
                             );
-                            logger.info(`pushing new metrics on social post for campaign: ${post.campaign.name}`);
                             postsToSave.push(updatedPost);
                         }
                         if (socialLink?.type === "tiktok") {
@@ -132,9 +127,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
             skip += take;
         }
     }
-    logger.info("saving entities");
     await getConnection().createEntityManager().save(postsToSave);
-    logger.info("closing connection");
     await connection.close();
     process.exit(0);
 })();
