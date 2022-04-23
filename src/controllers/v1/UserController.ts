@@ -2,38 +2,38 @@ import { Get, Property, Returns } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
 import { Context, QueryParams } from "@tsed/common";
 import { BadRequest, NotFound } from "@tsed/exceptions";
-import { NotificationSettings, Participant, Profile, SocialLink, User, Wallet, XoxodayOrder } from "@prisma/client";
+import { Participant, Profile, SocialLink, User, Wallet } from "@prisma/client";
 import { TatumClient } from "../../clients/tatumClient";
 import { UserService } from "../../services/UserService";
 import { PaginatedVariablesModel, Pagination, SuccessArrayResult, SuccessResult } from "../../util/entities";
 import { NOTIFICATION_SETTING_NOT_FOUND, USER_NOT_FOUND } from "../../util/errors";
 import { getCryptoAssestImageUrl, getUSDValueForCurrency, formatFloat, getMinWithdrawableAmount } from "../../util";
-import { NotificationSettingsResultModel, UserResultModel } from "../../models/RestModels";
+import { NotificationSettingsResultModel, ProfileResultModel, UserResultModel } from "../../models/RestModels";
 import { NotificationService } from "../../services/NotificationService";
 
-const userResultRelations = [
-    "profile" as const,
-    "social_link" as const,
-    "participant" as const,
-    "notification_settings" as const,
-    "wallet" as const,
-    "xoxoday_order" as const,
-];
+const userResultRelations = ["profile" as const, "social_link" as const, "participant" as const, "wallet" as const];
+
+function getProfileResultModel(profile: Profile): ProfileResultModel {
+    return {
+        ...profile,
+        hasRecoveryCodeSet: !!profile?.recoveryCode,
+        interests: JSON.parse(profile.interests),
+        values: JSON.parse(profile.values),
+    };
+}
 
 function getUserResultModel(
     user: User & {
         profile: Profile | null;
         social_link: SocialLink[];
         participant: Participant[];
-        notification_settings: NotificationSettings | null;
         wallet: Wallet | null;
-        xoxoday_order: XoxodayOrder[];
     }
-) {
-    const userResult: UserResultModel = user;
-    if (userResult.profile) userResult.profile.hasRecoveryCodeSet = !!user.profile?.recoveryCode;
-
-    return userResult;
+): UserResultModel {
+    return {
+        ...user,
+        profile: user.profile ? getProfileResultModel(user.profile) : null,
+    };
 }
 
 class BalanceResultModel {
