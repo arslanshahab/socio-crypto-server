@@ -1,7 +1,7 @@
 import { Campaign } from "../../models/Campaign";
 import { TwitterClient } from "../../clients/twitter";
 import { SocialPost } from "../../models/SocialPost";
-import { getConnection } from "typeorm";
+import { getConnection, MoreThan } from "typeorm";
 import { Secrets } from "../../util/secrets";
 import { Application } from "../../app";
 import logger from "../../util/logger";
@@ -14,6 +14,7 @@ import { HourlyCampaignMetric } from "../../models/HourlyCampaignMetric";
 import { QualityScore } from "../../models/QualityScore";
 import * as dotenv from "dotenv";
 import { TikTokClient } from "../../clients/tiktok";
+import { DateUtils } from "typeorm/util/DateUtils";
 
 dotenv.config();
 const app = new Application();
@@ -76,10 +77,22 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
     const connection = await app.connectDatabase();
     logger.info("Database connected");
     let postsToSave: SocialPost[] = [];
-    const campaigns = await Campaign.find({ relations: ["posts"] });
+    const campaigns = await Campaign.find({
+        where: {
+            endDate: MoreThan(DateUtils.mixedDateToUtcDatetimeString(new Date())),
+            status: "APPROVED",
+            auditStatus: "DEFAULT",
+        },
+    });
     for (const campaign of campaigns) {
-        if (campaign.isOpen()) {
-            const posts = await SocialPost.find({ where: { campaign }, relations: ["user", "campaign"] });
+        console.log("FETCHING METRICS FOR CAMPAIGN: ", campaign.id, campaign.name);
+        const take = 10;
+        let skip = 0;
+        const totalPosts = await SocialPost.count({ where: { campaign }, relations: ["user", "campaign"] });
+        console.log("TOTAL POSTS: ", totalPosts);
+        const loop = Math.ceil(totalPosts / take);
+        for (let postIndex = 0; postIndex < loop; postIndex++) {
+            const posts = await SocialPost.find({ where: { campaign }, relations: ["user", "campaign"], take, skip });
             for (const post of posts) {
                 const socialLink = await SocialLink.findOne({
                     where: { user: post.user, type: post.type },
@@ -116,6 +129,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                     }
                 }
             }
+            skip += take;
         }
     }
     logger.info("saving entities");
