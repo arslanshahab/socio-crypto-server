@@ -73,10 +73,10 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, postId: st
 };
 
 (async () => {
-    console.log("Starting Cron.");
+    console.log("STARTING CRON.");
     await Secrets.initialize();
     const connection = await app.connectDatabase();
-    console.log("Database connected");
+    console.log("DATABASE CONNECTED.");
     try {
         const campaigns = await Campaign.find({
             where: {
@@ -93,7 +93,6 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, postId: st
             const totalPosts = await SocialPost.count({ where: { campaign }, relations: ["user", "campaign"] });
             console.log("TOTAL POSTS FOR CAMPAIGN ID: ", campaign.id, totalPosts);
             const loop = Math.ceil(totalPosts / take);
-            console.log("LOOP ", loop);
             for (let postPageIndex = 0; postPageIndex < loop; postPageIndex++) {
                 let posts = await SocialPost.find({ where: { campaign }, relations: ["campaign", "user"], take, skip });
                 console.log(posts.length);
@@ -146,6 +145,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, postId: st
                 //     }
                 // }
                 skip += take;
+                console.log("SAVING UPDATED POSTS ----.", postsToSave.length);
                 await getConnection().createEntityManager().save(postsToSave);
             }
         }
