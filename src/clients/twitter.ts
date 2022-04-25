@@ -194,7 +194,6 @@ export class TwitterClient {
     };
 
     public static get = async (socialLink: SocialLink, id: string, cached = true): Promise<string> => {
-        logger.debug(`retrieving tweet with id: ${id}`);
         let cacheKey = `twitter:${id}`;
         if (cached) {
             const cachedResponse = await getRedis().get(cacheKey);

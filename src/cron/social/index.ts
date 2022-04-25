@@ -12,13 +12,15 @@ import { DailyParticipantMetric } from "../../models/DailyParticipantMetric";
 import { HourlyCampaignMetric } from "../../models/HourlyCampaignMetric";
 import { QualityScore } from "../../models/QualityScore";
 import * as dotenv from "dotenv";
-import { TikTokClient } from "../../clients/tiktok";
+// import { TikTokClient } from "../../clients/tiktok";
 import { DateUtils } from "typeorm/util/DateUtils";
 
 dotenv.config();
 const app = new Application();
 
-const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: SocialPost) => {
+const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, postId: string) => {
+    const post = await SocialPost.findOne({ where: { id: postId }, relations: ["campaign", "user"] });
+    if (!post) return null;
     const participant = await Participant.findOne({
         where: { campaign: post.campaign, user: post.user },
         relations: ["campaign", "user"],
@@ -75,7 +77,6 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
     await Secrets.initialize();
     const connection = await app.connectDatabase();
     console.log("Database connected");
-    let postsToSave: SocialPost[] = [];
     const campaigns = await Campaign.find({
         where: {
             endDate: MoreThan(DateUtils.mixedDateToUtcDatetimeString(new Date())),
@@ -83,51 +84,64 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
             auditStatus: "DEFAULT",
         },
     });
+    console.log("TOTAL CAMPAIGNS: ", campaigns.length);
     for (let campaignIndex = 0; campaignIndex < campaigns.length; campaignIndex++) {
         const campaign = campaigns[campaignIndex];
-        const take = 100;
+        const take = 500;
         let skip = 0;
         const totalPosts = await SocialPost.count({ where: { campaign }, relations: ["user", "campaign"] });
+        console.log("TOTAL POSTS FOR CAMPAIGN ID: ", campaign.id, totalPosts);
         const loop = Math.ceil(totalPosts / take);
-        for (let postIndex = 0; postIndex < loop; postIndex++) {
-            let posts = await SocialPost.find({ where: { campaign }, relations: ["user", "campaign"], take, skip });
+        console.log("LOOP ", loop);
+        for (let postPageIndex = 0; postPageIndex < loop; postPageIndex++) {
+            let posts = await SocialPost.find({ where: { campaign }, relations: ["campaign", "user"], take, skip });
+            console.log(posts.length);
+            const postsToSave: SocialPost[] = [];
+            const twitterPromiseArray = [];
+            // const tiktokPromiseArray = [];
             for (const post of posts) {
                 const socialLink = await SocialLink.findOne({
                     where: { user: post.user, type: post.type },
-                    relations: ["user"],
                 });
                 if (socialLink) {
-                    try {
-                        if (socialLink?.type === "twitter") {
-                            const response = await TwitterClient.get(socialLink, post.id, false);
-                            const responseJSON = JSON.parse(response);
-                            const updatedPost = await updatePostMetrics(
-                                new BN(responseJSON["favorite_count"]),
-                                new BN(responseJSON["retweet_count"]),
-                                post
-                            );
-                            postsToSave.push(updatedPost);
-                        }
-                        if (socialLink?.type === "tiktok") {
-                            const postDetails = (await TikTokClient.getPosts(socialLink, [post.id]))[0];
-                            const likeCount = postDetails.like_count;
-                            const shareCount = postDetails.share_count;
-                            const updatedPost = await updatePostMetrics(
-                                new BN(likeCount) || 0,
-                                new BN(shareCount) || 0,
-                                post
-                            );
-                            postsToSave.push(updatedPost);
-                        }
-                    } catch (e) {
-                        console.log(e);
+                    console.log("preparing twitter reequest.");
+                    if (socialLink?.type === "twitter") {
+                        twitterPromiseArray.push(TwitterClient.get(socialLink, post.id, false));
                     }
+                    // if (socialLink?.type === "tiktok") {
+                    //     console.log("preparing tiktok reequest.");
+                    //     tiktokPromiseArray.push(TikTokClient.getPosts(socialLink, [post.id]));
+                    // }
                 }
             }
+            const twitterResponses = await Promise.allSettled(twitterPromiseArray);
+            for (let twitterRespIndex = 0; twitterRespIndex < twitterResponses.length; twitterRespIndex++) {
+                const twitterResp = twitterResponses[twitterRespIndex];
+                if (twitterResp.status === "fulfilled") {
+                    const responseJSON = JSON.parse(twitterResp.value);
+                    const updatedPost = await updatePostMetrics(
+                        new BN(responseJSON["favorite_count"]),
+                        new BN(responseJSON["retweet_count"]),
+                        responseJSON["id"]
+                    );
+                    if (updatedPost) postsToSave.push(updatedPost);
+                }
+            }
+            // const tiktokResponses = await Promise.allSettled(tiktokPromiseArray);
+            // for (let tiktokRespIndex = 0; tiktokRespIndex < twitterResponses.length; tiktokRespIndex++) {
+            //     const tiktokResp = tiktokResponses[tiktokRespIndex];
+            //     if (tiktokResp.status === "fulfilled") {
+            //         const postDetails = tiktokResp.value[0];
+            //         const likeCount = postDetails.like_count;
+            //         const shareCount = postDetails.share_count;
+            //         const updatedPost = await updatePostMetrics(new BN(likeCount) || 0, new BN(shareCount) || 0, post);
+            //         if (updatedPost) postsToSave.push(updatedPost);
+            //     }
+            // }
             skip += take;
+            await getConnection().createEntityManager().save(postsToSave);
         }
     }
-    await getConnection().createEntityManager().save(postsToSave);
     await connection.close();
     process.exit(0);
 })();
