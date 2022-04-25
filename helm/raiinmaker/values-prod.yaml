@@ -9,6 +9,9 @@ pg-bak:
 ingress:
     host: server.api.raiinmaker.com
 
+# up server replica count
+replicaCount: 16
+
 data:
     IAM_ROLE: arn:aws:iam::527252880472:role/raiinmaker-production
     environment:

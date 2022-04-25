@@ -10,7 +10,7 @@ import {
 } from "@prisma/client";
 import { Get, Property, Required, Enum, Returns } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
-import { Context, QueryParams } from "@tsed/common";
+import { Context, PathParams, QueryParams } from "@tsed/common";
 import { CampaignService } from "../../services/CampaignService";
 import { UserService } from "../../services/UserService";
 import { CampaignState, CampaignStatus } from "../../util/constants";
@@ -38,7 +38,7 @@ class ListCurrentCampaignVariablesModel {
 
 async function getCampaignResultModel(
     campaign: Campaign & {
-        participant: Participant[];
+        participant?: Participant[];
         currency: (Currency & { token: Token | null }) | null;
         crypto_currency: CryptoCurrency | null;
         campaign_media: CampaignMedia[];
@@ -85,6 +85,20 @@ export class CampaignController {
         const modelItems = await Promise.all(items.map((i) => getCampaignResultModel(i)));
         return new SuccessResult(new Pagination(modelItems, total, CampaignResultModel), Pagination);
     }
+
+    @Get("/one/:id")
+    @(Returns(200, SuccessResult).Of(CampaignResultModel))
+    public async getOne(@PathParams("id") id: string) {
+        const campaign = await this.campaignService.findCampaignById(id, {
+            currency: { include: { token: true } },
+            crypto_currency: true,
+            campaign_media: true,
+            campaign_template: true,
+        });
+        if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
+        return new SuccessResult(await getCampaignResultModel(campaign), CampaignResultModel);
+    }
+
     @Get("/current-campaign-tier")
     @(Returns(200, SuccessResult).Of(CurrentCampaignModel))
     public async getCurrentCampaignTier(

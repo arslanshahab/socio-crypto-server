@@ -8,6 +8,11 @@ import { SocialLink } from "../models/SocialLink";
 import { SocialLinkVariables, TwitterLinkCredentials } from "../types";
 import { TWITTER_LINK_EXPIRED, FormattedError } from "../util/errors";
 import { isArray } from "lodash";
+import { decrypt } from "../util/crypto";
+import { SocialLink as PrismaSocialLink } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient({});
 
 export class TwitterClient {
     public static textLimit = 280;
@@ -136,7 +141,7 @@ export class TwitterClient {
 
     public static getTotalFollowers = async (socialLink: SocialLink, id: string, cached = true) => {
         try {
-            logger.info(`getting follower count`);
+            logger.info(`getting follower count`, socialLink, id, cached);
             let cacheKey = `twitterFollowerCount:${id}`;
             if (cached) {
                 const cachedResponse = await getRedis().get(cacheKey);
@@ -152,6 +157,34 @@ export class TwitterClient {
                 const [data] = error;
                 if (data?.code === 89) {
                     await socialLink.remove();
+                    throw new FormattedError(new Error(TWITTER_LINK_EXPIRED));
+                }
+                throw new Error(data?.message || "");
+            }
+            throw new Error(error.message);
+        }
+    };
+    public static getTotalFollowersV1 = async (socialLink: PrismaSocialLink, id: string, cached = true) => {
+        try {
+            const apiKey = decrypt(socialLink.apiKey!);
+            const apiSecret = decrypt(socialLink.apiSecret!);
+            const cacheKey = `twitterFollowerCount:${id}`;
+            if (cached) {
+                const cachedResponse = await getRedis().get(cacheKey);
+                if (cachedResponse) return cachedResponse;
+            }
+            const client = TwitterClient.getClient({ apiKey: apiKey, apiSecret: apiSecret });
+            const response = await client.get("/account/verify_credentials", { include_entities: false });
+            const followerCount = response["followers_count"];
+            await getRedis().set(cacheKey, JSON.stringify(followerCount), "EX", 900);
+            return followerCount;
+        } catch (error) {
+            if (isArray(error)) {
+                const [data] = error;
+                if (data?.code === 89) {
+                    await prisma.socialLink.delete({
+                        where: { id },
+                    });
                     throw new FormattedError(new Error(TWITTER_LINK_EXPIRED));
                 }
                 throw new Error(data?.message || "");

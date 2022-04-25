@@ -1,39 +1,49 @@
 import { Get, Property, Put, Returns } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
 import { BodyParams, Context, QueryParams } from "@tsed/common";
-import { BadRequest } from "@tsed/exceptions";
-import { NotificationSettings, Participant, Profile, SocialLink, User, Wallet, XoxodayOrder } from "@prisma/client";
+// import { BadRequest } from "@tsed/exceptions";
+import {  Participant, Profile, SocialLink, User, Wallet } from "@prisma/client";
+// import { Context, QueryParams } from "@tsed/common";
+import { BadRequest, NotFound } from "@tsed/exceptions";
+// import { Participant, Profile, SocialLink, User, Wallet } from "@prisma/client";
 import { TatumClient } from "../../clients/tatumClient";
 import { UserService } from "../../services/UserService";
 import { PaginatedVariablesModel, Pagination, SuccessArrayResult, SuccessResult } from "../../util/entities";
-import { USER_NOT_FOUND } from "../../util/errors";
+import { NOTIFICATION_SETTING_NOT_FOUND, USER_NOT_FOUND } from "../../util/errors";
 import { getCryptoAssestImageUrl, getUSDValueForCurrency, formatFloat, getMinWithdrawableAmount } from "../../util";
-import { UserResultModel, UserWalletResultModel } from "../../models/RestModels";
+// import {  UserWalletResultModel } from "../../models/RestModels";
 import { CurrencyService } from "../../services/CurrencyService";
+import {
+    NotificationSettingsResultModel,
+    ProfileResultModel,
+    UserResultModel,
+    UserWalletResultModel,
+} from "../../models/RestModels";
+import { NotificationService } from "../../services/NotificationService";
 
-const userResultRelations = [
-    "profile" as const,
-    "social_link" as const,
-    "participant" as const,
-    "notification_settings" as const,
-    "wallet" as const,
-    "xoxoday_order" as const,
-];
+const userResultRelations = ["profile" as const, "social_link" as const, "participant" as const, "wallet" as const];
+
+function getProfileResultModel(profile: Profile): ProfileResultModel {
+    return {
+        ...profile,
+        hasRecoveryCodeSet: !!profile?.recoveryCode,
+        interests: JSON.parse(profile.interests),
+        values: JSON.parse(profile.values),
+    };
+}
 
 function getUserResultModel(
     user: User & {
         profile: Profile | null;
         social_link: SocialLink[];
         participant: Participant[];
-        notification_settings: NotificationSettings | null;
         wallet: Wallet | null;
-        xoxoday_order: XoxodayOrder[];
     }
-) {
-    const userResult: UserResultModel = user;
-    if (userResult.profile) userResult.profile.hasRecoveryCodeSet = !!user.profile?.recoveryCode;
-
-    return userResult;
+): UserResultModel {
+    return {
+        ...user,
+        profile: user.profile ? getProfileResultModel(user.profile) : null,
+    };
 }
 
 class BalanceResultModel {
@@ -51,6 +61,7 @@ export class UserController {
     private userService: UserService;
     @Inject()
     private currencyService: CurrencyService;
+    private notificationService: NotificationService;
 
     @Get("/")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserResultModel))
@@ -170,5 +181,14 @@ export class UserController {
         const { id, activeStatus } = body;
         await this.userService.updateUserStatus(id, activeStatus);
         return "User status updated successfully";
+    }
+    @Get("/me/notification-settings")
+    @(Returns(200, SuccessResult).Of(NotificationSettingsResultModel))
+    public async getNotificationSettings(@Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new BadRequest(USER_NOT_FOUND);
+        const settings = await this.notificationService.findNotificationSettingByUserId(user.id);
+        if (!settings) throw new NotFound(NOTIFICATION_SETTING_NOT_FOUND);
+        return new SuccessResult(settings, NotificationSettingsResultModel);
     }
 }
