@@ -1,17 +1,13 @@
 import { Get, Property, Put, Returns } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
 import { BodyParams, Context, QueryParams } from "@tsed/common";
-// import { BadRequest } from "@tsed/exceptions";
-import {  Participant, Profile, SocialLink, User, Wallet } from "@prisma/client";
-// import { Context, QueryParams } from "@tsed/common";
+import { Participant, Profile, SocialLink, User, Wallet } from "@prisma/client";
 import { BadRequest, NotFound } from "@tsed/exceptions";
-// import { Participant, Profile, SocialLink, User, Wallet } from "@prisma/client";
 import { TatumClient } from "../../clients/tatumClient";
 import { UserService } from "../../services/UserService";
 import { PaginatedVariablesModel, Pagination, SuccessArrayResult, SuccessResult } from "../../util/entities";
 import { NOTIFICATION_SETTING_NOT_FOUND, USER_NOT_FOUND } from "../../util/errors";
 import { getCryptoAssestImageUrl, getUSDValueForCurrency, formatFloat, getMinWithdrawableAmount } from "../../util";
-// import {  UserWalletResultModel } from "../../models/RestModels";
 import { CurrencyService } from "../../services/CurrencyService";
 import {
     NotificationSettingsResultModel,
@@ -60,7 +56,6 @@ export class UserController {
     @Inject()
     private userService: UserService;
     @Inject()
-    private currencyService: CurrencyService;
     private notificationService: NotificationService;
 
     @Get("/")
@@ -138,19 +133,35 @@ export class UserController {
         );
     }
 
+    @Get("/me/notification-settings")
+    @(Returns(200, SuccessResult).Of(NotificationSettingsResultModel))
+    public async getNotificationSettings(@Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new BadRequest(USER_NOT_FOUND);
+        const settings = await this.notificationService.findNotificationSettingByUserId(user.id);
+        if (!settings) throw new NotFound(NOTIFICATION_SETTING_NOT_FOUND);
+        return new SuccessResult(settings, NotificationSettingsResultModel);
+    }
+}
+
+@Controller("/docs")
+export class UserV1Controller {
+    @Inject()
+    private userService: UserService;
+    @Inject()
+    private currencyService: CurrencyService;
+
     @Get("/users-record")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserResultModel))
     public async getUsersRecord(@QueryParams() query: PaginatedVariablesModel, @Context() context: Context) {
         const { skip = 0, take = 10, filter } = query;
-        const user = await this.userService.findUserByContext(context.get("user"));
-        if (!user) throw new BadRequest(USER_NOT_FOUND);
         const [users, count] = await this.userService.findUsersRecord(skip, take, filter);
         return new SuccessResult(new Pagination(users, count, Object), Pagination);
     }
 
-    @Get("/wallet-balances")
+    @Get("/user-balances")
     @(Returns(200, SuccessResult).Of(UserWalletResultModel))
-    public async getUserWalletBalances(@QueryParams() query: { userId: string }, @Context() context: Context) {
+    public async getUserBalances(@QueryParams() query: { userId: string }, @Context() context: Context) {
         const { userId } = query;
         const currencies = await this.currencyService.getCurrenciesByUserId(userId);
         const balances = await TatumClient.getBalanceForAccountList(currencies);
@@ -181,14 +192,5 @@ export class UserController {
         const { id, activeStatus } = body;
         await this.userService.updateUserStatus(id, activeStatus);
         return "User status updated successfully";
-    }
-    @Get("/me/notification-settings")
-    @(Returns(200, SuccessResult).Of(NotificationSettingsResultModel))
-    public async getNotificationSettings(@Context() context: Context) {
-        const user = await this.userService.findUserByContext(context.get("user"));
-        if (!user) throw new BadRequest(USER_NOT_FOUND);
-        const settings = await this.notificationService.findNotificationSettingByUserId(user.id);
-        if (!settings) throw new NotFound(NOTIFICATION_SETTING_NOT_FOUND);
-        return new SuccessResult(settings, NotificationSettingsResultModel);
     }
 }
