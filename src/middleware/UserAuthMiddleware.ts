@@ -9,9 +9,11 @@ import { getActiveAdmin } from "../controllers/helpers";
 @Middleware()
 export class UserAuthMiddleware {
     public async use(@Req() req: Req, @Context() ctx: Context) {
-        const tokenAdmin = req.headers.cookie?.split("=")[1];
-        if (tokenAdmin) {
-            const admin = getActiveAdmin(tokenAdmin);
+        // ADMIN authorization
+        // check if the cookie has session value
+        const adminToken = req.headers.cookie?.split("session=")[1];
+        if (adminToken) {
+            const admin = getActiveAdmin(adminToken);
             ctx.set("user", admin);
             return;
         }
@@ -20,6 +22,7 @@ export class UserAuthMiddleware {
             return;
         }
 
+        // USER authorization
         const token = ctx.request.req.headers.authorization;
         if (!token) throw new Forbidden("Access token is missing.");
         try {
