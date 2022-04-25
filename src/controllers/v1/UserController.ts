@@ -57,6 +57,8 @@ export class UserController {
     private userService: UserService;
     @Inject()
     private notificationService: NotificationService;
+    @Inject()
+    private currencyService: CurrencyService;
 
     @Get("/")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserResultModel))
@@ -142,14 +144,6 @@ export class UserController {
         if (!settings) throw new NotFound(NOTIFICATION_SETTING_NOT_FOUND);
         return new SuccessResult(settings, NotificationSettingsResultModel);
     }
-}
-
-@Controller("/docs")
-export class UserV1Controller {
-    @Inject()
-    private userService: UserService;
-    @Inject()
-    private currencyService: CurrencyService;
 
     @Get("/users-record")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserResultModel))
@@ -191,6 +185,7 @@ export class UserV1Controller {
     ) {
         const { id, activeStatus } = body;
         await this.userService.updateUserStatus(id, activeStatus);
-        return "User status updated successfully";
+        const result = { response: "User status updated successfully" };
+        return new SuccessResult(result, Object);
     }
 }

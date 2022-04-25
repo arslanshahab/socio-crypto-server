@@ -30,6 +30,8 @@ export class XoxodayController {
     private participantService: ParticipantService;
     @Inject()
     private userService: UserService;
+    @Inject()
+    private prismaService: PrismaService;
 
     @Get("/voucher")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(XoxodayVoucherResultModel))
@@ -70,20 +72,10 @@ export class XoxodayController {
         };
         return new SuccessResult(result, RedemptionRequirementsModel);
     }
-}
-@Controller("/docs")
-export class XoxodayControllerV1 {
-    @Inject()
-    private prismaService: PrismaService;
-    @Inject()
-    private xoxodayService: XoxodayService;
-    @Inject()
-    private participantService: ParticipantService;
-
     @Get("/redemption-requirements/:userId")
     @(Returns(200, SuccessResult).Of(RedemptionRequirementsModel))
     public async getRedemptionRequirementsV1(@PathParams() query: { userId: string }, @Context() context: Context) {
-        const { userId } = query;        
+        const { userId } = query;
         const { TWITTER } = SocialClientType;
         const recentOrder = await this.xoxodayService.getLast24HourRedemption("XOXODAY_REDEMPTION");
         const socialLink = await this.prismaService.socialLink.findMany({

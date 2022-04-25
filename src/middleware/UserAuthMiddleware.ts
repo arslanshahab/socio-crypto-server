@@ -1,7 +1,7 @@
 import { Context, Middleware, Req } from "@tsed/common";
 import { Forbidden, InternalServerError } from "@tsed/exceptions";
-// import { Firebase } from "../clients/firebase";
 import { verifySessionToken } from "../util";
+import { getActiveAdmin } from "../controllers/helpers";
 
 /**
  * Authenticates users based on the Authorization header
@@ -9,20 +9,13 @@ import { verifySessionToken } from "../util";
 @Middleware()
 export class UserAuthMiddleware {
     public async use(@Req() req: Req, @Context() ctx: Context) {
-        // const tokenAdmin =ctx.request.req.headers.cookie;
-        // const decodedToken = await Firebase.verifySessionCookie(tokenAdmin);
-        // const firebaseUser = await Firebase.getUserById(decodedToken.uid);
-        // const admin = {
-        //     id: decodedToken.uid,
-        //     method: "firebase",
-        //     ...decodedToken,
-        //     ...(firebaseUser.customClaims && {
-        //         role: firebaseUser.customClaims.role,
-        //         company: firebaseUser.customClaims.company,
-        //         tempPass: firebaseUser.customClaims.tempPass || false,
-        //     }),
-        // };
-        // console.log("decodedToken---------------", admin);
+        const tokenAdmin = req.headers.cookie?.split("=")[1];
+        if (tokenAdmin) {
+            const admin = getActiveAdmin(tokenAdmin);
+            ctx.set("user", admin);
+            return;
+        }
+
         if (ctx.has("user") || ctx.request.url.startsWith("/v1/docs/")) {
             return;
         }

@@ -12,9 +12,11 @@ import { Escrow } from "../models/Escrow";
 import { WalletCurrency } from "../models/WalletCurrency";
 import { CampaignStatus, FEE_RATE } from "../util/constants";
 import {
+    ADMIN_NOT_FOUND,
     AMOUNT_IN_POSITIVE,
     CURRENCY_NOT_FOUND,
     ESCROW_NOT_FOUND,
+    INVALID_TOKEN,
     PARTICIPANT_NOT_FOUND,
     SOICIAL_LINKING_ERROR,
     WALLET_CURRENCY_NOT_FOUND,
@@ -24,6 +26,8 @@ import { getExchangeRateForCurrency } from "../util/exchangeRate";
 import { TwitterClient } from "../clients/twitter";
 import { TikTokClient } from "../clients/tiktok";
 import { FacebookClient } from "../clients/facebook";
+import { Firebase } from "../clients/firebase";
+import { Forbidden, NotFound } from "@tsed/exceptions";
 
 export const feeMultiplier = () => new BN(1).minus(FEE_RATE);
 
@@ -383,4 +387,22 @@ export const getSocialClient = (type: string) => {
         default:
             throw new Error(SOICIAL_LINKING_ERROR);
     }
+};
+
+export const getActiveAdmin = async (token: string) => {
+    const decodedToken = await Firebase.verifySessionCookie(token);
+    if (!decodedToken) throw new Forbidden(INVALID_TOKEN);
+    const firebaseUser = await Firebase.getUserById(decodedToken.uid);
+    if (!firebaseUser) throw new NotFound(ADMIN_NOT_FOUND);
+    const admin = {
+        id: decodedToken.uid,
+        method: "firebase",
+        ...decodedToken,
+        ...(firebaseUser.customClaims && {
+            role: firebaseUser.customClaims.role,
+            company: firebaseUser.customClaims.company,
+            tempPass: firebaseUser.customClaims.tempPass || false,
+        }),
+    };
+    return admin;
 };
