@@ -168,6 +168,8 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
             }
         }
     } catch (error) {}
+    console.log("COMPLETED CRON TASKS ----.");
     await connection.close();
+    console.log("DATABASE CONNECTION CLOSED ----.");
     process.exit(0);
 })();
