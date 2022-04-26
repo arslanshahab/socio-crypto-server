@@ -90,7 +90,6 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
             const loop = Math.ceil(totalPosts / take);
             for (let postPageIndex = 0; postPageIndex < loop; postPageIndex++) {
                 let posts = await SocialPost.find({ where: { campaign }, relations: ["campaign", "user"], take, skip });
-                console.log(posts.length);
                 const postsToSave: SocialPost[] = [];
                 const twitterPromiseArray = [];
                 const tiktokPromiseArray = [];
