@@ -50,5 +50,8 @@ export class Pagination<T> {
 export class PaginatedVariablesModel {
     @Required() public readonly skip: number;
     @Required() public readonly take: number;
+}
+
+export class PaginatedVariablesModelV2 extends PaginatedVariablesModel {
     @Property() public readonly filter: string;
 }

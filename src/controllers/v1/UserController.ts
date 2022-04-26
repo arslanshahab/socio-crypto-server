@@ -5,13 +5,20 @@ import { Participant, Profile, SocialLink, User, Wallet } from "@prisma/client";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { TatumClient } from "../../clients/tatumClient";
 import { UserService } from "../../services/UserService";
-import { PaginatedVariablesModel, Pagination, SuccessArrayResult, SuccessResult } from "../../util/entities";
+import {
+    PaginatedVariablesModel,
+    PaginatedVariablesModelV2,
+    Pagination,
+    SuccessArrayResult,
+    SuccessResult,
+} from "../../util/entities";
 import { NOTIFICATION_SETTING_NOT_FOUND, USER_NOT_FOUND } from "../../util/errors";
 import { getCryptoAssestImageUrl, getUSDValueForCurrency, formatFloat, getMinWithdrawableAmount } from "../../util";
 import { CurrencyService } from "../../services/CurrencyService";
 import {
     NotificationSettingsResultModel,
     ProfileResultModel,
+    UserRecordResultModel,
     UserResultModel,
     UserWalletResultModel,
 } from "../../models/RestModels";
@@ -147,10 +154,10 @@ export class UserController {
 
     @Get("/users-record")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserResultModel))
-    public async getUsersRecord(@QueryParams() query: PaginatedVariablesModel, @Context() context: Context) {
+    public async getUsersRecord(@QueryParams() query: PaginatedVariablesModelV2, @Context() context: Context) {
         const { skip = 0, take = 10, filter } = query;
         const [users, count] = await this.userService.findUsersRecord(skip, take, filter);
-        return new SuccessResult(new Pagination(users, count, Object), Pagination);
+        return new SuccessResult(new Pagination(users, count, UserRecordResultModel), Pagination);
     }
 
     @Get("/user-balances")
