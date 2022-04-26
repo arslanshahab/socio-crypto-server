@@ -97,7 +97,6 @@ export const registerUser = async (
         const userId = await User.initNewUser(email, createPasswordHash({ email, password }), username);
         const user = await User.findUserByContext({ userId } as JWTPayload, ["wallet"]);
         if (!user) throw new Error(USER_NOT_FOUND);
-        await user.transferCoiinReward({ type: "REGISTRATION_REWARD" });
         return { token: createSessionToken(user) };
     } catch (error) {
         throw new FormattedError(error);

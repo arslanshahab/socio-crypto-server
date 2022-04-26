@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { Xoxoday } from "../clients/xoxoday";
 import { generateRandomId, supportedCountries, asyncHandler, BN } from "../util";
 import { XoxodayOrder, XoxodayVoucher } from "src/types";
-import { getExchangeRateForCurrency } from "../util/exchangeRate";
+import { getExchangeRateForCurrency, getSymbolValueInUSD } from "../util/exchangeRate";
 import { User } from "../models/User";
 import { getSocialClient } from "./social";
 import { S3Client } from "../clients/s3";
@@ -10,7 +10,15 @@ import { Transfer } from "../models/Transfer";
 import { XoxodayOrder as XoxodayOrderModel } from "../models/XoxodayOrder";
 import { TatumClient } from "../clients/tatumClient";
 import { MISSING_PARAMS, USER_NOT_FOUND, FormattedError, INVALID_TOKEN, ERROR_LINKING_TWITTER } from "../util/errors";
-import { BSC, COIIN } from "../util/constants";
+import {
+    BSC,
+    COIIN,
+    WEEK_LIMIT_USD_FOUR_MONTH_OLD_ACCOUNT,
+    WEEK_LIMIT_USD_ONE_MONTH_OLD_ACCOUNT,
+    WEEK_LIMIT_USD_TWO_MONTH_OLD_ACCOUNT,
+    WEEK_LIMIT_USD_THREE_MONTH_OLD_ACCOUNT,
+} from "../util/constants";
+import { differenceInMonths } from "date-fns";
 
 export const initXoxoday = asyncHandler(async (req: Request, res: Response) => {
     try {
@@ -74,11 +82,14 @@ export const placeOrder = async (parent: any, args: { cart: Array<any>; email: s
         if (!cart || !cart.length) throw new Error(MISSING_PARAMS);
         const totalUSDValue = cart.reduce((a, b) => a + (b.denomination || 0), 0);
         const totalCoiinSpent = parseFloat(totalUSDValue) / parseFloat(process.env.COIIN_VALUE || "0.2");
-        console.log(totalCoiinSpent);
         await ifUserCanRedeem(user, totalCoiinSpent);
         const ordersData = await prepareOrderList(cart, email);
         const orderStatusList = await Xoxoday.placeOrder(ordersData);
-        await user.updateCoiinBalance("SUBTRACT", totalCoiinSpent);
+        try {
+            await user.updateCoiinBalance("SUBTRACT", totalCoiinSpent);
+        } catch (error) {
+            throw new Error("There was an error placing your order, please try again later.");
+        }
         XoxodayOrderModel.saveOrderList(await prepareOrderEntities(cart, orderStatusList), user);
         await Transfer.newReward({
             wallet: user.wallet,
@@ -170,8 +181,33 @@ const ifUserCanRedeem = async (user: User, totalCoiinSpent: number) => {
     const twitterFollowers = await socialClient.getTotalFollowers(twitterAccount, twitterAccount.id);
     if (twitterFollowers < 20) throw new Error("You need to have atleast 20 followers on twitter before you redeem!");
     if (!user.campaigns.length) throw new Error("You need to participate in atleast one campaign in order to redeem!");
-    const recentOrder = await Transfer.getLast24HourRedemption(user.wallet, "XOXODAY_REDEMPTION");
-    if (Boolean(recentOrder)) throw new Error("You can only redeem once in 24 hours!");
+    const accountAgeInMonths = differenceInMonths(new Date(), user.createdAt) || 1;
+    const coiinRedeemedInCurrentWeek = await Transfer.getCurrentWeekRedemption(user.wallet, "XOXODAY_REDEMPTION");
+    const usdRedeemedCurrentWeek = await getSymbolValueInUSD(COIIN, coiinRedeemedInCurrentWeek + totalCoiinSpent);
+    if (accountAgeInMonths <= 1) {
+        if (usdRedeemedCurrentWeek > WEEK_LIMIT_USD_ONE_MONTH_OLD_ACCOUNT)
+            throw new Error(
+                `As your account is 1 month old, you can only redeem $${WEEK_LIMIT_USD_ONE_MONTH_OLD_ACCOUNT} worth of vouchers within a week.`
+            );
+    } else if (accountAgeInMonths === 2) {
+        if (usdRedeemedCurrentWeek > WEEK_LIMIT_USD_TWO_MONTH_OLD_ACCOUNT)
+            throw new Error(
+                `As your account is ${accountAgeInMonths} months old, you can only redeem $${WEEK_LIMIT_USD_TWO_MONTH_OLD_ACCOUNT} worth of vouchers within a week.`
+            );
+    } else if (accountAgeInMonths === 3) {
+        if (usdRedeemedCurrentWeek > WEEK_LIMIT_USD_THREE_MONTH_OLD_ACCOUNT)
+            throw new Error(
+                `As your account is ${accountAgeInMonths} months old, you can only redeem $${WEEK_LIMIT_USD_THREE_MONTH_OLD_ACCOUNT} worth of vouchers within a week.`
+            );
+    } else {
+        if (usdRedeemedCurrentWeek >= WEEK_LIMIT_USD_FOUR_MONTH_OLD_ACCOUNT)
+            throw new Error(
+                `You can only redeem $${WEEK_LIMIT_USD_FOUR_MONTH_OLD_ACCOUNT} worth of vouchers within a week.`
+            );
+    }
+
+    if (Boolean(await Transfer.getLast24HourRedemption(user.wallet, "XOXODAY_REDEMPTION")))
+        throw new Error("You can only redeem once in 24 hours!");
     const userCurrency = await TatumClient.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet: user.wallet });
     const coiinBalance = new BN((await TatumClient.getAccountBalance(userCurrency.tatumId)).availableBalance);
     if (coiinBalance.isLessThanOrEqualTo(0) || coiinBalance.isLessThan(totalCoiinSpent))

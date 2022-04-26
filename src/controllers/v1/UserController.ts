@@ -136,9 +136,9 @@ export class UserController {
             }) || []
         );
 
-        return new SuccessResult(
+        return new SuccessArrayResult(
             currencies.filter(<T>(r: T | null): r is T => !!r),
-            Array
+            BalanceResultModel
         );
     }
 

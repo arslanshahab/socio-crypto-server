@@ -11,7 +11,7 @@ export const NETWORK_TO_NATIVE_TOKEN: { [key: string]: string } = {
 };
 export const CUSTODIAL_NETWORKS = [MATIC, ETH, BSC];
 export const WITHDRAW_LIMIT = 1000;
-export const SHARING_REWARD_LIMIT_PER_DAY = 25;
+export const SHARING_REWARD_LIMIT_PER_DAY = 5;
 export const RAIINMAKER_ORG_NAME = "raiinmaker";
 export const AMOUNT_LIMIT_FOR_KYC_IN_XOXODAY = 100;
 export const CRYPTO_ICONS_BUCKET_URL = "https://rm-crypto-icons.s3.us-west-2.amazonaws.com";
@@ -52,6 +52,10 @@ export const LOGIN_REWARD_AMOUNT = 1;
 export const PARTICIPATION_REWARD_AMOUNT = 2;
 export const REGISTRATION_REWARD_AMOUNT = 15;
 export const SHARING_REWARD_AMOUNT = 1;
+export const WEEK_LIMIT_USD_ONE_MONTH_OLD_ACCOUNT = 25;
+export const WEEK_LIMIT_USD_TWO_MONTH_OLD_ACCOUNT = 50;
+export const WEEK_LIMIT_USD_THREE_MONTH_OLD_ACCOUNT = 75;
+export const WEEK_LIMIT_USD_FOUR_MONTH_OLD_ACCOUNT = 100;
 export const REWARD_AMOUNTS: { [key: string]: number } = {
     LOGIN_REWARD: LOGIN_REWARD_AMOUNT,
     PARTICIPATION_REWARD: PARTICIPATION_REWARD_AMOUNT,
