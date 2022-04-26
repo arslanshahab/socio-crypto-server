@@ -91,4 +91,77 @@ export class UserService {
         if (role === "manager" && !company) throw new Forbidden("Forbidden, company not specified");
         return { role, company };
     }
+
+    public findUsersRecord(skip: number, take: number, filter: string) {
+        return this.prismaService.$transaction([
+            this.prismaService.user.findMany({
+                where: filter
+                    ? {
+                          OR: [
+                              {
+                                  email: { contains: filter, mode: "insensitive" },
+                              },
+                              {
+                                  profile: {
+                                      OR: [
+                                          {
+                                              username: { contains: filter, mode: "insensitive" },
+                                          },
+                                          {
+                                              email: { contains: filter, mode: "insensitive" },
+                                          },
+                                      ],
+                                  },
+                              },
+                          ],
+                      }
+                    : {},
+                select: {
+                    id: true,
+                    email: true,
+                    kycStatus: true,
+                    createdAt: true,
+                    lastLogin: true,
+                    active: true,
+                    social_post: {
+                        select: { id: true, userId: true },
+                    },
+                    profile: {
+                        select: {
+                            username: true,
+                            city: true,
+                            state: true,
+                            country: true,
+                        },
+                    },
+                },
+                skip,
+                take,
+            }),
+            this.prismaService.user.count({}),
+        ]);
+    }
+    public async updateUserStatus(userId: string, activeStatus: boolean) {
+        return await this.prismaService.user.update({
+            where: { id: userId },
+            data: { active: activeStatus },
+        });
+    }
+
+    public async getUserById(userId: string) {
+        return await this.prismaService.user.findFirst({
+            where: { id: userId },
+            include: {
+                wallet: {
+                    include: {
+                        currency: {
+                            include: {
+                                token: true,
+                            },
+                        },
+                    },
+                },
+            },
+        });
+    }
 }
