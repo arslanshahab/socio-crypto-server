@@ -19,12 +19,9 @@ dotenv.config();
 const app = new Application();
 
 const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: SocialPost) => {
-    const participant = await Participant.findOne({
-        where: { campaign: post.campaign, user: post.user },
-        relations: ["campaign", "user"],
-    });
+    const participant = await Participant.findOne({ where: { campaign: post.campaign, user: post.user } });
     if (!participant) throw new Error("participant not found");
-    const campaign = await Campaign.findOne({ where: { id: participant.campaign.id }, relations: ["org"] });
+    const campaign = await Campaign.findOne({ where: { id: post.campaign.id }, relations: ["org"] });
     if (!campaign) throw new Error("campaign not found");
     let qualityScore = await QualityScore.findOne({ where: { participantId: participant.id } });
     if (!qualityScore) qualityScore = QualityScore.newQualityScore(participant.id);
@@ -32,11 +29,11 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
     const sharesMultiplier = calculateQualityMultiplier(qualityScore.shares);
     const likesAdjustedScore = likes
         .minus(post.likes)
-        .times(post.campaign.algorithm.pointValues.likes)
+        .times(campaign.algorithm.pointValues.likes)
         .times(likesMultiplier);
     const sharesAdjustedScore = shares
         .minus(post.shares)
-        .times(post.campaign.algorithm.pointValues.shares)
+        .times(campaign.algorithm.pointValues.shares)
         .times(sharesMultiplier);
     campaign.totalParticipationScore = campaign.totalParticipationScore.plus(
         likesAdjustedScore.plus(sharesAdjustedScore)
@@ -52,7 +49,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
     await HourlyCampaignMetric.upsert(campaign, campaign.org, "likes", adjustedRawLikes);
     await HourlyCampaignMetric.upsert(campaign, campaign.org, "shares", adjustedRawShares);
     await DailyParticipantMetric.upsert(
-        participant.user,
+        post.user,
         campaign,
         participant,
         "likes",
@@ -60,7 +57,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
         adjustedRawLikes
     );
     await DailyParticipantMetric.upsert(
-        participant.user,
+        post.user,
         campaign,
         participant,
         "shares",
@@ -86,7 +83,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
         console.log("TOTAL CAMPAIGNS: ", campaigns.length);
         for (let campaignIndex = 0; campaignIndex < campaigns.length; campaignIndex++) {
             const campaign = campaigns[campaignIndex];
-            const take = 100;
+            const take = 200;
             let skip = 0;
             const totalPosts = await SocialPost.count({ where: { campaign }, relations: ["user", "campaign"] });
             console.log("TOTAL POSTS FOR CAMPAIGN ID: ", campaign.id, totalPosts);
@@ -116,8 +113,12 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                     } catch (error) {}
                 }
 
+                console.log("TWITTER TOTAL PROMISES ---- ", twitterPromiseArray.length);
+                console.log("TIKTOK TOTAL PROMISES ---- ", tiktokPromiseArray.length);
+                let fulfilledTwitterPromises = 0;
+                let fulfilledTiktokPromises = 0;
+
                 try {
-                    console.log("PENDING PROMISES ----", twitterPromiseArray.length);
                     const twitterResponses = await Promise.allSettled(twitterPromiseArray);
                     for (let twitterRespIndex = 0; twitterRespIndex < twitterResponses.length; twitterRespIndex++) {
                         const twitterResp = twitterResponses[twitterRespIndex];
@@ -131,6 +132,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                                 post
                             );
                             postsToSave.push(updatedPost);
+                            fulfilledTwitterPromises += 1;
                         }
                     }
                 } catch (error) {
@@ -138,13 +140,12 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                 }
 
                 try {
-                    console.log("PENDING PROMISES ----", tiktokPromiseArray.length);
                     const tiktokResponses = await Promise.allSettled(tiktokPromiseArray);
                     for (let tiktokRespIndex = 0; tiktokRespIndex < tiktokResponses.length; tiktokRespIndex++) {
                         const tiktokResp = tiktokResponses[tiktokRespIndex];
                         const post = tiktokPosts[tiktokRespIndex];
                         if (tiktokResp.status === "fulfilled") {
-                            console.log("calculating metrics");
+                            console.log("preparing and updating social score.");
                             const postDetails = tiktokResp.value[0];
                             const likeCount = postDetails.like_count;
                             const shareCount = postDetails.share_count;
@@ -154,12 +155,15 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                                 post
                             );
                             postsToSave.push(updatedPost);
+                            fulfilledTiktokPromises += 1;
                         }
                     }
                 } catch (error) {
                     console.log("there was an error making request to tiktok.");
                 }
                 skip += take;
+                console.log("FULFILLED TWITTER PROMISES ----.", fulfilledTwitterPromises);
+                console.log("FULFILLED TIKTOK PROMISES ----.", fulfilledTiktokPromises);
                 console.log("SAVING UPDATED POSTS ----.", postsToSave.length);
                 await getConnection().createEntityManager().save(postsToSave);
             }
