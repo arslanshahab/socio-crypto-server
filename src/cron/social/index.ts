@@ -124,7 +124,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                         const twitterResp = twitterResponses[twitterRespIndex];
                         const post = twitterPosts[twitterRespIndex];
                         if (twitterResp.status === "fulfilled" && twitterResp.value) {
-                            console.log("calculating metrics");
+                            // console.log("preparing and updating social score.");
                             const responseJSON = JSON.parse(twitterResp.value);
                             const updatedPost = await updatePostMetrics(
                                 new BN(responseJSON["favorite_count"]),
@@ -145,7 +145,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                         const tiktokResp = tiktokResponses[tiktokRespIndex];
                         const post = tiktokPosts[tiktokRespIndex];
                         if (tiktokResp.status === "fulfilled") {
-                            console.log("preparing and updating social score.");
+                            // console.log("preparing and updating social score.");
                             const postDetails = tiktokResp.value[0];
                             const likeCount = postDetails.like_count;
                             const shareCount = postDetails.share_count;
