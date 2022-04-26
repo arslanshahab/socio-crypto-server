@@ -1,9 +1,8 @@
-import { Get, Property, Put, Returns } from "@tsed/schema";
+import { Get, Put, Returns } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
 import { BodyParams, Context, QueryParams } from "@tsed/common";
 import { Participant, Profile, SocialLink, User, Wallet } from "@prisma/client";
 import { BadRequest, NotFound } from "@tsed/exceptions";
-import { TatumClient } from "../../clients/tatumClient";
 import { UserService } from "../../services/UserService";
 import {
     PaginatedVariablesModel,
@@ -13,16 +12,17 @@ import {
     SuccessResult,
 } from "../../util/entities";
 import { NOTIFICATION_SETTING_NOT_FOUND, USER_NOT_FOUND } from "../../util/errors";
-import { getCryptoAssestImageUrl, getUSDValueForCurrency, formatFloat, getMinWithdrawableAmount } from "../../util";
-import { CurrencyService } from "../../services/CurrencyService";
 import {
+    BalanceResultModel,
     NotificationSettingsResultModel,
     ProfileResultModel,
+    UpdatedResultModel,
     UserRecordResultModel,
     UserResultModel,
     UserWalletResultModel,
 } from "../../models/RestModels";
 import { NotificationService } from "../../services/NotificationService";
+import { getBalance } from "../helpers";
 
 const userResultRelations = ["profile" as const, "social_link" as const, "participant" as const, "wallet" as const];
 
@@ -49,15 +49,6 @@ function getUserResultModel(
     };
 }
 
-class BalanceResultModel {
-    @Property() public readonly balance: string;
-    @Property() public readonly symbol: string;
-    @Property() public readonly minWithdrawAmount: number;
-    @Property() public readonly usdBalance: number;
-    @Property() public readonly imageUrl: string;
-    @Property() public readonly network: string;
-}
-
 @Controller("/user")
 export class UserController {
     @Inject()
@@ -65,8 +56,7 @@ export class UserController {
     @Inject()
     private notificationService: NotificationService;
     @Inject()
-    private currencyService: CurrencyService;
-
+    // private currencyService: CurrencyService;
     @Get("/")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserResultModel))
     public async list(@QueryParams() query: PaginatedVariablesModel, @Context() context: Context) {
@@ -115,27 +105,7 @@ export class UserController {
             wallet: { include: { currency: { include: { token: true } } } },
         });
         if (!user) throw new BadRequest(USER_NOT_FOUND);
-
-        const currencies = await Promise.all(
-            user.wallet?.currency.map(async (currencyItem): Promise<BalanceResultModel | null> => {
-                if (!currencyItem.token) return null;
-
-                const balance = await TatumClient.getAccountBalance(currencyItem.tatumId);
-                const symbol = currencyItem.token.symbol;
-                return {
-                    balance: formatFloat(balance.availableBalance),
-                    symbol: symbol,
-                    minWithdrawAmount: await getMinWithdrawableAmount(symbol),
-                    usdBalance: await getUSDValueForCurrency(
-                        symbol.toLowerCase(),
-                        parseFloat(balance.availableBalance)
-                    ),
-                    imageUrl: getCryptoAssestImageUrl(symbol),
-                    network: currencyItem.token.network,
-                };
-            }) || []
-        );
-
+        const currencies = await getBalance(user);
         return new SuccessArrayResult(
             currencies.filter(<T>(r: T | null): r is T => !!r),
             BalanceResultModel
@@ -163,36 +133,24 @@ export class UserController {
     @Get("/user-balances")
     @(Returns(200, SuccessResult).Of(UserWalletResultModel))
     public async getUserBalances(@QueryParams() query: { userId: string }, @Context() context: Context) {
-        const { userId } = query;
-        const currencies = await this.currencyService.getCurrenciesByUserId(userId);
-        const balances = await TatumClient.getBalanceForAccountList(currencies);
-        const allCurrencies = currencies.map(async (x) => {
-            const balance = balances.find((y) => y.tatumId === x.tatumId)?.availableBalance;
-            const symbol = x.token?.symbol || "";
-            const usdBalance = await getUSDValueForCurrency(symbol.toLowerCase(), balance);
-            const minWithdrawAmount = await getMinWithdrawableAmount(symbol);
-            return {
-                symbol: symbol,
-                balance: formatFloat(balance),
-                minWithdrawAmount: minWithdrawAmount,
-                usdBalance: usdBalance,
-                imageUrl: getCryptoAssestImageUrl(symbol),
-                network: x.token?.network,
-            };
-        });
-        const result = await Promise.all(allCurrencies);
-        return new SuccessArrayResult(result, UserWalletResultModel);
+        const user = await this.userService.getUserById(query.userId);
+        if (!user) throw new BadRequest(USER_NOT_FOUND);
+        const currencies = await getBalance(user);
+        return new SuccessArrayResult(
+            currencies.filter(<T>(r: T | null): r is T => !!r),
+            BalanceResultModel
+        );
     }
 
     @Put("/update-user-status")
-    @Returns(200, SuccessResult)
+    @(Returns(200, SuccessResult).Of(UpdatedResultModel))
     public async updateUserStatus(
         @BodyParams() body: { id: string; activeStatus: boolean },
         @Context() context: Context
     ) {
         const { id, activeStatus } = body;
         await this.userService.updateUserStatus(id, activeStatus);
-        const result = { response: "User status updated successfully" };
-        return new SuccessResult(result, Object);
+        const result = { message: "User status updated successfully" };
+        return new SuccessResult(result, UpdatedResultModel);
     }
 }

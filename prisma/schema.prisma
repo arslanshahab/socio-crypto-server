@@ -4,6 +4,7 @@ generator client {
 
 generator tsed {
   provider = "tsed-prisma"
+  output   = "../node_modules/.prisma/client/entities"
 }
 
 datasource db {

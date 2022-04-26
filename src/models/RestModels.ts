@@ -196,3 +196,16 @@ export class UserWalletResultModel {
 export class UserRecordResultModel extends UserResultModel {
     @CollectionOf(SocialPostResultModel) public readonly social_post: SocialPostResultModel[];
 }
+
+export class BalanceResultModel {
+    @Property() public readonly balance: string;
+    @Property() public readonly symbol: string;
+    @Property() public readonly minWithdrawAmount: number;
+    @Property() public readonly usdBalance: number;
+    @Property() public readonly imageUrl: string;
+    @Property() public readonly network: string;
+}
+
+export class UpdatedResultModel {
+    @Property() public readonly message: string;
+}

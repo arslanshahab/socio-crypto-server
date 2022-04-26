@@ -4,7 +4,14 @@ import { Participant } from "../models/Participant";
 import { Campaign } from "../models/Campaign";
 import { getConnection } from "typeorm";
 import { Wallet } from "../models/Wallet";
-import { BN, generateRandomNumber } from "../util";
+import {
+    BN,
+    formatFloat,
+    generateRandomNumber,
+    getCryptoAssestImageUrl,
+    getMinWithdrawableAmount,
+    getUSDValueForCurrency,
+} from "../util";
 import { BigNumber } from "bignumber.js";
 import { DailyParticipantMetric } from "../models/DailyParticipantMetric";
 import { Org } from "../models/Org";
@@ -28,6 +35,9 @@ import { TikTokClient } from "../clients/tiktok";
 import { FacebookClient } from "../clients/facebook";
 import { Firebase } from "../clients/firebase";
 import { Forbidden, NotFound } from "@tsed/exceptions";
+import { TatumClient } from "../clients/tatumClient";
+import { BalanceResultModel } from "../models/RestModels";
+import { Currency, Token, User, Wallet as PrismaWallet } from "@prisma/client";
 
 export const feeMultiplier = () => new BN(1).minus(FEE_RATE);
 
@@ -405,4 +415,33 @@ export const getActiveAdmin = async (token: string) => {
         }),
     };
     return admin;
+};
+
+export const getBalance = async (
+    user: User & {
+        wallet:
+            | (PrismaWallet & {
+                  currency: (Currency & {
+                      token: Token | null;
+                  })[];
+              })
+            | null;
+    }
+) => {
+    const currencies = await Promise.all(
+        user.wallet?.currency.map(async (currencyItem): Promise<BalanceResultModel | null> => {
+            if (!currencyItem.token) return null;
+            const balance = await TatumClient.getAccountBalance(currencyItem.tatumId);
+            const symbol = currencyItem.token.symbol;
+            return {
+                balance: formatFloat(balance.availableBalance),
+                symbol: symbol,
+                minWithdrawAmount: await getMinWithdrawableAmount(symbol),
+                usdBalance: await getUSDValueForCurrency(symbol.toLowerCase(), parseFloat(balance.availableBalance)),
+                imageUrl: getCryptoAssestImageUrl(symbol),
+                network: currencyItem.token.network,
+            };
+        }) || []
+    );
+    return currencies;
 };

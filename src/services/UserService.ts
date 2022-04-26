@@ -147,4 +147,21 @@ export class UserService {
             data: { active: activeStatus },
         });
     }
+
+    public async getUserById(userId: string) {
+        return await this.prismaService.user.findFirst({
+            where: { id: userId },
+            include: {
+                wallet: {
+                    include: {
+                        currency: {
+                            include: {
+                                token: true,
+                            },
+                        },
+                    },
+                },
+            },
+        });
+    }
 }
