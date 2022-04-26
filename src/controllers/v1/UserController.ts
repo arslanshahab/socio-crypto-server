@@ -6,7 +6,7 @@ import { BadRequest, NotFound } from "@tsed/exceptions";
 import { UserService } from "../../services/UserService";
 import {
     PaginatedVariablesModel,
-    PaginatedVariablesModelV2,
+    PaginatedVariablesFilteredModel,
     Pagination,
     SuccessArrayResult,
     SuccessResult,
@@ -124,7 +124,7 @@ export class UserController {
 
     @Get("/users-record")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserResultModel))
-    public async getUsersRecord(@QueryParams() query: PaginatedVariablesModelV2, @Context() context: Context) {
+    public async getUsersRecord(@QueryParams() query: PaginatedVariablesFilteredModel, @Context() context: Context) {
         const { skip = 0, take = 10, filter } = query;
         const [users, count] = await this.userService.findUsersRecord(skip, take, filter);
         return new SuccessResult(new Pagination(users, count, UserRecordResultModel), Pagination);

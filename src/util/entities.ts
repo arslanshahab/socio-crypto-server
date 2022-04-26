@@ -52,6 +52,6 @@ export class PaginatedVariablesModel {
     @Required() public readonly take: number;
 }
 
-export class PaginatedVariablesModelV2 extends PaginatedVariablesModel {
+export class PaginatedVariablesFilteredModel extends PaginatedVariablesModel {
     @Property() public readonly filter: string;
 }
