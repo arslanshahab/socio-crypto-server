@@ -158,9 +158,16 @@ export class XoxodayVoucherResultModel {
     @Property() public readonly exchangeRate: string;
     @ArrayOf(String) public readonly valueDenominations: Array<string>;
 }
+export class SocialPostResultModel {
+    @Property() public readonly id: string;
+    @Property() public readonly userId: string;
+}
 export class UserResultModel {
     @Property() public readonly id: string;
     @Property() public readonly email: string;
+    @Property() public readonly createdAt: Date;
+    @Property() public readonly lastLogin: Date | null;
+    @Property() public readonly active: boolean;
     @Nullable(String) public readonly identityId: string | null;
     @Nullable(String) public readonly kycStatus: string | null;
     @Nullable(ProfileResultModel) public readonly profile: ProfileResultModel | null;
@@ -175,4 +182,30 @@ export class RedemptionRequirementsModel {
     @Property() public readonly twitterfollowersRequirement: number;
     @Property() public readonly participation: boolean;
     @Property() public readonly orderLimitForTwentyFourHoursReached: boolean;
+}
+
+export class UserWalletResultModel {
+    @Property() public readonly symbol: string;
+    @Property() public readonly balance: string;
+    @Property() public readonly minWithdrawAmount: number;
+    @Property() public readonly usdBalance: number;
+    @Property() public readonly imageUrl: string;
+    @Property() public readonly network: string;
+}
+
+export class UserRecordResultModel extends UserResultModel {
+    @CollectionOf(SocialPostResultModel) public readonly social_post: SocialPostResultModel[];
+}
+
+export class BalanceResultModel {
+    @Property() public readonly balance: string;
+    @Property() public readonly symbol: string;
+    @Property() public readonly minWithdrawAmount: number;
+    @Property() public readonly usdBalance: number;
+    @Property() public readonly imageUrl: string;
+    @Property() public readonly network: string;
+}
+
+export class UpdatedResultModel {
+    @Property() public readonly message: string;
 }

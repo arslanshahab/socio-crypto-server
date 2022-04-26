@@ -1,6 +1,6 @@
 import { Get, Property, Required, Returns } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
-import { Context, QueryParams } from "@tsed/common";
+import { Context, PathParams, QueryParams } from "@tsed/common";
 import { XoxodayService } from "../../services/XoxodayService";
 import { UserService } from "../../services/UserService";
 import { Pagination, SuccessResult } from "../../util/entities";
@@ -13,6 +13,7 @@ import { prepareVouchersList } from "../helpers";
 import { ParticipantService } from "../../services/ParticipantService";
 import { SocialClientType } from "../../util/constants";
 import { TwitterClient } from "../../clients/twitter";
+import { PrismaService } from ".prisma/client/entities";
 
 const userResultRelations = ["social_link" as const];
 class ListXoxoVariablesModel {
@@ -29,6 +30,8 @@ export class XoxodayController {
     private participantService: ParticipantService;
     @Inject()
     private userService: UserService;
+    @Inject()
+    private prismaService: PrismaService;
 
     @Get("/voucher")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(XoxodayVoucherResultModel))
@@ -42,7 +45,7 @@ export class XoxodayController {
         );
         if (!found) return [];
         const vouchers = await Xoxoday.getVouchers(found.filterValue, page);
-        const responseList = await prepareVouchersList(vouchers);        
+        const responseList = await prepareVouchersList(vouchers);
         return new SuccessResult(
             new Pagination(responseList, responseList.length, XoxodayVoucherResultModel),
             Pagination
@@ -60,6 +63,29 @@ export class XoxodayController {
             ? await TwitterClient.getTotalFollowersV1(twitterAccount, twitterAccount.id)
             : 0;
         const participants = await this.participantService.findParticipantsCountByUserId(user.id);
+        const result = {
+            twitterLinked: twitterAccount ? true : false,
+            twitterfollowers: twitterFollowers,
+            twitterfollowersRequirement: 20,
+            participation: Boolean(participants),
+            orderLimitForTwentyFourHoursReached: Boolean(recentOrder),
+        };
+        return new SuccessResult(result, RedemptionRequirementsModel);
+    }
+    @Get("/redemption-requirements/:userId")
+    @(Returns(200, SuccessResult).Of(RedemptionRequirementsModel))
+    public async getRedemptionRequirementsV1(@PathParams() query: { userId: string }, @Context() context: Context) {
+        const { userId } = query;
+        const { TWITTER } = SocialClientType;
+        const recentOrder = await this.xoxodayService.getLast24HourRedemption("XOXODAY_REDEMPTION");
+        const socialLink = await this.prismaService.socialLink.findMany({
+            where: { userId },
+        });
+        const twitterAccount = socialLink.find((item) => item.type === TWITTER);
+        const twitterFollowers = twitterAccount
+            ? await TwitterClient.getTotalFollowersV1(twitterAccount, twitterAccount.id)
+            : 0;
+        const participants = await this.participantService.findParticipantsCountByUserId(userId);
         const result = {
             twitterLinked: twitterAccount ? true : false,
             twitterfollowers: twitterFollowers,
