@@ -55,6 +55,7 @@ export class UserController {
     private userService: UserService;
     @Inject()
     private notificationService: NotificationService;
+    
     @Get("/")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserResultModel))
     public async list(@QueryParams() query: PaginatedVariablesModel, @Context() context: Context) {
