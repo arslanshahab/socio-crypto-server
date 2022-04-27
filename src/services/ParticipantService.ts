@@ -1,8 +1,9 @@
-import { User } from "@prisma/client";
+import { SocialLink, User } from "@prisma/client";
 import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
 import { FindCampaignById, FindParticipantById } from "../types";
 import { decrypt } from "../util/crypto";
+import { InternalServerError, NotFound } from "@tsed/exceptions";
 
 @Injectable()
 export class ParticipantService {
@@ -72,18 +73,21 @@ export class ParticipantService {
         });
     }
     public async findSocialLinkByUserId(userId: string, type: string) {
-        let response: any = this.prismaService.socialLink.findFirst({
+        const response = this.prismaService.socialLink.findFirst({
             where: {
                 userId,
                 type,
             },
         });
-        let socialLink = await response;
-        let apiKey = decrypt(socialLink.apiKey);
-        let apiSecret = decrypt(socialLink.apiSecret);
-        socialLink = { ...socialLink, apiKey, apiSecret };
-        return socialLink;
+        const socialLink: SocialLink | null = await response;
+        if (!socialLink) throw new NotFound("Social Link not found");
+        const apiKey = decrypt(socialLink.apiKey!);
+        const apiSecret = decrypt(socialLink.apiSecret!);
+        const { userId: slUserId } = socialLink;
+        if (!slUserId) throw new InternalServerError("Invalid Social Link");
+        return { ...socialLink, apiKey, apiSecret, userId: slUserId };
     }
+
     public async findParticipantsCountByUserId(userId: string) {
         return this.prismaService.participant.count({
             where: {

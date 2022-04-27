@@ -1,5 +1,6 @@
 import { Catch, ExceptionFilterMethods, PlatformContext, ResponseErrorObject } from "@tsed/common";
 import { Exception } from "@tsed/exceptions";
+import { SentryClient } from "../clients/sentry";
 
 /**
  * Processes all error responses
@@ -12,7 +13,8 @@ export class HttpExceptionFilter implements ExceptionFilterMethods {
         const error = this.mapError(exception);
         const headers = this.getHeaders(exception);
 
-        logger.error({ error });
+        logger.error({ exception });
+        SentryClient.captureException(exception);
 
         response.setHeaders(headers).status(error.status).body(error);
     }

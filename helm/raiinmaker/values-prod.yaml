@@ -9,6 +9,9 @@ pg-bak:
 ingress:
     host: server.api.raiinmaker.com
 
+# up server replica count
+replicaCount: 16
+
 data:
     IAM_ROLE: arn:aws:iam::527252880472:role/raiinmaker-production
     environment:
@@ -25,7 +28,7 @@ data:
         ETHEREUM_DEPOSIT_ADDRESS: "0x9f6fE7cF8CCC66477c9f7049F22FbbE35234274D"
         RAIINMAKER_DEV_TOKEN: "0dfdd4-e5a5a3-c657fc-36415b-116af1"
         MIN_WITHDRAW_LIMIT: "100"
-        COIIN_VALUE: "0.5"
+        COIIN_VALUE: "0.2"
         FIREBASE_API_KEY: "AIzaSyAAXv6aKS3xdrnTLf5hVVJgW60h26vFJok"
         SENTRY_DSN: "https://aedcc11778fe4bbdb489d4ad55eb08de@o1155640.ingest.sentry.io/6237600"
 

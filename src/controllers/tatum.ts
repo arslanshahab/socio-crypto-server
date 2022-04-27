@@ -257,7 +257,7 @@ export const withdrawFunds = async (
     try {
         const user = await User.findUserByContext(context.user, ["wallet"]);
         if (!user) throw new Error("User not found");
-        if (user.kycStatus !== "APPROVED")
+        if (!(await user.hasKycApproved()))
             throw new Error("You need to get your KYC approved before you can withdraw.");
         let { symbol, network, address, amount, verificationToken } = args;
         if (symbol.toUpperCase() === COIIN)
@@ -294,6 +294,7 @@ export const withdrawFunds = async (
             action: "WITHDRAW",
             wallet: user.wallet,
             tatumId: address,
+            status: "SUCCEEDED",
         });
         await newTransfer.save();
         return {
@@ -334,6 +335,7 @@ export const trackCoiinTransactionForUser = asyncHandler(async (req: Request, re
             action: "DEPOSIT",
             wallet: user.wallet,
             tatumId: userCurrency.tatumId,
+            status: "SUCCEEDED",
         });
         await newTransfer.save();
         await Firebase.sendUserTransactionUpdate(user.profile.deviceToken, "DEPOSIT");

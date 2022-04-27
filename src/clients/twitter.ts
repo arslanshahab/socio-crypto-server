@@ -9,6 +9,10 @@ import { SocialLinkVariables, TwitterLinkCredentials } from "../types";
 import { TWITTER_LINK_EXPIRED, FormattedError } from "../util/errors";
 import { isArray } from "lodash";
 import { decrypt } from "../util/crypto";
+import { SocialLink as PrismaSocialLink } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient({});
 
 export class TwitterClient {
     public static textLimit = 280;
@@ -160,10 +164,30 @@ export class TwitterClient {
             throw new Error(error.message);
         }
     };
-    public static getTotalFollowersV1 = async (socialLink: SocialLink, id: string, cached = true) => {
+
+    public static getUsername = async (socialLink: SocialLink) => {
         try {
-            const apiKey = decrypt(socialLink.apiKey);
-            const apiSecret = decrypt(socialLink.apiSecret);
+            const client = TwitterClient.getClient(socialLink.getTwitterCreds());
+            const response = await client.get("/account/verify_credentials", { include_entities: false });
+            const username = response["screen_name"];
+            return username;
+        } catch (error) {
+            if (isArray(error)) {
+                const [data] = error;
+                if (data?.code === 89) {
+                    await socialLink.remove();
+                    throw new FormattedError(new Error(TWITTER_LINK_EXPIRED));
+                }
+                throw new Error(data?.message || "");
+            }
+            throw new Error(error.message);
+        }
+    };
+
+    public static getTotalFollowersV1 = async (socialLink: PrismaSocialLink, id: string, cached = true) => {
+        try {
+            const apiKey = decrypt(socialLink.apiKey!);
+            const apiSecret = decrypt(socialLink.apiSecret!);
             const cacheKey = `twitterFollowerCount:${id}`;
             if (cached) {
                 const cachedResponse = await getRedis().get(cacheKey);
@@ -178,7 +202,9 @@ export class TwitterClient {
             if (isArray(error)) {
                 const [data] = error;
                 if (data?.code === 89) {
-                    await socialLink.remove();
+                    await prisma.socialLink.delete({
+                        where: { id },
+                    });
                     throw new FormattedError(new Error(TWITTER_LINK_EXPIRED));
                 }
                 throw new Error(data?.message || "");
@@ -187,24 +213,23 @@ export class TwitterClient {
         }
     };
 
-    public static get = async (socialLink: SocialLink, id: string, cached = true): Promise<string> => {
-        logger.debug(`retrieving tweet with id: ${id}`);
-        let cacheKey = `twitter:${id}`;
-        if (cached) {
-            const cachedResponse = await getRedis().get(cacheKey);
-            if (cachedResponse) return cachedResponse;
+    public static get = async (socialLink: SocialLink, id: string, cached = true): Promise<string | undefined> => {
+        try {
+            let cacheKey = `twitter:${id}`;
+            if (cached) {
+                const cachedResponse = await getRedis().get(cacheKey);
+                if (cachedResponse) return cachedResponse;
+            }
+            const client = TwitterClient.getClient(socialLink.getTwitterCreds());
+            const twitterResponse = await client.get("/statuses/show", { id });
+            await getRedis().set(cacheKey, JSON.stringify(twitterResponse), "EX", 3600); // cache for 15 minutes
+            return JSON.stringify(twitterResponse);
+        } catch (error) {
+            return undefined;
         }
-        const client = TwitterClient.getClient(socialLink.getTwitterCreds());
-        const twitterResponse = await client.get("/statuses/show", { id });
-        await getRedis().set(cacheKey, JSON.stringify(twitterResponse), "EX", 900); // cache for 15 minutes
-        return JSON.stringify(twitterResponse);
     };
 
-    public static getPost = async (
-        socialLink: SocialLinkVariables,
-        id: string,
-        cached = true
-    ): Promise<string> => {
+    public static getPost = async (socialLink: SocialLinkVariables, id: string, cached = true): Promise<string> => {
         let cacheKey = `twitter:${id}`;
         if (cached) {
             const cachedResponse = await getRedis().get(cacheKey);

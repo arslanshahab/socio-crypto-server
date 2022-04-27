@@ -55,6 +55,6 @@ export const getExchangeRateForCrypto = async (symbol: string) => {
 export const getSymbolValueInUSD = async (symbol: string, amount: number) => {
     symbol = symbol.toUpperCase();
     const valueInUSD =
-        symbol === "COIIN" ? parseFloat(process.env.COIIN_VALUE || "0") : await getExchangeRateForCrypto(symbol);
+        symbol === "COIIN" ? parseFloat(process.env.COIIN_VALUE || "0.2") : await getExchangeRateForCrypto(symbol);
     return valueInUSD * amount;
 };

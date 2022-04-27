@@ -34,7 +34,7 @@ import { differenceInHours } from "date-fns";
 import { Transfer } from "./Transfer";
 import { TatumClient } from "../clients/tatumClient";
 import { Org } from "./Org";
-import { BSC, COIIN, REWARD_AMOUNTS } from "../util/constants";
+import { BSC, COIIN, REWARD_AMOUNTS, SHARING_REWARD_LIMIT_PER_DAY } from "../util/constants";
 import { Campaign } from "./Campaign";
 
 @Entity()
@@ -205,6 +205,11 @@ export class User extends BaseEntity {
         return returnedUser;
     }
 
+    public async hasKycApproved(): Promise<boolean> {
+        const va = await VerificationApplication.findOne({ where: { user: this } });
+        return !va || va.status !== "APPROVED" ? false : true;
+    }
+
     public async updateCoiinBalance(operation: "ADD" | "SUBTRACT", amount: number): Promise<any> {
         const user = this;
         const wallet = await Wallet.findOne({ where: { user } });
@@ -217,16 +222,12 @@ export class User extends BaseEntity {
         });
         const senderId = operation === "ADD" ? raiinmakerCurrency.tatumId : userCurrency.tatumId;
         const receipientId = operation === "ADD" ? userCurrency.tatumId : raiinmakerCurrency.tatumId;
-        try {
-            await TatumClient.transferFunds({
-                senderAccountId: senderId,
-                recipientAccountId: receipientId,
-                amount: amount.toString(),
-                recipientNote: "USER-BALANCE-UPDATES",
-            });
-        } catch (error) {
-            console.log(error);
-        }
+        await TatumClient.transferFunds({
+            senderAccountId: senderId,
+            recipientAccountId: receipientId,
+            amount: amount.toString(),
+            recipientNote: "USER-BALANCE-UPDATES",
+        });
     }
 
     public transferCoiinReward = async (data: { type: RewardType; campaign?: Campaign }): Promise<any> => {
@@ -250,8 +251,10 @@ export class User extends BaseEntity {
             (type === "LOGIN_REWARD" && accountAgeInHours > 24 && !thisWeeksReward) ||
             (type === "PARTICIPATION_REWARD" && !thisWeeksReward) ||
             type === "REGISTRATION_REWARD" ||
-            type === "SHARING_REWARD"
+            (type === "SHARING_REWARD" &&
+                (await Transfer.getLast24HourRedemption(user.wallet, "SHARING_REWARD")) < SHARING_REWARD_LIMIT_PER_DAY)
         ) {
+            let transferStatus = true;
             try {
                 await TatumClient.transferFunds({
                     senderAccountId: raiinmakerCurrency.tatumId,
@@ -260,11 +263,12 @@ export class User extends BaseEntity {
                     recipientNote: "WEEKLY-REWARD",
                 });
             } catch (error) {
-                console.log(error);
+                transferStatus = false;
             }
             await Transfer.newReward({
                 wallet,
-                type,
+                action: type,
+                status: transferStatus ? "SUCCEEDED" : "FAILED",
                 symbol: COIIN,
                 amount: new BN(amount),
                 campaign,

@@ -1,53 +1,54 @@
-import { Get, Property, Returns } from "@tsed/schema";
+import { Get, Property, Put, Returns } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
-import { Context, QueryParams } from "@tsed/common";
+import { BodyParams, Context, QueryParams } from "@tsed/common";
+import { Participant, Profile, SocialLink, User, Wallet } from "@prisma/client";
 import { BadRequest, NotFound } from "@tsed/exceptions";
-import { NotificationSettings, Participant, Profile, SocialLink, User, Wallet, XoxodayOrder } from "@prisma/client";
-import { TatumClient } from "../../clients/tatumClient";
 import { UserService } from "../../services/UserService";
-import { PaginatedVariablesModel, Pagination, SuccessArrayResult, SuccessResult } from "../../util/entities";
-import { NOTIFICATION_SETTING_NOT_FOUND, USER_NOT_FOUND } from "../../util/errors";
-import { getCryptoAssestImageUrl, getUSDValueForCurrency, formatFloat, getMinWithdrawableAmount } from "../../util";
 import {
-    DailyParticipantMetricResultModel,
-    NotificationSettingsResultModel,
-    UserResultModel,
-} from "../../models/RestModels";
+    PaginatedVariablesModel,
+    PaginatedVariablesFilteredModel,
+    Pagination,
+    SuccessArrayResult,
+    SuccessResult,
+} from "../../util/entities";
+import { NOTIFICATION_SETTING_NOT_FOUND, USER_NOT_FOUND } from "../../util/errors";
+import { DailyParticipantMetricResultModel } from "../../models/RestModels";
 import { NotificationService } from "../../services/NotificationService";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
+import {
+    BalanceResultModel,
+    NotificationSettingsResultModel,
+    ProfileResultModel,
+    UpdatedResultModel,
+    UserRecordResultModel,
+    UserResultModel,
+    UserWalletResultModel,
+} from "../../models/RestModels";
+import { getBalance } from "../helpers";
 
-const userResultRelations = [
-    "profile" as const,
-    "social_link" as const,
-    "participant" as const,
-    "notification_settings" as const,
-    "wallet" as const,
-    "xoxoday_order" as const,
-];
+const userResultRelations = ["profile" as const, "social_link" as const, "participant" as const, "wallet" as const];
+
+function getProfileResultModel(profile: Profile): ProfileResultModel {
+    return {
+        ...profile,
+        hasRecoveryCodeSet: !!profile?.recoveryCode,
+        interests: JSON.parse(profile.interests),
+        values: JSON.parse(profile.values),
+    };
+}
 
 function getUserResultModel(
     user: User & {
         profile: Profile | null;
         social_link: SocialLink[];
         participant: Participant[];
-        notification_settings: NotificationSettings | null;
         wallet: Wallet | null;
-        xoxoday_order: XoxodayOrder[];
     }
-) {
-    const userResult: UserResultModel = user;
-    if (userResult.profile) userResult.profile.hasRecoveryCodeSet = !!user.profile?.recoveryCode;
-
-    return userResult;
-}
-
-class BalanceResultModel {
-    @Property() public readonly balance: string;
-    @Property() public readonly symbol: string;
-    @Property() public readonly minWithdrawAmount: number;
-    @Property() public readonly usdBalance: number;
-    @Property() public readonly imageUrl: string;
-    @Property() public readonly network: string;
+): UserResultModel {
+    return {
+        ...user,
+        profile: user.profile ? getProfileResultModel(user.profile) : null,
+    };
 }
 class UserQueryVariables {
     @Property() public readonly today: boolean;
@@ -110,32 +111,13 @@ export class UserController {
             wallet: { include: { currency: { include: { token: true } } } },
         });
         if (!user) throw new BadRequest(USER_NOT_FOUND);
-
-        const currencies = await Promise.all(
-            user.wallet?.currency.map(async (currencyItem): Promise<BalanceResultModel | null> => {
-                if (!currencyItem.token) return null;
-
-                const balance = await TatumClient.getAccountBalance(currencyItem.tatumId);
-                const symbol = currencyItem.token.symbol;
-                return {
-                    balance: formatFloat(balance.availableBalance),
-                    symbol: symbol,
-                    minWithdrawAmount: await getMinWithdrawableAmount(symbol),
-                    usdBalance: await getUSDValueForCurrency(
-                        symbol.toLowerCase(),
-                        parseFloat(balance.availableBalance)
-                    ),
-                    imageUrl: getCryptoAssestImageUrl(symbol),
-                    network: currencyItem.token.network,
-                };
-            }) || []
-        );
-
-        return new SuccessResult(
+        const currencies = await getBalance(user);
+        return new SuccessArrayResult(
             currencies.filter(<T>(r: T | null): r is T => !!r),
-            Array
+            BalanceResultModel
         );
     }
+
     @Get("/me/notification-settings")
     @(Returns(200, SuccessResult).Of(NotificationSettingsResultModel))
     public async getNotificationSettings(@Context() context: Context) {
@@ -145,7 +127,7 @@ export class UserController {
         if (!settings) throw new NotFound(NOTIFICATION_SETTING_NOT_FOUND);
         return new SuccessResult(settings, NotificationSettingsResultModel);
     }
-    
+
     @Get("/user-metrics")
     @(Returns(200, SuccessResult).Of(DailyParticipantMetricResultModel))
     public async getUserMetrics(@QueryParams() query: UserQueryVariables, @Context() context: Context) {
@@ -154,5 +136,36 @@ export class UserController {
         if (!user) throw new BadRequest(USER_NOT_FOUND);
         const result = await this.dailyParticipantMetricService.getSortedByUserId(user.id, today);
         return new SuccessResult(new Pagination(result, result.length, DailyParticipantMetricResultModel), Pagination);
+    }
+    @Get("/users-record")
+    @(Returns(200, SuccessResult).Of(Pagination).Nested(UserResultModel))
+    public async getUsersRecord(@QueryParams() query: PaginatedVariablesFilteredModel, @Context() context: Context) {
+        const { skip = 0, take = 10, filter } = query;
+        const [users, count] = await this.userService.findUsersRecord(skip, take, filter);
+        return new SuccessResult(new Pagination(users, count, UserRecordResultModel), Pagination);
+    }
+
+    @Get("/user-balances")
+    @(Returns(200, SuccessResult).Of(UserWalletResultModel))
+    public async getUserBalances(@QueryParams() query: { userId: string }, @Context() context: Context) {
+        const user = await this.userService.getUserById(query.userId);
+        if (!user) throw new BadRequest(USER_NOT_FOUND);
+        const currencies = await getBalance(user);
+        return new SuccessArrayResult(
+            currencies.filter(<T>(r: T | null): r is T => !!r),
+            BalanceResultModel
+        );
+    }
+
+    @Put("/update-user-status")
+    @(Returns(200, SuccessResult).Of(UpdatedResultModel))
+    public async updateUserStatus(
+        @BodyParams() body: { id: string; activeStatus: boolean },
+        @Context() context: Context
+    ) {
+        const { id, activeStatus } = body;
+        await this.userService.updateUserStatus(id, activeStatus);
+        const result = { message: "User status updated successfully" };
+        return new SuccessResult(result, UpdatedResultModel);
     }
 }

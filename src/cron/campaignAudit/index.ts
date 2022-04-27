@@ -10,6 +10,7 @@ import { Firebase } from "../../clients/firebase";
 
 dotenv.config();
 const app = new Application();
+console.log("APP instance created.");
 
 (async () => {
     console.log("Starting campaign audit.");
@@ -64,6 +65,8 @@ const app = new Application();
         }
     } catch (error) {
         console.log(error);
+        await connection.close();
+        process.exit(0);
     }
     await connection.close();
     process.exit(0);

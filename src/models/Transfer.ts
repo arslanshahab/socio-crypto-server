@@ -19,7 +19,7 @@ import { TransferAction, TransferStatus } from "../types";
 import { Org } from "./Org";
 import { RafflePrize } from "./RafflePrize";
 import { performCurrencyTransfer } from "../controllers/helpers";
-import { startOfISOWeek, endOfISOWeek } from "date-fns";
+import { startOfISOWeek, endOfISOWeek, startOfWeek, endOfWeek } from "date-fns";
 import { initDateFromParams } from "../util/date";
 import { RAIINMAKER_ORG_NAME, COIIN } from "../util/constants";
 
@@ -182,10 +182,36 @@ export class Transfer extends BaseEntity {
     }
 
     public static async getLast24HourRedemption(wallet: Wallet, type: TransferAction) {
-        const date = initDateFromParams({ date: new Date(), d: new Date().getDate() - 1, h: 0, i: 0, s: 0 });
-        return await Transfer.findOne({
-            where: { action: type, createdAt: MoreThan(DateUtils.mixedDateToUtcDatetimeString(date)) },
+        const currentDate = new Date();
+        const date = initDateFromParams({
+            date: currentDate,
+            d: currentDate.getDate() - 1,
+            h: currentDate.getHours(),
+            i: currentDate.getMinutes(),
+            s: currentDate.getSeconds(),
         });
+        return await Transfer.count({
+            where: { wallet, action: type, createdAt: MoreThan(DateUtils.mixedDateToUtcDatetimeString(date)) },
+        });
+    }
+
+    public static async getCurrentWeekRedemption(wallet: Wallet, action: TransferAction) {
+        const currentDate = new Date();
+        const start = startOfWeek(currentDate);
+        const end = endOfWeek(currentDate);
+        const { earnings } = await this.createQueryBuilder("transfer")
+            .select("SUM(CAST(transfer.amount AS DECIMAL)) as earnings")
+            .where(
+                `transfer."createdAt" >= :start AND transfer."walletId" = :wallet AND transfer.action ilike '%' || :action || '%'`,
+                {
+                    action,
+                    start: DateUtils.mixedDateToUtcDatetimeString(start),
+                    end: DateUtils.mixedDateToUtcDatetimeString(end),
+                    wallet: wallet.id,
+                }
+            )
+            .getRawOne();
+        return earnings;
     }
 
     public static async getCoinnEarnedToday(wallet: Wallet) {
@@ -203,6 +229,7 @@ export class Transfer extends BaseEntity {
             .getRawOne();
         return earnings;
     }
+
     public static async getTransactionHistory(orgId: String) {
         const query = await this.createQueryBuilder("transfer")
             .leftJoin("transfer.wallet", "wallet", 'transfer."walletId"=wallet.id ')
@@ -308,6 +335,7 @@ export class Transfer extends BaseEntity {
         tatumId: string;
         wallet: Wallet;
         action: TransferAction;
+        status: TransferStatus;
     }) {
         const newTransfer = new Transfer();
         newTransfer.currency = data.symbol;
@@ -317,7 +345,7 @@ export class Transfer extends BaseEntity {
         newTransfer.action = data.action;
         newTransfer.ethAddress = data.tatumId;
         newTransfer.wallet = data.wallet;
-        newTransfer.status = "SUCCEEDED";
+        newTransfer.status = data.status;
         return newTransfer;
     }
 
@@ -325,12 +353,14 @@ export class Transfer extends BaseEntity {
         wallet: Wallet;
         amount: BigNumber;
         symbol: string;
-        type: TransferAction;
+        action: TransferAction;
+        status: TransferStatus;
         campaign?: Campaign;
     }) {
         const transfer = new Transfer();
         transfer.amount = data.amount;
-        transfer.action = data.type;
+        transfer.action = data.action;
+        transfer.status = data.status;
         transfer.currency = data.symbol;
         transfer.wallet = data.wallet;
         if (data.campaign) transfer.campaign = data.campaign;

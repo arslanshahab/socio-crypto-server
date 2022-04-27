@@ -1,6 +1,6 @@
 import { Get, Property, Required, Returns } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
-import { Context, QueryParams } from "@tsed/common";
+import { Context, PathParams, QueryParams } from "@tsed/common";
 import { XoxodayService } from "../../services/XoxodayService";
 import { UserService } from "../../services/UserService";
 import { Pagination, SuccessResult } from "../../util/entities";
@@ -9,8 +9,11 @@ import { USER_NOT_FOUND, MISSING_PARAMS } from "../../util/errors";
 import { supportedCountries } from "../../util";
 import { Xoxoday } from "../../clients/xoxoday";
 import { RedemptionRequirementsModel, XoxodayVoucherResultModel } from "../../models/RestModels";
-import { getSocialClient, prepareVouchersList } from "../helpers";
+import { prepareVouchersList } from "../helpers";
 import { ParticipantService } from "../../services/ParticipantService";
+import { SocialClientType } from "../../util/constants";
+import { TwitterClient } from "../../clients/twitter";
+import { PrismaService } from ".prisma/client/entities";
 
 const userResultRelations = ["social_link" as const];
 class ListXoxoVariablesModel {
@@ -27,10 +30,12 @@ export class XoxodayController {
     private participantService: ParticipantService;
     @Inject()
     private userService: UserService;
+    @Inject()
+    private prismaService: PrismaService;
 
     @Get("/voucher")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(XoxodayVoucherResultModel))
-    public async list(@QueryParams() query: ListXoxoVariablesModel, @Context() context: Context) {
+    public async getStoreVouchers(@QueryParams() query: ListXoxoVariablesModel, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
         const { country, page } = query;
@@ -49,15 +54,38 @@ export class XoxodayController {
     @Get("/redemption-requirements")
     @(Returns(200, SuccessResult).Of(RedemptionRequirementsModel))
     public async getRedemptionRequirements(@Context() context: Context) {
+        const { TWITTER } = SocialClientType;
         const user = await this.userService.findUserByContext(context.get("user"), userResultRelations);
         if (!user) throw new BadRequest(USER_NOT_FOUND);
         const recentOrder = await this.xoxodayService.getLast24HourRedemption("XOXODAY_REDEMPTION");
-        const twitterAccount = user.social_link.find((item) => item.type === "twitter");
-        const socialClient = getSocialClient("twitter");
+        const twitterAccount = user.social_link.find((item) => item.type === TWITTER);
         const twitterFollowers = twitterAccount
-            ? await socialClient.getTotalFollowersV1(twitterAccount, twitterAccount.id)
+            ? await TwitterClient.getTotalFollowersV1(twitterAccount, twitterAccount.id)
             : 0;
         const participants = await this.participantService.findParticipantsCountByUserId(user.id);
+        const result = {
+            twitterLinked: twitterAccount ? true : false,
+            twitterfollowers: twitterFollowers,
+            twitterfollowersRequirement: 20,
+            participation: Boolean(participants),
+            orderLimitForTwentyFourHoursReached: Boolean(recentOrder),
+        };
+        return new SuccessResult(result, RedemptionRequirementsModel);
+    }
+    @Get("/redemption-requirements/:userId")
+    @(Returns(200, SuccessResult).Of(RedemptionRequirementsModel))
+    public async getRedemptionRequirementsV1(@PathParams() query: { userId: string }, @Context() context: Context) {
+        const { userId } = query;
+        const { TWITTER } = SocialClientType;
+        const recentOrder = await this.xoxodayService.getLast24HourRedemption("XOXODAY_REDEMPTION");
+        const socialLink = await this.prismaService.socialLink.findMany({
+            where: { userId },
+        });
+        const twitterAccount = socialLink.find((item) => item.type === TWITTER);
+        const twitterFollowers = twitterAccount
+            ? await TwitterClient.getTotalFollowersV1(twitterAccount, twitterAccount.id)
+            : 0;
+        const participants = await this.participantService.findParticipantsCountByUserId(userId);
         const result = {
             twitterLinked: twitterAccount ? true : false,
             twitterfollowers: twitterFollowers,

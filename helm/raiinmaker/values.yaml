@@ -25,9 +25,9 @@ cron:
     frequency:
         social: "0 * * * *" # At minute 0 every hour
         daily: "0 0 * * *" # At minute 0 every day
-        coiinWatcher: "*/5 * * * *" # At every 5 minutes
+        # coiinWatcher: "*/5 * * * *" # At every 5 minutes
         qualityScore: "0 * * * *" # At minute 0 every hour
-        campaignAudit: "*/15 * * * *" # At every 30 minutes
+        campaignAudit: "*/30 * * * *" # At every 30 minutes
 
 # up server replica count
 replicaCount: 2
@@ -59,7 +59,7 @@ data:
         ETHEREUM_DEPOSIT_ADDRESS: "0x275EE6238D103fDBE49d4cF6358575aA914F8654"
         RAIINMAKER_DEV_TOKEN: "0dfdd4-e5a5a3-c657fc-36415b-116af1"
         MIN_WITHDRAW_LIMIT: "100"
-        COIIN_VALUE: "0.5"
+        COIIN_VALUE: "0.2"
         FIREBASE_API_KEY: "AIzaSyAAXv6aKS3xdrnTLf5hVVJgW60h26vFJok"
         SENTRY_DSN: "https://ba0ee0b07cad495bba9d8734bd37cf34@o1155640.ingest.sentry.io/6236187"
 

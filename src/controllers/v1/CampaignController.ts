@@ -5,12 +5,12 @@ import {
     CryptoCurrency,
     Currency,
     Participant,
-    Prisma,
     Token,
+    Prisma,
 } from "@prisma/client";
 import { Get, Property, Required, Enum, Returns } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
-import { Context, QueryParams } from "@tsed/common";
+import { Context, PathParams, QueryParams } from "@tsed/common";
 import { CampaignService } from "../../services/CampaignService";
 import { UserService } from "../../services/UserService";
 import { CampaignState, CampaignStatus } from "../../util/constants";
@@ -25,8 +25,8 @@ import { ParticipantService } from "../../services/ParticipantService";
 import { SocialPostService } from "../../services/SocialPostService";
 import { CryptoCurrencyService } from "../../services/CryptoCurrencyService";
 import { getSymbolValueInUSD } from "../../util/exchangeRate";
-import { getCryptoAssestImageUrl } from "../../util";
 import { Tiers } from "../../types";
+import { getCryptoAssestImageUrl } from "../../util";
 
 class ListCampaignsVariablesModel extends PaginatedVariablesModel {
     @Required() @Enum(CampaignState) public readonly state: CampaignState;
@@ -40,7 +40,7 @@ class ListCurrentCampaignVariablesModel {
 
 async function getCampaignResultModel(
     campaign: Campaign & {
-        participant: Participant[];
+        participant?: Participant[];
         currency: (Currency & { token: Token | null }) | null;
         crypto_currency: CryptoCurrency | null;
         campaign_media: CampaignMedia[];
@@ -60,6 +60,12 @@ async function getCampaignResultModel(
         result.symbol = campaign.currency.token?.symbol || "";
         result.symbolImageUrl = getCryptoAssestImageUrl(campaign.currency?.token?.symbol || "");
     }
+
+    result.totalParticipationScore = parseInt(campaign.totalParticipationScore);
+    if (campaign.socialMediaType) result.socialMediaType = JSON.parse(campaign.socialMediaType);
+    if (campaign.keywords) result.keywords = JSON.parse(campaign.keywords);
+    if (campaign.suggestedPosts) result.suggestedPosts = JSON.parse(campaign.suggestedPosts);
+    if (campaign.suggestedTags) result.suggestedTags = JSON.parse(campaign.suggestedTags);
 
     return result;
 }
@@ -85,13 +91,27 @@ export class CampaignController {
         const modelItems = await Promise.all(items.map((i) => getCampaignResultModel(i)));
         return new SuccessResult(new Pagination(modelItems, total, CampaignResultModel), Pagination);
     }
+
+    @Get("/one/:id")
+    @(Returns(200, SuccessResult).Of(CampaignResultModel))
+    public async getOne(@PathParams("id") id: string) {
+        const campaign = await this.campaignService.findCampaignById(id, {
+            currency: { include: { token: true } },
+            crypto_currency: true,
+            campaign_media: true,
+            campaign_template: true,
+        });
+        if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
+        return new SuccessResult(await getCampaignResultModel(campaign), CampaignResultModel);
+    }
+
     @Get("/current-campaign-tier")
     @(Returns(200, SuccessResult).Of(CurrentCampaignModel))
-    public async currentCampaignTier(
+    public async getCurrentCampaignTier(
         @QueryParams() query: ListCurrentCampaignVariablesModel,
         @Context() context: Context
     ) {
-        let { campaignId } = query;
+        const { campaignId } = query;
         let currentTierSummary;
         let currentCampaign: Campaign | null;
         let cryptoPriceUsd;

@@ -16,7 +16,6 @@ import { getSymbolValueInUSD } from "../../util/exchangeRate";
 import { Campaign, Participant, Prisma } from "@prisma/client";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { getSocialClient } from "../helpers";
-import { ParticipantPostsModel } from "../../models/RestModels";
 import { Tiers } from "../../types";
 
 class ListParticipantVariablesModel {
@@ -40,7 +39,7 @@ export class ParticipantController {
 
     @Get()
     @(Returns(200, SuccessResult).Of(ParticipantModel))
-    public async list(@QueryParams() query: ListParticipantVariablesModel, @Context() context: Context) {
+    public async getParticipant(@QueryParams() query: ListParticipantVariablesModel, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
         const participant = await this.participantService.findParticipantById(query, user);
@@ -48,9 +47,9 @@ export class ParticipantController {
         return new SuccessResult(participant, ParticipantModel);
     }
     @Get("/participant-posts")
-    @(Returns(200, SuccessArrayResult).Of(ParticipantPostsModel))
-    public async participantPosts(@QueryParams() query: ListParticipantVariablesModel, @Context() context: Context) {
-        const results = [];
+    @(Returns(200, SuccessArrayResult).Of(String))
+    public async getParticipantPosts(@QueryParams() query: ListParticipantVariablesModel, @Context() context: Context) {
+        const results: string[] = [];
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
         const participant = await this.participantService.findParticipantById(query, user);
@@ -61,13 +60,13 @@ export class ParticipantController {
             const socialLink = await this.participantService.findSocialLinkByUserId(user?.id || "", "twitter");
             const client = getSocialClient(post.type);
             const response = await client?.getPost(socialLink, post.id);
-            results.push(response);
+            if (response) results.push(response);
         }
-        return new SuccessArrayResult(results, ParticipantPostsModel);
+        return new SuccessArrayResult(results, String);
     }
     @Get("/participant-by-campaign-id")
     @(Returns(200, SuccessResult).Of(ParticipantModel))
-    public async participantByCampaignId(
+    public async getParticipantByCampaignId(
         @QueryParams() query: ListParticipantVariablesModel,
         @Context() context: Context
     ) {
@@ -79,7 +78,7 @@ export class ParticipantController {
     }
     @Get("/campaign-participants")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(ParticipantModel))
-    public async campaignParticipants(
+    public async getCampaignParticipants(
         @QueryParams() query: ListParticipantVariablesModel,
         @Context() context: Context
     ) {
