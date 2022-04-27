@@ -19,8 +19,7 @@ import { TransferAction, TransferStatus } from "../types";
 import { Org } from "./Org";
 import { RafflePrize } from "./RafflePrize";
 import { performCurrencyTransfer } from "../controllers/helpers";
-import { startOfISOWeek, endOfISOWeek, startOfWeek, endOfWeek } from "date-fns";
-import { initDateFromParams } from "../util/date";
+import { startOfISOWeek, endOfISOWeek, startOfWeek, endOfWeek, subDays, startOfDay } from "date-fns";
 import { RAIINMAKER_ORG_NAME, COIIN } from "../util/constants";
 
 @Entity()
@@ -183,13 +182,7 @@ export class Transfer extends BaseEntity {
 
     public static async getLast24HourRedemption(wallet: Wallet, type: TransferAction) {
         const currentDate = new Date();
-        const date = initDateFromParams({
-            date: currentDate,
-            d: currentDate.getDate() - 1,
-            h: currentDate.getHours(),
-            i: currentDate.getMinutes(),
-            s: currentDate.getSeconds(),
-        });
+        const date = subDays(currentDate, 1);
         return await Transfer.count({
             where: { wallet, action: type, createdAt: MoreThan(DateUtils.mixedDateToUtcDatetimeString(date)) },
         });
@@ -215,7 +208,7 @@ export class Transfer extends BaseEntity {
     }
 
     public static async getCoinnEarnedToday(wallet: Wallet) {
-        const today = initDateFromParams({ date: new Date(), h: 0, i: 0, s: 0 });
+        const today = startOfDay(new Date());
         const { earnings } = await this.createQueryBuilder("transfer")
             .select("SUM(CAST(transfer.amount AS DECIMAL)) as earnings")
             .where(

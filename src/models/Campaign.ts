@@ -30,9 +30,9 @@ import { CampaignTemplate } from "./CampaignTemplate";
 import { TatumClient, CAMPAIGN_CREATION_AMOUNT } from "../clients/tatumClient";
 import { Currency } from "./Currency";
 import { getCryptoAssestImageUrl, BN } from "../util";
-import { initDateFromParams } from "../util/date";
 import { CampaignStatus, RAIINMAKER_ORG_NAME } from "../util/constants";
 import { getSymbolValueInUSD } from "../util/exchangeRate";
+import { subDays } from "date-fns";
 
 @Entity()
 export class Campaign extends BaseEntity {
@@ -452,14 +452,15 @@ export class Campaign extends BaseEntity {
         const alreadyHandledParticipants: { [key: string]: any } = {};
         for (let i = 0; i < campaign.participants.length; i++) {
             const participant = campaign.participants[i];
+            const currentDate = new Date();
             if (!alreadyHandledParticipants[participant.id]) {
                 const metrics = await DailyParticipantMetric.getSortedByParticipantId(participant.id);
                 if (metrics.length > 0) {
                     if (
                         formatUTCDateForComparision(metrics[metrics.length - 1].createdAt) !==
-                        formatUTCDateForComparision(new Date())
+                        formatUTCDateForComparision(currentDate)
                     ) {
-                        const datesInBetween = getDatesBetweenDates(metrics[metrics.length - 1].createdAt, new Date());
+                        const datesInBetween = getDatesBetweenDates(metrics[metrics.length - 1].createdAt, currentDate);
                         for (let j = 0; j < datesInBetween.length; j++) {
                             await DailyParticipantMetric.insertPlaceholderRow(
                                 datesInBetween[j],
@@ -471,14 +472,8 @@ export class Campaign extends BaseEntity {
                         }
                     }
                 } else {
-                    const yesterday = initDateFromParams({
-                        date: new Date(),
-                        d: new Date().getDate() - 1,
-                        h: 0,
-                        i: 0,
-                        s: 0,
-                    });
-                    const datesInBetween = getDatesBetweenDates(yesterday, new Date());
+                    const yesterday = subDays(currentDate, 1);
+                    const datesInBetween = getDatesBetweenDates(yesterday, currentDate);
                     for (let j = 0; j < datesInBetween.length; j++) {
                         await DailyParticipantMetric.insertPlaceholderRow(
                             datesInBetween[j],
