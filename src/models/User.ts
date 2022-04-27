@@ -34,7 +34,7 @@ import { differenceInHours } from "date-fns";
 import { Transfer } from "./Transfer";
 import { TatumClient } from "../clients/tatumClient";
 import { Org } from "./Org";
-import { BSC, COIIN, REWARD_AMOUNTS, SHARING_REWARD_LIMIT_PER_DAY } from "../util/constants";
+import { BSC, COIIN, REWARD_AMOUNTS } from "../util/constants";
 import { Campaign } from "./Campaign";
 
 @Entity()
@@ -249,10 +249,7 @@ export class User extends BaseEntity {
         });
         if (
             (type === "LOGIN_REWARD" && accountAgeInHours > 24 && !thisWeeksReward) ||
-            (type === "PARTICIPATION_REWARD" && !thisWeeksReward) ||
-            type === "REGISTRATION_REWARD" ||
-            (type === "SHARING_REWARD" &&
-                (await Transfer.getLast24HourRedemption(user.wallet, "SHARING_REWARD")) < SHARING_REWARD_LIMIT_PER_DAY)
+            (type === "PARTICIPATION_REWARD" && !thisWeeksReward)
         ) {
             let transferStatus = true;
             try {
