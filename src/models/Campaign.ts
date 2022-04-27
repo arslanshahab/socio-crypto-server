@@ -31,7 +31,7 @@ import { TatumClient, CAMPAIGN_CREATION_AMOUNT } from "../clients/tatumClient";
 import { Currency } from "./Currency";
 import { getCryptoAssestImageUrl, BN } from "../util";
 import { CampaignStatus, RAIINMAKER_ORG_NAME } from "../util/constants";
-import { getSymbolValueInUSD } from "../util/exchangeRate";
+import { getTokenValueInUSD } from "../util/exchangeRate";
 import { subDays } from "date-fns";
 
 @Entity()
@@ -251,7 +251,7 @@ export class Campaign extends BaseEntity {
 
     public async asV2() {
         const campaign = { ...this.asV1() };
-        campaign.coiinTotalUSD = await getSymbolValueInUSD(
+        campaign.coiinTotalUSD = await getTokenValueInUSD(
             campaign.symbol,
             parseFloat(campaign?.coiinTotal?.toString() || "0")
         );
