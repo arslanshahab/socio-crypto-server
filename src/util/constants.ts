@@ -65,7 +65,7 @@ export const REWARD_AMOUNTS: { [key: string]: number } = {
 export const KYC_APPROVAL_MESSAGE_TITLE = "Your KYC application has been APPROVED!";
 export const KYC_PENDING_MESSAGE_TITLE = "Your KYC application has been SUBMITTED!";
 export const KYC_REJECTED_MESSAGE_TITLE = "Your KYC Application has been REJECTED!";
-export const KYC_APPROVAL_MESSAGE_BODY = "You are now elligible for some extra features like withdraws above $600.";
+export const KYC_APPROVAL_MESSAGE_BODY = "You are now eligible for full functionality within Raiinmaker.";
 export const KYC_PENDING_MESSAGE_BODY = "We will update you once application's status changes.";
 export const KYC_REJECTED_MESSAGE_BODY =
     "Please contact our support to find out reason. You will have to re-apply for KYC with more precise details.";

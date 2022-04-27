@@ -3,7 +3,6 @@ import { Application } from "../../app";
 import * as dotenv from "dotenv";
 import { Campaign } from "../../models/Campaign";
 import { LessThan, EntityManager } from "typeorm";
-import { initDateFromParams } from "../../util/date";
 import { DateUtils } from "typeorm/util/DateUtils";
 import { payoutCryptoCampaignRewards, payoutRaffleCampaignRewards } from "./auditFunctions";
 import { Firebase } from "../../clients/firebase";
@@ -19,7 +18,7 @@ console.log("APP instance created.");
     const connection = await app.connectDatabase();
     console.log("Secrets and connection initialized.");
     try {
-        let date = initDateFromParams({ date: new Date(), d: new Date().getDate(), h: 0, i: 0, s: 0 });
+        let date = new Date();
         const campaigns = await Campaign.find({
             where: {
                 status: "APPROVED",

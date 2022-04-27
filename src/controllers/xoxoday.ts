@@ -205,7 +205,6 @@ const ifUserCanRedeem = async (user: User, totalCoiinSpent: number) => {
                 `You can only redeem $${WEEK_LIMIT_USD_FOUR_MONTH_OLD_ACCOUNT} worth of vouchers within a week.`
             );
     }
-
     if (Boolean(await Transfer.getLast24HourRedemption(user.wallet, "XOXODAY_REDEMPTION")))
         throw new Error("You can only redeem once in 24 hours!");
     const userCurrency = await TatumClient.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet: user.wallet });
