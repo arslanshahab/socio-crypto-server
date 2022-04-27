@@ -88,7 +88,7 @@ export class ParticipantController {
         return new SuccessResult(new Pagination(items, count, ParticipantModel), Pagination);
     }
     @Get("/participant-metrics")
-    @(Returns(200, SuccessResult).Of(ParticipantMetricsResultModel))
+    @(Returns(200, SuccessResult).Of(Pagination).Nested(ParticipantMetricsResultModel))
     public async getParticipantMetrics(
         @QueryParams() query: ListParticipantVariablesModel,
         @Context() context: Context
