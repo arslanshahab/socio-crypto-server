@@ -1,21 +1,12 @@
 import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
 import { Campaign, User, Participant } from "@prisma/client";
-// import { DateUtils } from "typeorm/util/DateUtils";
-// import { MoreThan } from "typeorm";
 
 @Injectable()
 export class DailyParticipantMetricService {
     @Inject()
     private prismaService: PrismaService;
 
-    /**
-     * Retrieves a user object from a JWTPayload
-     *
-     * @param data the jwt payload
-     * @param include additional relations to include with the user query
-     * @returns the user object, with the requested relations included
-     */
     public async getSortedByParticipantId(participantId: string) {
         return this.prismaService.dailyParticipantMetric.findMany({
             where: {
@@ -124,7 +115,6 @@ export class DailyParticipantMetricService {
 
         const response = this.prismaService.dailyParticipantMetric.findMany({
             where: {
-                // createdAt: { lt: new Date(today) },
                 createdAt: { lt: new Date(today), gte: new Date(yesterday) },
                 campaign: {
                     id: {
