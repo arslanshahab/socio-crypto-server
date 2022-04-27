@@ -30,10 +30,7 @@ import {
     AMOUNT_IN_POSITIVE,
     CURRENCY_NOT_FOUND,
     ESCROW_NOT_FOUND,
-<<<<<<< HEAD
-=======
     INVALID_TOKEN,
->>>>>>> b0ffc2b9f6b4d509438062faa8ffabd1a57f2381
     PARTICIPANT_NOT_FOUND,
     SOICIAL_LINKING_ERROR,
     WALLET_CURRENCY_NOT_FOUND,
@@ -43,15 +40,12 @@ import { getExchangeRateForCurrency } from "../util/exchangeRate";
 import { TwitterClient } from "../clients/twitter";
 import { TikTokClient } from "../clients/tiktok";
 import { FacebookClient } from "../clients/facebook";
-<<<<<<< HEAD
 import { Campaign as PrismaCampaign, Participant as PrismaParticipant } from "@prisma/client";
-=======
 import { Firebase } from "../clients/firebase";
 import { Forbidden, NotFound } from "@tsed/exceptions";
 import { TatumClient } from "../clients/tatumClient";
 import { BalanceResultModel } from "../models/RestModels";
 import { Currency, Token, User, Wallet as PrismaWallet } from "@prisma/client";
->>>>>>> b0ffc2b9f6b4d509438062faa8ffabd1a57f2381
 
 export const feeMultiplier = () => new BN(1).minus(FEE_RATE);
 
