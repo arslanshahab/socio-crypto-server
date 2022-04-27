@@ -60,6 +60,7 @@ data:
         RAIINMAKER_DEV_TOKEN: "0dfdd4-e5a5a3-c657fc-36415b-116af1"
         MIN_WITHDRAW_LIMIT: "100"
         COIIN_VALUE: "0.2"
+        FEE_RATE: "0.1"
         FIREBASE_API_KEY: "AIzaSyAAXv6aKS3xdrnTLf5hVVJgW60h26vFJok"
         SENTRY_DSN: "https://ba0ee0b07cad495bba9d8734bd37cf34@o1155640.ingest.sentry.io/6236187"
 

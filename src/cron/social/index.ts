@@ -85,7 +85,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
             const campaign = campaigns[campaignIndex];
             const take = 200;
             let skip = 0;
-            const totalPosts = await SocialPost.count({ where: { campaign }, relations: ["user", "campaign"] });
+            const totalPosts = await SocialPost.count({ where: { campaign } });
             console.log("TOTAL POSTS FOR CAMPAIGN ID: ", campaign.id, totalPosts);
             const loop = Math.ceil(totalPosts / take);
             for (let postPageIndex = 0; postPageIndex < loop; postPageIndex++) {
