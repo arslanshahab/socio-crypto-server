@@ -153,7 +153,7 @@ export class CampaignController {
         @QueryParams() query: ListCurrentCampaignVariablesModel,
         @Context() context: Context
     ) {
-        // this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const { campaignId } = query;
         const { _sum, _count } = await this.participantService.findPaticipantMetricsById(campaignId);
         const { postSum, postCount } = await this.socialPostService.findSocialPostMetricsById(campaignId);
