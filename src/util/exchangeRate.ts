@@ -52,9 +52,15 @@ export const getExchangeRateForCrypto = async (symbol: string) => {
     return 1;
 };
 
-export const getSymbolValueInUSD = async (symbol: string, amount: number) => {
-    symbol = symbol.toUpperCase();
+export const getTokenValueInUSD = async (token: string, amount: number) => {
+    token = token.toUpperCase();
     const valueInUSD =
-        symbol === "COIIN" ? parseFloat(process.env.COIIN_VALUE || "0.2") : await getExchangeRateForCrypto(symbol);
+        token === "COIIN" ? parseFloat(process.env.COIIN_VALUE || "0.2") : await getExchangeRateForCrypto(token);
     return valueInUSD * amount;
+};
+
+export const getCurrencyValueInUSD = async (currency: string, amount: number) => {
+    currency = currency.toUpperCase();
+    const valueInUSD = currency === "USD" ? 1 : await getExchangeRateForCurrency(currency);
+    return amount / valueInUSD;
 };

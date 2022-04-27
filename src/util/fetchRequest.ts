@@ -24,7 +24,9 @@ export const doFetch = async (requestData: RequestData) => {
     } catch (error) {
         if (error?.response?.data) {
             console.log("Error Data ---- ", error?.response?.data || "");
-            throw new Error(error?.response?.data?.message || error?.response?.data?.error_message);
+            throw new Error(
+                error?.response?.data?.message || error?.response?.data?.error_message || error?.response?.data?.error
+            );
         } else {
             console.log("Error ---- ", error);
             throw new Error(error.message);
