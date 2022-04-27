@@ -20,7 +20,7 @@ import { HourlyCampaignMetric } from "../models/HourlyCampaignMetric";
 import { QualityScore } from "../models/QualityScore";
 import { limit } from "../util/rateLimiter";
 import { JWTPayload } from "src/types";
-import { getSymbolValueInUSD } from "../util/exchangeRate";
+import { getTokenValueInUSD } from "../util/exchangeRate";
 import { GetCampaignsParticipantsVariables } from "../types.d";
 import {
     FormattedError,
@@ -180,7 +180,10 @@ export const getAccumulatedParticipantMetrics = async (
 ) => {
     const user = await User.findUserByContext(context.user);
     if (!user) throw new Error(USER_NOT_FOUND);
-    const campaign = await Campaign.findOne({ id: args.campaignId });
+    const campaign = await Campaign.findOne({
+        where: { id: args.campaignId },
+        relations: ["currency", "currency.token"],
+    });
     if (!campaign) throw new Error(CAMPAIGN_NOT_FOUND);
     const participant = await Participant.findOne({ where: { user, campaign } });
     if (!participant) throw new Error(PARTICIPANT_NOT_FOUND);
@@ -197,7 +200,10 @@ export const getAccumulatedParticipantMetrics = async (
         participationScore: counts?.participationScore || 0,
         currentTotal: currentTotal.toNumber(),
         participantShare: participantShare.toNumber() || 0,
-        participantShareUSD: await getSymbolValueInUSD(campaign.symbol, parseFloat(participantShare.toString() || "0")),
+        participantShareUSD: await getTokenValueInUSD(
+            campaign.currency.token.symbol,
+            parseFloat(participantShare.toString() || "0")
+        ),
         symbol: campaign.symbol,
         symbolImageUrl: getCryptoAssestImageUrl(campaign.symbol),
         campaignId: campaign.id,
@@ -220,7 +226,7 @@ export const getAccumulatedUserMetrics = async (parent: any, args: any, context:
             const participant = participations[index];
             const { currentTotal } = calculateTier(campaign.totalParticipationScore, campaign.algorithm.tiers);
             const share = await calculateParticipantPayout(new BN(currentTotal), campaign, participant);
-            const usdValue = await getSymbolValueInUSD(campaign.symbol, parseFloat(share.toString() || "0"));
+            const usdValue = await getTokenValueInUSD(campaign.symbol, parseFloat(share.toString() || "0"));
             participantShare = participantShare.plus(usdValue);
         }
     }
