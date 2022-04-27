@@ -33,7 +33,7 @@ console.log("APP instance created.");
                 where: {
                     id: campaigns[index].id,
                 },
-                relations: ["participants", "prize", "currency", "org"],
+                relations: ["currency", "org", "currency.token"],
             });
             if (!campaign) throw new Error("Campaign not found.");
             console.log(
@@ -65,8 +65,11 @@ console.log("APP instance created.");
     } catch (error) {
         console.log(error);
         await connection.close();
+        console.log("DATABASE CONNECTION CLOSED WITH ERROR ----.");
         process.exit(0);
     }
+    console.log("COMPLETED CRON TASKS ----.");
     await connection.close();
+    console.log("DATABASE CONNECTION CLOSED ----.");
     process.exit(0);
 })();
