@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { Xoxoday } from "../clients/xoxoday";
 import { generateRandomId, supportedCountries, asyncHandler, BN } from "../util";
 import { XoxodayOrder, XoxodayVoucher } from "src/types";
-import { getExchangeRateForCurrency, getSymbolValueInUSD } from "../util/exchangeRate";
+import { getCurrencyValueInUSD, getExchangeRateForCurrency, getTokenValueInUSD } from "../util/exchangeRate";
 import { User } from "../models/User";
 import { getSocialClient } from "./social";
 import { S3Client } from "../clients/s3";
@@ -77,11 +77,12 @@ export const placeOrder = async (parent: any, args: { cart: Array<any>; email: s
             "wallet.walletCurrency",
             "campaigns",
             "socialLinks",
+            "profile",
         ]);
         if (!user) throw new Error(USER_NOT_FOUND);
         if (!cart || !cart.length) throw new Error(MISSING_PARAMS);
-        const totalUSDValue = cart.reduce((a, b) => a + (b.denomination || 0), 0);
-        const totalCoiinSpent = parseFloat(totalUSDValue) / parseFloat(process.env.COIIN_VALUE || "0.2");
+        const totalCoiinSpent = await getCoiinSpendingOfCart(cart);
+        console.log(totalCoiinSpent);
         await ifUserCanRedeem(user, totalCoiinSpent);
         const ordersData = await prepareOrderList(cart, email);
         const orderStatusList = await Xoxoday.placeOrder(ordersData);
@@ -111,6 +112,12 @@ const prepareOrderEntities = async (cart: Array<any>, statusList: Array<any>): P
             ...item,
         };
     });
+};
+
+const getCoiinSpendingOfCart = async (cart: Array<any>) => {
+    const totalDenomination = cart.reduce((a, b) => a + (b.denomination || 0), 0);
+    const totalUSDValue = await getCurrencyValueInUSD(cart[0].currencyCode, totalDenomination);
+    return totalUSDValue / parseFloat(process.env.COIIN_VALUE || "0.2");
 };
 
 export const redemptionRequirements = async (parent: any, args: {}, context: { user: any }) => {
@@ -183,7 +190,7 @@ const ifUserCanRedeem = async (user: User, totalCoiinSpent: number) => {
     if (!user.campaigns.length) throw new Error("You need to participate in atleast one campaign in order to redeem!");
     const accountAgeInMonths = differenceInMonths(new Date(), user.createdAt) || 1;
     const coiinRedeemedInCurrentWeek = await Transfer.getCurrentWeekRedemption(user.wallet, "XOXODAY_REDEMPTION");
-    const usdRedeemedCurrentWeek = await getSymbolValueInUSD(COIIN, coiinRedeemedInCurrentWeek + totalCoiinSpent);
+    const usdRedeemedCurrentWeek = await getTokenValueInUSD(COIIN, coiinRedeemedInCurrentWeek + totalCoiinSpent);
     if (accountAgeInMonths <= 1) {
         if (usdRedeemedCurrentWeek > WEEK_LIMIT_USD_ONE_MONTH_OLD_ACCOUNT)
             throw new Error(
@@ -205,7 +212,6 @@ const ifUserCanRedeem = async (user: User, totalCoiinSpent: number) => {
                 `You can only redeem $${WEEK_LIMIT_USD_FOUR_MONTH_OLD_ACCOUNT} worth of vouchers within a week.`
             );
     }
-
     if (Boolean(await Transfer.getLast24HourRedemption(user.wallet, "XOXODAY_REDEMPTION")))
         throw new Error("You can only redeem once in 24 hours!");
     const userCurrency = await TatumClient.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet: user.wallet });

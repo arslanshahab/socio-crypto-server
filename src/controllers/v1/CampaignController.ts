@@ -24,7 +24,7 @@ import { BadRequest, NotFound } from "@tsed/exceptions";
 import { ParticipantService } from "../../services/ParticipantService";
 import { SocialPostService } from "../../services/SocialPostService";
 import { CryptoCurrencyService } from "../../services/CryptoCurrencyService";
-import { getSymbolValueInUSD } from "../../util/exchangeRate";
+import { getTokenValueInUSD } from "../../util/exchangeRate";
 import { Tiers } from "../../types";
 import { getCryptoAssestImageUrl } from "../../util";
 
@@ -49,7 +49,7 @@ async function getCampaignResultModel(
 ) {
     const result: CampaignResultModel = campaign;
     if (result.coiinTotal) {
-        const value = await getSymbolValueInUSD(campaign.symbol, parseFloat(campaign.coiinTotal.toString()));
+        const value = await getTokenValueInUSD(campaign.symbol, parseFloat(campaign.coiinTotal.toString()));
         result.coiinTotalUSD = value.toFixed(2);
     } else {
         result.coiinTotalUSD = "0";
