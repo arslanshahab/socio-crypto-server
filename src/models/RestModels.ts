@@ -266,6 +266,7 @@ export class UpdateCampaignResultModel {
 export class DeleteCampaignResultModel {
     @Property() public readonly campaignId: string;
     @Property() public readonly name: string;
+}
 export class UserWalletResultModel {
     @Property() public readonly symbol: string;
     @Property() public readonly balance: string;
