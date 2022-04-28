@@ -146,7 +146,13 @@ export const typeDefs = gql`
         completeEmailVerification(email: String!, token: String!): SuccessResponse
         completeVerification(email: String!, code: String!): SuccessResponse
         loginUser(email: String!, password: String!): SuccessResponse
-        registerUser(email: String!, username: String!, password: String!, verificationToken: String!): SuccessResponse
+        registerUser(
+            email: String!
+            username: String!
+            password: String!
+            verificationToken: String!
+            referralCode: String
+        ): SuccessResponse
         resetUserPassword(password: String!, verificationToken: String!): SuccessResponse
         recoverUserAccountStep1(username: String!, code: String!): SuccessResponse
         recoverUserAccountStep2(
