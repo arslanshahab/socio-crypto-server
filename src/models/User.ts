@@ -49,6 +49,9 @@ export class User extends BaseEntity {
     @Column({ nullable: false })
     public email: string;
 
+    @Column({ nullable: true })
+    public referralCode: string;
+
     @Column({ nullable: false })
     public password: string;
 
@@ -114,13 +117,19 @@ export class User extends BaseEntity {
         this.email = this.email ? this.email.toLowerCase() : this.email;
     }
 
-    public static async initNewUser(email: string, password: string, username: string): Promise<string> {
+    public static async initNewUser(
+        email: string,
+        password: string,
+        username: string,
+        referralCode?: string
+    ): Promise<string> {
         const user = new User();
         let wallet = new Wallet();
         const profile = new Profile();
         const notificationSettings = new NotificationSettings();
         user.email = email;
         user.password = password;
+        if (referralCode) user.referralCode = referralCode;
         await user.save();
         wallet.user = user;
         wallet = await wallet.save();
