@@ -19,7 +19,7 @@ model Admin {
   orgId      String?  @db.Uuid
   name       String   @default("raiinmaker") @db.VarChar
   createdAt  DateTime @default(now()) @db.Timestamp(6)
-  updatedAt  DateTime @default(now()) @db.Timestamp(6)
+  updatedAt  DateTime @updatedAt
   org        Org?     @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_6d94bbdb1be6d107f3d971fc808")
   user       User?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f8a889c4362d78f056960ca6dad")
 
@@ -44,7 +44,7 @@ model Campaign {
   suggestedPosts           String                   @default("[]")
   suggestedTags            String                   @default("[]")
   createdAt                DateTime                 @default(now()) @db.Timestamp(6)
-  updatedAt                DateTime                 @default(now()) @db.Timestamp(6)
+  updatedAt                DateTime                 @updatedAt
   requirements             Json?
   orgId                    String?                  @db.Uuid
   type                     String?
@@ -73,6 +73,10 @@ model Campaign {
   social_post              SocialPost[]
   transfer                 Transfer[]
 
+  @@index([status], map: "IDX_08135474cffdb8282c4ff37271")
+  @@index([beginDate], map: "IDX_4293bebb45d5083b55b41ac95d")
+  @@index([endDate], map: "IDX_a103498328a90babd98007c9a1")
+  @@index([isGlobal], map: "IDX_f04c2ce9b8b29b7348134ad30a")
   @@index([beginDate], map: "campaign_begindate_idx")
   @@index([endDate], map: "campaign_enddate_idx")
   @@index([isGlobal], map: "campaign_isglobal_idx")
@@ -88,7 +92,7 @@ model CampaignMedia {
   mediaFormat String?   @db.VarChar
   isDefault   Boolean?
   createdAt   DateTime  @default(now()) @db.Timestamp(6)
-  updatedAt   DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt   DateTime  @updatedAt
   campaign    Campaign? @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_b845045382e55918752955d23cb")
 
   @@map("campaign_media")
@@ -100,7 +104,7 @@ model CampaignTemplate {
   channel    String?   @db.VarChar
   post       String?   @db.VarChar
   createdAt  DateTime  @default(now()) @db.Timestamp(6)
-  updatedAt  DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt  DateTime  @updatedAt
   campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_19b3f8a418cf4753d5df4291099")
 
   @@map("campaign_template")
@@ -111,7 +115,7 @@ model CryptoCurrency {
   type               String              @unique(map: "UQ_11b2d6b4f14611301518cdec2e9") @db.VarChar
   contractAddress    String?             @unique(map: "UQ_6c11f6c7a2b89fce698221b2f50") @db.VarChar
   createdAt          DateTime            @default(now()) @db.Timestamp(6)
-  updatedAt          DateTime            @default(now()) @db.Timestamp(6)
+  updatedAt          DateTime            @updatedAt
   campaign           Campaign[]
   crypto_transaction CryptoTransaction[]
 
@@ -128,7 +132,7 @@ model CryptoTransaction {
   convertedValue  String?         @db.VarChar
   cryptoId        String?         @db.Uuid
   createdAt       DateTime        @default(now()) @db.Timestamp(6)
-  updatedAt       DateTime        @default(now()) @db.Timestamp(6)
+  updatedAt       DateTime        @updatedAt
   crypto_currency CryptoCurrency? @relation(fields: [cryptoId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ea1d711f8ac8362a89ae10d4ecd")
 
   @@map("crypto_transaction")
@@ -143,7 +147,7 @@ model Currency {
   message        String?    @db.VarChar
   destinationTag Int?
   createdAt      DateTime   @default(now()) @db.Timestamp(6)
-  updatedAt      DateTime   @default(now()) @db.Timestamp(6)
+  updatedAt      DateTime   @updatedAt
   walletId       String?    @db.Uuid
   derivationKey  Int?
   tokenId        String?    @db.Uuid
@@ -160,7 +164,7 @@ model CustodialAddress {
   available Boolean  @default(true)
   address   String   @db.VarChar
   createdAt DateTime @default(now()) @db.Timestamp(6)
-  updatedAt DateTime @default(now()) @db.Timestamp(6)
+  updatedAt DateTime @updatedAt
   walletId  String?  @db.Uuid
   wallet    Wallet?  @relation(fields: [walletId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_21fcc5a99d684c08f35cf493aa3")
 
@@ -179,7 +183,7 @@ model DailyParticipantMetric {
   totalParticipationScore String    @default(dbgenerated("0")) @db.VarChar
   participantId           String    @db.VarChar
   createdAt               DateTime  @default(now()) @db.Timestamp(6)
-  updatedAt               DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt               DateTime  @updatedAt
   userId                  String?   @db.Uuid
   campaignId              String?   @db.Uuid
   campaign                Campaign? @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_339b0794c16489770996c4991ca")
@@ -194,7 +198,7 @@ model DepositAaddress {
   currency  String   @db.VarChar
   address   String   @db.VarChar
   createdAt DateTime @default(now()) @db.Timestamp(6)
-  updatedAt DateTime @default(now()) @db.Timestamp(6)
+  updatedAt DateTime @updatedAt
 
   @@map("deposit_address")
 }
@@ -205,7 +209,7 @@ model Escrow {
   campaignId String?   @unique(map: "REL_9a7c2a319665a11a340b523f59") @db.Uuid
   walletId   String?   @db.Uuid
   createdAt  DateTime  @default(now()) @db.Timestamp(6)
-  updatedAt  DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt  DateTime  @updatedAt
   campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_9a7c2a319665a11a340b523f591")
   wallet     Wallet?   @relation(fields: [walletId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f980ed731d30053ac7e941c795c")
 
@@ -218,7 +222,7 @@ model ExternalAddress {
   claimed         Boolean  @default(false)
   claimMessage    String   @db.VarChar
   createdAt       DateTime @default(now()) @db.Timestamp(6)
-  updatedAt       DateTime @default(now()) @db.Timestamp(6)
+  updatedAt       DateTime @updatedAt
   userId          String?  @db.Uuid
   walletId        String?  @db.Uuid
   user            User?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f362b520f3de71dd59b128fea4e")
@@ -234,7 +238,7 @@ model ExternalWallet {
   claimMessage    String   @db.VarChar
   balance         String   @default(dbgenerated("0")) @db.VarChar
   createdAt       DateTime @default(now()) @db.Timestamp(6)
-  updatedAt       DateTime @default(now()) @db.Timestamp(6)
+  updatedAt       DateTime @updatedAt
   userId          String?  @db.Uuid
   orgId           String?  @db.Uuid
   org             Org?     @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_9df582d498e093cd579740f5c4c")
@@ -249,7 +253,7 @@ model FactorLink {
   providerId                            String   @db.VarChar
   identityId                            String   @db.VarChar
   createdAt                             DateTime @default(now()) @db.Timestamp(6)
-  updatedAt                             DateTime @default(now()) @db.Timestamp(6)
+  updatedAt                             DateTime @updatedAt
   userId                                String?  @db.Uuid
   name                                  String?  @db.VarChar
   verificationId                        String?  @db.Uuid
@@ -270,7 +274,7 @@ model HourlyCampaignMetric {
   shareCount       String    @default(dbgenerated("0")) @db.VarChar
   commentCount     String    @default(dbgenerated("0")) @db.VarChar
   createdAt        DateTime  @default(now()) @db.Timestamp(6)
-  updatedAt        DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt        DateTime  @updatedAt
   campaignId       String?   @db.Uuid
   orgId            String?   @db.Uuid
   campaign         Campaign? @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_0a14e4214cbadbbf5ab94dfeeb0")
@@ -294,7 +298,7 @@ model NotificationSettings {
   campaignCreate  Boolean  @default(true)
   campaignUpdates Boolean  @default(true)
   createdAt       DateTime @default(now()) @db.Timestamp(6)
-  updatedAt       DateTime @default(now()) @db.Timestamp(6)
+  updatedAt       DateTime @updatedAt
   userId          String?  @unique(map: "REL_5a8ffc3b89343043c9440d631e") @db.Uuid
   user            User?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_5a8ffc3b89343043c9440d631e2")
 
@@ -305,7 +309,7 @@ model Org {
   id                     String                 @id(map: "PK_703783130f152a752cadf7aa751") @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
   name                   String                 @db.VarChar
   createdAt              DateTime               @default(now()) @db.Timestamp(6)
-  updatedAt              DateTime               @default(now()) @db.Timestamp(6)
+  updatedAt              DateTime               @updatedAt
   stripeId               String?                @db.VarChar
   admin                  Admin[]
   campaign               Campaign[]
@@ -326,7 +330,7 @@ model Participant {
   participationScore String   @default(dbgenerated("0")) @db.VarChar
   link               String?  @db.VarChar
   createdAt          DateTime @default(now()) @db.Timestamp(6)
-  updatedAt          DateTime @default(now()) @db.Timestamp(6)
+  updatedAt          DateTime @updatedAt
   userId             String   @db.Uuid
   email              String?  @db.VarChar
   campaign           Campaign @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_1835802549e230f6cd88c6efef9")
@@ -351,7 +355,7 @@ model Profile {
   userId         String?  @unique(map: "REL_a24972ebd73b106250713dcddd") @db.Uuid
   country        String?
   createdAt      DateTime @default(now()) @db.Timestamp(6)
-  updatedAt      DateTime @default(now()) @db.Timestamp(6)
+  updatedAt      DateTime @updatedAt
   profilePicture String?  @db.VarChar
   user           User?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_a24972ebd73b106250713dcddd9")
 
@@ -368,7 +372,7 @@ model QualityScore {
   comments      String   @default(dbgenerated("0")) @db.VarChar
   participantId String   @db.VarChar
   createdAt     DateTime @default(now()) @db.Timestamp(6)
-  updatedAt     DateTime @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime @updatedAt
 
   @@map("quality_score")
 }
@@ -389,7 +393,7 @@ model RafflePrize {
   displayName   String     @db.VarChar
   image         Boolean?
   affiliateLink String?    @db.VarChar
-  updatedAt     DateTime   @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime   @updatedAt
   createdAt     DateTime   @default(now()) @db.Timestamp(6)
   campaignId    String?    @unique(map: "REL_29f131f37d9cbb4814b2b6d306") @db.Uuid
   campaign      Campaign?  @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_29f131f37d9cbb4814b2b6d3069")
@@ -404,7 +408,7 @@ model SocialLink {
   apiKey             String?  @db.VarChar
   apiSecret          String?  @db.VarChar
   createdAt          DateTime @default(now()) @db.Timestamp(6)
-  updatedAt          DateTime @default(now()) @db.Timestamp(6)
+  updatedAt          DateTime @updatedAt
   userId             String?  @db.Uuid
   followerCount      Int?
   accessToken        String?  @db.VarChar
@@ -426,7 +430,7 @@ model SocialPost {
   participantId String   @db.VarChar
   campaignId    String   @db.Uuid
   createdAt     DateTime @default(now()) @db.Timestamp(6)
-  updatedAt     DateTime @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime @updatedAt
   userId        String   @db.Uuid
   campaign      Campaign @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_3073fc6f7d48ae9dc23af5f00f6")
   user          User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ac33a6e1367ede7117c1742d6a4")
@@ -440,7 +444,7 @@ model TatumAccount {
   accountId      String   @db.VarChar
   currency       String   @db.VarChar
   createdAt      DateTime @default(now()) @db.Timestamp(6)
-  updatedAt      DateTime @default(now()) @db.Timestamp(6)
+  updatedAt      DateTime @updatedAt
   memo           String?  @db.VarChar
   message        String?  @db.VarChar
   destinationTag Int?
@@ -456,7 +460,7 @@ model TatumWallet {
   xpub      String   @db.VarChar
   address   String   @db.VarChar
   createdAt DateTime @default(now()) @db.Timestamp(6)
-  updatedAt DateTime @default(now()) @db.Timestamp(6)
+  updatedAt DateTime @updatedAt
 
   @@map("tatum_wallet")
 }
@@ -468,7 +472,7 @@ model Token {
   contractAddress String?    @db.VarChar
   enabled         Boolean    @default(true)
   createdAt       DateTime   @default(now()) @db.Timestamp(6)
-  updatedAt       DateTime   @default(now()) @db.Timestamp(6)
+  updatedAt       DateTime   @updatedAt
   currency        Currency[]
 
   @@map("token")
@@ -480,7 +484,7 @@ model Transfer {
   action          String       @db.VarChar
   status          String?      @db.VarChar
   createdAt       DateTime     @default(now()) @db.Timestamp(6)
-  updatedAt       DateTime     @default(now()) @db.Timestamp(6)
+  updatedAt       DateTime     @updatedAt
   walletId        String?      @db.Uuid
   campaignId      String?      @db.Uuid
   payoutStatus    String?      @db.VarChar
@@ -507,28 +511,28 @@ model TwentyFourHourMetric {
   score     String   @default(dbgenerated("0")) @db.VarChar
   createdAt DateTime @default(now()) @db.Timestamp(6)
   userId    String?  @db.Uuid
-  updatedAt DateTime @default(now()) @db.Timestamp(6)
+  updatedAt DateTime @updatedAt
   user      User?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_e965aecf58d4a7ff9406ab777e1")
 
   @@map("twenty_four_hour_metric")
 }
 
 model User {
-  active                                       Boolean                   @default(true)
-  createdAt                                    DateTime                  @default(now()) @db.Timestamp(6)
-  updatedAt                                    DateTime                  @default(now()) @db.Timestamp(6)
-  identityId                                   String?                   @db.VarChar
-  id                                           String                    @id(map: "PK_cace4a159ff9f2512dd42373760") @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
-  kycStatus                                    String?                   @default("") @db.VarChar
-  lastLogin                                    DateTime?                 @db.Timestamp(6)
-  email                                        String                    @db.VarChar
-  password                                     String                    @db.VarChar
+  active                                       Boolean                  @default(true)
+  createdAt                                    DateTime                 @default(now()) @db.Timestamp(6)
+  updatedAt                                    DateTime                 @updatedAt
+  identityId                                   String?                  @db.VarChar
+  id                                           String                   @id(map: "PK_cace4a159ff9f2512dd42373760") @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
+  kycStatus                                    String?                  @default("") @db.VarChar
+  lastLogin                                    DateTime?                @db.Timestamp(6)
+  email                                        String                   @db.VarChar
+  password                                     String                   @db.VarChar
   admin                                        Admin[]
   daily_participant_metric                     DailyParticipantMetric[]
   external_address                             ExternalAddress[]
   external_wallet                              ExternalWallet[]
-  factor_link_factor_link_userIdTouser         FactorLink[]              @relation("factor_link_userIdTouser")
-  factor_link_factor_link_verificationIdTouser FactorLink[]              @relation("factor_link_verificationIdTouser")
+  factor_link_factor_link_userIdTouser         FactorLink[]             @relation("factor_link_userIdTouser")
+  factor_link_factor_link_verificationIdTouser FactorLink[]             @relation("factor_link_verificationIdTouser")
   notification_settings                        NotificationSettings?
   participant                                  Participant[]
   profile                                      Profile?
@@ -536,10 +540,11 @@ model User {
   social_post                                  SocialPost[]
   tatum_account                                TatumAccount[]
   twenty_four_hour_metric                      TwentyFourHourMetric[]
-  verification_application                     VerificationApplication[]
+  verification_application                     VerificationApplication?
   wallet                                       Wallet?
   xoxoday_order                                XoxodayOrder[]
 
+  @@index([identityId], map: "IDX_dea97e26c765a4cdb575957a14")
   @@index([identityId], map: "user_identityid_idx")
   @@map("user")
 }
@@ -549,7 +554,7 @@ model Verification {
   email     String    @db.VarChar
   verified  Boolean   @default(false)
   createdAt DateTime  @default(now()) @db.Timestamp(6)
-  updatedAt DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt DateTime  @updatedAt
   code      String    @db.VarChar
   expiry    DateTime? @db.Timestamp(6)
   type      String?   @default("") @db.VarChar
@@ -558,11 +563,13 @@ model Verification {
 }
 
 model VerificationApplication {
-  applicationId String   @id(map: "PK_1831686ef76854c14ec36b15876") @db.VarChar
+  applicationId String   @db.VarChar
   status        String   @db.VarChar
-  userId        String?  @db.Uuid
+  userId        String?  @unique(map: "UQ_79e9b3d653b00690eae5f235dad") @db.Uuid
   createdAt     DateTime @default(now()) @db.Timestamp(6)
-  updatedAt     DateTime @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime @updatedAt
+  reason        String?  @db.VarChar
+  id            String   @id(map: "PK_9a21866200edef5f625c56bcdf9") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   user          User?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_79e9b3d653b00690eae5f235dad")
 
   @@map("verification_application")
@@ -571,7 +578,7 @@ model VerificationApplication {
 model Wallet {
   id                String             @id(map: "PK_bec464dd8d54c39c54fd32e2334") @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
   createdAt         DateTime           @default(now()) @db.Timestamp(6)
-  updatedAt         DateTime           @default(now()) @db.Timestamp(6)
+  updatedAt         DateTime           @updatedAt
   userId            String?            @unique(map: "UQ_35472b1fe48b6330cd349709564") @db.Uuid
   orgId             String?            @unique(map: "UQ_bf1e49e09b07f54d894eee24803") @db.Uuid
   org               Org?               @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_bf1e49e09b07f54d894eee24803")
@@ -592,7 +599,7 @@ model WalletCurrency {
   balance   String   @default(dbgenerated("0")) @db.VarChar
   walletId  String?  @db.Uuid
   createdAt DateTime @default(now()) @db.Timestamp(6)
-  updatedAt DateTime @default(now()) @db.Timestamp(6)
+  updatedAt DateTime @updatedAt
   wallet    Wallet?  @relation(fields: [walletId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_2c16fccf4e3ac04ec0e6f4f68d0")
 
   @@map("wallet_currency")
@@ -606,7 +613,7 @@ model WeeklyReward {
   week          String   @db.VarChar
   rewardType    String   @db.VarChar
   createdAt     DateTime @default(now()) @db.Timestamp(6)
-  updatedAt     DateTime @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime @updatedAt
 
   @@map("weekly_reward")
 }
@@ -623,7 +630,7 @@ model XoxodayOrder {
   denomination   Int
   userId         String?  @db.Uuid
   createdAt      DateTime @default(now()) @db.Timestamp(6)
-  updatedAt      DateTime @default(now()) @db.Timestamp(6)
+  updatedAt      DateTime @updatedAt
   user           User?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_e0883ce6ef869534d2013fc414b")
 
   @@map("xoxoday_order")

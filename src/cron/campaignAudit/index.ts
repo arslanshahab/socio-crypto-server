@@ -3,13 +3,13 @@ import { Application } from "../../app";
 import * as dotenv from "dotenv";
 import { Campaign } from "../../models/Campaign";
 import { LessThan, EntityManager } from "typeorm";
-import { initDateFromParams } from "../../util/date";
 import { DateUtils } from "typeorm/util/DateUtils";
 import { payoutCryptoCampaignRewards, payoutRaffleCampaignRewards } from "./auditFunctions";
 import { Firebase } from "../../clients/firebase";
 
 dotenv.config();
 const app = new Application();
+console.log("APP instance created.");
 
 (async () => {
     console.log("Starting campaign audit.");
@@ -18,7 +18,7 @@ const app = new Application();
     const connection = await app.connectDatabase();
     console.log("Secrets and connection initialized.");
     try {
-        let date = initDateFromParams({ date: new Date(), d: new Date().getDate(), h: 0, i: 0, s: 0 });
+        let date = new Date();
         const campaigns = await Campaign.find({
             where: {
                 status: "APPROVED",
@@ -33,7 +33,7 @@ const app = new Application();
                 where: {
                     id: campaigns[index].id,
                 },
-                relations: ["participants", "prize", "currency", "org"],
+                relations: ["currency", "org", "currency.token"],
             });
             if (!campaign) throw new Error("Campaign not found.");
             console.log(
@@ -64,7 +64,12 @@ const app = new Application();
         }
     } catch (error) {
         console.log(error);
+        await connection.close();
+        console.log("DATABASE CONNECTION CLOSED WITH ERROR ----.");
+        process.exit(0);
     }
+    console.log("COMPLETED CRON TASKS ----.");
     await connection.close();
+    console.log("DATABASE CONNECTION CLOSED ----.");
     process.exit(0);
 })();

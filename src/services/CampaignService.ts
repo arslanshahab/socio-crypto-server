@@ -53,15 +53,22 @@ export class CampaignService {
             this.prismaService.campaign.count({ where }),
         ]);
     }
-    public async findCampaignById(campaignId: string) {
-        return this.prismaService.campaign.findFirst({
+
+    public async findCampaignById<T extends Prisma.CampaignInclude | undefined>(campaignId: string, include?: T) {
+        return this.prismaService.campaign.findFirst<{
+            where: Prisma.CampaignWhereInput;
+            // this type allows adding additional relations to result tpe
+            include: T;
+        }>({
             where: {
                 id: {
                     equals: campaignId,
                 },
             },
+            include: include as T,
         });
     }
+    
     public async findGlobalCampaign(isGlobal: true, symbol: string) {
         return this.prismaService.campaign.findFirst({
             where: {

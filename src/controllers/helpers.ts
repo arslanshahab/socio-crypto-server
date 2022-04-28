@@ -4,7 +4,14 @@ import { Participant } from "../models/Participant";
 import { Campaign } from "../models/Campaign";
 import { getConnection } from "typeorm";
 import { Wallet } from "../models/Wallet";
-import { BN, generateRandomNumber } from "../util";
+import {
+    BN,
+    formatFloat,
+    generateRandomNumber,
+    getCryptoAssestImageUrl,
+    getMinWithdrawableAmount,
+    getUSDValueForCurrency,
+} from "../util";
 import { BigNumber } from "bignumber.js";
 import { DailyParticipantMetric } from "../models/DailyParticipantMetric";
 import { Org } from "../models/Org";
@@ -12,9 +19,11 @@ import { Escrow } from "../models/Escrow";
 import { WalletCurrency } from "../models/WalletCurrency";
 import { CampaignStatus, FEE_RATE } from "../util/constants";
 import {
+    ADMIN_NOT_FOUND,
     AMOUNT_IN_POSITIVE,
     CURRENCY_NOT_FOUND,
     ESCROW_NOT_FOUND,
+    INVALID_TOKEN,
     PARTICIPANT_NOT_FOUND,
     SOICIAL_LINKING_ERROR,
     WALLET_CURRENCY_NOT_FOUND,
@@ -25,6 +34,11 @@ import { TwitterClient } from "../clients/twitter";
 import { TikTokClient } from "../clients/tiktok";
 import { FacebookClient } from "../clients/facebook";
 import { Campaign as Campaign2 } from "@prisma/client";
+import { Firebase } from "../clients/firebase";
+import { Forbidden, NotFound } from "@tsed/exceptions";
+import { TatumClient } from "../clients/tatumClient";
+import { BalanceResultModel } from "../models/RestModels";
+import { Currency, Token, User, Wallet as PrismaWallet } from "@prisma/client";
 
 export const feeMultiplier = () => new BN(1).minus(FEE_RATE);
 
@@ -392,7 +406,7 @@ export const prepareVouchersList = async (list: Array<VouchersListVariables>): P
     });
 };
 
-export const getSocialClient = (type: string, accessToken?: string): any => {
+export const getSocialClient = (type: string) => {
     switch (type) {
         case "twitter":
             return TwitterClient;
@@ -403,4 +417,51 @@ export const getSocialClient = (type: string, accessToken?: string): any => {
         default:
             throw new Error(SOICIAL_LINKING_ERROR);
     }
+};
+
+export const getActiveAdmin = async (token: string) => {
+    const decodedToken = await Firebase.verifySessionCookie(token);
+    if (!decodedToken) throw new Forbidden(INVALID_TOKEN);
+    const firebaseUser = await Firebase.getUserById(decodedToken.uid);
+    if (!firebaseUser) throw new NotFound(ADMIN_NOT_FOUND);
+    const admin = {
+        id: decodedToken.uid,
+        method: "firebase",
+        ...decodedToken,
+        ...(firebaseUser.customClaims && {
+            role: firebaseUser.customClaims.role,
+            company: firebaseUser.customClaims.company,
+            tempPass: firebaseUser.customClaims.tempPass || false,
+        }),
+    };
+    return admin;
+};
+
+export const getBalance = async (
+    user: User & {
+        wallet:
+            | (PrismaWallet & {
+                  currency: (Currency & {
+                      token: Token | null;
+                  })[];
+              })
+            | null;
+    }
+) => {
+    const currencies = await Promise.all(
+        user.wallet?.currency.map(async (currencyItem): Promise<BalanceResultModel | null> => {
+            if (!currencyItem.token) return null;
+            const balance = await TatumClient.getAccountBalance(currencyItem.tatumId);
+            const symbol = currencyItem.token.symbol;
+            return {
+                balance: formatFloat(balance.availableBalance),
+                symbol: symbol,
+                minWithdrawAmount: await getMinWithdrawableAmount(symbol),
+                usdBalance: await getUSDValueForCurrency(symbol.toLowerCase(), parseFloat(balance.availableBalance)),
+                imageUrl: getCryptoAssestImageUrl(symbol),
+                network: currencyItem.token.network,
+            };
+        }) || []
+    );
+    return currencies;
 };

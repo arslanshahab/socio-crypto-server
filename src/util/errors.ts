@@ -84,6 +84,8 @@ export const GLOBAL_WITHDRAW_LIMIT = "GLOBAL_WITHDRAW_LIMIT";
 export const ALREADY_PARTICIPATING = "ALREADY_PARTICIPATING";
 export const MEDIA_NOT_FOUND = "MEDIA_NOT_FOUND";
 export const TWITTER_LINK_EXPIRED = "TWITTER_LINK_EXPIRED";
+export const ACCOUNT_RESTRICTED = "ACCOUNT_RESTRICTED";
+export const SERVICE_NOT_AVAILABLE = "SERVICE_NOT_AVAILABLE";
 
 export const errorMap: { [key: string]: string } = {
     SOMETHING_WENT_WRONG: "Something went wrong with your request. please try again!",
@@ -136,4 +138,6 @@ export const errorMap: { [key: string]: string } = {
     GLOBAL_WITHDRAW_LIMIT: `Withdraw limit reached! Withdraws above $${WITHDRAW_LIMIT} are restricted. Please contact our support for further assistance.`,
     MEDIA_NOT_FOUND: "Media not found.",
     TWITTER_LINK_EXPIRED: "Access token expired for twitter, please link your twitter again.",
+    ACCOUNT_RESTRICTED: "User account has been restricted. Please contact our support for further assistance.",
+    SERVICE_NOT_AVAILABLE: "Store redemption is not available is your country.",
 };

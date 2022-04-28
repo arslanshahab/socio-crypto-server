@@ -13,7 +13,7 @@ import { BSC, COIIN, WITHDRAW_LIMIT } from "../util/constants";
 import { Verification } from "../models/Verification";
 import { JWTPayload } from "src/types";
 import { createSubscriptionUrl } from "../util/tatumHelper";
-import { getSymbolValueInUSD } from "../util/exchangeRate";
+import { getTokenValueInUSD } from "../util/exchangeRate";
 import { errorMap, GLOBAL_WITHDRAW_LIMIT } from "../util/errors";
 import { Firebase } from "../clients/firebase";
 import { CustodialAddress } from "../models/CustodialAddress";
@@ -257,7 +257,7 @@ export const withdrawFunds = async (
     try {
         const user = await User.findUserByContext(context.user, ["wallet"]);
         if (!user) throw new Error("User not found");
-        if (user.kycStatus !== "APPROVED")
+        if (!(await user.hasKycApproved()))
             throw new Error("You need to get your KYC approved before you can withdraw.");
         let { symbol, network, address, amount, verificationToken } = args;
         if (symbol.toUpperCase() === COIIN)
@@ -272,7 +272,7 @@ export const withdrawFunds = async (
         const userAccountBalance = await TatumClient.getAccountBalance(userCurrency.tatumId);
         if (parseFloat(userAccountBalance.availableBalance) < amount)
             throw new Error("Not enough balance in user account to perform this withdraw.");
-        if ((await getSymbolValueInUSD(symbol, amount)) >= WITHDRAW_LIMIT)
+        if ((await getTokenValueInUSD(symbol, amount)) >= WITHDRAW_LIMIT)
             throw new Error(errorMap[GLOBAL_WITHDRAW_LIMIT]);
         const raiinmakerCurrency = await Org.getCurrencyForRaiinmaker(userCurrency.token);
         if (TatumClient.isCustodialWallet({ symbol, network }) && !raiinmakerCurrency.depositAddress)
@@ -294,6 +294,7 @@ export const withdrawFunds = async (
             action: "WITHDRAW",
             wallet: user.wallet,
             tatumId: address,
+            status: "SUCCEEDED",
         });
         await newTransfer.save();
         return {
@@ -334,6 +335,7 @@ export const trackCoiinTransactionForUser = asyncHandler(async (req: Request, re
             action: "DEPOSIT",
             wallet: user.wallet,
             tatumId: userCurrency.tatumId,
+            status: "SUCCEEDED",
         });
         await newTransfer.save();
         await Firebase.sendUserTransactionUpdate(user.profile.deviceToken, "DEPOSIT");

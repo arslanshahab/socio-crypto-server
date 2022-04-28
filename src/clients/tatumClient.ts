@@ -40,6 +40,7 @@ import { BSC, CUSTODIAL_NETWORKS, ETH } from "../util/constants";
 import { Token } from "../models/Token";
 import { SymbolNetworkParams } from "../types.d";
 import { sleep } from "../controllers/helpers";
+import { Currency as PrismaCurrency } from "@prisma/client";
 export const CAMPAIGN_CREATION_AMOUNT = "CAMPAIGN_CREATION_AMOUNT";
 export const CAMPAIGN_FEE = "CAMPAIGN_FEE";
 export const CAMPAIGN_REWARD = "CAMPAIGN_REWARD";
@@ -286,7 +287,7 @@ export class TatumClient {
         }
     };
 
-    public static getBalanceForAccountList = async (accounts: Currency[]) => {
+    public static getBalanceForAccountList = async (accounts: Currency[] | PrismaCurrency[]) => {
         try {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
             const promiseArray: Promise<any>[] = [];
@@ -377,7 +378,7 @@ export class TatumClient {
                 throw new Error("Not enough balance in user account to pay gas fee.");
             const body = {
                 ...payload,
-                amount: data.amount,
+                amount: withdrawAbleAmount,
                 ...(payload.currency.derivationKey && { index: payload.currency.derivationKey }),
                 fee,
             };

@@ -10,7 +10,7 @@ import {
 } from "@prisma/client";
 import { Get, Property, Required, Enum, Returns, Post } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
-import { BodyParams, Context, QueryParams } from "@tsed/common";
+import { Context,BodyParams, PathParams, QueryParams } from "@tsed/common";
 import { CampaignService } from "../../services/CampaignService";
 import { UserService } from "../../services/UserService";
 import { CampaignState, CampaignStatus } from "../../util/constants";
@@ -41,7 +41,6 @@ import { BadRequest, NotFound } from "@tsed/exceptions";
 import { ParticipantService } from "../../services/ParticipantService";
 import { SocialPostService } from "../../services/SocialPostService";
 import { CryptoCurrencyService } from "../../services/CryptoCurrencyService";
-import { getSymbolValueInUSD } from "../../util/exchangeRate";
 import { getCryptoAssestImageUrl } from "../../util";
 import { CampaignCreateTypes, Tiers } from "../../types";
 import { addYears } from "date-fns";
@@ -59,6 +58,7 @@ import { HourlyCampaignMetricsService } from "../../services/HourlyCampaignMetri
 import { TransferService } from "../../services/TransferService";
 import { EscrowService } from "../../services/EscrowService";
 import { CampaignTemplateService } from "../../services/CampaignTemplateService";
+import { getTokenValueInUSD } from "../../util/exchangeRate";
 
 const validator = new Validator();
 
@@ -74,7 +74,7 @@ class ListCurrentCampaignVariablesModel {
 
 async function getCampaignResultModel(
     campaign: Campaign & {
-        participant: Participant[];
+        participant?: Participant[];
         currency: (Currency & { token: Token | null }) | null;
         crypto_currency: CryptoCurrency | null;
         campaign_media: CampaignMedia[];
@@ -83,7 +83,7 @@ async function getCampaignResultModel(
 ) {
     const result: CampaignResultModel = campaign;
     if (result.coiinTotal) {
-        const value = await getSymbolValueInUSD(campaign.symbol, parseFloat(campaign.coiinTotal.toString()));
+        const value = await getTokenValueInUSD(campaign.symbol, parseFloat(campaign.coiinTotal.toString()));
         result.coiinTotalUSD = value.toFixed(2);
     } else {
         result.coiinTotalUSD = "0";
@@ -94,6 +94,12 @@ async function getCampaignResultModel(
         result.symbol = campaign.currency.token?.symbol || "";
         result.symbolImageUrl = getCryptoAssestImageUrl(campaign.currency?.token?.symbol || "");
     }
+
+    result.totalParticipationScore = parseInt(campaign.totalParticipationScore);
+    if (campaign.socialMediaType) result.socialMediaType = JSON.parse(campaign.socialMediaType);
+    if (campaign.keywords) result.keywords = JSON.parse(campaign.keywords);
+    if (campaign.suggestedPosts) result.suggestedPosts = JSON.parse(campaign.suggestedPosts);
+    if (campaign.suggestedTags) result.suggestedTags = JSON.parse(campaign.suggestedTags);
 
     return result;
 }
@@ -137,13 +143,27 @@ export class CampaignController {
         const modelItems = await Promise.all(items.map((i) => getCampaignResultModel(i)));
         return new SuccessResult(new Pagination(modelItems, total, CampaignResultModel), Pagination);
     }
+
+    @Get("/one/:id")
+    @(Returns(200, SuccessResult).Of(CampaignResultModel))
+    public async getOne(@PathParams("id") id: string) {
+        const campaign = await this.campaignService.findCampaignById(id, {
+            currency: { include: { token: true } },
+            crypto_currency: true,
+            campaign_media: true,
+            campaign_template: true,
+        });
+        if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
+        return new SuccessResult(await getCampaignResultModel(campaign), CampaignResultModel);
+    }
+
     @Get("/current-campaign-tier")
     @(Returns(200, SuccessResult).Of(CurrentCampaignModel))
-    public async currentCampaignTier(
+    public async getCurrentCampaignTier(
         @QueryParams() query: ListCurrentCampaignVariablesModel,
         @Context() context: Context
     ) {
-        let { campaignId } = query;
+        const { campaignId } = query;
         let currentTierSummary;
         let currentCampaign: Campaign | null;
         let cryptoPriceUsd;

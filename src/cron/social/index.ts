@@ -1,10 +1,9 @@
 import { Campaign } from "../../models/Campaign";
 import { TwitterClient } from "../../clients/twitter";
 import { SocialPost } from "../../models/SocialPost";
-import { getConnection } from "typeorm";
+import { getConnection, MoreThan } from "typeorm";
 import { Secrets } from "../../util/secrets";
 import { Application } from "../../app";
-import logger from "../../util/logger";
 import { SocialLink } from "../../models/SocialLink";
 import { Participant } from "../../models/Participant";
 import { BigNumber } from "bignumber.js";
@@ -14,17 +13,15 @@ import { HourlyCampaignMetric } from "../../models/HourlyCampaignMetric";
 import { QualityScore } from "../../models/QualityScore";
 import * as dotenv from "dotenv";
 import { TikTokClient } from "../../clients/tiktok";
+import { DateUtils } from "typeorm/util/DateUtils";
 
 dotenv.config();
 const app = new Application();
 
 const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: SocialPost) => {
-    const participant = await Participant.findOne({
-        where: { campaign: post.campaign, user: post.user },
-        relations: ["campaign", "user"],
-    });
+    const participant = await Participant.findOne({ where: { campaign: post.campaign, user: post.user } });
     if (!participant) throw new Error("participant not found");
-    const campaign = await Campaign.findOne({ where: { id: participant.campaign.id }, relations: ["org"] });
+    const campaign = await Campaign.findOne({ where: { id: post.campaign.id }, relations: ["org"] });
     if (!campaign) throw new Error("campaign not found");
     let qualityScore = await QualityScore.findOne({ where: { participantId: participant.id } });
     if (!qualityScore) qualityScore = QualityScore.newQualityScore(participant.id);
@@ -32,11 +29,11 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
     const sharesMultiplier = calculateQualityMultiplier(qualityScore.shares);
     const likesAdjustedScore = likes
         .minus(post.likes)
-        .times(post.campaign.algorithm.pointValues.likes)
+        .times(campaign.algorithm.pointValues.likes)
         .times(likesMultiplier);
     const sharesAdjustedScore = shares
         .minus(post.shares)
-        .times(post.campaign.algorithm.pointValues.shares)
+        .times(campaign.algorithm.pointValues.shares)
         .times(sharesMultiplier);
     campaign.totalParticipationScore = campaign.totalParticipationScore.plus(
         likesAdjustedScore.plus(sharesAdjustedScore)
@@ -52,7 +49,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
     await HourlyCampaignMetric.upsert(campaign, campaign.org, "likes", adjustedRawLikes);
     await HourlyCampaignMetric.upsert(campaign, campaign.org, "shares", adjustedRawShares);
     await DailyParticipantMetric.upsert(
-        participant.user,
+        post.user,
         campaign,
         participant,
         "likes",
@@ -60,7 +57,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
         adjustedRawLikes
     );
     await DailyParticipantMetric.upsert(
-        participant.user,
+        post.user,
         campaign,
         participant,
         "shares",
@@ -71,37 +68,84 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
 };
 
 (async () => {
-    logger.info("Starting Cron.");
+    console.log("STARTING CRON.");
     await Secrets.initialize();
     const connection = await app.connectDatabase();
-    logger.info("Database connected");
-    let postsToSave: SocialPost[] = [];
-    const campaigns = await Campaign.find({ relations: ["posts"] });
-    for (const campaign of campaigns) {
-        if (campaign.isOpen()) {
-            const posts = await SocialPost.find({ where: { campaign }, relations: ["user", "campaign"] });
-            for (const post of posts) {
-                const socialLink = await SocialLink.findOne({
-                    where: { user: post.user, type: post.type },
-                    relations: ["user"],
-                });
-                if (!socialLink) {
-                    logger.error(`participant ${post.user.id} has not linked ${post.type} as a social platform`);
-                } else {
+    console.log("DATABASE CONNECTED.");
+    try {
+        const campaigns = await Campaign.find({
+            where: {
+                endDate: MoreThan(DateUtils.mixedDateToUtcDatetimeString(new Date())),
+                status: "APPROVED",
+                auditStatus: "DEFAULT",
+            },
+        });
+        console.log("TOTAL CAMPAIGNS: ", campaigns.length);
+        for (let campaignIndex = 0; campaignIndex < campaigns.length; campaignIndex++) {
+            const campaign = campaigns[campaignIndex];
+            const take = 200;
+            let skip = 0;
+            const totalPosts = await SocialPost.count({ where: { campaign } });
+            console.log("TOTAL POSTS FOR CAMPAIGN ID: ", campaign.id, totalPosts);
+            const loop = Math.ceil(totalPosts / take);
+            for (let postPageIndex = 0; postPageIndex < loop; postPageIndex++) {
+                let posts = await SocialPost.find({ where: { campaign }, relations: ["campaign", "user"], take, skip });
+                const postsToSave: SocialPost[] = [];
+                const twitterPromiseArray = [];
+                const tiktokPromiseArray = [];
+                const twitterPosts = [];
+                const tiktokPosts = [];
+                for (const post of posts) {
+                    const socialLink = await SocialLink.findOne({
+                        where: { user: post.user, type: post.type },
+                    });
+                    if (!socialLink) continue;
                     try {
-                        if (socialLink?.type === "twitter") {
-                            const response = await TwitterClient.get(socialLink, post.id, false);
-                            const responseJSON = JSON.parse(response);
+                        if (socialLink.type === "twitter") {
+                            twitterPromiseArray.push(TwitterClient.get(socialLink, post.id, false));
+                            twitterPosts.push(post);
+                        }
+                        if (socialLink?.type === "tiktok") {
+                            tiktokPromiseArray.push(TikTokClient.getPosts(socialLink, [post.id]));
+                            tiktokPosts.push(post);
+                        }
+                    } catch (error) {}
+                }
+
+                console.log("TWITTER TOTAL PROMISES ---- ", twitterPromiseArray.length);
+                console.log("TIKTOK TOTAL PROMISES ---- ", tiktokPromiseArray.length);
+                let fulfilledTwitterPromises = 0;
+                let fulfilledTiktokPromises = 0;
+
+                try {
+                    const twitterResponses = await Promise.allSettled(twitterPromiseArray);
+                    for (let twitterRespIndex = 0; twitterRespIndex < twitterResponses.length; twitterRespIndex++) {
+                        const twitterResp = twitterResponses[twitterRespIndex];
+                        const post = twitterPosts[twitterRespIndex];
+                        if (twitterResp.status === "fulfilled" && twitterResp.value) {
+                            // console.log("preparing and updating social score.");
+                            const responseJSON = JSON.parse(twitterResp.value);
                             const updatedPost = await updatePostMetrics(
                                 new BN(responseJSON["favorite_count"]),
                                 new BN(responseJSON["retweet_count"]),
                                 post
                             );
-                            logger.info(`pushing new metrics on social post for campaign: ${post.campaign.name}`);
                             postsToSave.push(updatedPost);
+                            fulfilledTwitterPromises += 1;
                         }
-                        if (socialLink?.type === "tiktok") {
-                            const postDetails = (await TikTokClient.getPosts(socialLink, [post.id]))[0];
+                    }
+                } catch (error) {
+                    console.log("there was an error making request to twitter.");
+                }
+
+                try {
+                    const tiktokResponses = await Promise.allSettled(tiktokPromiseArray);
+                    for (let tiktokRespIndex = 0; tiktokRespIndex < tiktokResponses.length; tiktokRespIndex++) {
+                        const tiktokResp = tiktokResponses[tiktokRespIndex];
+                        const post = tiktokPosts[tiktokRespIndex];
+                        if (tiktokResp.status === "fulfilled") {
+                            // console.log("preparing and updating social score.");
+                            const postDetails = tiktokResp.value[0];
                             const likeCount = postDetails.like_count;
                             const shareCount = postDetails.share_count;
                             const updatedPost = await updatePostMetrics(
@@ -110,17 +154,22 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                                 post
                             );
                             postsToSave.push(updatedPost);
+                            fulfilledTiktokPromises += 1;
                         }
-                    } catch (e) {
-                        console.log(e);
                     }
+                } catch (error) {
+                    console.log("there was an error making request to tiktok.");
                 }
+                skip += take;
+                console.log("FULFILLED TWITTER PROMISES ----.", fulfilledTwitterPromises);
+                console.log("FULFILLED TIKTOK PROMISES ----.", fulfilledTiktokPromises);
+                console.log("SAVING UPDATED POSTS ----.", postsToSave.length);
+                await getConnection().createEntityManager().save(postsToSave);
             }
         }
-    }
-    logger.info("saving entities");
-    await getConnection().createEntityManager().save(postsToSave);
-    logger.info("closing connection");
+    } catch (error) {}
+    console.log("COMPLETED CRON TASKS ----.");
     await connection.close();
+    console.log("DATABASE CONNECTION CLOSED ----.");
     process.exit(0);
 })();

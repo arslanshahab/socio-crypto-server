@@ -95,6 +95,7 @@ export const transferFundsToRaiinmaker = async (data: { currency: Currency; amou
         action: "FEE",
         wallet: raiinmakerCurrency.wallet,
         tatumId: raiinmakerCurrency.tatumId,
+        status: "SUCCEEDED",
     });
     newTransfer.save();
 };
