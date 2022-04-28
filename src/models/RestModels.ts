@@ -1,4 +1,4 @@
-import { ArrayOf, CollectionOf, Nullable, Optional, Property } from "@tsed/schema";
+import { ArrayOf, CollectionOf, Nullable, Optional, Property, Required } from "@tsed/schema";
 
 export class CampaignMediaResultModel {
     @Property() public readonly id: string;
@@ -291,4 +291,8 @@ export class BalanceResultModel {
 
 export class UpdatedResultModel {
     @Property() public readonly message: string;
+}
+
+export class CampaignIdParm {
+    @Required() public readonly campaignId: string;
 }

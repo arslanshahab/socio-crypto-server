@@ -10,7 +10,7 @@ import {
 } from "@prisma/client";
 import { Get, Property, Required, Enum, Returns, Post } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
-import { Context,BodyParams, PathParams, QueryParams } from "@tsed/common";
+import { Context, BodyParams, PathParams, QueryParams } from "@tsed/common";
 import { CampaignService } from "../../services/CampaignService";
 import { UserService } from "../../services/UserService";
 import { CampaignState, CampaignStatus } from "../../util/constants";
@@ -29,6 +29,7 @@ import {
 } from "../../util/errors";
 import { PaginatedVariablesModel, Pagination, SuccessResult } from "../../util/entities";
 import {
+    CampaignIdParm,
     CampaignMetricsResultModel,
     CampaignResultModel,
     CreateCampaignResultModel,
@@ -36,6 +37,7 @@ import {
     DeleteCampaignResultModel,
     MediaUrlsModel,
     UpdateCampaignResultModel,
+    UpdatedResultModel,
 } from "../../models/RestModels";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { ParticipantService } from "../../services/ParticipantService";
@@ -498,5 +500,18 @@ export class CampaignController {
             name: campaign?.name,
         };
         return new SuccessResult(result, DeleteCampaignResultModel);
+    }
+    @Post("/payout-campaign-rewards")
+    @(Returns(200, SuccessResult).Of(UpdatedResultModel))
+    public async payoutCampaignRewards(@QueryParams() query: CampaignIdParm, @Context() context: Context) {
+        const { campaignId } = query;
+        const { company } = this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
+        const campaign = await this.campaignService.findCampaignById(campaignId, undefined, company);
+        if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
+        await this.campaignService.updateCampaignStatus(campaignId);
+        const result = {
+            message: "Campaign has been submitted for auditting",
+        };
+        return new SuccessResult(result, UpdatedResultModel);
     }
 }

@@ -54,7 +54,11 @@ export class CampaignService {
         ]);
     }
 
-    public async findCampaignById<T extends Prisma.CampaignInclude | undefined>(campaignId: string, include?: T) {
+    public async findCampaignById<T extends Prisma.CampaignInclude | undefined>(
+        campaignId: string,
+        include?: T,
+        company?: string
+    ) {
         return this.prismaService.campaign.findFirst<{
             where: Prisma.CampaignWhereInput;
             // this type allows adding additional relations to result tpe
@@ -64,11 +68,12 @@ export class CampaignService {
                 id: {
                     equals: campaignId,
                 },
+                company,
             },
             include: include as T,
         });
     }
-    
+
     public async findGlobalCampaign(isGlobal: true, symbol: string) {
         return this.prismaService.campaign.findFirst({
             where: {
@@ -258,6 +263,17 @@ export class CampaignService {
     public async deleteCampaign(campaignId: string) {
         return await this.prismaService.campaign.delete({
             where: { id: campaignId },
+        });
+    }
+
+    public async updateCampaignStatus(campaignId: string) {
+        return await this.prismaService.campaign.update({
+            where: {
+                id: campaignId,
+            },
+            data: {
+                auditStatus: "PENDING",
+            },
         });
     }
 }
