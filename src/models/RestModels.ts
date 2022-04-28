@@ -293,6 +293,6 @@ export class UpdatedResultModel {
     @Property() public readonly message: string;
 }
 
-export class CampaignIdParm {
+export class CampaignIdParmsModel {
     @Required() public readonly campaignId: string;
 }

@@ -173,13 +173,13 @@ model CustodialAddress {
 
 model DailyParticipantMetric {
   id                      String    @id(map: "PK_2941b85aab0073a60a1319ec3b4") @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
-  clickCount              Int
-  viewCount               Int
-  submissionCount         Int
-  likeCount               Int
-  shareCount              Int
-  commentCount            Int
-  participationScore      Int
+  clickCount              String    @default(dbgenerated("0")) @db.VarChar
+  viewCount               String    @default(dbgenerated("0")) @db.VarChar
+  submissionCount         String    @default(dbgenerated("0")) @db.VarChar
+  likeCount               String    @default(dbgenerated("0")) @db.VarChar
+  shareCount              String    @default(dbgenerated("0")) @db.VarChar
+  commentCount            String    @default(dbgenerated("0")) @db.VarChar
+  participationScore      String    @default(dbgenerated("0")) @db.VarChar
   totalParticipationScore String    @default(dbgenerated("0")) @db.VarChar
   participantId           String    @db.VarChar
   createdAt               DateTime  @default(now()) @db.Timestamp(6)
@@ -323,10 +323,10 @@ model Org {
 
 model Participant {
   id                 String   @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
-  clickCount         Int
+  clickCount         String   @default(dbgenerated("0")) @db.VarChar
   campaignId         String   @db.Uuid
-  viewCount          Int
-  submissionCount    Int
+  viewCount          String   @default(dbgenerated("0")) @db.VarChar
+  submissionCount    String   @default(dbgenerated("0")) @db.VarChar
   participationScore String   @default(dbgenerated("0")) @db.VarChar
   link               String?  @db.VarChar
   createdAt          DateTime @default(now()) @db.Timestamp(6)
@@ -424,9 +424,9 @@ model SocialLink {
 model SocialPost {
   id            String   @db.VarChar
   type          String   @default("twitter") @db.VarChar
-  likes         Int
-  shares        Int
-  comments      Int
+  likes         String   @default(dbgenerated("0")) @db.VarChar
+  shares        String   @default(dbgenerated("0")) @db.VarChar
+  comments      String   @default(dbgenerated("0")) @db.VarChar
   participantId String   @db.VarChar
   campaignId    String   @db.Uuid
   createdAt     DateTime @default(now()) @db.Timestamp(6)

@@ -24,12 +24,11 @@ import {
     ERROR_CALCULATING_TIER,
     ORG_NOT_FOUND,
     RAFFLE_PRIZE_MISSING,
-    USER_NOT_FOUND,
     WALLET_NOT_FOUND,
 } from "../../util/errors";
 import { PaginatedVariablesModel, Pagination, SuccessResult } from "../../util/entities";
 import {
-    CampaignIdParm,
+    CampaignIdParmsModel,
     CampaignMetricsResultModel,
     CampaignResultModel,
     CreateCampaignResultModel,
@@ -44,7 +43,7 @@ import { ParticipantService } from "../../services/ParticipantService";
 import { SocialPostService } from "../../services/SocialPostService";
 import { CryptoCurrencyService } from "../../services/CryptoCurrencyService";
 import { getCryptoAssestImageUrl } from "../../util";
-import { CampaignCreateTypes, Tiers } from "../../types";
+import { CampaignAuditReport, CampaignCreateTypes, Tiers } from "../../types";
 import { addYears } from "date-fns";
 import { Validator } from "../../schemas";
 import { OrganizationService } from "../../services/OrganizationService";
@@ -71,7 +70,7 @@ class ListCampaignsVariablesModel extends PaginatedVariablesModel {
 }
 class ListCurrentCampaignVariablesModel {
     @Property() public readonly campaignId: string;
-    @Property() public readonly userRelated: boolean | undefined;
+    // @Property() public readonly userRelated: boolean | undefined;
 }
 
 async function getCampaignResultModel(
@@ -161,16 +160,12 @@ export class CampaignController {
 
     @Get("/current-campaign-tier")
     @(Returns(200, SuccessResult).Of(CurrentCampaignModel))
-    public async getCurrentCampaignTier(
-        @QueryParams() query: ListCurrentCampaignVariablesModel,
-        @Context() context: Context
-    ) {
+    public async getCurrentCampaignTier(@QueryParams() query: CampaignIdParmsModel, @Context() context: Context) {
         const { campaignId } = query;
         let currentTierSummary;
         let currentCampaign: Campaign | null;
         let cryptoPriceUsd;
-        const user = await this.userService.findUserByContext(context.get("user"));
-        if (!user) throw new BadRequest(USER_NOT_FOUND);
+
         currentCampaign = await this.campaignService.findCampaignById(campaignId);
         if (campaignId) {
             if (!currentCampaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
@@ -207,7 +202,7 @@ export class CampaignController {
         @QueryParams() query: ListCurrentCampaignVariablesModel,
         @Context() context: Context
     ) {
-        // this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const { campaignId } = query;
         const { _sum, _count } = await this.participantService.findPaticipantMetricsById(campaignId);
         const { postSum, postCount } = await this.socialPostService.findSocialPostMetricsById(campaignId);
@@ -467,12 +462,10 @@ export class CampaignController {
 
     @Post("/delete-campaign")
     @(Returns(200, SuccessResult).Of(DeleteCampaignResultModel))
-    public async deleteCampaign(@QueryParams() query: { campaignId: string }, @Context() context: Context) {
+    public async deleteCampaign(@QueryParams() query: CampaignIdParmsModel, @Context() context: Context) {
         const { campaignId } = query;
-        // const { role, company = "raiinmaker" } = this.userService.checkPermissions(
-        //     { hasRole: ["admin", "manager"] },
-        //     context.get("user")
-        // );
+        const { company } = this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
+
         const socialPost = await this.socialPostService.findSocialPostByCampaignId(campaignId);
         if (socialPost.length > 0) this.socialPostService.deleteSocialPost(campaignId);
         const payouts = await this.transferService.findTransferByCampaignId(campaignId);
@@ -493,7 +486,7 @@ export class CampaignController {
         if (campaignTemplate.length > 0) this.campaignTemplateService.deleteCampaignTemplate(campaignId);
         const campaignMedia = await this.campaignMediaservice.findCampaignMediaByCampaignId(campaignId);
         if (campaignMedia.length > 0) this.campaignMediaservice.deleteCampaignMedia(campaignId);
-        const campaign = await this.campaignService.findCampaignById(campaignId);
+        const campaign = await this.campaignService.findCampaignById(campaignId, undefined, company);
         if (campaign) this.campaignService.deleteCampaign(campaignId);
         const result = {
             campaignId: campaign?.id,
@@ -503,9 +496,9 @@ export class CampaignController {
     }
     @Post("/payout-campaign-rewards")
     @(Returns(200, SuccessResult).Of(UpdatedResultModel))
-    public async payoutCampaignRewards(@QueryParams() query: CampaignIdParm, @Context() context: Context) {
-        const { campaignId } = query;
+    public async payoutCampaignRewards(@QueryParams() query: CampaignIdParmsModel, @Context() context: Context) {
         const { company } = this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
+        const { campaignId } = query;
         const campaign = await this.campaignService.findCampaignById(campaignId, undefined, company);
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
         await this.campaignService.updateCampaignStatus(campaignId);
@@ -513,5 +506,28 @@ export class CampaignController {
             message: "Campaign has been submitted for auditting",
         };
         return new SuccessResult(result, UpdatedResultModel);
+    }
+    @Post("/generate-campaign-audit-report")
+    @(Returns(200, SuccessResult).Of(Object))
+    public async generateCampaignAuditReport(@QueryParams() query: CampaignIdParmsModel, @Context() context: Context) {
+        const { company } = this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
+        let { campaignId } = query;
+        const campaign = await this.campaignService.findCampaignById(campaignId, undefined, company);
+        if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
+        campaignId = campaign.id;
+        const { data }: any = await this.getCurrentCampaignTier({ campaignId }, context);
+        const { currentTotal } = data;
+        const bigNumTotal = new BN(campaign.type !== "coiin" ? 0 : currentTotal);
+        const auditReport: CampaignAuditReport = {
+            totalClicks: new BN(0),
+            totalViews: new BN(0),
+            totalSubmissions: new BN(0),
+            totalLikes: new BN(0),
+            totalShares: new BN(0),
+            totalParticipationScore: new BN(campaign.totalParticipationScore),
+            totalRewardPayout: bigNumTotal,
+            flaggedParticipants: [],
+        };
+        console.log("big number total--------", auditReport);
     }
 }
