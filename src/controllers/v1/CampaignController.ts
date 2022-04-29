@@ -1,13 +1,4 @@
-import {
-    Campaign,
-    CampaignMedia,
-    CampaignTemplate,
-    CryptoCurrency,
-    Currency,
-    Participant,
-    Token,
-    Prisma,
-} from "@prisma/client";
+import { Campaign, Prisma } from "@prisma/client";
 import { Get, Property, Required, Enum, Returns } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
 import { Context, PathParams, QueryParams } from "@tsed/common";
@@ -24,46 +15,12 @@ import { BadRequest, NotFound } from "@tsed/exceptions";
 import { ParticipantService } from "../../services/ParticipantService";
 import { SocialPostService } from "../../services/SocialPostService";
 import { CryptoCurrencyService } from "../../services/CryptoCurrencyService";
-import { getTokenValueInUSD } from "../../util/exchangeRate";
 import { Tiers } from "../../types";
-import { getCryptoAssestImageUrl } from "../../util";
 
 class ListCampaignsVariablesModel extends PaginatedVariablesModel {
     @Required() @Enum(CampaignState) public readonly state: CampaignState;
     @Property() @Enum(CampaignStatus, "ALL") public readonly status: CampaignStatus | "ALL" | undefined;
     @Property(Boolean) public readonly userRelated: boolean | undefined;
-}
-
-async function getCampaignResultModel(
-    campaign: Campaign & {
-        participant?: Participant[];
-        currency: (Currency & { token: Token | null }) | null;
-        crypto_currency: CryptoCurrency | null;
-        campaign_media: CampaignMedia[];
-        campaign_template: CampaignTemplate[];
-    }
-) {
-    const result: CampaignResultModel = campaign;
-    if (result.coiinTotal) {
-        const value = await getTokenValueInUSD(campaign.symbol, parseFloat(campaign.coiinTotal.toString()));
-        result.coiinTotalUSD = value.toFixed(2);
-    } else {
-        result.coiinTotalUSD = "0";
-    }
-
-    if (campaign.currency) {
-        result.network = campaign.currency.token?.network || "";
-        result.symbol = campaign.currency.token?.symbol || "";
-        result.symbolImageUrl = getCryptoAssestImageUrl(campaign.currency?.token?.symbol || "");
-    }
-
-    result.totalParticipationScore = parseInt(campaign.totalParticipationScore);
-    if (campaign.socialMediaType) result.socialMediaType = JSON.parse(campaign.socialMediaType);
-    if (campaign.keywords) result.keywords = JSON.parse(campaign.keywords);
-    if (campaign.suggestedPosts) result.suggestedPosts = JSON.parse(campaign.suggestedPosts);
-    if (campaign.suggestedTags) result.suggestedTags = JSON.parse(campaign.suggestedTags);
-
-    return result;
 }
 
 @Controller("/campaign")
@@ -84,7 +41,7 @@ export class CampaignController {
     public async list(@QueryParams() query: ListCampaignsVariablesModel, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         const [items, total] = await this.campaignService.findCampaignsByStatus(query, user || undefined);
-        const modelItems = await Promise.all(items.map((i) => getCampaignResultModel(i)));
+        const modelItems = await Promise.all(items.map((i) => CampaignResultModel.build(i)));
         return new SuccessResult(new Pagination(modelItems, total, CampaignResultModel), Pagination);
     }
 
@@ -98,7 +55,7 @@ export class CampaignController {
             campaign_template: true,
         });
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
-        return new SuccessResult(await getCampaignResultModel(campaign), CampaignResultModel);
+        return new SuccessResult(await CampaignResultModel.build(campaign), CampaignResultModel);
     }
 
     @Get("/current-campaign-tier")

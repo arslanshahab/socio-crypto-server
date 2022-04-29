@@ -28,7 +28,12 @@ import { TransferAction } from "../../util/constants";
 import { SocialService } from "../../services/SocialService";
 import { getBalance } from "../helpers";
 
-const userResultRelations = ["profile" as const, "social_link" as const, "participant" as const, "wallet" as const];
+const userResultRelations = {
+    profile: true,
+    social_link: true,
+    participant: { include: { campaign: true } },
+    wallet: true,
+};
 
 class AddressResultModel {
     @Property() public readonly symbol: string;

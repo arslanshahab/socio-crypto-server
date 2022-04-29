@@ -1,5 +1,6 @@
-import { ArrayOf, CollectionOf, Nullable, Optional, Property, Required } from "@tsed/schema";
 import Prisma from "@prisma/client";
+import { ArrayOf, CollectionOf, Nullable, Optional, Property, Required } from "@tsed/schema";
+import { getTokenValueInUSD } from "../util/exchangeRate";
 import { getCryptoAssestImageUrl } from "../util";
 
 export class CampaignMediaResultModel {
@@ -25,7 +26,19 @@ export class ParticipantResultModel {
     @Property() public readonly campaignId: string;
     @Property() public readonly participationScore: string;
     @Nullable(String) public readonly link: string | null;
+
+    @Property() public readonly currentlyParticipating: boolean;
+
+    public static build(participant: Prisma.Participant & { campaign: Prisma.Campaign }): ParticipantResultModel {
+        const now = new Date();
+        const currentlyParticipating =
+            new Date(participant.campaign.beginDate).getTime() <= now.getTime() &&
+            new Date(participant.campaign.endDate).getTime() >= now.getTime();
+
+        return { ...participant, currentlyParticipating };
+    }
 }
+
 export class CampaignResultModel {
     @Property() public readonly id: string;
     @Property() public readonly name: string;
@@ -65,6 +78,43 @@ export class CampaignResultModel {
     @ArrayOf(String) public keywords?: string | string[];
     @ArrayOf(String) public suggestedPosts?: string | string[];
     @ArrayOf(String) public suggestedTags?: string | string[];
+
+    public static async build(
+        campaign: Prisma.Campaign & {
+            participant?: Prisma.Participant[];
+            currency: (Prisma.Currency & { token: Prisma.Token | null }) | null;
+            crypto_currency: Prisma.CryptoCurrency | null;
+            campaign_media: Prisma.CampaignMedia[];
+            campaign_template: Prisma.CampaignTemplate[];
+        }
+    ) {
+        const result: CampaignResultModel = {
+            ...campaign,
+            participant: campaign.participant?.map((participant) =>
+                ParticipantResultModel.build({ ...participant, campaign })
+            ),
+        };
+        if (result.coiinTotal) {
+            const value = await getTokenValueInUSD(campaign.symbol, parseFloat(campaign.coiinTotal.toString()));
+            result.coiinTotalUSD = value.toFixed(2);
+        } else {
+            result.coiinTotalUSD = "0";
+        }
+
+        if (campaign.currency) {
+            result.network = campaign.currency.token?.network || "";
+            result.symbol = campaign.currency.token?.symbol || "";
+            result.symbolImageUrl = getCryptoAssestImageUrl(campaign.currency?.token?.symbol || "");
+        }
+
+        result.totalParticipationScore = parseInt(campaign.totalParticipationScore);
+        if (campaign.socialMediaType) result.socialMediaType = JSON.parse(campaign.socialMediaType);
+        if (campaign.keywords) result.keywords = JSON.parse(campaign.keywords);
+        if (campaign.suggestedPosts) result.suggestedPosts = JSON.parse(campaign.suggestedPosts);
+        if (campaign.suggestedTags) result.suggestedTags = JSON.parse(campaign.suggestedTags);
+
+        return result;
+    }
 }
 
 export class CurrentCampaignModel {
@@ -198,20 +248,21 @@ export class UserResultModel {
     @Nullable(String) public readonly kycStatus: string | null;
     @Nullable(ProfileResultModel) public readonly profile: ProfileResultModel | null;
     @CollectionOf(SocialLinkResultModel) public readonly social_link: Partial<SocialLinkResultModel>[];
-    @CollectionOf(ParticipantResultModel) public readonly participant: Partial<ParticipantResultModel>[];
+    @CollectionOf(ParticipantResultModel) public readonly participant: ParticipantResultModel[];
     @Nullable(WalletResultModel) public readonly wallet: Partial<WalletResultModel> | null;
 
     public static build(
         user: Prisma.User & {
             profile: Prisma.Profile | null;
             social_link: Prisma.SocialLink[];
-            participant: Prisma.Participant[];
+            participant: (Prisma.Participant & { campaign: Prisma.Campaign })[];
             wallet: Prisma.Wallet | null;
         }
     ): UserResultModel {
         return {
             ...user,
             profile: user.profile ? ProfileResultModel.build(user.profile) : null,
+            participant: user.participant.map((participant) => ParticipantResultModel.build(participant)),
         };
     }
 }
