@@ -42,6 +42,7 @@ import { BadRequest, NotFound } from "@tsed/exceptions";
 import { ParticipantService } from "../../services/ParticipantService";
 import { SocialPostService } from "../../services/SocialPostService";
 import { CryptoCurrencyService } from "../../services/CryptoCurrencyService";
+import { getTokenValueInUSD } from "../../util/exchangeRate";
 import { getCryptoAssestImageUrl } from "../../util";
 import { CampaignAuditReport, CampaignCreateTypes, Tiers } from "../../types";
 import { addYears } from "date-fns";
@@ -59,7 +60,6 @@ import { HourlyCampaignMetricsService } from "../../services/HourlyCampaignMetri
 import { TransferService } from "../../services/TransferService";
 import { EscrowService } from "../../services/EscrowService";
 import { CampaignTemplateService } from "../../services/CampaignTemplateService";
-import { getTokenValueInUSD } from "../../util/exchangeRate";
 
 const validator = new Validator();
 
@@ -204,17 +204,26 @@ export class CampaignController {
     ) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const { campaignId } = query;
-        const { _sum, _count } = await this.participantService.findPaticipantMetricsById(campaignId);
-        const { postSum, postCount } = await this.socialPostService.findSocialPostMetricsById(campaignId);
+        const participant = await this.participantService.findPaticipantMetricsById(campaignId);
+        const clickCount = participant.reduce((sum, item) => sum + parseInt(item.clickCount), 0);
+        const viewCount = participant.reduce((sum, item) => sum + parseInt(item.viewCount), 0);
+        const submissionCount = participant.reduce((sum, item) => sum + parseInt(item.submissionCount), 0);
+        const participantCount = participant.length;
+        const socialPostMetrics = await this.socialPostService.findSocialPostMetricsById(campaignId);
+        const likeCount = socialPostMetrics.reduce((sum, item) => sum + parseInt(item.likes), 0);
+        const commentCount = socialPostMetrics.reduce((sum, item) => sum + parseInt(item.comments), 0);
+        const shareCount = socialPostMetrics.reduce((sum, item) => sum + parseInt(item.shares), 0);
+        const socialPostCount = socialPostMetrics.length;
+
         const metrics = {
-            clickCount: _sum.clickCount,
-            viewCount: _sum.viewCount,
-            submissionCount: _sum.submissionCount,
-            participantCount: _count,
-            likeCount: postSum.likes,
-            commentCount: postSum.comments,
-            shareCount: postSum.shares,
-            postCount,
+            clickCount: clickCount || 0,
+            viewCount: viewCount || 0,
+            submissionCount: submissionCount || 0,
+            likeCount: likeCount || 0,
+            commentCount: commentCount || 0,
+            shareCount: shareCount || 0,
+            participantCount,
+            postCount: socialPostCount,
         };
         return new SuccessResult(metrics, CampaignMetricsResultModel);
     }

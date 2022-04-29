@@ -1,21 +1,12 @@
 import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
 import { Campaign, User, Participant } from "@prisma/client";
-// import { DateUtils } from "typeorm/util/DateUtils";
-// import { MoreThan } from "typeorm";
 
 @Injectable()
 export class DailyParticipantMetricService {
     @Inject()
     private prismaService: PrismaService;
 
-    /**
-     * Retrieves a user object from a JWTPayload
-     *
-     * @param data the jwt payload
-     * @param include additional relations to include with the user query
-     * @returns the user object, with the requested relations included
-     */
     public async getSortedByParticipantId(participantId: string) {
         return this.prismaService.dailyParticipantMetric.findMany({
             where: {
@@ -40,81 +31,72 @@ export class DailyParticipantMetricService {
                 participantId: participant.id,
                 campaignId: campaign.id,
                 userId: user.id,
-                participationScore: 0,
+                participationScore: "0",
                 totalParticipationScore: lastParticipationScore,
-                clickCount: 0,
-                likeCount: 0,
-                shareCount: 0,
-                submissionCount: 0,
-                viewCount: 0,
-                commentCount: 0,
+                clickCount: "0",
+                likeCount: "0",
+                shareCount: "0",
+                submissionCount: "0",
+                viewCount: "0",
+                commentCount: "0",
             },
         });
     }
     public async getAccumulatedParticipantMetrics(participantId: string) {
-        return this.prismaService.dailyParticipantMetric.aggregate({
+        return this.prismaService.dailyParticipantMetric.findMany({
             where: { participantId },
-            _sum: {
-                clickCount: true,
-                commentCount: true,
-                likeCount: true,
-                shareCount: true,
-                submissionCount: true,
-                viewCount: true,
-                participationScore: true,
-            },
+            // _sum: {
+            //     clickCount: true,
+            //     commentCount: true,
+            //     likeCount: true,
+            //     shareCount: true,
+            //     submissionCount: true,
+            //     viewCount: true,
+            //     participationScore: true,
+            // },
         });
     }
     public async getAccumulatedMetricsByParticipantIds(participantIds: string[]) {
-        return this.prismaService.dailyParticipantMetric.aggregate({
+        return this.prismaService.dailyParticipantMetric.findMany({
             where: {
                 participantId: {
                     in: participantIds,
                 },
             },
-            _sum: {
-                clickCount: true,
-                commentCount: true,
-                likeCount: true,
-                shareCount: true,
-                submissionCount: true,
-                viewCount: true,
-                participationScore: true,
-            },
+            // _sum: {
+            //     clickCount: true,
+            //     commentCount: true,
+            //     likeCount: true,
+            //     shareCount: true,
+            //     submissionCount: true,
+            //     viewCount: true,
+            //     participationScore: true,
+            // },
         });
     }
     public async getSortedByUserId(userId: string, today: Boolean) {
-        if (today) {
-            let currentDate: Date | string = new Date();
-            const month =
-                currentDate.getUTCMonth() + 1 < 10
-                    ? `0${currentDate.getUTCMonth() + 1}`
-                    : currentDate.getUTCMonth() + 1;
-            const day = currentDate.getUTCDate() < 10 ? `0${currentDate.getUTCDate()}` : currentDate.getUTCDate();
-            const yyymmdd = `${currentDate.getUTCFullYear()}-${month}-${day}`;
-            currentDate = `${yyymmdd} 00:00:00`;
-
-            return this.prismaService.dailyParticipantMetric.findMany({
-                where: {
-                    userId,
-                    createdAt: {
-                        gt: new Date(currentDate),
-                    },
-                },
-                orderBy: {
-                    createdAt: "asc",
-                },
-            });
-        } else {
-            return this.prismaService.dailyParticipantMetric.findMany({
-                where: {
-                    userId,
-                },
-                orderBy: {
-                    createdAt: "asc",
-                },
-            });
-        }
+        let currentDate: Date | string = new Date();
+        const month =
+            currentDate.getUTCMonth() + 1 < 10 ? `0${currentDate.getUTCMonth() + 1}` : currentDate.getUTCMonth() + 1;
+        const day = currentDate.getUTCDate() < 10 ? `0${currentDate.getUTCDate()}` : currentDate.getUTCDate();
+        const yyymmdd = `${currentDate.getUTCFullYear()}-${month}-${day}`;
+        currentDate = `${yyymmdd} 00:00:00`;
+        const filter = today
+            ? {
+                  userId,
+                  createdAt: {
+                      gt: new Date(currentDate),
+                  },
+              }
+            : {
+                  userId,
+              };
+        return this.prismaService.dailyParticipantMetric.findMany({
+            where: filter,
+            orderBy: {
+                createdAt: "asc",
+            },
+        });
     }
     public async getPreviousDayMetricsForAllCampaigns(campaignId: string[]) {
         const yesterdayDate = new Date();

@@ -86,15 +86,15 @@ export const updateUserPassword = asyncHandler(async (req: Request, res: Respons
 
 export const registerUser = async (
     parent: any,
-    args: { email: string; username: string; password: string; verificationToken: string }
+    args: { email: string; username: string; password: string; verificationToken: string; referralCode?: string }
 ) => {
     try {
-        const { email, password, username, verificationToken } = args;
+        const { email, password, username, verificationToken, referralCode } = args;
         if (!email || !password || !username || !verificationToken) throw new Error(MISSING_PARAMS);
         if (await User.findOne({ where: { email: ILike(email) } })) throw new Error(EMAIL_EXISTS);
         if (await Profile.findOne({ where: { username: ILike(username) } })) throw new Error(USERNAME_EXISTS);
         await Verification.verifyToken({ verificationToken, email });
-        const userId = await User.initNewUser(email, createPasswordHash({ email, password }), username);
+        const userId = await User.initNewUser(email, createPasswordHash({ email, password }), username, referralCode);
         const user = await User.findUserByContext({ userId } as JWTPayload, ["wallet"]);
         if (!user) throw new Error(USER_NOT_FOUND);
         return { token: createSessionToken(user) };
