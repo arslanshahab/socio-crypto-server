@@ -1,4 +1,7 @@
+import Prisma from "@prisma/client";
 import { ArrayOf, CollectionOf, Nullable, Optional, Property, Required } from "@tsed/schema";
+import { getTokenValueInUSD } from "../util/exchangeRate";
+import { getCryptoAssestImageUrl } from "../util";
 
 export class CampaignMediaResultModel {
     @Property() public readonly id: string;
@@ -23,7 +26,19 @@ export class ParticipantResultModel {
     @Property() public readonly campaignId: string;
     @Property() public readonly participationScore: string;
     @Nullable(String) public readonly link: string | null;
+
+    @Property() public readonly currentlyParticipating: boolean;
+
+    public static build(participant: Prisma.Participant & { campaign: Prisma.Campaign }): ParticipantResultModel {
+        const now = new Date();
+        const currentlyParticipating =
+            new Date(participant.campaign.beginDate).getTime() <= now.getTime() &&
+            new Date(participant.campaign.endDate).getTime() >= now.getTime();
+
+        return { ...participant, currentlyParticipating };
+    }
 }
+
 export class CampaignResultModel {
     @Property() public readonly id: string;
     @Property() public readonly name: string;
@@ -63,6 +78,43 @@ export class CampaignResultModel {
     @ArrayOf(String) public keywords?: string | string[];
     @ArrayOf(String) public suggestedPosts?: string | string[];
     @ArrayOf(String) public suggestedTags?: string | string[];
+
+    public static async build(
+        campaign: Prisma.Campaign & {
+            participant?: Prisma.Participant[];
+            currency: (Prisma.Currency & { token: Prisma.Token | null }) | null;
+            crypto_currency: Prisma.CryptoCurrency | null;
+            campaign_media: Prisma.CampaignMedia[];
+            campaign_template: Prisma.CampaignTemplate[];
+        }
+    ) {
+        const result: CampaignResultModel = {
+            ...campaign,
+            participant: campaign.participant?.map((participant) =>
+                ParticipantResultModel.build({ ...participant, campaign })
+            ),
+        };
+        if (result.coiinTotal) {
+            const value = await getTokenValueInUSD(campaign.symbol, parseFloat(campaign.coiinTotal.toString()));
+            result.coiinTotalUSD = value.toFixed(2);
+        } else {
+            result.coiinTotalUSD = "0";
+        }
+
+        if (campaign.currency) {
+            result.network = campaign.currency.token?.network || "";
+            result.symbol = campaign.currency.token?.symbol || "";
+            result.symbolImageUrl = getCryptoAssestImageUrl(campaign.currency?.token?.symbol || "");
+        }
+
+        result.totalParticipationScore = parseInt(campaign.totalParticipationScore);
+        if (campaign.socialMediaType) result.socialMediaType = JSON.parse(campaign.socialMediaType);
+        if (campaign.keywords) result.keywords = JSON.parse(campaign.keywords);
+        if (campaign.suggestedPosts) result.suggestedPosts = JSON.parse(campaign.suggestedPosts);
+        if (campaign.suggestedTags) result.suggestedTags = JSON.parse(campaign.suggestedTags);
+
+        return result;
+    }
 }
 
 export class CurrentCampaignModel {
@@ -98,6 +150,15 @@ export class ProfileResultModel {
     // these properties are stored as a string in the db, but are parsed into an array when returned from the API
     @ArrayOf(String) public interests: string[];
     @ArrayOf(String) public values: string[];
+
+    public static build(profile: Prisma.Profile): ProfileResultModel {
+        return {
+            ...profile,
+            hasRecoveryCodeSet: !!profile?.recoveryCode,
+            interests: JSON.parse(profile.interests),
+            values: JSON.parse(profile.values),
+        };
+    }
 }
 
 export class RafflePrizeResultModel {
@@ -125,18 +186,32 @@ export class TransferResultModel {
     @Property(Date) public readonly updatedAt: Date;
     @Nullable(String) public readonly campaignId: string | null;
     @Nullable(String) public readonly rafflePrizeId: string | null;
+    @Nullable(String) public readonly walletId: string | null;
     @Nullable(String) public readonly status: string | null;
     @Nullable(String) public readonly usdAmount: string | null;
     @Nullable(String) public readonly ethAddress: string | null;
     @Nullable(String) public readonly paypalAddress: string | null;
     @Nullable(String) public readonly currency: string | null;
     @Nullable(String) public readonly network: string | null;
+
+    @Property() public symbolImageUrl?: string;
+
+    public static build(transfer: Prisma.Transfer): TransferResultModel {
+        return {
+            ...transfer,
+            symbolImageUrl: transfer.currency ? getCryptoAssestImageUrl(transfer.currency) : undefined,
+            action: transfer.action?.toUpperCase() || "",
+            status: transfer.status?.toUpperCase() || "",
+        };
+    }
 }
 
 export class WalletResultModel {
     @Property() public readonly id: string;
     @CollectionOf(TransferResultModel) public readonly transfer: TransferResultModel[];
     @CollectionOf(WalletCurrencyResultModel) public readonly wallet_currency: WalletCurrencyResultModel[];
+
+    @Property() public pendingBalance?: string;
 }
 
 export class XoxodayOrderResultModel {
@@ -173,8 +248,23 @@ export class UserResultModel {
     @Nullable(String) public readonly kycStatus: string | null;
     @Nullable(ProfileResultModel) public readonly profile: ProfileResultModel | null;
     @CollectionOf(SocialLinkResultModel) public readonly social_link: Partial<SocialLinkResultModel>[];
-    @CollectionOf(ParticipantResultModel) public readonly participant: Partial<ParticipantResultModel>[];
+    @CollectionOf(ParticipantResultModel) public readonly participant: ParticipantResultModel[];
     @Nullable(WalletResultModel) public readonly wallet: Partial<WalletResultModel> | null;
+
+    public static build(
+        user: Prisma.User & {
+            profile: Prisma.Profile | null;
+            social_link: Prisma.SocialLink[];
+            participant: (Prisma.Participant & { campaign: Prisma.Campaign })[];
+            wallet: Prisma.Wallet | null;
+        }
+    ): UserResultModel {
+        return {
+            ...user,
+            profile: user.profile ? ProfileResultModel.build(user.profile) : null,
+            participant: user.participant.map((participant) => ParticipantResultModel.build(participant)),
+        };
+    }
 }
 
 export class RedemptionRequirementsModel {
@@ -198,6 +288,30 @@ export class CampaignMetricsResultModel {
 
 export class ParticipantMetricsResultModel {
     @Property() public readonly id: string;
+    @Property() public readonly clickCount: string;
+    @Property() public readonly viewCount: string;
+    @Property() public readonly submissionCount: string;
+    @Property() public readonly likeCount: string;
+    @Property() public readonly shareCount: string;
+    @Property() public readonly commentCount: string;
+    @Property() public readonly participationScore: string;
+    @Property() public readonly totalParticipationScore: string;
+    @Property() public readonly participantId: string;
+    @Property() public readonly userId: string;
+    @Property() public readonly campaignId: string;
+    @Property() public readonly createdAt: Date;
+    @Property() public readonly updatedAt: Date;
+    @Property() public readonly currentTotal: number;
+    @Property() public readonly participantShare: number;
+    @Property() public readonly participantShareUSD: number;
+    @Property() public readonly symbol: string;
+    @Property() public readonly symbolImageUrl: string;
+    @Property() public readonly totalShareUSD: number;
+    @Property() public readonly totalScore: number;
+}
+
+export class AccumulatedMetricsResultModel {
+    @Property() public readonly id: number;
     @Property() public readonly clickCount: number;
     @Property() public readonly viewCount: number;
     @Property() public readonly submissionCount: number;
@@ -205,12 +319,8 @@ export class ParticipantMetricsResultModel {
     @Property() public readonly shareCount: number;
     @Property() public readonly commentCount: number;
     @Property() public readonly participationScore: number;
-    @Property() public readonly totalParticipationScore: string;
     @Property() public readonly participantId: string;
-    @Property() public readonly userId: string;
     @Property() public readonly campaignId: string;
-    @Property() public readonly createdAt: Date;
-    @Property() public readonly updatedAt: Date;
     @Property() public readonly currentTotal: number;
     @Property() public readonly participantShare: number;
     @Property() public readonly participantShareUSD: number;
@@ -292,11 +402,9 @@ export class BalanceResultModel {
 export class UpdatedResultModel {
     @Property() public readonly message: string;
 }
-
-export class CampaignIdParmsModel {
+export class CampaignIdModel {
     @Required() public readonly campaignId: string;
 }
-
 export class ParticipantQueryParams {
     @Required() public readonly id: string;
 }

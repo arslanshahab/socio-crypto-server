@@ -1,7 +1,6 @@
-import { Get, Property, Put, Returns } from "@tsed/schema";
+import { Enum, Get, Put, Property, Required, Returns } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
 import { BodyParams, Context, QueryParams } from "@tsed/common";
-import { Participant, Profile, SocialLink, User, Wallet } from "@prisma/client";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { UserService } from "../../services/UserService";
 import {
@@ -11,44 +10,40 @@ import {
     SuccessArrayResult,
     SuccessResult,
 } from "../../util/entities";
-import { NOTIFICATION_SETTING_NOT_FOUND, USER_NOT_FOUND } from "../../util/errors";
+import { NOTIFICATION_SETTING_NOT_FOUND, USER_NOT_FOUND, WALLET_NOT_FOUND } from "../../util/errors";
 import { UserDailyParticipantMetricResultModel } from "../../models/RestModels";
-import { NotificationService } from "../../services/NotificationService";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 import {
     BalanceResultModel,
     NotificationSettingsResultModel,
-    ProfileResultModel,
-    UpdatedResultModel,
-    UserRecordResultModel,
     UserResultModel,
+    UserRecordResultModel,
     UserWalletResultModel,
+    TransferResultModel,
+    UpdatedResultModel,
 } from "../../models/RestModels";
+import { NotificationService } from "../../services/NotificationService";
+import { TransferService } from "../../services/TransferService";
+import { TransferAction } from "../../util/constants";
+import { SocialService } from "../../services/SocialService";
 import { getBalance } from "../helpers";
 
-const userResultRelations = ["profile" as const, "social_link" as const, "participant" as const, "wallet" as const];
+const userResultRelations = {
+    profile: true,
+    social_link: true,
+    participant: { include: { campaign: true } },
+    wallet: true,
+};
 
-function getProfileResultModel(profile: Profile): ProfileResultModel {
-    return {
-        ...profile,
-        hasRecoveryCodeSet: !!profile?.recoveryCode,
-        interests: JSON.parse(profile.interests),
-        values: JSON.parse(profile.values),
-    };
+class AddressResultModel {
+    @Property() public readonly symbol: string;
+    @Property() public readonly network: string;
+    @Property() public readonly address: string;
 }
 
-function getUserResultModel(
-    user: User & {
-        profile: Profile | null;
-        social_link: SocialLink[];
-        participant: Participant[];
-        wallet: Wallet | null;
-    }
-): UserResultModel {
-    return {
-        ...user,
-        profile: user.profile ? getProfileResultModel(user.profile) : null,
-    };
+class TransferHistoryVariablesModel extends PaginatedVariablesModel {
+    @Property() public readonly symbol?: string;
+    @Required() @Enum(TransferAction, "ALL") public readonly type: TransferAction & "ALL";
 }
 class UserQueryVariables {
     @Property() public readonly today: boolean;
@@ -62,6 +57,10 @@ export class UserController {
     private dailyParticipantMetricService: DailyParticipantMetricService;
     @Inject()
     private notificationService: NotificationService;
+    @Inject()
+    private transferService: TransferService;
+    @Inject()
+    private socialService: SocialService;
 
     @Get("/")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserResultModel))
@@ -70,7 +69,14 @@ export class UserController {
         const { skip = 0, take = 10 } = query;
         const [results, total] = await this.userService.findUsers({ skip, take }, userResultRelations);
 
-        return new SuccessResult(new Pagination(results.map(getUserResultModel), total, UserResultModel), Pagination);
+        return new SuccessResult(
+            new Pagination(
+                results.map((r) => UserResultModel.build(r)),
+                total,
+                UserResultModel
+            ),
+            Pagination
+        );
     }
 
     @Get("/me")
@@ -79,7 +85,7 @@ export class UserController {
         const user = await this.userService.findUserByContext(context.get("user"), userResultRelations);
         if (!user) throw new BadRequest(USER_NOT_FOUND);
 
-        return new SuccessResult(getUserResultModel(user), UserResultModel);
+        return new SuccessResult(UserResultModel.build(user), UserResultModel);
     }
 
     @Get("/me/participation-keywords")
@@ -139,6 +145,46 @@ export class UserController {
             Pagination
         );
     }
+    @Get("/me/coiin-address")
+    @(Returns(200, SuccessResult).Of(AddressResultModel))
+    public async getCoiinAddress(@Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"), {
+            wallet: { include: { org: true } },
+        });
+        if (!user) throw new BadRequest(USER_NOT_FOUND);
+        const wallet = user.wallet;
+        if (!wallet) throw new BadRequest(WALLET_NOT_FOUND);
+        return new SuccessResult(await this.userService.getCoiinAddress({ ...user, wallet }), AddressResultModel);
+    }
+
+    @Get("/me/transfer-history")
+    @(Returns(200, SuccessResult).Of(Pagination).Nested(TransferResultModel))
+    public async getTransferHistory(@QueryParams() query: TransferHistoryVariablesModel, @Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"), {
+            wallet: { include: { transfer: true, wallet_currency: true } },
+        });
+        if (!user) throw new BadRequest(USER_NOT_FOUND);
+        if (!user.wallet) throw new BadRequest(WALLET_NOT_FOUND);
+        const [data, count] = await this.transferService.findByWallet({
+            ...query,
+            walletId: user.wallet.id,
+        });
+        const results = data.map((item) => TransferResultModel.build(item));
+
+        return new SuccessResult(new Pagination(results, count, TransferResultModel), Pagination);
+    }
+
+    @Get("/me/follower-count")
+    @(Returns(200, SuccessResult).Of(Object))
+    public async getFollowerCount(@Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"), {
+            social_link: true,
+        });
+        if (!user) throw new BadRequest(USER_NOT_FOUND);
+
+        return new SuccessResult(await this.socialService.getLatestFollowersForLinks(user.social_link), Object);
+    }
+
     @Get("/users-record")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserRecordResultModel))
     public async getUsersRecord(@QueryParams() query: PaginatedVariablesFilteredModel, @Context() context: Context) {

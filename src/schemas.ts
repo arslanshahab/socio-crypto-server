@@ -160,6 +160,7 @@ export const kycUser = {
         middleName: { type: "string" },
         lastName: { type: "string" },
         email: { type: "string" },
+        ip: { type: "string" },
         billingStreetAddress: { type: "string" },
         billingCity: { type: "string" },
         billingCountry: { type: "string" },

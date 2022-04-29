@@ -8,7 +8,7 @@ import { Pagination, SuccessArrayResult, SuccessResult } from "../../util/entiti
 import { CAMPAIGN_NOT_FOUND, PARTICIPANT_NOT_FOUND, USER_NOT_FOUND } from "../../util/errors";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 import { formatUTCDateForComparision, getDatesBetweenDates } from "../helpers";
-import { ParticipantMetricsResultModel, ParticipantQueryParams } from "../../models/RestModels";
+import { AccumulatedMetricsResultModel, CampaignIdModel, ParticipantMetricsResultModel, ParticipantQueryParams } from "../../models/RestModels";
 import { CampaignService } from "../../services/CampaignService";
 import { calculateParticipantPayout, calculateTier } from "../helpers";
 import { BN, formatFloat, getCryptoAssestImageUrl } from "../../util";
@@ -68,13 +68,11 @@ export class ParticipantController {
     }
     @Get("/participant-by-campaign-id")
     @(Returns(200, SuccessResult).Of(ParticipantModel))
-    public async getParticipantByCampaignId(
-        @QueryParams() query: ListParticipantVariablesModel,
-        @Context() context: Context
-    ) {
+    public async getParticipantByCampaignId(@QueryParams() query: CampaignIdModel, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
-        const participant = await this.participantService.findParticipantByCampaignId(query, user);
+        const { campaignId } = query;
+        const participant = await this.participantService.findParticipantByCampaignId(campaignId);
         if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
         return new SuccessResult(participant, ParticipantModel);
     }
@@ -117,31 +115,19 @@ export class ParticipantController {
             }
         }
         const metricsResult = metrics.concat(additionalRows);
-        return new SuccessResult(new Pagination(metricsResult, metricsResult.length, Object), Pagination);
+        return new SuccessResult(new Pagination(metricsResult, metricsResult.length, ParticipantMetricsResultModel), Pagination);
     }
     @Get("/accumulated-participant-metrics")
-    @(Returns(200, SuccessResult).Of(ParticipantMetricsResultModel))
-    public async getAccumulatedParticipantMetrics(
-        @QueryParams() query: ListParticipantVariablesModel,
-        @Context() context: Context
-    ) {
+    @(Returns(200, SuccessResult).Of(AccumulatedMetricsResultModel))
+    public async getAccumulatedParticipantMetrics(@QueryParams() query: CampaignIdModel, @Context() context: Context) {
         const { campaignId } = query;
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
         const campaign: Campaign | null = await this.campaignService.findCampaignById(campaignId);
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
-        const participant: Participant | null = await this.participantService.findParticipantByCampaignId(query, user);
+        const participant: Participant | null = await this.participantService.findParticipantByCampaignId(campaignId);
         if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
-        const participantMetrics = await this.dailyParticipantMetricService.getAccumulatedParticipantMetrics(
-            participant.id
-        );
-        // const clickCount = participantMetrics.reduce((acc, curr) => acc + parseInt(curr.clickCount), 0);
-        // const likeCount = participantMetrics.reduce((acc, curr) => acc + parseInt(curr.likeCount), 0);
-        // const shareCount = participantMetrics.reduce((acc, curr) => acc + parseInt(curr.shareCount), 0);
-        // const viewCount = participantMetrics.reduce((acc, curr) => acc + parseInt(curr.viewCount), 0);
-        // const submissionCount = participantMetrics.reduce((acc, curr) => acc + parseInt(curr.submissionCount), 0);
-        // const commentCount = participantMetrics.reduce((acc, curr) => acc + parseInt(curr.commentCount), 0);
-        // const participationScore = participantMetrics.reduce((acc, curr) => acc + parseInt(curr.participationScore), 0);
+        const participantMetrics = await this.dailyParticipantMetricService.getDailyParticipantById(participant.id);
         const { clickCount, likeCount, shareCount, viewCount, submissionCount, commentCount, participationScore } =
             participantMetrics.reduce(
                 (acc, curr) => {
@@ -189,7 +175,7 @@ export class ParticipantController {
             campaignId: campaign.id,
             participantId: participant.id,
         };
-        return new SuccessResult(result, ParticipantMetricsResultModel);
+        return new SuccessResult(result, AccumulatedMetricsResultModel);
     }
     @Get("/accumulated-user-metrics")
     @(Returns(200, SuccessResult).Of(ParticipantMetricsResultModel))
@@ -204,9 +190,7 @@ export class ParticipantController {
         let dailyParticipantMetrics;
         let participantShare = 0;
         if (ids.length) {
-            dailyParticipantMetrics = await this.dailyParticipantMetricService.getAccumulatedMetricsByParticipantIds(
-                ids
-            );
+            dailyParticipantMetrics = await this.dailyParticipantMetricService.getDailyParticipantByIds(ids);
             for (let index = 0; index < participations.length; index++) {
                 const campaign: Campaign = participations[index].campaign;
                 const participant: Participant = participations[index];
@@ -253,6 +237,6 @@ export class ParticipantController {
             totalScore: participationScore || 0,
             totalShareUSD: parseFloat(formatFloat(participantShare)) || 0,
         };
-        return new SuccessResult(result, ParticipantMetricsResultModel);
+        return new SuccessResult(result, AccumulatedMetricsResultModel);
     }
 }

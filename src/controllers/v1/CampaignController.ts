@@ -1,13 +1,4 @@
-import {
-    Campaign,
-    CampaignMedia,
-    CampaignTemplate,
-    CryptoCurrency,
-    Currency,
-    Participant,
-    Prisma,
-    Token,
-} from "@prisma/client";
+import { Campaign, CampaignMedia, Prisma } from "@prisma/client";
 import { Get, Property, Required, Enum, Returns, Post } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
 import { Context, BodyParams, PathParams, QueryParams } from "@tsed/common";
@@ -28,7 +19,6 @@ import {
 } from "../../util/errors";
 import { PaginatedVariablesModel, Pagination, SuccessResult } from "../../util/entities";
 import {
-    CampaignIdParmsModel,
     CampaignMetricsResultModel,
     CampaignResultModel,
     CreateCampaignResultModel,
@@ -38,13 +28,12 @@ import {
     MediaUrlsModel,
     UpdateCampaignResultModel,
     UpdatedResultModel,
+    CampaignIdModel,
 } from "../../models/RestModels";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { ParticipantService } from "../../services/ParticipantService";
 import { SocialPostService } from "../../services/SocialPostService";
 import { CryptoCurrencyService } from "../../services/CryptoCurrencyService";
-import { getTokenValueInUSD } from "../../util/exchangeRate";
-import { getCryptoAssestImageUrl } from "../../util";
 import { CampaignAuditReportV2, CampaignCreateTypes, PointValueTypes, Tiers } from "../../types";
 import { addYears } from "date-fns";
 import { Validator } from "../../schemas";
@@ -68,42 +57,6 @@ class ListCampaignsVariablesModel extends PaginatedVariablesModel {
     @Required() @Enum(CampaignState) public readonly state: CampaignState;
     @Property() @Enum(CampaignStatus, "ALL") public readonly status: CampaignStatus | "ALL" | undefined;
     @Property(Boolean) public readonly userRelated: boolean | undefined;
-}
-class ListCurrentCampaignVariablesModel {
-    @Property() public readonly campaignId: string;
-    // @Property() public readonly userRelated: boolean | undefined;
-}
-
-async function getCampaignResultModel(
-    campaign: Campaign & {
-        participant?: Participant[];
-        currency: (Currency & { token: Token | null }) | null;
-        crypto_currency: CryptoCurrency | null;
-        campaign_media: CampaignMedia[];
-        campaign_template: CampaignTemplate[];
-    }
-) {
-    const result: CampaignResultModel = campaign;
-    if (result.coiinTotal) {
-        const value = await getTokenValueInUSD(campaign.symbol, parseFloat(campaign.coiinTotal.toString()));
-        result.coiinTotalUSD = value.toFixed(2);
-    } else {
-        result.coiinTotalUSD = "0";
-    }
-
-    if (campaign.currency) {
-        result.network = campaign.currency.token?.network || "";
-        result.symbol = campaign.currency.token?.symbol || "";
-        result.symbolImageUrl = getCryptoAssestImageUrl(campaign.currency?.token?.symbol || "");
-    }
-
-    result.totalParticipationScore = parseInt(campaign.totalParticipationScore);
-    if (campaign.socialMediaType) result.socialMediaType = JSON.parse(campaign.socialMediaType);
-    if (campaign.keywords) result.keywords = JSON.parse(campaign.keywords);
-    if (campaign.suggestedPosts) result.suggestedPosts = JSON.parse(campaign.suggestedPosts);
-    if (campaign.suggestedTags) result.suggestedTags = JSON.parse(campaign.suggestedTags);
-
-    return result;
 }
 
 @Controller("/campaign")
@@ -142,7 +95,7 @@ export class CampaignController {
     public async list(@QueryParams() query: ListCampaignsVariablesModel, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         const [items, total] = await this.campaignService.findCampaignsByStatus(query, user || undefined);
-        const modelItems = await Promise.all(items.map((i) => getCampaignResultModel(i)));
+        const modelItems = await Promise.all(items.map((i) => CampaignResultModel.build(i)));
         return new SuccessResult(new Pagination(modelItems, total, CampaignResultModel), Pagination);
     }
 
@@ -156,12 +109,12 @@ export class CampaignController {
             campaign_template: true,
         });
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
-        return new SuccessResult(await getCampaignResultModel(campaign), CampaignResultModel);
+        return new SuccessResult(await CampaignResultModel.build(campaign), CampaignResultModel);
     }
 
     @Get("/current-campaign-tier")
     @(Returns(200, SuccessResult).Of(CurrentCampaignModel))
-    public async getCurrentCampaignTier(@QueryParams() query: CampaignIdParmsModel, @Context() context: Context) {
+    public async getCurrentCampaignTier(@QueryParams() query: CampaignIdModel, @Context() context: Context) {
         const { campaignId } = query;
         let currentTierSummary;
         let currentCampaign: Campaign | null;
@@ -199,13 +152,10 @@ export class CampaignController {
     }
     @Get("/campaign-metrics")
     @(Returns(200, SuccessResult).Of(CampaignMetricsResultModel))
-    public async getCampaignMetrics(
-        @QueryParams() query: ListCurrentCampaignVariablesModel,
-        @Context() context: Context
-    ) {
+    public async getCampaignMetrics(@QueryParams() query: CampaignIdModel, @Context() context: Context) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const { campaignId } = query;
-        const participant = await this.participantService.findPaticipantMetricsById(campaignId);
+        const participant = await this.participantService.findParticipants(campaignId);
         const clickCount = participant.reduce((sum, item) => sum + parseInt(item.clickCount), 0);
         const viewCount = participant.reduce((sum, item) => sum + parseInt(item.viewCount), 0);
         const submissionCount = participant.reduce((sum, item) => sum + parseInt(item.submissionCount), 0);
@@ -472,7 +422,7 @@ export class CampaignController {
 
     @Post("/delete-campaign")
     @(Returns(200, SuccessResult).Of(DeleteCampaignResultModel))
-    public async deleteCampaign(@QueryParams() query: CampaignIdParmsModel, @Context() context: Context) {
+    public async deleteCampaign(@QueryParams() query: CampaignIdModel, @Context() context: Context) {
         const { campaignId } = query;
         const { company } = this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
 
@@ -484,7 +434,7 @@ export class CampaignController {
         if (rafflePrize.length > 0) this.rafflePrizeService.deleteRafflePrize(campaignId);
         const escrow = await this.escrowService.findEscrowByCampaignId(campaignId);
         if (escrow.length > 0) this.escrowService.deleteEscrow(campaignId);
-        const participant = await this.participantService.findParticipantByCampaignId(query);
+        const participant = await this.participantService.findParticipantByCampaignId(campaignId);
         if (participant) this.participantService.deleteParticipant(campaignId);
         const dailyParticipantMetrics = await this.dailyParticipantMetricService.findDailyParticipantByCampaignId(
             campaignId
@@ -506,7 +456,7 @@ export class CampaignController {
     }
     @Post("/payout-campaign-rewards")
     @(Returns(200, SuccessResult).Of(UpdatedResultModel))
-    public async payoutCampaignRewards(@QueryParams() query: CampaignIdParmsModel, @Context() context: Context) {
+    public async payoutCampaignRewards(@QueryParams() query: CampaignIdModel, @Context() context: Context) {
         const { company } = this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
         const { campaignId } = query;
         const campaign = await this.campaignService.findCampaignById(campaignId, undefined, company);
@@ -519,7 +469,7 @@ export class CampaignController {
     }
     @Post("/generate-campaign-audit-report")
     @(Returns(200, SuccessResult).Of(GenerateCampaignAuditReportResultModel))
-    public async generateCampaignAuditReport(@QueryParams() query: CampaignIdParmsModel, @Context() context: Context) {
+    public async generateCampaignAuditReport(@QueryParams() query: CampaignIdModel, @Context() context: Context) {
         const { company } = this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
         let { campaignId } = query;
         const campaign = await this.campaignService.findCampaignById(campaignId, { participant: true }, company);

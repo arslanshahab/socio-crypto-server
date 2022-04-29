@@ -33,10 +33,10 @@ export class ParticipantService {
             },
         });
     }
-    public async findParticipantByCampaignId(params: FindCampaignById, user?: User) {
+    public async findParticipantByCampaignId(campaignId: string) {
         return this.prismaService.participant.findFirst({
             where: {
-                campaignId: params?.campaignId,
+                campaignId,
             },
             include: {
                 user: {
@@ -95,15 +95,9 @@ export class ParticipantService {
             },
         });
     }
-    public async findPaticipantMetricsById(campaignId: string) {
+    public async findParticipants(campaignId: string) {
         return this.prismaService.participant.findMany({
             where: { campaignId },
-            // _sum: {
-            //     clickCount: true,
-            //     submissionCount: true,
-            //     viewCount: true,
-            // },
-            // _count: true,
         });
     }
     public async findParticipantByUser(userId: string) {

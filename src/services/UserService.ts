@@ -1,9 +1,13 @@
-import { Prisma } from "@prisma/client";
+import { Org, Prisma, User, Wallet } from "@prisma/client";
 import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
-import { JWTPayload } from "../types";
-import { Forbidden } from "@tsed/exceptions";
+import { BadRequest, Forbidden } from "@tsed/exceptions";
 import { isArray } from "lodash";
+import { JWTPayload } from "../types";
+import { AddressService } from "./AddressService";
+import { BSC, COIIN } from "../util/constants";
+import { TatumClient } from "../clients/tatumClient";
+import { createSubscriptionUrl } from "../util/tatumHelper";
 
 type Array2TrueMap<T> = T extends string[] ? { [idx in T[number]]: true } : undefined;
 
@@ -11,6 +15,8 @@ type Array2TrueMap<T> = T extends string[] ? { [idx in T[number]]: true } : unde
 export class UserService {
     @Inject()
     private prismaService: PrismaService;
+    @Inject()
+    private addressService: AddressService;
 
     /**
      * Retrieves a user object from a JWTPayload
@@ -78,6 +84,20 @@ export class UserService {
     }
 
     /**
+     * Retrieves an admin object by its firebase id
+     *
+     * @param firebaseId the firebaseId of the admin
+     * @param include additional relations to include with the admin query
+     * @returns the admin object, with the requested relations included
+     */
+    public async findUserByFirebaseId<T extends Prisma.AdminInclude | undefined>(firebaseId: string, include?: T) {
+        return this.prismaService.admin.findFirst<{
+            where: Prisma.AdminWhereInput;
+            // this type allows adding additional relations to result tpe
+            include: T;
+        }>({ where: { firebaseId }, include: include as T });
+    }
+    /**
      * Asserts that the user has the given permissions
      *
      * @param opts permissions to check for
@@ -120,6 +140,44 @@ export class UserService {
         const result = response.map((x) => x.profile?.deviceToken);
         return result;
     }
+    /**
+     * Retrieves the Coiin wallet for the given user, creating a new one if it doesn't exist
+     *
+     * @param user the user to retrieve the wallet for
+     * @returns the wallet's address
+     */
+    public async getCoiinAddress(user: User & { wallet: Wallet & { org: Org | null } }) {
+        let currency = await this.addressService.findOrCreateCurrency(
+            {
+                symbol: COIIN,
+                network: BSC,
+            },
+            user.wallet
+        );
+        if (!currency) throw new BadRequest("Currency not found for user.");
+        if (!currency.depositAddress) {
+            const availableAddress = await this.addressService.getAvailableAddress(
+                { symbol: COIIN, network: BSC },
+                user.wallet
+            );
+            if (!availableAddress) throw new Error("No custodial address available.");
+            await TatumClient.assignAddressToAccount({
+                accountId: currency.tatumId,
+                address: availableAddress.address,
+            });
+            await TatumClient.createAccountIncomingSubscription({
+                accountId: currency.tatumId,
+                url: createSubscriptionUrl({ userId: user.id, accountId: currency.tatumId }),
+            });
+            currency = await this.addressService.updateDepositAddress(currency, availableAddress.address);
+        }
+        return {
+            symbol: COIIN,
+            network: BSC,
+            address: currency.depositAddress,
+        };
+    }
+
     public findUsersRecord(skip: number, take: number, filter: string) {
         return this.prismaService.$transaction([
             this.prismaService.user.findMany({
