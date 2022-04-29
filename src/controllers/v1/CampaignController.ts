@@ -19,7 +19,7 @@ import { BN } from "../../util";
 import { getTokenPriceInUsd } from "../../clients/ethereum";
 import { CAMPAIGN_NOT_FOUND, ERROR_CALCULATING_TIER, USER_NOT_FOUND } from "../../util/errors";
 import { PaginatedVariablesModel, Pagination, SuccessResult } from "../../util/entities";
-import { CampaignMetricsResultModel, CampaignResultModel, CurrentCampaignModel } from "../../models/RestModels";
+import { CampaignIdModel, CampaignMetricsResultModel, CampaignResultModel, CurrentCampaignModel } from "../../models/RestModels";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { ParticipantService } from "../../services/ParticipantService";
 import { SocialPostService } from "../../services/SocialPostService";
@@ -32,10 +32,6 @@ class ListCampaignsVariablesModel extends PaginatedVariablesModel {
     @Required() @Enum(CampaignState) public readonly state: CampaignState;
     @Property() @Enum(CampaignStatus, "ALL") public readonly status: CampaignStatus | "ALL" | undefined;
     @Property(Boolean) public readonly userRelated: boolean | undefined;
-}
-class ListCurrentCampaignVariablesModel {
-    @Property() public readonly campaignId: string;
-    @Property() public readonly userRelated: boolean | undefined;
 }
 
 async function getCampaignResultModel(
@@ -108,7 +104,7 @@ export class CampaignController {
     @Get("/current-campaign-tier")
     @(Returns(200, SuccessResult).Of(CurrentCampaignModel))
     public async getCurrentCampaignTier(
-        @QueryParams() query: ListCurrentCampaignVariablesModel,
+        @QueryParams() query: CampaignIdModel,
         @Context() context: Context
     ) {
         const { campaignId } = query;
@@ -150,12 +146,12 @@ export class CampaignController {
     @Get("/campaign-metrics")
     @(Returns(200, SuccessResult).Of(CampaignMetricsResultModel))
     public async getCampaignMetrics(
-        @QueryParams() query: ListCurrentCampaignVariablesModel,
+        @QueryParams() query: CampaignIdModel,
         @Context() context: Context
     ) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const { campaignId } = query;
-        const participant = await this.participantService.findPaticipantMetricsById(campaignId);
+        const participant = await this.participantService.findParticipants(campaignId);
         const clickCount = participant.reduce((sum, item) => sum + parseInt(item.clickCount), 0);
         const viewCount = participant.reduce((sum, item) => sum + parseInt(item.viewCount), 0);
         const submissionCount = participant.reduce((sum, item) => sum + parseInt(item.submissionCount), 0);

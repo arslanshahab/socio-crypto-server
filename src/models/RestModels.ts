@@ -268,7 +268,9 @@ export class BalanceResultModel {
 export class UpdatedResultModel {
     @Property() public readonly message: string;
 }
-
+export class CampaignIdModel {
+    @Required() public readonly campaignId: string;
+}
 export class ParticipantQueryParams {
     @Required() public readonly id: string;
 }
