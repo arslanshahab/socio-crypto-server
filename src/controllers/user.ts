@@ -38,10 +38,11 @@ import {
     EMAIL_EXISTS,
     INVALID_TOKEN,
     ALREADY_PARTICIPATING,
+    GLOBAL_CAMPAIGN_NOT_FOUND,
 } from "../util/errors";
 import { addDays, endOfISOWeek, startOfDay } from "date-fns";
 import { Transfer } from "../models/Transfer";
-import { RAIINMAKER_ORG_NAME } from "../util/constants";
+import { BSC, COIIN, RAIINMAKER_ORG_NAME } from "../util/constants";
 import { JWTPayload } from "src/types";
 import { SHARING_REWARD_AMOUNT } from "../util/constants";
 import { NotificationSettings } from "../models/NotificationSettings";
@@ -480,33 +481,33 @@ export const rewardUserForSharing = async (
     try {
         const user = await User.findUserByContext(context.user, ["wallet"]);
         if (!user) throw new Error(USER_NOT_FOUND);
-        // let participant;
-        // let campaign;
-        // if (args.isGlobal) {
-        //     const globalCampaign = await Campaign.findOne({
-        //         where: { isGlobal: true, symbol: COIIN },
-        //         relations: ["org"],
-        //     });
-        //     if (!globalCampaign) throw new Error(GLOBAL_CAMPAIGN_NOT_FOUND);
-        //     campaign = globalCampaign;
-        //     participant = await Participant.findOne({
-        //         where: { user, campaign: globalCampaign },
-        //         relations: ["campaign"],
-        //     });
-        //     if (!participant) {
-        //         await TatumClient.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet: user.wallet });
-        //         participant = await Participant.createNewParticipant(user, globalCampaign, user.email);
-        //     }
-        // } else {
-        //     participant = await Participant.findOne({
-        //         where: { id: args.participantId, user },
-        //         relations: ["campaign"],
-        //     });
-        //     if (!participant) throw new Error(PARTICIPANT_NOT_FOUND);
-        //     campaign = participant.campaign;
-        // }
-        // if (!participant) throw new Error(PARTICIPANT_NOT_FOUND);
-        // await user.transferCoiinReward({ campaign, type: "SHARING_REWARD" });
+        let participant;
+        let campaign;
+        if (args.isGlobal) {
+            const globalCampaign = await Campaign.findOne({
+                where: { isGlobal: true, symbol: COIIN },
+                relations: ["org"],
+            });
+            if (!globalCampaign) throw new Error(GLOBAL_CAMPAIGN_NOT_FOUND);
+            campaign = globalCampaign;
+            participant = await Participant.findOne({
+                where: { user, campaign: globalCampaign },
+                relations: ["campaign"],
+            });
+            if (!participant) {
+                await TatumClient.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet: user.wallet });
+                participant = await Participant.createNewParticipant(user, globalCampaign, user.email);
+            }
+        } else {
+            participant = await Participant.findOne({
+                where: { id: args.participantId, user },
+                relations: ["campaign"],
+            });
+            if (!participant) throw new Error(PARTICIPANT_NOT_FOUND);
+            campaign = participant.campaign;
+        }
+        if (!participant) throw new Error(PARTICIPANT_NOT_FOUND);
+        await user.transferCoiinReward({ campaign, type: "SHARING_REWARD" });
         return { success: true };
     } catch (error) {
         throw new FormattedError(error);
