@@ -300,3 +300,23 @@ export class CampaignIdParmsModel {
 export class ParticipantQueryParams {
     @Required() public readonly id: string;
 }
+
+export class FlaggedParticipantResultModel {
+    @Property() public readonly participantId: string;
+    @Property() public readonly viewPayout: number;
+    @Property() public readonly clickPayout: number;
+    @Property() public readonly submissionPayout: number;
+    @Property() public readonly likesPayout: number;
+    @Property() public readonly sharesPayout: number;
+    @Property() public readonly totalPayout: number;
+}
+export class GenerateCampaignAuditReportResultModel {
+    @Property() public readonly totalClicks: number;
+    @Property() public readonly totalViews: number;
+    @Property() public readonly totalSubmissions: number;
+    @Property() public readonly totalLikes: number;
+    @Property() public readonly totalShares: number;
+    @Property() public readonly totalParticipationScore: number;
+    @Property() public readonly totalRewardPayout: number;
+    @CollectionOf(FlaggedParticipantResultModel) public readonly flaggedParticipants: FlaggedParticipantResultModel[];
+}

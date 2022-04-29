@@ -567,3 +567,22 @@ export interface PointValueTypes {
     likes: number;
     shares: number;
 }
+
+export interface CampaignAuditReportV2 {
+    totalClicks: number;
+    totalViews: number;
+    totalSubmissions: number;
+    totalLikes: number;
+    totalShares: number;
+    totalParticipationScore: number;
+    totalRewardPayout: number;
+    flaggedParticipants: {
+        participantId: string;
+        viewPayout: number;
+        clickPayout: number;
+        submissionPayout: number;
+        likesPayout: number;
+        sharesPayout: number;
+        totalPayout: number;
+    }[];
+}

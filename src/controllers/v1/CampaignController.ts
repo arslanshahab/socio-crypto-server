@@ -14,7 +14,7 @@ import { Context, BodyParams, PathParams, QueryParams } from "@tsed/common";
 import { CampaignService } from "../../services/CampaignService";
 import { UserService } from "../../services/UserService";
 import { CampaignState, CampaignStatus } from "../../util/constants";
-import { calculateTier } from "../helpers";
+import { calculateParticipantPayoutV2, calculateParticipantSocialScoreV2, calculateTier } from "../helpers";
 import { BN } from "../../util";
 import { getTokenPriceInUsd } from "../../clients/ethereum";
 import {
@@ -34,6 +34,7 @@ import {
     CreateCampaignResultModel,
     CurrentCampaignModel,
     DeleteCampaignResultModel,
+    GenerateCampaignAuditReportResultModel,
     MediaUrlsModel,
     UpdateCampaignResultModel,
     UpdatedResultModel,
@@ -44,7 +45,7 @@ import { SocialPostService } from "../../services/SocialPostService";
 import { CryptoCurrencyService } from "../../services/CryptoCurrencyService";
 import { getTokenValueInUSD } from "../../util/exchangeRate";
 import { getCryptoAssestImageUrl } from "../../util";
-import { CampaignAuditReport, CampaignCreateTypes, Tiers } from "../../types";
+import { CampaignAuditReportV2, CampaignCreateTypes, PointValueTypes, Tiers } from "../../types";
 import { addYears } from "date-fns";
 import { Validator } from "../../schemas";
 import { OrganizationService } from "../../services/OrganizationService";
@@ -517,26 +518,72 @@ export class CampaignController {
         return new SuccessResult(result, UpdatedResultModel);
     }
     @Post("/generate-campaign-audit-report")
-    @(Returns(200, SuccessResult).Of(Object))
+    @(Returns(200, SuccessResult).Of(GenerateCampaignAuditReportResultModel))
     public async generateCampaignAuditReport(@QueryParams() query: CampaignIdParmsModel, @Context() context: Context) {
         const { company } = this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
         let { campaignId } = query;
-        const campaign = await this.campaignService.findCampaignById(campaignId, undefined, company);
+        const campaign = await this.campaignService.findCampaignById(campaignId, { participant: true }, company);
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
         campaignId = campaign.id;
         const { data }: any = await this.getCurrentCampaignTier({ campaignId }, context);
         const { currentTotal } = data;
-        const bigNumTotal = new BN(campaign.type !== "coiin" ? 0 : currentTotal);
-        const auditReport: CampaignAuditReport = {
-            totalClicks: new BN(0),
-            totalViews: new BN(0),
-            totalSubmissions: new BN(0),
-            totalLikes: new BN(0),
-            totalShares: new BN(0),
-            totalParticipationScore: new BN(campaign.totalParticipationScore),
-            totalRewardPayout: bigNumTotal,
+        const totalRewards = campaign.type !== "coiin" ? 0 : currentTotal;
+        const auditReport: CampaignAuditReportV2 = {
+            totalClicks: 0,
+            totalViews: 0,
+            totalSubmissions: 0,
+            totalLikes: 0,
+            totalShares: 0,
+            totalParticipationScore: parseInt(campaign.totalParticipationScore),
+            totalRewardPayout: totalRewards,
             flaggedParticipants: [],
         };
-        console.log("big number total--------", auditReport);
+
+        for (const participant of campaign.participant) {
+            const socialPost = await this.socialPostService.findSocialPostByParticipantId(participant.id);
+
+            const { totalLikes, totalShares } = await calculateParticipantSocialScoreV2(
+                socialPost,
+                (campaign.algorithm as Prisma.JsonObject).pointValues as Prisma.JsonObject as unknown as PointValueTypes
+            );
+            auditReport.totalShares = auditReport.totalShares + totalShares;
+            auditReport.totalLikes = auditReport.totalLikes + totalLikes;
+            auditReport.totalClicks = auditReport.totalClicks + parseInt(participant.clickCount);
+            auditReport.totalViews = auditReport.totalViews + parseInt(participant.viewCount);
+            auditReport.totalSubmissions = auditReport.totalSubmissions + parseInt(participant.submissionCount);
+            const totalParticipantPayout = await calculateParticipantPayoutV2(totalRewards, campaign, participant);
+
+            const condition =
+                campaign.type === "raffle"
+                    ? parseInt(participant.participationScore) > auditReport.totalParticipationScore
+                    : totalParticipantPayout > auditReport.totalRewardPayout * 0.15;
+            let campaignAlgorithm = (campaign.algorithm as Prisma.JsonObject)
+                .pointValues as Prisma.JsonObject as unknown as PointValueTypes;
+
+            if (condition) {
+                auditReport.flaggedParticipants.push({
+                    participantId: participant.id,
+                    viewPayout: parseInt(participant.viewCount) * campaignAlgorithm.views,
+                    clickPayout: parseInt(participant.clickCount) * campaignAlgorithm.clicks,
+                    submissionPayout: parseInt(participant.submissionCount) * campaignAlgorithm.submissions,
+                    likesPayout: totalLikes * campaignAlgorithm.likes,
+                    sharesPayout: totalShares * campaignAlgorithm.shares,
+                    totalPayout: totalParticipantPayout,
+                });
+            }
+        }
+        const report: { [key: string]: any } = auditReport;
+        for (const key in report) {
+            if (key === "flaggedParticipants") {
+                for (const flagged of report[key]) {
+                    for (const value in flagged) {
+                        if (value !== "participantId") flagged[value] = parseFloat(flagged[value].toString());
+                    }
+                }
+                continue;
+            }
+            report[key] = parseFloat(report[key].toString());
+        }
+        return new SuccessResult(auditReport, GenerateCampaignAuditReportResultModel);
     }
 }
