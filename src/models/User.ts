@@ -259,7 +259,6 @@ export class User extends BaseEntity {
         if (
             (type === "LOGIN_REWARD" && accountAgeInHours > 24 && !thisWeeksReward) ||
             (type === "PARTICIPATION_REWARD" && !thisWeeksReward) ||
-            type === "REGISTRATION_REWARD" ||
             (type === "SHARING_REWARD" &&
                 (await Transfer.getLast24HourRedemption(user.wallet, "SHARING_REWARD")) < SHARING_REWARD_LIMIT_PER_DAY)
         ) {
