@@ -31,47 +31,47 @@ export class DailyParticipantMetricService {
                 participantId: participant.id,
                 campaignId: campaign.id,
                 userId: user.id,
-                participationScore: 0,
+                participationScore: "0",
                 totalParticipationScore: lastParticipationScore,
-                clickCount: 0,
-                likeCount: 0,
-                shareCount: 0,
-                submissionCount: 0,
-                viewCount: 0,
-                commentCount: 0,
+                clickCount: "0",
+                likeCount: "0",
+                shareCount: "0",
+                submissionCount: "0",
+                viewCount: "0",
+                commentCount: "0",
             },
         });
     }
     public async getAccumulatedParticipantMetrics(participantId: string) {
-        return this.prismaService.dailyParticipantMetric.aggregate({
+        return this.prismaService.dailyParticipantMetric.findMany({
             where: { participantId },
-            _sum: {
-                clickCount: true,
-                commentCount: true,
-                likeCount: true,
-                shareCount: true,
-                submissionCount: true,
-                viewCount: true,
-                participationScore: true,
-            },
+            // _sum: {
+            //     clickCount: true,
+            //     commentCount: true,
+            //     likeCount: true,
+            //     shareCount: true,
+            //     submissionCount: true,
+            //     viewCount: true,
+            //     participationScore: true,
+            // },
         });
     }
     public async getAccumulatedMetricsByParticipantIds(participantIds: string[]) {
-        return this.prismaService.dailyParticipantMetric.aggregate({
+        return this.prismaService.dailyParticipantMetric.findMany({
             where: {
                 participantId: {
                     in: participantIds,
                 },
             },
-            _sum: {
-                clickCount: true,
-                commentCount: true,
-                likeCount: true,
-                shareCount: true,
-                submissionCount: true,
-                viewCount: true,
-                participationScore: true,
-            },
+            // _sum: {
+            //     clickCount: true,
+            //     commentCount: true,
+            //     likeCount: true,
+            //     shareCount: true,
+            //     submissionCount: true,
+            //     viewCount: true,
+            //     participationScore: true,
+            // },
         });
     }
     public async getSortedByUserId(userId: string, today: Boolean) {

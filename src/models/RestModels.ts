@@ -1,4 +1,4 @@
-import { ArrayOf, CollectionOf, Nullable, Optional, Property } from "@tsed/schema";
+import { ArrayOf, CollectionOf, Nullable, Optional, Property, Required } from "@tsed/schema";
 
 export class CampaignMediaResultModel {
     @Property() public readonly id: string;
@@ -228,13 +228,13 @@ export class SocialMetricsResultModel {
 }
 export class UserDailyParticipantMetricResultModel {
     @Property() public readonly id: string;
-    @Property() public readonly clickCount: number;
-    @Property() public readonly viewCount: number;
-    @Property() public readonly submissionCount: number;
-    @Property() public readonly likeCount: number;
-    @Property() public readonly shareCount: number;
-    @Property() public readonly commentCount: number;
-    @Property() public readonly participationScore: number;
+    @Property() public readonly clickCount: string;
+    @Property() public readonly viewCount: string;
+    @Property() public readonly submissionCount: string;
+    @Property() public readonly likeCount: string;
+    @Property() public readonly shareCount: string;
+    @Property() public readonly commentCount: string;
+    @Property() public readonly participationScore: string;
     @Property() public readonly totalParticipationScore: string;
     @Property() public readonly participantId: string;
     @Property() public readonly createdAt: Date;
@@ -267,4 +267,8 @@ export class BalanceResultModel {
 
 export class UpdatedResultModel {
     @Property() public readonly message: string;
+}
+
+export class ParticipantQueryParams {
+    @Required() public readonly id: string;
 }

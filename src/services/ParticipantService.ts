@@ -1,7 +1,7 @@
 import { SocialLink, User } from "@prisma/client";
 import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
-import { FindCampaignById, FindParticipantById } from "../types";
+import { FindCampaignById } from "../types";
 import { decrypt } from "../util/crypto";
 import { InternalServerError, NotFound } from "@tsed/exceptions";
 
@@ -17,7 +17,7 @@ export class ParticipantService {
      * @param user an optional user include in the participants results (depends on params.userRelated)
      * @returns the list of participants, and a count of total participants, matching the parameters
      */
-    public async findParticipantById(params: FindParticipantById, user?: User) {
+    public async findParticipantById(participantId: string, user?: User) {
         return this.prismaService.participant.findFirst({
             include: {
                 user: {
@@ -28,7 +28,7 @@ export class ParticipantService {
                 campaign: true,
             },
             where: {
-                id: params.id,
+                id: participantId,
                 userId: user?.id,
             },
         });
@@ -96,14 +96,14 @@ export class ParticipantService {
         });
     }
     public async findPaticipantMetricsById(campaignId: string) {
-        return this.prismaService.participant.aggregate({
+        return this.prismaService.participant.findMany({
             where: { campaignId },
-            _sum: {
-                clickCount: true,
-                submissionCount: true,
-                viewCount: true,
-            },
-            _count: true,
+            // _sum: {
+            //     clickCount: true,
+            //     submissionCount: true,
+            //     viewCount: true,
+            // },
+            // _count: true,
         });
     }
     public async findParticipantByUser(userId: string) {

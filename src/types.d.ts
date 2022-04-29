@@ -481,9 +481,9 @@ interface AcuantApplicationExtractedDetails {
 interface SocialPostVariablesType {
     id: string;
     type: string;
-    likes: number;
-    shares: number;
-    comments: number;
+    likes: string;
+    shares: string;
+    comments: string;
     participantId: string;
     campaignId: string;
     createdAt: Date;

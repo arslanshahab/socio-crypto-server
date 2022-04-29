@@ -124,9 +124,9 @@ export const calculateParticipantSocialScoreV2 = async (
 ) => {
     let totalLikes = 0;
     let totalShares = 0;
-    socialPosts?.forEach((post: { likes: number; shares: number }) => {
-        totalLikes = totalLikes + post?.likes;
-        totalShares = totalShares + post.shares;
+    socialPosts?.forEach((post: { likes: string; shares: string }) => {
+        totalLikes = totalLikes + parseInt(post.likes);
+        totalShares = totalShares + parseInt(post.shares);
     });
     return {
         totalLikes,

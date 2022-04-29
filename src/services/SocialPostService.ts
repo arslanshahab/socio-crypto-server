@@ -7,17 +7,17 @@ export class SocialPostService {
     private prismaService: PrismaService;
 
     public async findSocialPostMetricsById(campaignId: string) {
-        const response = this.prismaService.socialPost.aggregate({
+        return this.prismaService.socialPost.findMany({
             where: { campaignId },
-            _sum: {
-                likes: true,
-                shares: true,
-                comments: true,
-            },
-            _count: true,
+            // _sum: {
+            //     likes: true,
+            //     shares: true,
+            //     comments: true,
+            // },
+            // _count: true,
         });
-        const { _sum, _count } = await response;
-        return { postSum: _sum, postCount: _count };
+        // const { _sum, _count } = await response;
+        // return { postSum: _sum, postCount: _count };
     }
     public async findSocialPostByParticipantId(participantId: string) {
         return this.prismaService.socialPost.findMany({

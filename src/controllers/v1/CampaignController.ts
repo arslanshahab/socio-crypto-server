@@ -155,17 +155,26 @@ export class CampaignController {
     ) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const { campaignId } = query;
-        const { _sum, _count } = await this.participantService.findPaticipantMetricsById(campaignId);
-        const { postSum, postCount } = await this.socialPostService.findSocialPostMetricsById(campaignId);
+        const participant = await this.participantService.findPaticipantMetricsById(campaignId);
+        const clickCount = participant.reduce((sum, item) => sum + parseInt(item.clickCount), 0);
+        const viewCount = participant.reduce((sum, item) => sum + parseInt(item.viewCount), 0);
+        const submissionCount = participant.reduce((sum, item) => sum + parseInt(item.submissionCount), 0);
+        const participantCount = participant.length;
+        const socialPostMetrics = await this.socialPostService.findSocialPostMetricsById(campaignId);
+        const likeCount = socialPostMetrics.reduce((sum, item) => sum + parseInt(item.likes), 0);
+        const commentCount = socialPostMetrics.reduce((sum, item) => sum + parseInt(item.comments), 0);
+        const shareCount = socialPostMetrics.reduce((sum, item) => sum + parseInt(item.shares), 0);
+        const socialPostCount = socialPostMetrics.length;
+
         const metrics = {
-            clickCount: _sum.clickCount,
-            viewCount: _sum.viewCount,
-            submissionCount: _sum.submissionCount,
-            participantCount: _count,
-            likeCount: postSum.likes,
-            commentCount: postSum.comments,
-            shareCount: postSum.shares,
-            postCount,
+            clickCount: clickCount || 0,
+            viewCount: viewCount || 0,
+            submissionCount: submissionCount || 0,
+            likeCount: likeCount || 0,
+            commentCount: commentCount || 0,
+            shareCount: shareCount || 0,
+            participantCount,
+            postCount: socialPostCount,
         };
         return new SuccessResult(metrics, CampaignMetricsResultModel);
     }

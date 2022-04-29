@@ -8,11 +8,11 @@ import { Pagination, SuccessArrayResult, SuccessResult } from "../../util/entiti
 import { CAMPAIGN_NOT_FOUND, PARTICIPANT_NOT_FOUND, USER_NOT_FOUND } from "../../util/errors";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 import { formatUTCDateForComparision, getDatesBetweenDates } from "../helpers";
-import { ParticipantMetricsResultModel } from "../../models/RestModels";
+import { ParticipantMetricsResultModel, ParticipantQueryParams } from "../../models/RestModels";
 import { CampaignService } from "../../services/CampaignService";
 import { calculateParticipantPayout, calculateTier } from "../helpers";
 import { BN, formatFloat, getCryptoAssestImageUrl } from "../../util";
-import { getSymbolValueInUSD } from "../../util/exchangeRate";
+import { getTokenValueInUSD } from "../../util/exchangeRate";
 import { Campaign, Participant, Prisma } from "@prisma/client";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { getSocialClient } from "../helpers";
@@ -39,20 +39,22 @@ export class ParticipantController {
 
     @Get()
     @(Returns(200, SuccessResult).Of(ParticipantModel))
-    public async getParticipant(@QueryParams() query: ListParticipantVariablesModel, @Context() context: Context) {
+    public async getParticipant(@QueryParams() query: ParticipantQueryParams, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
-        const participant = await this.participantService.findParticipantById(query, user);
+        const { id } = query;
+        const participant = await this.participantService.findParticipantById(id, user);
         if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
         return new SuccessResult(participant, ParticipantModel);
     }
     @Get("/participant-posts")
     @(Returns(200, SuccessArrayResult).Of(String))
-    public async getParticipantPosts(@QueryParams() query: ListParticipantVariablesModel, @Context() context: Context) {
+    public async getParticipantPosts(@QueryParams() query: ParticipantQueryParams, @Context() context: Context) {
         const results: string[] = [];
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
-        const participant = await this.participantService.findParticipantById(query, user);
+        const { id } = query;
+        const participant = await this.participantService.findParticipantById(id, user);
         if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
         const posts = await this.participantService.findSocialPosts(participant.id);
         for (let i = 0; i < posts.length; i++) {
@@ -89,16 +91,14 @@ export class ParticipantController {
     }
     @Get("/participant-metrics")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(ParticipantMetricsResultModel))
-    public async getParticipantMetrics(
-        @QueryParams() query: ListParticipantVariablesModel,
-        @Context() context: Context
-    ) {
+    public async getParticipantMetrics(@QueryParams() query: ParticipantQueryParams, @Context() context: Context) {
         const additionalRows = [];
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
-        const participant = await this.participantService.findParticipantById(query, user);
+        const { id } = query;
+        const participant = await this.participantService.findParticipantById(id, user);
         if (!participant) throw new Error(PARTICIPANT_NOT_FOUND);
-        const metrics = await this.dailyParticipantMetricService.getSortedByParticipantId(query.id);
+        const metrics = await this.dailyParticipantMetricService.getSortedByParticipantId(id);
         if (
             metrics.length > 0 &&
             formatUTCDateForComparision(metrics[metrics.length - 1].createdAt) !==
@@ -117,10 +117,7 @@ export class ParticipantController {
             }
         }
         const metricsResult = metrics.concat(additionalRows);
-        return new SuccessResult(
-            new Pagination(metricsResult, metricsResult.length, ParticipantMetricsResultModel),
-            Pagination
-        );
+        return new SuccessResult(new Pagination(metricsResult, metricsResult.length, Object), Pagination);
     }
     @Get("/accumulated-participant-metrics")
     @(Returns(200, SuccessResult).Of(ParticipantMetricsResultModel))
@@ -135,23 +132,55 @@ export class ParticipantController {
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
         const participant: Participant | null = await this.participantService.findParticipantByCampaignId(query, user);
         if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
-        const { _sum } = await this.dailyParticipantMetricService.getAccumulatedParticipantMetrics(participant.id);
+        const participantMetrics = await this.dailyParticipantMetricService.getAccumulatedParticipantMetrics(
+            participant.id
+        );
+        // const clickCount = participantMetrics.reduce((acc, curr) => acc + parseInt(curr.clickCount), 0);
+        // const likeCount = participantMetrics.reduce((acc, curr) => acc + parseInt(curr.likeCount), 0);
+        // const shareCount = participantMetrics.reduce((acc, curr) => acc + parseInt(curr.shareCount), 0);
+        // const viewCount = participantMetrics.reduce((acc, curr) => acc + parseInt(curr.viewCount), 0);
+        // const submissionCount = participantMetrics.reduce((acc, curr) => acc + parseInt(curr.submissionCount), 0);
+        // const commentCount = participantMetrics.reduce((acc, curr) => acc + parseInt(curr.commentCount), 0);
+        // const participationScore = participantMetrics.reduce((acc, curr) => acc + parseInt(curr.participationScore), 0);
+        const { clickCount, likeCount, shareCount, viewCount, submissionCount, commentCount, participationScore } =
+            participantMetrics.reduce(
+                (acc, curr) => {
+                    acc.clickCount += parseInt(curr.clickCount);
+                    acc.likeCount += parseInt(curr.likeCount);
+                    acc.shareCount += parseInt(curr.shareCount);
+                    acc.viewCount += parseInt(curr.viewCount);
+                    acc.submissionCount += parseInt(curr.submissionCount);
+                    acc.commentCount += parseInt(curr.commentCount);
+                    acc.participationScore += parseInt(curr.participationScore);
+                    return acc;
+                },
+                {
+                    clickCount: 0,
+                    likeCount: 0,
+                    shareCount: 0,
+                    viewCount: 0,
+                    submissionCount: 0,
+                    commentCount: 0,
+                    participationScore: 0,
+                }
+            );
+
         const { currentTotal } = calculateTier(
             new BN(campaign.totalParticipationScore),
             (campaign.algorithm as Prisma.JsonObject).tiers as Prisma.JsonObject as unknown as Tiers
         );
         const participantShare = await calculateParticipantPayout(new BN(currentTotal), campaign, participant);
         const result = {
-            clickCount: _sum?.clickCount || 0,
-            likeCount: _sum?.likeCount || 0,
-            shareCount: _sum?.shareCount || 0,
-            viewCount: _sum?.viewCount || 0,
-            submissionCount: _sum?.submissionCount || 0,
-            commentCount: _sum?.commentCount || 0,
-            participationScore: _sum?.participationScore || 0,
-            currentTotal: parseInt(currentTotal.toString()),
+            clickCount: clickCount || 0,
+            likeCount: likeCount || 0,
+            shareCount: shareCount || 0,
+            viewCount: viewCount || 0,
+            submissionCount: submissionCount || 0,
+            commentCount: commentCount || 0,
+            participationScore: participationScore || 0,
+            currentTotal: parseInt(currentTotal.toString()) || 0,
             participantShare: participantShare.toNumber() || 0,
-            participantShareUSD: await getSymbolValueInUSD(
+            participantShareUSD: await getTokenValueInUSD(
                 campaign.symbol,
                 parseFloat(participantShare.toString() || "0")
             ),
@@ -172,10 +201,12 @@ export class ParticipantController {
         if (!user) throw new BadRequest(USER_NOT_FOUND);
         const participations = await this.participantService.findParticipantByUser(user.id);
         const ids = participations.map((p) => p.id);
-        let counts;
+        let dailyParticipantMetrics;
         let participantShare = 0;
         if (ids.length) {
-            counts = await this.dailyParticipantMetricService.getAccumulatedMetricsByParticipantIds(ids);
+            dailyParticipantMetrics = await this.dailyParticipantMetricService.getAccumulatedMetricsByParticipantIds(
+                ids
+            );
             for (let index = 0; index < participations.length; index++) {
                 const campaign: Campaign = participations[index].campaign;
                 const participant: Participant = participations[index];
@@ -184,18 +215,42 @@ export class ParticipantController {
                     (campaign.algorithm as Prisma.JsonObject).tiers as Prisma.JsonObject as unknown as Tiers
                 );
                 const share = await calculateParticipantPayout(new BN(currentTotal), campaign, participant);
-                const usdValue = await getSymbolValueInUSD(campaign.symbol, parseFloat(share.toString() || "0"));
+                const usdValue = await getTokenValueInUSD(campaign.symbol, parseFloat(share.toString() || "0"));
                 participantShare = participantShare + usdValue;
             }
         }
+        if (!dailyParticipantMetrics) throw new NotFound("Daily participant metrics not found");
+        const { clickCount, likeCount, shareCount, viewCount, submissionCount, commentCount, participationScore } =
+            dailyParticipantMetrics.reduce(
+                (sum, curr) => {
+                    sum.clickCount += parseInt(curr.clickCount);
+                    sum.likeCount += parseInt(curr.likeCount);
+                    sum.shareCount += parseInt(curr.shareCount);
+                    sum.viewCount += parseInt(curr.viewCount);
+                    sum.submissionCount += parseInt(curr.submissionCount);
+                    sum.commentCount += parseInt(curr.commentCount);
+                    sum.participationScore += parseInt(curr.participationScore);
+                    return sum;
+                },
+                {
+                    clickCount: 0,
+                    likeCount: 0,
+                    shareCount: 0,
+                    viewCount: 0,
+                    submissionCount: 0,
+                    commentCount: 0,
+                    participationScore: 0,
+                }
+            );
+
         const result = {
-            clickCount: counts?._sum?.clickCount || 0,
-            likeCount: counts?._sum?.likeCount || 0,
-            shareCount: counts?._sum?.shareCount || 0,
-            viewCount: counts?._sum?.viewCount || 0,
-            submissionCount: counts?._sum?.submissionCount || 0,
-            commentCount: counts?._sum?.commentCount || 0,
-            totalScore: counts?._sum?.participationScore || 0,
+            clickCount: clickCount || 0,
+            likeCount: likeCount || 0,
+            shareCount: shareCount || 0,
+            viewCount: viewCount || 0,
+            submissionCount: submissionCount || 0,
+            commentCount: commentCount || 0,
+            totalScore: participationScore || 0,
             totalShareUSD: parseFloat(formatFloat(participantShare)) || 0,
         };
         return new SuccessResult(result, ParticipantMetricsResultModel);

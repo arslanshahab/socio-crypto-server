@@ -135,7 +135,10 @@ export class UserController {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
         const result = await this.dailyParticipantMetricService.getSortedByUserId(user.id, today);
-        return new SuccessResult(new Pagination(result, result.length, UserDailyParticipantMetricResultModel), Pagination);
+        return new SuccessResult(
+            new Pagination(result, result.length, UserDailyParticipantMetricResultModel),
+            Pagination
+        );
     }
     @Get("/users-record")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserRecordResultModel))
