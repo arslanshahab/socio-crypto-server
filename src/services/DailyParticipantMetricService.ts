@@ -42,36 +42,18 @@ export class DailyParticipantMetricService {
             },
         });
     }
-    public async getAccumulatedParticipantMetrics(participantId: string) {
+    public async getDailyParticipantById(participantId: string) {
         return this.prismaService.dailyParticipantMetric.findMany({
             where: { participantId },
-            // _sum: {
-            //     clickCount: true,
-            //     commentCount: true,
-            //     likeCount: true,
-            //     shareCount: true,
-            //     submissionCount: true,
-            //     viewCount: true,
-            //     participationScore: true,
-            // },
         });
     }
-    public async getAccumulatedMetricsByParticipantIds(participantIds: string[]) {
+    public async getDailyParticipantByIds(participantIds: string[]) {
         return this.prismaService.dailyParticipantMetric.findMany({
             where: {
                 participantId: {
                     in: participantIds,
                 },
             },
-            // _sum: {
-            //     clickCount: true,
-            //     commentCount: true,
-            //     likeCount: true,
-            //     shareCount: true,
-            //     submissionCount: true,
-            //     viewCount: true,
-            //     participationScore: true,
-            // },
         });
     }
     public async getSortedByUserId(userId: string, today: Boolean) {

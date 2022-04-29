@@ -127,9 +127,7 @@ export class ParticipantController {
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
         const participant: Participant | null = await this.participantService.findParticipantByCampaignId(campaignId);
         if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
-        const participantMetrics = await this.dailyParticipantMetricService.getAccumulatedParticipantMetrics(
-            participant.id
-        );
+        const participantMetrics = await this.dailyParticipantMetricService.getDailyParticipantById(participant.id);
         const { clickCount, likeCount, shareCount, viewCount, submissionCount, commentCount, participationScore } =
             participantMetrics.reduce(
                 (acc, curr) => {
@@ -192,9 +190,7 @@ export class ParticipantController {
         let dailyParticipantMetrics;
         let participantShare = 0;
         if (ids.length) {
-            dailyParticipantMetrics = await this.dailyParticipantMetricService.getAccumulatedMetricsByParticipantIds(
-                ids
-            );
+            dailyParticipantMetrics = await this.dailyParticipantMetricService.getDailyParticipantByIds(ids);
             for (let index = 0; index < participations.length; index++) {
                 const campaign: Campaign = participations[index].campaign;
                 const participant: Participant = participations[index];
