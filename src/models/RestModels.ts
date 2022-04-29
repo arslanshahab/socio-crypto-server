@@ -1,5 +1,5 @@
+import { ArrayOf, CollectionOf, Nullable, Optional, Property, Required } from "@tsed/schema";
 import Prisma from "@prisma/client";
-import { ArrayOf, CollectionOf, Nullable, Optional, Property } from "@tsed/schema";
 import { getCryptoAssestImageUrl } from "../util";
 
 export class CampaignMediaResultModel {
@@ -66,6 +66,7 @@ export class CampaignResultModel {
     @ArrayOf(String) public suggestedPosts?: string | string[];
     @ArrayOf(String) public suggestedTags?: string | string[];
 }
+
 export class CurrentCampaignModel {
     @Property() public currentTier: number;
     @Property() public currentTotal: number;
@@ -223,6 +224,84 @@ export class RedemptionRequirementsModel {
     @Property() public readonly orderLimitForTwentyFourHoursReached: boolean;
 }
 
+export class CampaignMetricsResultModel {
+    @Property() public readonly clickCount: number;
+    @Property() public readonly viewCount: number;
+    @Property() public readonly submissionCount: number;
+    @Property() public readonly participantCount: number;
+    @Property() public readonly likeCount: number;
+    @Property() public readonly commentCount: number;
+    @Property() public readonly shareCount: number;
+    @Property() public readonly postCount: number;
+}
+
+export class ParticipantMetricsResultModel {
+    @Property() public readonly id: string;
+    @Property() public readonly clickCount: string;
+    @Property() public readonly viewCount: string;
+    @Property() public readonly submissionCount: string;
+    @Property() public readonly likeCount: string;
+    @Property() public readonly shareCount: string;
+    @Property() public readonly commentCount: string;
+    @Property() public readonly participationScore: string;
+    @Property() public readonly totalParticipationScore: string;
+    @Property() public readonly participantId: string;
+    @Property() public readonly userId: string;
+    @Property() public readonly campaignId: string;
+    @Property() public readonly createdAt: Date;
+    @Property() public readonly updatedAt: Date;
+    @Property() public readonly currentTotal: number;
+    @Property() public readonly participantShare: number;
+    @Property() public readonly participantShareUSD: number;
+    @Property() public readonly symbol: string;
+    @Property() public readonly symbolImageUrl: string;
+    @Property() public readonly totalShareUSD: number;
+    @Property() public readonly totalScore: number;
+}
+
+export class AccumulatedMetricsResultModel {
+    @Property() public readonly id: number;
+    @Property() public readonly clickCount: number;
+    @Property() public readonly viewCount: number;
+    @Property() public readonly submissionCount: number;
+    @Property() public readonly likeCount: number;
+    @Property() public readonly shareCount: number;
+    @Property() public readonly commentCount: number;
+    @Property() public readonly participationScore: number;
+    @Property() public readonly participantId: string;
+    @Property() public readonly campaignId: string;
+    @Property() public readonly currentTotal: number;
+    @Property() public readonly participantShare: number;
+    @Property() public readonly participantShareUSD: number;
+    @Property() public readonly symbol: string;
+    @Property() public readonly symbolImageUrl: string;
+    @Property() public readonly totalShareUSD: number;
+    @Property() public readonly totalScore: number;
+}
+
+export class SocialMetricsResultModel {
+    @Property() public readonly totalLikes: number;
+    @Property() public readonly totalShares: number;
+    @Property() public readonly likesScore: number;
+    @Property() public readonly shareScore: number;
+}
+export class UserDailyParticipantMetricResultModel {
+    @Property() public readonly id: string;
+    @Property() public readonly clickCount: string;
+    @Property() public readonly viewCount: string;
+    @Property() public readonly submissionCount: string;
+    @Property() public readonly likeCount: string;
+    @Property() public readonly shareCount: string;
+    @Property() public readonly commentCount: string;
+    @Property() public readonly participationScore: string;
+    @Property() public readonly totalParticipationScore: string;
+    @Property() public readonly participantId: string;
+    @Property() public readonly createdAt: Date;
+    @Property() public readonly updatedAt: Date;
+    @Nullable(String) public readonly userId: string | null;
+    @Nullable(String) public readonly campaignId: string | null;
+}
+
 export class UserWalletResultModel {
     @Property() public readonly symbol: string;
     @Property() public readonly balance: string;
@@ -247,4 +326,10 @@ export class BalanceResultModel {
 
 export class UpdatedResultModel {
     @Property() public readonly message: string;
+}
+export class CampaignIdModel {
+    @Required() public readonly campaignId: string;
+}
+export class ParticipantQueryParams {
+    @Required() public readonly id: string;
 }

@@ -19,8 +19,10 @@ import { BN } from "../../util";
 import { getTokenPriceInUsd } from "../../clients/ethereum";
 import { CAMPAIGN_NOT_FOUND, ERROR_CALCULATING_TIER, USER_NOT_FOUND } from "../../util/errors";
 import { PaginatedVariablesModel, Pagination, SuccessResult } from "../../util/entities";
-import { CampaignResultModel, CurrentCampaignModel } from "../../models/RestModels";
+import { CampaignIdModel, CampaignMetricsResultModel, CampaignResultModel, CurrentCampaignModel } from "../../models/RestModels";
 import { BadRequest, NotFound } from "@tsed/exceptions";
+import { ParticipantService } from "../../services/ParticipantService";
+import { SocialPostService } from "../../services/SocialPostService";
 import { CryptoCurrencyService } from "../../services/CryptoCurrencyService";
 import { getTokenValueInUSD } from "../../util/exchangeRate";
 import { Tiers } from "../../types";
@@ -30,10 +32,6 @@ class ListCampaignsVariablesModel extends PaginatedVariablesModel {
     @Required() @Enum(CampaignState) public readonly state: CampaignState;
     @Property() @Enum(CampaignStatus, "ALL") public readonly status: CampaignStatus | "ALL" | undefined;
     @Property(Boolean) public readonly userRelated: boolean | undefined;
-}
-class ListCurrentCampaignVariablesModel {
-    @Property() public readonly campaignId: string;
-    @Property() public readonly userRelated: boolean | undefined;
 }
 
 async function getCampaignResultModel(
@@ -73,6 +71,10 @@ export class CampaignController {
     @Inject()
     private campaignService: CampaignService;
     @Inject()
+    private participantService: ParticipantService;
+    @Inject()
+    private socialPostService: SocialPostService;
+    @Inject()
     private cryptoCurrencyService: CryptoCurrencyService;
     @Inject()
     private userService: UserService;
@@ -102,7 +104,7 @@ export class CampaignController {
     @Get("/current-campaign-tier")
     @(Returns(200, SuccessResult).Of(CurrentCampaignModel))
     public async getCurrentCampaignTier(
-        @QueryParams() query: ListCurrentCampaignVariablesModel,
+        @QueryParams() query: CampaignIdModel,
         @Context() context: Context
     ) {
         const { campaignId } = query;
@@ -140,5 +142,36 @@ export class CampaignController {
         if (cryptoPriceUsd) body.tokenValueUsd = cryptoPriceUsd.toString();
         if (cryptoPriceUsd) body.tokenValueCoiin = cryptoPriceUsd.times(10).toString();
         return new SuccessResult(body, CurrentCampaignModel);
+    }
+    @Get("/campaign-metrics")
+    @(Returns(200, SuccessResult).Of(CampaignMetricsResultModel))
+    public async getCampaignMetrics(
+        @QueryParams() query: CampaignIdModel,
+        @Context() context: Context
+    ) {
+        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const { campaignId } = query;
+        const participant = await this.participantService.findParticipants(campaignId);
+        const clickCount = participant.reduce((sum, item) => sum + parseInt(item.clickCount), 0);
+        const viewCount = participant.reduce((sum, item) => sum + parseInt(item.viewCount), 0);
+        const submissionCount = participant.reduce((sum, item) => sum + parseInt(item.submissionCount), 0);
+        const participantCount = participant.length;
+        const socialPostMetrics = await this.socialPostService.findSocialPostMetricsById(campaignId);
+        const likeCount = socialPostMetrics.reduce((sum, item) => sum + parseInt(item.likes), 0);
+        const commentCount = socialPostMetrics.reduce((sum, item) => sum + parseInt(item.comments), 0);
+        const shareCount = socialPostMetrics.reduce((sum, item) => sum + parseInt(item.shares), 0);
+        const socialPostCount = socialPostMetrics.length;
+
+        const metrics = {
+            clickCount: clickCount || 0,
+            viewCount: viewCount || 0,
+            submissionCount: submissionCount || 0,
+            likeCount: likeCount || 0,
+            commentCount: commentCount || 0,
+            shareCount: shareCount || 0,
+            participantCount,
+            postCount: socialPostCount,
+        };
+        return new SuccessResult(metrics, CampaignMetricsResultModel);
     }
 }

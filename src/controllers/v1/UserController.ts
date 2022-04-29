@@ -11,6 +11,8 @@ import {
     SuccessResult,
 } from "../../util/entities";
 import { NOTIFICATION_SETTING_NOT_FOUND, USER_NOT_FOUND, WALLET_NOT_FOUND } from "../../util/errors";
+import { UserDailyParticipantMetricResultModel } from "../../models/RestModels";
+import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 import {
     BalanceResultModel,
     NotificationSettingsResultModel,
@@ -38,11 +40,16 @@ class TransferHistoryVariablesModel extends PaginatedVariablesModel {
     @Property() public readonly symbol?: string;
     @Required() @Enum(TransferAction, "ALL") public readonly type: TransferAction & "ALL";
 }
+class UserQueryVariables {
+    @Property() public readonly today: boolean;
+}
 
 @Controller("/user")
 export class UserController {
     @Inject()
     private userService: UserService;
+    @Inject()
+    private dailyParticipantMetricService: DailyParticipantMetricService;
     @Inject()
     private notificationService: NotificationService;
     @Inject()
@@ -122,6 +129,18 @@ export class UserController {
         return new SuccessResult(settings, NotificationSettingsResultModel);
     }
 
+    @Get("/user-metrics")
+    @(Returns(200, SuccessResult).Of(UserDailyParticipantMetricResultModel))
+    public async getUserMetrics(@QueryParams() query: UserQueryVariables, @Context() context: Context) {
+        const { today } = query;
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new BadRequest(USER_NOT_FOUND);
+        const result = await this.dailyParticipantMetricService.getSortedByUserId(user.id, today);
+        return new SuccessResult(
+            new Pagination(result, result.length, UserDailyParticipantMetricResultModel),
+            Pagination
+        );
+    }
     @Get("/me/coiin-address")
     @(Returns(200, SuccessResult).Of(AddressResultModel))
     public async getCoiinAddress(@Context() context: Context) {
@@ -163,7 +182,7 @@ export class UserController {
     }
 
     @Get("/users-record")
-    @(Returns(200, SuccessResult).Of(Pagination).Nested(UserResultModel))
+    @(Returns(200, SuccessResult).Of(Pagination).Nested(UserRecordResultModel))
     public async getUsersRecord(@QueryParams() query: PaginatedVariablesFilteredModel, @Context() context: Context) {
         const { skip = 0, take = 10, filter } = query;
         const [users, count] = await this.userService.findUsersRecord(skip, take, filter);
