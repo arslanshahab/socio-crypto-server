@@ -9,7 +9,14 @@ import { S3Client } from "../clients/s3";
 import { Transfer } from "../models/Transfer";
 import { XoxodayOrder as XoxodayOrderModel } from "../models/XoxodayOrder";
 import { TatumClient } from "../clients/tatumClient";
-import { MISSING_PARAMS, USER_NOT_FOUND, FormattedError, INVALID_TOKEN, ERROR_LINKING_TWITTER } from "../util/errors";
+import {
+    MISSING_PARAMS,
+    USER_NOT_FOUND,
+    FormattedError,
+    INVALID_TOKEN,
+    ERROR_LINKING_TWITTER,
+    SERVICE_NOT_AVAILABLE,
+} from "../util/errors";
 import {
     BSC,
     COIIN,
@@ -70,6 +77,7 @@ export const getVouchers = async (parent: any, args: { country: string; page: nu
 
 export const placeOrder = async (parent: any, args: { cart: Array<any>; email: string }, context: { user: any }) => {
     try {
+        if (SERVICE_NOT_AVAILABLE) throw new Error(SERVICE_NOT_AVAILABLE);
         const { cart, email } = args;
         if (!email) throw new Error(MISSING_PARAMS);
         const user = await User.findUserByContext(context.user, [

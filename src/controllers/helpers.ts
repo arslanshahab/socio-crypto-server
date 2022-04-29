@@ -1,5 +1,12 @@
 import { SocialPost } from "../models/SocialPost";
-import { Tiers, AggregateDailyMetrics, VouchersListVariables, XoxodayVoucher } from "../types";
+import {
+    Tiers,
+    AggregateDailyMetrics,
+    VouchersListVariables,
+    XoxodayVoucher,
+    SocialPostVariablesType,
+    PointValueTypes,
+} from "../types";
 import { Participant } from "../models/Participant";
 import { Campaign } from "../models/Campaign";
 import { getConnection } from "typeorm";
@@ -33,6 +40,7 @@ import { getExchangeRateForCurrency } from "../util/exchangeRate";
 import { TwitterClient } from "../clients/twitter";
 import { TikTokClient } from "../clients/tiktok";
 import { FacebookClient } from "../clients/facebook";
+import { Campaign as PrismaCampaign, Participant as PrismaParticipant } from "@prisma/client";
 import { Firebase } from "../clients/firebase";
 import { Forbidden, NotFound } from "@tsed/exceptions";
 import { TatumClient } from "../clients/tatumClient";
@@ -110,6 +118,23 @@ export const calculateParticipantSocialScore = async (participant: Participant, 
         shareScore: totalShares.multipliedBy(campaign.algorithm.pointValues.shares),
     };
 };
+export const calculateParticipantSocialScoreV2 = async (
+    socialPosts: SocialPostVariablesType[],
+    pointValues: PointValueTypes
+) => {
+    let totalLikes = 0;
+    let totalShares = 0;
+    socialPosts?.forEach((post: { likes: string; shares: string }) => {
+        totalLikes = totalLikes + parseInt(post.likes);
+        totalShares = totalShares + parseInt(post.shares);
+    });
+    return {
+        totalLikes,
+        totalShares,
+        likesScore: totalLikes * pointValues.likes,
+        shareScore: totalShares * pointValues.shares,
+    };
+};
 
 export const calculateTier = (totalParticipation: BigNumber, tiers: Tiers) => {
     let currentTier = 1;
@@ -145,9 +170,11 @@ export const calculateTier = (totalParticipation: BigNumber, tiers: Tiers) => {
 
 export const calculateParticipantPayout = async (
     currentCampaignTierTotal: BigNumber,
-    campaign: Campaign,
-    participant: Participant
+    campaign: Campaign | PrismaCampaign,
+    participant: Participant | PrismaParticipant
 ) => {
+    if (typeof campaign.totalParticipationScore === "string")
+        campaign.totalParticipationScore = new BN(campaign.totalParticipationScore);
     if (campaign.totalParticipationScore.eq(new BN(0))) return new BN(0);
     const percentageOfTotalParticipation = new BN(participant.participationScore).div(campaign.totalParticipationScore);
     return currentCampaignTierTotal.multipliedBy(percentageOfTotalParticipation);
