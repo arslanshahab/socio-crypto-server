@@ -72,6 +72,7 @@ export class AcuantClient {
         const body: { [key: string]: any } = {
             man: `${vars.firstName}-${vars.middleName}-${vars.lastName}`,
             tea: vars.email,
+            ip: vars.ip,
             bfn: vars.firstName,
             bmn: vars.middleName,
             bln: vars.lastName,
