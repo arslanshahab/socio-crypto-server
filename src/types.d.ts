@@ -438,6 +438,7 @@ export interface KycApplication {
     middleName?: string;
     lastName?: string;
     email?: string;
+    ip?: string;
     billingStreetAddress?: string;
     billingCity?: string;
     billingCountry?: string;

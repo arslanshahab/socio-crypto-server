@@ -1,4 +1,6 @@
 import { ArrayOf, CollectionOf, Nullable, Optional, Property, Required } from "@tsed/schema";
+import Prisma from "@prisma/client";
+import { getCryptoAssestImageUrl } from "../util";
 
 export class CampaignMediaResultModel {
     @Property() public readonly id: string;
@@ -98,6 +100,15 @@ export class ProfileResultModel {
     // these properties are stored as a string in the db, but are parsed into an array when returned from the API
     @ArrayOf(String) public interests: string[];
     @ArrayOf(String) public values: string[];
+
+    public static build(profile: Prisma.Profile): ProfileResultModel {
+        return {
+            ...profile,
+            hasRecoveryCodeSet: !!profile?.recoveryCode,
+            interests: JSON.parse(profile.interests),
+            values: JSON.parse(profile.values),
+        };
+    }
 }
 
 export class RafflePrizeResultModel {
@@ -125,18 +136,32 @@ export class TransferResultModel {
     @Property(Date) public readonly updatedAt: Date;
     @Nullable(String) public readonly campaignId: string | null;
     @Nullable(String) public readonly rafflePrizeId: string | null;
+    @Nullable(String) public readonly walletId: string | null;
     @Nullable(String) public readonly status: string | null;
     @Nullable(String) public readonly usdAmount: string | null;
     @Nullable(String) public readonly ethAddress: string | null;
     @Nullable(String) public readonly paypalAddress: string | null;
     @Nullable(String) public readonly currency: string | null;
     @Nullable(String) public readonly network: string | null;
+
+    @Property() public symbolImageUrl?: string;
+
+    public static build(transfer: Prisma.Transfer): TransferResultModel {
+        return {
+            ...transfer,
+            symbolImageUrl: transfer.currency ? getCryptoAssestImageUrl(transfer.currency) : undefined,
+            action: transfer.action?.toUpperCase() || "",
+            status: transfer.status?.toUpperCase() || "",
+        };
+    }
 }
 
 export class WalletResultModel {
     @Property() public readonly id: string;
     @CollectionOf(TransferResultModel) public readonly transfer: TransferResultModel[];
     @CollectionOf(WalletCurrencyResultModel) public readonly wallet_currency: WalletCurrencyResultModel[];
+
+    @Property() public pendingBalance?: string;
 }
 
 export class XoxodayOrderResultModel {
@@ -175,6 +200,20 @@ export class UserResultModel {
     @CollectionOf(SocialLinkResultModel) public readonly social_link: Partial<SocialLinkResultModel>[];
     @CollectionOf(ParticipantResultModel) public readonly participant: Partial<ParticipantResultModel>[];
     @Nullable(WalletResultModel) public readonly wallet: Partial<WalletResultModel> | null;
+
+    public static build(
+        user: Prisma.User & {
+            profile: Prisma.Profile | null;
+            social_link: Prisma.SocialLink[];
+            participant: Prisma.Participant[];
+            wallet: Prisma.Wallet | null;
+        }
+    ): UserResultModel {
+        return {
+            ...user,
+            profile: user.profile ? ProfileResultModel.build(user.profile) : null,
+        };
+    }
 }
 
 export class RedemptionRequirementsModel {
