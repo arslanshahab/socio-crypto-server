@@ -8,7 +8,7 @@ import { Pagination, SuccessArrayResult, SuccessResult } from "../../util/entiti
 import { CAMPAIGN_NOT_FOUND, PARTICIPANT_NOT_FOUND, USER_NOT_FOUND } from "../../util/errors";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 import { formatUTCDateForComparision, getDatesBetweenDates } from "../helpers";
-import { CampaignIdModel, ParticipantMetricsResultModel, ParticipantQueryParams } from "../../models/RestModels";
+import { AccumulatedMetricsResultModel, CampaignIdModel, ParticipantMetricsResultModel, ParticipantQueryParams } from "../../models/RestModels";
 import { CampaignService } from "../../services/CampaignService";
 import { calculateParticipantPayout, calculateTier } from "../helpers";
 import { BN, formatFloat, getCryptoAssestImageUrl } from "../../util";
@@ -115,10 +115,10 @@ export class ParticipantController {
             }
         }
         const metricsResult = metrics.concat(additionalRows);
-        return new SuccessResult(new Pagination(metricsResult, metricsResult.length, Object), Pagination);
+        return new SuccessResult(new Pagination(metricsResult, metricsResult.length, ParticipantMetricsResultModel), Pagination);
     }
     @Get("/accumulated-participant-metrics")
-    @(Returns(200, SuccessResult).Of(ParticipantMetricsResultModel))
+    @(Returns(200, SuccessResult).Of(AccumulatedMetricsResultModel))
     public async getAccumulatedParticipantMetrics(@QueryParams() query: CampaignIdModel, @Context() context: Context) {
         const { campaignId } = query;
         const user = await this.userService.findUserByContext(context.get("user"));
@@ -175,7 +175,7 @@ export class ParticipantController {
             campaignId: campaign.id,
             participantId: participant.id,
         };
-        return new SuccessResult(result, ParticipantMetricsResultModel);
+        return new SuccessResult(result, AccumulatedMetricsResultModel);
     }
     @Get("/accumulated-user-metrics")
     @(Returns(200, SuccessResult).Of(ParticipantMetricsResultModel))
@@ -237,6 +237,6 @@ export class ParticipantController {
             totalScore: participationScore || 0,
             totalShareUSD: parseFloat(formatFloat(participantShare)) || 0,
         };
-        return new SuccessResult(result, ParticipantMetricsResultModel);
+        return new SuccessResult(result, AccumulatedMetricsResultModel);
     }
 }

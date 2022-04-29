@@ -198,6 +198,30 @@ export class CampaignMetricsResultModel {
 
 export class ParticipantMetricsResultModel {
     @Property() public readonly id: string;
+    @Property() public readonly clickCount: string;
+    @Property() public readonly viewCount: string;
+    @Property() public readonly submissionCount: string;
+    @Property() public readonly likeCount: string;
+    @Property() public readonly shareCount: string;
+    @Property() public readonly commentCount: string;
+    @Property() public readonly participationScore: string;
+    @Property() public readonly totalParticipationScore: string;
+    @Property() public readonly participantId: string;
+    @Property() public readonly userId: string;
+    @Property() public readonly campaignId: string;
+    @Property() public readonly createdAt: Date;
+    @Property() public readonly updatedAt: Date;
+    @Property() public readonly currentTotal: number;
+    @Property() public readonly participantShare: number;
+    @Property() public readonly participantShareUSD: number;
+    @Property() public readonly symbol: string;
+    @Property() public readonly symbolImageUrl: string;
+    @Property() public readonly totalShareUSD: number;
+    @Property() public readonly totalScore: number;
+}
+
+export class AccumulatedMetricsResultModel {
+    @Property() public readonly id: number;
     @Property() public readonly clickCount: number;
     @Property() public readonly viewCount: number;
     @Property() public readonly submissionCount: number;
@@ -205,12 +229,8 @@ export class ParticipantMetricsResultModel {
     @Property() public readonly shareCount: number;
     @Property() public readonly commentCount: number;
     @Property() public readonly participationScore: number;
-    @Property() public readonly totalParticipationScore: string;
     @Property() public readonly participantId: string;
-    @Property() public readonly userId: string;
     @Property() public readonly campaignId: string;
-    @Property() public readonly createdAt: Date;
-    @Property() public readonly updatedAt: Date;
     @Property() public readonly currentTotal: number;
     @Property() public readonly participantShare: number;
     @Property() public readonly participantShareUSD: number;
