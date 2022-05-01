@@ -5,14 +5,11 @@ import { Context, BodyParams, PathParams, QueryParams } from "@tsed/common";
 import { CampaignService } from "../../services/CampaignService";
 import { UserService } from "../../services/UserService";
 import { CampaignState, CampaignStatus } from "../../util/constants";
-import { calculateParticipantPayoutV2, calculateParticipantSocialScoreV2, calculateTier } from "../helpers";
-import { BN } from "../../util";
-import { getTokenPriceInUsd } from "../../clients/ethereum";
+import { calculateParticipantPayoutV2, calculateParticipantSocialScoreV2 } from "../helpers";
 import {
     CAMPAIGN_NAME_EXISTS,
     CAMPAIGN_NOT_FOUND,
     COMPANY_NOT_SPECIFIED,
-    ERROR_CALCULATING_TIER,
     ORG_NOT_FOUND,
     RAFFLE_PRIZE_MISSING,
     WALLET_NOT_FOUND,
@@ -33,8 +30,7 @@ import {
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { ParticipantService } from "../../services/ParticipantService";
 import { SocialPostService } from "../../services/SocialPostService";
-import { CryptoCurrencyService } from "../../services/CryptoCurrencyService";
-import { CampaignAuditReportV2, CampaignCreateTypes, PointValueTypes, Tiers } from "../../types";
+import { CampaignAuditReportV2, CampaignCreateTypes, PointValueTypes } from "../../types";
 import { addYears } from "date-fns";
 import { Validator } from "../../schemas";
 import { OrganizationService } from "../../services/OrganizationService";
@@ -67,8 +63,6 @@ export class CampaignController {
     private participantService: ParticipantService;
     @Inject()
     private socialPostService: SocialPostService;
-    @Inject()
-    private cryptoCurrencyService: CryptoCurrencyService;
     @Inject()
     private organizationService: OrganizationService;
     @Inject()
@@ -116,39 +110,8 @@ export class CampaignController {
     @(Returns(200, SuccessResult).Of(CurrentCampaignModel))
     public async getCurrentCampaignTier(@QueryParams() query: CampaignIdModel, @Context() context: Context) {
         const { campaignId } = query;
-        let currentTierSummary;
-        let currentCampaign: Campaign | null;
-        let cryptoPriceUsd;
-
-        currentCampaign = await this.campaignService.findCampaignById(campaignId);
-        if (campaignId) {
-            if (!currentCampaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
-            if (currentCampaign.type == "raffle") return { currentTier: -1, currentTotal: 0 };
-            currentTierSummary = calculateTier(
-                new BN(currentCampaign.totalParticipationScore),
-                (currentCampaign.algorithm as Prisma.JsonObject).tiers as Prisma.JsonObject as unknown as Tiers
-            );
-            if (currentCampaign.cryptoId) {
-                const cryptoCurrency = await this.cryptoCurrencyService.findCryptoCurrencyById(
-                    currentCampaign.cryptoId
-                );
-                const cryptoCurrencyType = cryptoCurrency?.type;
-                if (!cryptoCurrencyType) throw new NotFound("Crypto currency not found");
-                cryptoPriceUsd = await getTokenPriceInUsd(cryptoCurrencyType);
-            }
-        }
-        if (!currentTierSummary) throw new BadRequest(ERROR_CALCULATING_TIER);
-        let body: CurrentCampaignModel = {
-            currentTier: currentTierSummary.currentTier,
-            currentTotal: parseFloat(currentTierSummary.currentTotal.toString()),
-            campaignType: null,
-            tokenValueCoiin: null,
-            tokenValueUsd: null,
-        };
-        if (currentCampaign) body.campaignType = currentCampaign.type;
-        if (cryptoPriceUsd) body.tokenValueUsd = cryptoPriceUsd.toString();
-        if (cryptoPriceUsd) body.tokenValueCoiin = cryptoPriceUsd.times(10).toString();
-        return new SuccessResult(body, CurrentCampaignModel);
+        const campaignTier = await this.campaignService.currentCampaignTier(campaignId);
+        return new SuccessResult(campaignTier, CurrentCampaignModel);
     }
     @Get("/campaign-metrics")
     @(Returns(200, SuccessResult).Of(CampaignMetricsResultModel))
@@ -234,6 +197,7 @@ export class CampaignController {
         if (!wallet) throw new NotFound(WALLET_NOT_FOUND);
         let currency;
         if (type === "crypto") {
+            // currency = await TatumClient.findOrCreateCurrencyV2({ symbol, network, wallet });
             currency = await TatumClient.findOrCreateCurrency({ symbol, network, wallet });
         }
         const existingCampaign = await this.campaignService.findCampaingByName(name);
@@ -363,7 +327,9 @@ export class CampaignController {
             for (let i = 0; i < campaignTemplates.length; i++) {
                 const receivedTemplate = campaignTemplates[i];
                 if (receivedTemplate.id) {
-                    const foundTemplate = await this.campaignTemplateService.findCampaignTemplateById(receivedTemplate.id);
+                    const foundTemplate = await this.campaignTemplateService.findCampaignTemplateById(
+                        receivedTemplate.id
+                    );
                     if (foundTemplate) {
                         await this.campaignTemplateService.updateCampaignTemplate(receivedTemplate);
                     }
@@ -479,8 +445,7 @@ export class CampaignController {
         const campaign = await this.campaignService.findCampaignById(campaignId, { participant: true }, company);
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
         campaignId = campaign.id;
-        const { data }: any = await this.getCurrentCampaignTier({ campaignId }, context);
-        const { currentTotal } = data;
+        const {currentTotal} = await this.campaignService.currentCampaignTier(campaignId);
         const totalRewards = campaign.type !== "coiin" ? 0 : currentTotal;
         const auditReport: CampaignAuditReportV2 = {
             totalClicks: 0,

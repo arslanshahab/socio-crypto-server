@@ -41,6 +41,7 @@ import { Token } from "../models/Token";
 import { SymbolNetworkParams } from "../types.d";
 import { sleep } from "../controllers/helpers";
 import { Currency as PrismaCurrency } from "@prisma/client";
+// import { Wallet as PrismaWallet } from "@prisma/client";
 export const CAMPAIGN_CREATION_AMOUNT = "CAMPAIGN_CREATION_AMOUNT";
 export const CAMPAIGN_FEE = "CAMPAIGN_FEE";
 export const CAMPAIGN_REWARD = "CAMPAIGN_REWARD";
@@ -626,4 +627,43 @@ export class TatumClient {
             throw new Error(error?.response?.data?.message || error.message);
         }
     };
+    // public static findOrCreateCurrencyV2 = async (
+    //     data: SymbolNetworkParams & { wallet: PrismaWallet }
+    // ): Promise<Currency> => {
+    //     try {
+    //         const token = await TatumClient.isCurrencySupported(data);
+    //         if (!token) throw new Error(`Currency ${data.symbol} is not supported.`);
+    //         const foundWallet = await Wallet.findOne({ where: { id: data.wallet.id }, relations: ["user", "org"] });
+    //         const isCustodial = TatumClient.isCustodialWallet(data);
+    //         let ledgerAccount = await Currency.findOne({ where: { wallet: data.wallet, token } });
+    //         let newDepositAddress;
+    //         if (!ledgerAccount) {
+    //             const newLedgerAccount = await TatumClient.createLedgerAccount({ ...data, isCustodial });
+    //             if (isCustodial) {
+    //                 if (foundWallet?.org) {
+    //                     const availableAddress = await CustodialAddress.getAvailableAddress(data);
+    //                     if (!availableAddress) throw new Error("No custodial address available.");
+    //                     await TatumClient.assignAddressToAccount({
+    //                         accountId: newLedgerAccount.id,
+    //                         address: availableAddress.address,
+    //                     });
+    //                     newDepositAddress = availableAddress;
+    //                 }
+    //             } else {
+    //                 newDepositAddress = await TatumClient.generateDepositAddress(newLedgerAccount.id);
+    //             }
+    //             ledgerAccount = await Currency.addAccount({
+    //                 ...newLedgerAccount,
+    //                 token,
+    //                 symbol: getCurrencyForTatum(data),
+    //                 ...(newDepositAddress && { address: newDepositAddress.address }),
+    //                 wallet: data.wallet,
+    //             });
+    //         }
+    //         return ledgerAccount;
+    //     } catch (error) {
+    //         console.log(error);
+    //         throw new Error(error?.response?.data?.message || error.message);
+    //     }
+    // };
 }

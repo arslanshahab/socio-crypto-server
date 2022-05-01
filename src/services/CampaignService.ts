@@ -1,12 +1,21 @@
-import { CampaignMedia, CampaignTemplate, Org, Prisma, User } from "@prisma/client";
+import { Campaign, CampaignMedia, CampaignTemplate, Org, Prisma, User } from "@prisma/client";
 import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
-import { CurrencyResultType, ListCampaignsVariablesV2 } from "../types";
+import { BadRequest, NotFound } from "@tsed/exceptions";
+import { CurrencyResultType, ListCampaignsVariablesV2, Tiers } from "../types";
+import { CAMPAIGN_NOT_FOUND, ERROR_CALCULATING_TIER } from "../util/errors";
+import { calculateTier } from "../controllers/helpers";
+import { BN } from "../util";
+import { getTokenPriceInUsd } from "../clients/ethereum";
+import { CurrentCampaignModel } from "../models/RestModels";
+import { CryptoCurrencyService } from "./CryptoCurrencyService";
 
 @Injectable()
 export class CampaignService {
     @Inject()
     private prismaService: PrismaService;
+    @Inject()
+    private cryptoCurrencyService: CryptoCurrencyService;
 
     /**
      * Retrieves a paginated list of campaigns
@@ -219,5 +228,41 @@ export class CampaignService {
                 auditStatus: "PENDING",
             },
         });
+    }
+
+    public async currentCampaignTier(campaignId: string) {
+        let currentTierSummary;
+        let currentCampaign: Campaign | null;
+        let cryptoPriceUsd;
+
+        currentCampaign = await this.findCampaignById(campaignId);
+        if (campaignId) {
+            if (!currentCampaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
+            if (currentCampaign.type == "raffle") return { currentTier: -1, currentTotal: 0 };
+            currentTierSummary = calculateTier(
+                new BN(currentCampaign.totalParticipationScore),
+                (currentCampaign.algorithm as Prisma.JsonObject).tiers as Prisma.JsonObject as unknown as Tiers
+            );
+            if (currentCampaign.cryptoId) {
+                const cryptoCurrency = await this.cryptoCurrencyService.findCryptoCurrencyById(
+                    currentCampaign.cryptoId
+                );
+                const cryptoCurrencyType = cryptoCurrency?.type;
+                if (!cryptoCurrencyType) throw new NotFound("Crypto currency not found");
+                cryptoPriceUsd = await getTokenPriceInUsd(cryptoCurrencyType);
+            }
+        }
+        if (!currentTierSummary) throw new BadRequest(ERROR_CALCULATING_TIER);
+        let body: CurrentCampaignModel = {
+            currentTier: currentTierSummary.currentTier,
+            currentTotal: parseFloat(currentTierSummary.currentTotal.toString()),
+            campaignType: null,
+            tokenValueCoiin: null,
+            tokenValueUsd: null,
+        };
+        if (currentCampaign) body.campaignType = currentCampaign.type;
+        if (cryptoPriceUsd) body.tokenValueUsd = cryptoPriceUsd.toString();
+        if (cryptoPriceUsd) body.tokenValueCoiin = cryptoPriceUsd.times(10).toString();
+        return body;
     }
 }
