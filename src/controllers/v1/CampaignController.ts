@@ -363,12 +363,12 @@ export class CampaignController {
             for (let i = 0; i < campaignTemplates.length; i++) {
                 const receivedTemplate = campaignTemplates[i];
                 if (receivedTemplate.id) {
-                    const foundTemplate = await this.campaignService.findCampaignTemplateById(receivedTemplate.id);
+                    const foundTemplate = await this.campaignTemplateService.findCampaignTemplateById(receivedTemplate.id);
                     if (foundTemplate) {
-                        await this.campaignService.updateCampaignTemplate(receivedTemplate);
+                        await this.campaignTemplateService.updateCampaignTemplate(receivedTemplate);
                     }
                 } else {
-                    await this.campaignService.updateNewCampaignTemplate(receivedTemplate, campaign.id);
+                    await this.campaignTemplateService.updateNewCampaignTemplate(receivedTemplate, campaign.id);
                 }
             }
         }
@@ -376,9 +376,9 @@ export class CampaignController {
             for (let i = 0; i < campaignMedia.length; i++) {
                 const receivedMedia = campaignMedia[i];
                 if (receivedMedia.id) {
-                    const foundMedia = await this.campaignService.findCampaignMediaById(receivedMedia.id);
+                    const foundMedia = await this.campaignMediaservice.findCampaignMediaById(receivedMedia.id);
                     if (foundMedia && foundMedia.media !== receivedMedia.media) {
-                        await this.campaignService.updateCampaignMedia(receivedMedia);
+                        await this.campaignMediaservice.updateCampaignMedia(receivedMedia);
                         const urlObject = { name: receivedMedia.media, channel: receivedMedia.channel, signedUrl: "" };
                         urlObject.signedUrl = await S3Client.generateCampaignSignedURL(
                             `campaign/${campaign.id}/${receivedMedia.media}`
@@ -391,7 +391,7 @@ export class CampaignController {
                         `campaign/${campaign.id}/${receivedMedia.media}`
                     );
                     mediaUrls.push(urlObject);
-                    await this.campaignService.updateNewCampaignMedia(receivedMedia, campaign.id);
+                    await this.campaignMediaservice.updateNewCampaignMedia(receivedMedia, campaign.id);
                 }
             }
         }

@@ -203,62 +203,6 @@ export class CampaignService {
             },
         });
     }
-    public async updateCampaignTemplate(campaignTemplates: CampaignTemplate) {
-        return await this.prismaService.campaignTemplate.update({
-            where: { id: campaignTemplates.id },
-            data: {
-                post: campaignTemplates.post,
-                updatedAt: new Date(),
-            },
-        });
-    }
-    public async updateCampaignMedia(campaignMedia: CampaignMedia) {
-        return await this.prismaService.campaignMedia.update({
-            where: {
-                id: campaignMedia.id,
-            },
-            data: {
-                channel: campaignMedia.channel,
-                media: campaignMedia.media,
-                mediaFormat: campaignMedia.mediaFormat,
-                isDefault: campaignMedia.isDefault,
-                updatedAt: new Date(),
-            },
-        });
-    }
-    public async updateNewCampaignTemplate(campaignTemplate: CampaignTemplate, campaignId: string) {
-        return await this.prismaService.campaignTemplate.create({
-            data: {
-                channel: campaignTemplate.channel,
-                post: campaignTemplate.post,
-                campaignId,
-                updatedAt: new Date(),
-            },
-        });
-    }
-    public async updateNewCampaignMedia(campaignMedia: CampaignMedia, campaignId: string) {
-        return await this.prismaService.campaignMedia.create({
-            data: {
-                channel: campaignMedia.channel,
-                media: campaignMedia.media,
-                mediaFormat: campaignMedia.mediaFormat,
-                isDefault: campaignMedia.isDefault,
-                campaignId,
-                updatedAt: new Date(),
-            },
-        });
-    }
-    public async findCampaignMediaById(campaignMediaId: string) {
-        return this.prismaService.campaignMedia.findFirst({
-            where: { id: campaignMediaId },
-        });
-    }
-
-    public async findCampaignTemplateById(campaignTemplateId: string) {
-        return this.prismaService.campaignTemplate.findFirst({
-            where: { id: campaignTemplateId },
-        });
-    }
 
     public async deleteCampaign(campaignId: string) {
         return await this.prismaService.campaign.delete({
