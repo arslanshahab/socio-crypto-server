@@ -10,9 +10,7 @@ import { TWITTER_LINK_EXPIRED, FormattedError } from "../util/errors";
 import { isArray } from "lodash";
 import { decrypt } from "../util/crypto";
 import { SocialLink as PrismaSocialLink } from "@prisma/client";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient({});
+import { prisma } from "./prisma";
 
 export class TwitterClient {
     public static textLimit = 280;

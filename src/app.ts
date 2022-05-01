@@ -73,7 +73,7 @@ export class Application {
                 if (context.request?.url?.endsWith("/v1/health")) return 0;
 
                 // default sample rate
-                return 1; // todo reduce this for production after performance issues are resolved
+                return 0.2;
             },
             integrations: [
                 // enable HTTP calls tracing

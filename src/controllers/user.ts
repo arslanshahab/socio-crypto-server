@@ -503,7 +503,8 @@ export const rewardUserForSharing = async (
                 where: { id: args.participantId, user },
                 relations: ["campaign"],
             });
-            campaign = participant?.campaign;
+            if (!participant) throw new Error(PARTICIPANT_NOT_FOUND);
+            campaign = participant.campaign;
         }
         if (!participant) throw new Error(PARTICIPANT_NOT_FOUND);
         await user.transferCoiinReward({ campaign, type: "SHARING_REWARD" });
