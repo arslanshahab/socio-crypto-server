@@ -370,6 +370,7 @@ export const getWalletBalances = async (parent: any, args: any, context: { user:
         const symbol = currencyItem.token.symbol;
         return {
             balance: formatFloat(balance.availableBalance),
+            availableBalance: formatFloat(balance.availableBalance),
             symbol: symbol,
             minWithdrawAmount: getMinWithdrawableAmount(symbol),
             usdBalance: getUSDValueForCurrency(symbol.toLowerCase(), balance.availableBalance),

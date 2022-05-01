@@ -361,6 +361,7 @@ export const typeDefs = gql`
     type UserBalance {
         symbol: String!
         balance: Float!
+        availableBalance: String!
         minWithdrawAmount: Float
         usdBalance: String!
         imageUrl: String!
