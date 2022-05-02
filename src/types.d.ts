@@ -550,11 +550,11 @@ export interface CurrencyResultType {
     id: string;
     tatumId: string;
     symbol: string;
-    depositAddress: string;
+    depositAddress: string | null;
     memo: string | null;
     message: string | null;
-    destinationTag: number;
-    derivationKey: number;
+    destinationTag: number| null;
+    derivationKey: number| null;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -585,4 +585,19 @@ export interface CampaignAuditReportV2 {
     totalParticipationScore: number;
     totalRewardPayout: number;
     flaggedParticipants: FlaggedParticipants[];
+}
+
+export interface LedgerAccount {
+    id: string;
+    tatumId: string;
+    symbol: string;
+    depositAddress: string;
+    memo: string | null;
+    message: string | null;
+    destinationTag: number | null;
+    createdAt: Date;
+    updatedAt: Date;
+    walletId: string;
+    derivationKey: string | null;
+    tokenId: string;
 }

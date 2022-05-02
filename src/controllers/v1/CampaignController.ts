@@ -193,11 +193,13 @@ export class CampaignController {
         const campaignCompany = role === "admin" ? body.company : company;
         const org = await this.organizationService.findOrganizationByCompanyName(company);
         if (!org) throw new NotFound(ORG_NOT_FOUND);
-        const wallet: any = await this.walletService.findWalletByOrgId(org.id);
+        const wallet = await this.walletService.findWalletByOrgId(org.id);
+        // console.log("wallet---------", wallet);
+
         if (!wallet) throw new NotFound(WALLET_NOT_FOUND);
         let currency;
         if (type === "crypto") {
-            currency = await TatumClient.findOrCreateCurrency({ symbol, network, wallet });
+            currency = await TatumClient.findOrCreateCurrencyV2({ symbol, network, wallet });
         }
         const existingCampaign = await this.campaignService.findCampaingByName(name);
         if (existingCampaign) throw new BadRequest(CAMPAIGN_NAME_EXISTS);

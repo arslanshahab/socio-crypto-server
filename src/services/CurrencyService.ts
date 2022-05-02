@@ -22,4 +22,6 @@ export class CurrencyService {
             include: { token: true },
         });
     }
+
+    public async addAccount()
 }
