@@ -515,10 +515,7 @@ export interface CampaignRequirementTypes {
         [key: string]: { minFollower: number };
     };
 }
-// export interface CampaignTemplateTypes {
-//     channel: string;
-//     post: string;
-// }
+
 export interface CampaignCreateTypes {
     id: string;
     name: string;
@@ -569,6 +566,16 @@ export interface PointValueTypes {
     shares: number;
 }
 
+export interface FlaggedParticipants {
+    participantId: string;
+    viewPayout: number;
+    clickPayout: number;
+    submissionPayout: number;
+    likesPayout: number;
+    sharesPayout: number;
+    totalPayout: number;
+}
+
 export interface CampaignAuditReportV2 {
     totalClicks: number;
     totalViews: number;
@@ -577,13 +584,5 @@ export interface CampaignAuditReportV2 {
     totalShares: number;
     totalParticipationScore: number;
     totalRewardPayout: number;
-    flaggedParticipants: {
-        participantId: string;
-        viewPayout: number;
-        clickPayout: number;
-        submissionPayout: number;
-        likesPayout: number;
-        sharesPayout: number;
-        totalPayout: number;
-    }[];
+    flaggedParticipants: FlaggedParticipants[];
 }

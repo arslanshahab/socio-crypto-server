@@ -197,7 +197,6 @@ export class CampaignController {
         if (!wallet) throw new NotFound(WALLET_NOT_FOUND);
         let currency;
         if (type === "crypto") {
-            // currency = await TatumClient.findOrCreateCurrencyV2({ symbol, network, wallet });
             currency = await TatumClient.findOrCreateCurrency({ symbol, network, wallet });
         }
         const existingCampaign = await this.campaignService.findCampaingByName(name);
@@ -445,7 +444,7 @@ export class CampaignController {
         const campaign = await this.campaignService.findCampaignById(campaignId, { participant: true }, company);
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
         campaignId = campaign.id;
-        const {currentTotal} = await this.campaignService.currentCampaignTier(campaignId);
+        const { currentTotal } = await this.campaignService.currentCampaignTier(campaignId);
         const totalRewards = campaign.type !== "coiin" ? 0 : currentTotal;
         const auditReport: CampaignAuditReportV2 = {
             totalClicks: 0,
