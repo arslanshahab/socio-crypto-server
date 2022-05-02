@@ -194,8 +194,6 @@ export class CampaignController {
         const org = await this.organizationService.findOrganizationByCompanyName(company);
         if (!org) throw new NotFound(ORG_NOT_FOUND);
         const wallet = await this.walletService.findWalletByOrgId(org.id);
-        // console.log("wallet---------", wallet);
-
         if (!wallet) throw new NotFound(WALLET_NOT_FOUND);
         let currency;
         if (type === "crypto") {

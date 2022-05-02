@@ -2,7 +2,7 @@ import express, { Request } from "express";
 import { BigNumber } from "bignumber.js";
 import { Stripe } from "stripe";
 import { CampaignState, CampaignStatus } from "./util/constants";
-import { CampaignMedia, CampaignTemplate, RafflePrize, Participant, Profile, User, Campaign } from "@prisma/client";
+import { CampaignMedia, CampaignTemplate, RafflePrize, Participant, Profile, User, Campaign, Token, Wallet } from "@prisma/client";
 
 interface JWTPayload {
     email: string;
@@ -587,17 +587,14 @@ export interface CampaignAuditReportV2 {
     flaggedParticipants: FlaggedParticipants[];
 }
 
-export interface LedgerAccount {
+export interface LedgerAccountTypes {
     id: string;
-    tatumId: string;
     symbol: string;
-    depositAddress: string;
-    memo: string | null;
-    message: string | null;
-    destinationTag: number | null;
-    createdAt: Date;
-    updatedAt: Date;
-    walletId: string;
-    derivationKey: string | null;
-    tokenId: string;
+    token: Token;
+    wallet: Wallet;
+    address?: string;
+    memo?: string;
+    message?: string;
+    destinationTag?: number;
+    derivationKey?: number;
 }

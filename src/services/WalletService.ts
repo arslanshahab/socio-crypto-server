@@ -18,15 +18,6 @@ export class WalletService {
             where: {
                 orgId,
             },
-            include: {
-                user: true,
-                org: true,
-                // wallet_currency: true,
-                // custodial_address: true,
-                // external_address: true,
-                // currency: true,
-                // escrow: true,
-            },
         });
     }
     public async findWalletById(id: string) {
