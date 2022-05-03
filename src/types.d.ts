@@ -2,7 +2,7 @@ import express, { Request } from "express";
 import { BigNumber } from "bignumber.js";
 import { Stripe } from "stripe";
 import { CampaignState, CampaignStatus } from "./util/constants";
-import { CampaignMedia, CampaignTemplate, RafflePrize, Participant, Profile, User, Campaign, Token, Wallet } from "@prisma/client";
+import { CampaignMedia, CampaignTemplate, RafflePrize, Token, Wallet } from "@prisma/client";
 
 interface JWTPayload {
     email: string;
@@ -553,8 +553,8 @@ export interface CurrencyResultType {
     depositAddress: string | null;
     memo: string | null;
     message: string | null;
-    destinationTag: number| null;
-    derivationKey: number| null;
+    destinationTag: number | null;
+    derivationKey: number | null;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -566,7 +566,7 @@ export interface PointValueTypes {
     shares: number;
 }
 
-export interface FlaggedParticipants {
+export type FlaggedParticipants = {
     participantId: string;
     viewPayout: number;
     clickPayout: number;
@@ -574,9 +574,9 @@ export interface FlaggedParticipants {
     likesPayout: number;
     sharesPayout: number;
     totalPayout: number;
-}
+};
 
-export interface CampaignAuditReportV2 {
+export type CampaignAuditReportV2 = {
     totalClicks: number;
     totalViews: number;
     totalSubmissions: number;
@@ -585,7 +585,7 @@ export interface CampaignAuditReportV2 {
     totalParticipationScore: number;
     totalRewardPayout: number;
     flaggedParticipants: FlaggedParticipants[];
-}
+};
 
 export interface LedgerAccountTypes {
     id: string;

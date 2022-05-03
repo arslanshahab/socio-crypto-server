@@ -470,14 +470,12 @@ export class CampaignController {
             auditReport.totalViews = auditReport.totalViews + parseInt(participant.viewCount);
             auditReport.totalSubmissions = auditReport.totalSubmissions + parseInt(participant.submissionCount);
             const totalParticipantPayout = await calculateParticipantPayoutV2(totalRewards, campaign, participant);
-
             const condition =
                 campaign.type === "raffle"
-                    ? parseInt(participant.participationScore) > auditReport.totalParticipationScore
+                    ? parseInt(participant.participationScore) > auditReport.totalParticipationScore * 0.15
                     : totalParticipantPayout > auditReport.totalRewardPayout * 0.15;
-            let campaignAlgorithm = (campaign.algorithm as Prisma.JsonObject)
+            const campaignAlgorithm = (campaign.algorithm as Prisma.JsonObject)
                 .pointValues as Prisma.JsonObject as unknown as PointValueTypes;
-
             if (condition) {
                 auditReport.flaggedParticipants.push({
                     participantId: participant.id,
@@ -490,7 +488,7 @@ export class CampaignController {
                 });
             }
         }
-        const report: { [key: string]: any } = auditReport;
+        const report: { [key: number]: number | any } = auditReport;
         for (const key in report) {
             if (key === "flaggedParticipants") {
                 for (const flagged of report[key]) {
