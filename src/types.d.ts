@@ -566,27 +566,6 @@ export interface PointValueTypes {
     shares: number;
 }
 
-export type FlaggedParticipants = {
-    participantId: string;
-    viewPayout: number;
-    clickPayout: number;
-    submissionPayout: number;
-    likesPayout: number;
-    sharesPayout: number;
-    totalPayout: number;
-};
-
-export type CampaignAuditReportV2 = {
-    totalClicks: number;
-    totalViews: number;
-    totalSubmissions: number;
-    totalLikes: number;
-    totalShares: number;
-    totalParticipationScore: number;
-    totalRewardPayout: number;
-    flaggedParticipants: FlaggedParticipants[];
-};
-
 export interface LedgerAccountTypes {
     id: string;
     symbol: string;

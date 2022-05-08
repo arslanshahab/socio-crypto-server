@@ -30,7 +30,7 @@ import {
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { ParticipantService } from "../../services/ParticipantService";
 import { SocialPostService } from "../../services/SocialPostService";
-import { CampaignAuditReportV2, CampaignCreateTypes, PointValueTypes } from "../../types";
+import { CampaignCreateTypes, PointValueTypes } from "../../types";
 import { addYears } from "date-fns";
 import { Validator } from "../../schemas";
 import { OrganizationService } from "../../services/OrganizationService";
@@ -446,7 +446,7 @@ export class CampaignController {
         campaignId = campaign.id;
         const { currentTotal } = await this.campaignService.currentCampaignTier(campaignId);
         const totalRewards = campaign.type !== "coiin" ? 0 : currentTotal;
-        const auditReport: CampaignAuditReportV2 = {
+        const auditReport = {
             totalClicks: 0,
             totalViews: 0,
             totalSubmissions: 0,
@@ -454,16 +454,12 @@ export class CampaignController {
             totalShares: 0,
             totalParticipationScore: parseInt(campaign.totalParticipationScore),
             totalRewardPayout: totalRewards,
-            flaggedParticipants: [],
         };
-
+        const flaggedParticipants = [];
         for (const participant of campaign.participant) {
             const socialPost = await this.socialPostService.findSocialPostByParticipantId(participant.id);
-
-            const { totalLikes, totalShares } = await calculateParticipantSocialScoreV2(
-                socialPost,
-                (campaign.algorithm as Prisma.JsonObject).pointValues as Prisma.JsonObject as unknown as PointValueTypes
-            );
+            const pointValues = (campaign.algorithm as Prisma.JsonObject).pointValues as unknown as PointValueTypes;
+            const { totalLikes, totalShares } = await calculateParticipantSocialScoreV2(socialPost, pointValues);
             auditReport.totalShares = auditReport.totalShares + totalShares;
             auditReport.totalLikes = auditReport.totalLikes + totalLikes;
             auditReport.totalClicks = auditReport.totalClicks + parseInt(participant.clickCount);
@@ -474,32 +470,31 @@ export class CampaignController {
                 campaign.type === "raffle"
                     ? parseInt(participant.participationScore) > auditReport.totalParticipationScore * 0.15
                     : totalParticipantPayout > auditReport.totalRewardPayout * 0.15;
-            const campaignAlgorithm = (campaign.algorithm as Prisma.JsonObject)
-                .pointValues as Prisma.JsonObject as unknown as PointValueTypes;
             if (condition) {
-                auditReport.flaggedParticipants.push({
+                flaggedParticipants.push({
                     participantId: participant.id,
-                    viewPayout: parseInt(participant.viewCount) * campaignAlgorithm.views,
-                    clickPayout: parseInt(participant.clickCount) * campaignAlgorithm.clicks,
-                    submissionPayout: parseInt(participant.submissionCount) * campaignAlgorithm.submissions,
-                    likesPayout: totalLikes * campaignAlgorithm.likes,
-                    sharesPayout: totalShares * campaignAlgorithm.shares,
+                    viewPayout: parseInt(participant.viewCount) * pointValues.views,
+                    clickPayout: parseInt(participant.clickCount) * pointValues.clicks,
+                    submissionPayout: parseInt(participant.submissionCount) * pointValues.submissions,
+                    likesPayout: totalLikes * pointValues.likes,
+                    sharesPayout: totalShares * pointValues.shares,
                     totalPayout: totalParticipantPayout,
                 });
             }
         }
-        const report: { [key: number]: number | any } = auditReport;
+        const report = { ...auditReport, flaggedParticipants };
         for (const key in report) {
             if (key === "flaggedParticipants") {
                 for (const flagged of report[key]) {
                     for (const value in flagged) {
-                        if (value !== "participantId") flagged[value] = parseFloat(flagged[value].toString());
+                        if (typeof value === "number") {
+                            flagged[value] = flagged[value];
+                        }
                     }
                 }
-                continue;
             }
-            report[key] = parseFloat(report[key].toString());
         }
-        return new SuccessResult(auditReport, GenerateCampaignAuditReportResultModel);
+
+        return new SuccessResult(report, GenerateCampaignAuditReportResultModel);
     }
 }
