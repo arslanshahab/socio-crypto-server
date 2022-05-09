@@ -276,7 +276,7 @@ export class CampaignController {
     @Post("/update-campaign")
     @(Returns(200, SuccessResult).Of(UpdateCampaignResultModel))
     public async updateCampaign(@BodyParams() body: CampaignCreateTypes, @Context() context: Context) {
-        const { role, company = "raiinmaker" } = this.userService.checkPermissions(
+        const { role, company } = this.userService.checkPermissions(
             { hasRole: ["admin", "manager"] },
             context.get("user")
         );
@@ -311,6 +311,7 @@ export class CampaignController {
             validator.validateRafflePrizeSchema(raffle_prize);
         }
         if (role === "admin" && !body.company) throw new NotFound(COMPANY_NOT_SPECIFIED);
+        if (!company) throw new NotFound(COMPANY_NOT_SPECIFIED);
         const org = await this.organizationService.findOrganizationByCompanyName(company);
         if (!org) throw new NotFound(ORG_NOT_FOUND);
         const campaign: Campaign | null = await this.campaignService.findCampaignById(id);
