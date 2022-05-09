@@ -23,6 +23,7 @@ import { Request, Response, NextFunction } from "express";
 import { BigNumber } from "bignumber.js";
 import { Factor } from "../models/Factor";
 import { CRYPTO_ICONS_MAP, CRYPTO_ICONS_BUCKET_URL, COIIN } from "./constants";
+import { User as PrismaUser } from "@prisma/client";
 
 // general helper functions start here
 export const getMinWithdrawableAmount = async (symbol: string) => {
@@ -349,7 +350,7 @@ export const getKycStatusDetails = (kycApplication: AcuantApplication): string =
 };
 
 export const findKycApplication = async (
-    user: User
+    user: User | PrismaUser
 ): Promise<{ kyc: VerificationApplication; factors?: AcuantApplicationExtractedDetails } | null> => {
     const recordedApplication = await VerificationApplication.findOne({ where: { user } });
     if (!recordedApplication) return null;
