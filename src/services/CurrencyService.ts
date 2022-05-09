@@ -6,6 +6,14 @@ export class CurrencyService {
     @Inject()
     private prismaService: PrismaService;
 
+    public async findLedgerAccount(walletId: string, tokenId: string) {
+        return this.prismaService.currency.findFirst({
+            where: {
+                walletId,
+                tokenId,
+            },
+        });
+    }
     public async getCurrenciesByUserId(userId: string) {
         return this.prismaService.currency.findMany({
             where: {

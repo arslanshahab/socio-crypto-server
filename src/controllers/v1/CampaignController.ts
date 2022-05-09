@@ -1,21 +1,53 @@
-import { Campaign, Prisma } from "@prisma/client";
-import { Get, Property, Required, Enum, Returns } from "@tsed/schema";
+import { Campaign, CampaignMedia, Prisma } from "@prisma/client";
+import { Get, Property, Required, Enum, Returns, Post } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
-import { Context, PathParams, QueryParams } from "@tsed/common";
+import { Context, BodyParams, PathParams, QueryParams } from "@tsed/common";
 import { CampaignService } from "../../services/CampaignService";
 import { UserService } from "../../services/UserService";
 import { CampaignState, CampaignStatus } from "../../util/constants";
-import { calculateTier } from "../helpers";
-import { BN } from "../../util";
-import { getTokenPriceInUsd } from "../../clients/ethereum";
-import { CAMPAIGN_NOT_FOUND, ERROR_CALCULATING_TIER, USER_NOT_FOUND } from "../../util/errors";
+import { calculateParticipantPayoutV2, calculateParticipantSocialScoreV2 } from "../helpers";
+import {
+    CAMPAIGN_NAME_EXISTS,
+    CAMPAIGN_NOT_FOUND,
+    COMPANY_NOT_SPECIFIED,
+    ORG_NOT_FOUND,
+    RAFFLE_PRIZE_MISSING,
+    WALLET_NOT_FOUND,
+} from "../../util/errors";
 import { PaginatedVariablesModel, Pagination, SuccessResult } from "../../util/entities";
-import { CampaignIdModel, CampaignMetricsResultModel, CampaignResultModel, CurrentCampaignModel } from "../../models/RestModels";
+import {
+    CampaignMetricsResultModel,
+    CampaignResultModel,
+    CreateCampaignResultModel,
+    CurrentCampaignModel,
+    DeleteCampaignResultModel,
+    GenerateCampaignAuditReportResultModel,
+    MediaUrlsModel,
+    UpdateCampaignResultModel,
+    UpdatedResultModel,
+    CampaignIdModel,
+} from "../../models/RestModels";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { ParticipantService } from "../../services/ParticipantService";
 import { SocialPostService } from "../../services/SocialPostService";
-import { CryptoCurrencyService } from "../../services/CryptoCurrencyService";
-import { Tiers } from "../../types";
+import { CampaignCreateTypes, PointValueTypes } from "../../types";
+import { addYears } from "date-fns";
+import { Validator } from "../../schemas";
+import { OrganizationService } from "../../services/OrganizationService";
+import { WalletService } from "../../services/WalletService";
+import { TatumClient } from "../../clients/tatumClient";
+import { S3Client } from "../../clients/s3";
+import { User } from "../../models/User";
+import { Firebase } from "../../clients/firebase";
+import { RafflePrizeService } from "../../services/RafflePrizeService";
+import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
+import { CampaignMediaService } from "../../services/CampaignMediaService";
+import { HourlyCampaignMetricsService } from "../../services/HourlyCampaignMetricsService";
+import { TransferService } from "../../services/TransferService";
+import { EscrowService } from "../../services/EscrowService";
+import { CampaignTemplateService } from "../../services/CampaignTemplateService";
+
+const validator = new Validator();
 
 class ListCampaignsVariablesModel extends PaginatedVariablesModel {
     @Required() @Enum(CampaignState) public readonly state: CampaignState;
@@ -32,7 +64,23 @@ export class CampaignController {
     @Inject()
     private socialPostService: SocialPostService;
     @Inject()
-    private cryptoCurrencyService: CryptoCurrencyService;
+    private organizationService: OrganizationService;
+    @Inject()
+    private walletService: WalletService;
+    @Inject()
+    private rafflePrizeService: RafflePrizeService;
+    @Inject()
+    private dailyParticipantMetricService: DailyParticipantMetricService;
+    @Inject()
+    private campaignMediaservice: CampaignMediaService;
+    @Inject()
+    private hourlyCampaignMetricsService: HourlyCampaignMetricsService;
+    @Inject()
+    private transferService: TransferService;
+    @Inject()
+    private escrowService: EscrowService;
+    @Inject()
+    private campaignTemplateService: CampaignTemplateService;
     @Inject()
     private userService: UserService;
 
@@ -60,52 +108,14 @@ export class CampaignController {
 
     @Get("/current-campaign-tier")
     @(Returns(200, SuccessResult).Of(CurrentCampaignModel))
-    public async getCurrentCampaignTier(
-        @QueryParams() query: CampaignIdModel,
-        @Context() context: Context
-    ) {
+    public async getCurrentCampaignTier(@QueryParams() query: CampaignIdModel, @Context() context: Context) {
         const { campaignId } = query;
-        let currentTierSummary;
-        let currentCampaign: Campaign | null;
-        let cryptoPriceUsd;
-        const user = await this.userService.findUserByContext(context.get("user"));
-        if (!user) throw new BadRequest(USER_NOT_FOUND);
-        currentCampaign = await this.campaignService.findCampaignById(campaignId);
-        if (campaignId) {
-            if (!currentCampaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
-            if (currentCampaign.type == "raffle") return { currentTier: -1, currentTotal: 0 };
-            currentTierSummary = calculateTier(
-                new BN(currentCampaign.totalParticipationScore),
-                (currentCampaign.algorithm as Prisma.JsonObject).tiers as Prisma.JsonObject as unknown as Tiers
-            );
-            if (currentCampaign.cryptoId) {
-                const cryptoCurrency = await this.cryptoCurrencyService.findCryptoCurrencyById(
-                    currentCampaign.cryptoId
-                );
-                const cryptoCurrencyType = cryptoCurrency?.type;
-                if (!cryptoCurrencyType) throw new NotFound("Crypto currency not found");
-                cryptoPriceUsd = await getTokenPriceInUsd(cryptoCurrencyType);
-            }
-        }
-        if (!currentTierSummary) throw new BadRequest(ERROR_CALCULATING_TIER);
-        let body: CurrentCampaignModel = {
-            currentTier: currentTierSummary.currentTier,
-            currentTotal: parseFloat(currentTierSummary.currentTotal.toString()),
-            campaignType: null,
-            tokenValueCoiin: null,
-            tokenValueUsd: null,
-        };
-        if (currentCampaign) body.campaignType = currentCampaign.type;
-        if (cryptoPriceUsd) body.tokenValueUsd = cryptoPriceUsd.toString();
-        if (cryptoPriceUsd) body.tokenValueCoiin = cryptoPriceUsd.times(10).toString();
-        return new SuccessResult(body, CurrentCampaignModel);
+        const campaignTier = await this.campaignService.currentCampaignTier(campaignId);
+        return new SuccessResult(campaignTier, CurrentCampaignModel);
     }
     @Get("/campaign-metrics")
     @(Returns(200, SuccessResult).Of(CampaignMetricsResultModel))
-    public async getCampaignMetrics(
-        @QueryParams() query: CampaignIdModel,
-        @Context() context: Context
-    ) {
+    public async getCampaignMetrics(@QueryParams() query: CampaignIdModel, @Context() context: Context) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const { campaignId } = query;
         const participant = await this.participantService.findParticipants(campaignId);
@@ -130,5 +140,362 @@ export class CampaignController {
             postCount: socialPostCount,
         };
         return new SuccessResult(metrics, CampaignMetricsResultModel);
+    }
+
+    @Post("/create-campaign")
+    @(Returns(200, SuccessResult).Of(CreateCampaignResultModel))
+    public async createCampaign(@BodyParams() body: CampaignCreateTypes, @Context() context: Context) {
+        const { role, company } = this.userService.checkPermissions(
+            { hasRole: ["admin", "manager"] },
+            context.get("user")
+        );
+
+        let {
+            name,
+            beginDate,
+            endDate,
+            coiinTotal,
+            target,
+            description,
+            instructions,
+            algorithm,
+            targetVideo,
+            imagePath,
+            tagline,
+            requirements,
+            suggestedPosts,
+            suggestedTags,
+            keywords,
+            type = "crypto",
+            raffle_prize,
+            symbol,
+            network,
+            campaignType,
+            socialMediaType,
+            campaignMedia,
+            campaignTemplates,
+            isGlobal,
+            showUrl,
+        } = body;
+
+        if (isGlobal) {
+            if (await this.campaignService.findGlobalCampaign(isGlobal, symbol))
+                throw new BadRequest("Global campaign already exists");
+            endDate = addYears(new Date(endDate), 100);
+        }
+        validator.validateAlgorithmCreateSchema(algorithm);
+        if (!!requirements) validator.validateCampaignRequirementsSchema(requirements);
+        if (type === "raffle") {
+            if (!raffle_prize) throw new BadRequest(RAFFLE_PRIZE_MISSING);
+            validator.validateRafflePrizeSchema(raffle_prize);
+        }
+        if (role === "admin" && !body.company) throw new NotFound(COMPANY_NOT_SPECIFIED);
+        const campaignCompany = role === "admin" ? body.company : company;
+        if (!campaignCompany) throw new NotFound(COMPANY_NOT_SPECIFIED);
+        const org = await this.organizationService.findOrganizationByCompanyName(company!);
+        if (!org) throw new NotFound(ORG_NOT_FOUND);
+        const wallet = await this.walletService.findWalletByOrgId(org.id);
+        if (!wallet) throw new NotFound(WALLET_NOT_FOUND);
+        let currency;
+        if (type === "crypto") {
+            currency = await TatumClient.findOrCreateCurrencyV2({ symbol, network, wallet });
+        }
+        const existingCampaign = await this.campaignService.findCampaingByName(name);
+        if (existingCampaign) throw new BadRequest(CAMPAIGN_NAME_EXISTS);
+        const campaign = await this.campaignService.createCampaign(
+            name,
+            beginDate,
+            endDate,
+            coiinTotal,
+            target,
+            description,
+            instructions,
+            campaignCompany,
+            symbol,
+            algorithm,
+            tagline,
+            requirements,
+            suggestedPosts,
+            suggestedTags,
+            keywords,
+            type,
+            imagePath,
+            campaignType,
+            socialMediaType,
+            isGlobal,
+            showUrl,
+            targetVideo,
+            org,
+            currency,
+            campaignMedia,
+            campaignTemplates
+        );
+        let campaignImageSignedURL = "";
+        let raffleImageSignedURL = "";
+        let mediaUrls: MediaUrlsModel[] = [];
+        if (imagePath) {
+            campaignImageSignedURL = await S3Client.generateCampaignSignedURL(`campaign/${campaign?.id}/${imagePath}`);
+        }
+        if (type === "raffle") {
+            const prize = await this.rafflePrizeService.createRafflePrize(campaign, raffle_prize);
+            if (raffle_prize.image) {
+                raffleImageSignedURL = await S3Client.generateCampaignSignedURL(
+                    `rafflePrize/${campaign.id}/${prize.id}`
+                );
+            }
+        }
+        campaignMedia;
+        if (campaignMedia.length) {
+            campaignMedia.forEach(async (item: CampaignMedia) => {
+                if (item.media && item.mediaFormat) {
+                    let urlObject: {
+                        name: string;
+                        channel: string | null;
+                        signedUrl: string;
+                    } = { name: "", channel: "", signedUrl: "" };
+                    urlObject.signedUrl = await S3Client.generateCampaignSignedURL(
+                        `campaign/${campaign.id}/${item.media}`
+                    );
+                    urlObject.name = item.media;
+                    urlObject.channel = item.channel;
+                    mediaUrls.push(urlObject);
+                }
+            });
+        }
+        const deviceTokens = await User.getAllDeviceTokens("campaignCreate");
+        if (deviceTokens.length > 0) await Firebase.sendCampaignCreatedNotifications(deviceTokens, campaign);
+        const result = {
+            campaignId: campaign.id,
+            campaignImageSignedURL: campaignImageSignedURL,
+            raffleImageSignedURL: raffleImageSignedURL,
+            mediaUrls: mediaUrls,
+        };
+        return new SuccessResult(result, CreateCampaignResultModel);
+    }
+
+    @Post("/update-campaign")
+    @(Returns(200, SuccessResult).Of(UpdateCampaignResultModel))
+    public async updateCampaign(@BodyParams() body: CampaignCreateTypes, @Context() context: Context) {
+        const { role, company } = this.userService.checkPermissions(
+            { hasRole: ["admin", "manager"] },
+            context.get("user")
+        );
+        let {
+            id,
+            name,
+            beginDate,
+            endDate,
+            target,
+            description,
+            instructions,
+            algorithm,
+            targetVideo,
+            imagePath,
+            tagline,
+            requirements,
+            suggestedPosts,
+            suggestedTags,
+            keywords,
+            type = "crypto",
+            raffle_prize,
+            campaignType,
+            socialMediaType,
+            campaignMedia,
+            campaignTemplates,
+            showUrl,
+        } = body;
+        validator.validateAlgorithmCreateSchema(algorithm);
+        if (!!requirements) validator.validateCampaignRequirementsSchema(requirements);
+        if (type === "raffle") {
+            if (!raffle_prize) throw new BadRequest(RAFFLE_PRIZE_MISSING);
+            validator.validateRafflePrizeSchema(raffle_prize);
+        }
+        if (role === "admin" && !body.company) throw new NotFound(COMPANY_NOT_SPECIFIED);
+        if (!company) throw new NotFound(COMPANY_NOT_SPECIFIED);
+        const org = await this.organizationService.findOrganizationByCompanyName(company);
+        if (!org) throw new NotFound(ORG_NOT_FOUND);
+        const campaign: Campaign | null = await this.campaignService.findCampaignById(id);
+        if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
+        let campaignImageSignedURL = "";
+        const raffleImageSignedURL = "";
+        const mediaUrls: { name: string | null; channel: string | null; signedUrl: string }[] = [];
+        if (imagePath && campaign.imagePath !== imagePath) {
+            imagePath;
+            campaignImageSignedURL = await S3Client.generateCampaignSignedURL(`campaign/${campaign.id}/${imagePath}`);
+        }
+        if (campaignTemplates) {
+            for (let i = 0; i < campaignTemplates.length; i++) {
+                const receivedTemplate = campaignTemplates[i];
+                if (receivedTemplate.id) {
+                    const foundTemplate = await this.campaignTemplateService.findCampaignTemplateById(
+                        receivedTemplate.id
+                    );
+                    if (foundTemplate) {
+                        await this.campaignTemplateService.updateCampaignTemplate(receivedTemplate);
+                    }
+                } else {
+                    await this.campaignTemplateService.updateNewCampaignTemplate(receivedTemplate, campaign.id);
+                }
+            }
+        }
+        if (campaignMedia) {
+            for (let i = 0; i < campaignMedia.length; i++) {
+                const receivedMedia = campaignMedia[i];
+                if (receivedMedia.id) {
+                    const foundMedia = await this.campaignMediaservice.findCampaignMediaById(receivedMedia.id);
+                    if (foundMedia && foundMedia.media !== receivedMedia.media) {
+                        await this.campaignMediaservice.updateCampaignMedia(receivedMedia);
+                        const urlObject = { name: receivedMedia.media, channel: receivedMedia.channel, signedUrl: "" };
+                        urlObject.signedUrl = await S3Client.generateCampaignSignedURL(
+                            `campaign/${campaign.id}/${receivedMedia.media}`
+                        );
+                        mediaUrls.push(urlObject);
+                    }
+                } else {
+                    const urlObject = { name: receivedMedia.media, channel: receivedMedia.channel, signedUrl: "" };
+                    urlObject.signedUrl = await S3Client.generateCampaignSignedURL(
+                        `campaign/${campaign.id}/${receivedMedia.media}`
+                    );
+                    mediaUrls.push(urlObject);
+                    await this.campaignMediaservice.updateNewCampaignMedia(receivedMedia, campaign.id);
+                }
+            }
+        }
+        await this.campaignService.updateCampaign(
+            id,
+            name,
+            beginDate,
+            endDate,
+            target,
+            description,
+            instructions,
+            algorithm,
+            targetVideo,
+            imagePath,
+            tagline,
+            requirements,
+            suggestedPosts,
+            suggestedTags,
+            keywords,
+            campaignType,
+            socialMediaType,
+            showUrl
+        );
+        const result = {
+            campaignId: campaign.id,
+            campaignImageSignedURL,
+            raffleImageSignedURL,
+            mediaUrls,
+        };
+        return new SuccessResult(result, UpdateCampaignResultModel);
+    }
+
+    @Post("/delete-campaign")
+    @(Returns(200, SuccessResult).Of(DeleteCampaignResultModel))
+    public async deleteCampaign(@QueryParams() query: CampaignIdModel, @Context() context: Context) {
+        const { campaignId } = query;
+        const { company } = this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
+
+        const socialPost = await this.socialPostService.findSocialPostByCampaignId(campaignId);
+        if (socialPost.length > 0) this.socialPostService.deleteSocialPost(campaignId);
+        const payouts = await this.transferService.findTransferByCampaignId(campaignId);
+        if (payouts.length > 0) this.transferService.deleteTransferPayouts(campaignId);
+        const rafflePrize = await this.rafflePrizeService.findRafflePrizeByCampaignId(campaignId);
+        if (rafflePrize.length > 0) this.rafflePrizeService.deleteRafflePrize(campaignId);
+        const escrow = await this.escrowService.findEscrowByCampaignId(campaignId);
+        if (escrow.length > 0) this.escrowService.deleteEscrow(campaignId);
+        const participant = await this.participantService.findParticipantByCampaignId(campaignId);
+        if (participant) this.participantService.deleteParticipant(campaignId);
+        const dailyParticipantMetrics = await this.dailyParticipantMetricService.findDailyParticipantByCampaignId(
+            campaignId
+        );
+        if (dailyParticipantMetrics) this.dailyParticipantMetricService.deleteDailyParticipantMetrics(campaignId);
+        const hourlyMetrics = await this.hourlyCampaignMetricsService.findCampaignHourlyMetricsByCampaignId(campaignId);
+        if (hourlyMetrics.length > 0) this.hourlyCampaignMetricsService.deleteCampaignHourlyMetrics(campaignId);
+        const campaignTemplate = await this.campaignTemplateService.findCampaignTemplateByCampaignId(campaignId);
+        if (campaignTemplate.length > 0) this.campaignTemplateService.deleteCampaignTemplate(campaignId);
+        const campaignMedia = await this.campaignMediaservice.findCampaignMediaByCampaignId(campaignId);
+        if (campaignMedia.length > 0) this.campaignMediaservice.deleteCampaignMedia(campaignId);
+        const campaign = await this.campaignService.findCampaignById(campaignId, undefined, company);
+        if (campaign) this.campaignService.deleteCampaign(campaignId);
+        const result = {
+            campaignId: campaign?.id,
+            name: campaign?.name,
+        };
+        return new SuccessResult(result, DeleteCampaignResultModel);
+    }
+    @Post("/payout-campaign-rewards")
+    @(Returns(200, SuccessResult).Of(UpdatedResultModel))
+    public async payoutCampaignRewards(@QueryParams() query: CampaignIdModel, @Context() context: Context) {
+        const { company } = this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
+        const { campaignId } = query;
+        const campaign = await this.campaignService.findCampaignById(campaignId, undefined, company);
+        if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
+        await this.campaignService.updateCampaignStatus(campaignId);
+        const result = {
+            message: "Campaign has been submitted for auditting",
+        };
+        return new SuccessResult(result, UpdatedResultModel);
+    }
+    @Post("/generate-campaign-audit-report")
+    @(Returns(200, SuccessResult).Of(GenerateCampaignAuditReportResultModel))
+    public async generateCampaignAuditReport(@QueryParams() query: CampaignIdModel, @Context() context: Context) {
+        const { company } = this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
+        let { campaignId } = query;
+        const campaign = await this.campaignService.findCampaignById(campaignId, { participant: true }, company);
+        if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
+        campaignId = campaign.id;
+        const { currentTotal } = await this.campaignService.currentCampaignTier(campaignId);
+        const totalRewards = campaign.type !== "coiin" ? 0 : currentTotal;
+        const auditReport = {
+            totalClicks: 0,
+            totalViews: 0,
+            totalSubmissions: 0,
+            totalLikes: 0,
+            totalShares: 0,
+            totalParticipationScore: parseInt(campaign.totalParticipationScore),
+            totalRewardPayout: totalRewards,
+        };
+        const flaggedParticipants = [];
+        for (const participant of campaign.participant) {
+            const socialPost = await this.socialPostService.findSocialPostByParticipantId(participant.id);
+            const pointValues = (campaign.algorithm as Prisma.JsonObject).pointValues as unknown as PointValueTypes;
+            const { totalLikes, totalShares } = await calculateParticipantSocialScoreV2(socialPost, pointValues);
+            auditReport.totalShares = auditReport.totalShares + totalShares;
+            auditReport.totalLikes = auditReport.totalLikes + totalLikes;
+            auditReport.totalClicks = auditReport.totalClicks + parseInt(participant.clickCount);
+            auditReport.totalViews = auditReport.totalViews + parseInt(participant.viewCount);
+            auditReport.totalSubmissions = auditReport.totalSubmissions + parseInt(participant.submissionCount);
+            const totalParticipantPayout = await calculateParticipantPayoutV2(totalRewards, campaign, participant);
+            const condition =
+                campaign.type === "raffle"
+                    ? parseInt(participant.participationScore) > auditReport.totalParticipationScore * 0.15
+                    : totalParticipantPayout > auditReport.totalRewardPayout * 0.15;
+            if (condition) {
+                flaggedParticipants.push({
+                    participantId: participant.id,
+                    viewPayout: parseInt(participant.viewCount) * pointValues.views,
+                    clickPayout: parseInt(participant.clickCount) * pointValues.clicks,
+                    submissionPayout: parseInt(participant.submissionCount) * pointValues.submissions,
+                    likesPayout: totalLikes * pointValues.likes,
+                    sharesPayout: totalShares * pointValues.shares,
+                    totalPayout: totalParticipantPayout,
+                });
+            }
+        }
+        const report = { ...auditReport, flaggedParticipants };
+        for (const key in report) {
+            if (key === "flaggedParticipants") {
+                for (const flagged of report[key]) {
+                    for (const value in flagged) {
+                        if (typeof value === "number") {
+                            flagged[value] = flagged[value];
+                        }
+                    }
+                }
+            }
+        }
+
+        return new SuccessResult(report, GenerateCampaignAuditReportResultModel);
     }
 }
