@@ -566,6 +566,15 @@ export interface PointValueTypes {
     shares: number;
 }
 
+export interface LedgerAccount {
+    currency: string;
+    active: boolean;
+    balance: { accountBalance: string; availableBalance: string };
+    frozen: boolean;
+    accountingCurrency: string;
+    id: string;
+}
+
 export interface LedgerAccountTypes {
     id: string;
     symbol: string;
@@ -576,4 +585,5 @@ export interface LedgerAccountTypes {
     message?: string;
     destinationTag?: number;
     derivationKey?: number;
+    newLedgerAccount?: LedgerAccount;
 }

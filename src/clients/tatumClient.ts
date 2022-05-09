@@ -705,6 +705,48 @@ export class TatumClient {
             throw new Error(error?.response?.data?.message || error.message);
         }
     };
+    //! Create New Account
+    public static addAccount = async (data: LedgerAccountTypes) => {
+        return await prisma.currency.create({
+            data: {
+                tatumId: data.newLedgerAccount?.id!,
+                tokenId: data.token.id,
+                symbol: data.symbol,
+                walletId: data.wallet.id,
+                depositAddress: data?.address,
+                memo: data?.memo,
+                message: data?.message,
+                destinationTag: data?.destinationTag,
+                derivationKey: data?.derivationKey,
+            },
+        });
+    };
+    //! Get Available Address
+    public static getAvailableAddress = async (data: SymbolNetworkParams & { wallet: PrismaWallet }) => {
+        let found = await prisma.custodialAddress.findFirst({
+            where: { chain: data.network, walletId: data.wallet.id },
+        });
+        if (!found) {
+            found = await prisma.custodialAddress.findFirst({
+                where: { chain: data.network, available: true },
+            });
+        }
+        if (!found) {
+            const newAddress = await TatumClient.generateCustodialAddressV2(data);
+            let custodialData = data.wallet
+                ? {
+                      address: newAddress,
+                      chain: data.network,
+                      walletId: data.wallet.id,
+                      available: false,
+                  }
+                : { address: newAddress, chain: data.network };
+            found = await prisma.custodialAddress.create({
+                data: custodialData,
+            });
+        }
+        return found;
+    };
     public static findOrCreateCurrencyV2 = async (data: SymbolNetworkParams & { wallet: PrismaWallet }) => {
         try {
             const token = await TatumClient.isCurrencySupportedV2(data);
@@ -723,32 +765,7 @@ export class TatumClient {
                 const newLedgerAccount = await TatumClient.createLedgerAccountV2({ ...data, isCustodial });
                 if (isCustodial) {
                     if (foundWallet.org) {
-                        const getAvailableAddress = async () => {
-                            let found = await prisma.custodialAddress.findFirst({
-                                where: { chain: data.network, walletId: data.wallet.id },
-                            });
-                            if (!found) {
-                                found = await prisma.custodialAddress.findFirst({
-                                    where: { chain: data.network, available: true },
-                                });
-                            }
-                            if (!found) {
-                                const newAddress = await TatumClient.generateCustodialAddressV2(data);
-                                let custodialData = data.wallet
-                                    ? {
-                                          address: newAddress,
-                                          chain: data.network,
-                                          walletId: data.wallet.id,
-                                          available: false,
-                                      }
-                                    : { address: newAddress, chain: data.network };
-                                found = await prisma.custodialAddress.create({
-                                    data: custodialData,
-                                });
-                            }
-                            return found;
-                        };
-                        const availableAddress = await getAvailableAddress();
+                        const availableAddress = await TatumClient.getAvailableAddress(data);
                         if (!availableAddress) throw new NotFound("No custodial address available.");
                         await TatumClient.assignAddressToAccount({
                             accountId: newLedgerAccount.id,
@@ -759,23 +776,7 @@ export class TatumClient {
                 } else {
                     newDepositAddress = await TatumClient.generateDepositAddress(newLedgerAccount.id);
                 }
-
-                const addAccount = async (data: LedgerAccountTypes) => {
-                    return await prisma.currency.create({
-                        data: {
-                            tatumId: newLedgerAccount.id,
-                            tokenId: data.token.id,
-                            symbol: data.symbol,
-                            walletId: data.wallet.id,
-                            depositAddress: data?.address,
-                            memo: data?.memo,
-                            message: data?.message,
-                            destinationTag: data?.destinationTag,
-                            derivationKey: data?.derivationKey,
-                        },
-                    });
-                };
-                ledgerAccount = await addAccount({
+                ledgerAccount = await TatumClient.addAccount({
                     ...newLedgerAccount,
                     token,
                     symbol: getCurrencyForTatum(data),
