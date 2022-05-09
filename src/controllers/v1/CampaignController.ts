@@ -244,7 +244,6 @@ export class CampaignController {
                 );
             }
         }
-        campaignMedia;
         if (campaignMedia.length) {
             campaignMedia.forEach(async (item: CampaignMedia) => {
                 if (item.media && item.mediaFormat) {
@@ -317,7 +316,6 @@ export class CampaignController {
         const campaign: Campaign | null = await this.campaignService.findCampaignById(id);
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
         let campaignImageSignedURL = "";
-        const raffleImageSignedURL = "";
         const mediaUrls: { name: string | null; channel: string | null; signedUrl: string }[] = [];
         if (imagePath && campaign.imagePath !== imagePath) {
             imagePath;
@@ -384,7 +382,6 @@ export class CampaignController {
         const result = {
             campaignId: campaign.id,
             campaignImageSignedURL,
-            raffleImageSignedURL,
             mediaUrls,
         };
         return new SuccessResult(result, UpdateCampaignResultModel);
