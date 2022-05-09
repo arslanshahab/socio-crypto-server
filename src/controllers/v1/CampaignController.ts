@@ -262,7 +262,6 @@ export class CampaignController {
                 }
             });
         }
-        // const deviceTokens = await this.userService.getAllDeviceTokens("campaignCreate");
         const deviceTokens = await User.getAllDeviceTokens("campaignCreate");
         if (deviceTokens.length > 0) await Firebase.sendCampaignCreatedNotifications(deviceTokens, campaign);
         const result = {
