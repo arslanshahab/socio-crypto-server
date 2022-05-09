@@ -639,7 +639,7 @@ export class TatumClient {
 
     public static generateCustodialAddressV2 = async (data: SymbolNetworkParams) => {
         try {
-            if (!TatumClient.isCustodialWallet(data)) throw new Error("Operation not supported.");
+            if (!TatumClient.isCustodialWallet(data)) throw new BadRequest("Operation not supported.");
             const wallet = await TatumClient.getWalletV2(data);
             const txResp = await TatumClient.createCustodialAddress({
                 owner: wallet?.walletAddress || "",
@@ -647,7 +647,7 @@ export class TatumClient {
                 fromPrivateKey: wallet?.privateKey || "",
                 chain: data.network,
             });
-            if (!txResp.txId || txResp.failed) throw new Error("There was an error creating custodial addresses.");
+            if (!txResp.txId || txResp.failed) throw new BadRequest("There was an error creating custodial addresses.");
             let addressAvailable = false;
             let address = "";
             while (!addressAvailable) {
@@ -787,7 +787,7 @@ export class TatumClient {
             return ledgerAccount;
         } catch (error) {
             console.log(error);
-            throw new Error(error?.response?.data?.message || error.message);
+            throw new BadRequest(error?.response?.data?.message || error.message);
         }
     };
 }
