@@ -7,7 +7,11 @@ import { KycService } from "../../services/KycService";
 import { UserService } from "../../services/UserService";
 import { SuccessResult } from "../../util/entities";
 import { KYC_NOT_FOUND, USER_NOT_FOUND } from "../../util/errors";
-import { findKycApplication } from "../../util";
+import { findKycApplicationV2, getApplicationStatus, getKycStatusDetails } from "../../util";
+import { Validator } from "../../schemas";
+import { AcuantClient } from "../../clients/acuant";
+import { Firebase } from "../../clients/firebase";
+import { VerificationApplicationService } from "../../services/VerificationApplicationService";
 
 class KycResultModel {
     @Property() public readonly kycId: string;
@@ -34,6 +38,7 @@ class KycApplication {
     @Required() public readonly faceImage: string;
     @Required() public readonly backDocumentImage: string;
 }
+const validator = new Validator();
 
 @Controller("/kyc")
 export class KycController {
@@ -41,6 +46,8 @@ export class KycController {
     private userService: UserService;
     @Inject()
     private kycService: KycService;
+    @Inject()
+    private verificationApplicationService: VerificationApplicationService;
 
     @Get()
     @(Returns(200, SuccessResult).Of(KycResultModel))
@@ -79,11 +86,35 @@ export class KycController {
     }
 
     @Post("/verify-kyc")
-    @Returns(200, SuccessResult)
+    @(Returns(200, SuccessResult).Of(Object))
     public async verifyKyc(@BodyParams() query: KycApplication, @Context() context: Context) {
-        const user = await this.userService.findUserByContext(context.get("user"));
+        const user = await this.userService.findUserByContext(context.get("user"), ["profile"]);
         if (!user) throw new BadRequest(USER_NOT_FOUND);
-        const currentKycApplication = await findKycApplication(user);
-        console.log("currentKycApplication-----------", currentKycApplication);
+        const currentKycApplication = await findKycApplicationV2(user);
+        let verificationApplication;
+        let factors;
+        if (!currentKycApplication || currentKycApplication.kyc.status === "REJECTED") {
+            validator.validateKycRegistration(query);
+            const newAcuantApplication = await AcuantClient.submitApplication(query);
+            const status = getApplicationStatus(newAcuantApplication);
+            verificationApplication = await this.verificationApplicationService.upsert({
+                appId: newAcuantApplication.mtid,
+                status,
+                user,
+                reason: getKycStatusDetails(newAcuantApplication),
+                record: currentKycApplication?.kyc,
+            });
+
+            Firebase.sendKycVerificationUpdate(user?.profile?.deviceToken || "", status);
+        } else {
+            verificationApplication = currentKycApplication.kyc;
+            factors = currentKycApplication.factors;
+        }
+        const result = {
+            kycId: verificationApplication?.applicationId,
+            status: verificationApplication?.status,
+            factors,
+        };
+        return new SuccessResult(result, Object);
     }
 }
