@@ -152,7 +152,6 @@ export class KycController {
         if (!["approve", "reject"].includes(status)) throw new BadRequest("Status must be either approve or reject");
         const user = await this.userService.findUserById(userId, ["profile", "notification_settings"]);
         if (!user) throw new NotFound(USER_NOT_FOUND);
-        console.log(user);
         if (user.notification_settings?.kyc) {
             if (status === "APPROVED") await Firebase.sendKycApprovalNotification(user.profile?.deviceToken!);
             else await Firebase.sendKycRejectionNotification(user.profile?.deviceToken!);

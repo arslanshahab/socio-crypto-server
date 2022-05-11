@@ -22,6 +22,7 @@ export class VerificationApplicationService {
                 status: data.status,
                 userId: data.user.id,
                 reason: data.reason,
+                updatedAt: new Date(),
             },
             create: {
                 applicationId: data.appId,
