@@ -13,7 +13,7 @@ export class UserAuthMiddleware {
         // check if the cookie has session value
         const adminToken = req.headers.cookie?.split("session=")[1];
         if (adminToken) {
-            const admin = getActiveAdmin(adminToken);
+            const admin = await getActiveAdmin(adminToken);
             ctx.set("user", admin);
             return;
         }

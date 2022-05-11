@@ -133,7 +133,6 @@ export class UserController {
         if (!settings) throw new NotFound(NOTIFICATION_SETTING_NOT_FOUND);
         return new SuccessResult(settings, NotificationSettingsResultModel);
     }
-
     @Get("/user-metrics")
     @(Returns(200, SuccessResult).Of(UserDailyParticipantMetricResultModel))
     public async getUserMetrics(@QueryParams() query: UserQueryVariables, @Context() context: Context) {

@@ -112,4 +112,16 @@ export class DailyParticipantMetricService {
         });
         return response;
     }
+
+    public async deleteDailyParticipantMetrics(campaignId: string) {
+        return await this.prismaService.dailyParticipantMetric.deleteMany({
+            where: { campaignId },
+        });
+    }
+
+    public async findDailyParticipantByCampaignId(campaignId: string) {
+        return this.prismaService.dailyParticipantMetric.findMany({
+            where: { campaignId },
+        });
+    }
 }

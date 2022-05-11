@@ -180,6 +180,16 @@ export const calculateParticipantPayout = async (
     return currentCampaignTierTotal.multipliedBy(percentageOfTotalParticipation);
 };
 
+export const calculateParticipantPayoutV2 = async (
+    currentCampaignTierTotal: number,
+    campaign: PrismaCampaign,
+    participant: PrismaParticipant
+) => {
+    const percentageOfTotalParticipation =
+        parseInt(participant.participationScore) / parseInt(campaign.totalParticipationScore);
+    return currentCampaignTierTotal * percentageOfTotalParticipation;
+};
+
 export const calculateParticipantPayoutFromDailyParticipation = (
     currentCampaignTierTotal: BigNumber,
     campaign: Campaign,
