@@ -428,3 +428,17 @@ export class GenerateCampaignAuditReportResultModel {
     @Property() public readonly totalRewardPayout: number;
     @CollectionOf(FlaggedParticipantResultModel) public readonly flaggedParticipants: FlaggedParticipantResultModel[];
 }
+
+export class KycUserResultModel {
+    @Property() public readonly id: string;
+    @Property() public readonly email: string;
+    @Property() public readonly createdAt: Date;
+    @Property() public readonly lastLogin: Date | null;
+    @Property() public readonly active: boolean;
+    @Nullable(String) public readonly identityId: string | null;
+    @Nullable(String) public readonly kycStatus: string | null;
+    @Property() public readonly password: string;
+    @Nullable(String) public readonly updatedAt: Date;
+    @Property() public readonly profile: Prisma.Profile ;
+    @Property() public readonly notification_settings: Prisma.NotificationSettings ;
+}

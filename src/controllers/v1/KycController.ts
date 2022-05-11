@@ -1,7 +1,7 @@
-import { BodyParams, Context, PathParams } from "@tsed/common";
+import { BodyParams, Context, PathParams, QueryParams } from "@tsed/common";
 import { Controller, Inject } from "@tsed/di";
 import { BadRequest, NotFound } from "@tsed/exceptions";
-import { Get, Post, Property, Required, Returns } from "@tsed/schema";
+import { Get, Post, Property, Put, Required, Returns } from "@tsed/schema";
 import { RAIINMAKER_ORG_NAME } from "../../util/constants";
 import { KycService } from "../../services/KycService";
 import { UserService } from "../../services/UserService";
@@ -12,6 +12,9 @@ import { Validator } from "../../schemas";
 import { AcuantClient } from "../../clients/acuant";
 import { Firebase } from "../../clients/firebase";
 import { VerificationApplicationService } from "../../services/VerificationApplicationService";
+import { KycUser } from "../../types";
+import { S3Client } from "../../clients/s3";
+import { KycUserResultModel } from "../../models/RestModels";
 
 class KycResultModel {
     @Property() public readonly kycId: string;
@@ -37,6 +40,11 @@ class KycApplication {
     @Required() public readonly frontDocumentImage: string;
     @Required() public readonly faceImage: string;
     @Required() public readonly backDocumentImage: string;
+}
+
+class KycStatusParms {
+    @Required() public readonly userId: string;
+    @Required() public readonly status: string;
 }
 const validator = new Validator();
 
@@ -116,5 +124,39 @@ export class KycController {
             factors,
         };
         return new SuccessResult(result, Object);
+    }
+
+    @Put("/update-kyc")
+    @(Returns(200, SuccessResult).Of(Object))
+    public async updateKyc(@BodyParams() query: KycUser, @Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new BadRequest(USER_NOT_FOUND);
+        if (query.idProof) {
+            await S3Client.uploadKycImage(user.id, "idProof", query.idProof);
+            delete query.idProof;
+            query.hasIdProof = true;
+        }
+        if (query.addressProof) {
+            await S3Client.uploadKycImage(user.id, "addressProof", query.addressProof);
+            delete query.addressProof;
+            query.hasAddressProof = true;
+        }
+        return S3Client.updateUserInfo(user.id, query);
+    }
+
+    @Put("/update-kyc-status")
+    @(Returns(200, SuccessResult).Of(KycUserResultModel))
+    public async updateKycStatus(@QueryParams() query: KycStatusParms, @Context() context: Context) {
+        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const { userId, status } = query;
+        if (!["approve", "reject"].includes(status)) throw new BadRequest("Status must be either approve or reject");
+        const user = await this.userService.findUserById(userId, ["profile", "notification_settings"]);
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        console.log(user);
+        if (user.notification_settings?.kyc) {
+            if (status === "APPROVED") await Firebase.sendKycApprovalNotification(user.profile?.deviceToken!);
+            else await Firebase.sendKycRejectionNotification(user.profile?.deviceToken!);
+        }
+        return new SuccessResult(user, KycUserResultModel);
     }
 }
