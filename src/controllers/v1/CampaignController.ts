@@ -35,7 +35,6 @@ import { addYears } from "date-fns";
 import { Validator } from "../../schemas";
 import { OrganizationService } from "../../services/OrganizationService";
 import { WalletService } from "../../services/WalletService";
-import { TatumClient } from "../../clients/tatumClient";
 import { S3Client } from "../../clients/s3";
 import { User } from "../../models/User";
 import { Firebase } from "../../clients/firebase";
@@ -46,6 +45,7 @@ import { HourlyCampaignMetricsService } from "../../services/HourlyCampaignMetri
 import { TransferService } from "../../services/TransferService";
 import { EscrowService } from "../../services/EscrowService";
 import { CampaignTemplateService } from "../../services/CampaignTemplateService";
+import { TatumClientService } from "../../services/TatumClientService";
 
 const validator = new Validator();
 
@@ -83,6 +83,8 @@ export class CampaignController {
     private campaignTemplateService: CampaignTemplateService;
     @Inject()
     private userService: UserService;
+    @Inject()
+    private tatumClientService: TatumClientService;
 
     @Get()
     @(Returns(200, SuccessResult).Of(Pagination).Nested(CampaignResultModel))
@@ -198,7 +200,7 @@ export class CampaignController {
         if (!wallet) throw new NotFound(WALLET_NOT_FOUND);
         let currency;
         if (type === "crypto") {
-            currency = await TatumClient.findOrCreateCurrencyV2({ symbol, network, wallet });
+            currency = await this.tatumClientService.findOrCreateCurrency({ symbol, network, wallet });
         }
         const existingCampaign = await this.campaignService.findCampaingByName(name);
         if (existingCampaign) throw new BadRequest(CAMPAIGN_NAME_EXISTS);
