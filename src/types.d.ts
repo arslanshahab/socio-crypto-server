@@ -587,3 +587,10 @@ export interface LedgerAccountTypes {
     derivationKey?: number;
     newLedgerAccount?: LedgerAccount;
 }
+
+export interface CustodialAddressPayload {
+    chain: string;
+    fromPrivateKey: string;
+    owner: string;
+    batchCount: number;
+}
