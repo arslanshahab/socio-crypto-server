@@ -118,4 +118,12 @@ export class ParticipantService {
             },
         });
     }
+
+    public async deleteParticipant(campaignId: string) {
+        return await this.prismaService.participant.deleteMany({
+            where: {
+                campaignId,
+            },
+        });
+    }
 }

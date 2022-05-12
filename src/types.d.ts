@@ -2,7 +2,7 @@ import express, { Request } from "express";
 import { BigNumber } from "bignumber.js";
 import { Stripe } from "stripe";
 import { CampaignState, CampaignStatus } from "./util/constants";
-import { CampaignMedia, CampaignTemplate, RafflePrize, Participant, Profile, User, Campaign } from "@prisma/client";
+import { CampaignMedia, CampaignTemplate, RafflePrize, Token, Wallet } from "@prisma/client";
 
 interface JWTPayload {
     email: string;
@@ -492,10 +492,105 @@ interface SocialPostVariablesType {
     userId: string;
 }
 
+export interface CampaignMediaVariableTypes {
+    channel: string;
+    media: string;
+    mediaFormat: string;
+    isDefault: boolean;
+}
+
+export interface CampaignRequirementTypes {
+    version: string;
+    location: {
+        city: string;
+        country: string;
+    }[];
+    values: string[];
+    ageRange: {
+        [key: string]: boolean;
+    };
+    interests: string[];
+    email: boolean;
+    socialFollowing: {
+        [key: string]: { minFollower: number };
+    };
+}
+
+export interface CampaignCreateTypes {
+    id: string;
+    name: string;
+    beginDate: Date;
+    endDate: Date;
+    coiinTotal: string;
+    target: string;
+    description: string;
+    instructions: string;
+    algorithm: AlgorithmJsonValueType;
+    targetVideo: string;
+    imagePath: string;
+    tagline: string;
+    requirements: CampaignRequirementTypes;
+    suggestedPosts: string[];
+    suggestedTags: string[];
+    keywords: string[];
+    type: string;
+    raffle_prize: RafflePrize;
+    symbol: string;
+    network: string;
+    campaignType: string;
+    socialMediaType: string[];
+    campaignMedia: CampaignMedia[];
+    campaignTemplates: CampaignTemplate[];
+    isGlobal: boolean;
+    showUrl: boolean;
+    company: string;
+}
+
+export interface CurrencyResultType {
+    id: string;
+    tatumId: string;
+    symbol: string;
+    depositAddress: string | null;
+    memo: string | null;
+    message: string | null;
+    destinationTag: number | null;
+    derivationKey: number | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
 export interface PointValueTypes {
     clicks: number;
     views: number;
     submissions: number;
     likes: number;
     shares: number;
+}
+
+export interface LedgerAccount {
+    currency: string;
+    active: boolean;
+    balance: { accountBalance: string; availableBalance: string };
+    frozen: boolean;
+    accountingCurrency: string;
+    id: string;
+}
+
+export interface LedgerAccountTypes {
+    id: string;
+    symbol: string;
+    token: Token;
+    wallet: Wallet;
+    address?: string;
+    memo?: string;
+    message?: string;
+    destinationTag?: number;
+    derivationKey?: number;
+    newLedgerAccount?: LedgerAccount;
+}
+
+export interface CustodialAddressPayload {
+    chain: string;
+    fromPrivateKey: string;
+    owner: string;
+    batchCount: number;
 }

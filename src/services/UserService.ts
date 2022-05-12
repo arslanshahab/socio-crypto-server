@@ -112,6 +112,34 @@ export class UserService {
         return { role, company };
     }
 
+    public async getAllDeviceTokens(action?: "campaignCreate" | "campaignUpdates") {
+        const campaignType = action === "campaignCreate" ? { campaignCreate: true } : { campaignUpdates: true };
+        const response = await this.prismaService.user.findMany({
+            select: {
+                profile: {
+                    select: { deviceToken: true },
+                },
+            },
+            where: {
+                profile: {
+                    AND: [
+                        {
+                            deviceToken: { not: null },
+                        },
+                        {
+                            deviceToken: { not: undefined },
+                        },
+                        {
+                            deviceToken: { not: "" },
+                        },
+                    ],
+                },
+                notification_settings: campaignType,
+            },
+        });
+        const result = response.map((x) => x.profile?.deviceToken);
+        return result;
+    }
     /**
      * Retrieves the Coiin wallet for the given user, creating a new one if it doesn't exist
      *
