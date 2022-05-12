@@ -53,9 +53,7 @@ export class SocialController {
     public async getUserSocialPostTime(@Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new NotFound(USER_NOT_FOUND);
-        const socialPostTime = await this.socialPostService.findUserSocialPostTime(
-            "f6e77998-90ab-4235-9343-29b3350f4816"
-        );
+        const socialPostTime = await this.socialPostService.findUserSocialPostTime(user.id);
         if (!socialPostTime) throw new NotFound("No social post found");
 
         const addMinutes = (numOfMinutes: number, date = new Date(socialPostTime?.createdAt!)) => {
