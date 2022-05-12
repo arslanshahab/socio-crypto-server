@@ -1,4 +1,4 @@
-import { Get, Returns } from "@tsed/schema";
+import { Get, Property, Returns } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
 import { Context, QueryParams } from "@tsed/common";
 import { UserService } from "../../services/UserService";
@@ -12,6 +12,9 @@ import { ParticipantQueryParams, SocialMetricsResultModel } from "../../models/R
 import { Campaign, Participant, Prisma, Profile, User } from "@prisma/client";
 import { PointValueTypes } from "../../types";
 
+export class SocialPostTimeResultModel {
+    @Property() readonly show_captcha: any;
+}
 @Controller("/social")
 export class SocialController {
     @Inject()
@@ -46,12 +49,29 @@ export class SocialController {
     }
 
     @Get("/user-social-post-time")
-    @(Returns(200, SuccessResult).Of(SocialMetricsResultModel))
+    @(Returns(200, SuccessResult).Of(SocialPostTimeResultModel))
     public async getUserSocialPostTime(@Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new NotFound(USER_NOT_FOUND);
-        const socialPostTime = await this.socialPostService.findUserSocialPostTime(user.id);
+        const socialPostTime = await this.socialPostService.findUserSocialPostTime(
+            "f6e77998-90ab-4235-9343-29b3350f4816"
+        );
         if (!socialPostTime) throw new NotFound("No social post found");
-        return new SuccessResult(socialPostTime, SocialMetricsResultModel);
+
+        const addMinutes = (numOfMinutes: number, date = new Date(socialPostTime?.createdAt!)) => {
+            date.setMinutes(date.getMinutes() + numOfMinutes);
+            return date;
+        };
+        let show_captcha;
+        const createdDate = socialPostTime?.createdAt.getMinutes();
+        let calculatedDate: number | Date = addMinutes(2);
+        let currentDate: number | Date = new Date();
+
+        calculatedDate = calculatedDate.getMinutes();
+        currentDate = currentDate.getMinutes();
+        if (createdDate < calculatedDate && calculatedDate > currentDate) show_captcha = true;
+        else show_captcha = false;
+        show_captcha = { show_captcha };
+        return new SuccessResult(show_captcha, SocialPostTimeResultModel);
     }
 }
