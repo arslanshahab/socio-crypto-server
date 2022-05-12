@@ -139,5 +139,6 @@ export const errorMap: { [key: string]: string } = {
     MEDIA_NOT_FOUND: "Media not found.",
     TWITTER_LINK_EXPIRED: "Access token expired for twitter, please link your twitter again.",
     ACCOUNT_RESTRICTED: "User account has been restricted. Please contact our support for further assistance.",
-    SERVICE_NOT_AVAILABLE: "Store redemption is not available is your country.",
+    SERVICE_NOT_AVAILABLE:
+        "This service has been disabled temporarily. Please contact our support for further assistance.",
 };

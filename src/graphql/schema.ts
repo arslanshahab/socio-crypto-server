@@ -323,7 +323,7 @@ export const typeDefs = gql`
         middleName: String!
         lastName: String!
         email: String!
-        ip: String!
+        ip: String
         billingStreetAddress: String!
         billingCity: String!
         billingCountry: String!
@@ -361,6 +361,7 @@ export const typeDefs = gql`
     type UserBalance {
         symbol: String!
         balance: Float!
+        availableBalance: String!
         minWithdrawAmount: Float
         usdBalance: String!
         imageUrl: String!

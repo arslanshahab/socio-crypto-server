@@ -370,6 +370,7 @@ export const getWalletBalances = async (parent: any, args: any, context: { user:
         const symbol = currencyItem.token.symbol;
         return {
             balance: formatFloat(balance.availableBalance),
+            availableBalance: formatFloat(balance.availableBalance),
             symbol: symbol,
             minWithdrawAmount: getMinWithdrawableAmount(symbol),
             usdBalance: getUSDValueForCurrency(symbol.toLowerCase(), balance.availableBalance),
@@ -503,7 +504,8 @@ export const rewardUserForSharing = async (
                 where: { id: args.participantId, user },
                 relations: ["campaign"],
             });
-            campaign = participant?.campaign;
+            if (!participant) throw new Error(PARTICIPANT_NOT_FOUND);
+            campaign = participant.campaign;
         }
         if (!participant) throw new Error(PARTICIPANT_NOT_FOUND);
         await user.transferCoiinReward({ campaign, type: "SHARING_REWARD" });
