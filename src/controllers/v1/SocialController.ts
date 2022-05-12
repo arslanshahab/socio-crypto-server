@@ -50,7 +50,7 @@ export class SocialController {
         return new SuccessResult(result, SocialMetricsResultModel);
     }
 
-    @Post("register-social-link")
+    @Post("/register-social-link")
     @(Returns(200, SuccessResult).Of(Boolean))
     public async registerSocialLink(
         @BodyParams() query: { type: SocialType; apiKey: string; apiSecret: string },
