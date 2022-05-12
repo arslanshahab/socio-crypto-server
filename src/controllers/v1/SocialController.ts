@@ -60,15 +60,16 @@ export class SocialController {
             date.setMinutes(date.getMinutes() + numOfMinutes);
             return date;
         };
-        let show_captcha;
+        let show_captcha = false;
         const createdDate = socialPostTime?.createdAt.getMinutes();
-        let calculatedDate: number | Date = addMinutes(2);
-        let currentDate: number | Date = new Date();
+        const timeToCompare: Date = addMinutes(2);
+        const currentDate: Date = new Date();
 
-        calculatedDate = calculatedDate.getMinutes();
-        currentDate = currentDate.getMinutes();
-        if (createdDate < calculatedDate && calculatedDate > currentDate) show_captcha = true;
-        else show_captcha = false;
+        const calculatedDate: number = timeToCompare.getMinutes();
+        const currentDateMinutes: number = currentDate.getMinutes();
+
+        if (createdDate < calculatedDate && calculatedDate > currentDateMinutes) show_captcha = true;
+        
         const captchaRequired = { show_captcha };
         return new SuccessResult(captchaRequired, SocialPostTimeResultModel);
     }
