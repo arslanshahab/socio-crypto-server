@@ -1,4 +1,4 @@
-import { Inject, Injectable, Service } from "@tsed/di";
+import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
 import { CustodialAddressPayload, SymbolNetworkParams } from "../types";
 import { RequestData } from "../util/fetchRequest";
@@ -17,7 +17,6 @@ import { CurrencyService } from "./CurrencyService";
 import { WalletService } from "./WalletService";
 
 @Injectable()
-@Service()
 export class TatumClientService {
     @Inject()
     private prismaService: PrismaService;
