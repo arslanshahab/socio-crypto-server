@@ -16,4 +16,13 @@ export class SocialPostService {
             where: { participantId },
         });
     }
+    public async findUserSocialPostTime(userId: string) {
+        return this.prismaService.socialPost.findFirst({
+            where: { userId },
+            orderBy: { createdAt: "desc" },
+            select: {
+                createdAt: true,
+            },
+        });
+    }
 }
