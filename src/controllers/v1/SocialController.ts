@@ -69,7 +69,7 @@ export class SocialController {
         currentDate = currentDate.getMinutes();
         if (createdDate < calculatedDate && calculatedDate > currentDate) show_captcha = true;
         else show_captcha = false;
-        show_captcha = { show_captcha };
-        return new SuccessResult(show_captcha, SocialPostTimeResultModel);
+        const captchaRequired = { show_captcha };
+        return new SuccessResult(captchaRequired, SocialPostTimeResultModel);
     }
 }
