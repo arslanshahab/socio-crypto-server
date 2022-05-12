@@ -335,6 +335,7 @@ export class SocialMetricsResultModel {
     @Property() public readonly totalShares: number;
     @Property() public readonly likesScore: number;
     @Property() public readonly shareScore: number;
+    @Property() public readonly createdAt: Date;
 }
 export class UserDailyParticipantMetricResultModel {
     @Property() public readonly id: string;
