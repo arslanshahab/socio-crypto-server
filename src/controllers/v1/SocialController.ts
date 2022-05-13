@@ -1,4 +1,4 @@
-import { Get, Post, Returns } from "@tsed/schema";
+import { Get, Post, Property, Returns } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
 import { BodyParams, Context, QueryParams } from "@tsed/common";
 import { UserService } from "../../services/UserService";
@@ -12,6 +12,10 @@ import { ParticipantQueryParams, SocialMetricsResultModel } from "../../models/R
 import { Campaign, Participant, Prisma, Profile, User } from "@prisma/client";
 import { PointValueTypes, SocialType } from "../../types";
 import { SocialLinkService } from "../../services/SocialLinkService";
+
+export class RegisterSocialLinkResultModel {
+    @Property() public readonly registerSocialLink: boolean;
+}
 
 export const allowedSocialLinks = ["twitter", "facebook", "tiktok"];
 
@@ -51,7 +55,7 @@ export class SocialController {
     }
 
     @Post("/register-social-link")
-    @(Returns(200, SuccessResult).Of(Boolean))
+    @(Returns(200, SuccessResult).Of(RegisterSocialLinkResultModel))
     public async registerSocialLink(
         @BodyParams() query: { type: SocialType; apiKey: string; apiSecret: string },
         @Context() context: Context
@@ -61,6 +65,7 @@ export class SocialController {
         const { type, apiKey, apiSecret } = query;
         if (!allowedSocialLinks.includes(type)) throw new BadRequest("the type must exist as a predefined type");
         await this.socialLinkService.addTwitterLink(user, apiKey, apiSecret);
-        return new SuccessResult(true, Boolean);
+        const registerSocialLink = { registerSocialLink: true };
+        return new SuccessResult(registerSocialLink, RegisterSocialLinkResultModel);
     }
 }
