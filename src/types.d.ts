@@ -10,6 +10,7 @@ interface JWTPayload {
     id: string;
     role: string;
     company?: string;
+    ip?: string;
 }
 
 export interface SymbolNetworkParams {
