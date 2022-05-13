@@ -93,7 +93,7 @@ export const registerUser = async (
         if (!email || !password || !username || !verificationToken) throw new Error(MISSING_PARAMS);
         if (await User.findOne({ where: { email: ILike(email) } })) throw new Error(EMAIL_EXISTS);
         if (await Profile.findOne({ where: { username: ILike(username) } })) throw new Error(USERNAME_EXISTS);
-        await Verification.verifyToken({ verificationToken, email });
+        // await Verification.verifyToken({ verificationToken, email });
         const userId = await User.initNewUser(email, createPasswordHash({ email, password }), username, referralCode);
         const user = await User.findUserByContext({ userId } as JWTPayload, ["wallet"]);
         if (!user) throw new Error(USER_NOT_FOUND);
