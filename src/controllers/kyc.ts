@@ -17,10 +17,11 @@ import {
 import { RAIINMAKER_ORG_NAME } from "../util/constants";
 import { KycApplication } from "../types.d";
 import { FormattedError, KYC_NOT_FOUND, USER_NOT_FOUND, VERIFICATION_NOT_FOUND } from "../util/errors";
+import { JWTPayload } from "src/types";
 
 const validator = new Validator();
 
-export const verifyKyc = async (parent: any, args: { userKyc: KycApplication }, context: { user: any }) => {
+export const verifyKyc = async (parent: any, args: { userKyc: KycApplication }, context: { user: JWTPayload }) => {
     try {
         const user = await User.findUserByContext(context.user, ["profile"]);
         if (!user) throw new Error(USER_NOT_FOUND);
@@ -28,8 +29,9 @@ export const verifyKyc = async (parent: any, args: { userKyc: KycApplication }, 
         let verificationApplication;
         let factors;
         if (!currentKycApplication || currentKycApplication.kyc.status === "REJECTED") {
-            validator.validateKycRegistration(args.userKyc);
-            const newAcuantApplication = await AcuantClient.submitApplication(args.userKyc);
+            const kycParams = { ...args.userKyc, ip: context.user.ip };
+            validator.validateKycRegistration(kycParams);
+            const newAcuantApplication = await AcuantClient.submitApplication(kycParams);
             const status = getApplicationStatus(newAcuantApplication);
             verificationApplication = await VerificationApplication.upsert({
                 appId: newAcuantApplication.mtid,
