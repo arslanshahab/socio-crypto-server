@@ -55,10 +55,9 @@ export class SocialController {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new NotFound(USER_NOT_FOUND);
         const socialPostTime = await this.socialPostService.findUserSocialPostTime(user.id);
-        if (!socialPostTime) throw new NotFound("No social post found");
         let show_captcha = false;
-        const timeToCompare = addMinutes(new Date(socialPostTime?.createdAt!), 2);
-        const currentDate: Date = new Date();
+        const timeToCompare = addMinutes(new Date(socialPostTime?.createdAt!), 60);
+        const currentDate = new Date();
         if (new Date(timeToCompare) > currentDate) show_captcha = true;
         const captchaRequired = { show_captcha };
         return new SuccessResult(captchaRequired, SocialPostTimeResultModel);
