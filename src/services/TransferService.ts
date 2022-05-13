@@ -33,4 +33,16 @@ export class TransferService {
             this.prismaService.transfer.count({ where }),
         ]);
     }
+
+    public async findTransferByCampaignId(campaignId: string) {
+        return this.prismaService.transfer.findMany({
+            where: { campaignId },
+        });
+    }
+
+    public async deleteTransferPayouts(campaignId: string) {
+        return await this.prismaService.transfer.deleteMany({
+            where: { campaignId },
+        });
+    }
 }

@@ -11,6 +11,7 @@ import {
     TRANSACTION_NOTIFICATION_TITLE,
     TRANSACTION_NOTIFICATION_BODY,
 } from "../util/constants";
+import { Campaign as PrismaCampaign } from "@prisma/client";
 
 interface FirebaseUserLoginResponse {
     kind: string;
@@ -202,7 +203,7 @@ export class Firebase {
         await Firebase.adminClient.messaging().send(message);
     }
 
-    public static async sendCampaignCreatedNotifications(tokens: string[], campaign: Campaign) {
+    public static async sendCampaignCreatedNotifications(tokens: string[], campaign: Campaign | PrismaCampaign) {
         if (tokens.length === 0) return;
         const title = "A new campaign has been created";
         const body = `The campaign ${campaign.name} was created and is now live!`;

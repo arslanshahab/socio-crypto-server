@@ -335,6 +335,7 @@ export class SocialMetricsResultModel {
     @Property() public readonly totalShares: number;
     @Property() public readonly likesScore: number;
     @Property() public readonly shareScore: number;
+    @Property() public readonly createdAt: Date;
 }
 export class UserDailyParticipantMetricResultModel {
     @Property() public readonly id: string;
@@ -352,7 +353,31 @@ export class UserDailyParticipantMetricResultModel {
     @Nullable(String) public readonly userId: string | null;
     @Nullable(String) public readonly campaignId: string | null;
 }
+export class ParticipantPostsModel {
+    @Property() public readonly results: string;
+}
+export class MediaUrlsModel {
+    @Property() public readonly name: string;
+    @Nullable(String) public readonly channel: string | null;
+    @Property() public readonly signedUrl: string;
+}
+export class CreateCampaignResultModel {
+    @Property() public readonly campaignId: string;
+    @Property() public readonly campaignImageSignedURL: string;
+    @Property() public readonly raffleImageSignedURL: string;
+    @CollectionOf(MediaUrlsModel) public readonly mediaUrls: MediaUrlsModel[];
+}
+export class UpdateCampaignResultModel {
+    @Property() public readonly campaignId: string;
+    @Property() public readonly campaignImageSignedURL: string;
+    @Property() public readonly raffleImageSignedURL: string;
+    @CollectionOf(MediaUrlsModel) public readonly mediaUrls: MediaUrlsModel[];
+}
 
+export class DeleteCampaignResultModel {
+    @Property() public readonly campaignId: string;
+    @Property() public readonly name: string;
+}
 export class UserWalletResultModel {
     @Property() public readonly symbol: string;
     @Property() public readonly balance: string;
@@ -383,4 +408,24 @@ export class CampaignIdModel {
 }
 export class ParticipantQueryParams {
     @Required() public readonly id: string;
+}
+
+export class FlaggedParticipantResultModel {
+    @Property() public readonly participantId: string;
+    @Property() public readonly viewPayout: number;
+    @Property() public readonly clickPayout: number;
+    @Property() public readonly submissionPayout: number;
+    @Property() public readonly likesPayout: number;
+    @Property() public readonly sharesPayout: number;
+    @Property() public readonly totalPayout: number;
+}
+export class GenerateCampaignAuditReportResultModel {
+    @Property() public readonly totalClicks: number;
+    @Property() public readonly totalViews: number;
+    @Property() public readonly totalSubmissions: number;
+    @Property() public readonly totalLikes: number;
+    @Property() public readonly totalShares: number;
+    @Property() public readonly totalParticipationScore: number;
+    @Property() public readonly totalRewardPayout: number;
+    @CollectionOf(FlaggedParticipantResultModel) public readonly flaggedParticipants: FlaggedParticipantResultModel[];
 }

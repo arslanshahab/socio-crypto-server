@@ -40,7 +40,6 @@ import { BSC, CUSTODIAL_NETWORKS, ETH } from "../util/constants";
 import { Token } from "../models/Token";
 import { SymbolNetworkParams } from "../types.d";
 import { sleep } from "../controllers/helpers";
-import { Currency as PrismaCurrency } from "@prisma/client";
 export const CAMPAIGN_CREATION_AMOUNT = "CAMPAIGN_CREATION_AMOUNT";
 export const CAMPAIGN_FEE = "CAMPAIGN_FEE";
 export const CAMPAIGN_REWARD = "CAMPAIGN_REWARD";
@@ -287,7 +286,7 @@ export class TatumClient {
         }
     };
 
-    public static getBalanceForAccountList = async (accounts: Currency[] | PrismaCurrency[]) => {
+    public static getBalanceForAccountList = async (accounts: Currency[]) => {
         try {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
             const promiseArray: Promise<any>[] = [];
