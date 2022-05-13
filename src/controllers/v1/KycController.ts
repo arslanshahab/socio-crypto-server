@@ -12,7 +12,7 @@ import { Validator } from "../../schemas";
 import { AcuantClient } from "../../clients/acuant";
 import { Firebase } from "../../clients/firebase";
 import { VerificationApplicationService } from "../../services/VerificationApplicationService";
-import { KycUser } from "../../types";
+import { KycApplication, KycUser } from "../../types";
 import { S3Client } from "../../clients/s3";
 import { KycUpdateResultModel, KycUserResultModel } from "../../models/RestModels";
 
@@ -20,26 +20,6 @@ class KycResultModel {
     @Property() public readonly kycId: string;
     @Property() public readonly status: string;
     @Property(Object) public readonly factors: object | undefined;
-}
-class KycApplication {
-    @Required() public readonly firstName: string;
-    @Required() public readonly middleName: string;
-    @Required() public readonly lastName: string;
-    @Required() public readonly email: string;
-    @Property() public readonly ip: string;
-    @Required() public readonly billingStreetAddress: string;
-    @Required() public readonly billingCity: string;
-    @Required() public readonly billingCountry: string;
-    @Property() public readonly billingZip: number;
-    @Property() public readonly zipCode: string;
-    @Required() public readonly gender: string;
-    @Required() public readonly dob: string;
-    @Required() public readonly phoneNumber: string;
-    @Required() public readonly documentType: string;
-    @Required() public readonly documentCountry: string;
-    @Required() public readonly frontDocumentImage: string;
-    @Required() public readonly faceImage: string;
-    @Required() public readonly backDocumentImage: string;
 }
 
 class KycStatusParms {
