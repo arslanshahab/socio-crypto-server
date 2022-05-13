@@ -14,7 +14,7 @@ import { Firebase } from "../../clients/firebase";
 import { VerificationApplicationService } from "../../services/VerificationApplicationService";
 import { KycUser } from "../../types";
 import { S3Client } from "../../clients/s3";
-import { KycUserResultModel } from "../../models/RestModels";
+import { KycUpdateResultModel, KycUserResultModel } from "../../models/RestModels";
 
 class KycResultModel {
     @Property() public readonly kycId: string;
@@ -94,7 +94,7 @@ export class KycController {
     }
 
     @Post("/verify-kyc")
-    @(Returns(200, SuccessResult).Of(Object))
+    @(Returns(200, SuccessResult).Of(KycUpdateResultModel))
     public async verifyKyc(@BodyParams() query: KycApplication, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"), ["profile"]);
         if (!user) throw new BadRequest(USER_NOT_FOUND);
@@ -123,11 +123,11 @@ export class KycController {
             status: verificationApplication?.status,
             factors,
         };
-        return new SuccessResult(result, Object);
+        return new SuccessResult(result, KycUpdateResultModel);
     }
 
     @Put("/update-kyc")
-    @(Returns(200, SuccessResult).Of(Object))
+    @(Returns(200, SuccessResult).Of(KycResultModel))
     public async updateKyc(@BodyParams() query: KycUser, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
@@ -141,7 +141,8 @@ export class KycController {
             delete query.addressProof;
             query.hasAddressProof = true;
         }
-        return S3Client.updateUserInfo(user.id, query);
+        const result = await S3Client.updateUserInfo(user.id, query);
+        return new SuccessResult(result, KycResultModel);
     }
 
     @Put("/update-kyc-status")

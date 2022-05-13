@@ -440,6 +440,21 @@ export class KycUserResultModel {
     @Nullable(String) public readonly kycStatus: string | null;
     @Property() public readonly password: string;
     @Nullable(String) public readonly updatedAt: Date;
-    @Property() public readonly profile: Prisma.Profile ;
-    @Property() public readonly notification_settings: Prisma.NotificationSettings ;
+    @Property() public readonly profile: Prisma.Profile;
+    @Property() public readonly notification_settings: Prisma.NotificationSettings;
+}
+
+export class AcuantApplicationExtractedDetailsModel {
+    @Property() public readonly age: number | null;
+    @Property() public readonly fullName: string | null;
+    @Property() public readonly address: string | null;
+    @Property() public readonly isDocumentValid: boolean | null;
+    @Property() public readonly documentDetails: string | null;
+    @Property() public readonly documentExpiry: Date | null;
+}
+
+export class KycUpdateResultModel {
+    @Property() public readonly kycId: string;
+    @Property() public readonly status: string;
+    @Property() public readonly factors: AcuantApplicationExtractedDetailsModel;
 }
