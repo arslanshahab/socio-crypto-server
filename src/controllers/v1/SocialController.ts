@@ -4,20 +4,34 @@ import { BodyParams, Context, QueryParams } from "@tsed/common";
 import { UserService } from "../../services/UserService";
 import { SuccessResult } from "../../util/entities";
 import { BadRequest, NotFound } from "@tsed/exceptions";
-import { PARTICIPANT_NOT_FOUND, USER_NOT_FOUND } from "../../util/errors";
+import {
+    CAMPAIGN_CLOSED,
+    MEDIA_NOT_FOUND,
+    PARTICIPANT_NOT_FOUND,
+    POST_ID_NOT_FOUND,
+    USER_NOT_FOUND,
+} from "../../util/errors";
 import { ParticipantService } from "../../services/ParticipantService";
 import { SocialPostService } from "../../services/SocialPostService";
-import { calculateParticipantSocialScoreV2 } from "../helpers";
+import { calculateParticipantSocialScoreV2, getSocialClient } from "../helpers";
 import { ParticipantQueryParams, SocialMetricsResultModel } from "../../models/RestModels";
 import { Campaign, Participant, Prisma, Profile, User } from "@prisma/client";
-import { PointValueTypes, SocialType } from "../../types";
+import { PointValueTypes, SocialPostParamTypes, SocialType } from "../../types";
 import { SocialLinkService } from "../../services/SocialLinkService";
+import { CampaignService } from "../../services/CampaignService";
+import { CampaignMediaService } from "../../services/CampaignMediaService";
+import { downloadMedia } from "../../util";
+import { HourlyCampaignMetricsService } from "../../services/HourlyCampaignMetricsService";
 
 export class RegisterSocialLinkResultModel {
     @Property() public readonly registerSocialLink: boolean;
 }
 
 export const allowedSocialLinks = ["twitter", "facebook", "tiktok"];
+const assetUrl =
+    process.env.NODE_ENV === "production"
+        ? "https://raiinmaker-media.api.raiinmaker.com"
+        : "https://raiinmaker-media-staging.api.raiinmaker.com";
 
 @Controller("/social")
 export class SocialController {
@@ -29,6 +43,12 @@ export class SocialController {
     private userService: UserService;
     @Inject()
     private socialLinkService: SocialLinkService;
+    @Inject()
+    private campaignService: CampaignService;
+    @Inject()
+    private campaignMediaService: CampaignMediaService;
+    @Inject()
+    private hourlyCampaignMetricsService: HourlyCampaignMetricsService;
 
     @Get("/social-metrics")
     @(Returns(200, SuccessResult).Of(SocialMetricsResultModel))
@@ -67,5 +87,57 @@ export class SocialController {
         await this.socialLinkService.addTwitterLink(user, apiKey, apiSecret);
         const result = { registerSocialLink: true };
         return new SuccessResult(result, RegisterSocialLinkResultModel);
+    }
+
+    @Post("/post-to-social")
+    @(Returns(200, SuccessResult).Of(RegisterSocialLinkResultModel))
+    public async postToSocial(@BodyParams() query: SocialPostParamTypes, @Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"), ["wallet"]);
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        let { socialType, text, mediaType, mediaFormat, media, participantId, defaultMedia, mediaId } = query;
+        const startTime = new Date().getTime();
+        if (!allowedSocialLinks.includes(socialType)) throw new BadRequest(`posting to ${socialType} is not allowed`);
+        const participant = await this.participantService.findParticipantById(participantId, user);
+        if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
+        if (!(await this.campaignService.isCampaignOpen(participant.campaign.id)))
+            throw new BadRequest(CAMPAIGN_CLOSED);
+        const socialLink = await this.socialLinkService.findSocialLinkByUserId(user.id, socialType);
+
+        if (!socialLink) throw new BadRequest(`You have not linked ${socialType} as a social platform`);
+        const campaign = await this.campaignService.findCampaignById(participant.campaign.id, {
+            org: true,
+            campaign_media: true,
+        });
+        if (!campaign) throw new NotFound(CAMPAIGN_CLOSED);
+        const client = getSocialClient(socialType);
+
+        if (defaultMedia) {
+            let selectedMedia = await this.campaignMediaService.findCampaignMediaById(mediaId, socialType);
+            if (!selectedMedia) throw new NotFound(MEDIA_NOT_FOUND);
+            const mediaUrl = `${assetUrl}/campaign/${campaign.id}/${selectedMedia?.media}`;
+            const downloaded = await downloadMedia(mediaType, mediaUrl, selectedMedia.mediaFormat!);
+            media = downloaded;
+            mediaFormat = selectedMedia.mediaFormat!;
+        }
+        let postId: string;
+        if (mediaType && mediaFormat) {
+            postId = await client.postV2(participant.id, socialLink, text, media, mediaType, mediaFormat);
+        } else {
+            postId = await client.postV2(participant.id, socialLink, text);
+        }
+        if (!postId) throw new NotFound(POST_ID_NOT_FOUND);
+        await this.hourlyCampaignMetricsService.upsertMetrics(campaign.id, campaign.org?.id, "post");
+
+        const socialPost = await this.socialPostService.newSocialPost(
+            postId,
+            socialType,
+            participant.id,
+            user.id,
+            participant.campaign.id
+        );
+        const endTime = new Date().getTime();
+        const timeTaken = (endTime - startTime) / 1000;
+        console.log("Number of seconds taken for this upload", timeTaken);
+        return socialPost.id;
     }
 }

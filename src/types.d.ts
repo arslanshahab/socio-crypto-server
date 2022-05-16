@@ -587,3 +587,14 @@ export interface LedgerAccountTypes {
     derivationKey?: number;
     newLedgerAccount?: LedgerAccount;
 }
+
+export interface SocialPostParamTypes {
+    socialType: "twitter" | "facebook" | "tiktok";
+    text: string;
+    mediaType: "video" | "photo" | "gif";
+    mediaFormat: string;
+    media: string;
+    participantId: string;
+    defaultMedia: boolean;
+    mediaId: string;
+}

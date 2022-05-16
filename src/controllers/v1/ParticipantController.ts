@@ -17,6 +17,7 @@ import { Campaign, Participant, Prisma } from "@prisma/client";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { getSocialClient } from "../helpers";
 import { Tiers } from "../../types";
+import { SocialLinkService } from "../../services/SocialLinkService";
 
 class ListParticipantVariablesModel {
     @Property() public readonly id: string;
@@ -36,6 +37,8 @@ export class ParticipantController {
     private campaignService: CampaignService;
     @Inject()
     private userService: UserService;
+    @Inject()
+    private socialLinkService:SocialLinkService;
 
     @Get()
     @(Returns(200, SuccessResult).Of(ParticipantModel))
@@ -59,7 +62,7 @@ export class ParticipantController {
         const posts = await this.participantService.findSocialPosts(participant.id);
         for (let i = 0; i < posts.length; i++) {
             const post = posts[i];
-            const socialLink = await this.participantService.findSocialLinkByUserId(user?.id || "", "twitter");
+            const socialLink = await this.socialLinkService.findSocialLinkByUserId(user?.id || "", "twitter");
             const client = getSocialClient(post.type);
             const response = await client?.getPost(socialLink, post.id);
             if (response) results.push(response);

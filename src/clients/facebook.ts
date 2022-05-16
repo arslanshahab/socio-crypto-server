@@ -7,6 +7,7 @@ export class FacebookClient {
     }
 
     public static post = async () => {};
+    public static postV2 = async () => {};
 
     public static async getPageData(accessToken: string) {
         const payload: { [key: string]: any } = {};

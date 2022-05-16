@@ -19,9 +19,11 @@ export class CampaignMediaService {
         });
     }
 
-    public async findCampaignMediaById(campaignMediaId: string) {
+    public async findCampaignMediaById(campaignMediaId: string, socialType?: string) {
         return this.prismaService.campaignMedia.findFirst({
-            where: { id: campaignMediaId },
+            where: socialType
+                ? { id: campaignMediaId, channel: { contains: socialType, mode: "insensitive" } }
+                : { id: campaignMediaId },
         });
     }
 
