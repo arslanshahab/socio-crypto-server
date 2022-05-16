@@ -14,7 +14,7 @@ import {
 import { ParticipantService } from "../../services/ParticipantService";
 import { SocialPostService } from "../../services/SocialPostService";
 import { calculateParticipantSocialScoreV2, getSocialClient } from "../helpers";
-import { ParticipantQueryParams, SocialMetricsResultModel } from "../../models/RestModels";
+import { ParticipantQueryParams, SocialMetricsResultModel, SocialPostResultModel } from "../../models/RestModels";
 import { Campaign, Participant, Prisma, Profile, User } from "@prisma/client";
 import { PointValueTypes, SocialPostParamTypes, SocialType } from "../../types";
 import { SocialLinkService } from "../../services/SocialLinkService";
@@ -90,12 +90,11 @@ export class SocialController {
     }
 
     @Post("/post-to-social")
-    @(Returns(200, SuccessResult).Of(RegisterSocialLinkResultModel))
+    @(Returns(200, SuccessResult).Of(SocialPostResultModel))
     public async postToSocial(@BodyParams() query: SocialPostParamTypes, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"), ["wallet"]);
         if (!user) throw new NotFound(USER_NOT_FOUND);
         let { socialType, text, mediaType, mediaFormat, media, participantId, defaultMedia, mediaId } = query;
-        const startTime = new Date().getTime();
         if (!allowedSocialLinks.includes(socialType)) throw new BadRequest(`posting to ${socialType} is not allowed`);
         const participant = await this.participantService.findParticipantById(participantId, user);
         if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
@@ -135,9 +134,7 @@ export class SocialController {
             user.id,
             participant.campaign.id
         );
-        const endTime = new Date().getTime();
-        const timeTaken = (endTime - startTime) / 1000;
-        console.log("Number of seconds taken for this upload", timeTaken);
-        return socialPost.id;
+        const result = { id: socialPost.id };
+        return new SuccessResult(result, SocialPostResultModel);
     }
 }
