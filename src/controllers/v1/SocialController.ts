@@ -65,7 +65,7 @@ export class SocialController {
         const { type, apiKey, apiSecret } = query;
         if (!allowedSocialLinks.includes(type)) throw new BadRequest("the type must exist as a predefined type");
         await this.socialLinkService.addTwitterLink(user, apiKey, apiSecret);
-        const registerSocialLink = { registerSocialLink: true };
-        return new SuccessResult(registerSocialLink, RegisterSocialLinkResultModel);
+        const result = { registerSocialLink: true };
+        return new SuccessResult(result, RegisterSocialLinkResultModel);
     }
 }
