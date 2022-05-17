@@ -35,7 +35,7 @@ export const authenticateUser = async ({ req }: { req: express.Request }) => {
         const user = verifySessionToken(token);
         const userData = await User.findUserByContext(user);
         if (!userData?.active) throw new Error(ACCOUNT_RESTRICTED);
-        return { user };
+        return { user: { ...user, ip: req.socket.remoteAddress } };
     } catch (error) {
         throw new FormattedError(error);
     }

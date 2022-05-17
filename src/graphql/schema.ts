@@ -323,7 +323,6 @@ export const typeDefs = gql`
         middleName: String!
         lastName: String!
         email: String!
-        ip: String
         billingStreetAddress: String!
         billingCity: String!
         billingCountry: String!

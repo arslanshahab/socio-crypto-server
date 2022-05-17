@@ -631,3 +631,131 @@ spec:
             - name: tiktok
               secret:
                 secretName: tiktok
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: coiin-transfer
+  labels:
+    app.kubernetes.io/name: coiin-transfer
+    helm.sh/chart: {{ include "raiinmaker.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  schedule: "{{ .Values.cron.frequency.coiinTransfer }}"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          annotations:
+            iam.amazonaws.com/role: {{ .Values.data.IAM_ROLE }}
+        spec:
+          containers:
+            - name: coiin-transfer
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              command: ["node"]
+              args: ["./dist/cron/coiinTransfer/index.js"]
+              env:
+                - name: PG_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.postgresql.existingSecret }}
+                      key: postgresql-password
+              envFrom:
+                - configMapRef:
+                    name: "{{ include "raiinmaker.fullname" . }}-server-env"
+              volumeMounts:
+                - name: firebase-credentials
+                  mountPath: "/var/secrets/firebase-credentials"
+                  readOnly: true
+                - name: bearer-token
+                  mountPath: "/var/secrets/bearer-token"
+                  readOnly: true
+                - name: dragonchain-credentials
+                  mountPath: "/var/secrets/dragonchain-credentials"
+                  readOnly: true
+                - name: encryption-key
+                  mountPath: "/var/secrets/encryption-key"
+                  readOnly: true
+                - name: twitter-credentials
+                  mountPath: "/var/secrets/twitter-credentials"
+                  readOnly: true
+                - name: paypal-credentials
+                  mountPath: "/var/secrets/paypal-credentials"
+                  readOnly: true
+                - name: factor-credentials
+                  mountPath: "/var/secrets/factor-credentials"
+                  readOnly: true
+                - name: eth-hot-wallet-privkey
+                  mountPath: "/var/secrets/eth-hot-wallet-privkey"
+                  readOnly: true
+                - name: stripe-api-key
+                  mountPath: "/var/secrets/stripe-api-key"
+                  readOnly: true
+                - name: stripe-webhook-secret
+                  mountPath: "/var/secrets/stripe-webhook-secret"
+                  readOnly: true
+                - name: xoxoday
+                  mountPath: "/var/secrets/xoxoday"
+                  readOnly: true
+                - name: tatum
+                  mountPath: "/var/secrets/tatum"
+                  readOnly: true
+                - name: acuant
+                  mountPath: "/var/secrets/acuant"
+                  readOnly: true
+                - name: tiktok
+                  mountPath: "/var/secrets/tiktok"
+                  readOnly: true
+              resources:
+                requests:
+                  memory: "500Mi"
+                  cpu: "250m"
+                limits:
+                  memory: "500Mi"
+                  cpu: "500m"
+          restartPolicy: OnFailure
+          volumes:
+            - name: firebase-credentials
+              secret:
+                secretName: "firebase-credentials"
+            - name: bearer-token
+              secret:
+                secretName: "bearer-token"
+            - name: dragonchain-credentials
+              secret:
+                secretName: dragonchain-credentials
+            - name: encryption-key
+              secret:
+                secretName: encryption-key
+            - name: twitter-credentials
+              secret:
+                secretName: twitter-credentials
+            - name: paypal-credentials
+              secret:
+                secretName: paypal-credentials
+            - name: factor-credentials
+              secret:
+                secretName: factor-credentials
+            - name: eth-hot-wallet-privkey
+              secret:
+                secretName: eth-hot-wallet-privkey
+            - name: stripe-api-key
+              secret:
+                secretName: stripe-api-key
+            - name: stripe-webhook-secret
+              secret:
+                secretName: stripe-webhook-secret
+            - name: xoxoday
+              secret:
+                secretName: xoxoday
+            - name: tatum
+              secret:
+                secretName: tatum
+            - name: acuant
+              secret:
+                secretName: acuant
+            - name: tiktok
+              secret:
+                secretName: tiktok

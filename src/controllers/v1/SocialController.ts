@@ -11,9 +11,10 @@ import { calculateParticipantSocialScoreV2 } from "../helpers";
 import { ParticipantQueryParams, SocialMetricsResultModel } from "../../models/RestModels";
 import { Campaign, Participant, Prisma, Profile, User } from "@prisma/client";
 import { PointValueTypes } from "../../types";
+import { addMinutes } from "date-fns";
 
 export class SocialPostTimeResultModel {
-    @Property() readonly show_captcha: any;
+    @Property() readonly show_captcha: boolean;
 }
 @Controller("/social")
 export class SocialController {
@@ -54,22 +55,10 @@ export class SocialController {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new NotFound(USER_NOT_FOUND);
         const socialPostTime = await this.socialPostService.findUserSocialPostTime(user.id);
-        if (!socialPostTime) throw new NotFound("No social post found");
-
-        const addMinutes = (numOfMinutes: number, date = new Date(socialPostTime?.createdAt!)) => {
-            date.setMinutes(date.getMinutes() + numOfMinutes);
-            return date;
-        };
         let show_captcha = false;
-        const createdDate = socialPostTime?.createdAt.getMinutes();
-        const timeToCompare: Date = addMinutes(2);
-        const currentDate: Date = new Date();
-
-        const calculatedDate: number = timeToCompare.getMinutes();
-        const currentDateMinutes: number = currentDate.getMinutes();
-
-        if (createdDate < calculatedDate && calculatedDate > currentDateMinutes) show_captcha = true;
-        
+        const timeToCompare = addMinutes(new Date(socialPostTime?.createdAt!), 60);
+        const currentDate = new Date();
+        if (new Date(timeToCompare) > currentDate) show_captcha = true;
         const captchaRequired = { show_captcha };
         return new SuccessResult(captchaRequired, SocialPostTimeResultModel);
     }
