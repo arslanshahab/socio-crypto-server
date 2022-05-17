@@ -1,4 +1,4 @@
-import { Get, Post, Property, Returns } from "@tsed/schema";
+import { Get, Post, Property, Required, Returns } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
 import { BodyParams, Context, QueryParams } from "@tsed/common";
 import { UserService } from "../../services/UserService";
@@ -25,6 +25,13 @@ import { HourlyCampaignMetricsService } from "../../services/HourlyCampaignMetri
 
 export class RegisterSocialLinkResultModel {
     @Property() public readonly registerSocialLink: boolean;
+}
+export class SocialPostDeleteModel {
+    @Property() public readonly removeSocialLink: boolean;
+}
+
+export class SocialLinkType {
+    @Required() public readonly type: SocialType;
 }
 
 export const allowedSocialLinks = ["twitter", "facebook", "tiktok"];
@@ -136,5 +143,17 @@ export class SocialController {
         );
         const result = { id: socialPost.id };
         return new SuccessResult(result, SocialPostResultModel);
+    }
+
+    @Post("/remove-social-link")
+    @(Returns(200, SuccessResult).Of(SocialPostDeleteModel))
+    public async removeSocialLink(@QueryParams() query: SocialLinkType, @Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"), ["social_link"]);
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        const { type } = query;
+        if (!allowedSocialLinks.includes(type)) throw new BadRequest("Invalid or missing params");
+        await this.socialLinkService.removeSocialLink(user.id, type);
+        const result = { removeSocialLink: true };
+        return new SuccessResult(result, SocialPostDeleteModel);
     }
 }

@@ -47,4 +47,11 @@ export class SocialLinkService {
             });
         }
     }
+
+    public async removeSocialLink(userId: string, type: string) {
+        const socialLink = await this.findSocialLinkByUserId(userId, type);
+        return await this.prismaService.socialLink.delete({
+            where: { id: socialLink.id },
+        });
+    }
 }
