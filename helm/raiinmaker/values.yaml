@@ -28,6 +28,7 @@ cron:
         # coiinWatcher: "*/5 * * * *" # At every 5 minutes
         qualityScore: "0 * * * *" # At minute 0 every hour
         campaignAudit: "*/30 * * * *" # At every 30 minutes
+        coiinTransfer: "0 */12 * * *" # At every 12 hours
 
 # up server replica count
 replicaCount: 2
