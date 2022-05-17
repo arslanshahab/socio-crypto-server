@@ -1,13 +1,19 @@
-import { Org, Prisma, User, Wallet } from "@prisma/client";
+import { Campaign, Org, Prisma, User, Wallet } from "@prisma/client";
 import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
-import { BadRequest, Forbidden } from "@tsed/exceptions";
+import { BadRequest, Forbidden, NotFound } from "@tsed/exceptions";
 import { isArray } from "lodash";
-import { JWTPayload } from "../types";
+import { JWTPayload, RewardType } from "../types";
 import { AddressService } from "./AddressService";
-import { BSC, COIIN } from "../util/constants";
+import { BSC, COIIN, REWARD_AMOUNTS, SHARING_REWARD_LIMIT_PER_DAY } from "../util/constants";
 import { TatumClient } from "../clients/tatumClient";
 import { createSubscriptionUrl } from "../util/tatumHelper";
+import { WalletService } from "./WalletService";
+import { WALLET_NOT_FOUND } from "src/util/errors";
+import { differenceInHours } from "date-fns";
+import { TransferService } from "./TransferService";
+import { OrganizationService } from "./OrganizationService";
+import { TatumClientService } from "./TatumClientService";
 
 type Array2TrueMap<T> = T extends string[] ? { [idx in T[number]]: true } : undefined;
 
@@ -17,6 +23,14 @@ export class UserService {
     private prismaService: PrismaService;
     @Inject()
     private addressService: AddressService;
+    @Inject()
+    private walletService: WalletService;
+    @Inject()
+    private transferService: TransferService;
+    @Inject()
+    private orgService: OrganizationService;
+    @Inject()
+    private tatumClientService: TatumClientService;
 
     /**
      * Retrieves a user object from a JWTPayload
@@ -249,5 +263,50 @@ export class UserService {
                 },
             },
         });
+    }
+
+    public async transferCoiinReward(data: { user: User; type: RewardType; campaign?: Campaign }) {
+        const { user, type, campaign } = data;
+        const wallet = await this.walletService.findWalletByUserId(user.id);
+        if (!wallet) throw new NotFound(WALLET_NOT_FOUND);
+        let accountAgeInHours = 0,
+            thisWeeksReward;
+        if (type === "LOGIN_REWARD") accountAgeInHours = differenceInHours(new Date(), new Date(user.createdAt));
+        if (type === "LOGIN_REWARD" || type === "PARTICIPATION_REWARD")
+            thisWeeksReward = await this.transferService.getRewardForThisWeek(wallet.id, type);
+        const amount = REWARD_AMOUNTS[type] || 0;
+        const raiinmakerCurrency = await this.orgService.getCurrencyForRaiinmaker({ symbol: COIIN, network: BSC });
+        const userCurrency = await this.tatumClientService.findOrCreateCurrency({
+            symbol: COIIN,
+            network: BSC,
+            wallet,
+        });
+        if (
+            (type === "LOGIN_REWARD" && accountAgeInHours > 24 && !thisWeeksReward) ||
+            (type === "PARTICIPATION_REWARD" && !thisWeeksReward) ||
+            (type === "SHARING_REWARD" &&
+                (await this.transferService.getLast24HourRedemption(wallet.id, "SHARING_REWARD")) <
+                    SHARING_REWARD_LIMIT_PER_DAY)
+        ) {
+            let transferStatus = true;
+            try {
+                await this.tatumClientService.trnasferFunds({
+                    senderAccountId: raiinmakerCurrency.tatumId,
+                    recipientAccountId: userCurrency.tatumId,
+                    amount: amount.toString(),
+                    recipientNote: "WEEKLY-REWARD",
+                });
+            } catch (error) {
+                transferStatus = false;
+            }
+            await this.transferService.newReward({
+                walletId: wallet.id,
+                action: type,
+                status: transferStatus ? "SUCCEEDED" : "FAILED",
+                symbol: COIIN,
+                amount: amount.toString(),
+                campaign,
+            });
+        }
     }
 }

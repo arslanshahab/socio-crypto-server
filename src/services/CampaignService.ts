@@ -267,9 +267,7 @@ export class CampaignService {
     }
 
     public async isCampaignOpen(campaignId: string) {
-        const campaign = await this.prismaService.campaign.findFirst({
-            where: { id: campaignId },
-        });
+        const campaign = await this.findCampaignById(campaignId);
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
         const now = new Date();
         if (

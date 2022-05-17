@@ -1,12 +1,18 @@
-import { User } from "@prisma/client";
+import { Campaign, User } from "@prisma/client";
 import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
 import { FindCampaignById } from "../types";
+import { encrypt } from "../util/crypto";
+import { serverBaseUrl } from "../config";
+import { TinyUrl } from "../clients/tinyUrl";
+import { HourlyCampaignMetricsService } from "./HourlyCampaignMetricsService";
 
 @Injectable()
 export class ParticipantService {
     @Inject()
     private prismaService: PrismaService;
+    @Inject()
+    private hourlyCampaignMetricsService: HourlyCampaignMetricsService;
 
     /**
      * Retrieves a paginated list of participants
@@ -83,9 +89,9 @@ export class ParticipantService {
             where: { campaignId },
         });
     }
-    public async findParticipantByUser(userId: string) {
+    public async findParticipantByUser(userId: string, campaignId?: string) {
         return this.prismaService.participant.findMany({
-            where: { userId },
+            where: campaignId ? { userId, campaignId } : { userId },
             include: {
                 campaign: true,
             },
@@ -108,5 +114,23 @@ export class ParticipantService {
                 campaignId,
             },
         });
+    }
+
+    public async createParticipant(userId: string, campaign: Campaign, email?: string) {
+        const participant = await this.prismaService.participant.create({
+            data: {
+                clickCount: "0",
+                viewCount: "0",
+                submissionCount: "0",
+                participationScore: "0",
+                userId,
+                campaignId: campaign.id,
+                email: email ? encrypt(email) : "",
+            },
+        });
+        const url = `${serverBaseUrl}/v1/referral/${participant.id}`;
+        participant.link = await TinyUrl.shorten(url);
+        await this.hourlyCampaignMetricsService.upsertMetrics(campaign.id, campaign?.orgId!, "participate");
+        return participant;
     }
 }

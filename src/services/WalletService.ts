@@ -5,7 +5,7 @@ import { PrismaService } from ".prisma/client/entities";
 export class WalletService {
     @Inject()
     private prismaService: PrismaService;
-    
+
     public async findWalletByOrgId(orgId: string) {
         return this.prismaService.wallet.findFirst({
             where: {
@@ -22,6 +22,12 @@ export class WalletService {
                 user: true,
                 org: true,
             },
+        });
+    }
+
+    public async findWalletByUserId(userId: string) {
+        return this.prismaService.wallet.findFirst({
+            where: { userId },
         });
     }
 }
