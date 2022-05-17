@@ -1,4 +1,5 @@
 import * as AWS from "aws-sdk";
+import { COIIN_ALERT_TRIGGER_LIMIT } from "../util/constants";
 import { Campaign } from "../models/Campaign";
 import { Transfer } from "../models/Transfer";
 
@@ -126,6 +127,21 @@ export class SesClient {
         const title = `Verify your email address`;
         const text = `Please use this code to verify your email address: ${otp}`;
         const template = SesClient.getTemplate(title, text, "Verify Email Address", emailAddress);
+        try {
+            const data = await SesClient.client.sendEmail(template).promise();
+            console.log(`Email sent to ${emailAddress}, ${JSON.stringify(data)}`);
+            return true;
+        } catch (error) {
+            console.error("Error occurred while sending email");
+            console.error(error);
+            throw new Error(error.message);
+        }
+    }
+
+    public static async coiinBalanceAlert(emailAddress: string, balance: number) {
+        const title = `COIIN BALANCE IS BELEOW ${COIIN_ALERT_TRIGGER_LIMIT}!!`;
+        const text = `Hey Raiinmaker, Tatum COIIN balance has reached a certain limit. Please add more coiin to your account. Current balance is  ${balance}.`;
+        const template = SesClient.getTemplate(title, text, title, emailAddress);
         try {
             const data = await SesClient.client.sendEmail(template).promise();
             console.log(`Email sent to ${emailAddress}, ${JSON.stringify(data)}`);

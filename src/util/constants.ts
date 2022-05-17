@@ -9,6 +9,7 @@ export const NETWORK_TO_NATIVE_TOKEN: { [key: string]: string } = {
     ETH: ETH,
     MATIC: MATIC,
 };
+export const COIIN_ALERT_TRIGGER_LIMIT = 5000;
 export const CUSTODIAL_NETWORKS = [MATIC, ETH, BSC];
 export const WITHDRAW_LIMIT = 1000;
 export const SHARING_REWARD_LIMIT_PER_DAY = 5;
