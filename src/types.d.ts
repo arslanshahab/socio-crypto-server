@@ -10,6 +10,7 @@ interface JWTPayload {
     id: string;
     role: string;
     company?: string;
+    ip?: string;
 }
 
 export interface SymbolNetworkParams {
@@ -597,4 +598,10 @@ export interface SocialPostParamTypes {
     participantId: string;
     defaultMedia: boolean;
     mediaId: string;
+}
+export interface CustodialAddressPayload {
+    chain: string;
+    fromPrivateKey: string;
+    owner: string;
+    batchCount: number;
 }

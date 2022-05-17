@@ -36,6 +36,7 @@ import { TatumClient } from "../clients/tatumClient";
 import { Org } from "./Org";
 import { BSC, COIIN, REWARD_AMOUNTS, SHARING_REWARD_LIMIT_PER_DAY } from "../util/constants";
 import { Campaign } from "./Campaign";
+import { trim } from "lodash";
 
 @Entity()
 export class User extends BaseEntity {
@@ -127,7 +128,7 @@ export class User extends BaseEntity {
         let wallet = new Wallet();
         const profile = new Profile();
         const notificationSettings = new NotificationSettings();
-        user.email = email;
+        user.email = trim(email);
         user.password = password;
         if (referralCode) user.referralCode = referralCode;
         await user.save();

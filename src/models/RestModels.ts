@@ -335,6 +335,7 @@ export class SocialMetricsResultModel {
     @Property() public readonly totalShares: number;
     @Property() public readonly likesScore: number;
     @Property() public readonly shareScore: number;
+    @Property() public readonly createdAt: Date;
 }
 export class UserDailyParticipantMetricResultModel {
     @Property() public readonly id: string;
@@ -427,4 +428,33 @@ export class GenerateCampaignAuditReportResultModel {
     @Property() public readonly totalParticipationScore: number;
     @Property() public readonly totalRewardPayout: number;
     @CollectionOf(FlaggedParticipantResultModel) public readonly flaggedParticipants: FlaggedParticipantResultModel[];
+}
+
+export class KycUserResultModel {
+    @Property() public readonly id: string;
+    @Property() public readonly email: string;
+    @Property() public readonly createdAt: Date;
+    @Property() public readonly lastLogin: Date | null;
+    @Property() public readonly active: boolean;
+    @Nullable(String) public readonly identityId: string | null;
+    @Nullable(String) public readonly kycStatus: string | null;
+    @Property() public readonly password: string;
+    @Nullable(String) public readonly updatedAt: Date;
+    @Property() public readonly profile: Prisma.Profile;
+    @Property() public readonly notification_settings: Prisma.NotificationSettings;
+}
+
+export class AcuantApplicationExtractedDetailsModel {
+    @Property() public readonly age: number | null;
+    @Property() public readonly fullName: string | null;
+    @Property() public readonly address: string | null;
+    @Property() public readonly isDocumentValid: boolean | null;
+    @Property() public readonly documentDetails: string | null;
+    @Property() public readonly documentExpiry: Date | null;
+}
+
+export class KycUpdateResultModel {
+    @Property() public readonly kycId: string;
+    @Property() public readonly status: string;
+    @Property() public readonly factors: AcuantApplicationExtractedDetailsModel;
 }

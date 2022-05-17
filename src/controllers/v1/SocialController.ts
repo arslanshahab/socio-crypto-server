@@ -22,6 +22,7 @@ import { CampaignService } from "../../services/CampaignService";
 import { CampaignMediaService } from "../../services/CampaignMediaService";
 import { downloadMedia } from "../../util";
 import { HourlyCampaignMetricsService } from "../../services/HourlyCampaignMetricsService";
+import { addMinutes } from "date-fns";
 
 export class RegisterSocialLinkResultModel {
     @Property() public readonly registerSocialLink: boolean;
@@ -40,6 +41,9 @@ const assetUrl =
         ? "https://raiinmaker-media.api.raiinmaker.com"
         : "https://raiinmaker-media-staging.api.raiinmaker.com";
 
+export class SocialPostTimeResultModel {
+    @Property() readonly show_captcha: boolean;
+}
 @Controller("/social")
 export class SocialController {
     @Inject()
@@ -155,5 +159,19 @@ export class SocialController {
         await this.socialLinkService.removeSocialLink(user.id, type);
         const result = { removeSocialLink: true };
         return new SuccessResult(result, SocialPostDeleteModel);
+    }
+    
+    @Get("/user-social-post-time")
+    @(Returns(200, SuccessResult).Of(SocialPostTimeResultModel))
+    public async getUserSocialPostTime(@Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        const socialPostTime = await this.socialPostService.findUserSocialPostTime(user.id);
+        let show_captcha = false;
+        const timeToCompare = addMinutes(new Date(socialPostTime?.createdAt!), 60);
+        const currentDate = new Date();
+        if (new Date(timeToCompare) > currentDate) show_captcha = true;
+        const captchaRequired = { show_captcha };
+        return new SuccessResult(captchaRequired, SocialPostTimeResultModel);
     }
 }
