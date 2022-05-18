@@ -1,4 +1,4 @@
-import { Campaign, User } from "@prisma/client";
+import { Campaign, Participant, User } from "@prisma/client";
 import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
 import { FindCampaignById } from "../types";
@@ -117,7 +117,7 @@ export class ParticipantService {
     }
 
     public async createNewParticipant(userId: string, campaign: Campaign, email?: string) {
-        const participant = await this.prismaService.participant.create({
+        let participant = await this.prismaService.participant.create({
             data: {
                 clickCount: "0",
                 viewCount: "0",
@@ -129,8 +129,20 @@ export class ParticipantService {
             },
         });
         const url = `${serverBaseUrl}/v1/referral/${participant.id}`;
-        participant.link = await TinyUrl.shorten(url);
+        const link = await TinyUrl.shorten(url);
         await this.hourlyCampaignMetricsService.upsertMetrics(campaign.id, campaign?.orgId!, "participate");
+        participant = await this.prismaService.participant.update({
+            where: {
+                id_campaignId_userId: {
+                    id: participant.id,
+                    campaignId: participant.campaignId,
+                    userId: participant.userId,
+                },
+            },
+            data: {
+                link,
+            },
+        });
         return participant;
     }
 
@@ -143,10 +155,14 @@ export class ParticipantService {
         });
     }
 
-    public async removeParticipant(participantId: string) {
-        return await this.prismaService.participant.deleteMany({
+    public async removeParticipant(participant: Participant) {
+        return await this.prismaService.participant.delete({
             where: {
-                id: participantId,
+                id_campaignId_userId: {
+                    id: participant.id,
+                    campaignId: participant.campaignId,
+                    userId: participant.userId,
+                },
             },
         });
     }

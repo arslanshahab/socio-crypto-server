@@ -280,7 +280,7 @@ export class UserController {
         const participant = await this.participantService.findParticipantByUserAndCampaignIds(user.id, campaign.id);
         if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
         await this.hourlyCampaignMetricsService.upsertMetrics(campaign.id, campaign.org?.id, "removeParticipant");
-        await this.participantService.removeParticipant(participant.id);
+        await this.participantService.removeParticipant(participant);
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 }
