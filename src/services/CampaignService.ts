@@ -89,6 +89,7 @@ export class CampaignService {
                 isGlobal,
                 symbol,
             },
+            include: { org: true },
         });
     }
     public async findCampaingByName(name: string) {

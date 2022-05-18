@@ -259,7 +259,7 @@ export class UserController {
         if (await this.participantService.findParticipantByUserAndCampaignIds(user.id, campaign.id))
             throw new BadRequest(ALREADY_PARTICIPATING);
         await this.tatumClientService.findOrCreateCurrency({ ...campaign?.currency?.token!, wallet: user.wallet! });
-        const participant = await this.participantService.createParticipant(user.id, campaign, email);
+        const participant = await this.participantService.createNewParticipant(user.id, campaign, email);
         if (!campaign.isGlobal)
             await this.userService.transferCoiinReward({ user, type: "PARTICIPATION_REWARD", campaign });
         return new SuccessResult(participant, ParticipantMetricsResultModel);

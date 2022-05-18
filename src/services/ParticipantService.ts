@@ -116,7 +116,7 @@ export class ParticipantService {
         });
     }
 
-    public async createParticipant(userId: string, campaign: Campaign, email?: string) {
+    public async createNewParticipant(userId: string, campaign: Campaign, email?: string) {
         const participant = await this.prismaService.participant.create({
             data: {
                 clickCount: "0",

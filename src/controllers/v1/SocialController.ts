@@ -6,6 +6,7 @@ import { SuccessResult } from "../../util/entities";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import {
     CAMPAIGN_CLOSED,
+    GLOBAL_CAMPAIGN_NOT_FOUND,
     MEDIA_NOT_FOUND,
     PARTICIPANT_NOT_FOUND,
     POST_ID_NOT_FOUND,
@@ -23,12 +24,14 @@ import { CampaignMediaService } from "../../services/CampaignMediaService";
 import { downloadMedia } from "../../util";
 import { HourlyCampaignMetricsService } from "../../services/HourlyCampaignMetricsService";
 import { addMinutes } from "date-fns";
+import { BSC, COIIN } from "../../util/constants";
+import { TatumClientService } from "../../services/TatumClientService";
 
 export class RegisterSocialLinkResultModel {
     @Property() public readonly registerSocialLink: boolean;
 }
-export class SocialPostDeleteModel {
-    @Property() public readonly removeSocialLink: boolean;
+export class SocialPostSuccessModel {
+    @Property() public readonly success: boolean;
 }
 
 export class SocialLinkType {
@@ -60,6 +63,8 @@ export class SocialController {
     private campaignMediaService: CampaignMediaService;
     @Inject()
     private hourlyCampaignMetricsService: HourlyCampaignMetricsService;
+    @Inject()
+    private tatumClientService: TatumClientService;
 
     @Get("/social-metrics")
     @(Returns(200, SuccessResult).Of(SocialMetricsResultModel))
@@ -150,17 +155,17 @@ export class SocialController {
     }
 
     @Post("/remove-social-link")
-    @(Returns(200, SuccessResult).Of(SocialPostDeleteModel))
+    @(Returns(200, SuccessResult).Of(SocialPostSuccessModel))
     public async removeSocialLink(@QueryParams() query: SocialLinkType, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"), ["social_link"]);
         if (!user) throw new NotFound(USER_NOT_FOUND);
         const { type } = query;
         if (!allowedSocialLinks.includes(type)) throw new BadRequest("Invalid or missing params");
         await this.socialLinkService.removeSocialLink(user.id, type);
-        const result = { removeSocialLink: true };
-        return new SuccessResult(result, SocialPostDeleteModel);
+        const result = { success: true };
+        return new SuccessResult(result, SocialPostSuccessModel);
     }
-    
+
     @Get("/user-social-post-time")
     @(Returns(200, SuccessResult).Of(SocialPostTimeResultModel))
     public async getUserSocialPostTime(@Context() context: Context) {
@@ -173,5 +178,31 @@ export class SocialController {
         if (new Date(timeToCompare) > currentDate) show_captcha = true;
         const captchaRequired = { show_captcha };
         return new SuccessResult(captchaRequired, SocialPostTimeResultModel);
+    }
+
+    @Post("/post-content-globally")
+    @(Returns(200, SuccessResult).Of(SocialPostSuccessModel))
+    public async postContentGlobally(@BodyParams() query: SocialPostParamTypes, @Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"), ["wallet"]);
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        let { socialType } = query;
+        if (!allowedSocialLinks.includes(socialType)) throw new BadRequest(`posting to ${socialType} is not allowed`);
+        const globalCampaign = await this.campaignService.findGlobalCampaign(true, COIIN);
+        if (!globalCampaign) throw new NotFound(GLOBAL_CAMPAIGN_NOT_FOUND);
+        let participant = await this.participantService.findParticipantByUserAndCampaignIds(user.id, globalCampaign.id);
+        if (!participant) {
+            await this.tatumClientService.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet: user.wallet! });
+            participant = await this.participantService.createNewParticipant(user.id, globalCampaign, user.email);
+        }
+        await this.postToSocial(
+            {
+                ...query,
+                defaultMedia: false,
+                mediaId: "none",
+                participantId: participant.id,
+            },
+            context
+        );
+        return new SuccessResult({ success: true }, SocialPostSuccessModel);
     }
 }
