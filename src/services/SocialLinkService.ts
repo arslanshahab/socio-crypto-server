@@ -27,7 +27,7 @@ export class SocialLinkService {
     }
 
     public async addTwitterLink(user: User, apiKey: string, apiSecret: string) {
-        let socialLink = await this.findSocialLinkByUserId(user.id, "twitter");
+        const socialLink = await this.prismaService.socialLink.findFirst({ where: { userId: user.id, type: "twitter" } });
         if (socialLink) {
             return await this.prismaService.socialLink.update({
                 where: { id: socialLink.id },
