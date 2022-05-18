@@ -19,9 +19,9 @@ export class HourlyCampaignMetricsService {
         });
     }
 
-    public async findMetricsByCampaignId(campaignId: string, createdDate?: string) {
+    public async findMetricsByCampaignId(campaignId: string, createdDate: string) {
         return this.prismaService.hourlyCampaignMetric.findFirst({
-            where: { campaignId, createdAt: { gt: createdDate } },
+            where: { campaignId, createdAt: { gt: new Date(createdDate!) } },
         });
     }
 

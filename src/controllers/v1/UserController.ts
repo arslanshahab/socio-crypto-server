@@ -21,6 +21,7 @@ import {
     WALLET_NOT_FOUND,
 } from "../../util/errors";
 import {
+    BooleanResultModel,
     CampaignIdModel,
     ParticipantMetricsResultModel,
     UserDailyParticipantMetricResultModel,
@@ -244,7 +245,10 @@ export class UserController {
 
     @Post("/participate")
     @(Returns(200, SuccessResult).Of(ParticipantMetricsResultModel))
-    public async participate(@QueryParams() query: { campaignId: string; email: string }, @Context() context: Context) {
+    public async participate(
+        @QueryParams() query: { campaignId: string; email?: string },
+        @Context() context: Context
+    ) {
         const user = await this.userService.findUserByContext(context.get("user"), ["wallet"]);
         if (!user) throw new NotFound(USER_NOT_FOUND);
         const { campaignId, email } = query;
@@ -266,7 +270,7 @@ export class UserController {
     }
 
     @Post("/remove-participation")
-    @(Returns(200, SuccessResult).Of(UserRecordResultModel))
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async removeParticipation(@QueryParams() query: CampaignIdModel, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new NotFound(USER_NOT_FOUND);
@@ -277,6 +281,6 @@ export class UserController {
         if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
         await this.hourlyCampaignMetricsService.upsertMetrics(campaign.id, campaign.org?.id, "removeParticipant");
         await this.participantService.removeParticipant(participant.id);
-        return new SuccessResult(user, UserRecordResultModel);
+        return new SuccessResult({ success: true }, BooleanResultModel);
     }
 }

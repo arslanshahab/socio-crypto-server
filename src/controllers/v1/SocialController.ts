@@ -15,7 +15,7 @@ import {
 import { ParticipantService } from "../../services/ParticipantService";
 import { SocialPostService } from "../../services/SocialPostService";
 import { calculateParticipantSocialScoreV2, getSocialClient } from "../helpers";
-import { ParticipantQueryParams, SocialMetricsResultModel, SocialPostResultModel } from "../../models/RestModels";
+import { BooleanResultModel, ParticipantQueryParams, SocialMetricsResultModel, SocialPostResultModel } from "../../models/RestModels";
 import { Campaign, Participant, Prisma, Profile, User } from "@prisma/client";
 import { PointValueTypes, SocialPostParamTypes, SocialType } from "../../types";
 import { SocialLinkService } from "../../services/SocialLinkService";
@@ -29,9 +29,6 @@ import { TatumClientService } from "../../services/TatumClientService";
 
 export class RegisterSocialLinkResultModel {
     @Property() public readonly registerSocialLink: boolean;
-}
-export class SocialPostSuccessModel {
-    @Property() public readonly success: boolean;
 }
 
 export class SocialLinkType {
@@ -155,7 +152,7 @@ export class SocialController {
     }
 
     @Post("/remove-social-link")
-    @(Returns(200, SuccessResult).Of(SocialPostSuccessModel))
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async removeSocialLink(@QueryParams() query: SocialLinkType, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"), ["social_link"]);
         if (!user) throw new NotFound(USER_NOT_FOUND);
@@ -163,7 +160,7 @@ export class SocialController {
         if (!allowedSocialLinks.includes(type)) throw new BadRequest("Invalid or missing params");
         await this.socialLinkService.removeSocialLink(user.id, type);
         const result = { success: true };
-        return new SuccessResult(result, SocialPostSuccessModel);
+        return new SuccessResult(result, BooleanResultModel);
     }
 
     @Get("/user-social-post-time")
@@ -181,7 +178,7 @@ export class SocialController {
     }
 
     @Post("/post-content-globally")
-    @(Returns(200, SuccessResult).Of(SocialPostSuccessModel))
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async postContentGlobally(@BodyParams() query: SocialPostParamTypes, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"), ["wallet"]);
         if (!user) throw new NotFound(USER_NOT_FOUND);
@@ -203,6 +200,6 @@ export class SocialController {
             },
             context
         );
-        return new SuccessResult({ success: true }, SocialPostSuccessModel);
+        return new SuccessResult({ success: true }, BooleanResultModel);
     }
 }
