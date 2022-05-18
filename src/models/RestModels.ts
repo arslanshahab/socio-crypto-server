@@ -390,6 +390,8 @@ export class UserWalletResultModel {
 }
 
 export class UserRecordResultModel extends UserResultModel {
+    @Property() public readonly password: string;
+    @Property() public readonly updatedAt: Date;
     @CollectionOf(SocialPostResultModel) public readonly social_post: SocialPostResultModel[];
 }
 

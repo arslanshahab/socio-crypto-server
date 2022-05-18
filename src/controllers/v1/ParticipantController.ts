@@ -188,7 +188,7 @@ export class ParticipantController {
     ) {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
-        const participations = await this.participantService.findParticipantByUser(user.id);
+        const participations = await this.participantService.findParticipantsByUser(user.id);
         const ids = participations.map((p) => p.id);
         let dailyParticipantMetrics;
         let participantShare = 0;

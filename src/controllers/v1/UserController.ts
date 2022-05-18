@@ -16,10 +16,15 @@ import {
     CAMPAIGN_NOT_FOUND,
     MISSING_PARAMS,
     NOTIFICATION_SETTING_NOT_FOUND,
+    PARTICIPANT_NOT_FOUND,
     USER_NOT_FOUND,
     WALLET_NOT_FOUND,
 } from "../../util/errors";
-import { ParticipantMetricsResultModel, UserDailyParticipantMetricResultModel } from "../../models/RestModels";
+import {
+    CampaignIdModel,
+    ParticipantMetricsResultModel,
+    UserDailyParticipantMetricResultModel,
+} from "../../models/RestModels";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 import {
     BalanceResultModel,
@@ -38,6 +43,7 @@ import { getBalance } from "../helpers";
 import { CampaignService } from "../../services/CampaignService";
 import { ParticipantService } from "../../services/ParticipantService";
 import { TatumClientService } from "../../services/TatumClientService";
+import { HourlyCampaignMetricsService } from "../../services/HourlyCampaignMetricsService";
 
 const userResultRelations = {
     profile: true,
@@ -78,6 +84,8 @@ export class UserController {
     private participantService: ParticipantService;
     @Inject()
     private tatumClientService: TatumClientService;
+    @Inject()
+    private hourlyCampaignMetricsService: HourlyCampaignMetricsService;
 
     @Get("/")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserResultModel))
@@ -248,12 +256,27 @@ export class UserController {
         if (campaign.type === "raffle" && email) throw new BadRequest(MISSING_PARAMS);
 
         if (await !this.campaignService.isCampaignOpen(campaign.id)) throw new BadRequest(CAMPAIGN_CLOSED);
-        if (await this.participantService.findParticipantByUser(user.id, campaign.id))
+        if (await this.participantService.findParticipantByUserAndCampaignIds(user.id, campaign.id))
             throw new BadRequest(ALREADY_PARTICIPATING);
         await this.tatumClientService.findOrCreateCurrency({ ...campaign?.currency?.token!, wallet: user.wallet! });
         const participant = await this.participantService.createParticipant(user.id, campaign, email);
         if (!campaign.isGlobal)
             await this.userService.transferCoiinReward({ user, type: "PARTICIPATION_REWARD", campaign });
         return new SuccessResult(participant, ParticipantMetricsResultModel);
+    }
+
+    @Post("/remove-participation")
+    @(Returns(200, SuccessResult).Of(UserRecordResultModel))
+    public async removeParticipation(@QueryParams() query: CampaignIdModel, @Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        const { campaignId } = query;
+        const campaign = await this.campaignService.findCampaignById(campaignId, { org: true });
+        if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
+        const participant = await this.participantService.findParticipantByUserAndCampaignIds(user.id, campaign.id);
+        if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
+        await this.hourlyCampaignMetricsService.upsertMetrics(campaign.id, campaign.org?.id, "removeParticipant");
+        await this.participantService.removeParticipant(participant.id);
+        return new SuccessResult(user, UserRecordResultModel);
     }
 }

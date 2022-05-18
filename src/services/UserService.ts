@@ -9,7 +9,7 @@ import { BSC, COIIN, REWARD_AMOUNTS, SHARING_REWARD_LIMIT_PER_DAY } from "../uti
 import { TatumClient } from "../clients/tatumClient";
 import { createSubscriptionUrl } from "../util/tatumHelper";
 import { WalletService } from "./WalletService";
-import { WALLET_NOT_FOUND } from "src/util/errors";
+import { WALLET_NOT_FOUND } from "../util/errors";
 import { differenceInHours } from "date-fns";
 import { TransferService } from "./TransferService";
 import { OrganizationService } from "./OrganizationService";

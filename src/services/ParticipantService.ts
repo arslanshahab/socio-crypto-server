@@ -89,7 +89,7 @@ export class ParticipantService {
             where: { campaignId },
         });
     }
-    public async findParticipantByUser(userId: string, campaignId?: string) {
+    public async findParticipantsByUser(userId: string, campaignId?: string) {
         return this.prismaService.participant.findMany({
             where: campaignId ? { userId, campaignId } : { userId },
             include: {
@@ -132,5 +132,22 @@ export class ParticipantService {
         participant.link = await TinyUrl.shorten(url);
         await this.hourlyCampaignMetricsService.upsertMetrics(campaign.id, campaign?.orgId!, "participate");
         return participant;
+    }
+
+    public async findParticipantByUserAndCampaignIds(userId: string, campaignId: string) {
+        return this.prismaService.participant.findFirst({
+            where: {
+                userId,
+                campaignId,
+            },
+        });
+    }
+
+    public async removeParticipant(participantId: string) {
+        return await this.prismaService.participant.deleteMany({
+            where: {
+                id: participantId,
+            },
+        });
     }
 }
