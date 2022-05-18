@@ -22,75 +22,82 @@ console.log("APP instance created.");
     const connection = await app.connectDatabase();
     console.log("Secrets and connection initialized.");
     try {
-        if (process.env.NODE_ENV === "production") {
-            const emailAddressList = ["ray@raiinmaker.com", "murad@raiinmaker.com", "ben@raiinmaker.com"];
-            const raiinmakerOrg = await Org.findOne({ where: { name: RAIINMAKER_ORG_NAME }, relations: ["wallet"] });
-            if (!raiinmakerOrg) throw new Error("Org not found.");
-            const raiinmakerCoiinCurrency = await Currency.findOne({
-                where: {
-                    wallet: raiinmakerOrg.wallet,
-                    token: await Token.findOne({ where: { symbol: COIIN, network: BSC } }),
-                },
-                relations: ["token"],
-            });
-            if (!raiinmakerCoiinCurrency) throw new Error("Coiin currency not found for raiinmaker.");
-            const balance = await raiinmakerOrg.getAvailableBalance(raiinmakerCoiinCurrency.token);
-            if (balance < COIIN_ALERT_TRIGGER_LIMIT) {
-                for (const email of emailAddressList) {
-                    await SesClient.coiinBalanceAlert(email, balance);
-                }
+        const emailAddressList = ["ray@raiinmaker.com", "murad@raiinmaker.com", "ben@raiinmaker.com"];
+        const raiinmakerOrg = await Org.findOne({ where: { name: RAIINMAKER_ORG_NAME }, relations: ["wallet"] });
+        if (!raiinmakerOrg) throw new Error("Org not found.");
+        const raiinmakerCoiinCurrency = await Currency.findOne({
+            where: {
+                wallet: raiinmakerOrg.wallet,
+                token: await Token.findOne({ where: { symbol: COIIN, network: BSC } }),
+            },
+            relations: ["token"],
+        });
+        if (!raiinmakerCoiinCurrency) throw new Error("Coiin currency not found for raiinmaker.");
+        const balance = await raiinmakerOrg.getAvailableBalance(raiinmakerCoiinCurrency.token);
+        if (balance < COIIN_ALERT_TRIGGER_LIMIT) {
+            for (const email of emailAddressList) {
+                await SesClient.coiinBalanceAlert(email, balance);
             }
-            const failedTransfersCount = await Transfer.count({
-                where: {
-                    status: "FAILED",
-                    currency: COIIN,
-                    action: In([
-                        "REGISTRATION_REWARD",
-                        "CAMPAIGN_REWARD",
-                        "SHARING_REWARD",
-                        "PARTICIPATION_REWARD",
-                        "LOGIN_REWARD",
-                    ]),
-                },
-            });
-            if (failedTransfersCount) {
-                const take = 200;
-                let skip = 0;
-                const paginatedLoop = Math.ceil(failedTransfersCount / take);
-                for (let pageIndex = 0; pageIndex < paginatedLoop; pageIndex++) {
-                    const failedTramsfers = await Transfer.find({
-                        where: {
-                            status: "FAILED",
-                            currency: COIIN,
-                            action: In([
-                                "REGISTRATION_REWARD",
-                                "CAMPAIGN_REWARD",
-                                "SHARING_REWARD",
-                                "PARTICIPATION_REWARD",
-                                "LOGIN_REWARD",
-                            ]),
-                        },
-                        relations: ["wallet"],
-                        take,
-                        skip,
+        }
+        const failedTransfersCount = await Transfer.count({
+            where: {
+                status: "FAILED",
+                currency: COIIN,
+                action: In([
+                    "REGISTRATION_REWARD",
+                    "CAMPAIGN_REWARD",
+                    "SHARING_REWARD",
+                    "PARTICIPATION_REWARD",
+                    "LOGIN_REWARD",
+                ]),
+            },
+        });
+        console.log("FAILED TRANSFERS: ", failedTransfersCount);
+        if (failedTransfersCount) {
+            const take = 200;
+            let skip = 0;
+            const paginatedLoop = Math.ceil(failedTransfersCount / take);
+            for (let pageIndex = 0; pageIndex < paginatedLoop; pageIndex++) {
+                const failedTramsfers = await Transfer.find({
+                    where: {
+                        status: "FAILED",
+                        currency: COIIN,
+                        action: In([
+                            "REGISTRATION_REWARD",
+                            "CAMPAIGN_REWARD",
+                            "SHARING_REWARD",
+                            "PARTICIPATION_REWARD",
+                            "LOGIN_REWARD",
+                        ]),
+                    },
+                    relations: ["wallet"],
+                    take,
+                    skip,
+                });
+                for (const transfer of failedTramsfers) {
+                    const userCurrency = await TatumClient.findOrCreateCurrency({
+                        wallet: transfer.wallet,
+                        symbol: COIIN,
+                        network: BSC,
                     });
-                    for (const transfer of failedTramsfers) {
-                        const userCurrency = await TatumClient.findOrCreateCurrency({
-                            wallet: transfer.wallet,
-                            symbol: COIIN,
-                            network: BSC,
-                        });
-                        await TatumClient.transferFunds({
-                            senderAccountId: raiinmakerCoiinCurrency.tatumId,
-                            recipientAccountId: userCurrency.tatumId,
-                            amount: transfer.amount.toString(),
-                            recipientNote: "COMPENSATING_FAILED_TRANSFER",
-                        });
-                        transfer.status = "SUCCEEDED";
-                        await transfer.save();
-                    }
+                    await TatumClient.transferFunds({
+                        senderAccountId: raiinmakerCoiinCurrency.tatumId,
+                        recipientAccountId: userCurrency.tatumId,
+                        amount: transfer.amount.toString(),
+                        recipientNote: "COMPENSATING_FAILED_TRANSFER",
+                    });
+                    transfer.status = "SUCCEEDED";
+                    console.log(
+                        "TRANSFER FIXED: ",
+                        transfer.id,
+                        transfer.amount.toString(),
+                        transfer.wallet.id,
+                        transfer.action
+                    );
+                    await transfer.save();
                 }
             }
+            skip += take;
         }
     } catch (error) {
         console.log(error);
