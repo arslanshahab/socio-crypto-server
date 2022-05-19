@@ -57,7 +57,8 @@ export class TransferService {
                 walletId,
                 action: type,
                 createdAt: {
-                    in: [start, end],
+                    gte: new Date(start),
+                    lte: new Date(end),
                 },
             },
         });

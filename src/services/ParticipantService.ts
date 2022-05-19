@@ -149,8 +149,7 @@ export class ParticipantService {
     public async findParticipantByUserAndCampaignIds(userId: string, campaignId: string) {
         return this.prismaService.participant.findFirst({
             where: {
-                userId,
-                campaignId,
+                AND: [{ userId }, { campaignId }],
             },
         });
     }
