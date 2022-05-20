@@ -54,23 +54,11 @@ export const getExchangeRateForCrypto = async (symbol: string) => {
     return 1;
 };
 
-export const getExchangeRateForCryptoV2 = async (symbol: string) => {
-    symbol = symbol.toUpperCase();
-    if (symbol === COIIN) return parseFloat(process.env.COIIN_VALUE || "0.2");
-    const apiKey = "efe97a3f1582b2319afc10add7fb926991e86e386d0dca653d71126bfa4f1d1d";
-    const requestData: RequestData = {
-        method: "GET",
-        url: `https://min-api.cryptocompare.com/data/price?fsym=${symbol}&tsyms=USD&api_key=${apiKey}`,
-    };
-    const data = await doFetch(requestData);
-    return data["USD"] || 1;
-};
-
 export const getTokenValueInUSD = async (token: string, amount: number) => {
     token = token.toUpperCase();
     let tokenValue = 1;
     try {
-        tokenValue = await getExchangeRateForCryptoV2(token);
+        tokenValue = await getExchangeRateForCrypto(token);
     } catch (error) {}
     return tokenValue * amount;
 };
