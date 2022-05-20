@@ -1,6 +1,6 @@
 import { Enum, Get, Put, Property, Required, Returns, Post } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
-import { BodyParams, Context, QueryParams } from "@tsed/common";
+import { BodyParams, Context, PathParams, QueryParams } from "@tsed/common";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { UserService } from "../../services/UserService";
 import {
@@ -25,6 +25,7 @@ import {
     CampaignIdModel,
     ParticipantMetricsResultModel,
     UserDailyParticipantMetricResultModel,
+    UserTransactionResultModel,
 } from "../../models/RestModels";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 import {
@@ -65,6 +66,11 @@ class TransferHistoryVariablesModel extends PaginatedVariablesModel {
 }
 class UserQueryVariables {
     @Property() public readonly today: boolean;
+}
+
+class UserCountResultModel {
+    @Property() public readonly totalUsers: number;
+    @Property() public readonly lastWeekUsers: number;
 }
 
 @Controller("/user")
@@ -282,5 +288,26 @@ export class UserController {
         await this.hourlyCampaignMetricsService.upsertMetrics(campaign.id, campaign.org?.id, "removeParticipant");
         await this.participantService.removeParticipant(participant);
         return new SuccessResult({ success: true }, BooleanResultModel);
+    }
+
+    @Get("/user-transactions-history/:userId")
+    @(Returns(200, SuccessResult).Of(Pagination).Nested(UserTransactionResultModel))
+    public async getUserTransactionHistory(@PathParams() query: { userId: string }, @Context() context: Context) {
+        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const { userId } = query;
+        const transaction = await this.transferService.findUserTransactions(userId);
+        return new SuccessResult(
+            new Pagination(transaction, transaction.length, UserTransactionResultModel),
+            Pagination
+        );
+    }
+
+    @Get("/users-count")
+    @(Returns(200, SuccessResult).Of(UserCountResultModel))
+    public async getUserCount(@Context() context: Context) {
+        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const totalUsers = await this.userService.getUserCount();
+        const lastWeekUsers = await this.userService.getUserCountLastWeek();
+        return new SuccessResult({ totalUsers, lastWeekUsers }, UserCountResultModel);
     }
 }

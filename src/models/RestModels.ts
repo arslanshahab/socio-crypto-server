@@ -464,3 +464,11 @@ export class KycUpdateResultModel {
 export class BooleanResultModel {
     @Property() public readonly success: boolean;
 }
+
+export class UserTransactionResultModel extends TransferResultModel {
+    @Property() public readonly payoutStatus: string;
+    @Property() public readonly payoutId: string;
+    @Property() public readonly transactionHash: string;
+    @Property() public readonly orgId: string;
+    @Property() public readonly stripeCardId: string;
+}

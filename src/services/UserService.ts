@@ -10,7 +10,7 @@ import { TatumClient } from "../clients/tatumClient";
 import { createSubscriptionUrl } from "../util/tatumHelper";
 import { WalletService } from "./WalletService";
 import { WALLET_NOT_FOUND } from "../util/errors";
-import { differenceInHours } from "date-fns";
+import { differenceInHours, subDays } from "date-fns";
 import { TransferService } from "./TransferService";
 import { OrganizationService } from "./OrganizationService";
 import { TatumClientService } from "./TatumClientService";
@@ -308,5 +308,21 @@ export class UserService {
                 campaign,
             });
         }
+    }
+
+    public async getUserCount() {
+        return this.prismaService.user.count();
+    }
+
+    public async getUserCountLastWeek() {
+        const currentDate = new Date();
+        return this.prismaService.user.count({
+            where: {
+                createdAt: {
+                    gte: subDays(currentDate, 7),
+                    lte: currentDate,
+                },
+            },
+        });
     }
 }
