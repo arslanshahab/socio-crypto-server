@@ -73,6 +73,10 @@ class UserCountResultModel {
     @Property() public readonly lastWeekUsers: number;
 }
 
+class CoiinResultModel {
+    @Property() public readonly totalAmount: number;
+}
+
 @Controller("/user")
 export class UserController {
     @Inject()
@@ -309,5 +313,23 @@ export class UserController {
         const totalUsers = await this.userService.getUserCount();
         const lastWeekUsers = await this.userService.getUserCountLastWeek();
         return new SuccessResult({ totalUsers, lastWeekUsers }, UserCountResultModel);
+    }
+
+    @Get("/coiin-redeem")
+    @(Returns(200, SuccessResult).Of(CoiinResultModel))
+    public async coiinRedeem(@Context() context: Context) {
+        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const transactions = await this.transferService.getRedeemCoiin();
+        const totalAmount = transactions.reduce((acc, cur) => acc + parseFloat(cur.amount), 0);
+        return new SuccessResult({ totalAmount }, CoiinResultModel);
+    }
+
+    @Get("/coiin-distributed")
+    @(Returns(200, SuccessResult).Of(CoiinResultModel))
+    public async coiinDistributed(@Context() context: Context) {
+        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const transactions = await this.transferService.getDistributedCoiin();
+        const totalAmount = transactions.reduce((acc, cur) => acc + parseFloat(cur.amount), 0);
+        return new SuccessResult({ totalAmount }, CoiinResultModel);
     }
 }
