@@ -7,9 +7,10 @@ export class FacebookClient {
     }
 
     public static post = async () => {};
+    public static postV2 = async () => {};
 
     public static async getPageData(accessToken: string) {
-        const payload: { [key: string]: any } = {};
+        const payload: { [key: string]: number } = {};
         const client = FacebookClient.getClient(accessToken);
         const data = await client.get(`v8.0/me`, {
             fields: ["friends"],
@@ -18,10 +19,5 @@ export class FacebookClient {
         return payload;
     }
 
-    public static getPost = async (
-        socialLink: SocialLinkVariables,
-        id: string,
-        cached = true
-    ) => {
-    };
+    public static getPost = async (socialLink: SocialLinkVariables, id: string, cached = true) => {};
 }

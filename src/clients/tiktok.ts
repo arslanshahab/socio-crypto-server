@@ -77,6 +77,8 @@ export class TikTokClient {
         }
     };
 
+    public static postV2 = async () => {};
+
     public static getPosts = async (socialLink: SocialLink, sharedIds: string[]) => {
         const credentials = await TikTokClient.getTokens(socialLink);
         const requestData: RequestData = {

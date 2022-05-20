@@ -1,14 +1,18 @@
-import { SocialLink, User } from "@prisma/client";
+import { Campaign, Participant, User } from "@prisma/client";
 import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
 import { FindCampaignById } from "../types";
-import { decrypt } from "../util/crypto";
-import { InternalServerError, NotFound } from "@tsed/exceptions";
+import { encrypt } from "../util/crypto";
+import { serverBaseUrl } from "../config";
+import { TinyUrl } from "../clients/tinyUrl";
+import { HourlyCampaignMetricsService } from "./HourlyCampaignMetricsService";
 
 @Injectable()
 export class ParticipantService {
     @Inject()
     private prismaService: PrismaService;
+    @Inject()
+    private hourlyCampaignMetricsService: HourlyCampaignMetricsService;
 
     /**
      * Retrieves a paginated list of participants
@@ -72,21 +76,6 @@ export class ParticipantService {
             },
         });
     }
-    public async findSocialLinkByUserId(userId: string, type: string) {
-        const response = this.prismaService.socialLink.findFirst({
-            where: {
-                userId,
-                type,
-            },
-        });
-        const socialLink: SocialLink | null = await response;
-        if (!socialLink) throw new NotFound("Social Link not found");
-        const apiKey = decrypt(socialLink.apiKey!);
-        const apiSecret = decrypt(socialLink.apiSecret!);
-        const { userId: slUserId } = socialLink;
-        if (!slUserId) throw new InternalServerError("Invalid Social Link");
-        return { ...socialLink, apiKey, apiSecret, userId: slUserId };
-    }
 
     public async findParticipantsCountByUserId(userId: string) {
         return this.prismaService.participant.count({
@@ -100,7 +89,7 @@ export class ParticipantService {
             where: { campaignId },
         });
     }
-    public async findParticipantByUser(userId: string) {
+    public async findParticipantsByUserId(userId: string) {
         return this.prismaService.participant.findMany({
             where: { userId },
             include: {
@@ -123,6 +112,56 @@ export class ParticipantService {
         return await this.prismaService.participant.deleteMany({
             where: {
                 campaignId,
+            },
+        });
+    }
+
+    public async createNewParticipant(userId: string, campaign: Campaign, email?: string) {
+        let participant = await this.prismaService.participant.create({
+            data: {
+                clickCount: "0",
+                viewCount: "0",
+                submissionCount: "0",
+                participationScore: "0",
+                userId,
+                campaignId: campaign.id,
+                email: email ? encrypt(email) : "",
+            },
+        });
+        const url = `${serverBaseUrl}/v1/referral/${participant.id}`;
+        const link = await TinyUrl.shorten(url);
+        await this.hourlyCampaignMetricsService.upsertMetrics(campaign.id, campaign?.orgId!, "participate");
+        participant = await this.prismaService.participant.update({
+            where: {
+                id_campaignId_userId: {
+                    id: participant.id,
+                    campaignId: participant.campaignId,
+                    userId: participant.userId,
+                },
+            },
+            data: {
+                link,
+            },
+        });
+        return participant;
+    }
+
+    public async findParticipantByUserAndCampaignIds(userId: string, campaignId: string) {
+        return this.prismaService.participant.findFirst({
+            where: {
+                AND: [{ userId }, { campaignId }],
+            },
+        });
+    }
+
+    public async removeParticipant(participant: Participant) {
+        return await this.prismaService.participant.delete({
+            where: {
+                id_campaignId_userId: {
+                    id: participant.id,
+                    campaignId: participant.campaignId,
+                    userId: participant.userId,
+                },
             },
         });
     }

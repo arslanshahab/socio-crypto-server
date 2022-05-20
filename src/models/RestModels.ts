@@ -308,6 +308,8 @@ export class ParticipantMetricsResultModel {
     @Property() public readonly symbolImageUrl: string;
     @Property() public readonly totalShareUSD: number;
     @Property() public readonly totalScore: number;
+    @Property() public readonly link: string;
+    @Property() public readonly email: string;
 }
 
 export class AccumulatedMetricsResultModel {
@@ -457,4 +459,8 @@ export class KycUpdateResultModel {
     @Property() public readonly kycId: string;
     @Property() public readonly status: string;
     @Property() public readonly factors: AcuantApplicationExtractedDetailsModel;
+}
+
+export class BooleanResultModel {
+    @Property() public readonly success: boolean;
 }

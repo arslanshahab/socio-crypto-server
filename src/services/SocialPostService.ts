@@ -28,6 +28,19 @@ export class SocialPostService {
             where: { campaignId },
         });
     }
+
+    public async newSocialPost(id: string, type: string, participantId: string, userId: string, campaignId: string) {
+        return await this.prismaService.socialPost.create({
+            data: {
+                id,
+                type,
+                participantId,
+                userId,
+                campaignId,
+            },
+        });
+    }
+    
     public async findUserSocialPostTime(userId: string) {
         return this.prismaService.socialPost.findFirst({
             where: { userId },
