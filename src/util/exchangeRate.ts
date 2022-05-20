@@ -1,5 +1,6 @@
 import { getRedis } from "../clients/redis";
 import { doFetch, RequestData } from "./fetchRequest";
+import { COIIN } from "./constants";
 
 interface SymbolData {
     id: string;
@@ -28,6 +29,7 @@ export const getExchangeRateForCurrency = async (symbol: string) => {
 
 export const getExchangeRateForCrypto = async (symbol: string) => {
     symbol = symbol.toLowerCase();
+    if (symbol === COIIN) return parseFloat(process.env.COIIN_VALUE || "0.2");
     const cacheKey = "exchangeRatesForCrypto";
     let cachedResponse = await getRedis().get(cacheKey);
     if (cachedResponse) {
@@ -54,13 +56,14 @@ export const getExchangeRateForCrypto = async (symbol: string) => {
 
 export const getExchangeRateForCryptoV2 = async (symbol: string) => {
     symbol = symbol.toUpperCase();
+    if (symbol === COIIN) return parseFloat(process.env.COIIN_VALUE || "0.2");
     const apiKey = "efe97a3f1582b2319afc10add7fb926991e86e386d0dca653d71126bfa4f1d1d";
     const requestData: RequestData = {
         method: "GET",
-        url: `https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=USD&api_key=${apiKey}`,
+        url: `https://min-api.cryptocompare.com/data/price?fsym=${symbol}&tsyms=USD&api_key=${apiKey}`,
     };
     const data = await doFetch(requestData);
-    return data[symbol] || 1;
+    return data["USD"] || 1;
 };
 
 export const getTokenValueInUSD = async (token: string, amount: number) => {
@@ -69,8 +72,7 @@ export const getTokenValueInUSD = async (token: string, amount: number) => {
     try {
         tokenValue = await getExchangeRateForCryptoV2(token);
     } catch (error) {}
-    const valueInUSD = token === "COIIN" ? parseFloat(process.env.COIIN_VALUE || "0.2") : tokenValue;
-    return valueInUSD * amount;
+    return tokenValue * amount;
 };
 
 export const getCurrencyValueInUSD = async (currency: string, amount: number) => {
