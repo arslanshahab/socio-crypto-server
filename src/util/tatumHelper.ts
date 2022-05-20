@@ -4,7 +4,7 @@ import { BN } from ".";
 import { Org } from "../models/Org";
 import { Transfer } from "../models/Transfer";
 import { formatFloat } from "./index";
-import { getExchangeRateForCrypto } from "./exchangeRate";
+import { getExchangeRateForCryptoV2 } from "./exchangeRate";
 import { serverBaseUrl } from "../config";
 import { SymbolNetworkParams } from "../types.d";
 import { BSC, NETWORK_TO_NATIVE_TOKEN, COIIN, ETH, MATIC } from "./constants";
@@ -58,8 +58,8 @@ export const offchainEstimateFee = async (data: WithdrawPayload): Promise<number
 };
 
 export const getFeeInSymbol = async (base: string, symbol: string, amount: number): Promise<number> => {
-    const marketRateSymbol = await getExchangeRateForCrypto(symbol);
-    const marketRateBase = await getExchangeRateForCrypto(base);
+    const marketRateSymbol = await getExchangeRateForCryptoV2(symbol);
+    const marketRateBase = await getExchangeRateForCryptoV2(base);
     const BasetoSymbol = marketRateBase / marketRateSymbol;
     return BasetoSymbol * amount;
 };
