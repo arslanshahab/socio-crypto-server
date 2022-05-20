@@ -9,7 +9,7 @@ import { sleep } from "../controllers/helpers";
 import { doFetch } from "../util/fetchRequest";
 import { S3Client } from "../clients/s3";
 import { getCurrencyForTatum } from "../util/tatumHelper";
-import { assignDepositAddress, createAccount, generateDepositAddress } from "@tatumio/tatum";
+import { assignDepositAddress, createAccount, generateDepositAddress, storeTransaction } from "@tatumio/tatum";
 import { CUSTODIAL_NETWORKS } from "../util/constants";
 import { TokenService } from "./TokenService";
 import { TatumWalletService } from "./TatumWalletService";
@@ -230,6 +230,22 @@ export class TatumClientService {
         } catch (error) {
             console.log(error);
             throw new BadRequest(error?.response?.data?.message || error.message);
+        }
+    }
+
+    // Transfer funds
+    public async trnasferFunds(data: {
+        senderAccountId: string;
+        recipientAccountId: string;
+        amount: string;
+        recipientNote: string;
+    }) {
+        try {
+            process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
+            return await storeTransaction(data);
+        } catch (error) {
+            console.log(error?.response?.data || error.message);
+            throw new Error(error?.response?.data?.message || error.message);
         }
     }
 }

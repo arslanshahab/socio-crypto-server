@@ -89,6 +89,7 @@ export class CampaignService {
                 isGlobal,
                 symbol,
             },
+            include: { org: true },
         });
     }
     public async findCampaingByName(name: string) {
@@ -264,5 +265,17 @@ export class CampaignService {
         if (cryptoPriceUsd) body.tokenValueUsd = cryptoPriceUsd.toString();
         if (cryptoPriceUsd) body.tokenValueCoiin = cryptoPriceUsd.times(10).toString();
         return body;
+    }
+
+    public async isCampaignOpen(campaignId: string) {
+        const campaign = await this.findCampaignById(campaignId);
+        if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
+        const now = new Date();
+        if (
+            new Date(campaign.beginDate).getTime() <= now.getTime() &&
+            new Date(campaign.endDate).getTime() >= now.getTime()
+        )
+            return true;
+        return false;
     }
 }

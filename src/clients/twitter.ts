@@ -11,6 +11,7 @@ import { isArray } from "lodash";
 import { decrypt } from "../util/crypto";
 import { SocialLink as PrismaSocialLink } from "@prisma/client";
 import { prisma } from "./prisma";
+import { BadRequest } from "@tsed/exceptions";
 
 export class TwitterClient {
     public static textLimit = 280;
@@ -134,6 +135,41 @@ export class TwitterClient {
                 throw new Error(data?.message || "");
             }
             throw new Error(error.message);
+        }
+    };
+
+    //! Post media
+    public static postV2 = async (
+        participantId: string,
+        socialLink: SocialLinkVariables,
+        text: string,
+        data?: string,
+        mediaType?: "photo" | "video" | "gif",
+        mediaFormat?: string
+    ) => {
+        try {
+            text = text.replace("@", "#");
+            logger.debug(`posting tweet to twitter with text: ${text}`);
+            if (text.length > TwitterClient.textLimit) throw new Error("Text too long for twitter");
+            const options: { [key: string]: string } = { status: text };
+            const client = TwitterClient.getClient({ apiKey: socialLink.apiKey, apiSecret: socialLink.apiSecret });
+            if (data && mediaType && mediaFormat) {
+                options["media_ids"] =
+                    mediaType === "photo"
+                        ? await TwitterClient.postImage(client, data, mediaFormat)
+                        : await TwitterClient.postChunkedMedia(client, data, mediaType, mediaFormat);
+            }
+            const response = await client.post("/statuses/update", options);
+            return response.id_str;
+        } catch (error) {
+            if (isArray(error)) {
+                const [data] = error;
+                if (data?.code === 89) {
+                    throw new BadRequest(TWITTER_LINK_EXPIRED);
+                }
+                throw new BadRequest(data?.message || "");
+            }
+            throw new BadRequest(error.message);
         }
     };
 

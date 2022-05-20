@@ -1,4 +1,4 @@
-import { getExchangeRateForCrypto } from "./exchangeRate";
+import { getExchangeRateForCryptoV2 } from "./exchangeRate";
 // eslint-disable-next-line
 // @ts-ignore
 import getImage from "cryptoicons-cdn";
@@ -33,7 +33,7 @@ export const getMinWithdrawableAmount = async (symbol: string) => {
     const marketRate =
         symbol.toLocaleLowerCase() === COIIN.toLowerCase()
             ? parseFloat(process.env.COIIN_VALUE || "0.2")
-            : await getExchangeRateForCrypto(symbol);
+            : await getExchangeRateForCryptoV2(symbol);
     return (1 / marketRate) * minLimit;
 };
 
@@ -41,7 +41,7 @@ export const getUSDValueForCurrency = async (symbol: string, amount: number) => 
     if (symbol.toLowerCase() === "coiin") {
         return parseFloat(process.env.COIIN_VALUE || "0.2") * amount;
     }
-    const marketRate = await getExchangeRateForCrypto(symbol);
+    const marketRate = await getExchangeRateForCryptoV2(symbol);
     return marketRate * amount;
 };
 
