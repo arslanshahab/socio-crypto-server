@@ -476,6 +476,7 @@ export class UserTransactionResultModel extends TransferResultModel {
 export class DashboardStatsResultModel {
     @Property() public readonly totalUsers: number;
     @Property() public readonly lastWeekUsers: number;
+    @Property() public readonly bannedUsers: number;
     @Property() public readonly distributedTotalAmount: number;
     @Property() public readonly redeemedTotalAmount: number;
 }

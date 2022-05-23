@@ -221,9 +221,9 @@ export class UserController {
         return new SuccessResult(new Pagination(users, count, UserRecordResultModel), Pagination);
     }
 
-    @Get("/user-balances")
+    @Get("/user-balances/:userId")
     @(Returns(200, SuccessResult).Of(UserWalletResultModel))
-    public async getUserBalances(@QueryParams() query: { userId: string }, @Context() context: Context) {
+    public async getUserBalances(@PathParams() query: { userId: string }, @Context() context: Context) {
         const user = await this.userService.getUserById(query.userId);
         if (!user) throw new BadRequest(USER_NOT_FOUND);
         const currencies = await getBalance(user);
@@ -302,11 +302,11 @@ export class UserController {
     @(Returns(200, SuccessResult).Of(DashboardStatsResultModel))
     public async getDashboardStats(@Context() context: Context) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        const [totalUsers, lastWeekUsers] = await this.userService.getUserCount();
+        const [totalUsers, lastWeekUsers, bannedUsers] = await this.userService.getUserCount();
         const [redeemTransactions, distributedTransactions] = await this.transferService.getCoiinRecord();
         const redeemedTotalAmount = redeemTransactions.reduce((acc, cur) => acc + parseFloat(cur.amount), 0);
         const distributedTotalAmount = distributedTransactions.reduce((acc, cur) => acc + parseFloat(cur.amount), 0);
-        const result = { totalUsers, lastWeekUsers, distributedTotalAmount, redeemedTotalAmount };
+        const result = { totalUsers, lastWeekUsers, bannedUsers, distributedTotalAmount, redeemedTotalAmount };
         return new SuccessResult(result, DashboardStatsResultModel);
     }
 }

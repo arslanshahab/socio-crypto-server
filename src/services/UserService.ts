@@ -318,9 +318,11 @@ export class UserService {
                 where: {
                     createdAt: {
                         gte: subDays(currentDate, 7),
-                        lte: currentDate,
                     },
                 },
+            }),
+            this.prismaService.user.count({
+                where: { active: false },
             }),
         ]);
     }
