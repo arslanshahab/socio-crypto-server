@@ -111,24 +111,23 @@ export class TransferService {
         });
     }
 
-    public async getRedeemCoiin() {
-        return this.prismaService.transfer.findMany({
-            where: { OR: [{ action: "WITHDRAW" }, { action: "XOXODAY_REDEMPTION" }] },
-        });
-    }
-
-    public async getDistributedCoiin() {
-        return this.prismaService.transfer.findMany({
-            where: {
-                OR: [
-                    { action: "LOGIN_REWARD" },
-                    { action: "REGISTRATION_REWARD" },
-                    { action: "PARTICIPATION_REWARD" },
-                    { action: "SHARING_REWARD" },
-                    { action: "CAMPAIGN_REWARD" },
-                    { action: "NETWORK_REWARD" },
-                ],
-            },
-        });
+    public async getCoiinRecord() {
+        return this.prismaService.$transaction([
+            this.prismaService.transfer.findMany({
+                where: { OR: [{ action: "WITHDRAW" }, { action: "XOXODAY_REDEMPTION" }] },
+            }),
+            this.prismaService.transfer.findMany({
+                where: {
+                    OR: [
+                        { action: "LOGIN_REWARD" },
+                        { action: "REGISTRATION_REWARD" },
+                        { action: "PARTICIPATION_REWARD" },
+                        { action: "SHARING_REWARD" },
+                        { action: "CAMPAIGN_REWARD" },
+                        { action: "NETWORK_REWARD" },
+                    ],
+                },
+            }),
+        ]);
     }
 }

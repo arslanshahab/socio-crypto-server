@@ -472,3 +472,10 @@ export class UserTransactionResultModel extends TransferResultModel {
     @Property() public readonly orgId: string;
     @Property() public readonly stripeCardId: string;
 }
+
+export class DashboardStatsResultModel {
+    @Property() public readonly totalUsers: number;
+    @Property() public readonly lastWeekUsers: number;
+    @Property() public readonly distributedTotalAmount: number;
+    @Property() public readonly redeemedTotalAmount: number;
+}

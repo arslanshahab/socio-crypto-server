@@ -311,18 +311,17 @@ export class UserService {
     }
 
     public async getUserCount() {
-        return this.prismaService.user.count();
-    }
-
-    public async getUserCountLastWeek() {
         const currentDate = new Date();
-        return this.prismaService.user.count({
-            where: {
-                createdAt: {
-                    gte: subDays(currentDate, 7),
-                    lte: currentDate,
+        return this.prismaService.$transaction([
+            this.prismaService.user.count(),
+            this.prismaService.user.count({
+                where: {
+                    createdAt: {
+                        gte: subDays(currentDate, 7),
+                        lte: currentDate,
+                    },
                 },
-            },
-        });
+            }),
+        ]);
     }
 }

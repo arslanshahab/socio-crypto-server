@@ -23,6 +23,7 @@ import {
 import {
     BooleanResultModel,
     CampaignIdModel,
+    DashboardStatsResultModel,
     ParticipantMetricsResultModel,
     UserDailyParticipantMetricResultModel,
     UserTransactionResultModel,
@@ -66,15 +67,6 @@ class TransferHistoryVariablesModel extends PaginatedVariablesModel {
 }
 class UserQueryVariables {
     @Property() public readonly today: boolean;
-}
-
-class UserCountResultModel {
-    @Property() public readonly totalUsers: number;
-    @Property() public readonly lastWeekUsers: number;
-}
-
-class CoiinResultModel {
-    @Property() public readonly totalAmount: number;
 }
 
 @Controller("/user")
@@ -306,30 +298,15 @@ export class UserController {
         );
     }
 
-    @Get("/users-count")
-    @(Returns(200, SuccessResult).Of(UserCountResultModel))
-    public async getUserCount(@Context() context: Context) {
+    @Get("/dashboard-stats")
+    @(Returns(200, SuccessResult).Of(DashboardStatsResultModel))
+    public async getDashboardStats(@Context() context: Context) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        const totalUsers = await this.userService.getUserCount();
-        const lastWeekUsers = await this.userService.getUserCountLastWeek();
-        return new SuccessResult({ totalUsers, lastWeekUsers }, UserCountResultModel);
-    }
-
-    @Get("/coiin-redeem")
-    @(Returns(200, SuccessResult).Of(CoiinResultModel))
-    public async coiinRedeem(@Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        const transactions = await this.transferService.getRedeemCoiin();
-        const totalAmount = transactions.reduce((acc, cur) => acc + parseFloat(cur.amount), 0);
-        return new SuccessResult({ totalAmount }, CoiinResultModel);
-    }
-
-    @Get("/coiin-distributed")
-    @(Returns(200, SuccessResult).Of(CoiinResultModel))
-    public async coiinDistributed(@Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        const transactions = await this.transferService.getDistributedCoiin();
-        const totalAmount = transactions.reduce((acc, cur) => acc + parseFloat(cur.amount), 0);
-        return new SuccessResult({ totalAmount }, CoiinResultModel);
+        const [totalUsers, lastWeekUsers] = await this.userService.getUserCount();
+        const [redeemTransactions, distributedTransactions] = await this.transferService.getCoiinRecord();
+        const redeemedTotalAmount = redeemTransactions.reduce((acc, cur) => acc + parseFloat(cur.amount), 0);
+        const distributedTotalAmount = distributedTransactions.reduce((acc, cur) => acc + parseFloat(cur.amount), 0);
+        const result = { totalUsers, lastWeekUsers, distributedTotalAmount, redeemedTotalAmount };
+        return new SuccessResult(result, DashboardStatsResultModel);
     }
 }
