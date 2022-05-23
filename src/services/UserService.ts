@@ -54,15 +54,14 @@ export class UserService {
      * @returns the user object, with the requested relations included
      */
     public async findUserById<T extends (keyof Prisma.UserInclude)[] | Prisma.UserInclude | undefined>(
-        userId: string,
+        userId: string | Prisma.StringFilter,
         include?: T
     ) {
-        return this.prismaService.user.findUnique<{
-            where: Prisma.UserWhereUniqueInput;
-            // this type allows adding additional relations to result tpe
+        return this.prismaService.user.findFirst<{
+            where: Prisma.UserWhereInput;
             include: T extends unknown[] ? Array2TrueMap<T> : T;
         }>({
-            where: { id: userId },
+            where: { id: userId, deletedAt: null },
             include: (isArray(include)
                 ? include?.reduce((acc, relation) => ({ ...acc, [relation]: true }), {})
                 : include) as T extends unknown[] ? Array2TrueMap<T> : T,
@@ -82,6 +81,7 @@ export class UserService {
     ) {
         return this.prismaService.$transaction([
             this.prismaService.user.findMany<{
+                where: Prisma.UserWhereInput;
                 skip: number;
                 take: number;
                 // this type allows adding additional relations to result tpe
@@ -92,6 +92,7 @@ export class UserService {
                     : include) as T extends unknown[] ? Array2TrueMap<T> : T,
                 skip: params.skip,
                 take: params.take,
+                where: { deletedAt: null },
             }),
             this.prismaService.user.count(),
         ]);
@@ -135,6 +136,7 @@ export class UserService {
                 },
             },
             where: {
+                deletedAt: null,
                 profile: {
                     AND: [
                         {
@@ -200,8 +202,10 @@ export class UserService {
                           OR: [
                               {
                                   email: { contains: filter, mode: "insensitive" },
+                                  deletedAt: null,
                               },
                               {
+                                  deletedAt: null,
                                   profile: {
                                       OR: [
                                           {
@@ -215,7 +219,7 @@ export class UserService {
                               },
                           ],
                       }
-                    : {},
+                    : { deletedAt: null },
                 select: {
                     id: true,
                     email: true,
@@ -241,6 +245,7 @@ export class UserService {
             this.prismaService.user.count({}),
         ]);
     }
+
     public async updateUserStatus(userId: string, activeStatus: boolean) {
         return await this.prismaService.user.update({
             where: { id: userId },
@@ -248,9 +253,23 @@ export class UserService {
         });
     }
 
+    public async deleteUser(userId: string) {
+        return await this.prismaService.user.update({
+            where: { id: userId },
+            data: { deletedAt: new Date() },
+        });
+    }
+
+    public async recoverUser(userId: string) {
+        return await this.prismaService.user.update({
+            where: { id: userId },
+            data: { deletedAt: undefined },
+        });
+    }
+
     public async getUserById(userId: string) {
         return await this.prismaService.user.findFirst({
-            where: { id: userId },
+            where: { id: userId, deletedAt: null },
             include: {
                 wallet: {
                     include: {
