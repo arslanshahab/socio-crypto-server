@@ -7,6 +7,7 @@ import {
     JoinColumn,
     CreateDateColumn,
     UpdateDateColumn,
+    DeleteDateColumn,
 } from "typeorm";
 import { StringifiedArrayTransformer } from "../util/transformers";
 import { User } from "./User";
@@ -66,6 +67,9 @@ export class Profile extends BaseEntity {
 
     @UpdateDateColumn()
     public updatedAt: Date;
+
+    @DeleteDateColumn({ default: null })
+    public deletedAt: Date;
 
     public isRecoveryCodeValid = (code: string) => {
         return this.recoveryCode === sha256Hash(code);
