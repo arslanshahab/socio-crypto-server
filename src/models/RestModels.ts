@@ -442,6 +442,7 @@ export class KycUserResultModel {
     @Nullable(String) public readonly kycStatus: string | null;
     @Property() public readonly password: string;
     @Nullable(String) public readonly updatedAt: Date;
+    @Nullable(String) public readonly deletedAt: Date;
     @Property() public readonly profile: Prisma.Profile;
     @Property() public readonly notification_settings: Prisma.NotificationSettings;
 }

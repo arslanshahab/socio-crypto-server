@@ -356,6 +356,7 @@ model Profile {
   country        String?
   createdAt      DateTime @default(now()) @db.Timestamp(6)
   updatedAt      DateTime @updatedAt
+  deletedAt      DateTime? @db.Timestamp(6)
   profilePicture String?  @db.VarChar
   user           User?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_a24972ebd73b106250713dcddd9")
 
@@ -521,6 +522,7 @@ model User {
   active                                       Boolean                  @default(true)
   createdAt                                    DateTime                 @default(now()) @db.Timestamp(6)
   updatedAt                                    DateTime                 @updatedAt
+  deletedAt                                    DateTime?                @db.Timestamp(6)
   identityId                                   String?                  @db.VarChar
   id                                           String                   @id(map: "PK_cace4a159ff9f2512dd42373760") @default(dbgenerated("public.gen_random_uuid()")) @db.Uuid
   kycStatus                                    String?                  @default("") @db.VarChar
