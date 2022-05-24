@@ -1,4 +1,4 @@
-import { Enum, Get, Put, Property, Required, Returns, Post } from "@tsed/schema";
+import { Enum, Get, Put, Property, Required, Returns, Post, Delete } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
 import { BodyParams, Context, PathParams, QueryParams } from "@tsed/common";
 import { BadRequest, NotFound } from "@tsed/exceptions";
@@ -308,5 +308,15 @@ export class UserController {
         const distributedTotalAmount = distributedTransactions.reduce((acc, cur) => acc + parseFloat(cur.amount), 0);
         const result = { totalUsers, lastWeekUsers, bannedUsers, distributedTotalAmount, redeemedTotalAmount };
         return new SuccessResult(result, DashboardStatsResultModel);
+    }
+    
+    @Delete()
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
+    public async deleteUser(@Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        await this.userService.deleteUser(user.id);
+        const result = { message: "User account deleted." };
+        return new SuccessResult(result, UpdatedResultModel);
     }
 }

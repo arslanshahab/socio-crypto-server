@@ -5,6 +5,9 @@ import { BigNumber } from "bignumber.js";
 import { ParticipantEngagement } from "../../types";
 import { QualityScore } from "../../models/QualityScore";
 import { BN } from "../../util";
+import { DateUtils } from "typeorm/util/DateUtils";
+import { LessThanOrEqual, MoreThanOrEqual } from "typeorm";
+import { Participant } from "../../models/Participant";
 
 const calculateQualityTier = (deviation: BigNumber, engagement: BigNumber, average: BigNumber) => {
     const scoreDeviation = engagement.minus(average).div(deviation);
@@ -24,7 +27,15 @@ const calculateQualityTier = (deviation: BigNumber, engagement: BigNumber, avera
 };
 
 export const main = async () => {
-    const campaigns = await Campaign.listCampaignsByStatus(true, false);
+    const currentDate = new Date();
+    const campaigns = await Campaign.find({
+        where: {
+            status: "APPROVED",
+            auditStatus: "DEFAULT",
+            beginDate: LessThanOrEqual(DateUtils.mixedDateToDatetimeString(currentDate)),
+            endDate: MoreThanOrEqual(DateUtils.mixedDateToDatetimeString(currentDate)),
+        },
+    });
 
     for (const campaign of campaigns) {
         const likesEngagementData: BigNumber[] = [];
@@ -34,68 +45,80 @@ export const main = async () => {
         const submissionEngagementData: BigNumber[] = [];
         const clickEngagementData: BigNumber[] = [];
         const participantEngagementRates: ParticipantEngagement[] = [];
-        for (const participant of campaign.participants) {
-            const { likeRate, commentRate, shareRate, clickRate } = await new EngagementRate(
-                participant,
-                campaign
-            ).social();
-            const viewRate = new EngagementRate(participant, campaign).views();
-            const submissionRate = new EngagementRate(participant, campaign).submissions();
-            likesEngagementData.push(likeRate);
-            sharesEngagementData.push(shareRate);
-            commentsEngagementData.push(commentRate);
-            viewsEngagementData.push(viewRate);
-            submissionEngagementData.push(submissionRate);
-            clickEngagementData.push(clickRate);
-            participantEngagementRates.push({
-                participantId: participant.id,
-                shareRate,
-                likeRate,
-                commentRate,
-                viewRate,
-                submissionRate,
-                clickRate,
-            });
-        }
-        const { standardDeviation: likesStandardDeviation, average: averageLikeRate } = new StandardDeviation(
-            likesEngagementData
-        ).calculate();
-        const { standardDeviation: sharesStandardDeviation, average: averageShareRate } = new StandardDeviation(
-            sharesEngagementData
-        ).calculate();
-        const { standardDeviation: commentsStandardDeviation, average: averageCommentRate } = new StandardDeviation(
-            commentsEngagementData
-        ).calculate();
-        const { standardDeviation: viewsStandardDeviation, average: averageViewRate } = new StandardDeviation(
-            viewsEngagementData
-        ).calculate();
-        const { standardDeviation: submissionsStandardDeviation, average: averageSubmissionRate } =
-            new StandardDeviation(submissionEngagementData).calculate();
-        const { standardDeviation: clicksStandardDeviation, average: averageClickRate } = new StandardDeviation(
-            clickEngagementData
-        ).calculate();
-        for (const rate of participantEngagementRates) {
-            let qualityScore = await QualityScore.findOne({ where: { participantId: rate.participantId } });
-            if (!qualityScore) {
-                qualityScore = QualityScore.newQualityScore(rate.participantId);
+        const totalParticipants = await Participant.count({ where: { campaign } });
+        const take = 200;
+        let skip = 0;
+        const paginatedParticipantLoop = Math.ceil(totalParticipants / take);
+        for (let pageIndex = 0; pageIndex < paginatedParticipantLoop; pageIndex++) {
+            const participants = await Participant.find({ where: { campaign }, relations: ["user"], skip, take });
+            for (const participant of participants) {
+                const { likeRate, commentRate, shareRate, clickRate } = await new EngagementRate(
+                    participant,
+                    campaign
+                ).social();
+                const viewRate = new EngagementRate(participant, campaign).views();
+                const submissionRate = new EngagementRate(participant, campaign).submissions();
+                likesEngagementData.push(likeRate);
+                sharesEngagementData.push(shareRate);
+                commentsEngagementData.push(commentRate);
+                viewsEngagementData.push(viewRate);
+                submissionEngagementData.push(submissionRate);
+                clickEngagementData.push(clickRate);
+                participantEngagementRates.push({
+                    participantId: participant.id,
+                    shareRate,
+                    likeRate,
+                    commentRate,
+                    viewRate,
+                    submissionRate,
+                    clickRate,
+                });
             }
-            const likesTier = calculateQualityTier(likesStandardDeviation, rate.likeRate, averageLikeRate);
-            const sharesTier = calculateQualityTier(sharesStandardDeviation, rate.shareRate, averageShareRate);
-            const commentsTier = calculateQualityTier(commentsStandardDeviation, rate.commentRate, averageCommentRate);
-            const viewsTier = calculateQualityTier(viewsStandardDeviation, rate.viewRate, averageViewRate);
-            const submissionsTier = calculateQualityTier(
-                submissionsStandardDeviation,
-                rate.submissionRate,
-                averageSubmissionRate
-            );
-            const clicksTier = calculateQualityTier(clicksStandardDeviation, rate.clickRate, averageClickRate);
-            qualityScore.likes = likesTier;
-            qualityScore.shares = sharesTier;
-            qualityScore.comments = commentsTier;
-            qualityScore.views = viewsTier;
-            qualityScore.submissions = submissionsTier;
-            qualityScore.clicks = clicksTier;
-            await qualityScore.save();
+            const { standardDeviation: likesStandardDeviation, average: averageLikeRate } = new StandardDeviation(
+                likesEngagementData
+            ).calculate();
+            const { standardDeviation: sharesStandardDeviation, average: averageShareRate } = new StandardDeviation(
+                sharesEngagementData
+            ).calculate();
+            const { standardDeviation: commentsStandardDeviation, average: averageCommentRate } = new StandardDeviation(
+                commentsEngagementData
+            ).calculate();
+            const { standardDeviation: viewsStandardDeviation, average: averageViewRate } = new StandardDeviation(
+                viewsEngagementData
+            ).calculate();
+            const { standardDeviation: submissionsStandardDeviation, average: averageSubmissionRate } =
+                new StandardDeviation(submissionEngagementData).calculate();
+            const { standardDeviation: clicksStandardDeviation, average: averageClickRate } = new StandardDeviation(
+                clickEngagementData
+            ).calculate();
+            for (const rate of participantEngagementRates) {
+                let qualityScore = await QualityScore.findOne({ where: { participantId: rate.participantId } });
+                if (!qualityScore) {
+                    qualityScore = QualityScore.newQualityScore(rate.participantId);
+                }
+                const likesTier = calculateQualityTier(likesStandardDeviation, rate.likeRate, averageLikeRate);
+                const sharesTier = calculateQualityTier(sharesStandardDeviation, rate.shareRate, averageShareRate);
+                const commentsTier = calculateQualityTier(
+                    commentsStandardDeviation,
+                    rate.commentRate,
+                    averageCommentRate
+                );
+                const viewsTier = calculateQualityTier(viewsStandardDeviation, rate.viewRate, averageViewRate);
+                const submissionsTier = calculateQualityTier(
+                    submissionsStandardDeviation,
+                    rate.submissionRate,
+                    averageSubmissionRate
+                );
+                const clicksTier = calculateQualityTier(clicksStandardDeviation, rate.clickRate, averageClickRate);
+                qualityScore.likes = likesTier;
+                qualityScore.shares = sharesTier;
+                qualityScore.comments = commentsTier;
+                qualityScore.views = viewsTier;
+                qualityScore.submissions = submissionsTier;
+                qualityScore.clicks = clicksTier;
+                await qualityScore.save();
+            }
+            skip += take;
         }
     }
 };
