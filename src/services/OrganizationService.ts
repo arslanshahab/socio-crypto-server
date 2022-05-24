@@ -32,4 +32,12 @@ export class OrganizationService {
         if (!raiinmakerOrg) throw new NotFound(`Org not found for ${RAIINMAKER_ORG_NAME}.`);
         return await this.tatumClientService.findOrCreateCurrency({ ...data, wallet: raiinmakerOrg.wallet! });
     }
+
+    public async findOrgByAdminId(adminId: string) {
+        return this.prismaService.org.findFirst({
+            where: {
+                id: adminId,
+            },
+        });
+    }
 }

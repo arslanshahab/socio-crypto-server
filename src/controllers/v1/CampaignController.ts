@@ -7,6 +7,7 @@ import { UserService } from "../../services/UserService";
 import { CampaignState, CampaignStatus } from "../../util/constants";
 import { calculateParticipantPayoutV2, calculateParticipantSocialScoreV2 } from "../helpers";
 import {
+    ADMIN_NOT_FOUND,
     CAMPAIGN_NAME_EXISTS,
     CAMPAIGN_NOT_FOUND,
     COMPANY_NOT_SPECIFIED,
@@ -26,6 +27,7 @@ import {
     UpdateCampaignResultModel,
     UpdatedResultModel,
     CampaignIdModel,
+    CampaignStatsResultModelArray,
 } from "../../models/RestModels";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { ParticipantService } from "../../services/ParticipantService";
@@ -46,6 +48,7 @@ import { TransferService } from "../../services/TransferService";
 import { EscrowService } from "../../services/EscrowService";
 import { CampaignTemplateService } from "../../services/CampaignTemplateService";
 import { TatumClientService } from "../../services/TatumClientService";
+import { AdminService } from "../../services/AdminService";
 
 const validator = new Validator();
 
@@ -85,6 +88,8 @@ export class CampaignController {
     private userService: UserService;
     @Inject()
     private tatumClientService: TatumClientService;
+    @Inject()
+    private adminService: AdminService;
 
     @Get()
     @(Returns(200, SuccessResult).Of(Pagination).Nested(CampaignResultModel))
@@ -496,5 +501,94 @@ export class CampaignController {
         }
 
         return new SuccessResult(report, GenerateCampaignAuditReportResultModel);
+    }
+
+    @Get("/dashboard-metrics/:campaignId")
+    @(Returns(200, SuccessResult).Of(Object))
+    public async getDashboardMetrics(@PathParams() query: CampaignIdModel, @Context() context: Context) {
+        // this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const user = await this.userService.findUserByContext(context.get("user"));
+        console.log("user-------------------", user);
+        const admin = await this.adminService.findAdminByUserId(user?.identityId!);
+        if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
+
+        // const user = await this.userService.findUserByContext(context.get("user"));
+        // const user = await this.userService.findUserByContext(context.get("user"), { admin: true });
+        // const org = await this.organizationService.findOrgByAdminId(user?.id!);
+        // console.log("admin---------------------------", user, org);
+        const { campaignId } = query;
+        let campaignMetrics;
+        let aggregatedCampaignMetrics;
+        let totalParticipants;
+
+        if (campaignId === "-1") {
+            aggregatedCampaignMetrics = await this.dailyParticipantMetricService.getAggregatedOrgMetrics(admin.orgId!);
+            aggregatedCampaignMetrics = aggregatedCampaignMetrics.reduce(
+                (acc, curr) => {
+                    acc.clickCount += parseInt(curr.clickCount);
+                    acc.viewCount += parseInt(curr.viewCount);
+                    acc.shareCount += parseInt(curr.shareCount);
+                    acc.participationScore += parseInt(curr.participationScore);
+                    return acc;
+                },
+                {
+                    clickCount: 0,
+                    viewCount: 0,
+                    shareCount: 0,
+                    participationScore: 0,
+                }
+            );
+            aggregatedCampaignMetrics = { ...aggregatedCampaignMetrics, campaignName: "All" };
+            campaignMetrics = await this.dailyParticipantMetricService.getOrgMetrics();
+            campaignMetrics = campaignMetrics.reduce(
+                (acc, curr) => {
+                    acc.clickCount += parseInt(curr.clickCount);
+                    acc.viewCount += parseInt(curr.viewCount);
+                    acc.shareCount += parseInt(curr.shareCount);
+                    acc.participationScore += parseInt(curr.participationScore);
+                    return acc;
+                },
+                {
+                    clickCount: 0,
+                    viewCount: 0,
+                    shareCount: 0,
+                    participationScore: 0,
+                }
+            );
+            totalParticipants = await this.participantService.findParticipantsCount();
+        }
+        if (campaignId !== "-1") {
+            aggregatedCampaignMetrics = await this.dailyParticipantMetricService.getAggregatedOrgMetrics(
+                admin.orgId!,
+                campaignId
+            );
+            aggregatedCampaignMetrics = aggregatedCampaignMetrics.reduce(
+                (acc, curr) => {
+                    acc.clickCount += parseInt(curr.clickCount);
+                    acc.viewCount += parseInt(curr.viewCount);
+                    acc.shareCount += parseInt(curr.shareCount);
+                    acc.participationScore += parseInt(curr.participationScore);
+                    return acc;
+                },
+                {
+                    clickCount: 0,
+                    viewCount: 0,
+                    shareCount: 0,
+                    participationScore: 0,
+                }
+            );
+            campaignMetrics = await this.dailyParticipantMetricService.getOrgMetrics(campaignId);
+            totalParticipants = await this.participantService.findParticipantsCount(campaignId);
+        }
+        const aggregaredMetrics = {
+            clickCount: aggregatedCampaignMetrics?.clickCount || 0,
+            viewCount: aggregatedCampaignMetrics?.viewCount || 0,
+            shareCount: aggregatedCampaignMetrics?.shareCount || 0,
+            participationScore: aggregatedCampaignMetrics?.participationScore || 0,
+            // campaignName: aggregatedCampaignMetrics?.campaignName || "",
+            totalParticipants: totalParticipants || 0,
+        };
+        const metrics = { aggregaredMetrics, campaignMetrics };
+        return new SuccessResult(metrics, CampaignStatsResultModelArray);
     }
 }

@@ -124,4 +124,29 @@ export class DailyParticipantMetricService {
             where: { campaignId },
         });
     }
+
+    public async getAggregatedOrgMetrics(orgId: string, campaignId?: string) {
+        return this.prismaService.dailyParticipantMetric.findMany({
+            where: campaignId ? { campaignId } : {},
+            select: {
+                clickCount: true,
+                viewCount: true,
+                shareCount: true,
+                participationScore: true,
+                // campaign: { select: { name: true } },
+            },
+        });
+    }
+
+    public async getOrgMetrics(campaignId?: string) {
+        return this.prismaService.dailyParticipantMetric.findMany({
+            where: campaignId ? { campaignId } : {},
+            select: {
+                clickCount: true,
+                viewCount: true,
+                shareCount: true,
+                participationScore: true,
+            },
+        });
+    }
 }
