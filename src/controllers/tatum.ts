@@ -262,7 +262,7 @@ export const withdrawFunds = async (
         let { symbol, network, address, amount, verificationToken } = args;
         if (symbol.toUpperCase() === COIIN)
             throw new Error(
-                `${symbol} withdrawls are currently disabled. Please contact our support for further assistance.`
+                `${symbol} is not available to withdrawal until after the TGE, follow our social channels to learn more!`
             );
         const token = await TatumClient.isCurrencySupported({ symbol, network });
         if (!token) throw new Error(`Currency "${symbol}" is not supported`);

@@ -11,6 +11,7 @@ import {
     BeforeUpdate,
     ILike,
     Index,
+    DeleteDateColumn,
 } from "typeorm";
 import { Participant } from "./Participant";
 import { Wallet } from "./Wallet";
@@ -75,6 +76,9 @@ export class User extends BaseEntity {
 
     @UpdateDateColumn()
     public updatedAt: Date;
+
+    @DeleteDateColumn({ default: null })
+    public deletedAt: Date;
 
     @OneToMany((_type) => Participant, (participant) => participant.user)
     campaigns: Participant[];
