@@ -507,7 +507,7 @@ export class CampaignController {
         return new SuccessResult(report, GenerateCampaignAuditReportResultModel);
     }
 
-    @Get("/dashboard-metrics/:campaignId")
+    @Get("/campaign-metrics/:campaignId")
     @(Returns(200, SuccessResult).Of(CampaignStatsResultModelArray))
     public async getDashboardMetrics(@PathParams() query: CampaignIdModel, @Context() context: Context) {
         // this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));

@@ -298,18 +298,20 @@ export class UserController {
         );
     }
 
-    @Get("/dashboard-stats")
+    @Get("/user-stats")
     @(Returns(200, SuccessResult).Of(DashboardStatsResultModel))
     public async getDashboardStats(@Context() context: Context) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const [totalUsers, lastWeekUsers, bannedUsers] = await this.userService.getUserCount();
         const [redeemTransactions, distributedTransactions] = await this.transferService.getCoiinRecord();
-        const redeemedTotalAmount = redeemTransactions.reduce((acc, cur) => acc + parseFloat(cur.amount), 0);
-        const distributedTotalAmount = distributedTransactions.reduce((acc, cur) => acc + parseFloat(cur.amount), 0);
+        let redeemedTotalAmount = redeemTransactions.reduce((acc, cur) => acc + parseFloat(cur.amount), 0);
+        let distributedTotalAmount = distributedTransactions.reduce((acc, cur) => acc + parseFloat(cur.amount), 0);
+        redeemedTotalAmount = parseFloat(redeemedTotalAmount.toFixed(2));
+        distributedTotalAmount = parseFloat(distributedTotalAmount.toFixed(2));
         const result = { totalUsers, lastWeekUsers, bannedUsers, distributedTotalAmount, redeemedTotalAmount };
         return new SuccessResult(result, DashboardStatsResultModel);
     }
-    
+
     @Delete()
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async deleteUser(@Context() context: Context) {
