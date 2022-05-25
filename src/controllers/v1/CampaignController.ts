@@ -7,7 +7,7 @@ import { UserService } from "../../services/UserService";
 import { CampaignState, CampaignStatus } from "../../util/constants";
 import { calculateParticipantPayoutV2, calculateParticipantSocialScoreV2 } from "../helpers";
 import {
-    ADMIN_NOT_FOUND,
+    // ADMIN_NOT_FOUND,
     CAMPAIGN_NAME_EXISTS,
     CAMPAIGN_NOT_FOUND,
     COMPANY_NOT_SPECIFIED,
@@ -48,7 +48,7 @@ import { TransferService } from "../../services/TransferService";
 import { EscrowService } from "../../services/EscrowService";
 import { CampaignTemplateService } from "../../services/CampaignTemplateService";
 import { TatumClientService } from "../../services/TatumClientService";
-import { AdminService } from "../../services/AdminService";
+// import { AdminService } from "../../services/AdminService";
 
 const validator = new Validator();
 
@@ -88,15 +88,19 @@ export class CampaignController {
     private userService: UserService;
     @Inject()
     private tatumClientService: TatumClientService;
-    @Inject()
-    private adminService: AdminService;
+    // @Inject()
+    // private adminService: AdminService;
 
     @Get()
     @(Returns(200, SuccessResult).Of(Pagination).Nested(CampaignResultModel))
     public async list(@QueryParams() query: ListCampaignsVariablesModel, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         const [items, total] = await this.campaignService.findCampaignsByStatus(query, user || undefined);
+        console.log("campaigns-------------------------/", items);
+
         const modelItems = await Promise.all(items.map((i) => CampaignResultModel.build(i)));
+        console.log("model items-------------------------/", modelItems);
+
         return new SuccessResult(new Pagination(modelItems, total, CampaignResultModel), Pagination);
     }
 
@@ -504,25 +508,27 @@ export class CampaignController {
     }
 
     @Get("/dashboard-metrics/:campaignId")
-    @(Returns(200, SuccessResult).Of(Object))
+    @(Returns(200, SuccessResult).Of(CampaignStatsResultModelArray))
     public async getDashboardMetrics(@PathParams() query: CampaignIdModel, @Context() context: Context) {
         // this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const user = await this.userService.findUserByContext(context.get("user"));
         console.log("user-------------------", user);
-        const admin = await this.adminService.findAdminByUserId(user?.identityId!);
-        if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
+        // const admin = await this.adminService.findAdminByUserId(user?.identityId!);
+        // if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
 
         // const user = await this.userService.findUserByContext(context.get("user"));
         // const user = await this.userService.findUserByContext(context.get("user"), { admin: true });
         // const org = await this.organizationService.findOrgByAdminId(user?.id!);
         // console.log("admin---------------------------", user, org);
         const { campaignId } = query;
+
         let campaignMetrics;
         let aggregatedCampaignMetrics;
         let totalParticipants;
+        let calculateCampaignMetrics = [];
 
         if (campaignId === "-1") {
-            aggregatedCampaignMetrics = await this.dailyParticipantMetricService.getAggregatedOrgMetrics(admin.orgId!);
+            aggregatedCampaignMetrics = await this.dailyParticipantMetricService.getAggregatedOrgMetrics();
             aggregatedCampaignMetrics = aggregatedCampaignMetrics.reduce(
                 (acc, curr) => {
                     acc.clickCount += parseInt(curr.clickCount);
@@ -539,29 +545,32 @@ export class CampaignController {
                 }
             );
             aggregatedCampaignMetrics = { ...aggregatedCampaignMetrics, campaignName: "All" };
-            campaignMetrics = await this.dailyParticipantMetricService.getOrgMetrics();
-            campaignMetrics = campaignMetrics.reduce(
-                (acc, curr) => {
-                    acc.clickCount += parseInt(curr.clickCount);
-                    acc.viewCount += parseInt(curr.viewCount);
-                    acc.shareCount += parseInt(curr.shareCount);
-                    acc.participationScore += parseInt(curr.participationScore);
-                    return acc;
-                },
-                {
-                    clickCount: 0,
-                    viewCount: 0,
-                    shareCount: 0,
-                    participationScore: 0,
-                }
-            );
+            const campaign = await this.campaignService.findCampaigns("f18afe8d-eb80-4864-93f1-84f0052d6b84");
+            for (let i = 0; i < campaign.length; i++) {
+                const campaignId = campaign[i].id;
+                campaignMetrics = await this.dailyParticipantMetricService.getOrgMetrics(campaignId);
+                campaignMetrics = campaignMetrics.reduce(
+                    (acc, curr) => {
+                        acc.clickCount += parseInt(curr.clickCount);
+                        acc.viewCount += parseInt(curr.viewCount);
+                        acc.shareCount += parseInt(curr.shareCount);
+                        acc.participationScore += parseInt(curr.participationScore);
+                        return acc;
+                    },
+                    {
+                        clickCount: 0,
+                        viewCount: 0,
+                        shareCount: 0,
+                        participationScore: 0,
+                    }
+                );
+                calculateCampaignMetrics.push(campaignMetrics);
+            }
+
             totalParticipants = await this.participantService.findParticipantsCount();
         }
         if (campaignId !== "-1") {
-            aggregatedCampaignMetrics = await this.dailyParticipantMetricService.getAggregatedOrgMetrics(
-                admin.orgId!,
-                campaignId
-            );
+            aggregatedCampaignMetrics = await this.dailyParticipantMetricService.getAggregatedOrgMetrics(campaignId);
             aggregatedCampaignMetrics = aggregatedCampaignMetrics.reduce(
                 (acc, curr) => {
                     acc.clickCount += parseInt(curr.clickCount);
@@ -578,6 +587,22 @@ export class CampaignController {
                 }
             );
             campaignMetrics = await this.dailyParticipantMetricService.getOrgMetrics(campaignId);
+            campaignMetrics = campaignMetrics.reduce(
+                (acc, curr) => {
+                    acc.clickCount += parseInt(curr.clickCount);
+                    acc.viewCount += parseInt(curr.viewCount);
+                    acc.shareCount += parseInt(curr.shareCount);
+                    acc.participationScore += parseInt(curr.participationScore);
+                    return acc;
+                },
+                {
+                    clickCount: 0,
+                    viewCount: 0,
+                    shareCount: 0,
+                    participationScore: 0,
+                }
+            );
+            calculateCampaignMetrics.push(campaignMetrics);
             totalParticipants = await this.participantService.findParticipantsCount(campaignId);
         }
         const aggregaredMetrics = {
@@ -588,7 +613,7 @@ export class CampaignController {
             // campaignName: aggregatedCampaignMetrics?.campaignName || "",
             totalParticipants: totalParticipants || 0,
         };
-        const metrics = { aggregaredMetrics, campaignMetrics };
+        const metrics = { aggregaredMetrics, calculateCampaignMetrics };
         return new SuccessResult(metrics, CampaignStatsResultModelArray);
     }
 }

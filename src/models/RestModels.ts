@@ -490,13 +490,13 @@ export class DashboardStatsResultModel {
 }
 
 export class CampaignStatsResultModel {
-    @Property() public readonly clickCount: string;
-    @Property() public readonly viewCount: string;
-    @Property() public readonly shareCount: string;
-    @Property() public readonly participationScore: string;
+    @Property() public readonly clickCount: number;
+    @Property() public readonly viewCount: number;
+    @Property() public readonly shareCount: number;
+    @Property() public readonly participationScore: number;
 }
 
 export class CampaignStatsResultModelArray {
     @Property() public readonly aggregaredMetrics: AggregaredMetrics;
-    @Property() public readonly campaignMetrics: CampaignStatsResultModel[];
+    @Property() public readonly calculateCampaignMetrics: CampaignStatsResultModel[];
 }

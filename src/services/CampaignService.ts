@@ -230,6 +230,9 @@ export class CampaignService {
             },
         });
     }
+    public async findCampaigns(orgId: string) {
+        return await this.prismaService.campaign.findMany({ where: { orgId } });
+    }
 
     public async currentCampaignTier(campaignId: string) {
         let currentTierSummary;

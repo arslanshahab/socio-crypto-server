@@ -125,7 +125,7 @@ export class DailyParticipantMetricService {
         });
     }
 
-    public async getAggregatedOrgMetrics(orgId: string, campaignId?: string) {
+    public async getAggregatedOrgMetrics(campaignId?: string) {
         return this.prismaService.dailyParticipantMetric.findMany({
             where: campaignId ? { campaignId } : {},
             select: {
