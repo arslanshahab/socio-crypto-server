@@ -72,7 +72,7 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
         if (!raiinmakerAccount) throw new Error("currency not found for raiinmaker");
         const campaignAccount = campaign.currency;
         if (!campaignAccount) throw new Error("currency not found for campaign");
-        const take = 200;
+        const take = 500;
         let skip = 0;
         const totalParticipants = await Participant.count({ where: { campaign } });
         const paginatedLoop = Math.ceil(totalParticipants / take);
