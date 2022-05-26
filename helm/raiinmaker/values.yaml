@@ -27,8 +27,8 @@ cron:
         daily: "0 0 * * *" # At minute 0 every day
         # coiinWatcher: "*/5 * * * *" # At every 5 minutes
         qualityScore: "0 * * * *" # At minute 0 every hour
-        campaignAudit: "*/30 * * * *" # At every 30 minutes
-        coiinTransfer: "0 * * * *" # At every 6 hours
+        campaignAudit: "0 * * * *" # At every hour
+        coiinTransfer: "0 * * * *" # At every hour
 
 # up server replica count
 replicaCount: 2
