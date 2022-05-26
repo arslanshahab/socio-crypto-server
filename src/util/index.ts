@@ -73,38 +73,6 @@ export const getBase64FileExtension = (fileString: string) => {
     return fileString.split(":")[1].split(";")[0];
 };
 
-<<<<<<< Updated upstream
-=======
-export async function calculateLunarMonth() {
-    const currDate = new Date();
-    const beginDate = initDateFromParams({ date: currDate, d: currDate.getDate() - 28, h: 0, i: 0, s: 0, ms: 0 });
-    const todayDate = initDateFromParams({ date: currDate, h: 0, i: 0, s: 0, ms: 0 });
-    return {
-        beginDateString: DateUtils.mixedDateToDatetimeString(beginDate),
-        todayDateString: DateUtils.mixedDateToDatetimeString(todayDate),
-    };
-}
-
-export const getLunationData = () => {
-    const currentDate = new Date();
-    const currentTime = currentDate.getTime();
-    const nextIndex = LUNAR_START_DATES.findIndex((item) => new Date(item.date).getTime() > currentTime);
-    return {
-        prevLunation: LUNAR_START_DATES[nextIndex - 2].lunation,
-        currentLunation: LUNAR_START_DATES[nextIndex - 1].lunation,
-        nextLunation: LUNAR_START_DATES[nextIndex].lunation,
-    };
-};
-
-export const networkActionWeights = {
-    click: () => new BN(1),
-    view: () => new BN(2),
-    submission: () => new BN(6),
-    share: () => new BN(9),
-    like: () => new BN(3),
-};
-
->>>>>>> Stashed changes
 export const asyncHandler = (fn: any) => (req: Request, res: Response, next: NextFunction) => {
     return Promise.resolve(fn(req, res, next)).catch(next);
 };
