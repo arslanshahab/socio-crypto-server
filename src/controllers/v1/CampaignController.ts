@@ -504,18 +504,16 @@ export class CampaignController {
         return new SuccessResult(report, GenerateCampaignAuditReportResultModel);
     }
 
-    @Get("/campaign-metrics/:campaignId")
+    @Get("/dashboard-metrics/:campaignId")
     @(Returns(200, SuccessResult).Of(CampaignStatsResultModelArray))
     public async getDashboardMetrics(@PathParams() query: CampaignIdModel, @Context() context: Context) {
-        const firebaseId = context.get("user")?.firebaseId;
-        const admin = await this.userService.findUserByFirebaseId(firebaseId);
+        const admin = await this.userService.findUserByFirebaseId(context.get("user").firebaseId);
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
         const { campaignId } = query;
         let campaignMetrics;
         let aggregatedCampaignMetrics;
         let totalParticipants;
         let calculateCampaignMetrics = [];
-
         if (campaignId === "-1") {
             aggregatedCampaignMetrics = await this.dailyParticipantMetricService.getAggregatedOrgMetrics();
             aggregatedCampaignMetrics = aggregatedCampaignMetrics.reduce(
