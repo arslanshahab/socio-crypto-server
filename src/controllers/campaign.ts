@@ -651,9 +651,7 @@ export const listAllCampaignsForOrg = async (parent: any, args: any, context: { 
 //! Dashboard Metrics
 export const getDashboardMetrics = async (parent: any, { campaignId, skip, take }: any, context: { user: any }) => {
     try {
-        const userId = context.user;
-        console.log("-------------------------------------", userId);
-
+        const userId = context.user.id;
         checkPermissions({ hasRole: ["admin"] }, context);
         const admin = await Admin.findOne({ where: { firebaseId: userId }, relations: ["org"] });
         if (!admin) throw new Error(ADMIN_NOT_FOUND);
