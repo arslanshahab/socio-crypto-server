@@ -32,6 +32,7 @@ export class CampaignService {
             ...(params.state === "CLOSED" ? { endDate: { lte: now } } : {}),
             status: params.status || "APPROVED",
             isGlobal: false,
+            auditStatus: params.auditStatus,
         };
 
         return this.prismaService.$transaction([
@@ -49,7 +50,7 @@ export class CampaignService {
                               },
                               where: { userId: user?.id },
                           }
-                        : false,
+                        : true,
                     crypto_currency: true,
                     campaign_media: true,
                     campaign_template: true,

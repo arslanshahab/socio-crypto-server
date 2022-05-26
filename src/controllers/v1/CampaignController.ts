@@ -8,7 +8,6 @@ import { CampaignState, CampaignStatus } from "../../util/constants";
 import { calculateParticipantPayoutV2, calculateParticipantSocialScoreV2 } from "../helpers";
 import {
     ADMIN_NOT_FOUND,
-    // ADMIN_NOT_FOUND,
     CAMPAIGN_NAME_EXISTS,
     CAMPAIGN_NOT_FOUND,
     COMPANY_NOT_SPECIFIED,
@@ -33,7 +32,7 @@ import {
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { ParticipantService } from "../../services/ParticipantService";
 import { SocialPostService } from "../../services/SocialPostService";
-import { CampaignCreateTypes, PointValueTypes } from "../../types";
+import { CampaignAuditStatus, CampaignCreateTypes, PointValueTypes } from "../../types";
 import { addYears } from "date-fns";
 import { Validator } from "../../schemas";
 import { OrganizationService } from "../../services/OrganizationService";
@@ -49,7 +48,6 @@ import { TransferService } from "../../services/TransferService";
 import { EscrowService } from "../../services/EscrowService";
 import { CampaignTemplateService } from "../../services/CampaignTemplateService";
 import { TatumClientService } from "../../services/TatumClientService";
-// import { AdminService } from "../../services/AdminService";
 
 const validator = new Validator();
 
@@ -57,6 +55,7 @@ class ListCampaignsVariablesModel extends PaginatedVariablesModel {
     @Required() @Enum(CampaignState) public readonly state: CampaignState;
     @Property() @Enum(CampaignStatus, "ALL") public readonly status: CampaignStatus | "ALL" | undefined;
     @Property(Boolean) public readonly userRelated: boolean | undefined;
+    @Property(String) public readonly auditStatus: CampaignAuditStatus | undefined;
 }
 
 @Controller("/campaign")
@@ -89,8 +88,6 @@ export class CampaignController {
     private userService: UserService;
     @Inject()
     private tatumClientService: TatumClientService;
-    // @Inject()
-    // private adminService: AdminService;
 
     @Get()
     @(Returns(200, SuccessResult).Of(Pagination).Nested(CampaignResultModel))
@@ -597,7 +594,6 @@ export class CampaignController {
             viewCount: aggregatedCampaignMetrics?.viewCount || 0,
             shareCount: aggregatedCampaignMetrics?.shareCount || 0,
             participationScore: aggregatedCampaignMetrics?.participationScore || 0,
-            // campaignName: aggregatedCampaignMetrics?.campaignName || "",
             totalParticipants: totalParticipants || 0,
         };
         const metrics = { aggregaredMetrics, calculateCampaignMetrics };
