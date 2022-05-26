@@ -80,7 +80,7 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
         for (let pageIndex = 0; pageIndex < paginatedLoop; pageIndex++) {
             const participants = await Participant.find({
                 where: { campaign },
-                relations: ["user"],
+                relations: ["user", "campaign"],
                 take,
                 skip,
             });
@@ -93,7 +93,14 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
                 if (!userData) throw new Error("User not found");
                 userDeviceIds[userData.id] = userData.profile.deviceToken;
                 const participantShare = await calculateParticipantPayout(totalRewardAmount, campaign, participant);
-                if (participantShare.isGreaterThan(0)) {
+                const alreadyTransferred = await Transfer.findOne({
+                    where: {
+                        amount: participantShare,
+                        campaign: campaign,
+                        wallet: await Wallet.findOne({ where: { user: participant.user } }),
+                    },
+                });
+                if (participantShare.isGreaterThan(0) && !alreadyTransferred) {
                     usersRewards[userData.id] = participantShare;
                 }
                 console.log(
@@ -105,7 +112,7 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
             }
 
             if (!campaign.tatumBlockageId) throw new Error(`No blockage Id found for campaign--- ${campaign.id}`);
-            await TatumClient.unblockAccountBalance(campaign.tatumBlockageId);
+            if (pageIndex === 0) await TatumClient.unblockAccountBalance(campaign.tatumBlockageId);
 
             const promiseArray = [];
             const transferDetails = [];
