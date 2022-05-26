@@ -7,6 +7,7 @@ import { UserService } from "../../services/UserService";
 import { CampaignState, CampaignStatus } from "../../util/constants";
 import { calculateParticipantPayoutV2, calculateParticipantSocialScoreV2 } from "../helpers";
 import {
+    ADMIN_NOT_FOUND,
     // ADMIN_NOT_FOUND,
     CAMPAIGN_NAME_EXISTS,
     CAMPAIGN_NOT_FOUND,
@@ -96,11 +97,7 @@ export class CampaignController {
     public async list(@QueryParams() query: ListCampaignsVariablesModel, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         const [items, total] = await this.campaignService.findCampaignsByStatus(query, user || undefined);
-        console.log("campaigns-------------------------/", items);
-
         const modelItems = await Promise.all(items.map((i) => CampaignResultModel.build(i)));
-        console.log("model items-------------------------/", modelItems);
-
         return new SuccessResult(new Pagination(modelItems, total, CampaignResultModel), Pagination);
     }
 
@@ -510,18 +507,10 @@ export class CampaignController {
     @Get("/campaign-metrics/:campaignId")
     @(Returns(200, SuccessResult).Of(CampaignStatsResultModelArray))
     public async getDashboardMetrics(@PathParams() query: CampaignIdModel, @Context() context: Context) {
-        // this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        const user = await this.userService.findUserByContext(context.get("user"));
-        console.log("user-------------------", user);
-        // const admin = await this.adminService.findAdminByUserId(user?.identityId!);
-        // if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
-
-        // const user = await this.userService.findUserByContext(context.get("user"));
-        // const user = await this.userService.findUserByContext(context.get("user"), { admin: true });
-        // const org = await this.organizationService.findOrgByAdminId(user?.id!);
-        // console.log("admin---------------------------", user, org);
+        const firebaseId = context.get("user")?.firebaseId;
+        const admin = await this.userService.findUserByFirebaseId(firebaseId);
+        if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
         const { campaignId } = query;
-
         let campaignMetrics;
         let aggregatedCampaignMetrics;
         let totalParticipants;
@@ -545,7 +534,7 @@ export class CampaignController {
                 }
             );
             aggregatedCampaignMetrics = { ...aggregatedCampaignMetrics, campaignName: "All" };
-            const campaign = await this.campaignService.findCampaigns("f18afe8d-eb80-4864-93f1-84f0052d6b84");
+            const campaign = await this.campaignService.findCampaigns(admin.orgId!);
             for (let i = 0; i < campaign.length; i++) {
                 const campaignId = campaign[i].id;
                 campaignMetrics = await this.dailyParticipantMetricService.getOrgMetrics(campaignId);
