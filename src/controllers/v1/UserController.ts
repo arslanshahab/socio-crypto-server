@@ -321,4 +321,15 @@ export class UserController {
         const result = { message: "User account deleted." };
         return new SuccessResult(result, UpdatedResultModel);
     }
+
+    @Post("/delete-user-by-id/:userId")
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
+    public async deleteUserById(@PathParams() query: { userId: string }, @Context() context: Context) {
+        const { userId } = query;
+        const user = await this.userService.findUserById(userId);
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        await this.userService.deleteUser(user.id);
+        const result = { message: "User account deleted." };
+        return new SuccessResult(result, UpdatedResultModel);
+    }
 }
