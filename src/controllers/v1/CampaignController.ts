@@ -411,7 +411,8 @@ export class CampaignController {
         const dailyParticipantMetrics = await this.dailyParticipantMetricService.findDailyParticipantByCampaignId(
             campaignId
         );
-        if (dailyParticipantMetrics) this.dailyParticipantMetricService.deleteDailyParticipantMetrics(campaignId);
+        const dailyParticipantMetricsIds = dailyParticipantMetrics.map((x) => x.id);
+        await this.dailyParticipantMetricService.deleteDailyParticipantMetrics(dailyParticipantMetricsIds);
         const hourlyMetrics = await this.hourlyCampaignMetricsService.findCampaignHourlyMetricsByCampaignId(campaignId);
         if (hourlyMetrics.length > 0) this.hourlyCampaignMetricsService.deleteCampaignHourlyMetrics(campaignId);
         const campaignTemplate = await this.campaignTemplateService.findCampaignTemplateByCampaignId(campaignId);

@@ -113,9 +113,9 @@ export class DailyParticipantMetricService {
         return response;
     }
 
-    public async deleteDailyParticipantMetrics(campaignId: string) {
+    public async deleteDailyParticipantMetrics(id: string[]) {
         return await this.prismaService.dailyParticipantMetric.deleteMany({
-            where: { campaignId },
+            where: { id: { in: id } },
         });
     }
 
