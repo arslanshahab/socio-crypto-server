@@ -1,6 +1,6 @@
 import { Enum, Get, Put, Property, Required, Returns, Post, Delete } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
-import { BodyParams, Context, QueryParams } from "@tsed/common";
+import { BodyParams, Context, PathParams, QueryParams } from "@tsed/common";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { UserService } from "../../services/UserService";
 import {
@@ -45,6 +45,7 @@ import { CampaignService } from "../../services/CampaignService";
 import { ParticipantService } from "../../services/ParticipantService";
 import { TatumClientService } from "../../services/TatumClientService";
 import { HourlyCampaignMetricsService } from "../../services/HourlyCampaignMetricsService";
+import { SesClient } from "../../clients/ses";
 
 const userResultRelations = {
     profile: true,
@@ -291,6 +292,26 @@ export class UserController {
         if (!user) throw new NotFound(USER_NOT_FOUND);
         await this.userService.deleteUser(user.id);
         const result = { message: "User account deleted." };
+        return new SuccessResult(result, UpdatedResultModel);
+    }
+
+    @Post("/reset-user-password/:userId")
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
+    public async resetUserPassword(@PathParams() query: { userId: string }, @Context() context: Context) {
+        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const { userId } = query;
+        const user = await this.userService.findUserById(userId);
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        const chars = process.env.PASSWORD_CHARSET || "789abcdxyz!@#$%^&*";
+        const passwordLength = 8;
+        let password = "";
+        for (var i = 0; i <= passwordLength; i++) {
+            var randomNumber = Math.floor(Math.random() * chars.length);
+            password += chars.substring(randomNumber, randomNumber + 1);
+        }
+        await this.userService.resetUserPassword(user.id, user.email, password);
+        await SesClient.restUserPasswordEmail(user.email, password);
+        const result = { message: "User password reset successfully" };
         return new SuccessResult(result, UpdatedResultModel);
     }
 }

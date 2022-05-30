@@ -152,4 +152,16 @@ export class SesClient {
             throw new Error(error.message);
         }
     }
+
+    public static async restUserPasswordEmail(emailAddress: string, otp: string) {
+        const title = `Your Password Reset Successfully`;
+        const text = `Please enter the following password to login: ${otp}`;
+        const template = SesClient.getTemplate(title, text, "Password Reset Request", emailAddress);
+        try {
+            await SesClient.client.sendEmail(template).promise();
+            return true;
+        } catch (error) {
+            throw new Error(error.message);
+        }
+    }
 }

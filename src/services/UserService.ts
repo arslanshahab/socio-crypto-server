@@ -14,6 +14,7 @@ import { differenceInHours } from "date-fns";
 import { TransferService } from "./TransferService";
 import { OrganizationService } from "./OrganizationService";
 import { TatumClientService } from "./TatumClientService";
+import { createPasswordHash } from "../util";
 
 type Array2TrueMap<T> = T extends string[] ? { [idx in T[number]]: true } : undefined;
 
@@ -327,5 +328,15 @@ export class UserService {
                 campaign,
             });
         }
+    }
+
+    public async resetUserPassword(userId: string, email: string, password: string) {
+        const hashedPassword = createPasswordHash({ email, password });
+        return await this.prismaService.user.update({
+            where: { id: userId },
+            data: {
+                password: hashedPassword,
+            },
+        });
     }
 }
