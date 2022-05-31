@@ -133,6 +133,7 @@ export class DailyParticipantMetricService {
                 viewCount: true,
                 shareCount: true,
                 participationScore: true,
+                campaign: { select: { name: true } },
             },
         });
     }

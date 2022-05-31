@@ -555,8 +555,8 @@ export class CampaignController {
             totalParticipants = await this.participantService.findParticipantsCount();
         }
         if (campaignId !== "-1") {
-            aggregatedCampaignMetrics = await this.dailyParticipantMetricService.getAggregatedOrgMetrics(campaignId);
-            aggregatedCampaignMetrics = aggregatedCampaignMetrics.reduce(
+            const aggregatedMetrics = await this.dailyParticipantMetricService.getAggregatedOrgMetrics(campaignId);
+            aggregatedCampaignMetrics = aggregatedMetrics.reduce(
                 (acc, curr) => {
                     acc.clickCount += parseInt(curr.clickCount);
                     acc.viewCount += parseInt(curr.viewCount);
@@ -571,6 +571,10 @@ export class CampaignController {
                     participationScore: 0,
                 }
             );
+            aggregatedCampaignMetrics = {
+                ...aggregatedCampaignMetrics,
+                campaignName: aggregatedMetrics[0].campaign?.name,
+            };
             campaignMetrics = await this.dailyParticipantMetricService.getOrgMetrics(campaignId);
             campaignMetrics = campaignMetrics.reduce(
                 (acc, curr) => {
