@@ -530,9 +530,9 @@ export class CampaignController {
                 }
             );
             aggregatedCampaignMetrics = { ...aggregatedCampaignMetrics, campaignName: "All" };
-            const campaign = await this.campaignService.findCampaigns(admin.orgId!);
-            for (let i = 0; i < campaign.length; i++) {
-                const campaignId = campaign[i].id;
+            const campaigns = await this.campaignService.findCampaigns(admin.orgId!);
+            for (let i = 0; i < campaigns.length; i++) {
+                const campaignId = campaigns[i].id;
                 campaignMetrics = await this.dailyParticipantMetricService.getOrgMetrics(campaignId);
                 campaignMetrics = campaignMetrics.reduce(
                     (acc, curr) => {
@@ -555,8 +555,8 @@ export class CampaignController {
             totalParticipants = await this.participantService.findParticipantsCount();
         }
         if (campaignId !== "-1") {
-            const aggregatedMetrics = await this.dailyParticipantMetricService.getAggregatedOrgMetrics(campaignId);
-            aggregatedCampaignMetrics = aggregatedMetrics.reduce(
+            const participantMetrics = await this.dailyParticipantMetricService.getAggregatedOrgMetrics(campaignId);
+            aggregatedCampaignMetrics = participantMetrics.reduce(
                 (acc, curr) => {
                     acc.clickCount += parseInt(curr.clickCount);
                     acc.viewCount += parseInt(curr.viewCount);
@@ -573,7 +573,7 @@ export class CampaignController {
             );
             aggregatedCampaignMetrics = {
                 ...aggregatedCampaignMetrics,
-                campaignName: aggregatedMetrics[0].campaign?.name,
+                campaignName: participantMetrics[0].campaign?.name,
             };
             campaignMetrics = await this.dailyParticipantMetricService.getOrgMetrics(campaignId);
             campaignMetrics = campaignMetrics.reduce(
@@ -600,6 +600,7 @@ export class CampaignController {
             shareCount: aggregatedCampaignMetrics?.shareCount || 0,
             participationScore: aggregatedCampaignMetrics?.participationScore || 0,
             totalParticipants: totalParticipants || 0,
+            campaignName: aggregatedCampaignMetrics?.campaignName || "",
         };
         const metrics = { aggregaredMetrics, calculateCampaignMetrics };
         return new SuccessResult(metrics, CampaignStatsResultModelArray);

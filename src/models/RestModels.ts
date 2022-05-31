@@ -480,6 +480,7 @@ export class AggregaredMetrics {
     @Property() public readonly shareCount: number;
     @Property() public readonly participationScore: number;
     @Property() public readonly totalParticipants: number;
+    @Property() public readonly campaignName: string;
 }
 export class DashboardStatsResultModel {
     @Property() public readonly totalUsers: number;
