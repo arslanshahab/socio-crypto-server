@@ -24,6 +24,7 @@ import {
     BooleanResultModel,
     CampaignIdModel,
     ParticipantMetricsResultModel,
+    SingleUserResultModel,
     UserDailyParticipantMetricResultModel,
 } from "../../models/RestModels";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
@@ -295,7 +296,7 @@ export class UserController {
         return new SuccessResult(result, UpdatedResultModel);
     }
 
-    @Post("/reset-user-password/:userId")
+    @Put("/reset-user-password/:userId")
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async resetUserPassword(@PathParams() query: { userId: string }, @Context() context: Context) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
@@ -313,5 +314,14 @@ export class UserController {
         await SesClient.restUserPasswordEmail(user.email, password);
         const result = { message: "User password reset successfully" };
         return new SuccessResult(result, UpdatedResultModel);
+    }
+
+    @Get("/single-user/:userId")
+    @(Returns(200, SuccessResult).Of(SingleUserResultModel))
+    public async getUserById(@PathParams() query: { userId: string }, @Context() context: Context) {
+        this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
+        const user = await this.userService.findUserById(query.userId, ["profile", "social_post"]);
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        return new SuccessResult(user, SingleUserResultModel);
     }
 }
