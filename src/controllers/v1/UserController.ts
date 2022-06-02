@@ -25,6 +25,7 @@ import {
     CampaignIdModel,
     DashboardStatsResultModel,
     ParticipantMetricsResultModel,
+    SingleUserResultModel,
     UserDailyParticipantMetricResultModel,
     UserTransactionResultModel,
 } from "../../models/RestModels";
@@ -47,6 +48,7 @@ import { CampaignService } from "../../services/CampaignService";
 import { ParticipantService } from "../../services/ParticipantService";
 import { TatumClientService } from "../../services/TatumClientService";
 import { HourlyCampaignMetricsService } from "../../services/HourlyCampaignMetricsService";
+import { SesClient } from "../../clients/ses";
 
 const userResultRelations = {
     profile: true,
@@ -331,5 +333,34 @@ export class UserController {
         await this.userService.deleteUser(user.id);
         const result = { message: "User account deleted." };
         return new SuccessResult(result, UpdatedResultModel);
+    }
+    
+    @Put("/reset-user-password/:userId")
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
+    public async resetUserPassword(@PathParams() query: { userId: string }, @Context() context: Context) {
+        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const { userId } = query;
+        const user = await this.userService.findUserById(userId);
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        const chars = process.env.PASSWORD_CHARSET || "789abcdxyz!@#$%^&*";
+        const passwordLength = 8;
+        let password = "";
+        for (var i = 0; i <= passwordLength; i++) {
+            var randomNumber = Math.floor(Math.random() * chars.length);
+            password += chars.substring(randomNumber, randomNumber + 1);
+        }
+        await this.userService.resetUserPassword(user.id, user.email, password);
+        await SesClient.restUserPasswordEmail(user.email, password);
+        const result = { message: "User password reset successfully" };
+        return new SuccessResult(result, UpdatedResultModel);
+    }
+
+    @Get("/single-user/:userId")
+    @(Returns(200, SuccessResult).Of(SingleUserResultModel))
+    public async getUserById(@PathParams() query: { userId: string }, @Context() context: Context) {
+        this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
+        const user = await this.userService.findUserById(query.userId, ["profile", "social_post"]);
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        return new SuccessResult(user, SingleUserResultModel);
     }
 }
