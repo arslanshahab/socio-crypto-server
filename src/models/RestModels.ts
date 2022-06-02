@@ -515,3 +515,8 @@ export class SingleUserResultModel {
     @Nullable(String) public readonly profile: Prisma.Profile;
     @Nullable(String) public readonly social_post: Prisma.SocialPost[];
 }
+
+export class OrgEmployeesResultModel {
+    @Property() public readonly adminsDetails: Prisma.Admin[];
+    @Property() public readonly orgName: string;
+}
