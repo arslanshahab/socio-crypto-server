@@ -359,6 +359,7 @@ export interface ListCampaignsVariablesV2 {
     state: CampaignState;
     status?: CampaignStatus | "ALL";
     userRelated?: boolean;
+    auditStatus?: CampaignAuditStatus;
 }
 export interface FindParticipantById {
     id: string;

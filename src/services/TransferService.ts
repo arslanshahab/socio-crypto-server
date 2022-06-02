@@ -3,11 +3,16 @@ import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
 import { endOfISOWeek, startOfISOWeek, subDays } from "date-fns";
 import { TransferAction, TransferStatus } from "../types";
+import { WalletService } from "./WalletService";
+import { NotFound } from "@tsed/exceptions";
+import { WALLET_NOT_FOUND } from "../util/errors";
 
 @Injectable()
 export class TransferService {
     @Inject()
     private prismaService: PrismaService;
+    @Inject()
+    private walletService: WalletService;
 
     /**
      * Retrieves transfers for a given wallet
@@ -96,5 +101,33 @@ export class TransferService {
                 campaignId: data.campaign ? data.campaign.id : null,
             },
         });
+    }
+
+    public async findUserTransactions(userId: string) {
+        const wallet = await this.walletService.findWalletByUserId(userId);
+        if (!wallet) throw new NotFound(WALLET_NOT_FOUND);
+        return this.prismaService.transfer.findMany({
+            where: { walletId: wallet.id },
+        });
+    }
+
+    public async getCoiinRecord() {
+        return this.prismaService.$transaction([
+            this.prismaService.transfer.findMany({
+                where: { OR: [{ action: "WITHDRAW" }, { action: "XOXODAY_REDEMPTION" }] },
+            }),
+            this.prismaService.transfer.findMany({
+                where: {
+                    OR: [
+                        { action: "LOGIN_REWARD" },
+                        { action: "REGISTRATION_REWARD" },
+                        { action: "PARTICIPATION_REWARD" },
+                        { action: "SHARING_REWARD" },
+                        { action: "CAMPAIGN_REWARD" },
+                        { action: "NETWORK_REWARD" },
+                    ],
+                },
+            }),
+        ]);
     }
 }

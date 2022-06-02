@@ -1,6 +1,6 @@
 import { Enum, Get, Put, Property, Required, Returns, Post, Delete } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
-import { BodyParams, Context, QueryParams } from "@tsed/common";
+import { BodyParams, Context, PathParams, QueryParams } from "@tsed/common";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { UserService } from "../../services/UserService";
 import {
@@ -23,8 +23,10 @@ import {
 import {
     BooleanResultModel,
     CampaignIdModel,
+    DashboardStatsResultModel,
     ParticipantMetricsResultModel,
     UserDailyParticipantMetricResultModel,
+    UserTransactionResultModel,
 } from "../../models/RestModels";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 import {
@@ -219,9 +221,9 @@ export class UserController {
         return new SuccessResult(new Pagination(users, count, UserRecordResultModel), Pagination);
     }
 
-    @Get("/user-balances")
+    @Get("/user-balances/:userId")
     @(Returns(200, SuccessResult).Of(UserWalletResultModel))
-    public async getUserBalances(@QueryParams() query: { userId: string }, @Context() context: Context) {
+    public async getUserBalances(@PathParams() query: { userId: string }, @Context() context: Context) {
         const user = await this.userService.getUserById(query.userId);
         if (!user) throw new BadRequest(USER_NOT_FOUND);
         const currencies = await getBalance(user);
@@ -284,10 +286,47 @@ export class UserController {
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 
+    @Get("/user-transactions-history/:userId")
+    @(Returns(200, SuccessResult).Of(Pagination).Nested(UserTransactionResultModel))
+    public async getUserTransactionHistory(@PathParams() query: { userId: string }, @Context() context: Context) {
+        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const { userId } = query;
+        const transaction = await this.transferService.findUserTransactions(userId);
+        return new SuccessResult(
+            new Pagination(transaction, transaction.length, UserTransactionResultModel),
+            Pagination
+        );
+    }
+
+    @Get("/user-stats")
+    @(Returns(200, SuccessResult).Of(DashboardStatsResultModel))
+    public async getDashboardStats(@Context() context: Context) {
+        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const [totalUsers, lastWeekUsers, bannedUsers] = await this.userService.getUserCount();
+        const [redeemTransactions, distributedTransactions] = await this.transferService.getCoiinRecord();
+        let redeemedTotalAmount = redeemTransactions.reduce((acc, cur) => acc + parseFloat(cur.amount), 0);
+        let distributedTotalAmount = distributedTransactions.reduce((acc, cur) => acc + parseFloat(cur.amount), 0);
+        redeemedTotalAmount = parseFloat(redeemedTotalAmount.toFixed(2));
+        distributedTotalAmount = parseFloat(distributedTotalAmount.toFixed(2));
+        const result = { totalUsers, lastWeekUsers, bannedUsers, distributedTotalAmount, redeemedTotalAmount };
+        return new SuccessResult(result, DashboardStatsResultModel);
+    }
+
     @Delete()
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async deleteUser(@Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        await this.userService.deleteUser(user.id);
+        const result = { message: "User account deleted." };
+        return new SuccessResult(result, UpdatedResultModel);
+    }
+
+    @Post("/delete-user-by-id/:userId")
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
+    public async deleteUserById(@PathParams() query: { userId: string }, @Context() context: Context) {
+        const { userId } = query;
+        const user = await this.userService.findUserById(userId);
         if (!user) throw new NotFound(USER_NOT_FOUND);
         await this.userService.deleteUser(user.id);
         const result = { message: "User account deleted." };
