@@ -4,6 +4,7 @@ import { SymbolNetworkParams } from "../types";
 import { RAIINMAKER_ORG_NAME } from "../util/constants";
 import { NotFound } from "@tsed/exceptions";
 import { TatumClientService } from "./TatumClientService";
+import { CurrencyService } from "./CurrencyService";
 
 @Injectable()
 export class OrganizationService {
@@ -11,6 +12,8 @@ export class OrganizationService {
     private prismaService: PrismaService;
     @Inject()
     private tatumClientService: TatumClientService;
+    @Inject()
+    private currencyService: CurrencyService;
 
     public async findOrganizationByCompanyName(companyName: string) {
         return this.prismaService.org.findFirst({
@@ -45,5 +48,12 @@ export class OrganizationService {
         return this.prismaService.org.findMany({
             include: { campaign: true, admin: true },
         });
+    }
+
+    public async getAvailableBalance(orgId: string) {
+        const currency = await this.currencyService.findCurrencyByOrgId(orgId);
+        if (!currency) throw new NotFound("Currency not found for org.");
+        const tatumBalance = await this.tatumClientService.getAccountBalance(currency.tatumId);
+        return parseFloat(tatumBalance.availableBalance || "0");
     }
 }

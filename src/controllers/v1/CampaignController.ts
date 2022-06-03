@@ -4,12 +4,13 @@ import { Controller, Inject } from "@tsed/di";
 import { Context, BodyParams, PathParams, QueryParams } from "@tsed/common";
 import { CampaignService } from "../../services/CampaignService";
 import { UserService } from "../../services/UserService";
-import { CampaignState, CampaignStatus } from "../../util/constants";
+import { CampaignState, CampaignStatus, RAIINMAKER_ORG_NAME } from "../../util/constants";
 import { calculateParticipantPayoutV2, calculateParticipantSocialScoreV2 } from "../helpers";
 import {
     ADMIN_NOT_FOUND,
     CAMPAIGN_NAME_EXISTS,
     CAMPAIGN_NOT_FOUND,
+    CAMPAIGN_ORGANIZATION_MISSING,
     COMPANY_NOT_SPECIFIED,
     ORG_NOT_FOUND,
     RAFFLE_PRIZE_MISSING,
@@ -604,5 +605,47 @@ export class CampaignController {
         };
         const metrics = { aggregaredMetrics, calculateCampaignMetrics };
         return new SuccessResult(metrics, CampaignStatsResultModelArray);
+    }
+
+    @Post("/admin-update-campaign-status")
+    @(Returns(200, SuccessResult).Of(UpdatedResultModel))
+    public async adminUpdateCampaignStatus(
+        @QueryParams() query: { status: CampaignStatus; campaignId: string },
+        @Context() context: Context
+    ) {
+        this.userService.checkPermissions({ restrictCompany: RAIINMAKER_ORG_NAME }, context.get("user"));
+        const { status, campaignId } = query;
+        const campaign = await this.campaignService.findCampaignById(campaignId, {
+            org: true,
+            currency: { include: { token: true } },
+        });
+        if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
+        if (!campaign.org) throw new NotFound(CAMPAIGN_ORGANIZATION_MISSING);
+        switch (status) {
+            case "APPROVED":
+                if (campaign.type === "raffle") {
+                    campaign.status = CampaignStatus.APPROVED;
+                    break;
+                }
+                const walletBalance = await this.organizationService.getAvailableBalance(campaign.org.id);
+                if (walletBalance < parseFloat(campaign.coiinTotal)) {
+                    campaign.status = CampaignStatus.INSUFFICIENT_FUNDS;
+                    break;
+                }
+                campaign.status = CampaignStatus.APPROVED;
+                const blockageId = await this.campaignService.blockCampaignAmount(campaign.id);
+                if (campaign.symbol.toLowerCase() !== "coiin") {
+                    campaign.tatumBlockageId = blockageId;
+                }
+                break;
+
+            case "DENIED":
+                campaign.status = CampaignStatus.DENIED;
+                break;
+        }
+        await this.campaignService.adminUpdateCampaignStatus(campaign.id, campaign.status, campaign.tatumBlockageId!);
+        const deviceTokens = await User.getAllDeviceTokens("campaignCreate");
+        if (deviceTokens.length > 0) await Firebase.sendCampaignCreatedNotifications(deviceTokens, campaign);
+        return new SuccessResult({ message: "Campaign status updated successfully" }, UpdatedResultModel);
     }
 }
