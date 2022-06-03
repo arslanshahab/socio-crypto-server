@@ -520,3 +520,14 @@ export class OrgEmployeesResultModel {
     @Property() public readonly adminsDetails: Prisma.Admin[];
     @Property() public readonly orgName: string;
 }
+
+export class OrgDetailsModel {
+    @Property() public readonly name: string;
+    @Property() public readonly createdAt: Date;
+    @Property() public readonly admins: number;
+    @Property() public readonly campaigns: number;
+}
+
+export class OrganizationDetailsResultModel {
+    @Property() public readonly orgDetails: OrgDetailsModel[];
+}

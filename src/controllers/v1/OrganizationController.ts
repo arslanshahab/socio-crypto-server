@@ -7,7 +7,7 @@ import { AdminService } from "../../services/AdminService";
 import { OrganizationService } from "../../services/OrganizationService";
 import { UserService } from "../../services/UserService";
 import { SuccessResult, Pagination } from "../../util/entities";
-import { OrgEmployeesResultModel } from "../../models/RestModels";
+import { OrganizationDetailsResultModel, OrgEmployeesResultModel } from "../../models/RestModels";
 
 @Controller("/organization")
 export class OrganizationController {
@@ -34,5 +34,21 @@ export class OrganizationController {
         });
         const result = { adminsDetails, orgName };
         return new SuccessResult(result, OrgEmployeesResultModel);
+    }
+
+    @Get("/org-details")
+    @(Returns(200, SuccessResult).Of(OrganizationDetailsResultModel))
+    public async getOrgDetails(@Context() context: Context) {
+        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const organizations = await this.organizationService.orgDetails();
+        const orgDetails = organizations.map((org) => {
+            return {
+                name: org.name,
+                createdAt: org.createdAt,
+                admins: org.admin.length,
+                campaigns: org.campaign.length,
+            };
+        });
+        return new SuccessResult({ orgDetails }, OrganizationDetailsResultModel);
     }
 }

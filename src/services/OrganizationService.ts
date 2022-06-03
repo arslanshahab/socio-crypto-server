@@ -40,4 +40,10 @@ export class OrganizationService {
             },
         });
     }
+
+    public async orgDetails() {
+        return this.prismaService.org.findMany({
+            include: { campaign: true, admin: true },
+        });
+    }
 }
