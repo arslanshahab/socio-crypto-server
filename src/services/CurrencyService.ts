@@ -50,4 +50,10 @@ export class CurrencyService {
             where: { walletId: wallet?.id, tokenId },
         });
     }
+
+    public async findCurrencyByTokenId(tokenId: string, walletId: string) {
+        return this.prismaService.currency.findFirst({
+            where: { tokenId, walletId },
+        });
+    }
 }

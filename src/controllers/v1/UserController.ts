@@ -14,9 +14,11 @@ import {
     ALREADY_PARTICIPATING,
     CAMPAIGN_CLOSED,
     CAMPAIGN_NOT_FOUND,
+    CURRENCY_NOT_FOUND,
     MISSING_PARAMS,
     NOTIFICATION_SETTING_NOT_FOUND,
     PARTICIPANT_NOT_FOUND,
+    TOKEN_NOT_FOUND,
     USER_NOT_FOUND,
     WALLET_NOT_FOUND,
 } from "../../util/errors";
@@ -41,7 +43,7 @@ import {
 } from "../../models/RestModels";
 import { NotificationService } from "../../services/NotificationService";
 import { TransferService } from "../../services/TransferService";
-import { TransferAction } from "../../util/constants";
+import { COIIN, CoiinStatus, TransferAction } from "../../util/constants";
 import { SocialService } from "../../services/SocialService";
 import { getBalance } from "../helpers";
 import { CampaignService } from "../../services/CampaignService";
@@ -49,6 +51,9 @@ import { ParticipantService } from "../../services/ParticipantService";
 import { TatumClientService } from "../../services/TatumClientService";
 import { HourlyCampaignMetricsService } from "../../services/HourlyCampaignMetricsService";
 import { SesClient } from "../../clients/ses";
+import { CurrencyService } from "../../services/CurrencyService";
+import { WalletService } from "../../services/WalletService";
+import { TokenService } from "../../services/TokenService";
 
 const userResultRelations = {
     profile: true,
@@ -91,6 +96,12 @@ export class UserController {
     private tatumClientService: TatumClientService;
     @Inject()
     private hourlyCampaignMetricsService: HourlyCampaignMetricsService;
+    @Inject()
+    private currencyService: CurrencyService;
+    @Inject()
+    private walletService: WalletService;
+    @Inject()
+    private tokenService: TokenService;
 
     @Get("/")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserResultModel))
@@ -334,7 +345,7 @@ export class UserController {
         const result = { message: "User account deleted." };
         return new SuccessResult(result, UpdatedResultModel);
     }
-    
+
     @Put("/reset-user-password/:userId")
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async resetUserPassword(@PathParams() query: { userId: string }, @Context() context: Context) {
@@ -362,5 +373,43 @@ export class UserController {
         const user = await this.userService.findUserById(query.userId, ["profile", "social_post"]);
         if (!user) throw new NotFound(USER_NOT_FOUND);
         return new SuccessResult(user, SingleUserResultModel);
+    }
+
+    @Post("/transfer-user-coiin")
+    @(Returns(200, SuccessResult).Of(UpdatedResultModel))
+    public async transferUserCoiin(
+        @BodyParams() body: { coiin: string; userId: string; status: string },
+        @Context() context: Context
+    ) {
+        const admin = await this.userService.findUserByFirebaseId(context.get("user").firebaseId);
+        const token = await this.tokenService.findTokenBySymbol(COIIN);
+        if (!token) throw new NotFound(TOKEN_NOT_FOUND);
+        const walletByUserId = await this.walletService.findWalletByUserId(body.userId);
+        if (!walletByUserId) throw new NotFound(WALLET_NOT_FOUND + "for userId");
+        const walletByOrgId = await this.walletService.findWalletByOrgId(admin?.orgId!);
+        if (!walletByOrgId) throw new NotFound(WALLET_NOT_FOUND + "for orgId");
+        const currencyForUser = await this.currencyService.findCurrencyByTokenId(token.id, walletByUserId.id);
+        if (!currencyForUser) throw new NotFound(CURRENCY_NOT_FOUND + "for user");
+        const currencyForOrg = await this.currencyService.findCurrencyByTokenId(token.id, walletByOrgId?.id!);
+        if (!currencyForOrg) throw new NotFound(CURRENCY_NOT_FOUND + "for org");
+        if (body.status === CoiinStatus.ADD) {
+            console.log("add---", currencyForUser?.tatumId, "---", currencyForOrg?.tatumId);
+            await this.tatumClientService.transferFunds({
+                senderAccountId: currencyForOrg?.tatumId,
+                recipientAccountId: currencyForUser?.tatumId,
+                amount: body.coiin,
+                recipientNote: "Transfer Coiin",
+            });
+        }
+        if (body.status === CoiinStatus.REMOVE) {
+            console.log("removed----", currencyForOrg?.tatumId, "---", currencyForUser?.tatumId);
+            await this.tatumClientService.transferFunds({
+                senderAccountId: currencyForUser?.tatumId,
+                recipientAccountId: currencyForOrg?.tatumId!,
+                amount: body.coiin,
+                recipientNote: "Transfer Coiin",
+            });
+        }
+        return new SuccessResult({ message: "Transfer funds successfully" }, UpdatedResultModel);
     }
 }

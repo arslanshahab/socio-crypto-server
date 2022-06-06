@@ -132,3 +132,8 @@ export enum TransferAction {
     NETWORK_REWARD = "NETWORK_REWARD",
     XOXODAY_REDEMPTION = "XOXODAY_REDEMPTION",
 }
+
+export enum CoiinStatus {
+    ADD = "ADD",
+    REMOVE = "REMOVE",
+}
