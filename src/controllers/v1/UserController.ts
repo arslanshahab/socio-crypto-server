@@ -381,6 +381,7 @@ export class UserController {
         @BodyParams() body: { coiin: string; userId: string; status: string },
         @Context() context: Context
     ) {
+        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const admin = await this.userService.findUserByFirebaseId(context.get("user").firebaseId);
         const token = await this.tokenService.findTokenBySymbol(COIIN);
         if (!token) throw new NotFound(TOKEN_NOT_FOUND);
