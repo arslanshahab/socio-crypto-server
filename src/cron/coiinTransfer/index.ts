@@ -96,7 +96,7 @@ const fixFailedCampaignTransfers = async () => {
                     symbol: COIIN,
                     network: BSC,
                 });
-                const orgCurrency = await transfer.campaign.currency;
+                const orgCurrency = transfer.campaign.currency;
                 try {
                     await TatumClient.transferFunds({
                         senderAccountId: orgCurrency.tatumId,
