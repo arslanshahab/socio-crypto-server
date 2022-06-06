@@ -465,3 +465,39 @@ export class KycUpdateResultModel {
 export class BooleanResultModel {
     @Property() public readonly success: boolean;
 }
+
+export class UserTransactionResultModel extends TransferResultModel {
+    @Property() public readonly payoutStatus: string;
+    @Property() public readonly payoutId: string;
+    @Property() public readonly transactionHash: string;
+    @Property() public readonly orgId: string;
+    @Property() public readonly stripeCardId: string;
+}
+
+export class AggregaredMetrics {
+    @Property() public readonly clickCount: number;
+    @Property() public readonly viewCount: number;
+    @Property() public readonly shareCount: number;
+    @Property() public readonly participationScore: number;
+    @Property() public readonly totalParticipants: number;
+    @Property() public readonly campaignName: string;
+}
+export class DashboardStatsResultModel {
+    @Property() public readonly totalUsers: number;
+    @Property() public readonly lastWeekUsers: number;
+    @Property() public readonly bannedUsers: number;
+    @Property() public readonly distributedTotalAmount: number;
+    @Property() public readonly redeemedTotalAmount: number;
+}
+
+export class CampaignStatsResultModel {
+    @Property() public readonly clickCount: number;
+    @Property() public readonly viewCount: number;
+    @Property() public readonly shareCount: number;
+    @Property() public readonly participationScore: number;
+}
+
+export class CampaignStatsResultModelArray {
+    @Property() public readonly aggregaredMetrics: AggregaredMetrics;
+    @Property() public readonly calculateCampaignMetrics: CampaignStatsResultModel[];
+}
