@@ -113,15 +113,40 @@ export class DailyParticipantMetricService {
         return response;
     }
 
-    public async deleteDailyParticipantMetrics(campaignId: string) {
+    public async deleteDailyParticipantMetrics(id: string[]) {
         return await this.prismaService.dailyParticipantMetric.deleteMany({
-            where: { campaignId },
+            where: { id: { in: id } },
         });
     }
 
     public async findDailyParticipantByCampaignId(campaignId: string) {
         return this.prismaService.dailyParticipantMetric.findMany({
             where: { campaignId },
+        });
+    }
+
+    public async getAggregatedOrgMetrics(campaignId?: string) {
+        return this.prismaService.dailyParticipantMetric.findMany({
+            where: campaignId ? { campaignId } : {},
+            select: {
+                clickCount: true,
+                viewCount: true,
+                shareCount: true,
+                participationScore: true,
+                campaign: { select: { name: true } },
+            },
+        });
+    }
+
+    public async getOrgMetrics(campaignId?: string) {
+        return this.prismaService.dailyParticipantMetric.findMany({
+            where: campaignId ? { campaignId } : {},
+            select: {
+                clickCount: true,
+                viewCount: true,
+                shareCount: true,
+                participationScore: true,
+            },
         });
     }
 }

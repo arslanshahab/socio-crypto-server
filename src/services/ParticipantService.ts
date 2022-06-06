@@ -165,4 +165,10 @@ export class ParticipantService {
             },
         });
     }
+
+    public async findParticipantsCount(campaignId?: string) {
+        return this.prismaService.participant.count({
+            where: campaignId ? { campaignId } : {},
+        });
+    }
 }
