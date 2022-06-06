@@ -15,6 +15,111 @@ dotenv.config();
 const app = new Application();
 console.log("APP instance created.");
 
+const fixFailedCoiinTransfers = async (raiinmakerCoiinCurrency: Currency) => {
+    const failedCoiinTransfersCount = await Transfer.count({
+        where: {
+            status: "FAILED",
+            currency: COIIN,
+            action: In(["SHARING_REWARD", "PARTICIPATION_REWARD", "LOGIN_REWARD"]),
+        },
+    });
+    console.log("FAILED COIIN TRANSFERS: ", failedCoiinTransfersCount);
+    if (failedCoiinTransfersCount) {
+        const take = 200;
+        let skip = 0;
+        const paginatedLoop = Math.ceil(failedCoiinTransfersCount / take);
+        for (let pageIndex = 0; pageIndex < paginatedLoop; pageIndex++) {
+            const failedCoiinTransfers = await Transfer.find({
+                where: {
+                    status: "FAILED",
+                    currency: COIIN,
+                    action: In(["SHARING_REWARD", "PARTICIPATION_REWARD", "LOGIN_REWARD"]),
+                },
+                relations: ["wallet"],
+                take,
+                skip,
+            });
+            for (const transfer of failedCoiinTransfers) {
+                const userCurrency = await TatumClient.findOrCreateCurrency({
+                    wallet: transfer.wallet,
+                    symbol: COIIN,
+                    network: BSC,
+                });
+                try {
+                    await TatumClient.transferFunds({
+                        senderAccountId: raiinmakerCoiinCurrency.tatumId,
+                        recipientAccountId: userCurrency.tatumId,
+                        amount: transfer.amount.toString(),
+                        recipientNote: "COMPENSATING_FAILED_TRANSFER",
+                    });
+                    transfer.status = "SUCCEEDED";
+                } catch (error) {}
+                console.log(
+                    "TRANSFER FIXED: ",
+                    transfer.id,
+                    transfer.amount.toString(),
+                    transfer.wallet.id,
+                    transfer.action
+                );
+                await transfer.save();
+            }
+        }
+        skip += take;
+    }
+};
+
+const fixFailedCampaignTransfers = async () => {
+    const failedCampaignTransfersCount = await Transfer.count({
+        where: {
+            status: "FAILED",
+            action: "CAMPAIGN_REWARD",
+        },
+    });
+    console.log("FAILED CAMPAIGN TRANSFERS: ", failedCampaignTransfersCount);
+    if (failedCampaignTransfersCount) {
+        const take = 200;
+        let skip = 0;
+        const paginatedLoop = Math.ceil(failedCampaignTransfersCount / take);
+        for (let pageIndex = 0; pageIndex < paginatedLoop; pageIndex++) {
+            const failedCampaignTransfers = await Transfer.find({
+                where: {
+                    status: "FAILED",
+                    action: "CAMPAIGN_REWARD",
+                },
+                relations: ["wallet", "campaign", "campaign.currency"],
+                take,
+                skip,
+            });
+            for (const transfer of failedCampaignTransfers) {
+                const userCurrency = await TatumClient.findOrCreateCurrency({
+                    wallet: transfer.wallet,
+                    symbol: COIIN,
+                    network: BSC,
+                });
+                const orgCurrency = transfer.campaign.currency;
+                try {
+                    await TatumClient.transferFunds({
+                        senderAccountId: orgCurrency.tatumId,
+                        recipientAccountId: userCurrency.tatumId,
+                        amount: transfer.amount.toString(),
+                        recipientNote: "COMPENSATING_FAILED_TRANSFER",
+                    });
+                    transfer.status = "SUCCEEDED";
+                } catch (error) {}
+                console.log(
+                    "TRANSFER FIXED: ",
+                    transfer.id,
+                    transfer.amount.toString(),
+                    transfer.wallet.id,
+                    transfer.action
+                );
+                await transfer.save();
+            }
+        }
+        skip += take;
+    }
+};
+
 (async () => {
     console.log("Starting auto coiin transfer.");
     await Secrets.initialize();
@@ -39,68 +144,8 @@ console.log("APP instance created.");
                 await SesClient.coiinBalanceAlert(email, balance);
             }
         }
-        const failedTransfersCount = await Transfer.count({
-            where: {
-                status: "FAILED",
-                currency: COIIN,
-                action: In([
-                    "REGISTRATION_REWARD",
-                    "CAMPAIGN_REWARD",
-                    "SHARING_REWARD",
-                    "PARTICIPATION_REWARD",
-                    "LOGIN_REWARD",
-                ]),
-            },
-        });
-        console.log("FAILED TRANSFERS: ", failedTransfersCount);
-        if (failedTransfersCount) {
-            const take = 200;
-            let skip = 0;
-            const paginatedLoop = Math.ceil(failedTransfersCount / take);
-            for (let pageIndex = 0; pageIndex < paginatedLoop; pageIndex++) {
-                const failedTramsfers = await Transfer.find({
-                    where: {
-                        status: "FAILED",
-                        currency: COIIN,
-                        action: In([
-                            "REGISTRATION_REWARD",
-                            "CAMPAIGN_REWARD",
-                            "SHARING_REWARD",
-                            "PARTICIPATION_REWARD",
-                            "LOGIN_REWARD",
-                        ]),
-                    },
-                    relations: ["wallet"],
-                    take,
-                    skip,
-                });
-                for (const transfer of failedTramsfers) {
-                    const userCurrency = await TatumClient.findOrCreateCurrency({
-                        wallet: transfer.wallet,
-                        symbol: COIIN,
-                        network: BSC,
-                    });
-                    try {
-                        await TatumClient.transferFunds({
-                            senderAccountId: raiinmakerCoiinCurrency.tatumId,
-                            recipientAccountId: userCurrency.tatumId,
-                            amount: transfer.amount.toString(),
-                            recipientNote: "COMPENSATING_FAILED_TRANSFER",
-                        });
-                        transfer.status = "SUCCEEDED";
-                    } catch (error) {}
-                    console.log(
-                        "TRANSFER FIXED: ",
-                        transfer.id,
-                        transfer.amount.toString(),
-                        transfer.wallet.id,
-                        transfer.action
-                    );
-                    await transfer.save();
-                }
-            }
-            skip += take;
-        }
+        await fixFailedCoiinTransfers(raiinmakerCoiinCurrency);
+        await fixFailedCampaignTransfers();
     } catch (error) {
         console.log(error);
         await connection.close();
