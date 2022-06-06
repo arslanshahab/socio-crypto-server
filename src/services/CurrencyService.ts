@@ -44,10 +44,10 @@ export class CurrencyService {
         });
     }
 
-    public async findCurrencyByOrgId(orgId: string) {
+    public async findCurrencyByOrgId(orgId: string, tokenId: string) {
         const wallet = await this.walletService.findWalletByOrgId(orgId);
         return this.prismaService.currency.findFirst({
-            where: { walletId: wallet?.id },
+            where: { walletId: wallet?.id, tokenId },
         });
     }
 }

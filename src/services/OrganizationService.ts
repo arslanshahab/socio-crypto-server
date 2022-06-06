@@ -50,8 +50,8 @@ export class OrganizationService {
         });
     }
 
-    public async getAvailableBalance(orgId: string) {
-        const currency = await this.currencyService.findCurrencyByOrgId(orgId);
+    public async getAvailableBalance(orgId: string, tokenId: string) {
+        const currency = await this.currencyService.findCurrencyByOrgId(orgId, tokenId);
         if (!currency) throw new NotFound("Currency not found for org.");
         const tatumBalance = await this.tatumClientService.getAccountBalance(currency.tatumId);
         return parseFloat(tatumBalance.availableBalance || "0");

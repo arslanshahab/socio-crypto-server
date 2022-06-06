@@ -1,5 +1,5 @@
 import { Campaign, CampaignMedia, Prisma } from "@prisma/client";
-import { Get, Property, Required, Enum, Returns, Post } from "@tsed/schema";
+import { Get, Property, Required, Enum, Returns, Post, Put } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
 import { Context, BodyParams, PathParams, QueryParams } from "@tsed/common";
 import { CampaignService } from "../../services/CampaignService";
@@ -607,7 +607,7 @@ export class CampaignController {
         return new SuccessResult(metrics, CampaignStatsResultModelArray);
     }
 
-    @Post("/admin-update-campaign-status")
+    @Put("/admin-update-campaign-status")
     @(Returns(200, SuccessResult).Of(UpdatedResultModel))
     public async adminUpdateCampaignStatus(
         @QueryParams() query: { status: CampaignStatus; campaignId: string },
@@ -615,6 +615,7 @@ export class CampaignController {
     ) {
         this.userService.checkPermissions({ restrictCompany: RAIINMAKER_ORG_NAME }, context.get("user"));
         const { status, campaignId } = query;
+
         const campaign = await this.campaignService.findCampaignById(campaignId, {
             org: true,
             currency: { include: { token: true } },
@@ -627,7 +628,10 @@ export class CampaignController {
                     campaign.status = CampaignStatus.APPROVED;
                     break;
                 }
-                const walletBalance = await this.organizationService.getAvailableBalance(campaign.org.id);
+                const walletBalance = await this.organizationService.getAvailableBalance(
+                    campaign.org.id,
+                    campaign.currency?.tokenId!
+                );
                 if (walletBalance < parseFloat(campaign.coiinTotal)) {
                     campaign.status = CampaignStatus.INSUFFICIENT_FUNDS;
                     break;
