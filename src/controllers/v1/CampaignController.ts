@@ -606,9 +606,9 @@ export class CampaignController {
         return new SuccessResult(metrics, CampaignStatsResultModelArray);
     }
 
-    @Get("/campaigns-list")
+    @Get("/campaigns-lite")
     @(Returns(200, SuccessArrayResult).Of(CampaignResultModel))
-    public async getCampaignsList(@Context() context: Context) {
+    public async getCampaignsLite(@Context() context: Context) {
         this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
         const campaigns = await this.campaignService.findCampaigns();
         return new SuccessArrayResult(campaigns, CampaignResultModel);
