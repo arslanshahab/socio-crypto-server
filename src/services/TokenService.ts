@@ -12,4 +12,10 @@ export class TokenService {
             where: { symbol: data.symbol.toUpperCase(), network: data.network.toUpperCase(), enabled: true },
         });
     }
+
+    public async findTokenBySymbol(data: SymbolNetworkParams) {
+        return this.prismaService.token.findFirst({
+            where: { symbol: data.symbol.toUpperCase() },
+        });
+    }
 }

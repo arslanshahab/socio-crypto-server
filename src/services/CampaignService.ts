@@ -3,12 +3,14 @@ import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { CurrencyResultType, ListCampaignsVariablesV2, Tiers } from "../types";
-import { CAMPAIGN_NOT_FOUND, ERROR_CALCULATING_TIER } from "../util/errors";
+import { CAMPAIGN_NOT_FOUND, CURRENCY_NOT_FOUND, ERROR_CALCULATING_TIER } from "../util/errors";
 import { calculateTier } from "../controllers/helpers";
 import { BN } from "../util";
 import { getTokenPriceInUsd } from "../clients/ethereum";
 import { CurrentCampaignModel } from "../models/RestModels";
 import { CryptoCurrencyService } from "./CryptoCurrencyService";
+import { CAMPAIGN_CREATION_AMOUNT } from "../clients/tatumClient";
+import { TatumClientService } from "./TatumClientService";
 
 @Injectable()
 export class CampaignService {
@@ -16,6 +18,8 @@ export class CampaignService {
     private prismaService: PrismaService;
     @Inject()
     private cryptoCurrencyService: CryptoCurrencyService;
+    @Inject()
+    private tatumClientService: TatumClientService;
 
     /**
      * Retrieves a paginated list of campaigns
@@ -281,5 +285,28 @@ export class CampaignService {
         )
             return true;
         return false;
+    }
+
+    public async blockCampaignAmount(campaignId: string) {
+        const campaign = await this.findCampaignById(campaignId, { currency: true });
+        if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
+        if (!campaign.currency) throw new NotFound(CURRENCY_NOT_FOUND);
+        const blockageKey = `${CAMPAIGN_CREATION_AMOUNT}:${campaign.id}`;
+        const blockedAmount = await this.tatumClientService.blockAccountBalance(
+            campaign.currency.tatumId,
+            campaign.coiinTotal,
+            blockageKey
+        );
+        return blockedAmount.id;
+    }
+
+    public async adminUpdateCampaignStatus(campaignId: string, status: string, tatumBlockageId?: string) {
+        return await this.prismaService.campaign.update({
+            where: { id: campaignId },
+            data: {
+                status,
+                tatumBlockageId,
+            },
+        });
     }
 }
