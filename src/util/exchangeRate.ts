@@ -1,13 +1,8 @@
 import { getRedis } from "../clients/redis";
 import { doFetch, RequestData } from "./fetchRequest";
 import { COIIN } from "./constants";
-
-interface SymbolData {
-    id: string;
-    symbol: string;
-    name: string;
-    current_price: number;
-}
+import { MarketData } from "../models/MarketData";
+import { ILike } from "typeorm";
 
 export const getExchangeRateForCurrency = async (symbol: string) => {
     const cacheKey = "exchangeRatesForStore";
@@ -30,26 +25,9 @@ export const getExchangeRateForCurrency = async (symbol: string) => {
 export const getExchangeRateForCrypto = async (symbol: string) => {
     symbol = symbol.toLowerCase();
     if (symbol === COIIN) return parseFloat(process.env.COIIN_VALUE || "0.2");
-    const cacheKey = "exchangeRatesForCrypto";
-    let cachedResponse = await getRedis().get(cacheKey);
-    if (cachedResponse) {
-        cachedResponse = JSON.parse(cachedResponse);
-        const symbolData = cachedResponse.find((item: SymbolData) => item.symbol === symbol);
-        if (symbolData) {
-            return symbolData.current_price;
-        }
-        return 1;
-    }
-    const requestData: RequestData = {
-        method: "GET",
-        url: `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=1&sparkline=false`,
-    };
-    const data = await doFetch(requestData);
-    await getRedis().set(cacheKey, JSON.stringify(data));
-    await getRedis().expire(cacheKey, 3600);
-    const symbolData = data.find((item: SymbolData) => item.symbol === symbol);
+    const symbolData = await MarketData.findOne({ where: { symbol: ILike(symbol) } });
     if (symbolData) {
-        return symbolData.current_price;
+        return symbolData.price;
     }
     return 1;
 };
