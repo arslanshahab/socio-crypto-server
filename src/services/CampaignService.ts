@@ -231,7 +231,7 @@ export class CampaignService {
             },
         });
     }
-    public async findCampaigns(orgId: string) {
+    public async findCampaignsByOrgId(orgId: string) {
         return await this.prismaService.campaign.findMany({ where: { orgId } });
     }
 
@@ -281,5 +281,11 @@ export class CampaignService {
         )
             return true;
         return false;
+    }
+
+    public async findCampaigns() {
+        return await this.prismaService.campaign.findMany({
+            select: { id: true, name: true },
+        });
     }
 }
