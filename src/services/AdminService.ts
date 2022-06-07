@@ -14,4 +14,12 @@ export class AdminService {
             include: { org: true },
         });
     }
+
+    public async listAdminsByOrg(orgId: string) {
+        return await this.prismaService.admin.findMany({
+            where: {
+                org: { id: orgId },
+            },
+        });
+    }
 }

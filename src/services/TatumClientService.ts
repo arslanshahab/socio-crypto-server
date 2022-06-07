@@ -9,7 +9,14 @@ import { sleep } from "../controllers/helpers";
 import { doFetch } from "../util/fetchRequest";
 import { S3Client } from "../clients/s3";
 import { getCurrencyForTatum } from "../util/tatumHelper";
-import { assignDepositAddress, createAccount, generateDepositAddress, storeTransaction } from "@tatumio/tatum";
+import {
+    assignDepositAddress,
+    blockAmount,
+    createAccount,
+    generateDepositAddress,
+    getAccountBalance,
+    storeTransaction,
+} from "@tatumio/tatum";
 import { CUSTODIAL_NETWORKS } from "../util/constants";
 import { TokenService } from "./TokenService";
 import { TatumWalletService } from "./TatumWalletService";
@@ -235,6 +242,48 @@ export class TatumClientService {
 
     // Transfer funds
     public async trnasferFunds(data: {
+        senderAccountId: string;
+        recipientAccountId: string;
+        amount: string;
+        recipientNote: string;
+    }) {
+        try {
+            process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
+            return await storeTransaction(data);
+        } catch (error) {
+            console.log(error?.response?.data || error.message);
+            throw new Error(error?.response?.data?.message || error.message);
+        }
+    }
+
+    // Get account balance
+    public async getAccountBalance(accountId: string) {
+        try {
+            process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
+            return await getAccountBalance(accountId);
+        } catch (error) {
+            console.log(error?.response?.data || error.message);
+            throw new Error(error?.response?.data?.message || error.message);
+        }
+    }
+
+    // Block account balance
+    public async blockAccountBalance(accountId: string, amount: string, type: string) {
+        try {
+            process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
+            return await blockAmount(accountId, {
+                amount,
+                type,
+                description: type,
+            });
+        } catch (error) {
+            console.log(error?.response?.data || error.message);
+            throw new Error(error?.response?.data?.message || error.message);
+        }
+    }
+
+    // Transfer funds
+    public async transferFunds(data: {
         senderAccountId: string;
         recipientAccountId: string;
         amount: string;
