@@ -466,6 +466,21 @@ export class BooleanResultModel {
     @Property() public readonly success: boolean;
 }
 
+export class SingleUserResultModel {
+    @Property() public readonly active: boolean;
+    @Property() public readonly createdAt: Date;
+    @Property() public readonly updatedAt: Date;
+    @Nullable(Date) public readonly deletedAt: Date | null;
+    @Nullable(String) public readonly identityId: string | null;
+    @Property() public readonly id: string;
+    @Nullable(String) public readonly kycStatus: string | null;
+    @Property() public readonly lastLogin: Date;
+    @Property() public readonly email: string;
+    @Property() public readonly password: string;
+    @Nullable(String) public readonly profile: Prisma.Profile;
+    @Nullable(String) public readonly social_post: Prisma.SocialPost[];
+}
+
 export class UserTransactionResultModel extends TransferResultModel {
     @Property() public readonly payoutStatus: string;
     @Property() public readonly payoutId: string;
@@ -500,20 +515,6 @@ export class CampaignStatsResultModel {
 export class CampaignStatsResultModelArray {
     @Property() public readonly aggregaredMetrics: AggregaredMetrics;
     @Property() public readonly calculateCampaignMetrics: CampaignStatsResultModel[];
-}
-export class SingleUserResultModel {
-    @Property() public readonly active: boolean;
-    @Property() public readonly createdAt: Date;
-    @Property() public readonly updatedAt: Date;
-    @Nullable(Date) public readonly deletedAt: Date | null;
-    @Nullable(String) public readonly identityId: string | null;
-    @Property() public readonly id: string;
-    @Nullable(String) public readonly kycStatus: string | null;
-    @Property() public readonly lastLogin: Date;
-    @Property() public readonly email: string;
-    @Property() public readonly password: string;
-    @Nullable(String) public readonly profile: Prisma.Profile;
-    @Nullable(String) public readonly social_post: Prisma.SocialPost[];
 }
 
 export class OrgEmployeesResultModel {

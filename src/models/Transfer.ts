@@ -19,7 +19,7 @@ import { TransferAction, TransferStatus } from "../types";
 import { Org } from "./Org";
 import { RafflePrize } from "./RafflePrize";
 import { performCurrencyTransfer } from "../controllers/helpers";
-import { startOfISOWeek, endOfISOWeek, startOfWeek, endOfWeek, subDays, startOfDay } from "date-fns";
+import { startOfISOWeek, endOfISOWeek, startOfWeek, endOfWeek, startOfDay, subHours } from "date-fns";
 import { RAIINMAKER_ORG_NAME, COIIN } from "../util/constants";
 
 @Entity()
@@ -182,7 +182,7 @@ export class Transfer extends BaseEntity {
 
     public static async getLast24HourRedemption(wallet: Wallet, type: TransferAction) {
         const currentDate = new Date();
-        const date = subDays(currentDate, 1);
+        const date = subHours(currentDate, 24);
         return await Transfer.count({
             where: { wallet, action: type, createdAt: MoreThan(DateUtils.mixedDateToUtcDatetimeString(date)) },
         });

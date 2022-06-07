@@ -330,6 +330,16 @@ export class UserService {
         }
     }
 
+    public async resetUserPassword(userId: string, email: string, password: string) {
+        const hashedPassword = createPasswordHash({ email, password });
+        return await this.prismaService.user.update({
+            where: { id: userId },
+            data: {
+                password: hashedPassword,
+            },
+        });
+    }
+
     public async getUserCount() {
         const currentDate = new Date();
         return this.prismaService.$transaction([
@@ -345,15 +355,5 @@ export class UserService {
                 where: { active: false },
             }),
         ]);
-    }
-
-    public async resetUserPassword(userId: string, email: string, password: string) {
-        const hashedPassword = createPasswordHash({ email, password });
-        return await this.prismaService.user.update({
-            where: { id: userId },
-            data: {
-                password: hashedPassword,
-            },
-        });
     }
 }
