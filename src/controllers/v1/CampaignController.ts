@@ -16,7 +16,7 @@ import {
     RAFFLE_PRIZE_MISSING,
     WALLET_NOT_FOUND,
 } from "../../util/errors";
-import { PaginatedVariablesModel, Pagination, SuccessResult } from "../../util/entities";
+import { PaginatedVariablesModel, Pagination, SuccessResult, SuccessArrayResult } from "../../util/entities";
 import {
     CampaignMetricsResultModel,
     CampaignResultModel,
@@ -531,7 +531,7 @@ export class CampaignController {
                 }
             );
             aggregatedCampaignMetrics = { ...aggregatedCampaignMetrics, campaignName: "All" };
-            const campaigns = await this.campaignService.findCampaigns(admin.orgId!);
+            const campaigns = await this.campaignService.findCampaignsByOrgId(admin.orgId!);
             for (let i = 0; i < campaigns.length; i++) {
                 const campaignId = campaigns[i].id;
                 campaignMetrics = await this.dailyParticipantMetricService.getOrgMetrics(campaignId);
@@ -607,6 +607,14 @@ export class CampaignController {
         return new SuccessResult(metrics, CampaignStatsResultModelArray);
     }
 
+    @Get("/campaigns-lite")
+    @(Returns(200, SuccessArrayResult).Of(CampaignResultModel))
+    public async getCampaignsLite(@Context() context: Context) {
+        this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
+        const campaigns = await this.campaignService.findCampaigns();
+        return new SuccessArrayResult(campaigns, CampaignResultModel);
+    }
+    
     @Put("/admin-update-campaign-status")
     @(Returns(200, SuccessResult).Of(UpdatedResultModel))
     public async adminUpdateCampaignStatus(
