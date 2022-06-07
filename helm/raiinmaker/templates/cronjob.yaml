@@ -838,11 +838,11 @@ spec:
                   readOnly: true
               resources:
                 requests:
-                  memory: "128Mi"
-                  cpu: "128m"
+                  memory: "250Mi"
+                  cpu: "250m"
                 limits:
-                  memory: "128Mi"
-                  cpu: "128m"
+                  memory: "250Mi"
+                  cpu: "250m"
           restartPolicy: OnFailure
           volumes:
             - name: firebase-credentials
