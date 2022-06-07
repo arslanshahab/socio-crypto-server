@@ -395,7 +395,6 @@ export class UserController {
         const orgCurrency = await this.currencyService.findCurrencyByTokenId(token.id, orgWallet?.id!);
         if (!orgCurrency) throw new NotFound(CURRENCY_NOT_FOUND + "for org");
         if (status === CoiinStatus.ADD) {
-            console.log("add---", userCurrency?.tatumId, "---", orgCurrency?.tatumId);
             await this.tatumClientService.transferFunds({
                 senderAccountId: orgCurrency?.tatumId,
                 recipientAccountId: userCurrency?.tatumId,
@@ -404,7 +403,6 @@ export class UserController {
             });
         }
         if (status === CoiinStatus.REMOVE) {
-            console.log("removed----", orgCurrency?.tatumId, "---", userCurrency?.tatumId);
             await this.tatumClientService.transferFunds({
                 senderAccountId: userCurrency?.tatumId,
                 recipientAccountId: orgCurrency?.tatumId!,
