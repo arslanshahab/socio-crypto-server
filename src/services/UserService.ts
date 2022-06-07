@@ -10,10 +10,11 @@ import { TatumClient } from "../clients/tatumClient";
 import { createSubscriptionUrl } from "../util/tatumHelper";
 import { WalletService } from "./WalletService";
 import { WALLET_NOT_FOUND } from "../util/errors";
-import { differenceInHours } from "date-fns";
+import { differenceInHours, subDays } from "date-fns";
 import { TransferService } from "./TransferService";
 import { OrganizationService } from "./OrganizationService";
 import { TatumClientService } from "./TatumClientService";
+import { createPasswordHash } from "../util";
 
 type Array2TrueMap<T> = T extends string[] ? { [idx in T[number]]: true } : undefined;
 
@@ -327,5 +328,32 @@ export class UserService {
                 campaign,
             });
         }
+    }
+
+    public async resetUserPassword(userId: string, email: string, password: string) {
+        const hashedPassword = createPasswordHash({ email, password });
+        return await this.prismaService.user.update({
+            where: { id: userId },
+            data: {
+                password: hashedPassword,
+            },
+        });
+    }
+
+    public async getUserCount() {
+        const currentDate = new Date();
+        return this.prismaService.$transaction([
+            this.prismaService.user.count(),
+            this.prismaService.user.count({
+                where: {
+                    createdAt: {
+                        gte: subDays(currentDate, 7),
+                    },
+                },
+            }),
+            this.prismaService.user.count({
+                where: { active: false },
+            }),
+        ]);
     }
 }

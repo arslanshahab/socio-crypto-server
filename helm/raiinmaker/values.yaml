@@ -29,6 +29,7 @@ cron:
         qualityScore: "0 * * * *" # At minute 0 every hour
         campaignAudit: "0 * * * *" # At every hour
         coiinTransfer: "0 * * * *" # At every hour
+        marketData: "*/15 * * * *" # At every 15 minutes
 
 # up server replica count
 replicaCount: 2

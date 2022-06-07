@@ -465,3 +465,54 @@ export class KycUpdateResultModel {
 export class BooleanResultModel {
     @Property() public readonly success: boolean;
 }
+
+export class SingleUserResultModel {
+    @Property() public readonly active: boolean;
+    @Property() public readonly createdAt: Date;
+    @Property() public readonly updatedAt: Date;
+    @Nullable(Date) public readonly deletedAt: Date | null;
+    @Nullable(String) public readonly identityId: string | null;
+    @Property() public readonly id: string;
+    @Nullable(String) public readonly kycStatus: string | null;
+    @Property() public readonly lastLogin: Date;
+    @Property() public readonly email: string;
+    @Property() public readonly password: string;
+    @Nullable(String) public readonly profile: Prisma.Profile;
+    @Nullable(String) public readonly social_post: Prisma.SocialPost[];
+}
+
+export class UserTransactionResultModel extends TransferResultModel {
+    @Property() public readonly payoutStatus: string;
+    @Property() public readonly payoutId: string;
+    @Property() public readonly transactionHash: string;
+    @Property() public readonly orgId: string;
+    @Property() public readonly stripeCardId: string;
+}
+
+export class AggregaredMetrics {
+    @Property() public readonly clickCount: number;
+    @Property() public readonly viewCount: number;
+    @Property() public readonly shareCount: number;
+    @Property() public readonly participationScore: number;
+    @Property() public readonly totalParticipants: number;
+    @Property() public readonly campaignName: string;
+}
+export class DashboardStatsResultModel {
+    @Property() public readonly totalUsers: number;
+    @Property() public readonly lastWeekUsers: number;
+    @Property() public readonly bannedUsers: number;
+    @Property() public readonly distributedTotalAmount: number;
+    @Property() public readonly redeemedTotalAmount: number;
+}
+
+export class CampaignStatsResultModel {
+    @Property() public readonly clickCount: number;
+    @Property() public readonly viewCount: number;
+    @Property() public readonly shareCount: number;
+    @Property() public readonly participationScore: number;
+}
+
+export class CampaignStatsResultModelArray {
+    @Property() public readonly aggregaredMetrics: AggregaredMetrics;
+    @Property() public readonly calculateCampaignMetrics: CampaignStatsResultModel[];
+}
