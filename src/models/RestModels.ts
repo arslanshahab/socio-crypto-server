@@ -310,6 +310,7 @@ export class ParticipantMetricsResultModel {
     @Property() public readonly totalScore: number;
     @Property() public readonly link: string;
     @Property() public readonly email: string;
+    @Nullable(String) public readonly reward: string | null;
 }
 
 export class AccumulatedMetricsResultModel {
@@ -440,6 +441,7 @@ export class KycUserResultModel {
     @Property() public readonly active: boolean;
     @Nullable(String) public readonly identityId: string | null;
     @Nullable(String) public readonly kycStatus: string | null;
+    @Nullable(String) public readonly referralCode: string | null;
     @Property() public readonly password: string;
     @Nullable(String) public readonly updatedAt: Date;
     @Nullable(String) public readonly deletedAt: Date;
@@ -472,6 +474,7 @@ export class SingleUserResultModel {
     @Property() public readonly updatedAt: Date;
     @Nullable(Date) public readonly deletedAt: Date | null;
     @Nullable(String) public readonly identityId: string | null;
+    @Nullable(String) public readonly referralCode: string | null;
     @Property() public readonly id: string;
     @Nullable(String) public readonly kycStatus: string | null;
     @Property() public readonly lastLogin: Date;
