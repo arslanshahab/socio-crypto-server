@@ -43,7 +43,7 @@ import {
 } from "../../models/RestModels";
 import { NotificationService } from "../../services/NotificationService";
 import { TransferService } from "../../services/TransferService";
-import { COIIN, CoiinStatus, TransferAction } from "../../util/constants";
+import { BSC, COIIN, CoiinTransferAction, TransferAction } from "../../util/constants";
 import { SocialService } from "../../services/SocialService";
 import { getBalance } from "../helpers";
 import { CampaignService } from "../../services/CampaignService";
@@ -378,13 +378,14 @@ export class UserController {
     @Post("/transfer-user-coiin")
     @(Returns(200, SuccessResult).Of(UpdatedResultModel))
     public async transferUserCoiin(
-        @BodyParams() body: { coiin: string; userId: string; status: string },
+        @BodyParams() body: { coiin: string; userId: string; action: string },
         @Context() context: Context
     ) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const admin = await this.userService.findUserByFirebaseId(context.get("user").firebaseId);
-        const { coiin, userId, status } = body;
-        const token = await this.tokenService.findTokenBySymbol(COIIN);
+        const { coiin, userId, action } = body;
+        const { ADD, REMOVE } = CoiinTransferAction;
+        const token = await this.tokenService.findTokenBySymbol({ symbol: COIIN, network: BSC });
         if (!token) throw new NotFound(TOKEN_NOT_FOUND);
         const userWallet = await this.walletService.findWalletByUserId(userId);
         if (!userWallet) throw new NotFound(WALLET_NOT_FOUND + "for userId");
@@ -394,7 +395,7 @@ export class UserController {
         if (!userCurrency) throw new NotFound(CURRENCY_NOT_FOUND + "for user");
         const orgCurrency = await this.currencyService.findCurrencyByTokenId(token.id, orgWallet?.id!);
         if (!orgCurrency) throw new NotFound(CURRENCY_NOT_FOUND + "for org");
-        if (status === CoiinStatus.ADD) {
+        if (action === ADD) {
             await this.tatumClientService.transferFunds({
                 senderAccountId: orgCurrency?.tatumId,
                 recipientAccountId: userCurrency?.tatumId,
@@ -402,7 +403,7 @@ export class UserController {
                 recipientNote: "Transfer Coiin",
             });
         }
-        if (status === CoiinStatus.REMOVE) {
+        if (action === REMOVE) {
             await this.tatumClientService.transferFunds({
                 senderAccountId: userCurrency?.tatumId,
                 recipientAccountId: orgCurrency?.tatumId!,

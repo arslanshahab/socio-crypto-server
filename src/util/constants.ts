@@ -133,7 +133,7 @@ export enum TransferAction {
     XOXODAY_REDEMPTION = "XOXODAY_REDEMPTION",
 }
 
-export enum CoiinStatus {
+export enum CoiinTransferAction {
     ADD = "ADD",
     REMOVE = "REMOVE",
 }

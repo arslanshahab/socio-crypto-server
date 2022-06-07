@@ -13,9 +13,9 @@ export class TokenService {
         });
     }
 
-    public async findTokenBySymbol(symbol: string) {
+    public async findTokenBySymbol(data: SymbolNetworkParams) {
         return this.prismaService.token.findFirst({
-            where: { symbol: symbol.toUpperCase() },
+            where: { symbol: data.symbol.toUpperCase() },
         });
     }
 }
