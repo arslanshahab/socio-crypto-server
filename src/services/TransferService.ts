@@ -6,6 +6,7 @@ import { TransferAction, TransferStatus } from "../types";
 import { WalletService } from "./WalletService";
 import { NotFound } from "@tsed/exceptions";
 import { WALLET_NOT_FOUND } from "../util/errors";
+import { startOfYear } from "date-fns";
 
 @Injectable()
 export class TransferService {
@@ -129,5 +130,44 @@ export class TransferService {
                 },
             }),
         ]);
+    }
+
+    public async getWithdrawalsByStatus(status: TransferStatus) {
+        return this.prismaService.transfer.findMany({
+            where: { status, action: "withdraw" },
+            include: {
+                wallet: {
+                    include: {
+                        user: {
+                            include: {
+                                profile: true,
+                            },
+                        },
+                    },
+                },
+            },
+            orderBy: { createdAt: "asc" },
+        });
+    }
+
+    public async getTotalAnnualWithdrawalByWallet(walletId: string) {
+        const usdAmount = await this.prismaService.transfer.findMany({
+            where: {
+                action: "withdraw",
+                status: "APPROVED",
+                walletId,
+                updatedAt: { gte: startOfYear(new Date()) },
+            },
+            select: { usdAmount: true },
+        });
+        const sum = usdAmount.reduce((acc, curr) => acc + parseFloat(curr.usdAmount!), 0);
+        return sum;
+    }
+
+    public async getTotalPendingByCurrencyInUsd(walletId: string) {
+        return this.prismaService.transfer.findMany({
+            where: { action: "withdraw", status: "PENDING", walletId },
+            select: { currency: true, amount: true, usdAmount: true },
+        });
     }
 }

@@ -1,11 +1,14 @@
 import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
 import { LedgerAccountTypes } from "../types";
+import { WalletService } from "./WalletService";
 
 @Injectable()
 export class CurrencyService {
     @Inject()
     private prismaService: PrismaService;
+    @Inject()
+    private walletService: WalletService;
 
     public async findLedgerAccount(walletId: string, tokenId: string) {
         return this.prismaService.currency.findFirst({
@@ -15,7 +18,7 @@ export class CurrencyService {
             },
         });
     }
-    
+
     public async getCurrenciesByUserId(userId: string) {
         return this.prismaService.currency.findMany({
             where: {
@@ -38,6 +41,19 @@ export class CurrencyService {
                 destinationTag: data?.destinationTag,
                 derivationKey: data?.derivationKey,
             },
+        });
+    }
+
+    public async findCurrencyByOrgId(orgId: string, tokenId: string) {
+        const wallet = await this.walletService.findWalletByOrgId(orgId);
+        return this.prismaService.currency.findFirst({
+            where: { walletId: wallet?.id, tokenId },
+        });
+    }
+
+    public async findCurrencyByTokenId(tokenId: string, walletId: string) {
+        return this.prismaService.currency.findFirst({
+            where: { tokenId, walletId },
         });
     }
 }
