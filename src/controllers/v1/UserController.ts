@@ -383,31 +383,32 @@ export class UserController {
     ) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const admin = await this.userService.findUserByFirebaseId(context.get("user").firebaseId);
+        const { coiin, userId, status } = body;
         const token = await this.tokenService.findTokenBySymbol(COIIN);
         if (!token) throw new NotFound(TOKEN_NOT_FOUND);
-        const walletByUserId = await this.walletService.findWalletByUserId(body.userId);
-        if (!walletByUserId) throw new NotFound(WALLET_NOT_FOUND + "for userId");
-        const walletByOrgId = await this.walletService.findWalletByOrgId(admin?.orgId!);
-        if (!walletByOrgId) throw new NotFound(WALLET_NOT_FOUND + "for orgId");
-        const currencyForUser = await this.currencyService.findCurrencyByTokenId(token.id, walletByUserId.id);
-        if (!currencyForUser) throw new NotFound(CURRENCY_NOT_FOUND + "for user");
-        const currencyForOrg = await this.currencyService.findCurrencyByTokenId(token.id, walletByOrgId?.id!);
-        if (!currencyForOrg) throw new NotFound(CURRENCY_NOT_FOUND + "for org");
-        if (body.status === CoiinStatus.ADD) {
-            console.log("add---", currencyForUser?.tatumId, "---", currencyForOrg?.tatumId);
+        const userWallet = await this.walletService.findWalletByUserId(userId);
+        if (!userWallet) throw new NotFound(WALLET_NOT_FOUND + "for userId");
+        const orgWallet = await this.walletService.findWalletByOrgId(admin?.orgId!);
+        if (!orgWallet) throw new NotFound(WALLET_NOT_FOUND + "for orgId");
+        const userCurrency = await this.currencyService.findCurrencyByTokenId(token.id, userWallet.id);
+        if (!userCurrency) throw new NotFound(CURRENCY_NOT_FOUND + "for user");
+        const orgCurrency = await this.currencyService.findCurrencyByTokenId(token.id, orgWallet?.id!);
+        if (!orgCurrency) throw new NotFound(CURRENCY_NOT_FOUND + "for org");
+        if (status === CoiinStatus.ADD) {
+            console.log("add---", userCurrency?.tatumId, "---", orgCurrency?.tatumId);
             await this.tatumClientService.transferFunds({
-                senderAccountId: currencyForOrg?.tatumId,
-                recipientAccountId: currencyForUser?.tatumId,
-                amount: body.coiin,
+                senderAccountId: orgCurrency?.tatumId,
+                recipientAccountId: userCurrency?.tatumId,
+                amount: coiin,
                 recipientNote: "Transfer Coiin",
             });
         }
-        if (body.status === CoiinStatus.REMOVE) {
-            console.log("removed----", currencyForOrg?.tatumId, "---", currencyForUser?.tatumId);
+        if (status === CoiinStatus.REMOVE) {
+            console.log("removed----", orgCurrency?.tatumId, "---", userCurrency?.tatumId);
             await this.tatumClientService.transferFunds({
-                senderAccountId: currencyForUser?.tatumId,
-                recipientAccountId: currencyForOrg?.tatumId!,
-                amount: body.coiin,
+                senderAccountId: userCurrency?.tatumId,
+                recipientAccountId: orgCurrency?.tatumId!,
+                amount: coiin,
                 recipientNote: "Transfer Coiin",
             });
         }
