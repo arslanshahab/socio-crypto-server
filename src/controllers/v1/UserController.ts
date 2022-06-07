@@ -384,7 +384,7 @@ export class UserController {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const admin = await this.userService.findUserByFirebaseId(context.get("user").firebaseId);
         const { coiin, userId, action } = body;
-        const { ADD, REMOVE } = CoiinTransferAction;
+        const { ADD } = CoiinTransferAction;
         const token = await this.tokenService.findTokenBySymbol({ symbol: COIIN, network: BSC });
         if (!token) throw new NotFound(TOKEN_NOT_FOUND);
         const userWallet = await this.walletService.findWalletByUserId(userId);
@@ -395,21 +395,15 @@ export class UserController {
         if (!userCurrency) throw new NotFound(CURRENCY_NOT_FOUND + "for user");
         const orgCurrency = await this.currencyService.findCurrencyByTokenId(token.id, orgWallet?.id!);
         if (!orgCurrency) throw new NotFound(CURRENCY_NOT_FOUND + "for org");
-        if (action === ADD) {
+        try {
             await this.tatumClientService.transferFunds({
-                senderAccountId: orgCurrency?.tatumId,
-                recipientAccountId: userCurrency?.tatumId,
+                senderAccountId: action === ADD ? orgCurrency?.tatumId : userCurrency?.tatumId,
+                recipientAccountId: action === ADD ? userCurrency?.tatumId : orgCurrency?.tatumId,
                 amount: coiin,
                 recipientNote: "Transfer Coiin",
             });
-        }
-        if (action === REMOVE) {
-            await this.tatumClientService.transferFunds({
-                senderAccountId: userCurrency?.tatumId,
-                recipientAccountId: orgCurrency?.tatumId!,
-                amount: coiin,
-                recipientNote: "Transfer Coiin",
-            });
+        } catch (error) {
+            throw new Error(error.message);
         }
         return new SuccessResult({ message: "Transfer funds successfully" }, UpdatedResultModel);
     }
