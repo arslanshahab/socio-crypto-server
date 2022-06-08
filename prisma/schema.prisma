@@ -63,8 +63,6 @@ model Campaign {
   crypto_currency          CryptoCurrency?          @relation(fields: [cryptoId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_6c80d74e57757c61ae9b7255f79")
   currency                 Currency?                @relation(fields: [currencyId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_94f38926b8f74ecd88ecf6ba8c8")
   org                      Org?                     @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f1ade2ad37c88435b086c97cfc8")
-  campaign_media           CampaignMedia[]
-  campaign_template        CampaignTemplate[]
   daily_participant_metric DailyParticipantMetric[]
   escrow                   Escrow?
   hourly_campaign_metric   HourlyCampaignMetric[]
@@ -81,27 +79,25 @@ model Campaign {
 }
 
 model CampaignMedia {
-  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  campaignId  String?   @db.Uuid
-  channel     String?   @db.VarChar
-  media       String?   @db.VarChar
-  mediaFormat String?   @db.VarChar
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  campaignId  String?  @db.Uuid
+  channel     String?  @db.VarChar
+  media       String?  @db.VarChar
+  mediaFormat String?  @db.VarChar
   isDefault   Boolean?
-  createdAt   DateTime  @default(now()) @db.Timestamp(6)
-  updatedAt   DateTime  @default(now()) @updatedAt @db.Timestamp(6)
-  campaign    Campaign? @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_b845045382e55918752955d23cb")
+  createdAt   DateTime @default(now()) @db.Timestamp(6)
+  updatedAt   DateTime @default(now()) @updatedAt @db.Timestamp(6)
 
   @@map("campaign_media")
 }
 
 model CampaignTemplate {
-  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  campaignId String?   @db.Uuid
-  channel    String?   @db.VarChar
-  post       String?   @db.VarChar
-  createdAt  DateTime  @default(now()) @db.Timestamp(6)
-  updatedAt  DateTime  @default(now()) @updatedAt @db.Timestamp(6)
-  campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_19b3f8a418cf4753d5df4291099")
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  campaignId String?  @db.Uuid
+  channel    String?  @db.VarChar
+  post       String?  @db.VarChar
+  createdAt  DateTime @default(now()) @db.Timestamp(6)
+  updatedAt  DateTime @default(now()) @updatedAt @db.Timestamp(6)
 
   @@map("campaign_template")
 }
@@ -515,7 +511,6 @@ model User {
   twenty_four_hour_metric                      TwentyFourHourMetric[]
   verification_application                     VerificationApplication?
   wallet                                       Wallet?
-  weekly_reward                                WeeklyReward[]           @relation("userToweekly_reward")
   xoxoday_order                                XoxodayOrder[]
 
   @@index([identityId], map: "IDX_dea97e26c765a4cdb575957a14")
@@ -587,7 +582,6 @@ model WeeklyReward {
   rewardType    String   @db.VarChar
   createdAt     DateTime @default(now()) @db.Timestamp(6)
   updatedAt     DateTime @default(now()) @updatedAt @db.Timestamp(6)
-  user          User?    @relation("userToweekly_reward", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ba2529b7af668bbc111475272b1")
 
   @@map("weekly_reward")
 }
