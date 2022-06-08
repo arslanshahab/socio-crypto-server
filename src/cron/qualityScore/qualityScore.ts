@@ -1,13 +1,10 @@
-import { Campaign } from "../../models/Campaign";
 import { EngagementRate } from "./EngagementRate";
 import { StandardDeviation } from "./StandardDeviation";
 import { BigNumber } from "bignumber.js";
 import { ParticipantEngagement } from "../../types";
-import { QualityScore } from "../../models/QualityScore";
 import { BN } from "../../util";
-import { DateUtils } from "typeorm/util/DateUtils";
-import { LessThanOrEqual, MoreThanOrEqual } from "typeorm";
-import { Participant } from "../../models/Participant";
+import { prisma } from "../../clients/prisma";
+// import { CampaignAuditStatus, CampaignStatus } from "src/util/constants";
 
 const calculateQualityTier = (deviation: BigNumber, engagement: BigNumber, average: BigNumber) => {
     const scoreDeviation = engagement.minus(average).div(deviation);
@@ -27,15 +24,8 @@ const calculateQualityTier = (deviation: BigNumber, engagement: BigNumber, avera
 };
 
 export const main = async () => {
-    const currentDate = new Date();
-    const campaigns = await Campaign.find({
-        where: {
-            status: "APPROVED",
-            auditStatus: "DEFAULT",
-            beginDate: LessThanOrEqual(DateUtils.mixedDateToDatetimeString(currentDate)),
-            endDate: MoreThanOrEqual(DateUtils.mixedDateToDatetimeString(currentDate)),
-        },
-    });
+    // const currentDate = new Date();
+    const campaigns = await prisma.campaign.findMany();
 
     for (const campaign of campaigns) {
         const likesEngagementData: BigNumber[] = [];
@@ -45,19 +35,22 @@ export const main = async () => {
         const submissionEngagementData: BigNumber[] = [];
         const clickEngagementData: BigNumber[] = [];
         const participantEngagementRates: ParticipantEngagement[] = [];
-        const totalParticipants = await Participant.count({ where: { campaign } });
+        const totalParticipants = await prisma.participant.count({ where: { campaignId: campaign.id } });
         const take = 200;
         let skip = 0;
         const paginatedParticipantLoop = Math.ceil(totalParticipants / take);
         for (let pageIndex = 0; pageIndex < paginatedParticipantLoop; pageIndex++) {
-            const participants = await Participant.find({ where: { campaign }, relations: ["user"], skip, take });
+            const participants = await prisma.participant.findMany({ where: { campaignId: campaign.id }, skip, take });
             for (const participant of participants) {
+                const user = await prisma.user.findFirst({ where: { id: participant.userId } });
+                if (!user) throw new Error("User not found.");
                 const { likeRate, commentRate, shareRate, clickRate } = await new EngagementRate(
                     participant,
-                    campaign
+                    campaign,
+                    user
                 ).social();
-                const viewRate = new EngagementRate(participant, campaign).views();
-                const submissionRate = new EngagementRate(participant, campaign).submissions();
+                const viewRate = new EngagementRate(participant, campaign, user).views();
+                const submissionRate = new EngagementRate(participant, campaign, user).submissions();
                 likesEngagementData.push(likeRate);
                 sharesEngagementData.push(shareRate);
                 commentsEngagementData.push(commentRate);
@@ -92,10 +85,9 @@ export const main = async () => {
                 clickEngagementData
             ).calculate();
             for (const rate of participantEngagementRates) {
-                let qualityScore = await QualityScore.findOne({ where: { participantId: rate.participantId } });
-                if (!qualityScore) {
-                    qualityScore = QualityScore.newQualityScore(rate.participantId);
-                }
+                const qualityScore = await prisma.qualityScore.findFirst({
+                    where: { participantId: rate.participantId },
+                });
                 const likesTier = calculateQualityTier(likesStandardDeviation, rate.likeRate, averageLikeRate);
                 const sharesTier = calculateQualityTier(sharesStandardDeviation, rate.shareRate, averageShareRate);
                 const commentsTier = calculateQualityTier(
@@ -110,13 +102,31 @@ export const main = async () => {
                     averageSubmissionRate
                 );
                 const clicksTier = calculateQualityTier(clicksStandardDeviation, rate.clickRate, averageClickRate);
-                qualityScore.likes = likesTier;
-                qualityScore.shares = sharesTier;
-                qualityScore.comments = commentsTier;
-                qualityScore.views = viewsTier;
-                qualityScore.submissions = submissionsTier;
-                qualityScore.clicks = clicksTier;
-                await qualityScore.save();
+                if (qualityScore) {
+                    await prisma.qualityScore.update({
+                        where: { id: qualityScore.id || "" },
+                        data: {
+                            likes: likesTier.toString(),
+                            shares: sharesTier.toString(),
+                            comments: commentsTier.toString(),
+                            views: viewsTier.toString(),
+                            submissions: submissionsTier.toString(),
+                            clicks: clicksTier.toString(),
+                        },
+                    });
+                } else {
+                    await prisma.qualityScore.create({
+                        data: {
+                            participantId: rate.participantId,
+                            likes: likesTier.toString(),
+                            shares: sharesTier.toString(),
+                            comments: commentsTier.toString(),
+                            views: viewsTier.toString(),
+                            submissions: submissionsTier.toString(),
+                            clicks: clicksTier.toString(),
+                        },
+                    });
+                }
             }
             skip += take;
         }
