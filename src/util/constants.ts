@@ -106,6 +106,11 @@ export enum CampaignStatus {
     APPROVED = "APPROVED",
     DENIED = "DENIED",
 }
+export enum CampaignAuditStatus {
+    DEFAULT = "ACTIVE",
+    PENDING = "PENDING",
+    AUDITED = "AUDITED",
+}
 export enum CampaignState {
     ALL = "ALL",
     OPEN = "OPEN",
