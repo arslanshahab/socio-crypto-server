@@ -310,7 +310,6 @@ export class ParticipantMetricsResultModel {
     @Property() public readonly totalScore: number;
     @Property() public readonly link: string;
     @Property() public readonly email: string;
-    @Nullable(String) public readonly reward: string | null;
 }
 
 export class AccumulatedMetricsResultModel {

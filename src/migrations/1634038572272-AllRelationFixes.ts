@@ -33,7 +33,6 @@ export class AllRelationFixes1634038572272 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "campaign_media" ALTER COLUMN "media" SET NOT NULL`);
         await queryRunner.query(`ALTER TABLE "campaign_media" ALTER COLUMN "channel" SET NOT NULL`);
         await queryRunner.query(`ALTER TABLE "weekly_reward" ADD "participantId" uuid`);
-        await queryRunner.query(`ALTER TABLE "participant" ADD "reward" uuid`);
         await queryRunner.query(`DROP TABLE "tatum_wallet"`);
     }
 }
