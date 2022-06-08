@@ -51,8 +51,6 @@ model Campaign {
   status                   String                   @default("DEFAULT") @db.VarChar
   cryptoId                 String?                  @db.Uuid
   keywords                 String                   @default("[]")
-  sharedMedia              String?                  @db.VarChar
-  sharedMediaFormat        String?                  @db.VarChar
   campaignType             String?                  @db.VarChar
   socialMediaType          String                   @default("[]")
   instructions             String?                  @default("") @db.VarChar
@@ -320,7 +318,6 @@ model Participant {
   updatedAt          DateTime @default(now()) @updatedAt @db.Timestamp(6)
   userId             String   @db.Uuid
   email              String?  @db.VarChar
-  reward             String?  @db.Uuid
   campaign           Campaign @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_1835802549e230f6cd88c6efef9")
   user               User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_b915e97dea27ffd1e40c8003b3b")
 
