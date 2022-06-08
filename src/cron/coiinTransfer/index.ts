@@ -41,7 +41,7 @@ const fixFailedCoiinTransfers = async (raiinmakerCoiinCurrency: Currency) => {
             });
             for (const transfer of failedCoiinTransfers) {
                 const userCurrency = await TatumClient.findOrCreateCurrency({
-                    wallet: transfer.wallet,
+                    walletId: transfer.wallet.id,
                     symbol: COIIN,
                     network: BSC,
                 });
@@ -92,7 +92,7 @@ const fixFailedCampaignTransfers = async () => {
             });
             for (const transfer of failedCampaignTransfers) {
                 const userCurrency = await TatumClient.findOrCreateCurrency({
-                    wallet: transfer.wallet,
+                    walletId: transfer.wallet.id,
                     symbol: COIIN,
                     network: BSC,
                 });

@@ -267,7 +267,7 @@ export const postContentGlobally = async (
         if (!globalCampaign) throw new Error(GLOBAL_CAMPAIGN_NOT_FOUND);
         let participant = await Participant.findOne({ where: { user, campaign: globalCampaign } });
         if (!participant) {
-            await TatumClient.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet: user.wallet });
+            await TatumClient.findOrCreateCurrency({ symbol: COIIN, network: BSC, walletId: user.wallet.id });
             participant = await Participant.createNewParticipant(user, globalCampaign, user.email);
         }
         await postToSocial(

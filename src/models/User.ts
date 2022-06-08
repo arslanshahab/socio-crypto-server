@@ -146,7 +146,7 @@ export class User extends BaseEntity {
         user.profile = profile;
         user.notificationSettings = notificationSettings;
         await user.save();
-        await TatumClient.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet });
+        await TatumClient.findOrCreateCurrency({ symbol: COIIN, network: BSC, walletId: wallet.id });
         return user.id;
     }
 
@@ -232,7 +232,7 @@ export class User extends BaseEntity {
         const userCurrency = await TatumClient.findOrCreateCurrency({
             symbol: COIIN,
             network: BSC,
-            wallet: user.wallet,
+            walletId: user.wallet.id,
         });
         const senderId = operation === "ADD" ? raiinmakerCurrency.tatumId : userCurrency.tatumId;
         const receipientId = operation === "ADD" ? userCurrency.tatumId : raiinmakerCurrency.tatumId;
@@ -259,7 +259,7 @@ export class User extends BaseEntity {
         const userCurrency = await TatumClient.findOrCreateCurrency({
             symbol: COIIN,
             network: BSC,
-            wallet: user.wallet,
+            walletId: user.wallet.id,
         });
         if (
             (type === "LOGIN_REWARD" && accountAgeInHours > 24 && !thisWeeksReward) ||

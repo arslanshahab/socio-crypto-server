@@ -515,6 +515,7 @@ model User {
   profile                                      Profile?
   social_link                                  SocialLink[]
   social_post                                  SocialPost[]
+  tatum_account                                tatum_account[]          @relation("tatum_accountTouser")
   twenty_four_hour_metric                      TwentyFourHourMetric[]
   verification_application                     VerificationApplication?
   wallet                                       Wallet?
@@ -621,4 +622,17 @@ model MarketData {
   updatedAt DateTime @default(now()) @db.Timestamp(6)
 
   @@map("market_data")
+}
+
+model tatum_account {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId      String   @db.VarChar
+  currency       String   @db.VarChar
+  createdAt      DateTime @default(now()) @db.Timestamp(6)
+  updatedAt      DateTime @default(now()) @db.Timestamp(6)
+  memo           String?  @db.VarChar
+  message        String?  @db.VarChar
+  destinationTag Int?
+  userId         String?  @db.Uuid
+  user           User?    @relation("tatum_accountTouser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_49a94263eaae183abe64b42b8a4")
 }

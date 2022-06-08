@@ -38,6 +38,8 @@ import { Tiers } from "../../types.d";
 
 export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
     try {
+        if (!campaign?.tatumBlockageId) throw new Error(`No blockage Id found for campaign--- ${campaign.id}`);
+        await TatumClient.unblockAccountBalance(campaign.tatumBlockageId);
         const userDeviceIds: { [key: string]: string } = {};
         const { currentTotal } = calculateTier(
             new BN(campaign.totalParticipationScore),
@@ -53,7 +55,9 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
                 id: campaign?.currencyId || "",
             },
         });
+        if (!campaignCurrency) throw new Error("Campaign currency not found.");
         const campaignToken = await prisma.token.findFirst({ where: { id: campaignCurrency?.tokenId || "" } });
+        if (!campaignToken) throw new Error("Campaign token not found.");
         const raiinmakerOrg = await prisma.org.findFirst({ where: { name: RAIINMAKER_ORG_NAME } });
         const raiinmakerWallet = await prisma.wallet.findFirst({ where: { orgId: raiinmakerOrg?.id } });
         const raiinmakerCurrency = await prisma.currency.findFirst({
@@ -79,19 +83,18 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
                 const userData = await prisma.user.findFirst({
                     where: { id: participant.userId },
                 });
-                if (!userData) throw new Error("User not found.");
+                if (!userData) throw new Error(`User not found for ID: ${participant?.userId}`);
                 const userProfile = await prisma.profile.findFirst({ where: { userId: userData?.id } });
-                if (!userProfile) throw new Error("User profile not found.");
+                if (!userProfile) throw new Error(`Profile not found for user: ${userData?.id}`);
                 const userWallet = await prisma.wallet.findFirst({ where: { userId: userData?.id } });
-                if (!userWallet) throw new Error("User wallet not found.");
-                const userCurrency = await prisma.currency.findFirst({
-                    where: {
-                        walletId: userWallet?.id,
-                        tokenId: campaignToken?.id,
-                    },
+                if (!userWallet) throw new Error(`Wallet not found for user: ${userData.id}`);
+                const userCurrency = await TatumClient.findOrCreateCurrency({
+                    symbol: campaignToken?.symbol || "",
+                    network: campaignToken?.network || "",
+                    walletId: userWallet.id,
                 });
-                if (!userCurrency) throw new Error("User currency not found.");
-                if (!userData) throw new Error("User not found");
+                if (!userCurrency)
+                    throw new Error(`Currency not found for wallet: ${userWallet.id} and token: ${campaignToken?.id}`);
                 if (userProfile?.deviceToken) userDeviceIds[userData.id] = userProfile?.deviceToken;
                 const participantShare = await calculateParticipantPayout(totalRewardAmount, campaign, participant);
                 const alreadyTransferred = await prisma.transfer.findFirst({
@@ -101,6 +104,7 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
                         walletId: userWallet?.id,
                     },
                 });
+                console.log(participantShare.toString());
                 if (participantShare.isGreaterThan(0) && !alreadyTransferred) {
                     promiseArray.push(
                         TatumClient.transferFunds({
@@ -126,16 +130,7 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
                         userCurrency.tatumId
                     );
                 }
-                console.log(
-                    "REWARD CALCULATED FRO USER --- ",
-                    userData.id,
-                    participant.id,
-                    participantShare.toString()
-                );
             }
-
-            if (!campaign.tatumBlockageId) throw new Error(`No blockage Id found for campaign--- ${campaign.id}`);
-            if (pageIndex === 0) await TatumClient.unblockAccountBalance(campaign.tatumBlockageId);
 
             // transfer campaign fee to raiinmaker tatum account
             if (campaign?.orgId !== raiinmakerOrg?.id) {

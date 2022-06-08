@@ -25,7 +25,6 @@ console.log("APP instance created.");
                 auditStatus: CampaignAuditStatus.PENDING,
             },
         });
-        console.log(campaigns);
         console.log(`TOTAL CAMPAIGNS TO BE AUDITED--- ${campaigns.map((item) => item.id)}`);
         for (let index = 0; index < campaigns.length; index++) {
             const campaign = await prisma.campaign.findUnique({
