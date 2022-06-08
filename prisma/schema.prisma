@@ -64,6 +64,8 @@ model Campaign {
   currency                 Currency?                @relation(fields: [currencyId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_94f38926b8f74ecd88ecf6ba8c8")
   org                      Org?                     @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f1ade2ad37c88435b086c97cfc8")
   daily_participant_metric DailyParticipantMetric[]
+  campaign_media           CampaignMedia[]
+  campaign_template        CampaignTemplate[]
   escrow                   Escrow?
   hourly_campaign_metric   HourlyCampaignMetric[]
   participant              Participant[]
@@ -87,7 +89,7 @@ model CampaignMedia {
   isDefault   Boolean?
   createdAt   DateTime @default(now()) @db.Timestamp(6)
   updatedAt   DateTime @default(now()) @updatedAt @db.Timestamp(6)
-
+  campaign    Campaign? @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_b845045382e55918752955d23cb")
   @@map("campaign_media")
 }
 
@@ -98,7 +100,7 @@ model CampaignTemplate {
   post       String?  @db.VarChar
   createdAt  DateTime @default(now()) @db.Timestamp(6)
   updatedAt  DateTime @default(now()) @updatedAt @db.Timestamp(6)
-
+  campaign    Campaign? @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_b845045382e55918752955d23cb")
   @@map("campaign_template")
 }
 
