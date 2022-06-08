@@ -2,7 +2,7 @@ import { Secrets } from "../../util/secrets";
 import { Application } from "../../app";
 import * as dotenv from "dotenv";
 import { doFetch, RequestData } from "../../util/fetchRequest";
-import { MarketData } from "../../models/MarketData";
+import { prisma } from "../../clients/prisma";
 
 dotenv.config();
 const app = new Application();
@@ -18,18 +18,23 @@ console.log("APP instance created.");
             method: "GET",
             url: `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=1&sparkline=false`,
         };
-        const marketData = await doFetch(requestData);
-        for (const item of marketData) {
+        const list = await doFetch(requestData);
+        for (const item of list) {
             let marketSymbol;
-            marketSymbol = await MarketData.findOne({ where: { symbol: item.symbol } });
+            marketSymbol = await prisma.marketData.findFirst({ where: { symbol: item.symbol } });
             if (marketSymbol) {
-                marketSymbol.price = parseFloat(item.current_price);
+                await prisma.marketData.update({
+                    where: { id: marketSymbol.id },
+                    data: { price: parseFloat(item.current_price) },
+                });
             } else {
-                marketSymbol = new MarketData();
-                marketSymbol.symbol = item.symbol.toUpperCase();
-                marketSymbol.price = parseFloat(item.current_price);
+                await prisma.marketData.create({
+                    data: {
+                        symbol: item.symbol.toUpperCase(),
+                        price: parseFloat(item.current_price),
+                    },
+                });
             }
-            await marketSymbol.save();
         }
     } catch (error) {
         console.log(error);
