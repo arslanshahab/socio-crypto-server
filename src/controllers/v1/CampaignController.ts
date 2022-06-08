@@ -95,7 +95,7 @@ export class CampaignController {
     public async list(@QueryParams() query: ListCampaignsVariablesModel, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         const [items, total] = await this.campaignService.findCampaignsByStatus(query, user || undefined);
-        const modelItems = await Promise.all(items.map((i) => CampaignResultModel.build(i)));
+        const modelItems = await Promise.all(items.map((i) => CampaignResultModel.build(i as any)));
         return new SuccessResult(new Pagination(modelItems, total, CampaignResultModel), Pagination);
     }
 
@@ -614,7 +614,7 @@ export class CampaignController {
         const campaigns = await this.campaignService.findCampaigns();
         return new SuccessArrayResult(campaigns, CampaignResultModel);
     }
-    
+
     @Put("/admin-update-campaign-status")
     @(Returns(200, SuccessResult).Of(UpdatedResultModel))
     public async adminUpdateCampaignStatus(
