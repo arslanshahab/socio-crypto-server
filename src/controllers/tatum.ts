@@ -260,6 +260,7 @@ export const withdrawFunds = async (
         if (!(await user.hasKycApproved()))
             throw new Error("You need to get your KYC approved before you can withdraw.");
         let { symbol, network, address, amount, verificationToken } = args;
+        address = address.toLocaleLowerCase();
         if (symbol.toUpperCase() === COIIN)
             throw new Error(
                 `${symbol} is not available to withdrawal until after the TGE, follow our social channels to learn more!`
