@@ -588,19 +588,23 @@ export class TatumClient {
         }
     };
 
-    public static findOrCreateCurrency = async (data: SymbolNetworkParams & { wallet: Wallet }): Promise<Currency> => {
+    public static findOrCreateCurrency = async (
+        data: SymbolNetworkParams & { walletId: string }
+    ): Promise<Currency> => {
         try {
+            const wallet = await Wallet.findOne({ where: { id: data.walletId } });
+            if (!wallet) throw new Error("Wallet not found.");
             const token = await TatumClient.isCurrencySupported(data);
             if (!token) throw new Error(`Currency ${data.symbol} is not supported.`);
-            const foundWallet = await Wallet.findOne({ where: { id: data.wallet.id }, relations: ["user", "org"] });
+            const foundWallet = await Wallet.findOne({ where: { id: wallet.id }, relations: ["user", "org"] });
             const isCustodial = TatumClient.isCustodialWallet(data);
-            let ledgerAccount = await Currency.findOne({ where: { wallet: data.wallet, token } });
+            let ledgerAccount = await Currency.findOne({ where: { wallet: wallet, token } });
             let newDepositAddress;
             if (!ledgerAccount) {
                 const newLedgerAccount = await TatumClient.createLedgerAccount({ ...data, isCustodial });
                 if (isCustodial) {
                     if (foundWallet?.org) {
-                        const availableAddress = await CustodialAddress.getAvailableAddress(data);
+                        const availableAddress = await CustodialAddress.getAvailableAddress({ ...data, wallet });
                         if (!availableAddress) throw new Error("No custodial address available.");
                         await TatumClient.assignAddressToAccount({
                             accountId: newLedgerAccount.id,
@@ -616,7 +620,7 @@ export class TatumClient {
                     token,
                     symbol: getCurrencyForTatum(data),
                     ...(newDepositAddress && { address: newDepositAddress.address }),
-                    wallet: data.wallet,
+                    wallet,
                 });
             }
             return ledgerAccount;

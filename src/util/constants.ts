@@ -106,6 +106,11 @@ export enum CampaignStatus {
     APPROVED = "APPROVED",
     DENIED = "DENIED",
 }
+export enum CampaignAuditStatus {
+    DEFAULT = "DEFAULT",
+    PENDING = "PENDING",
+    AUDITED = "AUDITED",
+}
 export enum CampaignState {
     ALL = "ALL",
     OPEN = "OPEN",
@@ -132,7 +137,20 @@ export enum TransferAction {
     NETWORK_REWARD = "NETWORK_REWARD",
     XOXODAY_REDEMPTION = "XOXODAY_REDEMPTION",
 }
-
+export enum TransferStatus {
+    BLOCKED = "BLOCKED",
+    CANCELED = "CANCELED",
+    DENIED = "DENIED",
+    FAILED = "FAILED",
+    HELD = "HELD",
+    REFUNDED = "REFUNDED",
+    RETURNED = "RETURNED",
+    SUCCEEDED = "SUCCEEDED",
+    UNCLAIMED = "UNCLAIMED",
+    PENDING = "PENDING",
+    APPROVED = "APPROVED",
+    REJECTED = "REJECTED",
+}
 export enum CoiinTransferAction {
     ADD = "ADD",
     REMOVE = "REMOVE",

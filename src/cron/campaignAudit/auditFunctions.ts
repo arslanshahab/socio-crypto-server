@@ -1,161 +1,142 @@
-import { EntityManager } from "typeorm";
-import { Campaign } from "../../models/Campaign";
-import { Participant } from "../../models/Participant";
-import { calculateParticipantPayout, calculateRaffleWinner, performCurrencyTransfer } from "../../controllers/helpers";
-import { Wallet } from "../../models/Wallet";
-import { RafflePrize } from "../../models/RafflePrize";
-import { Transfer } from "../../models/Transfer";
-import { SesClient } from "../../clients/ses";
-// import { Dragonchain } from "../../clients/dragonchain";
-import { decrypt } from "../../util/crypto";
-import { getCurrentCampaignTier } from "../../controllers/campaign";
+import { calculateParticipantPayout, calculateTier } from "../../controllers/helpers";
 import { BN } from "../../util";
-import { BigNumber } from "bignumber.js";
-import { FEE_RATE, RAIINMAKER_ORG_NAME } from "../../util/constants";
-import { Currency } from "../../models/Currency";
-import { Org } from "../../models/Org";
-import { User } from "../../models/User";
+import { CampaignAuditStatus, FEE_RATE, RAIINMAKER_ORG_NAME } from "../../util/constants";
 import { TatumClient, CAMPAIGN_REWARD, CAMPAIGN_FEE } from "../../clients/tatumClient";
-import { Escrow } from "../../models/Escrow";
-import { getParticipant } from "../../controllers/participant";
-import { In } from "typeorm";
+import { Campaign, Prisma } from "@prisma/client";
+import { prisma } from "../../clients/prisma";
+import { Tiers } from "../../types.d";
 
-export const payoutRaffleCampaignRewards = async (
-    entityManager: EntityManager,
-    campaign: Campaign,
-    rejected: string[]
-) => {
-    if (!campaign.prize) throw new Error("no campaign prize");
-    if (campaign.participants.length === 0) throw new Error("no participants on campaign for audit");
-    let totalParticipationScore = new BN(0).plus(campaign.totalParticipationScore);
-    const clonedParticipants =
-        rejected.length > 0
-            ? campaign.participants.reduce((accum: Participant[], current: Participant) => {
-                  if (rejected.indexOf(current.id) > -1)
-                      totalParticipationScore = totalParticipationScore.minus(current.participationScore);
-                  else accum.push(current);
-                  return accum;
-              }, [])
-            : campaign.participants;
-    const winner = calculateRaffleWinner(totalParticipationScore, clonedParticipants);
-    const wallet = await Wallet.findOneOrFail({ where: { user: winner.user } });
-    const prize = await RafflePrize.findOneOrFail({
-        where: { id: campaign.prize.id },
-    });
-    const transfer = Transfer.newFromRaffleSelection(wallet, campaign, prize);
-    campaign.auditStatus = "AUDITED";
-    await entityManager.save([campaign, wallet, transfer]);
-    await SesClient.sendRafflePrizeRedemptionEmail(winner.user.id, decrypt(winner.email), campaign);
-    // await Dragonchain.ledgerRaffleCampaignAudit({ [winner.user.id]: campaign.prize.displayName }, [], campaign.id);
-    return { [winner.user.id]: winner.user.profile.deviceToken };
-};
+// export const payoutRaffleCampaignRewards = async (
+//     entityManager: EntityManager,
+//     campaign: Campaign,
+//     rejected: string[]
+// ) => {
+//     if (!campaign.prize) throw new Error("no campaign prize");
+//     if (campaign.participants.length === 0) throw new Error("no participants on campaign for audit");
+//     let totalParticipationScore = new BN(0).plus(campaign.totalParticipationScore);
+//     const clonedParticipants =
+//         rejected.length > 0
+//             ? campaign.participants.reduce((accum: Participant[], current: Participant) => {
+//                   if (rejected.indexOf(current.id) > -1)
+//                       totalParticipationScore = totalParticipationScore.minus(current.participationScore);
+//                   else accum.push(current);
+//                   return accum;
+//               }, [])
+//             : campaign.participants;
+//     const winner = calculateRaffleWinner(totalParticipationScore, clonedParticipants);
+//     const wallet = await Wallet.findOneOrFail({ where: { user: winner.user } });
+//     const prize = await RafflePrize.findOneOrFail({
+//         where: { id: campaign.prize.id },
+//     });
+//     const transfer = Transfer.newFromRaffleSelection(wallet, campaign, prize);
+//     campaign.auditStatus = "AUDITED";
+//     await entityManager.save([campaign, wallet, transfer]);
+//     await SesClient.sendRafflePrizeRedemptionEmail(winner.user.id, decrypt(winner.email), campaign);
+//     // await Dragonchain.ledgerRaffleCampaignAudit({ [winner.user.id]: campaign.prize.displayName }, [], campaign.id);
+//     return { [winner.user.id]: winner.user.profile.deviceToken };
+// };
 
 export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
     try {
-        const usersRewards: { [key: string]: BigNumber } = {};
+        if (!campaign?.tatumBlockageId) throw new Error(`No blockage Id found for campaign--- ${campaign.id}`);
+        await TatumClient.unblockAccountBalance(campaign.tatumBlockageId);
         const userDeviceIds: { [key: string]: string } = {};
-        const { currentTotal } = await getCurrentCampaignTier(null, { campaign });
+        const { currentTotal } = calculateTier(
+            new BN(campaign.totalParticipationScore),
+            (campaign.algorithm as Prisma.JsonObject).tiers as Prisma.JsonObject as unknown as Tiers
+        );
         let totalRewardAmount = new BN(currentTotal);
         let raiinmakerFee = new BN(0);
         const campaignFee = totalRewardAmount.multipliedBy(FEE_RATE);
         raiinmakerFee = raiinmakerFee.plus(campaignFee);
         totalRewardAmount = totalRewardAmount.minus(campaignFee);
-        const raiinmakerAccount = await Currency.findOne({
+        const campaignCurrency = await prisma.currency.findFirst({
             where: {
-                wallet: await Wallet.findOne({
-                    where: { org: await Org.findOne({ where: { name: RAIINMAKER_ORG_NAME } }) },
-                }),
-                token: campaign.currency.token,
+                id: campaign?.currencyId || "",
             },
-            relations: ["token"],
         });
-        if (!raiinmakerAccount) throw new Error("currency not found for raiinmaker");
-        const campaignAccount = campaign.currency;
-        if (!campaignAccount) throw new Error("currency not found for campaign");
+        if (!campaignCurrency) throw new Error("Campaign currency not found.");
+        const campaignToken = await prisma.token.findFirst({ where: { id: campaignCurrency?.tokenId || "" } });
+        if (!campaignToken) throw new Error("Campaign token not found.");
+        const raiinmakerOrg = await prisma.org.findFirst({ where: { name: RAIINMAKER_ORG_NAME } });
+        const raiinmakerWallet = await prisma.wallet.findFirst({ where: { orgId: raiinmakerOrg?.id } });
+        const raiinmakerCurrency = await prisma.currency.findFirst({
+            where: { tokenId: campaignToken?.id, walletId: raiinmakerWallet?.id },
+        });
+        if (!raiinmakerCurrency) throw new Error("currency not found for raiinmaker");
+        if (!campaignCurrency) throw new Error("currency not found for campaign");
         const take = 500;
         let skip = 0;
-        const totalParticipants = await Participant.count({ where: { campaign } });
+        const totalParticipants = await prisma.participant.count({ where: { campaignId: campaign.id } });
         const paginatedLoop = Math.ceil(totalParticipants / take);
 
         for (let pageIndex = 0; pageIndex < paginatedLoop; pageIndex++) {
-            const participants = await Participant.find({
-                where: { campaign },
-                relations: ["user", "campaign"],
+            const participants = await prisma.participant.findMany({
+                where: { campaignId: campaign.id },
                 take,
                 skip,
             });
-            for (let index = 0; index < participants.length; index++) {
-                const participant = participants[index];
-                const userData = await User.findOne({
-                    where: { id: participant.user.id },
-                    relations: ["profile"],
-                });
-                if (!userData) throw new Error("User not found");
-                userDeviceIds[userData.id] = userData.profile.deviceToken;
-                const participantShare = await calculateParticipantPayout(totalRewardAmount, campaign, participant);
-                const alreadyTransferred = await Transfer.findOne({
-                    where: {
-                        amount: participantShare,
-                        campaign: campaign,
-                        wallet: await Wallet.findOne({ where: { user: participant.user } }),
-                    },
-                });
-                if (participantShare.isGreaterThan(0) && !alreadyTransferred) {
-                    usersRewards[userData.id] = participantShare;
-                }
-                console.log(
-                    "REWARD CALCULATED FRO USER --- ",
-                    userData.id,
-                    participant.id,
-                    participantShare.toString()
-                );
-            }
-
-            if (!campaign.tatumBlockageId) throw new Error(`No blockage Id found for campaign--- ${campaign.id}`);
-            if (pageIndex === 0) await TatumClient.unblockAccountBalance(campaign.tatumBlockageId);
-
             const promiseArray = [];
             const transferDetails = [];
             for (let index = 0; index < participants.length; index++) {
                 const participant = participants[index];
-                const userCurrency = await Currency.findOne({
+                const userData = await prisma.user.findFirst({
+                    where: { id: participant.userId },
+                });
+                if (!userData) throw new Error(`User not found for ID: ${participant?.userId}`);
+                const userProfile = await prisma.profile.findFirst({ where: { userId: userData?.id } });
+                if (!userProfile) throw new Error(`Profile not found for user: ${userData?.id}`);
+                const userWallet = await prisma.wallet.findFirst({ where: { userId: userData?.id } });
+                if (!userWallet) throw new Error(`Wallet not found for user: ${userData.id}`);
+                const userCurrency = await TatumClient.findOrCreateCurrency({
+                    symbol: campaignToken?.symbol || "",
+                    network: campaignToken?.network || "",
+                    walletId: userWallet.id,
+                });
+                if (!userCurrency)
+                    throw new Error(`Currency not found for wallet: ${userWallet.id} and token: ${campaignToken?.id}`);
+                if (userProfile?.deviceToken) userDeviceIds[userData.id] = userProfile?.deviceToken;
+                const participantShare = await calculateParticipantPayout(totalRewardAmount, campaign, participant);
+                const alreadyTransferred = await prisma.transfer.findFirst({
                     where: {
-                        wallet: await Wallet.findOne({ where: { user: participant.user } }),
-                        symbol: campaign.symbol,
+                        amount: participantShare.toString(),
+                        campaignId: campaign.id,
+                        walletId: userWallet?.id,
                     },
                 });
-                if (!userCurrency) throw new Error(`currency not found for user ${participant.user.id}`);
-                if (usersRewards[participant.user.id]) {
+                console.log(participantShare.toString());
+                if (participantShare.isGreaterThan(0) && !alreadyTransferred) {
                     promiseArray.push(
                         TatumClient.transferFunds({
-                            senderAccountId: campaignAccount.tatumId,
+                            senderAccountId: campaignCurrency.tatumId,
                             recipientAccountId: userCurrency.tatumId,
-                            amount: usersRewards[participant.user.id]?.toString(),
+                            amount: participantShare.toString(),
                             recipientNote: `${CAMPAIGN_REWARD}:${campaign.id}`,
                         })
                     );
                     transferDetails.push({
-                        campaignAccount,
+                        campaignCurrency,
                         userCurrency,
                         campaign,
                         participant,
-                        amount: usersRewards[participant.user.id],
+                        user: userData,
+                        amount: participantShare.toString(),
                     });
                     console.log(
                         "TRANSFER PREPARED ---- ",
                         participant.id,
-                        usersRewards[participant.user.id]?.toString(),
-                        campaignAccount.tatumId,
+                        participantShare.toString(),
+                        campaignCurrency.tatumId,
                         userCurrency.tatumId
                     );
                 }
             }
 
             // transfer campaign fee to raiinmaker tatum account
-            if (campaign.org.name !== RAIINMAKER_ORG_NAME) {
+            if (campaign?.orgId !== raiinmakerOrg?.id) {
                 await TatumClient.transferFunds({
-                    senderAccountId: campaignAccount.tatumId,
-                    recipientAccountId: raiinmakerAccount.tatumId,
+                    senderAccountId: campaignCurrency.tatumId,
+                    recipientAccountId: raiinmakerCurrency.tatumId,
                     amount: raiinmakerFee?.toString(),
                     recipientNote: `${CAMPAIGN_FEE}:${campaign.id}`,
                 });
@@ -165,148 +146,27 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
             for (let index = 0; index < responses.length; index++) {
                 const resp = responses[index];
                 const transferData = transferDetails[index];
-                const wallet = await Wallet.findOne({ where: { user: transferData.participant.user } });
+                const wallet = await prisma.wallet.findFirst({ where: { userId: transferData.user.id } });
                 if (!wallet) throw new Error("wallet not found for user.");
-                const newTransfer = Transfer.initTatumTransfer({
-                    symbol: transferData.campaign.currency.token.symbol,
-                    network: "",
-                    campaign: transferData.campaign,
-                    amount: transferData.amount,
-                    tatumId: transferData.userCurrency.tatumId,
-                    wallet,
+                transferRecords.push({
+                    symbol: campaignToken?.symbol,
+                    campaignId: transferData.campaign.id,
+                    amount: transferData.amount.toString(),
+                    ethAddress: transferData.userCurrency.tatumId,
+                    walletId: wallet.id,
                     action: "CAMPAIGN_REWARD",
                     status: resp.status === "fulfilled" ? "SUCCEEDED" : "FAILED",
                 });
-                transferRecords.push(newTransfer);
             }
-            await Transfer.save(transferRecords);
+            await prisma.transfer.createMany({ data: transferRecords });
             skip += take;
         }
-
-        campaign.auditStatus = "AUDITED";
-        await campaign.save();
+        await prisma.campaign.update({
+            where: { id: campaign.id },
+            data: { auditStatus: CampaignAuditStatus.AUDITED },
+        });
         return userDeviceIds;
     } catch (error) {
         throw new Error(error.message);
     }
-};
-
-export const payoutCoiinCampaignRewards = async (
-    entityManager: EntityManager,
-    campaign: Campaign,
-    rejected: string[]
-) => {
-    const usersWalletValues: { [key: string]: BigNumber } = {};
-    const userDeviceIds: { [key: string]: string } = {};
-    const transfers: Transfer[] = [];
-    const { currentTotal } = await getCurrentCampaignTier(null, { campaign });
-    const bigNumTotal = new BN(currentTotal);
-    const participants = await Participant.find({
-        where: { campaign },
-        relations: ["user"],
-    });
-    let escrow = await Escrow.findOne({
-        where: { campaign },
-        relations: ["wallet"],
-    });
-    if (!escrow) throw new Error("escrow not found");
-    let totalFee = new BN(0);
-    let totalPayout = new BN(0);
-    const users =
-        participants.length > 0
-            ? await User.find({
-                  where: { id: In(participants.map((p) => p.user.id)) },
-                  relations: ["wallet"],
-              })
-            : [];
-    const wallets =
-        users.length > 0
-            ? await Wallet.find({
-                  where: { id: In(users.map((u) => u.wallet.id)) },
-                  relations: ["user"],
-              })
-            : [];
-    if (rejected.length > 0) {
-        const newParticipationCount = participants.length - rejected.length;
-        let totalRejectedPayout = new BN(0);
-        for (const id of rejected) {
-            const participant = await getParticipant(null, { id });
-            const totalParticipantPayout = await calculateParticipantPayout(bigNumTotal, campaign, participant);
-            totalRejectedPayout = totalRejectedPayout.plus(totalParticipantPayout);
-        }
-        const addedPayoutToEachParticipant = totalRejectedPayout.div(new BN(newParticipationCount));
-        for (const participant of participants) {
-            if (!rejected.includes(participant.id)) {
-                const subtotal = await calculateParticipantPayout(bigNumTotal, campaign, participant);
-                const totalParticipantPayout = subtotal.plus(addedPayoutToEachParticipant);
-                if (participant.user.profile.deviceToken)
-                    userDeviceIds[participant.user.id] = participant.user.profile.deviceToken;
-                if (!usersWalletValues[participant.user.id])
-                    usersWalletValues[participant.user.id] = totalParticipantPayout;
-                else
-                    usersWalletValues[participant.user.id] =
-                        usersWalletValues[participant.user.id].plus(totalParticipantPayout);
-            }
-        }
-    } else {
-        for (const participant of participants) {
-            const totalParticipantPayout = await calculateParticipantPayout(bigNumTotal, campaign, participant);
-            if (participant.user.profile.deviceToken)
-                userDeviceIds[participant.user.id] = participant.user.profile.deviceToken;
-            if (!usersWalletValues[participant.user.id])
-                usersWalletValues[participant.user.id] = totalParticipantPayout;
-            else
-                usersWalletValues[participant.user.id] =
-                    usersWalletValues[participant.user.id].plus(totalParticipantPayout);
-        }
-    }
-    for (const userId in usersWalletValues) {
-        const currentWallet = wallets.find((w) => w.user.id === userId);
-        if (currentWallet) {
-            const allottedPayment = usersWalletValues[userId];
-            if (new BN(allottedPayment).isGreaterThan(0)) {
-                const fee = new BN(allottedPayment).times(FEE_RATE);
-                const payout = new BN(allottedPayment).minus(fee);
-                totalFee = totalFee.plus(fee);
-                totalPayout = totalPayout.plus(allottedPayment);
-                await performCurrencyTransfer(
-                    escrow.id,
-                    currentWallet.id,
-                    campaign.crypto.type,
-                    payout?.toString(),
-                    true
-                );
-                const transfer = Transfer.newFromCampaignPayout(currentWallet, campaign, payout);
-                transfers.push(transfer);
-            }
-        }
-    }
-    if (new BN(totalFee).isGreaterThan(0)) await Transfer.transferCampaignPayoutFee(campaign, totalFee);
-    const payoutTransfer = Transfer.newFromWalletPayout(escrow.wallet, campaign, totalPayout);
-    transfers.push(payoutTransfer);
-    escrow = await Escrow.findOneOrFail({
-        where: { campaign },
-        relations: ["wallet"],
-    });
-    if (escrow.amount.gt(0)) {
-        await performCurrencyTransfer(
-            escrow.id,
-            escrow.wallet.id,
-            campaign.crypto.type,
-            escrow.amount?.toString(),
-            true
-        );
-        const transfer = Transfer.newFromCampaignPayoutRefund(escrow.wallet, campaign, escrow.amount);
-        await transfer.save();
-        await escrow.remove();
-    } else {
-        await escrow.remove();
-    }
-    campaign.auditStatus = "AUDITED";
-    await entityManager.save(campaign);
-    await entityManager.save(participants);
-    await entityManager.save(transfers);
-
-    // await Dragonchain.ledgerCoiinCampaignAudit(usersWalletValues, rejected, campaign.id);
-    return userDeviceIds;
 };

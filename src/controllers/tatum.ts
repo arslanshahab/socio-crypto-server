@@ -107,7 +107,7 @@ export const createTatumAccount = asyncHandler(async (req: Request, res: Respons
         if (!userId || !symbol || !network) throw new Error("Missing required parameters");
         const user = await User.findOne({ where: { id: userId }, relations: ["wallet"] });
         if (!user) throw new Error("User not found.");
-        const tatumCurrency = await TatumClient.findOrCreateCurrency({ symbol, network, wallet: user.wallet });
+        const tatumCurrency = await TatumClient.findOrCreateCurrency({ symbol, network, walletId: user.wallet.id });
         res.status(200).json(tatumCurrency);
     } catch (error) {
         res.status(200).json(error.message);
@@ -197,7 +197,7 @@ export const getDepositAddress = async (
         if (!admin) throw new Error("Admin not found!");
         const token = await TatumClient.isCurrencySupported(args);
         if (!token) throw new Error("Currency not supported");
-        const ledgerAccount = await TatumClient.findOrCreateCurrency({ ...args, wallet: admin.org.wallet });
+        const ledgerAccount = await TatumClient.findOrCreateCurrency({ ...args, walletId: admin.org.wallet.id });
         if (!ledgerAccount) throw new Error("Ledger account not found.");
         return {
             symbol: token.symbol,
@@ -219,7 +219,7 @@ export const getCoiinAddressForUser = async (parent: any, args: any, context: { 
         let currency = await TatumClient.findOrCreateCurrency({
             symbol: COIIN,
             network: BSC,
-            wallet: user.wallet,
+            walletId: user.wallet.id,
         });
         if (!currency) throw new Error("Currency not found for user.");
         if (!currency.depositAddress) {
