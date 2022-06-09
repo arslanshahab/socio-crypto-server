@@ -42,3 +42,43 @@ prisma.$use(async (params, next) => {
 
     return result;
 });
+
+export const readPrisma = new PrismaClient({
+    datasources: {
+        db: {
+            url: "staging-database.cluster-ro-cuqkwt1n17k6.us-west-1.rds.amazonaws.com",
+        },
+    },
+});
+
+// support sentry tracing https://github.com/getsentry/sentry-javascript/issues/3143#issuecomment-886065074
+readPrisma.$use(async (params, next) => {
+    const { model, action, runInTransaction, args } = params;
+    const description = [model, action].filter(Boolean).join(".");
+    const data = {
+        model,
+        action,
+        runInTransaction,
+        args,
+    };
+
+    const scope = getCurrentHub().getScope();
+    const parentSpan = scope?.getSpan();
+    const span = parentSpan?.startChild({
+        op: "db",
+        description,
+        data,
+    });
+
+    // optional but nice
+    scope?.addBreadcrumb({
+        category: "db",
+        message: description,
+        data,
+    });
+
+    const result = await next(params);
+    span?.finish();
+
+    return result;
+});
