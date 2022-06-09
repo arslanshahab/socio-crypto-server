@@ -145,6 +145,6 @@ export class Org extends BaseEntity {
     public static getCurrencyForRaiinmaker = async (data: SymbolNetworkParams) => {
         const raiinmakerOrg = await Org.findOne({ where: { name: RAIINMAKER_ORG_NAME }, relations: ["wallet"] });
         if (!raiinmakerOrg) throw new Error(`Org not found for ${RAIINMAKER_ORG_NAME}.`);
-        return await TatumClient.findOrCreateCurrency({ ...data, wallet: raiinmakerOrg.wallet });
+        return await TatumClient.findOrCreateCurrency({ ...data, walletId: raiinmakerOrg.wallet.id });
     };
 }

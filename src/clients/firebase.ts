@@ -167,7 +167,7 @@ export class Firebase {
 
     public static async sendDailyParticipationUpdate(
         token: string,
-        campaign: Campaign,
+        campaignName: string,
         coiins: BigNumber,
         participationScore: BigNumber,
         rank: number,
@@ -176,9 +176,7 @@ export class Firebase {
         const title = "Daily Participation Upate";
         const body = `You have earned ${participationScore.toString()} an estimated ${coiins.toFixed(
             2
-        )} Coiin rewards in the past 24 hours from ${
-            campaign.name
-        } Campaign. Currently you are #${rank} out of ${totalParticipants}.`;
+        )} Coiin rewards in the past 24 hours from ${campaignName} Campaign. Currently you are #${rank} out of ${totalParticipants}.`;
         const message: admin.messaging.Message = {
             notification: {
                 title,

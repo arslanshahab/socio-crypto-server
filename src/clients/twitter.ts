@@ -5,7 +5,7 @@ import { getRedis } from "./redis";
 import { extractVideoData, chunkVideo, sleep } from "../controllers/helpers";
 import { Participant } from "../models/Participant";
 import { SocialLink } from "../models/SocialLink";
-import { SocialLinkVariables, TwitterLinkCredentials } from "../types";
+import { TwitterLinkCredentials } from "../types";
 import { TWITTER_LINK_EXPIRED, FormattedError } from "../util/errors";
 import { isArray } from "lodash";
 import { decrypt } from "../util/crypto";
@@ -141,7 +141,7 @@ export class TwitterClient {
     //! Post media
     public static postV2 = async (
         participantId: string,
-        socialLink: SocialLinkVariables,
+        socialLink: PrismaSocialLink,
         text: string,
         data?: string,
         mediaType?: "photo" | "video" | "gif",
@@ -152,7 +152,10 @@ export class TwitterClient {
             logger.debug(`posting tweet to twitter with text: ${text}`);
             if (text.length > TwitterClient.textLimit) throw new Error("Text too long for twitter");
             const options: { [key: string]: string } = { status: text };
-            const client = TwitterClient.getClient({ apiKey: socialLink.apiKey, apiSecret: socialLink.apiSecret });
+            const client = TwitterClient.getClient({
+                apiKey: socialLink.apiKey || "",
+                apiSecret: socialLink.apiSecret || "",
+            });
             if (data && mediaType && mediaFormat) {
                 options["media_ids"] =
                     mediaType === "photo"
@@ -263,13 +266,16 @@ export class TwitterClient {
         }
     };
 
-    public static getPost = async (socialLink: SocialLinkVariables, id: string, cached = true): Promise<string> => {
+    public static getPost = async (socialLink: PrismaSocialLink, id: string, cached = true): Promise<string> => {
         let cacheKey = `twitter:${id}`;
         if (cached) {
             const cachedResponse = await getRedis().get(cacheKey);
             if (cachedResponse) return cachedResponse;
         }
-        const client = TwitterClient.getClient({ apiKey: socialLink.apiKey, apiSecret: socialLink.apiSecret });
+        const client = TwitterClient.getClient({
+            apiKey: decrypt(socialLink.apiKey || "") || "",
+            apiSecret: decrypt(socialLink.apiSecret || "") || "",
+        });
         const twitterResponse = await client.get("/statuses/show", { id });
         await getRedis().set(cacheKey, JSON.stringify(twitterResponse), "EX", 900); // cache for 15 minutes
         return JSON.stringify(twitterResponse);

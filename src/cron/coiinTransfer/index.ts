@@ -2,25 +2,22 @@ import { Secrets } from "../../util/secrets";
 import { Application } from "../../app";
 import * as dotenv from "dotenv";
 import { Firebase } from "../../clients/firebase";
-import { Org } from "../../models/Org";
-import { COIIN, BSC, RAIINMAKER_ORG_NAME, COIIN_ALERT_TRIGGER_LIMIT } from "../../util/constants";
-import { Currency } from "../../models/Currency";
-import { Token } from "../../models/Token";
+import { COIIN, BSC, RAIINMAKER_ORG_NAME, COIIN_ALERT_TRIGGER_LIMIT, TransferStatus } from "../../util/constants";
 import { SesClient } from "../../clients/ses";
-import { Transfer } from "../../models/Transfer";
-import { In } from "typeorm";
 import { TatumClient } from "../../clients/tatumClient";
+import { prisma } from "../../clients/prisma";
+import { Currency } from "@prisma/client";
 
 dotenv.config();
 const app = new Application();
 console.log("APP instance created.");
 
 const fixFailedCoiinTransfers = async (raiinmakerCoiinCurrency: Currency) => {
-    const failedCoiinTransfersCount = await Transfer.count({
+    const failedCoiinTransfersCount = await prisma.transfer.count({
         where: {
             status: "FAILED",
             currency: COIIN,
-            action: In(["SHARING_REWARD", "PARTICIPATION_REWARD", "LOGIN_REWARD"]),
+            action: { in: ["SHARING_REWARD", "PARTICIPATION_REWARD", "LOGIN_REWARD"] },
         },
     });
     console.log("FAILED COIIN TRANSFERS: ", failedCoiinTransfersCount);
@@ -29,19 +26,18 @@ const fixFailedCoiinTransfers = async (raiinmakerCoiinCurrency: Currency) => {
         let skip = 0;
         const paginatedLoop = Math.ceil(failedCoiinTransfersCount / take);
         for (let pageIndex = 0; pageIndex < paginatedLoop; pageIndex++) {
-            const failedCoiinTransfers = await Transfer.find({
+            const failedCoiinTransfers = await prisma.transfer.findMany({
                 where: {
                     status: "FAILED",
                     currency: COIIN,
-                    action: In(["SHARING_REWARD", "PARTICIPATION_REWARD", "LOGIN_REWARD"]),
+                    action: { in: ["SHARING_REWARD", "PARTICIPATION_REWARD", "LOGIN_REWARD"] },
                 },
-                relations: ["wallet"],
                 take,
                 skip,
             });
             for (const transfer of failedCoiinTransfers) {
                 const userCurrency = await TatumClient.findOrCreateCurrency({
-                    wallet: transfer.wallet,
+                    walletId: transfer.walletId || "",
                     symbol: COIIN,
                     network: BSC,
                 });
@@ -52,16 +48,18 @@ const fixFailedCoiinTransfers = async (raiinmakerCoiinCurrency: Currency) => {
                         amount: transfer.amount.toString(),
                         recipientNote: "COMPENSATING_FAILED_TRANSFER",
                     });
-                    transfer.status = "SUCCEEDED";
+                    console.log(
+                        "TRANSFER FIXED: ",
+                        transfer.id,
+                        transfer.amount.toString(),
+                        transfer.walletId,
+                        transfer.action
+                    );
+                    await prisma.transfer.update({
+                        where: { id: transfer.id },
+                        data: { status: TransferStatus.SUCCEEDED },
+                    });
                 } catch (error) {}
-                console.log(
-                    "TRANSFER FIXED: ",
-                    transfer.id,
-                    transfer.amount.toString(),
-                    transfer.wallet.id,
-                    transfer.action
-                );
-                await transfer.save();
             }
         }
         skip += take;
@@ -69,7 +67,7 @@ const fixFailedCoiinTransfers = async (raiinmakerCoiinCurrency: Currency) => {
 };
 
 const fixFailedCampaignTransfers = async () => {
-    const failedCampaignTransfersCount = await Transfer.count({
+    const failedCampaignTransfersCount = await prisma.transfer.count({
         where: {
             status: "FAILED",
             action: "CAMPAIGN_REWARD",
@@ -81,39 +79,44 @@ const fixFailedCampaignTransfers = async () => {
         let skip = 0;
         const paginatedLoop = Math.ceil(failedCampaignTransfersCount / take);
         for (let pageIndex = 0; pageIndex < paginatedLoop; pageIndex++) {
-            const failedCampaignTransfers = await Transfer.find({
+            const failedCampaignTransfers = await prisma.transfer.findMany({
                 where: {
                     status: "FAILED",
                     action: "CAMPAIGN_REWARD",
                 },
-                relations: ["wallet", "campaign", "campaign.currency"],
                 take,
                 skip,
             });
             for (const transfer of failedCampaignTransfers) {
                 const userCurrency = await TatumClient.findOrCreateCurrency({
-                    wallet: transfer.wallet,
+                    walletId: transfer.walletId || "",
                     symbol: COIIN,
                     network: BSC,
                 });
-                const orgCurrency = transfer.campaign.currency;
+                const campaign = await prisma.campaign.findFirst({ where: { id: transfer.campaignId || "" } });
+                if (!campaign) throw new Error("Campaign not found.");
+                const campaignCurrency = await prisma.currency.findFirst({ where: { id: campaign.currencyId || "" } });
+                if (!campaignCurrency) throw new Error("Currency not found for campaign.");
+
                 try {
                     await TatumClient.transferFunds({
-                        senderAccountId: orgCurrency.tatumId,
+                        senderAccountId: campaignCurrency.tatumId,
                         recipientAccountId: userCurrency.tatumId,
                         amount: transfer.amount.toString(),
                         recipientNote: "COMPENSATING_FAILED_TRANSFER",
                     });
-                    transfer.status = "SUCCEEDED";
+                    console.log(
+                        "TRANSFER FIXED: ",
+                        transfer.id,
+                        transfer.amount.toString(),
+                        transfer.walletId,
+                        transfer.action
+                    );
+                    await prisma.transfer.update({
+                        where: { id: transfer.id },
+                        data: { status: TransferStatus.SUCCEEDED },
+                    });
                 } catch (error) {}
-                console.log(
-                    "TRANSFER FIXED: ",
-                    transfer.id,
-                    transfer.amount.toString(),
-                    transfer.wallet.id,
-                    transfer.action
-                );
-                await transfer.save();
             }
         }
         skip += take;
@@ -128,20 +131,21 @@ const fixFailedCampaignTransfers = async () => {
     console.log("Secrets and connection initialized.");
     try {
         const emailAddressList = ["ray@raiinmaker.com", "murad@raiinmaker.com", "ben@raiinmaker.com"];
-        const raiinmakerOrg = await Org.findOne({ where: { name: RAIINMAKER_ORG_NAME }, relations: ["wallet"] });
-        if (!raiinmakerOrg) throw new Error("Org not found.");
-        const raiinmakerCoiinCurrency = await Currency.findOne({
-            where: {
-                wallet: raiinmakerOrg.wallet,
-                token: await Token.findOne({ where: { symbol: COIIN, network: BSC } }),
-            },
-            relations: ["token"],
+        const raiinmakerOrg = await prisma.org.findFirst({ where: { name: RAIINMAKER_ORG_NAME } });
+        if (!raiinmakerOrg) throw new Error("Org not found for raiinmaker.");
+        const raiinmakerWallet = await prisma.wallet.findFirst({ where: { orgId: raiinmakerOrg.id } });
+        if (!raiinmakerWallet) throw new Error("Wallet not found fro raiinmaker.");
+        const coiinToken = await prisma.token.findFirst({ where: { symbol: COIIN, network: BSC } });
+        if (!coiinToken) throw new Error("Coiin token not found.");
+        const raiinmakerCoiinCurrency = await prisma.currency.findFirst({
+            where: { walletId: raiinmakerWallet.id, tokenId: coiinToken.id },
         });
         if (!raiinmakerCoiinCurrency) throw new Error("Coiin currency not found for raiinmaker.");
-        const balance = await raiinmakerOrg.getAvailableBalance(raiinmakerCoiinCurrency.token);
-        if (process.env.NODE_ENV === "production" && balance < COIIN_ALERT_TRIGGER_LIMIT) {
+        const balanceData = await TatumClient.getAccountBalance(raiinmakerCoiinCurrency.tatumId);
+        const availableBalance = parseFloat(balanceData.availableBalance);
+        if (process.env.NODE_ENV === "production" && availableBalance < COIIN_ALERT_TRIGGER_LIMIT) {
             for (const email of emailAddressList) {
-                await SesClient.coiinBalanceAlert(email, balance);
+                await SesClient.coiinBalanceAlert(email, availableBalance);
             }
         }
         await fixFailedCoiinTransfers(raiinmakerCoiinCurrency);

@@ -24,7 +24,7 @@ dotenv.config();
             console.log("created tatum account for this participant --- ", index, participant.id);
             const wallet = await Wallet.findOne({ where: { user: participant.user } });
             if (!wallet) throw new Error("User wallet not found.");
-            await TatumClient.findOrCreateCurrency({ symbol: MATIC, network: MATIC, wallet: wallet });
+            await TatumClient.findOrCreateCurrency({ symbol: MATIC, network: MATIC, walletId: wallet.id });
         }
         await connection.close();
         process.exit(0);

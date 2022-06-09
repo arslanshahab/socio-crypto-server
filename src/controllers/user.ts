@@ -64,7 +64,7 @@ export const participate = async (
         if (!campaign.isOpen()) throw new Error(CAMPAIGN_CLOSED);
 
         if (await Participant.findOne({ where: { campaign, user } })) throw new Error(ALREADY_PARTICIPATING);
-        await TatumClient.findOrCreateCurrency({ ...campaign.currency.token, wallet: user.wallet });
+        await TatumClient.findOrCreateCurrency({ ...campaign.currency.token, walletId: user.wallet.id });
         const participant = await Participant.createNewParticipant(user, campaign, args.email);
         if (!campaign.isGlobal) await user.transferCoiinReward({ type: "PARTICIPATION_REWARD", campaign });
         return await participant.asV2();
@@ -496,7 +496,7 @@ export const rewardUserForSharing = async (
                 relations: ["campaign"],
             });
             if (!participant) {
-                await TatumClient.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet: user.wallet });
+                await TatumClient.findOrCreateCurrency({ symbol: COIIN, network: BSC, walletId: user.wallet.id });
                 participant = await Participant.createNewParticipant(user, globalCampaign, user.email);
             }
         } else {
