@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { getCurrentHub } from "@sentry/node";
 
-const { PG_URL, PG_HOST, PG_PORT, PG_USER, PG_PASSWORD } = process.env;
+const { PG_URL, PG_HOST, PG_PORT, PG_USER, PG_PASSWORD, PG_HOST_READER } = process.env;
 
 export const prisma = new PrismaClient({
     datasources: {
@@ -46,7 +46,7 @@ prisma.$use(async (params, next) => {
 export const readPrisma = new PrismaClient({
     datasources: {
         db: {
-            url: PG_URL || `postgresql://${PG_USER}:${PG_PASSWORD}@${PG_HOST}:${PG_PORT}/postgres`,
+            url: PG_URL || `postgresql://${PG_USER}:${PG_PASSWORD}@${PG_HOST_READER}:${PG_PORT}/postgres`,
         },
     },
 });

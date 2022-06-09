@@ -49,6 +49,7 @@ import { TransferService } from "../../services/TransferService";
 import { EscrowService } from "../../services/EscrowService";
 import { CampaignTemplateService } from "../../services/CampaignTemplateService";
 import { TatumClientService } from "../../services/TatumClientService";
+import { readPrisma } from "../../clients/prisma";
 
 const validator = new Validator();
 
@@ -93,6 +94,8 @@ export class CampaignController {
     @Get()
     @(Returns(200, SuccessResult).Of(Pagination).Nested(CampaignResultModel))
     public async list(@QueryParams() query: ListCampaignsVariablesModel, @Context() context: Context) {
+        let campaigns = await readPrisma.campaign.findMany();
+        console.log("all campaigns with read prisma---------", campaigns.length);
         const user = await this.userService.findUserByContext(context.get("user"));
         const [items, total] = await this.campaignService.findCampaignsByStatus(query, user || undefined);
         const modelItems = await Promise.all(items.map((i) => CampaignResultModel.build(i as any)));
