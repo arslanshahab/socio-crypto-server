@@ -46,7 +46,7 @@ prisma.$use(async (params, next) => {
 export const readPrisma = new PrismaClient({
     datasources: {
         db: {
-            url: "staging-database.cluster-ro-cuqkwt1n17k6.us-west-1.rds.amazonaws.com",
+            url: PG_URL || `postgresql://${PG_USER}:${PG_PASSWORD}@${PG_HOST}:${PG_PORT}/postgres`,
         },
     },
 });
