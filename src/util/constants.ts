@@ -107,7 +107,7 @@ export enum CampaignStatus {
     DENIED = "DENIED",
 }
 export enum CampaignAuditStatus {
-    DEFAULT = "ACTIVE",
+    DEFAULT = "DEFAULT",
     PENDING = "PENDING",
     AUDITED = "AUDITED",
 }
