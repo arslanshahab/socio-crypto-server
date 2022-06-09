@@ -572,9 +572,10 @@ export class CampaignController {
                     participationScore: 0,
                 }
             );
+            const campaignName = await this.campaignService.findCampaignById(campaignId);
             aggregatedCampaignMetrics = {
                 ...aggregatedCampaignMetrics,
-                campaignName: participantMetrics[0].campaign?.name,
+                campaignName: campaignName?.name,
             };
             campaignMetrics = await this.dailyParticipantMetricService.getOrgMetrics(campaignId);
             campaignMetrics = campaignMetrics.reduce(
