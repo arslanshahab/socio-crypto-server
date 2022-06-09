@@ -138,7 +138,7 @@ export const createNewCampaign = async (parent: any, args: NewCampaignVariables,
         if (!wallet) throw new Error("Wallet not found.");
         let currency;
         if (type === "crypto") {
-            currency = await TatumClient.findOrCreateCurrency({ symbol, network, wallet });
+            currency = await TatumClient.findOrCreateCurrency({ symbol, network, walletId: wallet.id });
         }
         if (await Campaign.findOne({ name: ILike(name) })) return new Error(CAMPAIGN_NAME_EXISTS);
         const campaign = Campaign.newCampaign(

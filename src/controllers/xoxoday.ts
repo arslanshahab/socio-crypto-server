@@ -222,7 +222,11 @@ const ifUserCanRedeem = async (user: User, totalCoiinSpent: number) => {
     }
     if (Boolean(await Transfer.getLast24HourRedemption(user.wallet, "XOXODAY_REDEMPTION")))
         throw new Error("You can only redeem once in 24 hours!");
-    const userCurrency = await TatumClient.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet: user.wallet });
+    const userCurrency = await TatumClient.findOrCreateCurrency({
+        symbol: COIIN,
+        network: BSC,
+        walletId: user.wallet.id,
+    });
     const coiinBalance = new BN((await TatumClient.getAccountBalance(userCurrency.tatumId)).availableBalance);
     if (coiinBalance.isLessThanOrEqualTo(0) || coiinBalance.isLessThan(totalCoiinSpent))
         throw new Error("Not enough coiin balance to proceed with this transaction!");

@@ -1,11 +1,10 @@
 import { Secrets } from "../../util/secrets";
 import { Application } from "../../app";
 import * as dotenv from "dotenv";
-import { Campaign } from "../../models/Campaign";
-import { LessThan, EntityManager } from "typeorm";
-import { DateUtils } from "typeorm/util/DateUtils";
-import { payoutCryptoCampaignRewards, payoutRaffleCampaignRewards } from "./auditFunctions";
+import { payoutCryptoCampaignRewards } from "./auditFunctions";
 import { Firebase } from "../../clients/firebase";
+import { CampaignAuditStatus, CampaignStatus } from "../../util/constants";
+import { prisma } from "../../clients/prisma";
 
 dotenv.config();
 const app = new Application();
@@ -17,23 +16,28 @@ console.log("APP instance created.");
     await Firebase.initialize();
     const connection = await app.connectDatabase();
     console.log("Secrets and connection initialized.");
+    const now = new Date();
     try {
-        let date = new Date();
-        const campaigns = await Campaign.find({
+        const campaigns = await prisma.campaign.findMany({
             where: {
-                status: "APPROVED",
-                auditStatus: "PENDING",
-                endDate: LessThan(DateUtils.mixedDateToDatetimeString(date)),
+                endDate: { lte: now },
+                status: CampaignStatus.APPROVED,
+                auditStatus: CampaignAuditStatus.PENDING,
             },
         });
-        const entityManager = new EntityManager(connection);
         console.log(`TOTAL CAMPAIGNS TO BE AUDITED--- ${campaigns.map((item) => item.id)}`);
         for (let index = 0; index < campaigns.length; index++) {
-            const campaign = await Campaign.findOne({
+            const campaign = await prisma.campaign.findUnique({
                 where: {
                     id: campaigns[index].id,
                 },
-                relations: ["currency", "org", "currency.token"],
+                include: {
+                    currency: {
+                        include: {
+                            token: true,
+                        },
+                    },
+                },
             });
             if (!campaign) throw new Error("Campaign not found.");
             console.log(
@@ -47,12 +51,9 @@ console.log("APP instance created.");
                 campaign?.tatumBlockageId
             );
             let deviceIds;
-            switch (campaign.type.toLowerCase()) {
+            switch (campaign?.type?.toLowerCase()) {
                 case "crypto":
                     deviceIds = await payoutCryptoCampaignRewards(campaign);
-                    break;
-                case "raffle":
-                    deviceIds = await payoutRaffleCampaignRewards(entityManager, campaign, []);
                     break;
                 default:
                     throw new Error("campaign type is invalid");

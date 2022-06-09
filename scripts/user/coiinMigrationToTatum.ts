@@ -36,7 +36,7 @@ dotenv.config();
             const coiinCurrency = user.wallet.currency.find((item) => item.symbol.toUpperCase() === COIIN);
             if (!coiinCurrency) {
                 legderPromises.push(
-                    TatumClient.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet: user.wallet })
+                    TatumClient.findOrCreateCurrency({ symbol: COIIN, network: BSC, walletId: user.wallet.id })
                 );
                 console.log("creating legder account promise", index, user.id);
             }

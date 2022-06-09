@@ -1,10 +1,9 @@
-import { Participant } from "../../models/Participant";
 import { BigNumber } from "bignumber.js";
-import { Campaign } from "../../models/Campaign";
-import { User } from "../../models/User";
-import { SocialPost } from "../../models/SocialPost";
 import { BN } from "../../util";
-import { SocialLink } from "../../models/SocialLink";
+import { Participant } from "@prisma/client";
+import { Campaign } from "@prisma/client";
+import { User } from "@prisma/client";
+import { prisma } from "../../clients/prisma";
 
 export class EngagementRate {
     participant: Participant;
@@ -18,20 +17,20 @@ export class EngagementRate {
     shareCount: BigNumber;
     commentCount: BigNumber;
 
-    constructor(participant: Participant, campaign: Campaign) {
+    constructor(participant: Participant, campaign: Campaign, user: User) {
         this.participant = participant;
         this.campaign = campaign;
-        this.user = participant.user;
+        this.user = user;
     }
 
     async getParticipantSocialData() {
-        this.postCount = new BN(
-            await SocialPost.count({ where: { campaign: this.campaign, user: this.user, type: "twitter" } })
-        );
-        this.followerCount = new BN(
-            (await SocialLink.findOne({ where: { user: this.user, type: "twitter" } }))?.followerCount || 0
-        );
-        const { likeCount, shareCount, commentCount } = await User.getUserTotalSocialEngagement(this.user.id);
+        const totalPosts = await prisma.socialPost.count({
+            where: { campaignId: this.campaign.id, userId: this.user.id, type: "twitter" },
+        });
+        this.postCount = new BN(totalPosts);
+        const socialLink = await prisma.socialLink.findFirst({ where: { userId: this.user.id, type: "twitter" } });
+        this.followerCount = new BN(socialLink?.followerCount || 0);
+        const { likeCount, shareCount, commentCount } = await this.getUserTotalSocialEngagement(this.user.id);
         this.potentialEngagement = this.postCount.times(this.followerCount);
         this.likeCount = new BN(likeCount);
         this.shareCount = new BN(shareCount);
@@ -44,15 +43,25 @@ export class EngagementRate {
             likeRate: this.likeCount.div(this.potentialEngagement),
             shareRate: this.shareCount.div(this.potentialEngagement),
             commentRate: this.commentCount.div(this.potentialEngagement),
-            clickRate: this.participant.clickCount.div(this.potentialEngagement),
+            clickRate: new BN(this.participant.clickCount).div(this.potentialEngagement),
         };
     }
 
+    getUserTotalSocialEngagement = async (userId: string) => {
+        const userPosts = await prisma.socialPost.findMany({ where: { userId } });
+        const likeCount = userPosts.map((item) => parseFloat(item.likes || "0")).reduce((sum, item) => sum + item, 0);
+        const shareCount = userPosts.map((item) => parseFloat(item.shares || "0")).reduce((sum, item) => sum + item, 0);
+        const commentCount = userPosts
+            .map((item) => parseFloat(item.comments || "0"))
+            .reduce((sum, item) => sum + item, 0);
+        return { likeCount, shareCount, commentCount };
+    };
+
     views() {
-        return this.participant.clickCount.div(this.participant.viewCount);
+        return new BN(this.participant.clickCount).div(this.participant.viewCount);
     }
 
     submissions() {
-        return this.participant.clickCount.div(this.participant.submissionCount);
+        return new BN(this.participant.clickCount).div(this.participant.submissionCount);
     }
 }
