@@ -49,6 +49,7 @@ import { TransferService } from "../../services/TransferService";
 import { EscrowService } from "../../services/EscrowService";
 import { CampaignTemplateService } from "../../services/CampaignTemplateService";
 import { TatumClientService } from "../../services/TatumClientService";
+import { MarketDataService } from "../../services/MarketDataService";
 
 const validator = new Validator();
 
@@ -89,13 +90,23 @@ export class CampaignController {
     private userService: UserService;
     @Inject()
     private tatumClientService: TatumClientService;
+    @Inject()
+    private marketDataService: MarketDataService;
 
     @Get()
     @(Returns(200, SuccessResult).Of(Pagination).Nested(CampaignResultModel))
     public async list(@QueryParams() query: ListCampaignsVariablesModel, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         const [items, total] = await this.campaignService.findCampaignsByStatus(query, user || undefined);
-        const modelItems = await Promise.all(items.map((i) => CampaignResultModel.build(i as any)));
+        const modelItems = await Promise.all(
+            items.map(async (i) => {
+                const campaignTokenValueInUSD = await this.marketDataService.getTokenValueInUSD(
+                    i.currency?.token?.symbol || "",
+                    parseFloat(i.coiinTotal)
+                );
+                return CampaignResultModel.build(i, campaignTokenValueInUSD);
+            })
+        );
         return new SuccessResult(new Pagination(modelItems, total, CampaignResultModel), Pagination);
     }
 
@@ -109,7 +120,14 @@ export class CampaignController {
             campaign_template: true,
         });
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
-        return new SuccessResult(await CampaignResultModel.build(campaign), CampaignResultModel);
+        const campaignTokenValueInUSD = await this.marketDataService.getTokenValueInUSD(
+            campaign.currency?.token?.symbol || "",
+            parseFloat(campaign.coiinTotal)
+        );
+        return new SuccessResult(
+            await CampaignResultModel.build(campaign, campaignTokenValueInUSD),
+            CampaignResultModel
+        );
     }
 
     @Get("/current-campaign-tier")
