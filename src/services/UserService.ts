@@ -1,4 +1,4 @@
-import { Campaign, Org, Prisma, User, Wallet } from "@prisma/client";
+import { Campaign, Prisma, User, Wallet } from "@prisma/client";
 import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
 import { BadRequest, Forbidden, NotFound } from "@tsed/exceptions";
@@ -15,6 +15,7 @@ import { TransferService } from "./TransferService";
 import { OrganizationService } from "./OrganizationService";
 import { TatumClientService } from "./TatumClientService";
 import { createPasswordHash } from "../util";
+import { UseCache } from "@tsed/common";
 
 type Array2TrueMap<T> = T extends string[] ? { [idx in T[number]]: true } : undefined;
 
@@ -40,6 +41,7 @@ export class UserService {
      * @param include additional relations to include with the user query
      * @returns the user object, with the requested relations included
      */
+
     public async findUserByContext<T extends (keyof Prisma.UserInclude)[] | Prisma.UserInclude | undefined>(
         data: JWTPayload,
         include?: T
@@ -54,6 +56,7 @@ export class UserService {
      * @param include additional relations to include with the user query
      * @returns the user object, with the requested relations included
      */
+    @UseCache({ ttl: 3600, refreshThreshold: 900 })
     public async findUserById<T extends (keyof Prisma.UserInclude)[] | Prisma.UserInclude | undefined>(
         userId: string | Prisma.StringFilter,
         include?: T
@@ -163,7 +166,8 @@ export class UserService {
      * @param user the user to retrieve the wallet for
      * @returns the wallet's address
      */
-    public async getCoiinAddress(user: User & { wallet: Wallet & { org: Org | null } }) {
+    @UseCache({ ttl: 3600, refreshThreshold: 900 })
+    public async getCoiinAddress(user: User & { wallet: Wallet }) {
         let currency = await this.addressService.findOrCreateCurrency(
             {
                 symbol: COIIN,

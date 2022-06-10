@@ -11,6 +11,7 @@ import { CurrentCampaignModel } from "../models/RestModels";
 import { CryptoCurrencyService } from "./CryptoCurrencyService";
 import { CAMPAIGN_CREATION_AMOUNT } from "../clients/tatumClient";
 import { TatumClientService } from "./TatumClientService";
+import { UseCache } from "@tsed/common";
 
 @Injectable()
 export class CampaignService {
@@ -28,6 +29,7 @@ export class CampaignService {
      * @param user an optional user include in the campaign results (depends on params.userRelated)
      * @returns the list of campaigns, and a count of total campaigns, matching the parameters
      */
+    @UseCache({ ttl: 3600, refreshThreshold: 900 })
     public async findCampaignsByStatus(params: ListCampaignsVariablesV2, user?: User) {
         const now = new Date();
 
@@ -68,6 +70,7 @@ export class CampaignService {
         ]);
     }
 
+    @UseCache({ ttl: 3600, refreshThreshold: 900 })
     public async findCampaignById<T extends Prisma.CampaignInclude | undefined>(
         campaignId: string,
         include?: T,
@@ -88,6 +91,7 @@ export class CampaignService {
         });
     }
 
+    @UseCache({ ttl: 3600, refreshThreshold: 900 })
     public async findGlobalCampaign(isGlobal: true, symbol: string) {
         return this.prismaService.campaign.findFirst({
             where: {
@@ -97,6 +101,7 @@ export class CampaignService {
             include: { org: true },
         });
     }
+    @UseCache({ ttl: 3600, refreshThreshold: 900 })
     public async findCampaingByName(name: string) {
         return this.prismaService.campaign.findFirst({
             where: {
@@ -235,10 +240,12 @@ export class CampaignService {
             },
         });
     }
+
     public async findCampaignsByOrgId(orgId: string) {
         return await this.prismaService.campaign.findMany({ where: { orgId } });
     }
 
+    @UseCache({ ttl: 3600, refreshThreshold: 900 })
     public async currentCampaignTier(campaignId: string) {
         let currentTierSummary;
         let currentCampaign: Campaign | null;
