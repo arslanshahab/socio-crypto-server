@@ -7,6 +7,7 @@ import { PlatformApplication } from "@tsed/common";
 import { UserAuthMiddleware } from "./middleware/UserAuthMiddleware";
 import "./services/PrismaService";
 import "./middleware/HttpExceptionFilter";
+import RedisStore from "cache-manager-redis-store";
 // import * as bodyParser from "body-parser";
 // import * as compress from "compression";
 // import * as cookieParser from "cookie-parser";
@@ -22,6 +23,10 @@ const { NODE_ENV = "development" } = process.env;
     port: process.env.PORT || 8080,
     mount: {
         "/v1": [`${__dirname}/controllers/v1/**/*.[jt]s`],
+    },
+    cache: {
+        ttl: 3600,
+        store: RedisStore,
     },
     swagger:
         NODE_ENV !== "production"

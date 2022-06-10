@@ -1,6 +1,5 @@
 import Prisma from "@prisma/client";
 import { ArrayOf, CollectionOf, Nullable, Optional, Property, Required } from "@tsed/schema";
-import { getTokenValueInUSD } from "../util/exchangeRate";
 import { getCryptoAssestImageUrl } from "../util";
 
 export class CampaignMediaResultModel {
@@ -86,7 +85,8 @@ export class CampaignResultModel {
             crypto_currency: Prisma.CryptoCurrency | null;
             campaign_media: Prisma.CampaignMedia[];
             campaign_template: Prisma.CampaignTemplate[];
-        }
+        },
+        coiinTotalUSD: number
     ) {
         const result: CampaignResultModel = {
             ...campaign,
@@ -94,12 +94,8 @@ export class CampaignResultModel {
                 ParticipantResultModel.build({ ...participant, campaign })
             ),
         };
-        if (result.coiinTotal) {
-            const value = await getTokenValueInUSD(campaign.symbol, parseFloat(campaign.coiinTotal.toString()));
-            result.coiinTotalUSD = value.toFixed(2);
-        } else {
-            result.coiinTotalUSD = "0";
-        }
+
+        result.coiinTotalUSD = result.coiinTotal ? coiinTotalUSD.toFixed(2) : "0";
 
         if (campaign.currency) {
             result.network = campaign.currency.token?.network || "";

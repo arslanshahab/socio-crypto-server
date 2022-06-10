@@ -189,11 +189,9 @@ export class UserController {
     @Get("/me/coiin-address")
     @(Returns(200, SuccessResult).Of(AddressResultModel))
     public async getCoiinAddress(@Context() context: Context) {
-        const user = await this.userService.findUserByContext(context.get("user"), {
-            wallet: { include: { org: true } },
-        });
+        const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
-        const wallet = user.wallet;
+        const wallet = await this.walletService.findWalletByUserId(user.id);
         if (!wallet) throw new BadRequest(WALLET_NOT_FOUND);
         return new SuccessResult(await this.userService.getCoiinAddress({ ...user, wallet }), AddressResultModel);
     }
@@ -201,14 +199,13 @@ export class UserController {
     @Get("/me/transfer-history")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(TransferResultModel))
     public async getTransferHistory(@QueryParams() query: TransferHistoryVariablesModel, @Context() context: Context) {
-        const user = await this.userService.findUserByContext(context.get("user"), {
-            wallet: { include: { transfer: true, wallet_currency: true } },
-        });
+        const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
-        if (!user.wallet) throw new BadRequest(WALLET_NOT_FOUND);
+        const wallet = await this.walletService.findWalletByUserId(user.id);
+        if (!wallet) throw new BadRequest(WALLET_NOT_FOUND);
         const [data, count] = await this.transferService.findByWallet({
             ...query,
-            walletId: user.wallet.id,
+            walletId: wallet.id,
         });
         const results = data.map((item) => TransferResultModel.build(item));
 
