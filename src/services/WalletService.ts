@@ -7,7 +7,7 @@ export class WalletService {
     @Inject()
     private prismaService: PrismaService;
 
-    @UseCache({ ttl: 3600, refreshThreshold: 900 })
+    @UseCache({ ttl: 3600, refreshThreshold: 2700 })
     public async findWalletByOrgId(orgId: string) {
         return this.prismaService.wallet.findFirst({
             where: {
@@ -16,7 +16,7 @@ export class WalletService {
         });
     }
 
-    @UseCache({ ttl: 3600, refreshThreshold: 900 })
+    @UseCache({ ttl: 3600, refreshThreshold: 2700 })
     public async findWalletById(id: string) {
         return this.prismaService.wallet.findFirst({
             where: {
@@ -29,7 +29,7 @@ export class WalletService {
         });
     }
 
-    @UseCache({ ttl: 3600, refreshThreshold: 900 })
+    @UseCache({ ttl: 3600, refreshThreshold: 2700 })
     public async findWalletByUserId(userId: string) {
         return this.prismaService.wallet.findFirst({
             where: { userId },

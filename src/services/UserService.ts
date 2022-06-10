@@ -56,7 +56,7 @@ export class UserService {
      * @param include additional relations to include with the user query
      * @returns the user object, with the requested relations included
      */
-    @UseCache({ ttl: 3600, refreshThreshold: 900 })
+    @UseCache({ ttl: 3600, refreshThreshold: 2700 })
     public async findUserById<T extends (keyof Prisma.UserInclude)[] | Prisma.UserInclude | undefined>(
         userId: string | Prisma.StringFilter,
         include?: T
@@ -166,7 +166,7 @@ export class UserService {
      * @param user the user to retrieve the wallet for
      * @returns the wallet's address
      */
-    @UseCache({ ttl: 3600, refreshThreshold: 900 })
+    @UseCache({ ttl: 3600, refreshThreshold: 2700 })
     public async getCoiinAddress(user: User & { wallet: Wallet }) {
         let currency = await this.addressService.findOrCreateCurrency(
             {

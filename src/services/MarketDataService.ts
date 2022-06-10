@@ -8,7 +8,7 @@ export class MarketDataService {
     @Inject()
     private prismaService: PrismaService;
 
-    @UseCache({ ttl: 900, refreshThreshold: 300 })
+    @UseCache({ ttl: 900, refreshThreshold: 600 })
     public async findMarketData(symbol: string) {
         return this.prismaService.marketData.findFirst({
             where: { symbol: { contains: symbol, mode: "insensitive" } },
