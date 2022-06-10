@@ -1,18 +1,26 @@
 import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
-import { UseCache } from "@tsed/common";
 import { COIIN } from "../util/constants";
+import { PlatformCache } from "@tsed/common";
+import { MarketData } from "../models/MarketData";
 
 @Injectable()
 export class MarketDataService {
     @Inject()
     private prismaService: PrismaService;
+    @Inject()
+    private cache: PlatformCache;
 
-    @UseCache({ ttl: 900, refreshThreshold: 600 })
     public async findMarketData(symbol: string) {
-        return this.prismaService.marketData.findFirst({
+        const cacheKey = `market:data-${symbol}`;
+        let marketData = await this.cache.get(cacheKey);
+        console.log("murad-malik", typeof marketData);
+        if (marketData) return JSON.parse(marketData as string);
+        marketData = this.prismaService.marketData.findFirst({
             where: { symbol: { contains: symbol, mode: "insensitive" } },
         });
+        this.cache.set(cacheKey, JSON.stringify(marketData), { ttl: 900 });
+        return marketData as MarketData;
     }
 
     public async getExchangeRateForCrypto(symbol: string) {
