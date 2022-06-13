@@ -7,7 +7,7 @@ import { PlatformApplication } from "@tsed/common";
 import { UserAuthMiddleware } from "./middleware/UserAuthMiddleware";
 import "./services/PrismaService";
 import "./middleware/HttpExceptionFilter";
-import RedisStore from "cache-manager-redis-store";
+import RedisClient from "cache-manager-redis-store";
 // import * as bodyParser from "body-parser";
 // import * as compress from "compression";
 // import * as cookieParser from "cookie-parser";
@@ -16,7 +16,7 @@ import RedisStore from "cache-manager-redis-store";
 // based on https://tsed.io/getting-started/migrate-from-express.html#create-server
 // todo uncomment this code when all the routes are migrated
 
-const { NODE_ENV = "development" } = process.env;
+const { NODE_ENV = "development", REDIS_HOST = "localhost", REDIS_PORT = "6379" } = process.env;
 
 @Configuration({
     acceptMimes: ["application/json"],
@@ -26,7 +26,7 @@ const { NODE_ENV = "development" } = process.env;
     },
     cache: {
         ttl: 3600,
-        store: RedisStore,
+        store: RedisClient.create({ host: REDIS_HOST, port: Number(REDIS_PORT) }),
     },
     swagger:
         NODE_ENV !== "production"

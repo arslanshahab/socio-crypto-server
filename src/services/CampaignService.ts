@@ -33,7 +33,7 @@ export class CampaignService {
     @UseCache({
         ttl: 3600,
         refreshThreshold: 2700,
-        key: (args: any[]) => prepareCacheKey(args[0], CacheKeys.CAMPAIGN_BY_STATUS),
+        key: (args: any[]) => prepareCacheKey(args, CacheKeys.CAMPAIGN_BY_STATUS_SERVICE),
     })
     public async findCampaignsByStatus(params: ListCampaignsVariablesV2, user?: User) {
         const now = new Date();
@@ -78,7 +78,7 @@ export class CampaignService {
     @UseCache({
         ttl: 3600,
         refreshThreshold: 2700,
-        key: (args: any[]) => prepareCacheKey(args[0], CacheKeys.CAMPAIGN_BY_ID),
+        key: (args: any[]) => prepareCacheKey(args, CacheKeys.CAMPAIGN_BY_ID_SERVICE),
     })
     public async findCampaignById<T extends Prisma.CampaignInclude | undefined>(
         campaignId: string,
@@ -103,7 +103,7 @@ export class CampaignService {
     @UseCache({
         ttl: 3600,
         refreshThreshold: 2700,
-        key: (args: any[]) => prepareCacheKey(args[0], CacheKeys.CAMPAIGN_GLOBAL),
+        key: (args: any[]) => prepareCacheKey(args, CacheKeys.CAMPAIGN_GLOBAL_SERVICE),
     })
     public async findGlobalCampaign(isGlobal: true, symbol: string) {
         return this.prismaService.campaign.findFirst({
@@ -118,7 +118,7 @@ export class CampaignService {
     @UseCache({
         ttl: 3600,
         refreshThreshold: 2700,
-        key: (args: any[]) => prepareCacheKey(args[0], CacheKeys.CAMPAIGN_BY_NAME),
+        key: (args: any[]) => prepareCacheKey(args, CacheKeys.CAMPAIGN_BY_NAME_SERVICE),
     })
     public async findCampaingByName(name: string) {
         return this.prismaService.campaign.findFirst({
@@ -263,7 +263,7 @@ export class CampaignService {
     @UseCache({
         ttl: 3600,
         refreshThreshold: 2700,
-        key: (args: any[]) => prepareCacheKey(args[0], CacheKeys.CAMPAIGN_BY_STATUS),
+        key: (args: any[]) => prepareCacheKey(args, CacheKeys.CAMPAIGN_BY_STATUS_SERVICE),
     })
     public async findCampaignsByOrgId(orgId: string) {
         return await this.prismaService.campaign.findMany({ where: { orgId } });
@@ -272,7 +272,7 @@ export class CampaignService {
     @UseCache({
         ttl: 3600,
         refreshThreshold: 2700,
-        key: (args: any[]) => prepareCacheKey(args[0], CacheKeys.CAMPAIGN_BY_STATUS),
+        key: (args: any[]) => prepareCacheKey(args, CacheKeys.CAMPAIGN_BY_STATUS_SERVICE),
     })
     public async currentCampaignTier(campaignId: string) {
         let currentTierSummary;

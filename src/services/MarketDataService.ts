@@ -1,6 +1,6 @@
 import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
-import { COIIN } from "../util/constants";
+import { CacheKeys, COIIN } from "../util/constants";
 import { PlatformCache } from "@tsed/common";
 import { MarketData } from "../models/MarketData";
 
@@ -12,7 +12,7 @@ export class MarketDataService {
     private cache: PlatformCache;
 
     public async findMarketData(symbol: string) {
-        const cacheKey = `market:data-${symbol}`;
+        const cacheKey = `${CacheKeys.MARKET_DATA_SERVICE}:${symbol}`;
         let marketData = await this.cache.get(cacheKey);
         if (marketData) return JSON.parse(marketData as string);
         marketData = this.prismaService.marketData.findFirst({
