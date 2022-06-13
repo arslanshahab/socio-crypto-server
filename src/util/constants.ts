@@ -106,16 +106,19 @@ export enum CampaignStatus {
     APPROVED = "APPROVED",
     DENIED = "DENIED",
 }
+
 export enum CampaignAuditStatus {
     DEFAULT = "DEFAULT",
     PENDING = "PENDING",
     AUDITED = "AUDITED",
 }
+
 export enum CampaignState {
     ALL = "ALL",
     OPEN = "OPEN",
     CLOSED = "CLOSED",
 }
+
 export enum SocialClientType {
     FACEBOOK = "facebook",
     TWITTER = "twitter",
@@ -137,6 +140,7 @@ export enum TransferAction {
     NETWORK_REWARD = "NETWORK_REWARD",
     XOXODAY_REDEMPTION = "XOXODAY_REDEMPTION",
 }
+
 export enum TransferStatus {
     BLOCKED = "BLOCKED",
     CANCELED = "CANCELED",
@@ -151,7 +155,23 @@ export enum TransferStatus {
     APPROVED = "APPROVED",
     REJECTED = "REJECTED",
 }
+
 export enum CoiinTransferAction {
     ADD = "ADD",
     REMOVE = "REMOVE",
+}
+
+export enum CacheKeys {
+    CAMPAIGN_BY_STATUS_SERVICE = "CAMPAIGN-BY-STATUS",
+    CAMPAIGN_BY_ID_SERVICE = "CAMPAIGN-BY-ID",
+    CAMPAIGN_BY_NAME_SERVICE = "CAMPAIGN-BY-NAME",
+    CAMPAIGN_BY_ORG_SERVICE = "CAMPAIGN-BY-ORG",
+    CAMPAIGN_GLOBAL_SERVICE = "CAMPAIGN-GLOBAL",
+    CAMPAIGN_TIER_SERVICE = "CAMPAIGN-TIER",
+    MARKET_DATA_SERVICE = "MARKET-DATA",
+    USER_BY_ID_SERVICE = "USER-BY-ID",
+    USER_COIIN_ADDRESS_SERVICE = "USER-COIIN-ADDRESS",
+    WALLET_BY_ID_SERVICE = "WALLET-BY-ID",
+    WALLET_BY_ORG_SERVICE = "WALLET-BY-ORG",
+    WALLET_BY_USER_SERVICE = "WALLET-BY-USER",
 }

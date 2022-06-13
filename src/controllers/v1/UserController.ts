@@ -234,7 +234,17 @@ export class UserController {
     @Get("/user-balances/:userId")
     @(Returns(200, SuccessResult).Of(UserWalletResultModel))
     public async getUserBalances(@PathParams() query: { userId: string }, @Context() context: Context) {
-        const user = await this.userService.getUserById(query.userId);
+        const user = await this.userService.findUserById(query.userId, {
+            wallet: {
+                include: {
+                    currency: {
+                        include: {
+                            token: true,
+                        },
+                    },
+                },
+            },
+        });
         if (!user) throw new BadRequest(USER_NOT_FOUND);
         const currencies = await getBalance(user);
         return new SuccessArrayResult(

@@ -463,3 +463,19 @@ export const verifySessionToken = (token: string): JWTPayload => {
     return jwt.verify(token, Secrets.encryptionKey, { audience: serverBaseUrl }) as JWTPayload;
 };
 // authentication helpers end here
+
+export const prepareCacheKey = (args: any, key: string) => {
+    for (const arg of args) {
+        if (typeof arg === "object") {
+            for (const param of Object.keys(arg)) {
+                if (param) key = `${key}:${param}=${arg[param]}`;
+            }
+        } else if (typeof arg === "string") {
+            key = `${key}:${arg}`;
+        } else if (typeof arg === "number") {
+            key = `${key}:${arg.toString()}`;
+        }
+    }
+    console.log(key);
+    return key;
+};
