@@ -449,6 +449,15 @@ export const createSessionToken = (user: User): string => {
     };
     return jwt.sign(payload, Secrets.encryptionKey, { expiresIn: "7d", audience: serverBaseUrl });
 };
+export const createSessionTokenV2 = (user: PrismaUser): string => {
+    const payload: JWTPayload = {
+        email: user.email,
+        id: user.identityId!,
+        userId: user.id,
+        role: "admin",
+    };
+    return jwt.sign(payload, Secrets.encryptionKey, { expiresIn: "7d", audience: serverBaseUrl });
+};
 
 export const verifySessionToken = (token: string): JWTPayload => {
     return jwt.verify(token, Secrets.encryptionKey, { audience: serverBaseUrl }) as JWTPayload;

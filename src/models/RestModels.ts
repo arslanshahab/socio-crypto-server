@@ -530,3 +530,12 @@ export class OrgDetailsModel {
 export class OrganizationDetailsResultModel {
     @Property() public readonly orgDetails: OrgDetailsModel[];
 }
+
+export class LoginParams {
+    @Required() public readonly email: string;
+    @Required() public readonly password: string;
+}
+
+export class UserLoginResultModel {
+    @Property() public readonly token: string;
+}
