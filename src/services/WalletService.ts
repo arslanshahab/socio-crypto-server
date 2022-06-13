@@ -1,6 +1,7 @@
 import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
 import { UseCache } from "@tsed/common";
+import { User } from "@prisma/client";
 
 @Injectable()
 export class WalletService {
@@ -39,6 +40,14 @@ export class WalletService {
     public async ifWalletBelongsToOrg(id: string) {
         return this.prismaService.wallet.findFirst({
             where: { id, NOT: { orgId: null } },
+        });
+    }
+
+    public async createWallet(user: User) {
+        return await this.prismaService.wallet.create({
+            data: {
+                userId: user.id,
+            },
         });
     }
 }

@@ -16,6 +16,8 @@ import { OrganizationService } from "./OrganizationService";
 import { TatumClientService } from "./TatumClientService";
 import { createPasswordHash } from "../util";
 import { UseCache } from "@tsed/common";
+import { ProfileService } from "./ProfileService";
+import { NotificationService } from "./NotificationService";
 
 type Array2TrueMap<T> = T extends string[] ? { [idx in T[number]]: true } : undefined;
 
@@ -33,6 +35,10 @@ export class UserService {
     private orgService: OrganizationService;
     @Inject()
     private tatumClientService: TatumClientService;
+    @Inject()
+    private profileService: ProfileService;
+    @Inject()
+    private notificationService: NotificationService;
 
     /**
      * Retrieves a user object from a JWTPayload
@@ -371,5 +377,21 @@ export class UserService {
 
     public async updateLastLogin(userId: string) {
         return await this.prismaService.user.update({ where: { id: userId }, data: { lastLogin: new Date() } });
+    }
+
+    public async initNewUser(email: string, username: string, password: string, referralCode?: string | null) {
+        const user = await this.prismaService.user.create({
+            data: {
+                email: email.trim(),
+                password: createPasswordHash({ email, password }),
+                referralCode: referralCode ? referralCode : null,
+            },
+        });
+
+        const wallet = await this.walletService.createWallet(user);
+        await this.profileService.createProfile(user, username);
+        await this.notificationService.createNotificationSetting(user.id);
+        await this.tatumClientService.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet: wallet });
+        return await user.id;
     }
 }

@@ -536,6 +536,14 @@ export class LoginParams {
     @Required() public readonly password: string;
 }
 
-export class UserLoginResultModel {
+export class UserTokenReturnModel {
     @Property() public readonly token: string;
+}
+
+export class RegisterUserParams {
+    @Required() public readonly email: string;
+    @Required() public readonly username: string;
+    @Required() public readonly password: string;
+    @Required() public readonly verificationToken: string;
+    @Nullable(String) public readonly referralCode: string | null;
 }
