@@ -16,13 +16,13 @@ console.log("APP instance created.");
     await Firebase.initialize();
     const connection = await app.connectDatabase();
     console.log("Secrets and connection initialized.");
-    const now = new Date();
+    // const now = new Date();
     try {
         const campaigns = await prisma.campaign.findMany({
             where: {
-                endDate: { lte: now },
                 status: CampaignStatus.APPROVED,
                 auditStatus: CampaignAuditStatus.PENDING,
+                isGlobal: false,
             },
         });
         console.log(`TOTAL CAMPAIGNS TO BE AUDITED--- ${campaigns.map((item) => item.id)}`);
