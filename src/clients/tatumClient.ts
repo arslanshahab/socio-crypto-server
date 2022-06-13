@@ -73,6 +73,14 @@ export interface WalletKeys {
     secret?: string;
     mnemonic?: string;
 }
+
+export interface BatchTransferPayload {
+    senderAccountId: string;
+    transaction: {
+        recipientAccountId: string;
+        amount: string;
+    }[];
+}
 export class TatumClient {
     public static baseUrl = "https://api-eu1.tatum.io/v3";
 
@@ -313,6 +321,22 @@ export class TatumClient {
         try {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
             return await storeTransaction(data);
+        } catch (error) {
+            console.log(error?.response?.data || error.message);
+            throw new Error(error?.response?.data?.message || error.message);
+        }
+    };
+
+    public static transferFundsBatch = async (data: BatchTransferPayload) => {
+        try {
+            const endpoint = `${TatumClient.baseUrl}/ledger/transaction/batch`;
+            const requestData: RequestData = {
+                method: "POST",
+                url: endpoint,
+                payload: data,
+                headers: { "x-api-key": Secrets.tatumApiKey },
+            };
+            return await doFetch(requestData);
         } catch (error) {
             console.log(error?.response?.data || error.message);
             throw new Error(error?.response?.data?.message || error.message);
