@@ -42,7 +42,7 @@ export class AuthenticationController {
         return new SuccessResult({ token: createSessionTokenV2(user) }, UserTokenReturnModel);
     }
 
-    @Post("/login")
+    @Post("/user-login")
     @(Returns(200, SuccessResult).Of(UserTokenReturnModel))
     public async loginUser(@BodyParams() body: LoginParams) {
         const { email, password } = body;
