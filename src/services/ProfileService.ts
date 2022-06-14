@@ -1,6 +1,7 @@
 import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
 import { User } from "@prisma/client";
+import { sha256Hash } from "../util/crypto";
 
 @Injectable()
 export class ProfileService {
@@ -10,6 +11,7 @@ export class ProfileService {
     public async findProfileByUsername(username: string) {
         return this.prismaService.profile.findFirst({
             where: { username: { contains: username, mode: "insensitive" } },
+            include: { user: true },
         });
     }
 
@@ -21,5 +23,10 @@ export class ProfileService {
                 username: username,
             },
         });
+    }
+
+    public async isRecoveryCodeValid(username: string, code: string) {
+        const profile = await this.findProfileByUsername(username);
+        return profile?.recoveryCode === sha256Hash(code);
     }
 }

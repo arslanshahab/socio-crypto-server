@@ -385,4 +385,10 @@ export class UserService {
         await this.tatumClientService.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet: wallet });
         return await user.id;
     }
+
+    public async updateEmailPassword(email: string, password: string) {
+        return await this.prismaService.user.create({
+            data: { email, password },
+        });
+    }
 }

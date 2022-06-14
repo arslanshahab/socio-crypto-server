@@ -552,3 +552,14 @@ export class ResetUserPasswordParams {
     @Required() public readonly verificationToken: string;
     @Required() public readonly password: string;
 }
+
+export class RecoverUserAccountStep1Parms {
+    @Required() public readonly username: string;
+    @Required() public readonly code: string;
+}
+export class RecoverUserAccountStep2Parms {
+    @Required() public readonly email: string;
+    @Required() public readonly password: string;
+    @Required() public readonly userId: string;
+    @Required() public readonly verificationToken: string;
+}

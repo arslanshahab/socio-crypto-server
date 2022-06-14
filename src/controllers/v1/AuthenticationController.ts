@@ -6,14 +6,18 @@ import {
     ACCOUNT_RESTRICTED,
     EMAIL_EXISTS,
     EMAIL_NOT_EXISTS,
+    INCORRECT_CODE,
     INCORRECT_PASSWORD,
     MISSING_PARAMS,
     USERNAME_EXISTS,
+    USERNAME_NOT_EXISTS,
     USER_NOT_FOUND,
 } from "../../util/errors";
 import {
     BooleanResultModel,
     LoginParams,
+    RecoverUserAccountStep1Parms,
+    RecoverUserAccountStep2Parms,
     RegisterUserParams,
     ResetUserPasswordParams,
     UserTokenReturnModel,
@@ -72,5 +76,30 @@ export class AuthenticationController {
         if (!user) throw new NotFound(USER_NOT_FOUND);
         await this.userService.resetUserPassword(user.id, user.email, password);
         return new SuccessResult({ success: true }, BooleanResultModel);
+    }
+
+    @Post("/recover-user-account-step1")
+    @(Returns(200, SuccessResult).Of(UserTokenReturnModel))
+    public async recoverUserAccountStep1(@BodyParams() body: RecoverUserAccountStep1Parms) {
+        const { username, code } = body;
+        if (!username || !code) throw new NotFound(MISSING_PARAMS);
+        const profile = await this.profileService.findProfileByUsername(username);
+        if (!profile) throw new NotFound(USERNAME_NOT_EXISTS);
+        if (!(await this.profileService.isRecoveryCodeValid(username, code))) throw new BadRequest(INCORRECT_CODE);
+        if (!profile.user) throw new NotFound(USER_NOT_FOUND);
+        if (!profile.user.email) return { userId: profile.user.id };
+        else return new SuccessResult({ token: createSessionTokenV2(profile.user) }, UserTokenReturnModel);
+    }
+
+    @Post("/recover-user-account-step2")
+    @(Returns(200, SuccessResult).Of(Object))
+    public async recoverUserAccountStep2(@BodyParams() body: RecoverUserAccountStep2Parms) {
+        const { email, password, userId, verificationToken } = body;
+        const user = await this.userService.findUserById(userId);
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        await this.verificationService.verifyToken({ verificationToken, email });
+        if (user.email) throw new BadRequest(EMAIL_EXISTS);
+        await this.userService.updateEmailPassword(email, createPasswordHash({ email, password }));
+        return new SuccessResult({ token: createSessionTokenV2(user) }, UserTokenReturnModel);
     }
 }
