@@ -530,3 +530,8 @@ export class OrgDetailsModel {
 export class OrganizationDetailsResultModel {
     @Property() public readonly orgDetails: OrgDetailsModel[];
 }
+
+export class UserParticipateParams {
+    @Required() public readonly campaignId: string;
+    @Property() public readonly email: string;
+}
