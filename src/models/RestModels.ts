@@ -547,3 +547,7 @@ export class RegisterUserParams {
     @Required() public readonly verificationToken: string;
     @Nullable(String) public readonly referralCode: string | null;
 }
+export class UserParticipateParams {
+    @Required() public readonly campaignId: string;
+    @Property() public readonly email: string;
+}
