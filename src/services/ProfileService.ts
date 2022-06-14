@@ -1,0 +1,25 @@
+import { Inject, Injectable } from "@tsed/di";
+import { PrismaService } from ".prisma/client/entities";
+import { User } from "@prisma/client";
+
+@Injectable()
+export class ProfileService {
+    @Inject()
+    private prismaService: PrismaService;
+
+    public async findProfileByUsername(username: string) {
+        return this.prismaService.profile.findFirst({
+            where: { username: { contains: username, mode: "insensitive" } },
+        });
+    }
+
+    public async createProfile(user: User, username: string) {
+        return await this.prismaService.profile.create({
+            data: {
+                userId: user.id,
+                email: user.email,
+                username: username,
+            },
+        });
+    }
+}
