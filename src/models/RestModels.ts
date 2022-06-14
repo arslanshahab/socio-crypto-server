@@ -547,6 +547,32 @@ export class RegisterUserParams {
     @Required() public readonly verificationToken: string;
     @Nullable(String) public readonly referralCode: string | null;
 }
+
+export class ResetUserPasswordParams {
+    @Required() public readonly verificationToken: string;
+    @Required() public readonly password: string;
+}
+
+export class RecoverUserAccountStep1Parms {
+    @Required() public readonly username: string;
+    @Required() public readonly code: string;
+}
+export class RecoverUserAccountStep2Parms {
+    @Required() public readonly email: string;
+    @Required() public readonly password: string;
+    @Required() public readonly userId: string;
+    @Required() public readonly verificationToken: string;
+}
+
+export class CompleteVerificationParams {
+    @Required() public readonly email: string;
+    @Required() public readonly code: string;
+}
+
+export class CompleteVerificationResultModel extends BooleanResultModel {
+    @Property() public readonly verificationToken: string;
+}
+
 export class UserParticipateParams {
     @Required() public readonly campaignId: string;
     @Property() public readonly email: string;

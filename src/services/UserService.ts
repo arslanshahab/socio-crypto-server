@@ -389,4 +389,24 @@ export class UserService {
         await this.tatumClientService.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet: wallet });
         return await user.id;
     }
+
+    public async updateEmailPassword(email: string, password: string) {
+        return await this.prismaService.user.create({
+            data: { email, password },
+        });
+    }
+
+    public async updatedUserEmail(email: string) {
+        const user = this.findUserByEmail(email);
+        if (!user) {
+            const profile = await this.profileService.findProfileByEmail(email);
+            if (profile) {
+                await this.prismaService.user.create({
+                    data: { email: profile.email!, password: "" },
+                });
+                await this.prismaService.profile.update({ where: { id: profile.id }, data: { email: "" } });
+            }
+        }
+        return user;
+    }
 }
