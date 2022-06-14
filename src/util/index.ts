@@ -25,6 +25,7 @@ import { Factor } from "../models/Factor";
 import { CRYPTO_ICONS_MAP, CRYPTO_ICONS_BUCKET_URL, COIIN } from "./constants";
 import { User as PrismaUser, VerificationApplication as PrismaVerficationApplication } from "@prisma/client";
 import { prisma } from "../clients/prisma";
+import { PlatformCache } from "@tsed/common";
 
 // general helper functions start here
 export const getMinWithdrawableAmount = async (symbol: string) => {
@@ -464,18 +465,22 @@ export const verifySessionToken = (token: string): JWTPayload => {
 };
 // authentication helpers end here
 
-export const prepareCacheKey = (args: any, key: string) => {
-    for (const arg of args) {
-        if (typeof arg === "object") {
-            for (const param of Object.keys(arg)) {
-                if (param) key = `${key}:${param}=${arg[param]}`;
-            }
-        } else if (typeof arg === "string") {
-            key = `${key}:${arg}`;
-        } else if (typeof arg === "number") {
-            key = `${key}:${arg.toString()}`;
+export const prepareCacheKey = (baseKey: string, args?: any) => {
+    let key = baseKey;
+    if (args) {
+        if (typeof args === "string") {
+            key = `${key}:${args}`;
+        } else {
+            key = `${key}:${JSON.stringify(args)}`;
         }
     }
-    console.log(key);
     return key;
+};
+
+export const resetCacheKey = async (baseKey: string, cacheInstance: PlatformCache, args?: any) => {
+    const allKeys = await cacheInstance.keys(`*${prepareCacheKey(baseKey, args)}*`);
+    console.log(allKeys);
+    for (const key of allKeys) {
+        await cacheInstance.del(key);
+    }
 };

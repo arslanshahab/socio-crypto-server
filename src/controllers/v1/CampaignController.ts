@@ -21,7 +21,7 @@ import {
     CampaignMetricsResultModel,
     CampaignResultModel,
     CreateCampaignResultModel,
-    CurrentCampaignModel,
+    CurrentCampaignTierModel,
     DeleteCampaignResultModel,
     GenerateCampaignAuditReportResultModel,
     MediaUrlsModel,
@@ -131,12 +131,13 @@ export class CampaignController {
     }
 
     @Get("/current-campaign-tier")
-    @(Returns(200, SuccessResult).Of(CurrentCampaignModel))
+    @(Returns(200, SuccessResult).Of(CurrentCampaignTierModel))
     public async getCurrentCampaignTier(@QueryParams() query: CampaignIdModel, @Context() context: Context) {
         const { campaignId } = query;
         const campaignTier = await this.campaignService.currentCampaignTier(campaignId);
-        return new SuccessResult(campaignTier, CurrentCampaignModel);
+        return new SuccessResult(campaignTier, CurrentCampaignTierModel);
     }
+
     @Get("/campaign-metrics")
     @(Returns(200, SuccessResult).Of(CampaignMetricsResultModel))
     public async getCampaignMetrics(@QueryParams() query: CampaignIdModel, @Context() context: Context) {
