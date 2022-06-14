@@ -563,3 +563,12 @@ export class RecoverUserAccountStep2Parms {
     @Required() public readonly userId: string;
     @Required() public readonly verificationToken: string;
 }
+
+export class CompleteVerificationParams {
+    @Required() public readonly email: string;
+    @Required() public readonly code: string;
+}
+
+export class CompleteVerificationResultModel extends BooleanResultModel {
+    @Property() public readonly verificationToken: string;
+}

@@ -15,6 +15,8 @@ import {
 } from "../../util/errors";
 import {
     BooleanResultModel,
+    CompleteVerificationParams,
+    CompleteVerificationResultModel,
     LoginParams,
     RecoverUserAccountStep1Parms,
     RecoverUserAccountStep2Parms,
@@ -125,5 +127,17 @@ export class AuthenticationController {
             this.verificationService.getDecryptedCode(verificationData.code)
         );
         return new SuccessResult({ success: true }, BooleanResultModel);
+    }
+
+    @Post("/complete-verification")
+    @(Returns(200, SuccessResult).Of(CompleteVerificationResultModel))
+    public async completeVerification(@BodyParams() body: CompleteVerificationParams) {
+        const { email, code } = body;
+        if (!email || !code) throw new BadRequest(MISSING_PARAMS);
+        const verification = await this.verificationService.verifyCode(email, code);
+        return new SuccessResult(
+            { success: true, verificationToken: this.verificationService.generateToken(verification.id) },
+            CompleteVerificationResultModel
+        );
     }
 }
