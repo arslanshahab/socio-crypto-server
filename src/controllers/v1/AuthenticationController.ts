@@ -11,7 +11,13 @@ import {
     USERNAME_EXISTS,
     USER_NOT_FOUND,
 } from "../../util/errors";
-import { LoginParams, RegisterUserParams, UserTokenReturnModel } from "../../models/RestModels";
+import {
+    BooleanResultModel,
+    LoginParams,
+    RegisterUserParams,
+    ResetUserPasswordParams,
+    UserTokenReturnModel,
+} from "../../models/RestModels";
 import { SuccessResult } from "../../util/entities";
 import { UserService } from "../../services/UserService";
 import { createPasswordHash, createSessionTokenV2 } from "../../util";
@@ -54,5 +60,17 @@ export class AuthenticationController {
         await this.userService.updateLastLogin(user.id);
         await this.userService.transferCoiinReward({ user, type: "LOGIN_REWARD" });
         return new SuccessResult({ token: createSessionTokenV2(user) }, UserTokenReturnModel);
+    }
+
+    @Post("/reset-user-password")
+    @(Returns(200, SuccessResult).Of(Object))
+    public async resetUserPassword(@BodyParams() body: ResetUserPasswordParams) {
+        const { verificationToken, password } = body;
+        if (!verificationToken || !password) throw new NotFound(MISSING_PARAMS);
+        const verificationData = await this.verificationService.verifyToken({ verificationToken });
+        const user = await this.userService.findUserByEmail(verificationData.email);
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        await this.userService.resetUserPassword(user.id, user.email, password);
+        return new SuccessResult({ success: true }, BooleanResultModel);
     }
 }

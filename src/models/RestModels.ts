@@ -547,3 +547,8 @@ export class RegisterUserParams {
     @Required() public readonly verificationToken: string;
     @Nullable(String) public readonly referralCode: string | null;
 }
+
+export class ResetUserPasswordParams {
+    @Required() public readonly verificationToken: string;
+    @Required() public readonly password: string;
+}
