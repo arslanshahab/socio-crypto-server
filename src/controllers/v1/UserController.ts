@@ -76,6 +76,12 @@ class UserQueryVariables {
     @Property() public readonly today: boolean;
 }
 
+class TransferUserCoiinParams {
+    @Property() public readonly coiin: string;
+    @Property() public readonly userId: string;
+    @Property() public readonly action: string;
+}
+
 @Controller("/user")
 export class UserController {
     @Inject()
@@ -384,10 +390,7 @@ export class UserController {
 
     @Post("/transfer-user-coiin")
     @(Returns(200, SuccessResult).Of(UpdatedResultModel))
-    public async transferUserCoiin(
-        @BodyParams() body: { coiin: string; userId: string; action: string },
-        @Context() context: Context
-    ) {
+    public async transferUserCoiin(@BodyParams() body: TransferUserCoiinParams, @Context() context: Context) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const admin = await this.userService.findUserByFirebaseId(context.get("user").firebaseId);
         const { coiin, userId, action } = body;
