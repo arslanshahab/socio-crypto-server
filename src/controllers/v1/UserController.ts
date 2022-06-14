@@ -82,6 +82,10 @@ class TransferUserCoiinParams {
     @Property() public readonly action: string;
 }
 
+class RewardUserForSharingParams {
+    @Required() public readonly participantId: string;
+    @Required() public readonly isGlobal: boolean;
+}
 @Controller("/user")
 export class UserController {
     @Inject()
@@ -416,5 +420,14 @@ export class UserController {
             throw new Error(error.message);
         }
         return new SuccessResult({ message: "Transfer funds successfully" }, UpdatedResultModel);
+    }
+
+    @Post("/reward-user-for-sharing")
+    @(Returns(200, SuccessResult).Of(UpdatedResultModel))
+    public async rewardUserForSharing(@BodyParams() body: RewardUserForSharingParams, @Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"), ["wallet"]);
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        const { participantId, isGlobal } = body;
+        console.log("user-----------", user, participantId, isGlobal);
     }
 }
