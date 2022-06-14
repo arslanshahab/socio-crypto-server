@@ -63,7 +63,7 @@ export class AuthenticationController {
     }
 
     @Post("/reset-user-password")
-    @(Returns(200, SuccessResult).Of(Object))
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async resetUserPassword(@BodyParams() body: ResetUserPasswordParams) {
         const { verificationToken, password } = body;
         if (!verificationToken || !password) throw new NotFound(MISSING_PARAMS);
