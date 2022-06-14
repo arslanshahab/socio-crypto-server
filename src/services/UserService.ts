@@ -15,7 +15,8 @@ import { TransferService } from "./TransferService";
 import { OrganizationService } from "./OrganizationService";
 import { TatumClientService } from "./TatumClientService";
 import { createPasswordHash, prepareCacheKey } from "../util";
-import { UseCache } from "@tsed/common";
+import { PlatformCache, UseCache } from "@tsed/common";
+import { resetCacheKey } from "../util/index";
 
 type Array2TrueMap<T> = T extends string[] ? { [idx in T[number]]: true } : undefined;
 
@@ -33,6 +34,8 @@ export class UserService {
     private orgService: OrganizationService;
     @Inject()
     private tatumClientService: TatumClientService;
+    @Inject()
+    private cache: PlatformCache;
 
     /**
      * Retrieves a user object from a JWTPayload
@@ -57,9 +60,9 @@ export class UserService {
      * @returns the user object, with the requested relations included
      */
     @UseCache({
-        ttl: 3600,
-        refreshThreshold: 2700,
-        key: (args: any[]) => prepareCacheKey(args, CacheKeys.USER_BY_ID_SERVICE),
+        ttl: 600,
+        refreshThreshold: 300,
+        key: (args: any[]) => prepareCacheKey(args[0], CacheKeys.USER_BY_ID_SERVICE),
     })
     public async findUserById<T extends (keyof Prisma.UserInclude)[] | Prisma.UserInclude | undefined>(
         userId: string | Prisma.StringFilter,
@@ -171,9 +174,9 @@ export class UserService {
      * @returns the wallet's address
      */
     @UseCache({
-        ttl: 3600,
-        refreshThreshold: 2700,
-        key: (args: any[]) => prepareCacheKey(args, CacheKeys.USER_COIIN_ADDRESS_SERVICE),
+        ttl: 600,
+        refreshThreshold: 300,
+        key: (args: any[]) => prepareCacheKey(args[0], CacheKeys.USER_COIIN_ADDRESS_SERVICE),
     })
     public async getCoiinAddress(user: User & { wallet: Wallet }) {
         let currency = await this.addressService.findOrCreateCurrency(
@@ -260,6 +263,7 @@ export class UserService {
     }
 
     public async updateUserStatus(userId: string, activeStatus: boolean) {
+        await resetCacheKey(CacheKeys.USER_BY_ID_SERVICE, this.cache, userId);
         return await this.prismaService.user.update({
             where: { id: userId },
             data: { active: activeStatus },

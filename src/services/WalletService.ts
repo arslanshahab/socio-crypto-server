@@ -10,9 +10,9 @@ export class WalletService {
     private prismaService: PrismaService;
 
     @UseCache({
-        ttl: 3600,
-        refreshThreshold: 2700,
-        key: (args: any[]) => prepareCacheKey(args, CacheKeys.WALLET_BY_ORG_SERVICE),
+        ttl: 600,
+        refreshThreshold: 300,
+        key: (args: any[]) => prepareCacheKey(CacheKeys.WALLET_BY_ORG_SERVICE, args),
     })
     public async findWalletByOrgId(orgId: string) {
         return this.prismaService.wallet.findFirst({
@@ -23,9 +23,9 @@ export class WalletService {
     }
 
     @UseCache({
-        ttl: 3600,
-        refreshThreshold: 2700,
-        key: (args: any[]) => prepareCacheKey(args, CacheKeys.WALLET_BY_ID_SERVICE),
+        ttl: 600,
+        refreshThreshold: 300,
+        key: (args: any[]) => prepareCacheKey(CacheKeys.WALLET_BY_ID_SERVICE, args),
     })
     public async findWalletById(id: string) {
         return this.prismaService.wallet.findFirst({
@@ -40,9 +40,9 @@ export class WalletService {
     }
 
     @UseCache({
-        ttl: 3600,
-        refreshThreshold: 2700,
-        key: (args: any[]) => prepareCacheKey(args, CacheKeys.WALLET_BY_USER_SERVICE),
+        ttl: 600,
+        refreshThreshold: 300,
+        key: (args: any[]) => prepareCacheKey(CacheKeys.WALLET_BY_USER_SERVICE, args),
     })
     public async findWalletByUserId(userId: string) {
         return this.prismaService.wallet.findFirst({
