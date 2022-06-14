@@ -15,6 +15,7 @@ import {
     CAMPAIGN_CLOSED,
     CAMPAIGN_NOT_FOUND,
     CURRENCY_NOT_FOUND,
+    GLOBAL_CAMPAIGN_NOT_FOUND,
     MISSING_PARAMS,
     NOTIFICATION_SETTING_NOT_FOUND,
     PARTICIPANT_NOT_FOUND,
@@ -425,9 +426,33 @@ export class UserController {
     @Post("/reward-user-for-sharing")
     @(Returns(200, SuccessResult).Of(UpdatedResultModel))
     public async rewardUserForSharing(@BodyParams() body: RewardUserForSharingParams, @Context() context: Context) {
-        const user = await this.userService.findUserByContext(context.get("user"), ["wallet"]);
+        const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new NotFound(USER_NOT_FOUND);
         const { participantId, isGlobal } = body;
-        console.log("user-----------", user, participantId, isGlobal);
+        const wallet = await this.walletService.findWalletByUserId(user.id);
+        if (!wallet) throw new NotFound(WALLET_NOT_FOUND);
+        let participant;
+        let campaign;
+        if (isGlobal) {
+            const globalCampaign = await this.campaignService.findGlobalCampaign(isGlobal, COIIN);
+            if (!globalCampaign) throw new NotFound(GLOBAL_CAMPAIGN_NOT_FOUND);
+            campaign = globalCampaign;
+            participant = await this.participantService.findParticipantByUserAndCampaignId(user.id, campaign.id);
+            if (!participant) {
+                await this.tatumClientService.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet: wallet });
+                participant = await this.participantService.createNewParticipant(user.id, globalCampaign, user.email);
+            }
+        } else {
+            participant = await this.participantService.findParticipantById(participantId, user);
+            if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
+            campaign = participant.campaign;
+        }
+        if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
+        await this.userService.transferCoiinReward({
+            user: user,
+            type: "SHARING_REWARD",
+            campaign: campaign,
+        });
+        return new SuccessResult({ success: true }, BooleanResultModel);
     }
 }
