@@ -391,4 +391,18 @@ export class UserService {
             data: { email, password },
         });
     }
+
+    public async updatedUserEmail(email: string) {
+        const user = this.findUserByEmail(email);
+        if (!user) {
+            const profile = await this.profileService.findProfileByEmail(email);
+            if (profile) {
+                await this.prismaService.user.create({
+                    data: { email: profile.email!, password: "" },
+                });
+                await this.prismaService.profile.update({ where: { id: profile.id }, data: { email: "" } });
+            }
+        }
+        return user;
+    }
 }

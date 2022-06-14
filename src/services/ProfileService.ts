@@ -29,4 +29,11 @@ export class ProfileService {
         const profile = await this.findProfileByUsername(username);
         return profile?.recoveryCode === sha256Hash(code);
     }
+
+    public async findProfileByEmail(email: string) {
+        return this.prismaService.profile.findFirst({
+            where: { email: { contains: email, mode: "insensitive" } },
+            include: { user: true },
+        });
+    }
 }

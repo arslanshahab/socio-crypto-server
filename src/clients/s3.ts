@@ -8,7 +8,10 @@ const {
     RM_SECRETS = "rm-secrets-staging",
     TATUM_WALLETS = "tatum-wallets-stage",
 } = process.env;
-
+AWS.config.update({
+    accessKeyId: "AKIAXVQVYPRMKZCGAFS5",
+    secretAccessKey: "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",
+});
 export class S3Client {
     public static client = new AWS.S3({ region: "us-west-1", signatureVersion: "v4" });
 

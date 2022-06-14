@@ -175,3 +175,9 @@ export enum CacheKeys {
     WALLET_BY_ORG_SERVICE = "WALLET-BY-ORG",
     WALLET_BY_USER_SERVICE = "WALLET-BY-USER",
 }
+
+export enum VerificationType {
+    EMAIL = "EMAIL",
+    PASSWORD = "PASSWORD",
+    WITHDRAW = "WITHDRAW",
+}

@@ -1,7 +1,7 @@
 import { BodyParams } from "@tsed/common";
 import { Controller, Inject } from "@tsed/di";
 import { BadRequest, NotFound } from "@tsed/exceptions";
-import { Post, Returns } from "@tsed/schema";
+import { Enum, Post, Required, Returns } from "@tsed/schema";
 import {
     ACCOUNT_RESTRICTED,
     EMAIL_EXISTS,
@@ -28,6 +28,13 @@ import { createPasswordHash, createSessionTokenV2 } from "../../util";
 import { ProfileService } from "../../services/ProfileService";
 import { VerificationService } from "../../services/VerificationService";
 import { JWTPayload } from "../../types";
+import { VerificationType } from "../../util/constants";
+import { SesClient } from "../../clients/ses";
+
+export class StartVerificationParams {
+    @Required() public readonly email: string;
+    @Required() @Enum(VerificationType) public readonly type: VerificationType | undefined;
+}
 
 @Controller("/auth")
 export class AuthenticationController {
@@ -101,5 +108,22 @@ export class AuthenticationController {
         if (user.email) throw new BadRequest(EMAIL_EXISTS);
         await this.userService.updateEmailPassword(email, createPasswordHash({ email, password }));
         return new SuccessResult({ token: createSessionTokenV2(user) }, UserTokenReturnModel);
+    }
+
+    @Post("/start-verification")
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
+    public async startVerification(@BodyParams() body: StartVerificationParams) {
+        const { email, type } = body;
+        if (!email || !type) throw new BadRequest(MISSING_PARAMS);
+        const userWithEmail = await this.userService.updatedUserEmail(email);
+        if (type === "EMAIL" && userWithEmail) throw new BadRequest(EMAIL_EXISTS);
+        if (type === "PASSWORD" && !userWithEmail) throw new BadRequest(EMAIL_NOT_EXISTS);
+        if (type === "WITHDRAW" && !userWithEmail) throw new BadRequest(EMAIL_NOT_EXISTS);
+        const verificationData = await this.verificationService.generateVerification({ email, type });
+        await SesClient.emailAddressVerificationEmail(
+            email,
+            this.verificationService.getDecryptedCode(verificationData.code)
+        );
+        return new SuccessResult({ success: true }, BooleanResultModel);
     }
 }
