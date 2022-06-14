@@ -92,7 +92,7 @@ export class AuthenticationController {
     }
 
     @Post("/recover-user-account-step2")
-    @(Returns(200, SuccessResult).Of(Object))
+    @(Returns(200, SuccessResult).Of(UserTokenReturnModel))
     public async recoverUserAccountStep2(@BodyParams() body: RecoverUserAccountStep2Parms) {
         const { email, password, userId, verificationToken } = body;
         const user = await this.userService.findUserById(userId);
