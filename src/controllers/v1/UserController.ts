@@ -140,6 +140,7 @@ export class UserController {
             },
         });
         if (!user) throw new BadRequest(USER_NOT_FOUND);
+        console.log(user.participant);
         const keywords = new Set<string>();
         try {
             user.participant.forEach((p) =>

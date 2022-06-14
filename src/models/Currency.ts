@@ -59,6 +59,9 @@ export class Currency extends BaseEntity {
     @ManyToOne((_type) => Token, (token) => token.currency)
     public token: Token;
 
+    @Column({ nullable: true, default: 0, type: "float8" })
+    public balance: number;
+
     @CreateDateColumn()
     public createdAt: Date;
 

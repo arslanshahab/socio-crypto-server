@@ -62,7 +62,7 @@ export class UserService {
     @UseCache({
         ttl: 600,
         refreshThreshold: 300,
-        key: (args: any[]) => prepareCacheKey(CacheKeys.USER_BY_ID_SERVICE, args[0]),
+        key: (args: any[]) => prepareCacheKey(CacheKeys.USER_BY_ID_SERVICE, args),
     })
     public async findUserById<T extends (keyof Prisma.UserInclude)[] | Prisma.UserInclude | undefined>(
         userId: string | Prisma.StringFilter,
@@ -176,7 +176,7 @@ export class UserService {
     @UseCache({
         ttl: 600,
         refreshThreshold: 300,
-        key: (args: any[]) => prepareCacheKey(CacheKeys.USER_COIIN_ADDRESS_SERVICE, args[0]),
+        key: (args: any[]) => prepareCacheKey(CacheKeys.USER_COIIN_ADDRESS_SERVICE, args),
     })
     public async getCoiinAddress(user: User & { wallet: Wallet }) {
         let currency = await this.addressService.findOrCreateCurrency(
