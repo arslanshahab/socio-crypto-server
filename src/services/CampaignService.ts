@@ -9,14 +9,16 @@ import { BN, prepareCacheKey } from "../util";
 import { CurrentCampaignTierModel } from "../models/RestModels";
 import { CAMPAIGN_CREATION_AMOUNT } from "../clients/tatumClient";
 import { TatumClientService } from "./TatumClientService";
-import { UseCache } from "@tsed/common";
+import { PlatformCache, UseCache } from "@tsed/common";
 import { CacheKeys } from "../util/constants";
+import { resetCacheKey } from "../util/index";
 
 @Injectable()
 export class CampaignService {
     @Inject()
     private prismaService: PrismaService;
     @Inject()
+    private cache: PlatformCache;
     @Inject()
     private tatumClientService: TatumClientService;
 
@@ -156,6 +158,7 @@ export class CampaignService {
         campaignMedia: CampaignMedia[],
         campaignTemplates: CampaignTemplate[]
     ) {
+        await resetCacheKey(CacheKeys.CAMPAIGN_RESET_KEY, this.cache);
         const response = await this.prismaService.campaign.create({
             data: {
                 name: name,
@@ -215,6 +218,7 @@ export class CampaignService {
         socialMediaType: string[],
         showUrl: boolean
     ) {
+        await resetCacheKey(CacheKeys.CAMPAIGN_RESET_KEY, this.cache);
         return await this.prismaService.campaign.update({
             where: { id },
             data: {
@@ -241,12 +245,14 @@ export class CampaignService {
     }
 
     public async deleteCampaign(campaignId: string) {
+        await resetCacheKey(CacheKeys.CAMPAIGN_RESET_KEY, this.cache);
         return await this.prismaService.campaign.delete({
             where: { id: campaignId },
         });
     }
 
     public async updateCampaignStatus(campaignId: string) {
+        await resetCacheKey(CacheKeys.CAMPAIGN_RESET_KEY, this.cache);
         return await this.prismaService.campaign.update({
             where: {
                 id: campaignId,
