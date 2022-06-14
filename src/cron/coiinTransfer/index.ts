@@ -92,6 +92,7 @@ const fixFailedCampaignTransfers = async () => {
                 take,
                 skip,
             });
+            const prismaTransactions = [];
             for (const transfer of failedCampaignTransfers) {
                 const campaign = await prisma.campaign.findFirst({ where: { id: transfer.campaignId || "" } });
                 if (!campaign) throw new Error("Campaign not found.");
@@ -120,14 +121,17 @@ const fixFailedCampaignTransfers = async () => {
                         transfer.walletId,
                         transfer.action
                     );
-                    await prisma.transfer.update({
-                        where: { id: transfer.id },
-                        data: { status: TransferStatus.SUCCEEDED },
-                    });
+                    prismaTransactions.push(
+                        prisma.transfer.update({
+                            where: { id: transfer.id },
+                            data: { status: TransferStatus.SUCCEEDED },
+                        })
+                    );
                 } catch (error) {}
             }
+            await prisma.$transaction(prismaTransactions);
+            skip += take;
         }
-        skip += take;
     }
 };
 
