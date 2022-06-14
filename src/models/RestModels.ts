@@ -113,7 +113,7 @@ export class CampaignResultModel {
     }
 }
 
-export class CurrentCampaignModel {
+export class CurrentCampaignTierModel {
     @Property() public currentTier: number;
     @Property() public currentTotal: number;
     @Nullable(String) public campaignType: string | null;
