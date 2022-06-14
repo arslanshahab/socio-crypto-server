@@ -572,3 +572,8 @@ export class CompleteVerificationParams {
 export class CompleteVerificationResultModel extends BooleanResultModel {
     @Property() public readonly verificationToken: string;
 }
+
+export class UserParticipateParams {
+    @Required() public readonly campaignId: string;
+    @Property() public readonly email: string;
+}
