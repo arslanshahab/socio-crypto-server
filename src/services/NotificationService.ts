@@ -6,16 +6,17 @@ export class NotificationService {
     @Inject()
     private prismaService: PrismaService;
 
-    /**
-     * Retrieves a user object from a JWTPayload
-     *
-     * @param data the jwt payload
-     * @param include additional relations to include with the user query
-     * @returns the user object, with the requested relations included
-     */
     public async findNotificationSettingByUserId(userId: string) {
         return this.prismaService.notificationSettings.findFirst({
             where: { userId },
+        });
+    }
+
+    public async createNotificationSetting(userId: string) {
+        return await this.prismaService.notificationSettings.create({
+            data: {
+                userId,
+            },
         });
     }
 }

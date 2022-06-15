@@ -1,12 +1,16 @@
 import { Context, QueryParams } from "@tsed/common";
 import { Controller, Inject } from "@tsed/di";
-import { Get, Returns } from "@tsed/schema";
+import { Enum, Get, Property, Returns } from "@tsed/schema";
 import { SuccessResult } from "../../util/entities";
 import { TransferService } from "../../services/TransferService";
 import { UserService } from "../../services/UserService";
-import { TransferStatus } from "../../types";
 import { NotFound } from "@tsed/exceptions";
 import { TRANSFER_NOT_FOUND } from "../../util/errors";
+import { TransferStatus } from "../../util/constants";
+
+export class WithdrawStatusParams {
+    @Property() @Enum(TransferStatus) public readonly status: TransferStatus;
+}
 
 @Controller("/withdraw")
 export class WithdrawController {
@@ -17,7 +21,7 @@ export class WithdrawController {
 
     @Get()
     @(Returns(200, SuccessResult).Of(Object))
-    public async getWithdrawalsV2(@QueryParams() query: { status?: TransferStatus }, @Context() context: Context) {
+    public async getWithdrawalsV2(@QueryParams() query: WithdrawStatusParams, @Context() context: Context) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const { status = "PENDING" } = query;
         const transfers = await this.transferService.getWithdrawalsByStatus(status);

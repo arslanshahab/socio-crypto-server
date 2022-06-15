@@ -15,6 +15,8 @@ import { TransferService } from "./TransferService";
 import { OrganizationService } from "./OrganizationService";
 import { TatumClientService } from "./TatumClientService";
 import { createPasswordHash, prepareCacheKey } from "../util";
+import { ProfileService } from "./ProfileService";
+import { NotificationService } from "./NotificationService";
 import { PlatformCache, UseCache } from "@tsed/common";
 import { resetCacheKey } from "../util/index";
 
@@ -34,6 +36,10 @@ export class UserService {
     private orgService: OrganizationService;
     @Inject()
     private tatumClientService: TatumClientService;
+    @Inject()
+    private profileService: ProfileService;
+    @Inject()
+    private notificationService: NotificationService;
     @Inject()
     private cache: PlatformCache;
 
@@ -62,7 +68,7 @@ export class UserService {
     @UseCache({
         ttl: 600,
         refreshThreshold: 300,
-        key: (args: any[]) => prepareCacheKey(CacheKeys.USER_BY_ID_SERVICE, args[0]),
+        key: (args: any[]) => prepareCacheKey(CacheKeys.USER_BY_ID_SERVICE, args),
     })
     public async findUserById<T extends (keyof Prisma.UserInclude)[] | Prisma.UserInclude | undefined>(
         userId: string | Prisma.StringFilter,
@@ -176,7 +182,7 @@ export class UserService {
     @UseCache({
         ttl: 600,
         refreshThreshold: 300,
-        key: (args: any[]) => prepareCacheKey(CacheKeys.USER_COIIN_ADDRESS_SERVICE, args[0]),
+        key: (args: any[]) => prepareCacheKey(CacheKeys.USER_COIIN_ADDRESS_SERVICE, args),
     })
     public async getCoiinAddress(user: User & { wallet: Wallet }) {
         let currency = await this.addressService.findOrCreateCurrency(
@@ -354,5 +360,54 @@ export class UserService {
                 where: { active: false },
             }),
         ]);
+    }
+
+    public async findUserByEmail(email: string) {
+        return await this.prismaService.user.findFirst({
+            where: {
+                email: { contains: email, mode: "insensitive" },
+            },
+        });
+    }
+
+    public async updateLastLogin(userId: string) {
+        return await this.prismaService.user.update({ where: { id: userId }, data: { lastLogin: new Date() } });
+    }
+
+    public async initNewUser(email: string, username: string, password: string, referralCode?: string | null) {
+        const user = await this.prismaService.user.create({
+            data: {
+                email: email.trim(),
+                password: createPasswordHash({ email, password }),
+                referralCode: referralCode ? referralCode : null,
+            },
+        });
+
+        const wallet = await this.walletService.createWallet(user);
+        await this.profileService.createProfile(user, username);
+        await this.notificationService.createNotificationSetting(user.id);
+        await this.tatumClientService.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet: wallet });
+        return await user.id;
+    }
+
+    public async updateEmailPassword(email: string, password: string) {
+        return await this.prismaService.user.create({
+            data: { email, password },
+        });
+    }
+
+    public async updatedUserEmail(email: string) {
+        const user = this.findUserByEmail(email);
+        if (!user) {
+            const profile = await this.profileService.findProfileByEmail(email);
+            if (profile) {
+                await this.prismaService.user.update({
+                    where: { id: profile.userId! },
+                    data: { email: profile.email! },
+                });
+                await this.prismaService.profile.update({ where: { id: profile.id }, data: { email: "" } });
+            }
+        }
+        return user;
     }
 }

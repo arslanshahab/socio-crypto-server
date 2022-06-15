@@ -31,15 +31,15 @@ export class CurrencyService {
     public async addNewAccount(data: LedgerAccountTypes) {
         return await this.prismaService.currency.create({
             data: {
-                tatumId: data.newLedgerAccount?.id!,
+                tatumId: data?.id,
                 tokenId: data.token.id,
                 symbol: data.symbol,
                 walletId: data.wallet.id,
-                depositAddress: data?.address,
-                memo: data?.memo,
-                message: data?.message,
-                destinationTag: data?.destinationTag,
-                derivationKey: data?.derivationKey,
+                depositAddress: data.address ? data.address : null,
+                memo: data.memo ? data.memo : null,
+                message: data.message ? data.message : null,
+                destinationTag: data.destinationTag ? data.destinationTag : null,
+                derivationKey: data.derivationKey ? data.derivationKey : null,
             },
         });
     }
