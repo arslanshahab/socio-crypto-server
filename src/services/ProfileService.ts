@@ -36,4 +36,8 @@ export class ProfileService {
             include: { user: true },
         });
     }
+
+    public async isUsernameExists(username: string) {
+        return this.prismaService.profile.findFirst({ where: { username } });
+    }
 }

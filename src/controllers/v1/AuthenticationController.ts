@@ -1,7 +1,7 @@
-import { BodyParams } from "@tsed/common";
+import { BodyParams, QueryParams } from "@tsed/common";
 import { Controller, Inject } from "@tsed/di";
 import { BadRequest, NotFound } from "@tsed/exceptions";
-import { Enum, Post, Required, Returns } from "@tsed/schema";
+import { Enum, Get, Post, Required, Returns } from "@tsed/schema";
 import {
     ACCOUNT_RESTRICTED,
     EMAIL_EXISTS,
@@ -36,6 +36,10 @@ import { SesClient } from "../../clients/ses";
 export class StartVerificationParams {
     @Required() public readonly email: string;
     @Required() @Enum(VerificationType) public readonly type: VerificationType | undefined;
+}
+
+class UsernameExistsParams {
+    @Required() public readonly username: string;
 }
 
 @Controller("/auth")
@@ -139,5 +143,13 @@ export class AuthenticationController {
             { success: true, verificationToken: this.verificationService.generateToken(verification.id) },
             CompleteVerificationResultModel
         );
+    }
+
+    @Get("/username-exists")
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
+    public async usernameExists(@QueryParams() query: UsernameExistsParams) {
+        const { username } = query;
+        const profile = await this.profileService.isUsernameExists(username);
+        return new SuccessResult({ success: !!profile }, BooleanResultModel);
     }
 }
