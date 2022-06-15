@@ -52,12 +52,12 @@ export class ProfileService {
         return await this.prismaService.profile.update({
             where: { userId },
             data: {
-                ageRange: data.ageRange ? data.ageRange : null,
-                city: data.city ? data.city : null,
-                state: data.state ? data.state : null,
-                country: data.country ? data.country : null,
-                interests: data.interests ? JSON.stringify(data.interests) : "",
-                values: data.values ? JSON.stringify(data.values) : "",
+                ageRange: data.ageRange && data.ageRange,
+                city: data.city && data.city,
+                state: data.state && data.state,
+                country: data.country && data.country,
+                interests: data.interests && JSON.stringify(data.interests),
+                values: data.values && JSON.stringify(data.values),
             },
         });
     }
@@ -82,8 +82,8 @@ export class ProfileService {
                 city: data.city && null,
                 state: data.state && null,
                 country: data.country && null,
-                interests: JSON.stringify(interests),
-                values: JSON.stringify(values),
+                interests: data.interests && JSON.stringify(interests),
+                values: data.values && JSON.stringify(values),
             },
         });
     }
