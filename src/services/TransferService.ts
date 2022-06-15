@@ -1,12 +1,13 @@
 import { Campaign, Prisma } from "@prisma/client";
 import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
-import { endOfISOWeek, startOfISOWeek, subDays } from "date-fns";
+import { endOfISOWeek, startOfDay, startOfISOWeek, subDays } from "date-fns";
 import { TransferAction, TransferStatus } from "../types";
 import { WalletService } from "./WalletService";
 import { NotFound } from "@tsed/exceptions";
 import { WALLET_NOT_FOUND } from "../util/errors";
 import { startOfYear } from "date-fns";
+import { COIIN } from "../util/constants";
 
 @Injectable()
 export class TransferService {
@@ -169,5 +170,17 @@ export class TransferService {
             where: { action: "withdraw", status: "PENDING", walletId },
             select: { currency: true, amount: true, usdAmount: true },
         });
+    }
+
+    public async getCoinnEarnedToday(walletId: string) {
+        const today = startOfDay(new Date());
+        const earnings = await this.prismaService.transfer.findMany({
+            where: {
+                currency: COIIN,
+                createdAt: { gte: today },
+                walletId,
+            },
+        });
+        return earnings.reduce((acc, curr) => acc + parseFloat(curr.amount), 0);
     }
 }
