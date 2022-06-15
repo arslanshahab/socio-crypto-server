@@ -68,7 +68,7 @@ export class UserService {
     @UseCache({
         ttl: 600,
         refreshThreshold: 300,
-        key: (args: any[]) => prepareCacheKey(CacheKeys.USER_BY_ID_SERVICE, args[0]),
+        key: (args: any[]) => prepareCacheKey(CacheKeys.USER_BY_ID_SERVICE, args),
     })
     public async findUserById<T extends (keyof Prisma.UserInclude)[] | Prisma.UserInclude | undefined>(
         userId: string | Prisma.StringFilter,
@@ -182,7 +182,7 @@ export class UserService {
     @UseCache({
         ttl: 600,
         refreshThreshold: 300,
-        key: (args: any[]) => prepareCacheKey(CacheKeys.USER_COIIN_ADDRESS_SERVICE, args[0]),
+        key: (args: any[]) => prepareCacheKey(CacheKeys.USER_COIIN_ADDRESS_SERVICE, args),
     })
     public async getCoiinAddress(user: User & { wallet: Wallet }) {
         let currency = await this.addressService.findOrCreateCurrency(
@@ -401,8 +401,9 @@ export class UserService {
         if (!user) {
             const profile = await this.profileService.findProfileByEmail(email);
             if (profile) {
-                await this.prismaService.user.create({
-                    data: { email: profile.email!, password: "" },
+                await this.prismaService.user.update({
+                    where: { id: profile.userId! },
+                    data: { email: profile.email! },
                 });
                 await this.prismaService.profile.update({ where: { id: profile.id }, data: { email: "" } });
             }

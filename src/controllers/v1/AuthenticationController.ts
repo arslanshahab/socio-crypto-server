@@ -1,7 +1,7 @@
-import { BodyParams } from "@tsed/common";
+import { BodyParams, QueryParams } from "@tsed/common";
 import { Controller, Inject } from "@tsed/di";
 import { BadRequest, NotFound } from "@tsed/exceptions";
-import { Enum, Post, Property, Required, Returns } from "@tsed/schema";
+import { Enum, Post, Get, Property, Required, Returns } from "@tsed/schema";
 import {
     ACCOUNT_RESTRICTED,
     EMAIL_EXISTS,
@@ -37,13 +37,14 @@ export class StartVerificationParams {
     @Required() public readonly email: string;
     @Required() @Enum(VerificationType) public readonly type: VerificationType | undefined;
 }
-
 class UserIdResultModel {
     @Property() public readonly userId: string;
 }
-
 class RecoverUserAccountResultModel extends UserTokenReturnModel {
     @Property() public readonly userId: string;
+}
+class UsernameExistsParams {
+    @Required() public readonly username: string;
 }
 
 @Controller("/auth")
@@ -147,5 +148,13 @@ export class AuthenticationController {
             { success: true, verificationToken: this.verificationService.generateToken(verification.id) },
             CompleteVerificationResultModel
         );
+    }
+
+    @Get("/username-exists")
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
+    public async usernameExists(@QueryParams() query: UsernameExistsParams) {
+        const { username } = query;
+        const profile = await this.profileService.isUsernameExists(username);
+        return new SuccessResult({ success: !!profile }, BooleanResultModel);
     }
 }
