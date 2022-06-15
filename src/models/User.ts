@@ -255,33 +255,16 @@ export class User extends BaseEntity {
         if (type === "LOGIN_REWARD" || type === "PARTICIPATION_REWARD")
             thisWeeksReward = await Transfer.getRewardForThisWeek(wallet, type);
         const amount = REWARD_AMOUNTS[type] || 0;
-        const raiinmakerCurrency = await Org.getCurrencyForRaiinmaker({ symbol: COIIN, network: BSC });
-        const userCurrency = await TatumClient.findOrCreateCurrency({
-            symbol: COIIN,
-            network: BSC,
-            walletId: user.wallet.id,
-        });
         if (
             (type === "LOGIN_REWARD" && accountAgeInHours > 24 && !thisWeeksReward) ||
             (type === "PARTICIPATION_REWARD" && !thisWeeksReward) ||
             (type === "SHARING_REWARD" &&
                 (await Transfer.getLast24HourRedemption(user.wallet, "SHARING_REWARD")) < SHARING_REWARD_LIMIT_PER_DAY)
         ) {
-            let transferStatus = true;
-            try {
-                await TatumClient.transferFunds({
-                    senderAccountId: raiinmakerCurrency.tatumId,
-                    recipientAccountId: userCurrency.tatumId,
-                    amount: amount.toString(),
-                    recipientNote: "WEEKLY-REWARD",
-                });
-            } catch (error) {
-                transferStatus = false;
-            }
             await Transfer.newReward({
                 wallet,
                 action: type,
-                status: transferStatus ? "SUCCEEDED" : "FAILED",
+                status: "PENDING",
                 symbol: COIIN,
                 amount: new BN(amount),
                 campaign,

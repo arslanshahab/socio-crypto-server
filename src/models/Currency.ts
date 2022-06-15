@@ -60,7 +60,10 @@ export class Currency extends BaseEntity {
     public token: Token;
 
     @Column({ nullable: true, default: 0, type: "float8" })
-    public balance: number;
+    public accountBalance: number;
+
+    @Column({ nullable: true, default: 0, type: "float8" })
+    public availableBalance: number;
 
     @CreateDateColumn()
     public createdAt: Date;

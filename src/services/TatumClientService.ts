@@ -213,7 +213,7 @@ export class TatumClientService {
             if (!ledgerAccount) {
                 const newLedgerAccount = await this.createLedgerAccount({ ...data, isCustodial });
                 if (isCustodial) {
-                    if (foundWallet.org) {
+                    if (await this.walletService.ifWalletBelongsToOrg(foundWallet.id)) {
                         const availableAddress = await this.getAvailableAddress(data);
                         if (!availableAddress) throw new NotFound("No custodial address available.");
                         await this.assignAddressToAccount({

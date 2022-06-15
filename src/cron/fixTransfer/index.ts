@@ -15,7 +15,7 @@ console.log("APP instance created.");
 const fixFailedCoiinTransfers = async (raiinmakerCoiinCurrency: Currency) => {
     const failedCoiinTransfersCount = await prisma.transfer.count({
         where: {
-            status: "FAILED",
+            status: { in: ["FAILED", "PENDING"] },
             currency: COIIN,
             action: { in: ["SHARING_REWARD", "PARTICIPATION_REWARD", "LOGIN_REWARD"] },
         },
@@ -28,7 +28,7 @@ const fixFailedCoiinTransfers = async (raiinmakerCoiinCurrency: Currency) => {
         for (let pageIndex = 0; pageIndex < paginatedLoop; pageIndex++) {
             const failedCoiinTransfers = await prisma.transfer.findMany({
                 where: {
-                    status: "FAILED",
+                    status: { in: ["FAILED", "PENDING"] },
                     currency: COIIN,
                     action: { in: ["SHARING_REWARD", "PARTICIPATION_REWARD", "LOGIN_REWARD"] },
                 },
@@ -115,7 +115,7 @@ const fixFailedCampaignTransfers = async () => {
                         recipientNote: "COMPENSATING_FAILED_TRANSFER",
                     });
                     console.log(
-                        "TRANSFER FIXED: ",
+                        "TRANSFER FIX PREPARED: ",
                         transfer.id,
                         transfer.amount.toString(),
                         transfer.walletId,

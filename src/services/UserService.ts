@@ -12,7 +12,6 @@ import { WalletService } from "./WalletService";
 import { WALLET_NOT_FOUND } from "../util/errors";
 import { differenceInHours, subDays } from "date-fns";
 import { TransferService } from "./TransferService";
-import { OrganizationService } from "./OrganizationService";
 import { TatumClientService } from "./TatumClientService";
 import { createPasswordHash, prepareCacheKey } from "../util";
 import { ProfileService } from "./ProfileService";
@@ -32,8 +31,6 @@ export class UserService {
     private walletService: WalletService;
     @Inject()
     private transferService: TransferService;
-    @Inject()
-    private orgService: OrganizationService;
     @Inject()
     private tatumClientService: TatumClientService;
     @Inject()
@@ -300,12 +297,6 @@ export class UserService {
         if (type === "LOGIN_REWARD" || type === "PARTICIPATION_REWARD")
             thisWeeksReward = await this.transferService.getRewardForThisWeek(wallet.id, type);
         const amount = REWARD_AMOUNTS[type] || 0;
-        const raiinmakerCurrency = await this.orgService.getCurrencyForRaiinmaker({ symbol: COIIN, network: BSC });
-        const userCurrency = await this.tatumClientService.findOrCreateCurrency({
-            symbol: COIIN,
-            network: BSC,
-            wallet,
-        });
         if (
             (type === "LOGIN_REWARD" && accountAgeInHours > 24 && !thisWeeksReward) ||
             (type === "PARTICIPATION_REWARD" && !thisWeeksReward) ||
@@ -313,21 +304,10 @@ export class UserService {
                 (await this.transferService.getLast24HourRedemption(wallet.id, "SHARING_REWARD")) <
                     SHARING_REWARD_LIMIT_PER_DAY)
         ) {
-            let transferStatus = true;
-            try {
-                await this.tatumClientService.trnasferFunds({
-                    senderAccountId: raiinmakerCurrency.tatumId,
-                    recipientAccountId: userCurrency.tatumId,
-                    amount: amount.toString(),
-                    recipientNote: "WEEKLY-REWARD",
-                });
-            } catch (error) {
-                transferStatus = false;
-            }
             await this.transferService.newReward({
                 walletId: wallet.id,
                 action: type,
-                status: transferStatus ? "SUCCEEDED" : "FAILED",
+                status: "PENDING",
                 symbol: COIIN,
                 amount: amount.toString(),
                 campaign,

@@ -1,9 +1,10 @@
 import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
 import { UseCache } from "@tsed/common";
-import { User } from "@prisma/client";
+import { Prisma, User } from "@prisma/client";
 import { prepareCacheKey } from "../util";
 import { CacheKeys } from "../util/constants";
+import { CurrencyService } from "./CurrencyService";
 
 @Injectable()
 export class WalletService {
@@ -28,15 +29,12 @@ export class WalletService {
         refreshThreshold: 300,
         key: (args: any[]) => prepareCacheKey(CacheKeys.WALLET_BY_ID_SERVICE, args),
     })
-    public async findWalletById(id: string) {
+    public async findWalletById(id: string, include?: Prisma.WalletInclude) {
         return this.prismaService.wallet.findFirst({
             where: {
                 id,
             },
-            include: {
-                user: true,
-                org: true,
-            },
+            include,
         });
     }
 
@@ -63,5 +61,9 @@ export class WalletService {
                 userId: user.id,
             },
         });
+    }
+
+    public async getWalletBalances(walletId: string) {
+        const wallet = await this.findWalletById(walletId, { currency: { include: { token: true } } });
     }
 }

@@ -15,7 +15,7 @@ import { Wallet } from "./Wallet";
 import { Campaign } from "./Campaign";
 import { BN, getCryptoAssestImageUrl } from "../util";
 import { BigNumberEntityTransformer } from "../util/transformers";
-import { TransferAction, TransferStatus } from "../types";
+import { TransferAction, TransferStatus, TransferType } from "../types";
 import { Org } from "./Org";
 import { RafflePrize } from "./RafflePrize";
 import { performCurrencyTransfer } from "../controllers/helpers";
@@ -44,14 +44,7 @@ export class Transfer extends BaseEntity {
     public status: TransferStatus;
 
     @Column({ nullable: true })
-    public network: string;
-
-    // TODO: We should get rid of this column as well. It seems pretty redundant, and considering payouts aren't a thing yet this should be doable.
-    @Column({ nullable: true })
-    public payoutStatus: TransferStatus;
-
-    @Column({ nullable: true })
-    public payoutId: string;
+    public type: TransferType;
 
     @Column({ nullable: true })
     public stripeCardId: string;

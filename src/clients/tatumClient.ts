@@ -327,7 +327,7 @@ export class TatumClient {
         }
     };
 
-    public static transferFundsBatch = async (data: BatchTransferPayload) => {
+    public static transferFundsBatch = async (data: BatchTransferPayload): Promise<string[]> => {
         try {
             const endpoint = `${TatumClient.baseUrl}/ledger/transaction/batch`;
             const requestData: RequestData = {
