@@ -29,6 +29,7 @@ import {
     ParticipantMetricsResultModel,
     SingleUserResultModel,
     UserDailyParticipantMetricResultModel,
+    UserParticipateParams,
     UserTransactionResultModel,
 } from "../../models/RestModels";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
@@ -268,10 +269,7 @@ export class UserController {
 
     @Post("/participate")
     @(Returns(200, SuccessResult).Of(ParticipantMetricsResultModel))
-    public async participate(
-        @QueryParams() query: { campaignId: string; email?: string },
-        @Context() context: Context
-    ) {
+    public async participate(@QueryParams() query: UserParticipateParams, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"), ["wallet"]);
         if (!user) throw new NotFound(USER_NOT_FOUND);
         const { campaignId, email } = query;
