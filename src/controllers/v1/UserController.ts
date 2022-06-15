@@ -35,6 +35,7 @@ import {
     UserDailyParticipantMetricResultModel,
     UserParticipateParams,
     UserTransactionResultModel,
+    WeeklyRewardsResultModel,
 } from "../../models/RestModels";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 import {
@@ -48,7 +49,7 @@ import {
 } from "../../models/RestModels";
 import { NotificationService } from "../../services/NotificationService";
 import { TransferService } from "../../services/TransferService";
-import { BSC, COIIN, CoiinTransferAction, TransferAction } from "../../util/constants";
+import { BSC, COIIN, CoiinTransferAction, SHARING_REWARD_AMOUNT, TransferAction } from "../../util/constants";
 import { SocialService } from "../../services/SocialService";
 import { getBalance } from "../helpers";
 import { CampaignService } from "../../services/CampaignService";
@@ -59,6 +60,7 @@ import { SesClient } from "../../clients/ses";
 import { CurrencyService } from "../../services/CurrencyService";
 import { WalletService } from "../../services/WalletService";
 import { TokenService } from "../../services/TokenService";
+import { addDays, endOfISOWeek, startOfDay } from "date-fns";
 import { ProfileService } from "../../services/ProfileService";
 
 const userResultRelations = {
@@ -425,6 +427,33 @@ export class UserController {
             throw new Error(error.message);
         }
         return new SuccessResult({ message: "Transfer funds successfully" }, UpdatedResultModel);
+    }
+
+    @Get("/weekly-rewards")
+    @(Returns(200, SuccessResult).Of(WeeklyRewardsResultModel))
+    public async getWeeklyRewards(@Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        const wallet = await this.walletService.findWalletByUserId(user.id);
+        if (!wallet) throw new NotFound(WALLET_NOT_FOUND);
+        const loginReward = await this.transferService.getRewardForThisWeek(wallet.id, "LOGIN_REWARD");
+        const participationReward = await this.transferService.getRewardForThisWeek(wallet.id, "PARTICIPATION_REWARD");
+        const nextReward = startOfDay(addDays(endOfISOWeek(user.lastLogin!), 1));
+        const coiinEarnedToday = await this.transferService.getCoinnEarnedToday(wallet.id);
+        const result = {
+            loginRewardRedeemed: Boolean(loginReward),
+            loginReward: parseInt(loginReward?.amount?.toString() || "0"),
+            nextLoginReward: nextReward.toString(),
+            participationReward: parseInt(participationReward?.amount?.toString() || "0"),
+            participationId: "",
+            nextParticipationReward: nextReward.toString(),
+            participationRewardRedeemed: Boolean(participationReward),
+            participationRedemptionDate: participationReward?.createdAt?.toString() || "",
+            loginRedemptionDate: loginReward?.createdAt?.toString() || "",
+            earnedToday: coiinEarnedToday || 0,
+            sharingReward: SHARING_REWARD_AMOUNT,
+        };
+        return new SuccessResult(result, WeeklyRewardsResultModel);
     }
 
     @Post("/update-profile-interests")
