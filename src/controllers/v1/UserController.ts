@@ -28,6 +28,7 @@ import {
     DashboardStatsResultModel,
     ParticipantMetricsResultModel,
     ProfileResultModel,
+    RemoveInterestsParams,
     SingleUserResultModel,
     UpdateProfileInterestsParams,
     UserDailyParticipantMetricResultModel,
@@ -419,11 +420,20 @@ export class UserController {
     }
 
     @Post("/update-profile-interests")
-    @(Returns(200, SuccessResult).Of(Object))
+    @(Returns(200, SuccessResult).Of(ProfileResultModel))
     public async updateProfileInterests(@BodyParams() body: UpdateProfileInterestsParams, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new NotFound(USER_NOT_FOUND);
         const profile = await this.profileService.updateProfile(user.id, body);
         return new SuccessResult(await ProfileResultModel.build(profile), ProfileResultModel);
+    }
+
+    @Post("/remove-profile-interests")
+    @(Returns(200, SuccessResult).Of(ProfileResultModel))
+    public async removeProfileInterests(@BodyParams() body: RemoveInterestsParams, @Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        const profile = await this.profileService.removeProfileInterests(user.id, body);
+        return new SuccessResult(ProfileResultModel.build(profile), ProfileResultModel);
     }
 }

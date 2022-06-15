@@ -586,3 +586,12 @@ export class UpdateProfileInterestsParams {
     @ArrayOf(String) public readonly interests: string[];
     @ArrayOf(String) public readonly values: string[];
 }
+
+export class RemoveInterestsParams {
+    @Property() public readonly ageRange: string;
+    @Property() public readonly city: string;
+    @Property() public readonly state: string;
+    @Property() public readonly country: string;
+    @Property() public readonly interests: string;
+    @Property() public readonly values: string;
+}
