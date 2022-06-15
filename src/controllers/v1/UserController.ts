@@ -15,6 +15,7 @@ import {
     CAMPAIGN_CLOSED,
     CAMPAIGN_NOT_FOUND,
     CURRENCY_NOT_FOUND,
+    GLOBAL_CAMPAIGN_NOT_FOUND,
     MISSING_PARAMS,
     NOTIFICATION_SETTING_NOT_FOUND,
     PARTICIPANT_NOT_FOUND,
@@ -77,6 +78,16 @@ class UserQueryVariables {
     @Property() public readonly today: boolean;
 }
 
+class TransferUserCoiinParams {
+    @Property() public readonly coiin: string;
+    @Property() public readonly userId: string;
+    @Property() public readonly action: string;
+}
+
+class RewardUserForSharingParams {
+    @Required() public readonly participantId: string;
+    @Required() public readonly isGlobal: boolean;
+}
 @Controller("/user")
 export class UserController {
     @Inject()
@@ -382,10 +393,7 @@ export class UserController {
 
     @Post("/transfer-user-coiin")
     @(Returns(200, SuccessResult).Of(UpdatedResultModel))
-    public async transferUserCoiin(
-        @BodyParams() body: { coiin: string; userId: string; action: string },
-        @Context() context: Context
-    ) {
+    public async transferUserCoiin(@BodyParams() body: TransferUserCoiinParams, @Context() context: Context) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const admin = await this.userService.findUserByFirebaseId(context.get("user").firebaseId);
         const { coiin, userId, action } = body;
@@ -411,5 +419,38 @@ export class UserController {
             throw new Error(error.message);
         }
         return new SuccessResult({ message: "Transfer funds successfully" }, UpdatedResultModel);
+    }
+
+    @Post("/reward-user-for-sharing")
+    @(Returns(200, SuccessResult).Of(UpdatedResultModel))
+    public async rewardUserForSharing(@BodyParams() body: RewardUserForSharingParams, @Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        const { participantId, isGlobal } = body;
+        const wallet = await this.walletService.findWalletByUserId(user.id);
+        if (!wallet) throw new NotFound(WALLET_NOT_FOUND);
+        let participant;
+        let campaign;
+        if (isGlobal) {
+            const globalCampaign = await this.campaignService.findGlobalCampaign(isGlobal, COIIN);
+            if (!globalCampaign) throw new NotFound(GLOBAL_CAMPAIGN_NOT_FOUND);
+            campaign = globalCampaign;
+            participant = await this.participantService.findParticipantByUserAndCampaignId(user.id, campaign.id);
+            if (!participant) {
+                await this.tatumClientService.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet: wallet });
+                participant = await this.participantService.createNewParticipant(user.id, globalCampaign, user.email);
+            }
+        } else {
+            participant = await this.participantService.findParticipantById(participantId, user);
+            if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
+            campaign = participant.campaign;
+        }
+        if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
+        await this.userService.transferCoiinReward({
+            user: user,
+            type: "SHARING_REWARD",
+            campaign: campaign,
+        });
+        return new SuccessResult({ success: true }, BooleanResultModel);
     }
 }
