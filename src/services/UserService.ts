@@ -381,8 +381,9 @@ export class UserService {
         if (!user) {
             const profile = await this.profileService.findProfileByEmail(email);
             if (profile) {
-                await this.prismaService.user.create({
-                    data: { email: profile.email!, password: "" },
+                await this.prismaService.user.update({
+                    where: { id: profile.userId! },
+                    data: { email: profile.email! },
                 });
                 await this.prismaService.profile.update({ where: { id: profile.id }, data: { email: "" } });
             }

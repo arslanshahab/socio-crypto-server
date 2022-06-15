@@ -202,42 +202,37 @@ export class TatumClientService {
 
     // Find or create currency
     public async findOrCreateCurrency(data: SymbolNetworkParams & { wallet: Wallet }) {
-        try {
-            const token = await this.isCurrencySupported(data);
-            if (!token) throw new NotFound("No token found.");
-            const foundWallet = await this.walletService.findWalletById(data.wallet.id);
-            if (!foundWallet) throw new NotFound("Wallet not found");
-            const isCustodial = this.isCustodialWallet(data);
-            let ledgerAccount = await this.currenyService.findLedgerAccount(data.wallet.id, token.id);
-            let newDepositAddress;
-            if (!ledgerAccount) {
-                const newLedgerAccount = await this.createLedgerAccount({ ...data, isCustodial });
-                if (isCustodial) {
-                    if (await this.walletService.ifWalletBelongsToOrg(foundWallet.id)) {
-                        const availableAddress = await this.getAvailableAddress(data);
-                        if (!availableAddress) throw new NotFound("No custodial address available.");
-                        await this.assignAddressToAccount({
-                            accountId: newLedgerAccount.id,
-                            address: availableAddress.address,
-                        });
-                        newDepositAddress = availableAddress;
-                    }
-                } else {
-                    newDepositAddress = await this.generateDepositAddress(newLedgerAccount.id);
+        const token = await this.isCurrencySupported(data);
+        if (!token) throw new NotFound("No token found.");
+        const foundWallet = await this.walletService.findWalletById(data.wallet.id);
+        if (!foundWallet) throw new NotFound("Wallet not found");
+        const isCustodial = this.isCustodialWallet(data);
+        let ledgerAccount = await this.currenyService.findLedgerAccount(data.wallet.id, token.id);
+        let newDepositAddress;
+        if (!ledgerAccount) {
+            const newLedgerAccount = await this.createLedgerAccount({ ...data, isCustodial });
+            if (isCustodial) {
+                if (await this.walletService.ifWalletBelongsToOrg(foundWallet.id)) {
+                    const availableAddress = await this.getAvailableAddress(data);
+                    if (!availableAddress) throw new NotFound("No custodial address available.");
+                    await this.assignAddressToAccount({
+                        accountId: newLedgerAccount.id,
+                        address: availableAddress.address,
+                    });
+                    newDepositAddress = availableAddress;
                 }
-                ledgerAccount = await this.currenyService.addNewAccount({
-                    ...newLedgerAccount,
-                    token,
-                    symbol: getCurrencyForTatum(data),
-                    ...(newDepositAddress && { address: newDepositAddress.address }),
-                    wallet: data.wallet,
-                });
+            } else {
+                newDepositAddress = await this.generateDepositAddress(newLedgerAccount.id);
             }
-            return ledgerAccount;
-        } catch (error) {
-            console.log(error);
-            throw new BadRequest(error?.response?.data?.message || error.message);
+            ledgerAccount = await this.currenyService.addNewAccount({
+                ...newLedgerAccount,
+                token,
+                symbol: getCurrencyForTatum(data),
+                ...(newDepositAddress && { address: newDepositAddress.address }),
+                wallet: data.wallet,
+            });
         }
+        return ledgerAccount;
     }
 
     // Transfer funds
