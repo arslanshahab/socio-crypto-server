@@ -75,7 +75,6 @@ export class ProfileService {
             const index = values.indexOf(data.values);
             if (index > -1) values.splice(index, 1);
         }
-
         return await this.prismaService.profile.update({
             where: { userId },
             data: {
