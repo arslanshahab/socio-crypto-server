@@ -27,7 +27,9 @@ import {
     CampaignIdModel,
     DashboardStatsResultModel,
     ParticipantMetricsResultModel,
+    ProfileResultModel,
     SingleUserResultModel,
+    UpdateProfileInterestsParams,
     UserDailyParticipantMetricResultModel,
     UserParticipateParams,
     UserTransactionResultModel,
@@ -55,6 +57,7 @@ import { SesClient } from "../../clients/ses";
 import { CurrencyService } from "../../services/CurrencyService";
 import { WalletService } from "../../services/WalletService";
 import { TokenService } from "../../services/TokenService";
+import { ProfileService } from "../../services/ProfileService";
 
 const userResultRelations = {
     profile: true,
@@ -103,6 +106,8 @@ export class UserController {
     private walletService: WalletService;
     @Inject()
     private tokenService: TokenService;
+    @Inject()
+    private profileService: ProfileService;
 
     @Get("/")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserResultModel))
@@ -411,5 +416,14 @@ export class UserController {
             throw new Error(error.message);
         }
         return new SuccessResult({ message: "Transfer funds successfully" }, UpdatedResultModel);
+    }
+
+    @Post("/update-profile-interests")
+    @(Returns(200, SuccessResult).Of(Object))
+    public async updateProfileInterests(@BodyParams() body: UpdateProfileInterestsParams, @Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        const profile = await this.profileService.updateProfile(user.id, body);
+        return new SuccessResult(await ProfileResultModel.build(profile), ProfileResultModel);
     }
 }

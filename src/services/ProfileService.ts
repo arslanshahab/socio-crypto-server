@@ -2,6 +2,7 @@ import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
 import { User } from "@prisma/client";
 import { sha256Hash } from "../util/crypto";
+import { UpdateProfileInterestsParams } from "../models/RestModels";
 
 @Injectable()
 export class ProfileService {
@@ -39,5 +40,23 @@ export class ProfileService {
 
     public async isUsernameExists(username: string) {
         return this.prismaService.profile.findFirst({ where: { username } });
+    }
+
+    public async findProfileByUserId(userId: string) {
+        return this.prismaService.profile.findFirst({ where: { userId } });
+    }
+
+    public async updateProfile(userId: string, data: UpdateProfileInterestsParams) {
+        return await this.prismaService.profile.update({
+            where: { userId },
+            data: {
+                ageRange: data.ageRange ? data.ageRange : null,
+                city: data.city ? data.city : null,
+                state: data.state ? data.state : null,
+                country: data.country ? data.country : null,
+                interests: data.interests ? JSON.stringify(data.interests) : "",
+                values: data.values ? JSON.stringify(data.values) : "",
+            },
+        });
     }
 }
