@@ -1,7 +1,7 @@
 import { BodyParams, QueryParams } from "@tsed/common";
 import { Controller, Inject } from "@tsed/di";
 import { BadRequest, NotFound } from "@tsed/exceptions";
-import { Enum, Get, Post, Required, Returns } from "@tsed/schema";
+import { Enum, Post, Get, Property, Required, Returns } from "@tsed/schema";
 import {
     ACCOUNT_RESTRICTED,
     EMAIL_EXISTS,
@@ -37,7 +37,12 @@ export class StartVerificationParams {
     @Required() public readonly email: string;
     @Required() @Enum(VerificationType) public readonly type: VerificationType | undefined;
 }
-
+class UserIdResultModel {
+    @Property() public readonly userId: string;
+}
+class RecoverUserAccountResultModel extends UserTokenReturnModel {
+    @Property() public readonly userId: string;
+}
 class UsernameExistsParams {
     @Required() public readonly username: string;
 }
@@ -92,7 +97,7 @@ export class AuthenticationController {
     }
 
     @Post("/recover-user-account-step1")
-    @(Returns(200, SuccessResult).Of(UserTokenReturnModel))
+    @(Returns(200, SuccessResult).Of(RecoverUserAccountResultModel))
     public async recoverUserAccountStep1(@BodyParams() body: RecoverUserAccountStep1Parms) {
         const { username, code } = body;
         if (!username || !code) throw new NotFound(MISSING_PARAMS);
@@ -100,7 +105,7 @@ export class AuthenticationController {
         if (!profile) throw new NotFound(USERNAME_NOT_EXISTS);
         if (!(await this.profileService.isRecoveryCodeValid(username, code))) throw new BadRequest(INCORRECT_CODE);
         if (!profile.user) throw new NotFound(USER_NOT_FOUND);
-        if (!profile.user.email) return { userId: profile.user.id };
+        if (!profile.user.email) return new SuccessResult({ userId: profile.user.id }, UserIdResultModel);
         else return new SuccessResult({ token: createSessionTokenV2(profile.user) }, UserTokenReturnModel);
     }
 
