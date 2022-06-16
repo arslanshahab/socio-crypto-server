@@ -180,7 +180,7 @@ export class UserController {
         });
         if (!user) throw new NotFound(USER_NOT_FOUND);
         if (!user.wallet) throw new NotFound(WALLET_NOT_FOUND);
-        const balances = await getBalance(user);
+        const balances = await this.userService.getUserWalletBalances(user.wallet);
         return new SuccessArrayResult(
             balances.filter(<T>(r: T | null): r is T => !!r),
             BalanceResultModel
