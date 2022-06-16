@@ -1,10 +1,9 @@
-import {MigrationInterface, QueryRunner} from "typeorm";
+import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class TransferAndCurrencyChanges1655399383137 implements MigrationInterface {
-    name = 'TransferAndCurrencyChanges1655399383137'
+export class TransferAndCurrencyFixes1655399383137 implements MigrationInterface {
+    name = "TransferAndCurrencyFixes1655399383238";
 
     public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`ALTER TABLE "tatum_wallet" DROP COLUMN "enabled"`);
         await queryRunner.query(`ALTER TABLE "transfer" DROP COLUMN "network"`);
         await queryRunner.query(`ALTER TABLE "transfer" DROP COLUMN "payoutId"`);
         await queryRunner.query(`ALTER TABLE "transfer" DROP COLUMN "payoutStatus"`);
@@ -20,7 +19,5 @@ export class TransferAndCurrencyChanges1655399383137 implements MigrationInterfa
         await queryRunner.query(`ALTER TABLE "transfer" ADD "payoutStatus" character varying`);
         await queryRunner.query(`ALTER TABLE "transfer" ADD "payoutId" character varying`);
         await queryRunner.query(`ALTER TABLE "transfer" ADD "network" character varying`);
-        await queryRunner.query(`ALTER TABLE "tatum_wallet" ADD "enabled" boolean NOT NULL`);
     }
-
 }
