@@ -16,9 +16,11 @@ import {
     CAMPAIGN_NOT_FOUND,
     CURRENCY_NOT_FOUND,
     GLOBAL_CAMPAIGN_NOT_FOUND,
+    INCORRECT_PASSWORD,
     MISSING_PARAMS,
     NOTIFICATION_SETTING_NOT_FOUND,
     PARTICIPANT_NOT_FOUND,
+    SAME_OLD_AND_NEW_PASSWORD,
     TOKEN_NOT_FOUND,
     USER_NOT_FOUND,
     WALLET_NOT_FOUND,
@@ -62,6 +64,7 @@ import { WalletService } from "../../services/WalletService";
 import { TokenService } from "../../services/TokenService";
 import { addDays, endOfISOWeek, startOfDay } from "date-fns";
 import { ProfileService } from "../../services/ProfileService";
+import { createPasswordHash } from "../../util";
 
 const userResultRelations = {
     profile: true,
@@ -93,6 +96,11 @@ class TransferUserCoiinParams {
 class RewardUserForSharingParams {
     @Required() public readonly participantId: string;
     @Required() public readonly isGlobal: boolean;
+}
+
+class UpdateUserPasswordParams {
+    @Required() public readonly oldPassword: string;
+    @Required() public readonly newPassword: string;
 }
 @Controller("/user")
 export class UserController {
@@ -504,6 +512,23 @@ export class UserController {
             type: "SHARING_REWARD",
             campaign: campaign,
         });
+        return new SuccessResult({ success: true }, BooleanResultModel);
+    }
+
+    @Put("/update-user-password")
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
+    public async updateUserPassword(@BodyParams() body: UpdateUserPasswordParams, @Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        const { oldPassword, newPassword } = body;
+        if (createPasswordHash({ email: user.email, password: oldPassword }) !== user.password)
+            throw new BadRequest(INCORRECT_PASSWORD);
+        if (
+            createPasswordHash({ email: user.email, password: oldPassword }) ===
+            createPasswordHash({ email: user.email, password: newPassword })
+        )
+            throw new Error(SAME_OLD_AND_NEW_PASSWORD);
+        await this.userService.resetUserPassword(user.id, user.email, newPassword);
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 }
