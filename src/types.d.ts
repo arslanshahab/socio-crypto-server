@@ -320,6 +320,8 @@ export interface PaypalPayout {
     receiver: string;
 }
 
+export type TransferType = "CREDIT" | "DEBIT";
+
 export type TransferStatus =
     | "BLOCKED"
     | "CANCELED"

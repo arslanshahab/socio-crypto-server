@@ -38,14 +38,6 @@ export const getMinWithdrawableAmount = async (symbol: string) => {
     return (1 / marketRate) * minLimit;
 };
 
-export const getUSDValueForCurrency = async (symbol: string, amount: number) => {
-    if (symbol.toLowerCase() === "coiin") {
-        return parseFloat(process.env.COIIN_VALUE || "0.2") * amount;
-    }
-    const marketRate = await getExchangeRateForCrypto(symbol);
-    return marketRate * amount;
-};
-
 export const getCryptoAssestImageUrl = (symbol: string): string => {
     const key = CRYPTO_ICONS_MAP[symbol?.toUpperCase() || "ETH"] || CRYPTO_ICONS_MAP["ETH"];
     return `${CRYPTO_ICONS_BUCKET_URL}/${key}`;

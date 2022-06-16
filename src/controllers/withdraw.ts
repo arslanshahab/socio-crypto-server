@@ -5,9 +5,9 @@ import { Wallet } from "../models/Wallet";
 import { S3Client } from "../clients/s3";
 import { SesClient } from "../clients/ses";
 import { performCurrencyAction } from "./helpers";
-import { asyncHandler, BN } from "../util";
-import { Paypal } from "../clients/paypal";
-import { Response, Request } from "express";
+import { BN } from "../util";
+// import { Paypal } from "../clients/paypal";
+// import { Response, Request } from "express";
 import { Firebase } from "../clients/firebase";
 import { WalletCurrency } from "../models/WalletCurrency";
 import { getTokenPriceInUsd } from "../clients/ethereum";
@@ -143,7 +143,6 @@ export const update = async (
                                 receiver: kycData["paypalEmail"],
                                 payoutId,
                             });
-                            transfer.payoutId = payoutId;
                             transfer.currency = "usd";
                         }
                     }
@@ -262,51 +261,51 @@ export const getWithdrawalHistory = async () => {
     return transfers.map((transfer) => transfer.asV1());
 };
 
-export const paypalWebhook = asyncHandler(async (req: Request, res: Response) => {
-    const { verification_status } = await Paypal.verify(req.headers, req.body);
-    if (verification_status === "SUCCESS") {
-        const body = req.body;
-        const payoutId = body["resource"]["payout_item"]["sender_item_id"];
-        const transfer = await Transfer.findOne({ where: { payoutId } });
-        if (!transfer) throw new Error("transfer not found");
-        switch (body["event_type"]) {
-            case "PAYMENT.PAYOUTS-ITEM.BLOCKED":
-                transfer.payoutStatus = "BLOCKED";
-                break;
-            case "PAYMENT.PAYOUTS-ITEM.CANCELED":
-                transfer.payoutStatus = "CANCELED";
-                break;
-            case "PAYMENT.PAYOUTS-ITEM.DENIED":
-                transfer.payoutStatus = "DENIED";
-                break;
-            case "PAYMENT.PAYOUTS-ITEM.FAILED":
-                transfer.payoutStatus = "FAILED";
-                break;
-            case "PAYMENT.PAYOUTS-ITEM.HELD":
-                transfer.payoutStatus = "HELD";
-                break;
-            case "PAYMENT.PAYOUTS-ITEM.REFUNDED":
-                transfer.payoutStatus = "REFUNDED";
-                break;
-            case "PAYMENT.PAYOUTS-ITEM.RETURNED":
-                transfer.payoutStatus = "RETURNED";
-                break;
-            case "PAYMENT.PAYOUTS-ITEM.SUCCEEDED":
-                transfer.payoutStatus = "SUCCEEDED";
-                break;
-            case "PAYMENT.PAYOUTS-ITEM.UNCLAIMED":
-                transfer.payoutStatus = "UNCLAIMED";
-                break;
-            default:
-                throw Error(`unknown event ${body["event_type"]}`);
-        }
-        await transfer.save();
-    } else {
-        throw Error("invalid webhook request");
-    }
+// export const paypalWebhook = asyncHandler(async (req: Request, res: Response) => {
+//     const { verification_status } = await Paypal.verify(req.headers, req.body);
+//     if (verification_status === "SUCCESS") {
+//         const body = req.body;
+//         const payoutId = body["resource"]["payout_item"]["sender_item_id"];
+//         const transfer = await Transfer.findOne({ where: { payoutId } });
+//         if (!transfer) throw new Error("transfer not found");
+//         switch (body["event_type"]) {
+//             case "PAYMENT.PAYOUTS-ITEM.BLOCKED":
+//                 transfer.payoutStatus = "BLOCKED";
+//                 break;
+//             case "PAYMENT.PAYOUTS-ITEM.CANCELED":
+//                 transfer.payoutStatus = "CANCELED";
+//                 break;
+//             case "PAYMENT.PAYOUTS-ITEM.DENIED":
+//                 transfer.payoutStatus = "DENIED";
+//                 break;
+//             case "PAYMENT.PAYOUTS-ITEM.FAILED":
+//                 transfer.payoutStatus = "FAILED";
+//                 break;
+//             case "PAYMENT.PAYOUTS-ITEM.HELD":
+//                 transfer.payoutStatus = "HELD";
+//                 break;
+//             case "PAYMENT.PAYOUTS-ITEM.REFUNDED":
+//                 transfer.payoutStatus = "REFUNDED";
+//                 break;
+//             case "PAYMENT.PAYOUTS-ITEM.RETURNED":
+//                 transfer.payoutStatus = "RETURNED";
+//                 break;
+//             case "PAYMENT.PAYOUTS-ITEM.SUCCEEDED":
+//                 transfer.payoutStatus = "SUCCEEDED";
+//                 break;
+//             case "PAYMENT.PAYOUTS-ITEM.UNCLAIMED":
+//                 transfer.payoutStatus = "UNCLAIMED";
+//                 break;
+//             default:
+//                 throw Error(`unknown event ${body["event_type"]}`);
+//         }
+//         await transfer.save();
+//     } else {
+//         throw Error("invalid webhook request");
+//     }
 
-    res.status(200).json({ success: true });
-});
+//     res.status(200).json({ success: true });
+// });
 
 export const getWalletWithPendingBalance = async (
     _parent: any,
