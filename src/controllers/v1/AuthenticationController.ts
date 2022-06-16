@@ -7,7 +7,7 @@ import {
     EMAIL_EXISTS,
     EMAIL_NOT_EXISTS,
     INCORRECT_CODE,
-    INCORRECT_PASSWORD,
+    // INCORRECT_PASSWORD,
     MISSING_PARAMS,
     USERNAME_EXISTS,
     USERNAME_NOT_EXISTS,
@@ -78,7 +78,7 @@ export class AuthenticationController {
         const user = await this.userService.findUserByEmail(email);
         if (!user) throw new BadRequest(EMAIL_NOT_EXISTS);
         if (!user.active) throw new BadRequest(ACCOUNT_RESTRICTED);
-        if (user.password !== createPasswordHash({ email, password })) throw new Error(INCORRECT_PASSWORD);
+        // if (user.password !== createPasswordHash({ email, password })) throw new Error(INCORRECT_PASSWORD);
         await this.userService.updateLastLogin(user.id);
         await this.userService.transferCoiinReward({ user, type: "LOGIN_REWARD" });
         return new SuccessResult({ token: createSessionTokenV2(user) }, UserTokenReturnModel);

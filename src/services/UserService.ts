@@ -18,9 +18,9 @@ import { ProfileService } from "./ProfileService";
 import { NotificationService } from "./NotificationService";
 import { PlatformCache, UseCache } from "@tsed/common";
 import { resetCacheKey } from "../util/index";
-import { getMinWithdrawableAmount, getCryptoAssestImageUrl } from "../util/index";
-import { getTokenValueInUSD } from "../util/exchangeRate";
+import { getCryptoAssestImageUrl } from "../util/index";
 import { CurrencyService } from "./CurrencyService";
+import { MarketDataService } from "./MarketDataService";
 
 type Array2TrueMap<T> = T extends string[] ? { [idx in T[number]]: true } : undefined;
 
@@ -42,6 +42,8 @@ export class UserService {
     private notificationService: NotificationService;
     @Inject()
     private currencyService: CurrencyService;
+    @Inject()
+    private marketDataService: MarketDataService;
     @Inject()
     private cache: PlatformCache;
 
@@ -307,6 +309,7 @@ export class UserService {
                 (await this.transferService.getLast24HourRedemption(wallet.id, "SHARING_REWARD")) <
                     SHARING_REWARD_LIMIT_PER_DAY)
         ) {
+            await resetCacheKey(CacheKeys.USER_PENDING_TRANSFERS, this.cache, [wallet.id, COIIN]);
             await this.transferService.newReward({
                 walletId: wallet.id,
                 action: type,
@@ -405,8 +408,8 @@ export class UserService {
                 return {
                     balance: balance.toString(),
                     symbol,
-                    minWithdrawAmount: await getMinWithdrawableAmount(symbol),
-                    usdBalance: await getTokenValueInUSD(symbol, balance),
+                    minWithdrawAmount: await this.marketDataService.getMinWithdrawableAmount(symbol),
+                    usdBalance: await this.marketDataService.getTokenValueInUSD(symbol, balance),
                     imageUrl: getCryptoAssestImageUrl(symbol),
                     network,
                 };
