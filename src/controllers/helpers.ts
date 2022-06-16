@@ -11,14 +11,7 @@ import { Participant } from "../models/Participant";
 import { Campaign } from "../models/Campaign";
 import { getConnection } from "typeorm";
 import { Wallet } from "../models/Wallet";
-import {
-    BN,
-    formatFloat,
-    generateRandomNumber,
-    getCryptoAssestImageUrl,
-    getMinWithdrawableAmount,
-    getUSDValueForCurrency,
-} from "../util";
+import { BN, formatFloat, generateRandomNumber, getCryptoAssestImageUrl, getMinWithdrawableAmount } from "../util";
 import { BigNumber } from "bignumber.js";
 import { DailyParticipantMetric } from "../models/DailyParticipantMetric";
 import { Org } from "../models/Org";
@@ -36,7 +29,7 @@ import {
     WALLET_CURRENCY_NOT_FOUND,
     WALLET_NOT_FOUND,
 } from "../util/errors";
-import { getExchangeRateForCurrency } from "../util/exchangeRate";
+import { getExchangeRateForCurrency, getTokenValueInUSD } from "../util/exchangeRate";
 import { TwitterClient } from "../clients/twitter";
 import { TikTokClient } from "../clients/tiktok";
 import { FacebookClient } from "../clients/facebook";
@@ -474,7 +467,7 @@ export const getBalance = async (
                 balance: formatFloat(balance.availableBalance),
                 symbol: symbol,
                 minWithdrawAmount: await getMinWithdrawableAmount(symbol),
-                usdBalance: await getUSDValueForCurrency(symbol.toLowerCase(), parseFloat(balance.availableBalance)),
+                usdBalance: await getTokenValueInUSD(symbol, parseFloat(balance.availableBalance)),
                 imageUrl: getCryptoAssestImageUrl(symbol),
                 network: currencyItem.token.network,
             };

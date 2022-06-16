@@ -6,6 +6,9 @@ import { encrypt } from "../util/crypto";
 import { serverBaseUrl } from "../config";
 import { TinyUrl } from "../clients/tinyUrl";
 import { HourlyCampaignMetricsService } from "./HourlyCampaignMetricsService";
+import { PlatformCache } from "@tsed/common";
+import { resetCacheKey } from "../util/index";
+import { CacheKeys } from "../util/constants";
 
 @Injectable()
 export class ParticipantService {
@@ -13,6 +16,8 @@ export class ParticipantService {
     private prismaService: PrismaService;
     @Inject()
     private hourlyCampaignMetricsService: HourlyCampaignMetricsService;
+    @Inject()
+    private cache: PlatformCache;
 
     /**
      * Retrieves a paginated list of participants
@@ -117,6 +122,7 @@ export class ParticipantService {
     }
 
     public async createNewParticipant(userId: string, campaign: Campaign, email?: string) {
+        await resetCacheKey(CacheKeys.USER_RESET_KEY, this.cache);
         let participant = await this.prismaService.participant.create({
             data: {
                 clickCount: "0",

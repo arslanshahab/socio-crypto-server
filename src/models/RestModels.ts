@@ -188,7 +188,6 @@ export class TransferResultModel {
     @Nullable(String) public readonly ethAddress: string | null;
     @Nullable(String) public readonly paypalAddress: string | null;
     @Nullable(String) public readonly currency: string | null;
-    @Nullable(String) public readonly network: string | null;
 
     @Property() public symbolImageUrl?: string;
 
@@ -480,11 +479,10 @@ export class SingleUserResultModel {
 }
 
 export class UserTransactionResultModel extends TransferResultModel {
-    @Property() public readonly payoutStatus: string;
-    @Property() public readonly payoutId: string;
     @Property() public readonly transactionHash: string;
     @Property() public readonly orgId: string;
     @Property() public readonly stripeCardId: string;
+    @Nullable(String) public readonly type: string;
 }
 
 export class AggregaredMetrics {

@@ -7,6 +7,7 @@ import { SesClient } from "../../clients/ses";
 import { BatchTransferPayload, TatumClient } from "../../clients/tatumClient";
 import { prisma } from "../../clients/prisma";
 import { Currency } from "@prisma/client";
+import { getCurrencyForTatum } from "../../util/tatumHelper";
 
 dotenv.config();
 const app = new Application();
@@ -15,12 +16,12 @@ console.log("APP instance created.");
 const fixFailedCoiinTransfers = async (raiinmakerCoiinCurrency: Currency) => {
     const failedCoiinTransfersCount = await prisma.transfer.count({
         where: {
-            status: "FAILED",
+            status: { in: ["FAILED", "PENDING"] },
             currency: COIIN,
             action: { in: ["SHARING_REWARD", "PARTICIPATION_REWARD", "LOGIN_REWARD"] },
         },
     });
-    console.log("FAILED COIIN TRANSFERS: ", failedCoiinTransfersCount);
+    console.log("FAILED/PENDING COIIN TRANSFERS: ", failedCoiinTransfersCount);
     if (failedCoiinTransfersCount) {
         const take = 200;
         let skip = 0;
@@ -28,7 +29,7 @@ const fixFailedCoiinTransfers = async (raiinmakerCoiinCurrency: Currency) => {
         for (let pageIndex = 0; pageIndex < paginatedLoop; pageIndex++) {
             const failedCoiinTransfers = await prisma.transfer.findMany({
                 where: {
-                    status: "FAILED",
+                    status: { in: ["FAILED", "PENDING"] },
                     currency: COIIN,
                     action: { in: ["SHARING_REWARD", "PARTICIPATION_REWARD", "LOGIN_REWARD"] },
                 },
@@ -115,7 +116,7 @@ const fixFailedCampaignTransfers = async () => {
                         recipientNote: "COMPENSATING_FAILED_TRANSFER",
                     });
                     console.log(
-                        "TRANSFER FIXED: ",
+                        "TRANSFER FIX PREPARED: ",
                         transfer.id,
                         transfer.amount.toString(),
                         transfer.walletId,
@@ -131,6 +132,38 @@ const fixFailedCampaignTransfers = async () => {
             }
             await prisma.$transaction(prismaTransactions);
             skip += take;
+        }
+    }
+};
+
+const updateTatumBalances = async () => {
+    const supportedTokens = await prisma.token.findMany({ where: { enabled: true } });
+    for (const token of supportedTokens) {
+        const tatumSymbol = getCurrencyForTatum(token);
+        const totalAccountForSymbol = (await TatumClient.getTotalAccounts(tatumSymbol)).total;
+        console.log(`TOTAL ACCOUNTS FOR: ${tatumSymbol} ${totalAccountForSymbol}`);
+        const pageSize = 50;
+        let page = 0;
+        const paginatedLoop = Math.ceil(totalAccountForSymbol / pageSize);
+        for (let pageIndex = 0; pageIndex < paginatedLoop; pageIndex++) {
+            const prismaTransactions = [];
+            const accountList = await TatumClient.getAccountList(tatumSymbol, page, pageSize);
+            console.log("FETCHED ACCOUNT LIST FOR PAGE: ", page);
+            for (const account of accountList) {
+                const foundAccount = await prisma.currency.findFirst({ where: { tatumId: account.id } });
+                if (foundAccount) {
+                    prismaTransactions.push(
+                        prisma.$executeRaw`UPDATE currency set "accountBalance" = ${parseFloat(
+                            account.balance.accountBalance
+                        )}, "availableBalance" = ${parseFloat(
+                            account.balance.availableBalance
+                        )}, "updatedAt" = ${new Date()} WHERE "tatumId" = ${account.id}`
+                    );
+                }
+            }
+            console.log("PENDING PRISMA TRANSACTIONS: ", prismaTransactions.length);
+            await prisma.$transaction(prismaTransactions);
+            page += 1;
         }
     }
 };
@@ -162,6 +195,7 @@ const fixFailedCampaignTransfers = async () => {
         }
         await fixFailedCoiinTransfers(raiinmakerCoiinCurrency);
         await fixFailedCampaignTransfers();
+        await updateTatumBalances();
     } catch (error) {
         console.log(error);
         await connection.close();
