@@ -7,6 +7,7 @@ import { SesClient } from "../../clients/ses";
 import { BatchTransferPayload, TatumClient } from "../../clients/tatumClient";
 import { prisma } from "../../clients/prisma";
 import { Currency } from "@prisma/client";
+import { getCurrencyForTatum } from "../../util/tatumHelper";
 
 dotenv.config();
 const app = new Application();
@@ -20,7 +21,7 @@ const fixFailedCoiinTransfers = async (raiinmakerCoiinCurrency: Currency) => {
             action: { in: ["SHARING_REWARD", "PARTICIPATION_REWARD", "LOGIN_REWARD"] },
         },
     });
-    console.log("FAILED COIIN TRANSFERS: ", failedCoiinTransfersCount);
+    console.log("FAILED/PENDING COIIN TRANSFERS: ", failedCoiinTransfersCount);
     if (failedCoiinTransfersCount) {
         const take = 200;
         let skip = 0;
@@ -135,6 +136,38 @@ const fixFailedCampaignTransfers = async () => {
     }
 };
 
+const updateTatumBalances = async () => {
+    const supportedTokens = await prisma.token.findMany({ where: { enabled: true } });
+    for (const token of supportedTokens) {
+        const tatumSymbol = getCurrencyForTatum(token);
+        const totalAccountForSymbol = (await TatumClient.getTotalAccounts(tatumSymbol)).total;
+        console.log(`TOTAL ACCOUNTS FOR: ${tatumSymbol} ${totalAccountForSymbol}`);
+        const pageSize = 50;
+        let page = 0;
+        const paginatedLoop = Math.ceil(totalAccountForSymbol / pageSize);
+        for (let pageIndex = 0; pageIndex < paginatedLoop; pageIndex++) {
+            const prismaTransactions = [];
+            const accountList = await TatumClient.getAccountList(tatumSymbol, page, pageSize);
+            console.log("FETCHED ACCOUNT LIST FOR PAGE: ", page);
+            for (const account of accountList) {
+                const foundAccount = await prisma.currency.findFirst({ where: { tatumId: account.id } });
+                if (foundAccount) {
+                    prismaTransactions.push(
+                        prisma.$executeRaw`UPDATE currency set "accountBalance" = ${parseFloat(
+                            account.balance.accountBalance
+                        )}, "availableBalance" = ${parseFloat(
+                            account.balance.availableBalance
+                        )}, "updatedAt" = ${new Date()} WHERE "tatumId" = ${account.id}`
+                    );
+                }
+            }
+            console.log("PENDING PRISMA TRANSACTIONS: ", prismaTransactions.length);
+            await prisma.$transaction(prismaTransactions);
+            page += 1;
+        }
+    }
+};
+
 (async () => {
     console.log("Starting auto coiin transfer.");
     await Secrets.initialize();
@@ -162,6 +195,7 @@ const fixFailedCampaignTransfers = async () => {
         }
         await fixFailedCoiinTransfers(raiinmakerCoiinCurrency);
         await fixFailedCampaignTransfers();
+        await updateTatumBalances();
     } catch (error) {
         console.log(error);
         await connection.close();

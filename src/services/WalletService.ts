@@ -4,7 +4,6 @@ import { UseCache } from "@tsed/common";
 import { Prisma, User } from "@prisma/client";
 import { prepareCacheKey } from "../util";
 import { CacheKeys } from "../util/constants";
-import { CurrencyService } from "./CurrencyService";
 
 @Injectable()
 export class WalletService {
@@ -16,11 +15,12 @@ export class WalletService {
         refreshThreshold: 300,
         key: (args: any[]) => prepareCacheKey(CacheKeys.WALLET_BY_ORG_SERVICE, args),
     })
-    public async findWalletByOrgId(orgId: string) {
+    public async findWalletByOrgId(orgId: string, include?: Prisma.WalletInclude) {
         return this.prismaService.wallet.findFirst({
             where: {
                 orgId,
             },
+            include,
         });
     }
 
@@ -43,9 +43,10 @@ export class WalletService {
         refreshThreshold: 300,
         key: (args: any[]) => prepareCacheKey(CacheKeys.WALLET_BY_USER_SERVICE, args),
     })
-    public async findWalletByUserId(userId: string) {
+    public async findWalletByUserId(userId: string, include?: Prisma.WalletInclude) {
         return this.prismaService.wallet.findFirst({
             where: { userId },
+            include,
         });
     }
 
@@ -61,9 +62,5 @@ export class WalletService {
                 userId: user.id,
             },
         });
-    }
-
-    public async getWalletBalances(walletId: string) {
-        const wallet = await this.findWalletById(walletId, { currency: { include: { token: true } } });
     }
 }

@@ -1,11 +1,11 @@
-import { Campaign, Prisma, User, Wallet } from "@prisma/client";
+import { Campaign, Prisma, User, Wallet, Currency, Token } from "@prisma/client";
 import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
 import { BadRequest, Forbidden, NotFound } from "@tsed/exceptions";
 import { isArray } from "lodash";
 import { JWTPayload, RewardType } from "../types";
 import { AddressService } from "./AddressService";
-import { BSC, CacheKeys, COIIN, REWARD_AMOUNTS, SHARING_REWARD_LIMIT_PER_DAY } from "../util/constants";
+import { BSC, CacheKeys, COIIN, REWARD_AMOUNTS, SHARING_REWARD_LIMIT_PER_DAY, TransferType } from "../util/constants";
 import { TatumClient } from "../clients/tatumClient";
 import { createSubscriptionUrl } from "../util/tatumHelper";
 import { WalletService } from "./WalletService";
@@ -18,6 +18,9 @@ import { ProfileService } from "./ProfileService";
 import { NotificationService } from "./NotificationService";
 import { PlatformCache, UseCache } from "@tsed/common";
 import { resetCacheKey } from "../util/index";
+import { getMinWithdrawableAmount, getCryptoAssestImageUrl } from "../util/index";
+import { getTokenValueInUSD } from "../util/exchangeRate";
+import { CurrencyService } from "./CurrencyService";
 
 type Array2TrueMap<T> = T extends string[] ? { [idx in T[number]]: true } : undefined;
 
@@ -37,6 +40,8 @@ export class UserService {
     private profileService: ProfileService;
     @Inject()
     private notificationService: NotificationService;
+    @Inject()
+    private currencyService: CurrencyService;
     @Inject()
     private cache: PlatformCache;
 
@@ -182,13 +187,11 @@ export class UserService {
         key: (args: any[]) => prepareCacheKey(CacheKeys.USER_COIIN_ADDRESS_SERVICE, args),
     })
     public async getCoiinAddress(user: User & { wallet: Wallet }) {
-        let currency = await this.addressService.findOrCreateCurrency(
-            {
-                symbol: COIIN,
-                network: BSC,
-            },
-            user.wallet
-        );
+        let currency = await this.tatumClientService.findOrCreateCurrency({
+            symbol: COIIN,
+            network: BSC,
+            wallet: user.wallet,
+        });
         if (!currency) throw new BadRequest("Currency not found for user.");
         if (!currency.depositAddress) {
             const availableAddress = await this.addressService.getAvailableAddress(
@@ -204,7 +207,7 @@ export class UserService {
                 accountId: currency.tatumId,
                 url: createSubscriptionUrl({ userId: user.id, accountId: currency.tatumId }),
             });
-            currency = await this.addressService.updateDepositAddress(currency, availableAddress.address);
+            currency = await this.currencyService.updateDepositAddress(currency.id, availableAddress.address);
         }
         return {
             symbol: COIIN,
@@ -266,7 +269,7 @@ export class UserService {
     }
 
     public async updateUserStatus(userId: string, activeStatus: boolean) {
-        await resetCacheKey(CacheKeys.USER_BY_ID_SERVICE, this.cache, userId);
+        await resetCacheKey(CacheKeys.USER_BY_ID_SERVICE, this.cache);
         return await this.prismaService.user.update({
             where: { id: userId },
             data: { active: activeStatus },
@@ -310,6 +313,7 @@ export class UserService {
                 status: "PENDING",
                 symbol: COIIN,
                 amount: amount.toString(),
+                type: TransferType.CREDIT,
                 campaign,
             });
         }
@@ -389,5 +393,24 @@ export class UserService {
             }
         }
         return user;
+    }
+
+    public async getUserWalletBalances(wallet: Wallet & { currency: (Currency & { token: Token | null })[] }) {
+        return await Promise.all(
+            wallet.currency.map(async (item) => {
+                const symbol = item.token?.symbol || "";
+                const network = item.token?.network || "";
+                const pendingBalance = await this.transferService.getPendingWalletBalances(wallet.id, symbol);
+                const balance = (item.availableBalance || 0) + pendingBalance;
+                return {
+                    balance: balance.toString(),
+                    symbol,
+                    minWithdrawAmount: await getMinWithdrawableAmount(symbol),
+                    usdBalance: await getTokenValueInUSD(symbol, balance),
+                    imageUrl: getCryptoAssestImageUrl(symbol),
+                    network,
+                };
+            })
+        );
     }
 }

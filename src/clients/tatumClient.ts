@@ -653,4 +653,36 @@ export class TatumClient {
             throw new Error(error?.response?.data?.message || error.message);
         }
     };
+
+    public static getAccountList = async (symbol: string, page: number, pageSize: number) => {
+        try {
+            const endpoint = `${TatumClient.baseUrl}/ledger/account`;
+            const requestData: RequestData = {
+                method: "GET",
+                url: endpoint,
+                query: { currency: symbol, page, pageSize },
+                headers: { "x-api-key": Secrets.tatumApiKey },
+            };
+            return await doFetch(requestData);
+        } catch (error) {
+            console.log(error?.response?.data || error.message);
+            throw new Error(error?.response?.data?.message || error.message);
+        }
+    };
+
+    public static getTotalAccounts = async (symbol: string) => {
+        try {
+            const endpoint = `${TatumClient.baseUrl}/ledger/account/count`;
+            const requestData: RequestData = {
+                method: "GET",
+                url: endpoint,
+                query: { currency: symbol },
+                headers: { "x-api-key": Secrets.tatumApiKey },
+            };
+            return await doFetch(requestData);
+        } catch (error) {
+            console.log(error?.response?.data || error.message);
+            throw new Error(error?.response?.data?.message || error.message);
+        }
+    };
 }

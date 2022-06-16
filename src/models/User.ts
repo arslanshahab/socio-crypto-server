@@ -267,6 +267,7 @@ export class User extends BaseEntity {
                 status: "PENDING",
                 symbol: COIIN,
                 amount: new BN(amount),
+                type: "CREDIT",
                 campaign,
             });
         }

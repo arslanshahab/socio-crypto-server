@@ -156,6 +156,11 @@ export enum TransferStatus {
     REJECTED = "REJECTED",
 }
 
+export enum TransferType {
+    CREDIT = "CREDIT",
+    DEBIT = "DEBIT",
+}
+
 export enum CoiinTransferAction {
     ADD = "ADD",
     REMOVE = "REMOVE",

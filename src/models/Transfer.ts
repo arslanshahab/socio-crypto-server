@@ -341,6 +341,7 @@ export class Transfer extends BaseEntity {
         symbol: string;
         action: TransferAction;
         status: TransferStatus;
+        type: TransferType;
         campaign?: Campaign;
     }) {
         const transfer = new Transfer();
@@ -349,6 +350,7 @@ export class Transfer extends BaseEntity {
         transfer.status = data.status;
         transfer.currency = data.symbol;
         transfer.wallet = data.wallet;
+        transfer.type = data.type;
         if (data.campaign) transfer.campaign = data.campaign;
         return await transfer.save();
     }
