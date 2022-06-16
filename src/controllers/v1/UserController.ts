@@ -11,6 +11,7 @@ import {
     SuccessResult,
 } from "../../util/entities";
 import {
+    ADMIN_NOT_FOUND,
     ALREADY_PARTICIPATING,
     CAMPAIGN_CLOSED,
     CAMPAIGN_NOT_FOUND,
@@ -66,6 +67,8 @@ import { TokenService } from "../../services/TokenService";
 import { addDays, endOfISOWeek, startOfDay } from "date-fns";
 import { ProfileService } from "../../services/ProfileService";
 import { createPasswordHash } from "../../util";
+import { AdminService } from "../../services/AdminService";
+import { Firebase } from "../../clients/firebase";
 
 const userResultRelations = {
     profile: true,
@@ -108,6 +111,12 @@ class UpdateUserNameParams {
     @Required() public readonly username: string;
 }
 
+class PromotePermissionsParams {
+    @Required() public readonly firebaseId: string;
+    @Property() public readonly company: string;
+    @Property() public readonly role: "admin" | "manager";
+}
+
 @Controller("/user")
 export class UserController {
     @Inject()
@@ -136,6 +145,8 @@ export class UserController {
     private tokenService: TokenService;
     @Inject()
     private profileService: ProfileService;
+    @Inject()
+    private adminService: AdminService;
 
     @Get("/")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserResultModel))
@@ -548,5 +559,32 @@ export class UserController {
         if (profile) throw new BadRequest(USERNAME_EXISTS);
         await this.profileService.updateUsername(user.id, username);
         return new SuccessResult(UserResultModel.build(user), UserResultModel);
+    }
+
+    @Put("/promote-permissions")
+    @(Returns(200, SuccessResult).Of(UpdatedResultModel))
+    public async promotePermissions(@BodyParams() body: PromotePermissionsParams, @Context() context: Context) {
+        const { role, company } = this.userService.checkPermissions(
+            { hasRole: ["admin", "manager"] },
+            context.get("user")
+        );
+        const { firebaseId } = body;
+        if (!firebaseId) throw new BadRequest(MISSING_PARAMS);
+        const admin = await this.adminService.findAdminByFirebaseId(firebaseId);
+        if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
+        try {
+            if (role === "manager") {
+                await Firebase.adminClient.auth().setCustomUserClaims(admin.firebaseId, { role: "manager", company });
+            } else {
+                if (!body.role) throw new BadRequest(MISSING_PARAMS);
+                await Firebase.adminClient.auth().setCustomUserClaims(admin.firebaseId, {
+                    role: body.role,
+                    company: body.company || company,
+                });
+            }
+        } catch (error) {
+            console.log(error);
+        }
+        return new SuccessResult({ message: "User record updated successfully" }, UpdatedResultModel);
     }
 }
