@@ -30,4 +30,13 @@ export class MarketDataService {
     public async getTokenValueInUSD(token: string, amount: number) {
         return (await this.getExchangeRateForCrypto(token)) * amount;
     }
+
+    public async getMinWithdrawableAmount(symbol: string) {
+        const minLimit = parseFloat(process?.env?.MIN_WITHDRAW_LIMIT || "100");
+        const marketRate =
+            symbol.toUpperCase() === COIIN
+                ? parseFloat(process.env.COIIN_VALUE || "0.2")
+                : await this.getExchangeRateForCrypto(symbol);
+        return (1 / marketRate) * minLimit;
+    }
 }
