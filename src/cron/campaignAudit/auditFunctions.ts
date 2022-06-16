@@ -1,7 +1,7 @@
 import { calculateParticipantPayout, calculateTier } from "../../controllers/helpers";
 import { BN } from "../../util";
 import { CampaignAuditStatus, FEE_RATE, RAIINMAKER_ORG_NAME } from "../../util/constants";
-import { TatumClient, CAMPAIGN_REWARD, CAMPAIGN_FEE } from "../../clients/tatumClient";
+import { TatumClient, CAMPAIGN_FEE, BatchTransferPayload } from "../../clients/tatumClient";
 import { Campaign, Prisma } from "@prisma/client";
 import { prisma } from "../../clients/prisma";
 import { Tiers } from "../../types.d";
@@ -70,14 +70,28 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
         const totalParticipants = await prisma.participant.count({ where: { campaignId: campaign.id } });
         const paginatedLoop = Math.ceil(totalParticipants / take);
 
+        // transfer campaign fee to raiinmaker tatum account
+        if (campaign?.orgId !== raiinmakerOrg?.id) {
+            await TatumClient.transferFunds({
+                senderAccountId: campaignCurrency.tatumId,
+                recipientAccountId: raiinmakerCurrency.tatumId,
+                amount: raiinmakerFee?.toString(),
+                recipientNote: `${CAMPAIGN_FEE}:${campaign.id}`,
+            });
+        }
+
         for (let pageIndex = 0; pageIndex < paginatedLoop; pageIndex++) {
             const participants = await prisma.participant.findMany({
                 where: { campaignId: campaign.id },
                 take,
                 skip,
             });
-            const promiseArray = [];
             const transferDetails = [];
+            const batchTransfer: BatchTransferPayload = {
+                senderAccountId: "",
+                transaction: [],
+            };
+            batchTransfer.senderAccountId = campaignCurrency.tatumId;
             for (let index = 0; index < participants.length; index++) {
                 const participant = participants[index];
                 const userData = await prisma.user.findFirst({
@@ -106,14 +120,10 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
                 });
                 console.log(participantShare.toString());
                 if (participantShare.isGreaterThan(0) && !alreadyTransferred) {
-                    promiseArray.push(
-                        TatumClient.transferFunds({
-                            senderAccountId: campaignCurrency.tatumId,
-                            recipientAccountId: userCurrency.tatumId,
-                            amount: participantShare.toString(),
-                            recipientNote: `${CAMPAIGN_REWARD}:${campaign.id}`,
-                        })
-                    );
+                    batchTransfer.transaction.push({
+                        recipientAccountId: userCurrency.tatumId,
+                        amount: participantShare.toString(),
+                    });
                     transferDetails.push({
                         campaignCurrency,
                         userCurrency,
@@ -131,31 +141,21 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
                     );
                 }
             }
-
-            // transfer campaign fee to raiinmaker tatum account
-            if (campaign?.orgId !== raiinmakerOrg?.id) {
-                await TatumClient.transferFunds({
-                    senderAccountId: campaignCurrency.tatumId,
-                    recipientAccountId: raiinmakerCurrency.tatumId,
-                    amount: raiinmakerFee?.toString(),
-                    recipientNote: `${CAMPAIGN_FEE}:${campaign.id}`,
-                });
-            }
-            const responses = await Promise.allSettled(promiseArray);
+            const resp = await TatumClient.transferFundsBatch(batchTransfer);
+            console.log(resp);
             const transferRecords = [];
-            for (let index = 0; index < responses.length; index++) {
-                const resp = responses[index];
+            for (let index = 0; index < transferDetails.length; index++) {
                 const transferData = transferDetails[index];
                 const wallet = await prisma.wallet.findFirst({ where: { userId: transferData.user.id } });
                 if (!wallet) throw new Error("wallet not found for user.");
                 transferRecords.push({
-                    symbol: campaignToken?.symbol,
+                    currency: campaignToken?.symbol,
                     campaignId: transferData.campaign.id,
                     amount: transferData.amount.toString(),
                     ethAddress: transferData.userCurrency.tatumId,
                     walletId: wallet.id,
                     action: "CAMPAIGN_REWARD",
-                    status: resp.status === "fulfilled" ? "SUCCEEDED" : "FAILED",
+                    status: "SUCCEEDED",
                 });
             }
             await prisma.transfer.createMany({ data: transferRecords });

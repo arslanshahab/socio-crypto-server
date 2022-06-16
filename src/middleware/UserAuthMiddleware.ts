@@ -2,12 +2,18 @@ import { Context, Middleware, Req } from "@tsed/common";
 import { Forbidden, InternalServerError } from "@tsed/exceptions";
 import { verifySessionToken } from "../util";
 import { getActiveAdmin } from "../controllers/helpers";
+import { UserService } from "../services/UserService";
+import { Inject } from "@tsed/di";
+import { ACCOUNT_RESTRICTED } from "../util/errors";
 
 /**
  * Authenticates users based on the Authorization header
  */
 @Middleware()
 export class UserAuthMiddleware {
+    @Inject()
+    private userService: UserService;
+
     public async use(@Req() req: Req, @Context() ctx: Context) {
         // ADMIN authorization
         // check if the cookie has session value
@@ -18,7 +24,7 @@ export class UserAuthMiddleware {
             return;
         }
 
-        if (ctx.has("user") || ctx.request.url.startsWith("/v1/docs/")) {
+        if (ctx.has("user") || ctx.request.url.startsWith("/v1/docs/") || ctx.request.url.startsWith("/v1/auth/")) {
             return;
         }
 
@@ -27,6 +33,8 @@ export class UserAuthMiddleware {
         if (!token) throw new Forbidden("Access token is missing.");
         try {
             const user = verifySessionToken(token);
+            const userData = await this.userService.findUserByContext(user);
+            if (!userData?.active) throw new Forbidden(ACCOUNT_RESTRICTED);
             ctx.set("user", user);
         } catch (error) {
             throw new InternalServerError(error);

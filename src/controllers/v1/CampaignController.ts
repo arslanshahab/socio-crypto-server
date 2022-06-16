@@ -21,7 +21,7 @@ import {
     CampaignMetricsResultModel,
     CampaignResultModel,
     CreateCampaignResultModel,
-    CurrentCampaignModel,
+    CurrentCampaignTierModel,
     DeleteCampaignResultModel,
     GenerateCampaignAuditReportResultModel,
     MediaUrlsModel,
@@ -50,6 +50,7 @@ import { EscrowService } from "../../services/EscrowService";
 import { CampaignTemplateService } from "../../services/CampaignTemplateService";
 import { TatumClientService } from "../../services/TatumClientService";
 import { readPrisma } from "../../clients/prisma";
+import { MarketDataService } from "../../services/MarketDataService";
 
 const validator = new Validator();
 
@@ -90,6 +91,8 @@ export class CampaignController {
     private userService: UserService;
     @Inject()
     private tatumClientService: TatumClientService;
+    @Inject()
+    private marketDataService: MarketDataService;
 
     @Get()
     @(Returns(200, SuccessResult).Of(Pagination).Nested(CampaignResultModel))
@@ -98,7 +101,15 @@ export class CampaignController {
         console.log("all campaigns with read prisma---------", campaigns.length);
         const user = await this.userService.findUserByContext(context.get("user"));
         const [items, total] = await this.campaignService.findCampaignsByStatus(query, user || undefined);
-        const modelItems = await Promise.all(items.map((i) => CampaignResultModel.build(i as any)));
+        const modelItems = await Promise.all(
+            items.map(async (i) => {
+                const campaignTokenValueInUSD = await this.marketDataService.getTokenValueInUSD(
+                    i.currency?.token?.symbol || "",
+                    parseFloat(i.coiinTotal)
+                );
+                return CampaignResultModel.build(i, campaignTokenValueInUSD);
+            })
+        );
         return new SuccessResult(new Pagination(modelItems, total, CampaignResultModel), Pagination);
     }
 
@@ -112,16 +123,24 @@ export class CampaignController {
             campaign_template: true,
         });
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
-        return new SuccessResult(await CampaignResultModel.build(campaign), CampaignResultModel);
+        const campaignTokenValueInUSD = await this.marketDataService.getTokenValueInUSD(
+            campaign.currency?.token?.symbol || "",
+            parseFloat(campaign.coiinTotal)
+        );
+        return new SuccessResult(
+            await CampaignResultModel.build(campaign, campaignTokenValueInUSD),
+            CampaignResultModel
+        );
     }
 
     @Get("/current-campaign-tier")
-    @(Returns(200, SuccessResult).Of(CurrentCampaignModel))
+    @(Returns(200, SuccessResult).Of(CurrentCampaignTierModel))
     public async getCurrentCampaignTier(@QueryParams() query: CampaignIdModel, @Context() context: Context) {
         const { campaignId } = query;
         const campaignTier = await this.campaignService.currentCampaignTier(campaignId);
-        return new SuccessResult(campaignTier, CurrentCampaignModel);
+        return new SuccessResult(campaignTier, CurrentCampaignTierModel);
     }
+
     @Get("/campaign-metrics")
     @(Returns(200, SuccessResult).Of(CampaignMetricsResultModel))
     public async getCampaignMetrics(@QueryParams() query: CampaignIdModel, @Context() context: Context) {

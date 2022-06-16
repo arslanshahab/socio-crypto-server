@@ -1,6 +1,6 @@
 {
     "name": "raiinmaker-server",
-    "version": "3.3.84",
+    "version": "3.3.92",
     "main": "index.js",
     "repository": "git@github.com:dragonchain-inc/raiinmaker-server.git",
     "author": "Alex Benedetto <alex061994@gmail.com>",
@@ -60,6 +60,7 @@
         "@tsed/prisma": "^6.107.4",
         "@tsed/schema": "^6.107.2",
         "@tsed/swagger": "^6.107.4",
+        "@types/cache-manager-redis-store": "^2.0.1",
         "@types/lodash": "^4.14.170",
         "@types/websocket": "^1.0.5",
         "ajv": "^8.10.0",
@@ -69,6 +70,7 @@
         "bignumber.js": "^9.0.0",
         "body-parser": "^1.19.0",
         "bs58": "^4.0.1",
+        "cache-manager-redis-store": "^2.0.0",
         "cls-hooked": "^4.2.2",
         "cls-rtracer": "^1.4.0",
         "compression": "^1.7.4",

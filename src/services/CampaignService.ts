@@ -1,23 +1,24 @@
-import { Campaign, CampaignMedia, CampaignTemplate, Org, Prisma, User } from "@prisma/client";
+import { CampaignMedia, CampaignTemplate, Org, Prisma, User } from "@prisma/client";
 import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { CurrencyResultType, ListCampaignsVariablesV2, Tiers } from "../types";
 import { CAMPAIGN_NOT_FOUND, CURRENCY_NOT_FOUND, ERROR_CALCULATING_TIER } from "../util/errors";
 import { calculateTier } from "../controllers/helpers";
-import { BN } from "../util";
-import { getTokenPriceInUsd } from "../clients/ethereum";
-import { CurrentCampaignModel } from "../models/RestModels";
-import { CryptoCurrencyService } from "./CryptoCurrencyService";
+import { BN, prepareCacheKey } from "../util";
+import { CurrentCampaignTierModel } from "../models/RestModels";
 import { CAMPAIGN_CREATION_AMOUNT } from "../clients/tatumClient";
 import { TatumClientService } from "./TatumClientService";
+import { PlatformCache, UseCache } from "@tsed/common";
+import { CacheKeys } from "../util/constants";
+import { resetCacheKey } from "../util/index";
 
 @Injectable()
 export class CampaignService {
     @Inject()
     private prismaService: PrismaService;
     @Inject()
-    private cryptoCurrencyService: CryptoCurrencyService;
+    private cache: PlatformCache;
     @Inject()
     private tatumClientService: TatumClientService;
 
@@ -28,6 +29,11 @@ export class CampaignService {
      * @param user an optional user include in the campaign results (depends on params.userRelated)
      * @returns the list of campaigns, and a count of total campaigns, matching the parameters
      */
+    @UseCache({
+        ttl: 600,
+        refreshThreshold: 300,
+        key: (args: any[]) => prepareCacheKey(CacheKeys.CAMPAIGN_BY_STATUS_SERVICE, args),
+    })
     public async findCampaignsByStatus(params: ListCampaignsVariablesV2, user?: User) {
         const now = new Date();
 
@@ -68,6 +74,11 @@ export class CampaignService {
         ]);
     }
 
+    @UseCache({
+        ttl: 600,
+        refreshThreshold: 300,
+        key: (args: any[]) => prepareCacheKey(CacheKeys.CAMPAIGN_BY_ID_SERVICE, args),
+    })
     public async findCampaignById<T extends Prisma.CampaignInclude | undefined>(
         campaignId: string,
         include?: T,
@@ -88,6 +99,11 @@ export class CampaignService {
         });
     }
 
+    @UseCache({
+        ttl: 600,
+        refreshThreshold: 300,
+        key: (args: any[]) => prepareCacheKey(CacheKeys.CAMPAIGN_GLOBAL_SERVICE, args),
+    })
     public async findGlobalCampaign(isGlobal: true, symbol: string) {
         return this.prismaService.campaign.findFirst({
             where: {
@@ -97,6 +113,12 @@ export class CampaignService {
             include: { org: true },
         });
     }
+
+    @UseCache({
+        ttl: 600,
+        refreshThreshold: 300,
+        key: (args: any[]) => prepareCacheKey(CacheKeys.CAMPAIGN_BY_NAME_SERVICE, args),
+    })
     public async findCampaingByName(name: string) {
         return this.prismaService.campaign.findFirst({
             where: {
@@ -107,6 +129,7 @@ export class CampaignService {
             },
         });
     }
+
     public async createCampaign(
         name: string,
         beginDate: Date,
@@ -135,6 +158,7 @@ export class CampaignService {
         campaignMedia: CampaignMedia[],
         campaignTemplates: CampaignTemplate[]
     ) {
+        await resetCacheKey(CacheKeys.CAMPAIGN_RESET_KEY, this.cache);
         const response = await this.prismaService.campaign.create({
             data: {
                 name: name,
@@ -194,6 +218,7 @@ export class CampaignService {
         socialMediaType: string[],
         showUrl: boolean
     ) {
+        await resetCacheKey(CacheKeys.CAMPAIGN_RESET_KEY, this.cache);
         return await this.prismaService.campaign.update({
             where: { id },
             data: {
@@ -220,12 +245,14 @@ export class CampaignService {
     }
 
     public async deleteCampaign(campaignId: string) {
+        await resetCacheKey(CacheKeys.CAMPAIGN_RESET_KEY, this.cache);
         return await this.prismaService.campaign.delete({
             where: { id: campaignId },
         });
     }
 
     public async updateCampaignStatus(campaignId: string) {
+        await resetCacheKey(CacheKeys.CAMPAIGN_RESET_KEY, this.cache);
         return await this.prismaService.campaign.update({
             where: {
                 id: campaignId,
@@ -235,43 +262,32 @@ export class CampaignService {
             },
         });
     }
+
+    @UseCache({
+        ttl: 600,
+        refreshThreshold: 300,
+        key: (args: any[]) => prepareCacheKey(CacheKeys.CAMPAIGN_BY_ORG_SERVICE, args),
+    })
     public async findCampaignsByOrgId(orgId: string) {
         return await this.prismaService.campaign.findMany({ where: { orgId } });
     }
 
     public async currentCampaignTier(campaignId: string) {
-        let currentTierSummary;
-        let currentCampaign: Campaign | null;
-        let cryptoPriceUsd;
-
-        currentCampaign = await this.findCampaignById(campaignId);
-        if (campaignId) {
-            if (!currentCampaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
-            if (currentCampaign.type == "raffle") return { currentTier: -1, currentTotal: 0 };
-            currentTierSummary = calculateTier(
-                new BN(currentCampaign.totalParticipationScore),
-                (currentCampaign.algorithm as Prisma.JsonObject).tiers as Prisma.JsonObject as unknown as Tiers
-            );
-            if (currentCampaign.cryptoId) {
-                const cryptoCurrency = await this.cryptoCurrencyService.findCryptoCurrencyById(
-                    currentCampaign.cryptoId
-                );
-                const cryptoCurrencyType = cryptoCurrency?.type;
-                if (!cryptoCurrencyType) throw new NotFound("Crypto currency not found");
-                cryptoPriceUsd = await getTokenPriceInUsd(cryptoCurrencyType);
-            }
-        }
+        const currentCampaign = await this.findCampaignById(campaignId);
+        if (!currentCampaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
+        if (currentCampaign.type == "raffle") return { currentTier: -1, currentTotal: 0 };
+        const currentTierSummary = calculateTier(
+            new BN(currentCampaign.totalParticipationScore),
+            (currentCampaign.algorithm as Prisma.JsonObject).tiers as Prisma.JsonObject as unknown as Tiers
+        );
         if (!currentTierSummary) throw new BadRequest(ERROR_CALCULATING_TIER);
-        let body: CurrentCampaignModel = {
+        let body: CurrentCampaignTierModel = {
             currentTier: currentTierSummary.currentTier,
             currentTotal: parseFloat(currentTierSummary.currentTotal.toString()),
-            campaignType: null,
+            campaignType: currentCampaign.type,
             tokenValueCoiin: null,
             tokenValueUsd: null,
         };
-        if (currentCampaign) body.campaignType = currentCampaign.type;
-        if (cryptoPriceUsd) body.tokenValueUsd = cryptoPriceUsd.toString();
-        if (cryptoPriceUsd) body.tokenValueCoiin = cryptoPriceUsd.times(10).toString();
         return body;
     }
 

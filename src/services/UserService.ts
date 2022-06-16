@@ -1,11 +1,11 @@
-import { Campaign, Org, Prisma, User, Wallet } from "@prisma/client";
+import { Campaign, Prisma, User, Wallet } from "@prisma/client";
 import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
 import { BadRequest, Forbidden, NotFound } from "@tsed/exceptions";
 import { isArray } from "lodash";
 import { JWTPayload, RewardType } from "../types";
 import { AddressService } from "./AddressService";
-import { BSC, COIIN, REWARD_AMOUNTS, SHARING_REWARD_LIMIT_PER_DAY } from "../util/constants";
+import { BSC, CacheKeys, COIIN, REWARD_AMOUNTS, SHARING_REWARD_LIMIT_PER_DAY } from "../util/constants";
 import { TatumClient } from "../clients/tatumClient";
 import { createSubscriptionUrl } from "../util/tatumHelper";
 import { WalletService } from "./WalletService";
@@ -14,7 +14,11 @@ import { differenceInHours, subDays } from "date-fns";
 import { TransferService } from "./TransferService";
 import { OrganizationService } from "./OrganizationService";
 import { TatumClientService } from "./TatumClientService";
-import { createPasswordHash } from "../util";
+import { createPasswordHash, prepareCacheKey } from "../util";
+import { ProfileService } from "./ProfileService";
+import { NotificationService } from "./NotificationService";
+import { PlatformCache, UseCache } from "@tsed/common";
+import { resetCacheKey } from "../util/index";
 
 type Array2TrueMap<T> = T extends string[] ? { [idx in T[number]]: true } : undefined;
 
@@ -32,6 +36,12 @@ export class UserService {
     private orgService: OrganizationService;
     @Inject()
     private tatumClientService: TatumClientService;
+    @Inject()
+    private profileService: ProfileService;
+    @Inject()
+    private notificationService: NotificationService;
+    @Inject()
+    private cache: PlatformCache;
 
     /**
      * Retrieves a user object from a JWTPayload
@@ -40,6 +50,7 @@ export class UserService {
      * @param include additional relations to include with the user query
      * @returns the user object, with the requested relations included
      */
+
     public async findUserByContext<T extends (keyof Prisma.UserInclude)[] | Prisma.UserInclude | undefined>(
         data: JWTPayload,
         include?: T
@@ -54,6 +65,11 @@ export class UserService {
      * @param include additional relations to include with the user query
      * @returns the user object, with the requested relations included
      */
+    @UseCache({
+        ttl: 600,
+        refreshThreshold: 300,
+        key: (args: any[]) => prepareCacheKey(CacheKeys.USER_BY_ID_SERVICE, args),
+    })
     public async findUserById<T extends (keyof Prisma.UserInclude)[] | Prisma.UserInclude | undefined>(
         userId: string | Prisma.StringFilter,
         include?: T
@@ -163,7 +179,12 @@ export class UserService {
      * @param user the user to retrieve the wallet for
      * @returns the wallet's address
      */
-    public async getCoiinAddress(user: User & { wallet: Wallet & { org: Org | null } }) {
+    @UseCache({
+        ttl: 600,
+        refreshThreshold: 300,
+        key: (args: any[]) => prepareCacheKey(CacheKeys.USER_COIIN_ADDRESS_SERVICE, args),
+    })
+    public async getCoiinAddress(user: User & { wallet: Wallet }) {
         let currency = await this.addressService.findOrCreateCurrency(
             {
                 symbol: COIIN,
@@ -248,6 +269,7 @@ export class UserService {
     }
 
     public async updateUserStatus(userId: string, activeStatus: boolean) {
+        await resetCacheKey(CacheKeys.USER_BY_ID_SERVICE, this.cache, userId);
         return await this.prismaService.user.update({
             where: { id: userId },
             data: { active: activeStatus },
@@ -265,23 +287,6 @@ export class UserService {
         return await this.prismaService.user.update({
             where: { id: userId },
             data: { deletedAt: undefined },
-        });
-    }
-
-    public async getUserById(userId: string) {
-        return await this.prismaService.user.findFirst({
-            where: { id: userId, deletedAt: null },
-            include: {
-                wallet: {
-                    include: {
-                        currency: {
-                            include: {
-                                token: true,
-                            },
-                        },
-                    },
-                },
-            },
         });
     }
 
@@ -355,5 +360,54 @@ export class UserService {
                 where: { active: false },
             }),
         ]);
+    }
+
+    public async findUserByEmail(email: string) {
+        return await this.prismaService.user.findFirst({
+            where: {
+                email: { contains: email, mode: "insensitive" },
+            },
+        });
+    }
+
+    public async updateLastLogin(userId: string) {
+        return await this.prismaService.user.update({ where: { id: userId }, data: { lastLogin: new Date() } });
+    }
+
+    public async initNewUser(email: string, username: string, password: string, referralCode?: string | null) {
+        const user = await this.prismaService.user.create({
+            data: {
+                email: email.trim(),
+                password: createPasswordHash({ email, password }),
+                referralCode: referralCode ? referralCode : null,
+            },
+        });
+
+        const wallet = await this.walletService.createWallet(user);
+        await this.profileService.createProfile(user, username);
+        await this.notificationService.createNotificationSetting(user.id);
+        await this.tatumClientService.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet: wallet });
+        return await user.id;
+    }
+
+    public async updateEmailPassword(email: string, password: string) {
+        return await this.prismaService.user.create({
+            data: { email, password },
+        });
+    }
+
+    public async updatedUserEmail(email: string) {
+        const user = this.findUserByEmail(email);
+        if (!user) {
+            const profile = await this.profileService.findProfileByEmail(email);
+            if (profile) {
+                await this.prismaService.user.update({
+                    where: { id: profile.userId! },
+                    data: { email: profile.email! },
+                });
+                await this.prismaService.profile.update({ where: { id: profile.id }, data: { email: "" } });
+            }
+        }
+        return user;
     }
 }

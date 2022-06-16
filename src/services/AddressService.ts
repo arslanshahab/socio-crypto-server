@@ -1,15 +1,18 @@
-import { Prisma, Org, Wallet, Token, Currency } from "@prisma/client";
+import { Prisma, Wallet, Token, Currency } from "@prisma/client";
 import { Inject, Injectable } from "@tsed/di";
 import { BadRequest } from "@tsed/exceptions";
 import { PrismaService } from ".prisma/client/entities";
 import { TatumClient } from "../clients/tatumClient";
 import { SymbolNetworkParams } from "../types";
 import { getCurrencyForTatum } from "../util/tatumHelper";
+import { WalletService } from "./WalletService";
 
 @Injectable()
 export class AddressService {
     @Inject()
     private prismaService: PrismaService;
+    @Inject()
+    private walletService: WalletService;
 
     /**
      * Retrieves the currency for the given symbol and network, if it's enabled
@@ -117,7 +120,7 @@ export class AddressService {
      * @param wallet the wallet to use if possible
      * @returns the currency object
      */
-    public async findOrCreateCurrency(data: SymbolNetworkParams, wallet: Wallet & { org: Org | null }) {
+    public async findOrCreateCurrency(data: SymbolNetworkParams, wallet: Wallet) {
         const token = await this.isCurrencySupported(data);
         if (!token) throw new BadRequest(`Currency ${data.symbol} is not supported.`);
         let ledgerAccount = await this.prismaService.currency.findFirst({
@@ -128,7 +131,7 @@ export class AddressService {
             const isCustodial = TatumClient.isCustodialWallet(data);
             const newLedgerAccount = await TatumClient.createLedgerAccount({ ...data, isCustodial });
             if (isCustodial) {
-                if (wallet.org) {
+                if (await this.walletService.ifWalletBelongsToOrg(wallet.id)) {
                     const availableAddress = await this.getAvailableAddress(data, wallet);
                     if (!availableAddress) throw new Error("No custodial address available.");
                     await TatumClient.assignAddressToAccount({

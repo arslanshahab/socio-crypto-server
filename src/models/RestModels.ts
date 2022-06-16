@@ -1,6 +1,5 @@
 import Prisma from "@prisma/client";
 import { ArrayOf, CollectionOf, Nullable, Optional, Property, Required } from "@tsed/schema";
-import { getTokenValueInUSD } from "../util/exchangeRate";
 import { getCryptoAssestImageUrl } from "../util";
 
 export class CampaignMediaResultModel {
@@ -86,7 +85,8 @@ export class CampaignResultModel {
             crypto_currency: Prisma.CryptoCurrency | null;
             campaign_media: Prisma.CampaignMedia[];
             campaign_template: Prisma.CampaignTemplate[];
-        }
+        },
+        coiinTotalUSD: number
     ) {
         const result: CampaignResultModel = {
             ...campaign,
@@ -94,12 +94,8 @@ export class CampaignResultModel {
                 ParticipantResultModel.build({ ...participant, campaign })
             ),
         };
-        if (result.coiinTotal) {
-            const value = await getTokenValueInUSD(campaign.symbol, parseFloat(campaign.coiinTotal.toString()));
-            result.coiinTotalUSD = value.toFixed(2);
-        } else {
-            result.coiinTotalUSD = "0";
-        }
+
+        result.coiinTotalUSD = result.coiinTotal ? coiinTotalUSD.toFixed(2) : "0";
 
         if (campaign.currency) {
             result.network = campaign.currency.token?.network || "";
@@ -117,7 +113,7 @@ export class CampaignResultModel {
     }
 }
 
-export class CurrentCampaignModel {
+export class CurrentCampaignTierModel {
     @Property() public currentTier: number;
     @Property() public currentTotal: number;
     @Nullable(String) public campaignType: string | null;
@@ -533,4 +529,82 @@ export class OrgDetailsModel {
 
 export class OrganizationDetailsResultModel {
     @Property() public readonly orgDetails: OrgDetailsModel[];
+}
+
+export class LoginParams {
+    @Required() public readonly email: string;
+    @Required() public readonly password: string;
+}
+
+export class UserTokenReturnModel {
+    @Property() public readonly token: string;
+}
+
+export class RegisterUserParams {
+    @Required() public readonly email: string;
+    @Required() public readonly username: string;
+    @Required() public readonly password: string;
+    @Required() public readonly verificationToken: string;
+    @Nullable(String) public readonly referralCode: string | null;
+}
+
+export class ResetUserPasswordParams {
+    @Required() public readonly verificationToken: string;
+    @Required() public readonly password: string;
+}
+
+export class RecoverUserAccountStep1Parms {
+    @Required() public readonly username: string;
+    @Required() public readonly code: string;
+}
+export class RecoverUserAccountStep2Parms {
+    @Required() public readonly email: string;
+    @Required() public readonly password: string;
+    @Required() public readonly userId: string;
+    @Required() public readonly verificationToken: string;
+}
+
+export class CompleteVerificationParams {
+    @Required() public readonly email: string;
+    @Required() public readonly code: string;
+}
+
+export class CompleteVerificationResultModel extends BooleanResultModel {
+    @Property() public readonly verificationToken: string;
+}
+
+export class UserParticipateParams {
+    @Required() public readonly campaignId: string;
+    @Property() public readonly email: string;
+}
+
+export class WeeklyRewardsResultModel {
+    @Property() public readonly loginRewardRedeemed: boolean;
+    @Property() public readonly loginReward: number;
+    @Property() public readonly nextLoginReward: string;
+    @Property() public readonly participationReward: number;
+    @Property() public readonly participationId: string;
+    @Property() public readonly nextParticipationReward: string;
+    @Property() public readonly participationRewardRedeemed: boolean;
+    @Property() public readonly participationRedemptionDate: string;
+    @Property() public readonly loginRedemptionDate: string;
+    @Property() public readonly earnedToday: number;
+    @Property() public readonly sharingReward: number;
+}
+export class UpdateProfileInterestsParams {
+    @Property() public readonly ageRange: string;
+    @Property() public readonly city: string;
+    @Property() public readonly state: string;
+    @Property() public readonly country: string;
+    @ArrayOf(String) public readonly interests: string[];
+    @ArrayOf(String) public readonly values: string[];
+}
+
+export class RemoveInterestsParams {
+    @Property() public readonly ageRange: string;
+    @Property() public readonly city: string;
+    @Property() public readonly state: string;
+    @Property() public readonly country: string;
+    @Property() public readonly interests: string;
+    @Property() public readonly values: string;
 }
