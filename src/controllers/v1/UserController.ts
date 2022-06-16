@@ -3,7 +3,6 @@ import { Controller, Inject } from "@tsed/di";
 import { BodyParams, Context, PathParams, QueryParams } from "@tsed/common";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { UserService } from "../../services/UserService";
-import { getBalance } from "../helpers";
 import {
     PaginatedVariablesModel,
     PaginatedVariablesFilteredModel,
@@ -269,7 +268,7 @@ export class UserController {
         });
         if (!user) throw new NotFound(USER_NOT_FOUND);
         if (!user.wallet) throw new NotFound(WALLET_NOT_FOUND);
-        const currencies = await getBalance(user);
+        const currencies = await this.userService.getUserWalletBalances(user.wallet);
         return new SuccessArrayResult(
             currencies.filter(<T>(r: T | null): r is T => !!r),
             BalanceResultModel
