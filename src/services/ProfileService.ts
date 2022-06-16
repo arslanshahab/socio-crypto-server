@@ -87,4 +87,11 @@ export class ProfileService {
             },
         });
     }
+
+    public async updateUsername(userId: string, username: string) {
+        return await this.prismaService.profile.update({
+            where: { userId },
+            data: { username },
+        });
+    }
 }

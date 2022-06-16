@@ -22,6 +22,7 @@ import {
     PARTICIPANT_NOT_FOUND,
     SAME_OLD_AND_NEW_PASSWORD,
     TOKEN_NOT_FOUND,
+    USERNAME_EXISTS,
     USER_NOT_FOUND,
     WALLET_NOT_FOUND,
 } from "../../util/errors";
@@ -102,6 +103,11 @@ class UpdateUserPasswordParams {
     @Required() public readonly oldPassword: string;
     @Required() public readonly newPassword: string;
 }
+
+class UpdateUserNameParams {
+    @Required() public readonly username: string;
+}
+
 @Controller("/user")
 export class UserController {
     @Inject()
@@ -530,5 +536,17 @@ export class UserController {
             throw new Error(SAME_OLD_AND_NEW_PASSWORD);
         await this.userService.resetUserPassword(user.id, user.email, newPassword);
         return new SuccessResult({ success: true }, BooleanResultModel);
+    }
+
+    @Put("/update-user-name")
+    @(Returns(200, SuccessResult).Of(SingleUserResultModel))
+    public async updateUserName(@QueryParams() query: UpdateUserNameParams, @Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"), userResultRelations);
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        const { username } = query;
+        const profile = await this.profileService.findProfileByUsername(username);
+        if (profile) throw new BadRequest(USERNAME_EXISTS);
+        await this.profileService.updateUsername(user.id, username);
+        return new SuccessResult(UserResultModel.build(user), UserResultModel);
     }
 }
