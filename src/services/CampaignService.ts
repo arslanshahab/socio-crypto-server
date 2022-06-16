@@ -331,4 +331,8 @@ export class CampaignService {
             },
         });
     }
+
+    public async findCampaignList() {
+        return this.prismaService.campaign.findMany();
+    }
 }

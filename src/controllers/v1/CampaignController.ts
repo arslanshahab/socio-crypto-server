@@ -49,7 +49,7 @@ import { TransferService } from "../../services/TransferService";
 import { EscrowService } from "../../services/EscrowService";
 import { CampaignTemplateService } from "../../services/CampaignTemplateService";
 import { TatumClientService } from "../../services/TatumClientService";
-import { readPrisma } from "../../clients/prisma";
+import { prisma, readPrisma } from "../../clients/prisma";
 import { MarketDataService } from "../../services/MarketDataService";
 
 const validator = new Validator();
@@ -97,8 +97,6 @@ export class CampaignController {
     @Get()
     @(Returns(200, SuccessResult).Of(Pagination).Nested(CampaignResultModel))
     public async list(@QueryParams() query: ListCampaignsVariablesModel, @Context() context: Context) {
-        let campaigns = await readPrisma.campaign.findMany();
-        console.log("all campaigns with read prisma---------", campaigns.length);
         const user = await this.userService.findUserByContext(context.get("user"));
         const [items, total] = await this.campaignService.findCampaignsByStatus(query, user || undefined);
         const modelItems = await Promise.all(
@@ -682,5 +680,14 @@ export class CampaignController {
         const deviceTokens = await User.getAllDeviceTokens("campaignCreate");
         if (deviceTokens.length > 0) await Firebase.sendCampaignCreatedNotifications(deviceTokens, campaign);
         return new SuccessResult({ message: "Campaign status updated successfully" }, UpdatedResultModel);
+    }
+
+    @Get("/list-campaigns")
+    @(Returns(200, SuccessArrayResult).Of(CampaignResultModel))
+    public async listCampaigns(@Context() context: Context) {
+        const campaign = await this.campaignService.findCampaignList();
+        const campaignV1 = await prisma.campaign.findMany();
+        const campaignV2 = await readPrisma.campaign.findMany();
+        return new SuccessResult({ campaign, campaignV1, campaignV2 }, Object);
     }
 }
