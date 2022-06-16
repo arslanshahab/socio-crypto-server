@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class CurrencyBalance1655287422340 implements MigrationInterface {
-    name = "CurrencyBalance1655287422340";
+    name = "CurrencyBalanceChanges1656287422440";
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`ALTER TABLE "tatum_wallet" DROP COLUMN "enabled"`);
