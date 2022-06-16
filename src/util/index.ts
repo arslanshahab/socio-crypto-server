@@ -474,7 +474,7 @@ export const resetCacheKey = async (baseKey: string, cacheInstance: PlatformCach
     const allKeys = await cacheInstance.keys(`*${preparedKey}*`);
     for (const key of allKeys) {
         if (key.includes(preparedKey)) {
-            cacheInstance.del(key);
+            await cacheInstance.del(key);
         }
     }
 };

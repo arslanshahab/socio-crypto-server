@@ -271,7 +271,7 @@ export class UserService {
     }
 
     public async updateUserStatus(userId: string, activeStatus: boolean) {
-        await resetCacheKey(CacheKeys.USER_BY_ID_SERVICE, this.cache);
+        await resetCacheKey(CacheKeys.USER_BY_ID_SERVICE, this.cache, [userId]);
         return await this.prismaService.user.update({
             where: { id: userId },
             data: { active: activeStatus },
