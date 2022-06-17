@@ -65,7 +65,7 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
         });
         if (!raiinmakerCurrency) throw new Error("currency not found for raiinmaker");
         if (!campaignCurrency) throw new Error("currency not found for campaign");
-        const take = 500;
+        const take = 100;
         let skip = 0;
         const totalParticipants = await prisma.participant.count({ where: { campaignId: campaign.id } });
         const paginatedLoop = Math.ceil(totalParticipants / take);
@@ -141,6 +141,7 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
                     );
                 }
             }
+
             const resp = await TatumClient.transferFundsBatch(batchTransfer);
             const transferRecords = [];
             for (let index = 0; index < transferDetails.length; index++) {
