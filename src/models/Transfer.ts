@@ -354,4 +354,32 @@ export class Transfer extends BaseEntity {
         if (data.campaign) transfer.campaign = data.campaign;
         return await transfer.save();
     }
+
+    public static async getPendingWalletBalances(walletId: string, symbol: string) {
+        const { credit } = await this.createQueryBuilder("transfer")
+            .select("SUM(CAST(transfer.amount AS DECIMAL)) as credit")
+            .where(
+                `transfer.type >= :type AND transfer."walletId" = :wallet AND transfer.currency = :symbol AND transfer.status IN (:...statuses)`,
+                {
+                    symbol,
+                    wallet: walletId,
+                    type: "CREDIT",
+                    statuses: ["FAILED", "PENDING"],
+                }
+            )
+            .getRawOne();
+        const { debit } = await this.createQueryBuilder("transfer")
+            .select("SUM(CAST(transfer.amount AS DECIMAL)) as debit")
+            .where(
+                `transfer.type >= :type AND transfer."walletId" = :wallet AND transfer.currency = :symbol AND transfer.status = :status`,
+                {
+                    symbol,
+                    wallet: walletId,
+                    type: "DEBIT",
+                    status: "PENDING",
+                }
+            )
+            .getRawOne();
+        return parseFloat(credit || 0) - parseFloat(debit || 0);
+    }
 }
