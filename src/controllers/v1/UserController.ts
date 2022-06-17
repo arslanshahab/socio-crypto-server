@@ -19,6 +19,7 @@ import {
     EMAIL_EXISTS,
     GLOBAL_CAMPAIGN_NOT_FOUND,
     INCORRECT_PASSWORD,
+    INVALID_TOKEN,
     MISSING_PARAMS,
     NOTIFICATION_SETTING_NOT_FOUND,
     PARTICIPANT_NOT_FOUND,
@@ -74,6 +75,7 @@ import { createPasswordHash } from "../../util";
 import { AdminService } from "../../services/AdminService";
 import { Firebase } from "../../clients/firebase";
 import { VerificationService } from "../../services/VerificationService";
+import { decrypt } from "../../util/crypto";
 
 const userResultRelations = {
     profile: true,
@@ -132,6 +134,11 @@ class SetDeviceParams {
 
 class StartEmailVerificationParams {
     @Required() public readonly email: string;
+}
+
+class CompleteEmailVerificationParams {
+    @Required() public readonly email: string;
+    @Required() public readonly token: string;
 }
 
 @Controller("/user")
@@ -663,5 +670,24 @@ export class UserController {
             { success: true, message: "Email sent to provided email address" },
             ReturnSuccessResultModel
         );
+    }
+
+    @Post("/complete-email-verification")
+    @(Returns(200, SuccessResult).Of(UpdatedResultModel))
+    public async completeEmailVerification(
+        @BodyParams() body: CompleteEmailVerificationParams,
+        @Context() context: Context
+    ) {
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        const { email, token } = body;
+        if ((await this.userService.findUserByEmail(email)) || (await this.profileService.findProfileByEmail(email)))
+            throw new BadRequest(EMAIL_EXISTS);
+
+        const verificationData = await this.verificationService.findVerificationByEmail(email);
+        if (!verificationData || decrypt(verificationData.code) !== token) throw new BadRequest(INVALID_TOKEN);
+        await this.userService.updateUserEmail(user.id, email);
+        await this.verificationService.updateVerificationStatus(true, verificationData.id);
+        return new SuccessResult({ success: true, message: "Email address verified" }, ReturnSuccessResultModel);
     }
 }
