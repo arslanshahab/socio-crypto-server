@@ -665,7 +665,7 @@ export class UserController {
         const profile = await this.profileService.findProfileByUserId(user.id);
         if (!profile) throw new NotFound(PROFILE_NOT_FOUND);
         const { email } = body;
-        if (profile.email === email) throw new BadRequest(EMAIL_EXISTS);
+        if (user.email === email || profile.email === email) throw new BadRequest(EMAIL_EXISTS);
         const verificationData = await this.verificationService.generateVerification({ email, type: "EMAIL" });
         await SesClient.emailAddressVerificationEmail(
             email,
