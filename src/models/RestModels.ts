@@ -608,3 +608,8 @@ export class RemoveInterestsParams {
     @Property() public readonly interests: string;
     @Property() public readonly values: string;
 }
+
+export class UserResultModelV2 {
+    @Property() public readonly user: Prisma.User;
+    @Nullable(ProfileResultModel) public readonly profile: ProfileResultModel | null;
+}

@@ -94,4 +94,11 @@ export class ProfileService {
             data: { username },
         });
     }
+
+    public async setRecoveryCode(profileId: string, code: number) {
+        return await this.prismaService.profile.update({
+            where: { id: profileId },
+            data: { recoveryCode: sha256Hash(code.toString()) },
+        });
+    }
 }

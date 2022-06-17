@@ -21,6 +21,7 @@ import {
     MISSING_PARAMS,
     NOTIFICATION_SETTING_NOT_FOUND,
     PARTICIPANT_NOT_FOUND,
+    PROFILE_NOT_FOUND,
     SAME_OLD_AND_NEW_PASSWORD,
     TOKEN_NOT_FOUND,
     USERNAME_EXISTS,
@@ -38,6 +39,7 @@ import {
     UpdateProfileInterestsParams,
     UserDailyParticipantMetricResultModel,
     UserParticipateParams,
+    UserResultModelV2,
     UserTransactionResultModel,
     WeeklyRewardsResultModel,
 } from "../../models/RestModels";
@@ -115,6 +117,10 @@ class PromotePermissionsParams {
     @Required() public readonly firebaseId: string;
     @Property() public readonly company: string;
     @Property() public readonly role: "admin" | "manager";
+}
+
+class SetRecoveryCodeParams {
+    @Required() public readonly code: number;
 }
 
 @Controller("/user")
@@ -586,5 +592,17 @@ export class UserController {
             console.log(error);
         }
         return new SuccessResult({ message: "User record updated successfully" }, UpdatedResultModel);
+    }
+
+    @Put("/set-recovery-code")
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
+    public async setRecoveryCode(@BodyParams() body: SetRecoveryCodeParams, @Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        const profile = await this.profileService.findProfileByUserId(user.id);
+        if (!profile) throw new NotFound(PROFILE_NOT_FOUND);
+        const { code } = body;
+        await this.profileService.setRecoveryCode(profile.id, code);
+        return new SuccessResult({ user, profile: ProfileResultModel.build(profile) }, UserResultModelV2);
     }
 }
