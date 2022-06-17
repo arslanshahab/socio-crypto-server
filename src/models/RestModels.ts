@@ -472,11 +472,11 @@ export class SingleUserResultModel {
     @Nullable(String) public readonly referralCode: string | null;
     @Property() public readonly id: string;
     @Nullable(String) public readonly kycStatus: string | null;
-    @Property() public readonly lastLogin: Date;
+    @Nullable(Date) public readonly lastLogin: Date | null;
     @Property() public readonly email: string;
     @Property() public readonly password: string;
-    @Nullable(String) public readonly profile: Prisma.Profile;
-    @Nullable(String) public readonly social_post: Prisma.SocialPost[];
+    @Property(ProfileResultModel) public readonly profile: ProfileResultModel;
+    @Nullable(SocialPostResultModel) public readonly social_post: Prisma.SocialPost[];
 }
 
 export class UserTransactionResultModel extends TransferResultModel {
@@ -609,7 +609,14 @@ export class RemoveInterestsParams {
     @Property() public readonly values: string;
 }
 
-export class UserResultModelV2 {
+export class UpdateNotificationSettingsParams {
+    @Property() public readonly kyc: boolean;
+    @Property() public readonly withdraw: boolean;
+    @Property() public readonly campaignCreate: boolean;
+    @Property() public readonly campaignUpdates: boolean;
+}
+
+export class UpdateNotificationSettingsResultModel {
     @Property() public readonly user: Prisma.User;
-    @Nullable(ProfileResultModel) public readonly profile: ProfileResultModel | null;
+    @Property() public readonly notificationSettings: NotificationSettingsResultModel;
 }
