@@ -124,6 +124,10 @@ class SetRecoveryCodeParams {
     @Required() public readonly code: number;
 }
 
+class SetDeviceParams {
+    @Required() public readonly deviceToken: string;
+}
+
 @Controller("/user")
 export class UserController {
     @Inject()
@@ -618,5 +622,15 @@ export class UserController {
         if (!user) throw new NotFound(USER_NOT_FOUND);
         const notificationSettings = await this.notificationService.updateNotificationSettings(user.id, body);
         return new SuccessResult({ user, notificationSettings }, UpdateNotificationSettingsResultModel);
+    }
+
+    @Put("/set-device")
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
+    public async setDevice(@BodyParams() body: SetDeviceParams, @Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        const { deviceToken } = body;
+        await this.profileService.updateDeviceToken(user.id, deviceToken);
+        return new SuccessResult({ success: true }, BooleanResultModel);
     }
 }

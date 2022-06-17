@@ -101,4 +101,11 @@ export class ProfileService {
             data: { recoveryCode: sha256Hash(code.toString()) },
         });
     }
+
+    public async updateDeviceToken(userId: string, deviceToken: string) {
+        return await this.prismaService.profile.update({
+            where: { userId },
+            data: { deviceToken },
+        });
+    }
 }
