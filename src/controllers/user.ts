@@ -359,16 +359,16 @@ export const getWalletBalances = async (parent: any, args: any, context: { user:
     const user = await User.findUserByContext(context.user, ["wallet"]);
     if (!user) throw new Error(USER_NOT_FOUND);
     const currencies = await Currency.find({ where: { wallet: user.wallet }, relations: ["token"] });
-    const balances = await TatumClient.getBalanceForAccountList(currencies);
     let allCurrencies = currencies.map(async (currencyItem) => {
-        const balance = balances.find((balanceItem) => currencyItem.tatumId === balanceItem.tatumId);
         const symbol = currencyItem.token.symbol;
+        const pendingBalance = await Transfer.getPendingWalletBalances(user.wallet.id, symbol);
+        const balance = (currencyItem.availableBalance + pendingBalance).toString();
         return {
-            balance: formatFloat(balance.availableBalance),
-            availableBalance: formatFloat(balance.availableBalance),
+            balance: formatFloat(balance),
+            availableBalance: formatFloat(balance),
             symbol: symbol,
             minWithdrawAmount: getMinWithdrawableAmount(symbol),
-            usdBalance: getTokenValueInUSD(symbol.toLowerCase(), balance.availableBalance),
+            usdBalance: formatFloat(await getTokenValueInUSD(symbol.toLowerCase(), parseFloat(balance))),
             imageUrl: getCryptoAssestImageUrl(symbol),
             network: currencyItem.token.network,
         };
