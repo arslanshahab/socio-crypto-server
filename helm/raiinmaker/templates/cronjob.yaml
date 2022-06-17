@@ -635,14 +635,14 @@ spec:
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: coiin-transfer
+  name: fix-transfer-and-update-balance
   labels:
-    app.kubernetes.io/name: coiin-transfer
+    app.kubernetes.io/name: fix-transfer-and-update-balance
     helm.sh/chart: {{ include "raiinmaker.chart" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
-  schedule: "{{ .Values.cron.frequency.coiinTransfer }}"
+  schedule: "{{ .Values.cron.frequency.fixTransfer }}"
   jobTemplate:
     spec:
       template:
@@ -651,11 +651,11 @@ spec:
             iam.amazonaws.com/role: {{ .Values.data.IAM_ROLE }}
         spec:
           containers:
-            - name: coiin-transfer
+            - name: fix-transfer-and-update-balance
               image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
               imagePullPolicy: {{ .Values.image.pullPolicy }}
               command: ["node"]
-              args: ["./dist/cron/coiinTransfer/index.js"]
+              args: ["./dist/cron/fixTransfer/index.js"]
               env:
                 - name: PG_PASSWORD
                   valueFrom:

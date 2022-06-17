@@ -11,7 +11,7 @@ import { authenticateAdmin, authenticateUser } from "./middleware/authentication
 import { Firebase } from "./clients/firebase";
 // import * as FactorController from "./controllers/factor";
 // import * as Dragonfactor from "@myfii-dev/dragonfactor-auth";
-import { paypalWebhook } from "./controllers/withdraw";
+// import { paypalWebhook } from "./controllers/withdraw";
 import { adminResolvers, publicResolvers, resolvers } from "./graphql/resolvers";
 import { adminLogin, adminLogout, updateUserPassword } from "./controllers/authentication";
 import { trackClickByLink } from "./controllers/participant";
@@ -202,7 +202,7 @@ export class Application {
         this.app.post("/v1/login", adminLogin);
         this.app.post("/v1/logout", adminLogout);
         this.app.put("/v1/password", updateUserPassword);
-        this.app.post("/v1/payouts", paypalWebhook);
+        // this.app.post("/v1/payouts", paypalWebhook);
         this.app.post("/v1/xoxoday", initXoxoday);
         this.app.post("/v1/xoxoday/tokens", uploadXoxodayTokens);
         this.app.post("/v1/tatum/initWallet", initWallet);

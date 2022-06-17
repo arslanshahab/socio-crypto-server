@@ -63,9 +63,9 @@ model Campaign {
   crypto_currency          CryptoCurrency?          @relation(fields: [cryptoId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_6c80d74e57757c61ae9b7255f79")
   currency                 Currency?                @relation(fields: [currencyId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_94f38926b8f74ecd88ecf6ba8c8")
   org                      Org?                     @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f1ade2ad37c88435b086c97cfc8")
-  daily_participant_metric DailyParticipantMetric[]
   campaign_media           CampaignMedia[]
   campaign_template        CampaignTemplate[]
+  daily_participant_metric DailyParticipantMetric[]
   escrow                   Escrow?
   hourly_campaign_metric   HourlyCampaignMetric[]
   participant              Participant[]
@@ -81,26 +81,28 @@ model Campaign {
 }
 
 model CampaignMedia {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  campaignId  String?  @db.Uuid
-  channel     String?  @db.VarChar
-  media       String?  @db.VarChar
-  mediaFormat String?  @db.VarChar
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  campaignId  String?   @db.Uuid
+  channel     String?   @db.VarChar
+  media       String?   @db.VarChar
+  mediaFormat String?   @db.VarChar
   isDefault   Boolean?
-  createdAt   DateTime @default(now()) @db.Timestamp(6)
-  updatedAt   DateTime @default(now()) @updatedAt @db.Timestamp(6)
+  createdAt   DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt   DateTime  @default(now()) @updatedAt @db.Timestamp(6)
   campaign    Campaign? @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_b845045382e55918752955d23cb")
+
   @@map("campaign_media")
 }
 
 model CampaignTemplate {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  campaignId String?  @db.Uuid
-  channel    String?  @db.VarChar
-  post       String?  @db.VarChar
-  createdAt  DateTime @default(now()) @db.Timestamp(6)
-  updatedAt  DateTime @default(now()) @updatedAt @db.Timestamp(6)
-  campaign    Campaign? @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_b845045382e55918752955d23cb")
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  campaignId String?   @db.Uuid
+  channel    String?   @db.VarChar
+  post       String?   @db.VarChar
+  createdAt  DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt  DateTime  @default(now()) @updatedAt @db.Timestamp(6)
+  campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_19b3f8a418cf4753d5df4291099")
+
   @@map("campaign_template")
 }
 
@@ -133,21 +135,23 @@ model CryptoTransaction {
 }
 
 model Currency {
-  id             String     @id(map: "PK_3cda65c731a6264f0e444cc9b91") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tatumId        String     @db.VarChar
-  symbol         String     @db.VarChar
-  depositAddress String?    @db.VarChar
-  memo           String?    @db.VarChar
-  message        String?    @db.VarChar
-  destinationTag Int?
-  createdAt      DateTime   @default(now()) @db.Timestamp(6)
-  updatedAt      DateTime   @default(now()) @updatedAt @db.Timestamp(6)
-  walletId       String?    @db.Uuid
-  derivationKey  Int?
-  tokenId        String?    @db.Uuid
-  token          Token?     @relation(fields: [tokenId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_d1e8baad49c6c5514b6a0dcba26")
-  wallet         Wallet?    @relation(fields: [walletId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ea00856ad382361ea6545c3d23c")
-  campaign       Campaign[]
+  id               String     @id(map: "PK_3cda65c731a6264f0e444cc9b91") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tatumId          String     @db.VarChar
+  symbol           String     @db.VarChar
+  depositAddress   String?    @db.VarChar
+  memo             String?    @db.VarChar
+  message          String?    @db.VarChar
+  destinationTag   Int?
+  createdAt        DateTime   @default(now()) @db.Timestamp(6)
+  updatedAt        DateTime   @default(now()) @updatedAt @db.Timestamp(6)
+  walletId         String?    @db.Uuid
+  derivationKey    Int?
+  tokenId          String?    @db.Uuid
+  accountBalance   Float?     @default(0)
+  availableBalance Float?     @default(0)
+  token            Token?     @relation(fields: [tokenId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_d1e8baad49c6c5514b6a0dcba26")
+  wallet           Wallet?    @relation(fields: [walletId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ea00856ad382361ea6545c3d23c")
+  campaign         Campaign[]
 
   @@map("currency")
 }
@@ -426,7 +430,6 @@ model SocialPost {
 model TatumWallet {
   id        String   @id(map: "PK_7ea26f9bf3a0f53ce5802ac46cf") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   currency  String   @db.VarChar
-  enabled   Boolean
   xpub      String   @db.VarChar
   address   String   @db.VarChar
   createdAt DateTime @default(now()) @db.Timestamp(6)
@@ -457,8 +460,6 @@ model Transfer {
   updatedAt       DateTime     @default(now()) @updatedAt @db.Timestamp(6)
   walletId        String?      @db.Uuid
   campaignId      String?      @db.Uuid
-  payoutStatus    String?      @db.VarChar
-  payoutId        String?      @db.VarChar
   usdAmount       String?      @db.VarChar
   ethAddress      String?      @db.VarChar
   transactionHash String?      @db.VarChar
@@ -467,7 +468,7 @@ model Transfer {
   rafflePrizeId   String?      @db.Uuid
   currency        String?      @db.VarChar
   stripeCardId    String?      @db.VarChar
-  network         String?      @db.VarChar
+  type            String?      @db.VarChar
   campaign        Campaign?    @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_bbe21a18f940dab59ffd61671ef")
   org             Org?         @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_69167255fc368a59063ebd8cf16")
   raffle_prize    RafflePrize? @relation(fields: [rafflePrizeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f6c593d6013276bc80450c7638e")

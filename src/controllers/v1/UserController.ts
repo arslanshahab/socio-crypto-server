@@ -58,7 +58,6 @@ import { NotificationService } from "../../services/NotificationService";
 import { TransferService } from "../../services/TransferService";
 import { BSC, COIIN, CoiinTransferAction, SHARING_REWARD_AMOUNT, TransferAction } from "../../util/constants";
 import { SocialService } from "../../services/SocialService";
-import { getBalance } from "../helpers";
 import { CampaignService } from "../../services/CampaignService";
 import { ParticipantService } from "../../services/ParticipantService";
 import { TatumClientService } from "../../services/TatumClientService";
@@ -196,6 +195,7 @@ export class UserController {
             },
         });
         if (!user) throw new BadRequest(USER_NOT_FOUND);
+        console.log(user.participant);
         const keywords = new Set<string>();
         try {
             user.participant.forEach((p) =>
@@ -213,10 +213,11 @@ export class UserController {
         const user = await this.userService.findUserByContext(context.get("user"), {
             wallet: { include: { currency: { include: { token: true } } } },
         });
-        if (!user) throw new BadRequest(USER_NOT_FOUND);
-        const currencies = await getBalance(user);
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        if (!user.wallet) throw new NotFound(WALLET_NOT_FOUND);
+        const balances = await this.userService.getUserWalletBalances(user.wallet);
         return new SuccessArrayResult(
-            currencies.filter(<T>(r: T | null): r is T => !!r),
+            balances.filter(<T>(r: T | null): r is T => !!r),
             BalanceResultModel
         );
     }
@@ -301,8 +302,9 @@ export class UserController {
                 },
             },
         });
-        if (!user) throw new BadRequest(USER_NOT_FOUND);
-        const currencies = await getBalance(user);
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        if (!user.wallet) throw new NotFound(WALLET_NOT_FOUND);
+        const currencies = await this.userService.getUserWalletBalances(user.wallet);
         return new SuccessArrayResult(
             currencies.filter(<T>(r: T | null): r is T => !!r),
             BalanceResultModel
