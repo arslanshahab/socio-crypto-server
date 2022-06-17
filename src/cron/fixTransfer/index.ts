@@ -23,7 +23,7 @@ const fixFailedCoiinTransfers = async (raiinmakerCoiinCurrency: Currency) => {
     });
     console.log("FAILED/PENDING COIIN TRANSFERS: ", failedCoiinTransfersCount);
     if (failedCoiinTransfersCount) {
-        const take = 200;
+        const take = 100;
         let skip = 0;
         const paginatedLoop = Math.ceil(failedCoiinTransfersCount / take);
         for (let pageIndex = 0; pageIndex < paginatedLoop; pageIndex++) {
@@ -42,29 +42,32 @@ const fixFailedCoiinTransfers = async (raiinmakerCoiinCurrency: Currency) => {
             };
             const prismaTransactions = [];
             for (const transfer of failedCoiinTransfers) {
-                const userCurrency = await TatumClient.findOrCreateCurrency({
-                    walletId: transfer.walletId || "",
-                    symbol: COIIN,
-                    network: BSC,
-                });
-                batchTransfer.transaction.push({
-                    recipientAccountId: userCurrency.tatumId,
-                    amount: transfer.amount.toString(),
-                });
-                console.log(
-                    "TRANSFER FIX PREPARED: ",
-                    transfer.id,
-                    transfer.amount.toString(),
-                    transfer.walletId,
-                    transfer.action
-                );
-                prismaTransactions.push(
-                    prisma.transfer.update({
-                        where: { id: transfer.id },
-                        data: { status: TransferStatus.SUCCEEDED },
-                    })
-                );
+                if (transfer) {
+                    const userCurrency = await TatumClient.findOrCreateCurrency({
+                        walletId: transfer.walletId || "",
+                        symbol: COIIN,
+                        network: BSC,
+                    });
+                    batchTransfer.transaction.push({
+                        recipientAccountId: userCurrency.tatumId,
+                        amount: transfer.amount.toString(),
+                    });
+                    console.log(
+                        "TRANSFER FIX PREPARED: ",
+                        transfer.id,
+                        transfer.amount.toString(),
+                        transfer.walletId,
+                        transfer.action
+                    );
+                    prismaTransactions.push(
+                        prisma.transfer.update({
+                            where: { id: transfer.id },
+                            data: { status: TransferStatus.SUCCEEDED },
+                        })
+                    );
+                }
             }
+            console.log("BATCH: ", batchTransfer);
             await TatumClient.transferFundsBatch(batchTransfer);
             await prisma.$transaction(prismaTransactions);
             skip += take;
