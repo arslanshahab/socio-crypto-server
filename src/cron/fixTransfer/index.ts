@@ -13,7 +13,7 @@ dotenv.config();
 const app = new Application();
 console.log("APP instance created.");
 
-const fixFailedCoiinTransfers = async (raiinmakerCoiinCurrency: Currency) => {
+export const fixFailedCoiinTransfers = async (raiinmakerCoiinCurrency: Currency) => {
     const failedCoiinTransfersCount = await prisma.transfer.count({
         where: {
             status: { in: ["FAILED", "PENDING"] },
@@ -75,7 +75,7 @@ const fixFailedCoiinTransfers = async (raiinmakerCoiinCurrency: Currency) => {
     }
 };
 
-const fixFailedCampaignTransfers = async () => {
+export const fixFailedCampaignTransfers = async () => {
     const failedCampaignTransfersCount = await prisma.transfer.count({
         where: {
             status: "FAILED",
@@ -151,16 +151,18 @@ const updateTatumBalances = async () => {
         for (let pageIndex = 0; pageIndex < paginatedLoop; pageIndex++) {
             const prismaTransactions = [];
             const accountList = await TatumClient.getAccountList(tatumSymbol, page, pageSize);
-            console.log("FETCHED ACCOUNT LIST FOR PAGE: ", page);
+            console.log("FETCHED ACCOUNT LIST FOR PAGE: ", tatumSymbol, page);
             for (const account of accountList) {
                 const foundAccount = await prisma.currency.findFirst({ where: { tatumId: account.id } });
                 if (foundAccount) {
                     prismaTransactions.push(
-                        prisma.$executeRaw`UPDATE currency set "accountBalance" = ${parseFloat(
-                            account.balance.accountBalance
-                        )}, "availableBalance" = ${parseFloat(
-                            account.balance.availableBalance
-                        )}, "updatedAt" = ${new Date()} WHERE "tatumId" = ${account.id}`
+                        prisma.currency.update({
+                            where: { id: foundAccount.id },
+                            data: {
+                                accountBalance: parseFloat(account.balance.accountBalance),
+                                availableBalance: parseFloat(account.balance.availableBalance),
+                            },
+                        })
                     );
                 }
             }
