@@ -84,7 +84,7 @@ export const fixFailedCampaignTransfers = async () => {
     });
     console.log("FAILED CAMPAIGN TRANSFERS: ", failedCampaignTransfersCount);
     if (failedCampaignTransfersCount) {
-        const take = 200;
+        const take = 100;
         let skip = 0;
         const paginatedLoop = Math.ceil(failedCampaignTransfersCount / take);
         for (let pageIndex = 0; pageIndex < paginatedLoop; pageIndex++) {
