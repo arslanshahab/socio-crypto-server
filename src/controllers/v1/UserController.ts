@@ -16,6 +16,7 @@ import {
     CAMPAIGN_CLOSED,
     CAMPAIGN_NOT_FOUND,
     CURRENCY_NOT_FOUND,
+    EMAIL_EXISTS,
     GLOBAL_CAMPAIGN_NOT_FOUND,
     INCORRECT_PASSWORD,
     MISSING_PARAMS,
@@ -35,6 +36,7 @@ import {
     ParticipantMetricsResultModel,
     ProfileResultModel,
     RemoveInterestsParams,
+    ReturnSuccessResultModel,
     SingleUserResultModel,
     UpdateNotificationSettingsParams,
     UpdateNotificationSettingsResultModel,
@@ -71,6 +73,7 @@ import { ProfileService } from "../../services/ProfileService";
 import { createPasswordHash } from "../../util";
 import { AdminService } from "../../services/AdminService";
 import { Firebase } from "../../clients/firebase";
+import { VerificationService } from "../../services/VerificationService";
 
 const userResultRelations = {
     profile: true,
@@ -127,6 +130,10 @@ class SetDeviceParams {
     @Required() public readonly deviceToken: string;
 }
 
+class StartEmailVerificationParams {
+    @Required() public readonly email: string;
+}
+
 @Controller("/user")
 export class UserController {
     @Inject()
@@ -157,6 +164,8 @@ export class UserController {
     private profileService: ProfileService;
     @Inject()
     private adminService: AdminService;
+    @Inject()
+    private verificationService: VerificationService;
 
     @Get("/")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserResultModel))
@@ -634,5 +643,25 @@ export class UserController {
         const { deviceToken } = body;
         await this.profileService.updateDeviceToken(user.id, deviceToken);
         return new SuccessResult({ success: true }, BooleanResultModel);
+    }
+
+    @Post("/start-email-verification")
+    @(Returns(200, SuccessResult).Of(ReturnSuccessResultModel))
+    public async startEmailVerification(@BodyParams() body: StartEmailVerificationParams, @Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        const profile = await this.profileService.findProfileByUserId(user.id);
+        if (!profile) throw new NotFound(PROFILE_NOT_FOUND);
+        const { email } = body;
+        if (profile.email === email) throw new BadRequest(EMAIL_EXISTS);
+        const verificationData = await this.verificationService.generateVerification({ email, type: "EMAIL" });
+        await SesClient.emailAddressVerificationEmail(
+            email,
+            this.verificationService.getDecryptedCode(verificationData.code)
+        );
+        return new SuccessResult(
+            { success: true, message: "Email sent to provided email address" },
+            ReturnSuccessResultModel
+        );
     }
 }

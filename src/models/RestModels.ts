@@ -618,3 +618,8 @@ export class UpdateNotificationSettingsResultModel {
     @Property() public readonly user: Prisma.User;
     @Property() public readonly notificationSettings: NotificationSettingsResultModel;
 }
+
+export class ReturnSuccessResultModel {
+    @Property() public readonly success: boolean;
+    @Property() public readonly message: string;
+}
