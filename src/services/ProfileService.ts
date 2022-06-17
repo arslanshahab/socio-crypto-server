@@ -108,4 +108,11 @@ export class ProfileService {
             data: { deviceToken },
         });
     }
+
+    public async updateProfilePicture(userId: string, picture: string) {
+        return await this.prismaService.profile.update({
+            where: { userId },
+            data: { profilePicture: picture },
+        });
+    }
 }

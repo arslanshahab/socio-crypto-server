@@ -76,6 +76,7 @@ import { AdminService } from "../../services/AdminService";
 import { Firebase } from "../../clients/firebase";
 import { VerificationService } from "../../services/VerificationService";
 import { decrypt } from "../../util/crypto";
+import { S3Client } from "../../clients/s3";
 
 const userResultRelations = {
     profile: true,
@@ -139,6 +140,10 @@ class StartEmailVerificationParams {
 class CompleteEmailVerificationParams {
     @Required() public readonly email: string;
     @Required() public readonly token: string;
+}
+
+class UploadProfilePictureParams {
+    @Required() public readonly image: string;
 }
 
 @Controller("/user")
@@ -673,7 +678,7 @@ export class UserController {
     }
 
     @Post("/complete-email-verification")
-    @(Returns(200, SuccessResult).Of(UpdatedResultModel))
+    @(Returns(200, SuccessResult).Of(ReturnSuccessResultModel))
     public async completeEmailVerification(
         @BodyParams() body: CompleteEmailVerificationParams,
         @Context() context: Context
@@ -689,5 +694,16 @@ export class UserController {
         await this.userService.updateUserEmail(user.id, email);
         await this.verificationService.updateVerificationStatus(true, verificationData.id);
         return new SuccessResult({ success: true, message: "Email address verified" }, ReturnSuccessResultModel);
+    }
+
+    @Post("/upload-profile-picture")
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
+    public async uploadProfilePicture(@BodyParams() body: UploadProfilePictureParams, @Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        const { image } = body;
+        const filename = await S3Client.uploadProfilePicture("profilePicture", user.id, image);
+        await this.profileService.updateProfilePicture(user.id, filename);
+        return new SuccessResult({ success: true }, BooleanResultModel);
     }
 }
