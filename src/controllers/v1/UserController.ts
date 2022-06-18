@@ -411,9 +411,9 @@ export class UserController {
         const token = await this.tokenService.findTokenBySymbol({ symbol: COIIN, network: BSC });
         if (!token) throw new NotFound(TOKEN_NOT_FOUND);
         const userWallet = await this.walletService.findWalletByUserId(userId);
-        if (!userWallet) throw new NotFound(WALLET_NOT_FOUND + "for userId");
+        if (!userWallet) throw new NotFound(WALLET_NOT_FOUND + " for userId");
         const orgWallet = await this.walletService.findWalletByOrgId(admin?.orgId!);
-        if (!orgWallet) throw new NotFound(WALLET_NOT_FOUND + "for orgId");
+        if (!orgWallet) throw new NotFound(WALLET_NOT_FOUND + " for orgId");
         const userCurrency = await this.currencyService.findCurrencyByTokenId(token.id, userWallet.id);
         if (!userCurrency) throw new NotFound(CURRENCY_NOT_FOUND + " for user");
         const orgCurrency = await this.currencyService.findCurrencyByTokenId(token.id, orgWallet?.id!);
