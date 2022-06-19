@@ -1,13 +1,14 @@
 import { BodyParams, QueryParams } from "@tsed/common";
 import { Controller, Inject } from "@tsed/di";
-import { BadRequest, NotFound } from "@tsed/exceptions";
-import { Enum, Post, Get, Property, Required, Returns } from "@tsed/schema";
+import { BadRequest, NotFound, Unauthorized } from "@tsed/exceptions";
+import { Enum, Post, Get, Property, Required, Returns, Put } from "@tsed/schema";
 import {
     ACCOUNT_RESTRICTED,
     EMAIL_EXISTS,
     EMAIL_NOT_EXISTS,
     INCORRECT_CODE,
-    // INCORRECT_PASSWORD,
+    INCORRECT_PASSWORD,
+    INVALID_TOKEN,
     MISSING_PARAMS,
     USERNAME_EXISTS,
     USERNAME_NOT_EXISTS,
@@ -32,6 +33,7 @@ import { VerificationService } from "../../services/VerificationService";
 import { JWTPayload } from "../../types";
 import { VerificationType } from "../../util/constants";
 import { SesClient } from "../../clients/ses";
+import { Firebase } from "../../clients/firebase";
 
 export class StartVerificationParams {
     @Required() public readonly email: string;
@@ -47,6 +49,10 @@ class UsernameExistsParams {
     @Required() public readonly username: string;
 }
 
+class UpdateAdminPasswordParams {
+    @Required() public readonly idToken: string;
+    @Required() public readonly password: string;
+}
 @Controller("/auth")
 export class AuthenticationController {
     @Inject()
@@ -78,7 +84,7 @@ export class AuthenticationController {
         const user = await this.userService.findUserByEmail(email);
         if (!user) throw new BadRequest(EMAIL_NOT_EXISTS);
         if (!user.active) throw new BadRequest(ACCOUNT_RESTRICTED);
-        // if (user.password !== createPasswordHash({ email, password })) throw new Error(INCORRECT_PASSWORD);
+        if (user.password !== createPasswordHash({ email, password })) throw new Error(INCORRECT_PASSWORD);
         await this.userService.updateLastLogin(user.id);
         await this.userService.transferCoiinReward({ user, type: "LOGIN_REWARD" });
         return new SuccessResult({ token: createSessionTokenV2(user) }, UserTokenReturnModel);
@@ -156,5 +162,18 @@ export class AuthenticationController {
         const { username } = query;
         const profile = await this.profileService.isUsernameExists(username);
         return new SuccessResult({ success: !!profile }, BooleanResultModel);
+    }
+
+    @Put("/update-admin-password")
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
+    public async updateAdminPassword(@BodyParams() body: UpdateAdminPasswordParams) {
+        const { idToken, password } = body;
+        const decodedToken = await Firebase.verifyToken(idToken);
+        if (!decodedToken) return new Unauthorized(INVALID_TOKEN);
+        const user = await Firebase.getUserById(decodedToken.uid);
+        if (!user.customClaims) return new Unauthorized("Unauthorized!");
+        await Firebase.updateUserPassword(user.uid, password);
+        await Firebase.setCustomUserClaims(user.uid, user.customClaims.company, user.customClaims.role, false);
+        return new SuccessResult({ success: true }, BooleanResultModel);
     }
 }
