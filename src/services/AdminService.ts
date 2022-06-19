@@ -22,4 +22,12 @@ export class AdminService {
             },
         });
     }
+
+    public async findAdminByFirebaseId(firebaseId: string) {
+        return await this.prismaService.admin.findFirst({
+            where: {
+                firebaseId,
+            },
+        });
+    }
 }

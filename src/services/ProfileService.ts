@@ -87,4 +87,25 @@ export class ProfileService {
             },
         });
     }
+
+    public async updateUsername(userId: string, username: string) {
+        return await this.prismaService.profile.update({
+            where: { userId },
+            data: { username },
+        });
+    }
+
+    public async setRecoveryCode(profileId: string, code: number) {
+        return await this.prismaService.profile.update({
+            where: { id: profileId },
+            data: { recoveryCode: sha256Hash(code.toString()) },
+        });
+    }
+
+    public async updateDeviceToken(userId: string, deviceToken: string) {
+        return await this.prismaService.profile.update({
+            where: { userId },
+            data: { deviceToken },
+        });
+    }
 }
