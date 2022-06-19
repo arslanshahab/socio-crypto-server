@@ -7,7 +7,7 @@ import { formatFloat } from "./index";
 import { getExchangeRateForCrypto } from "./exchangeRate";
 import { serverBaseUrl } from "../config";
 import { SymbolNetworkParams } from "../types.d";
-import { BSC, NETWORK_TO_NATIVE_TOKEN, COIIN, ETH, MATIC } from "./constants";
+import { BSC, NETWORK_TO_NATIVE_TOKEN, COIIN, ETH, MATIC, ADA, BADA } from "./constants";
 
 interface WithdrawFeeData {
     withdrawAbleAmount: string;
@@ -108,5 +108,6 @@ export const getCurrencyForTatum = (data: SymbolNetworkParams) => {
     let { symbol, network } = data;
     if (symbol === COIIN && network === BSC) symbol = `${symbol}_${BSC}`;
     if (symbol === MATIC && network === ETH) symbol = `${symbol}_${ETH}`;
+    if (symbol === ADA && network === BSC) symbol = BADA;
     return symbol;
 };
