@@ -3,7 +3,7 @@ import { BN } from "../../util";
 import { CampaignAuditStatus, FEE_RATE, RAIINMAKER_ORG_NAME } from "../../util/constants";
 import { TatumClient, CAMPAIGN_FEE, BatchTransferPayload } from "../../clients/tatumClient";
 import { Campaign, Prisma } from "@prisma/client";
-import { prisma } from "../../clients/prisma";
+import { prisma, readPrisma } from "../../clients/prisma";
 import { Tiers } from "../../types.d";
 
 // export const payoutRaffleCampaignRewards = async (
@@ -50,24 +50,24 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
         const campaignFee = totalRewardAmount.multipliedBy(FEE_RATE);
         raiinmakerFee = raiinmakerFee.plus(campaignFee);
         totalRewardAmount = totalRewardAmount.minus(campaignFee);
-        const campaignCurrency = await prisma.currency.findFirst({
+        const campaignCurrency = await readPrisma.currency.findFirst({
             where: {
                 id: campaign?.currencyId || "",
             },
         });
         if (!campaignCurrency) throw new Error("Campaign currency not found.");
-        const campaignToken = await prisma.token.findFirst({ where: { id: campaignCurrency?.tokenId || "" } });
+        const campaignToken = await readPrisma.token.findFirst({ where: { id: campaignCurrency?.tokenId || "" } });
         if (!campaignToken) throw new Error("Campaign token not found.");
-        const raiinmakerOrg = await prisma.org.findFirst({ where: { name: RAIINMAKER_ORG_NAME } });
-        const raiinmakerWallet = await prisma.wallet.findFirst({ where: { orgId: raiinmakerOrg?.id } });
-        const raiinmakerCurrency = await prisma.currency.findFirst({
+        const raiinmakerOrg = await readPrisma.org.findFirst({ where: { name: RAIINMAKER_ORG_NAME } });
+        const raiinmakerWallet = await readPrisma.wallet.findFirst({ where: { orgId: raiinmakerOrg?.id } });
+        const raiinmakerCurrency = await readPrisma.currency.findFirst({
             where: { tokenId: campaignToken?.id, walletId: raiinmakerWallet?.id },
         });
         if (!raiinmakerCurrency) throw new Error("currency not found for raiinmaker");
         if (!campaignCurrency) throw new Error("currency not found for campaign");
         const take = 100;
         let skip = 0;
-        const totalParticipants = await prisma.participant.count({ where: { campaignId: campaign.id } });
+        const totalParticipants = await readPrisma.participant.count({ where: { campaignId: campaign.id } });
         const paginatedLoop = Math.ceil(totalParticipants / take);
 
         // transfer campaign fee to raiinmaker tatum account
@@ -81,7 +81,7 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
         }
 
         for (let pageIndex = 0; pageIndex < paginatedLoop; pageIndex++) {
-            const participants = await prisma.participant.findMany({
+            const participants = await readPrisma.participant.findMany({
                 where: { campaignId: campaign.id },
                 take,
                 skip,
@@ -94,13 +94,13 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
             batchTransfer.senderAccountId = campaignCurrency.tatumId;
             for (let index = 0; index < participants.length; index++) {
                 const participant = participants[index];
-                const userData = await prisma.user.findFirst({
+                const userData = await readPrisma.user.findFirst({
                     where: { id: participant.userId },
                 });
                 if (!userData) throw new Error(`User not found for ID: ${participant?.userId}`);
-                const userProfile = await prisma.profile.findFirst({ where: { userId: userData?.id } });
+                const userProfile = await readPrisma.profile.findFirst({ where: { userId: userData?.id } });
                 if (!userProfile) throw new Error(`Profile not found for user: ${userData?.id}`);
-                const userWallet = await prisma.wallet.findFirst({ where: { userId: userData?.id } });
+                const userWallet = await readPrisma.wallet.findFirst({ where: { userId: userData?.id } });
                 if (!userWallet) throw new Error(`Wallet not found for user: ${userData.id}`);
                 const userCurrency = await TatumClient.findOrCreateCurrency({
                     symbol: campaignToken?.symbol || "",
@@ -111,14 +111,13 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
                     throw new Error(`Currency not found for wallet: ${userWallet.id} and token: ${campaignToken?.id}`);
                 if (userProfile?.deviceToken) userDeviceIds[userData.id] = userProfile?.deviceToken;
                 const participantShare = await calculateParticipantPayout(totalRewardAmount, campaign, participant);
-                const alreadyTransferred = await prisma.transfer.findFirst({
+                const alreadyTransferred = await readPrisma.transfer.findFirst({
                     where: {
                         amount: participantShare.toString(),
                         campaignId: campaign.id,
                         walletId: userWallet?.id,
                     },
                 });
-                console.log(participantShare.toString());
                 if (participantShare.isGreaterThan(0) && !alreadyTransferred) {
                     batchTransfer.transaction.push({
                         recipientAccountId: userCurrency.tatumId,
@@ -146,7 +145,7 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
             const transferRecords = [];
             for (let index = 0; index < transferDetails.length; index++) {
                 const transferData = transferDetails[index];
-                const wallet = await prisma.wallet.findFirst({ where: { userId: transferData.user.id } });
+                const wallet = await readPrisma.wallet.findFirst({ where: { userId: transferData.user.id } });
                 if (!wallet) throw new Error("wallet not found for user.");
                 transferRecords.push({
                     currency: campaignToken?.symbol,

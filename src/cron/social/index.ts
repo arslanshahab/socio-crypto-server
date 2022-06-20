@@ -5,7 +5,7 @@ import { BigNumber } from "bignumber.js";
 import { BN, calculateQualityMultiplier } from "../../util";
 import * as dotenv from "dotenv";
 import { SocialPost, Prisma } from "@prisma/client";
-import { prisma } from "../../clients/prisma";
+import { prisma, readPrisma } from "../../clients/prisma";
 import { CampaignStatus, CampaignAuditStatus } from "../../util/constants";
 import { PointValueTypes } from "../../types.d";
 import { startOfDay } from "date-fns";
@@ -14,15 +14,15 @@ dotenv.config();
 const app = new Application();
 
 const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: SocialPost) => {
-    const participant = await prisma.participant.findFirst({
+    const participant = await readPrisma.participant.findFirst({
         where: { campaignId: post.campaignId, userId: post.userId },
     });
     if (!participant) throw new Error("participant not found");
-    const campaign = await prisma.campaign.findFirst({ where: { id: post.campaignId }, include: { org: true } });
+    const campaign = await readPrisma.campaign.findFirst({ where: { id: post.campaignId }, include: { org: true } });
     if (!campaign) throw new Error("campaign not found");
-    const user = await prisma.user.findFirst({ where: { id: post.userId } });
+    const user = await readPrisma.user.findFirst({ where: { id: post.userId } });
     if (!user) throw new Error("user not found");
-    let qualityScore = await prisma.qualityScore.findFirst({ where: { participantId: participant.id } });
+    let qualityScore = await readPrisma.qualityScore.findFirst({ where: { participantId: participant.id } });
     const likesMultiplier = calculateQualityMultiplier(new BN(qualityScore?.likes || 0));
     const sharesMultiplier = calculateQualityMultiplier(new BN(qualityScore?.shares || 0));
     const pointValues = (campaign.algorithm as Prisma.JsonObject)
@@ -69,7 +69,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
             id: qualityScore?.id,
         },
     });
-    const hourlyMetric = await prisma.hourlyCampaignMetric.findFirst({ where: { campaignId: campaign.id } });
+    const hourlyMetric = await readPrisma.hourlyCampaignMetric.findFirst({ where: { campaignId: campaign.id } });
     await prisma.hourlyCampaignMetric.create({
         data: {
             campaignId: campaign.id,
@@ -77,7 +77,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
             shareCount: (parseInt(hourlyMetric?.shareCount || "0") + adjustedRawShares).toString(),
         },
     });
-    const dailyMetric = await prisma.dailyParticipantMetric.findFirst({
+    const dailyMetric = await readPrisma.dailyParticipantMetric.findFirst({
         where: {
             userId: user.id,
             campaignId: campaign.id,
@@ -85,30 +85,25 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
             createdAt: { gt: startOfDay(new Date()) },
         },
     });
-    if (dailyMetric) {
-        await prisma.dailyParticipantMetric.update({
-            where: { id: dailyMetric?.id || "" },
-            data: {
-                participationScore: (
-                    parseInt(dailyMetric?.participationScore || "0") +
-                    likesAdjustedScore.plus(sharesAdjustedScore).toNumber()
-                ).toString(),
-                likeCount: (parseInt(dailyMetric?.likeCount || "0") + adjustedRawLikes).toString(),
-                shareCount: (parseInt(dailyMetric?.shareCount || "0") + adjustedRawShares).toString(),
-            },
-        });
-    } else {
-        await prisma.dailyParticipantMetric.create({
-            data: {
-                participantId: participant.id,
-                campaignId: campaign.id,
-                userId: user.id,
-                participationScore: likesAdjustedScore.plus(sharesAdjustedScore).toNumber().toString(),
-                likeCount: adjustedRawLikes.toString(),
-                shareCount: adjustedRawShares.toString(),
-            },
-        });
-    }
+    await prisma.dailyParticipantMetric.upsert({
+        where: { id: dailyMetric?.id || "" },
+        update: {
+            participationScore: (
+                parseInt(dailyMetric?.participationScore || "0") +
+                likesAdjustedScore.plus(sharesAdjustedScore).toNumber()
+            ).toString(),
+            likeCount: (parseInt(dailyMetric?.likeCount || "0") + adjustedRawLikes).toString(),
+            shareCount: (parseInt(dailyMetric?.shareCount || "0") + adjustedRawShares).toString(),
+        },
+        create: {
+            participantId: participant.id,
+            campaignId: campaign.id,
+            userId: user.id,
+            participationScore: likesAdjustedScore.plus(sharesAdjustedScore).toNumber().toString(),
+            likeCount: adjustedRawLikes.toString(),
+            shareCount: adjustedRawShares.toString(),
+        },
+    });
     return post;
 };
 
@@ -118,7 +113,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
     const connection = await app.connectDatabase();
     console.log("DATABASE CONNECTED.");
     try {
-        const campaigns = await prisma.campaign.findMany({
+        const campaigns = await readPrisma.campaign.findMany({
             where: {
                 endDate: { gte: new Date() },
                 status: CampaignStatus.APPROVED,
@@ -130,11 +125,11 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
             const campaign = campaigns[campaignIndex];
             const take = 200;
             let skip = 0;
-            const totalPosts = await prisma.socialPost.count({ where: { campaignId: campaign.id } });
+            const totalPosts = await readPrisma.socialPost.count({ where: { campaignId: campaign.id } });
             console.log("TOTAL POSTS FOR CAMPAIGN ID: ", campaign.id, totalPosts);
             const loop = Math.ceil(totalPosts / take);
             for (let postPageIndex = 0; postPageIndex < loop; postPageIndex++) {
-                let posts = await prisma.socialPost.findMany({
+                let posts = await readPrisma.socialPost.findMany({
                     where: { campaignId: campaign.id },
                     include: { campaign: true, user: true },
                     take,
@@ -145,7 +140,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                 const twitterPosts = [];
                 // const tiktokPosts = [];
                 for (const post of posts) {
-                    const socialLink = await prisma.socialLink.findFirst({
+                    const socialLink = await readPrisma.socialLink.findFirst({
                         where: { userId: post.user.id, type: post.type },
                     });
                     if (!socialLink) continue;
