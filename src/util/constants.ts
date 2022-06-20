@@ -4,6 +4,9 @@ export const MATIC = "MATIC";
 export const BSC = "BSC";
 export const ETH = "ETH";
 export const BNB = "BNB";
+export const ADA = "ADA";
+export const BADA = "BADA";
+export const BBNB = "BBNB";
 export const NETWORK_TO_NATIVE_TOKEN: { [key: string]: string } = {
     BSC: BNB,
     ETH: ETH,
