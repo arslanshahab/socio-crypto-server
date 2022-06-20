@@ -1,6 +1,6 @@
 import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
-import { User } from "@prisma/client";
+import { Prisma, User } from "@prisma/client";
 import { sha256Hash } from "../util/crypto";
 import { UpdateProfileInterestsParams, RemoveInterestsParams } from "../models/RestModels";
 import { NotFound } from "@tsed/exceptions";
@@ -11,10 +11,10 @@ export class ProfileService {
     @Inject()
     private prismaService: PrismaService;
 
-    public async findProfileByUsername(username: string) {
+    public async findProfileByUsername<T extends Prisma.ProfileInclude | undefined>(username: string, include?: T) {
         return this.prismaService.profile.findFirst({
             where: { username: { contains: username, mode: "insensitive" } },
-            include: { user: true },
+            include: include as T,
         });
     }
 
@@ -114,5 +114,9 @@ export class ProfileService {
             where: { userId },
             data: { profilePicture: picture },
         });
+    }
+    
+    public async ifUsernameExist(username: string) {
+        return Boolean(await this.prismaService.profile.findFirst({ where: { username } }));
     }
 }
