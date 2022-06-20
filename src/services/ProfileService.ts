@@ -109,7 +109,18 @@ export class ProfileService {
         });
     }
 
+    public async updateProfilePicture(userId: string, picture: string) {
+        return await this.prismaService.profile.update({
+            where: { userId },
+            data: { profilePicture: picture },
+        });
+    }
+
     public async ifUsernameExist(username: string) {
         return Boolean(await this.prismaService.profile.findFirst({ where: { username } }));
+    }
+
+    public async ifEmailExist(email: string) {
+        return Boolean(await this.prismaService.profile.findFirst({ where: { email } }));
     }
 }
