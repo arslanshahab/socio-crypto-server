@@ -423,4 +423,8 @@ export class UserService {
             data: { email },
         });
     }
+
+    public async ifEmailExist(email: string) {
+        return Boolean(await this.prismaService.user.findFirst({ where: { email } }));
+    }
 }

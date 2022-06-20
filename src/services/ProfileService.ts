@@ -115,8 +115,12 @@ export class ProfileService {
             data: { profilePicture: picture },
         });
     }
-    
+
     public async ifUsernameExist(username: string) {
         return Boolean(await this.prismaService.profile.findFirst({ where: { username } }));
+    }
+
+    public async ifEmailExist(email: string) {
+        return Boolean(await this.prismaService.profile.findFirst({ where: { email } }));
     }
 }

@@ -659,12 +659,13 @@ export class UserController {
     @Post("/start-email-verification")
     @(Returns(200, SuccessResult).Of(ReturnSuccessResultModel))
     public async startEmailVerification(@BodyParams() body: StartEmailVerificationParams, @Context() context: Context) {
+        const { email } = body;
+        if ((await this.userService.ifEmailExist(email)) || (await this.profileService.ifEmailExist(email)))
+            throw new BadRequest(EMAIL_EXISTS);
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new NotFound(USER_NOT_FOUND);
         const profile = await this.profileService.findProfileByUserId(user.id);
         if (!profile) throw new NotFound(PROFILE_NOT_FOUND);
-        const { email } = body;
-        if (user.email === email || profile.email === email) throw new BadRequest(EMAIL_EXISTS);
         const verificationData = await this.verificationService.generateVerification({ email, type: "EMAIL" });
         await SesClient.emailAddressVerificationEmail(
             email,
