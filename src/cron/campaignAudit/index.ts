@@ -4,7 +4,7 @@ import * as dotenv from "dotenv";
 import { payoutCryptoCampaignRewards } from "./auditFunctions";
 import { Firebase } from "../../clients/firebase";
 import { CampaignAuditStatus, CampaignStatus } from "../../util/constants";
-import { prisma } from "../../clients/prisma";
+import { readPrisma } from "../../clients/prisma";
 
 dotenv.config();
 const app = new Application();
@@ -18,7 +18,7 @@ console.log("APP instance created.");
     console.log("Secrets and connection initialized.");
     const now = new Date();
     try {
-        const campaigns = await prisma.campaign.findMany({
+        const campaigns = await readPrisma.campaign.findMany({
             where: {
                 endDate: { lte: now },
                 status: CampaignStatus.APPROVED,
@@ -28,7 +28,7 @@ console.log("APP instance created.");
         });
         console.log(`TOTAL CAMPAIGNS TO BE AUDITED--- ${campaigns.map((item) => item.id)}`);
         for (let index = 0; index < campaigns.length; index++) {
-            const campaign = await prisma.campaign.findUnique({
+            const campaign = await readPrisma.campaign.findUnique({
                 where: {
                     id: campaigns[index].id,
                 },
