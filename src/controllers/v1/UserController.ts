@@ -575,13 +575,12 @@ export class UserController {
     @Put("/update-user-name")
     @(Returns(200, SuccessResult).Of(UserResultModelV2))
     public async updateUserName(@QueryParams() query: UpdateUserNameParams, @Context() context: Context) {
-        let user = await this.userService.findUserByContext(context.get("user"));
+        let user = await this.userService.findUserByContext(context.get("user"), { profile: true });
         if (!user) throw new NotFound(USER_NOT_FOUND);
         const { username } = query;
-        const profile = await this.profileService.findProfileByUsername(username);
-        if (profile) throw new BadRequest(USERNAME_EXISTS);
-        await this.profileService.updateUsername(user.id, username);
-        user = await this.userService.findUserById(user.id, { profile: true });
+        if (user.profile?.username === username) throw new BadRequest(USERNAME_EXISTS);
+        const profile = await this.profileService.updateUsername(user.id, username);
+        user.profile = profile;
         return new SuccessResult(UserResultModelV2.build(user!), UserResultModelV2);
     }
 
@@ -615,13 +614,12 @@ export class UserController {
     @Put("/set-recovery-code")
     @(Returns(200, SuccessResult).Of(UserResultModelV2))
     public async setRecoveryCode(@BodyParams() body: SetRecoveryCodeParams, @Context() context: Context) {
-        let user = await this.userService.findUserByContext(context.get("user"));
+        let user = await this.userService.findUserByContext(context.get("user"), { profile: true });
         if (!user) throw new NotFound(USER_NOT_FOUND);
-        const profile = await this.profileService.findProfileByUserId(user.id);
-        if (!profile) throw new NotFound(PROFILE_NOT_FOUND);
+        if (!user.profile) throw new NotFound(PROFILE_NOT_FOUND);
         const { code } = body;
-        await this.profileService.setRecoveryCode(profile.id, code);
-        user = await this.userService.findUserById(user.id, { profile: true });
+        const profile = await this.profileService.setRecoveryCode(user.profile.id, code);
+        user.profile = profile;
         return new SuccessResult(UserResultModelV2.build(user!), UserResultModelV2);
     }
 
