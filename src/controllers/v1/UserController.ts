@@ -575,12 +575,11 @@ export class UserController {
     @Put("/update-user-name")
     @(Returns(200, SuccessResult).Of(UserResultModelV2))
     public async updateUserName(@QueryParams() query: UpdateUserNameParams, @Context() context: Context) {
+        const { username } = query;
+        if (await this.profileService.ifUsernameExist(username)) throw new BadRequest(USERNAME_EXISTS);
         let user = await this.userService.findUserByContext(context.get("user"), { profile: true });
         if (!user) throw new NotFound(USER_NOT_FOUND);
-        const { username } = query;
-        if (user.profile?.username === username) throw new BadRequest(USERNAME_EXISTS);
-        const profile = await this.profileService.updateUsername(user.id, username);
-        user.profile = profile;
+        user.profile = await this.profileService.updateUsername(user.id, username);
         return new SuccessResult(UserResultModelV2.build(user!), UserResultModelV2);
     }
 

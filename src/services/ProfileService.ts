@@ -108,4 +108,8 @@ export class ProfileService {
             data: { deviceToken },
         });
     }
+
+    public async ifUsernameExist(username: string) {
+        return Boolean(await this.prismaService.profile.findFirst({ where: { username } }));
+    }
 }
