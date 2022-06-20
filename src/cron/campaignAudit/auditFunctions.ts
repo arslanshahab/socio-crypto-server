@@ -118,7 +118,6 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
                         walletId: userWallet?.id,
                     },
                 });
-                console.log(participantShare.toString());
                 if (participantShare.isGreaterThan(0) && !alreadyTransferred) {
                     batchTransfer.transaction.push({
                         recipientAccountId: userCurrency.tatumId,
