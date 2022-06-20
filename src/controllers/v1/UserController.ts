@@ -45,6 +45,7 @@ import {
     UserParticipateParams,
     UserTransactionResultModel,
     WeeklyRewardsResultModel,
+    UserResultModelV2,
 } from "../../models/RestModels";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 import {
@@ -572,15 +573,16 @@ export class UserController {
     }
 
     @Put("/update-user-name")
-    @(Returns(200, SuccessResult).Of(UserResultModel))
+    @(Returns(200, SuccessResult).Of(UserResultModelV2))
     public async updateUserName(@QueryParams() query: UpdateUserNameParams, @Context() context: Context) {
-        const user = await this.userService.findUserByContext(context.get("user"), userResultRelations);
+        let user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new NotFound(USER_NOT_FOUND);
         const { username } = query;
         const profile = await this.profileService.findProfileByUsername(username);
         if (profile) throw new BadRequest(USERNAME_EXISTS);
         await this.profileService.updateUsername(user.id, username);
-        return new SuccessResult(UserResultModel.build(user), UserResultModel);
+        user = await this.userService.findUserById(user.id, { profile: true });
+        return new SuccessResult(UserResultModelV2.build(user!), UserResultModelV2);
     }
 
     @Put("/promote-permissions")
@@ -611,16 +613,16 @@ export class UserController {
     }
 
     @Put("/set-recovery-code")
-    @(Returns(200, SuccessResult).Of(SingleUserResultModel))
+    @(Returns(200, SuccessResult).Of(UserResultModelV2))
     public async setRecoveryCode(@BodyParams() body: SetRecoveryCodeParams, @Context() context: Context) {
-        const user = await this.userService.findUserByContext(context.get("user"));
+        let user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new NotFound(USER_NOT_FOUND);
         const profile = await this.profileService.findProfileByUserId(user.id);
         if (!profile) throw new NotFound(PROFILE_NOT_FOUND);
         const { code } = body;
         await this.profileService.setRecoveryCode(profile.id, code);
-        const result = { ...user, profile: ProfileResultModel.build(profile) };
-        return new SuccessResult(result, SingleUserResultModel);
+        user = await this.userService.findUserById(user.id, { profile: true });
+        return new SuccessResult(UserResultModelV2.build(user!), UserResultModelV2);
     }
 
     @Put("/update-notification-settings")
