@@ -107,7 +107,9 @@ export class AuthenticationController {
     public async recoverUserAccountStep1(@BodyParams() body: RecoverUserAccountStep1Parms) {
         const { username, code } = body;
         if (!username || !code) throw new NotFound(MISSING_PARAMS);
-        const profile = await this.profileService.findProfileByUsername(username);
+        const profile = await this.profileService.findProfileByUsername(username, {
+            user: true,
+        });
         if (!profile) throw new NotFound(USERNAME_NOT_EXISTS);
         if (!(await this.profileService.isRecoveryCodeValid(username, code))) throw new BadRequest(INCORRECT_CODE);
         if (!profile.user) throw new NotFound(USER_NOT_FOUND);

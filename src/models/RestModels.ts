@@ -473,7 +473,6 @@ export class SingleUserResultModel {
     @Nullable(String) public readonly kycStatus: string | null;
     @Nullable(Date) public readonly lastLogin: Date | null;
     @Property() public readonly email: string;
-    @Property() public readonly password: string;
     @Property(ProfileResultModel) public readonly profile: ProfileResultModel;
     @Nullable(SocialPostResultModel) public readonly social_post: Prisma.SocialPost[];
 }
@@ -622,4 +621,22 @@ export class UpdateNotificationSettingsResultModel {
 export class ReturnSuccessResultModel {
     @Property() public readonly success: boolean;
     @Property() public readonly message: string;
+}
+
+export class UserResultModelV2 {
+    @Property() public readonly id: string;
+    @Property() public readonly email: string;
+    @Property() public readonly createdAt: Date;
+    @Property() public readonly lastLogin: Date | null;
+    @Property() public readonly active: boolean;
+    @Nullable(String) public readonly identityId: string | null;
+    @Nullable(String) public readonly kycStatus: string | null;
+    @Nullable(ProfileResultModel) public readonly profile: ProfileResultModel | null;
+
+    public static build(user: Prisma.User & { profile?: Prisma.Profile | null }): UserResultModelV2 {
+        return {
+            ...user,
+            profile: user.profile ? ProfileResultModel.build(user.profile) : null,
+        };
+    }
 }
