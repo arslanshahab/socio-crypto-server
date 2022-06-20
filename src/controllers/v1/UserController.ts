@@ -19,6 +19,7 @@ import {
     EMAIL_EXISTS,
     GLOBAL_CAMPAIGN_NOT_FOUND,
     INCORRECT_PASSWORD,
+    INVALID_TOKEN,
     MISSING_PARAMS,
     NOTIFICATION_SETTING_NOT_FOUND,
     PARTICIPANT_NOT_FOUND,
@@ -75,6 +76,8 @@ import { createPasswordHash } from "../../util";
 import { AdminService } from "../../services/AdminService";
 import { Firebase } from "../../clients/firebase";
 import { VerificationService } from "../../services/VerificationService";
+import { decrypt } from "../../util/crypto";
+import { S3Client } from "../../clients/s3";
 
 const userResultRelations = {
     profile: true,
@@ -133,6 +136,15 @@ class SetDeviceParams {
 
 class StartEmailVerificationParams {
     @Required() public readonly email: string;
+}
+
+class CompleteEmailVerificationParams {
+    @Required() public readonly email: string;
+    @Required() public readonly token: string;
+}
+
+class UploadProfilePictureParams {
+    @Required() public readonly image: string;
 }
 
 @Controller("/user")
@@ -647,12 +659,13 @@ export class UserController {
     @Post("/start-email-verification")
     @(Returns(200, SuccessResult).Of(ReturnSuccessResultModel))
     public async startEmailVerification(@BodyParams() body: StartEmailVerificationParams, @Context() context: Context) {
+        const { email } = body;
+        if ((await this.userService.ifEmailExist(email)) || (await this.profileService.ifEmailExist(email)))
+            throw new BadRequest(EMAIL_EXISTS);
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new NotFound(USER_NOT_FOUND);
         const profile = await this.profileService.findProfileByUserId(user.id);
         if (!profile) throw new NotFound(PROFILE_NOT_FOUND);
-        const { email } = body;
-        if (profile.email === email) throw new BadRequest(EMAIL_EXISTS);
         const verificationData = await this.verificationService.generateVerification({ email, type: "EMAIL" });
         await SesClient.emailAddressVerificationEmail(
             email,
@@ -662,5 +675,35 @@ export class UserController {
             { success: true, message: "Email sent to provided email address" },
             ReturnSuccessResultModel
         );
+    }
+
+    @Post("/complete-email-verification")
+    @(Returns(200, SuccessResult).Of(ReturnSuccessResultModel))
+    public async completeEmailVerification(
+        @BodyParams() body: CompleteEmailVerificationParams,
+        @Context() context: Context
+    ) {
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        const { email, token } = body;
+        if ((await this.userService.findUserByEmail(email)) || (await this.profileService.findProfileByEmail(email)))
+            throw new BadRequest(EMAIL_EXISTS);
+
+        const verificationData = await this.verificationService.findVerificationByEmail(email);
+        if (!verificationData || decrypt(verificationData.code) !== token) throw new BadRequest(INVALID_TOKEN);
+        await this.userService.updateUserEmail(user.id, email);
+        await this.verificationService.updateVerificationStatus(true, verificationData.id);
+        return new SuccessResult({ success: true, message: "Email address verified" }, ReturnSuccessResultModel);
+    }
+
+    @Post("/upload-profile-picture")
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
+    public async uploadProfilePicture(@BodyParams() body: UploadProfilePictureParams, @Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        const { image } = body;
+        const filename = await S3Client.uploadProfilePicture("profilePicture", user.id, image);
+        await this.profileService.updateProfilePicture(user.id, filename);
+        return new SuccessResult({ success: true }, BooleanResultModel);
     }
 }
