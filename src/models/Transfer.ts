@@ -15,7 +15,7 @@ import { Wallet } from "./Wallet";
 import { Campaign } from "./Campaign";
 import { BN, getCryptoAssestImageUrl } from "../util";
 import { BigNumberEntityTransformer } from "../util/transformers";
-import { TransferAction, TransferStatus } from "../types";
+import { TransferAction, TransferStatus, TransferType } from "../types";
 import { Org } from "./Org";
 import { RafflePrize } from "./RafflePrize";
 import { performCurrencyTransfer } from "../controllers/helpers";
@@ -44,14 +44,7 @@ export class Transfer extends BaseEntity {
     public status: TransferStatus;
 
     @Column({ nullable: true })
-    public network: string;
-
-    // TODO: We should get rid of this column as well. It seems pretty redundant, and considering payouts aren't a thing yet this should be doable.
-    @Column({ nullable: true })
-    public payoutStatus: TransferStatus;
-
-    @Column({ nullable: true })
-    public payoutId: string;
+    public type: TransferType;
 
     @Column({ nullable: true })
     public stripeCardId: string;
@@ -348,6 +341,7 @@ export class Transfer extends BaseEntity {
         symbol: string;
         action: TransferAction;
         status: TransferStatus;
+        type: TransferType;
         campaign?: Campaign;
     }) {
         const transfer = new Transfer();
@@ -356,7 +350,36 @@ export class Transfer extends BaseEntity {
         transfer.status = data.status;
         transfer.currency = data.symbol;
         transfer.wallet = data.wallet;
+        transfer.type = data.type;
         if (data.campaign) transfer.campaign = data.campaign;
         return await transfer.save();
+    }
+
+    public static async getPendingWalletBalances(walletId: string, symbol: string) {
+        const { credit } = await this.createQueryBuilder("transfer")
+            .select("SUM(CAST(transfer.amount AS DECIMAL)) as credit")
+            .where(
+                `transfer.type >= :type AND transfer."walletId" = :wallet AND transfer.currency = :symbol AND transfer.status IN (:...statuses)`,
+                {
+                    symbol,
+                    wallet: walletId,
+                    type: "CREDIT",
+                    statuses: ["FAILED", "PENDING"],
+                }
+            )
+            .getRawOne();
+        const { debit } = await this.createQueryBuilder("transfer")
+            .select("SUM(CAST(transfer.amount AS DECIMAL)) as debit")
+            .where(
+                `transfer.type >= :type AND transfer."walletId" = :wallet AND transfer.currency = :symbol AND transfer.status = :status`,
+                {
+                    symbol,
+                    wallet: walletId,
+                    type: "DEBIT",
+                    status: "PENDING",
+                }
+            )
+            .getRawOne();
+        return parseFloat(credit || 0) - parseFloat(debit || 0);
     }
 }

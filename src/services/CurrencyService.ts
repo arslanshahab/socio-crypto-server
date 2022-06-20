@@ -56,4 +56,18 @@ export class CurrencyService {
             where: { tokenId, walletId },
         });
     }
+
+    /**
+     * Updates the deposit address for the given currency
+     *
+     * @param currency the currency to update
+     * @param address the new address
+     * @returns the updated currency
+     */
+    public async updateDepositAddress(currencyId: string, address: string) {
+        return this.prismaService.currency.update({
+            where: { id: currencyId },
+            data: { depositAddress: address },
+        });
+    }
 }

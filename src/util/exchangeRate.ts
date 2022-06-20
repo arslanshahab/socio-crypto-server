@@ -23,8 +23,7 @@ export const getExchangeRateForCurrency = async (symbol: string) => {
 };
 
 export const getExchangeRateForCrypto = async (symbol: string) => {
-    symbol = symbol.toLowerCase();
-    if (symbol === COIIN) return parseFloat(process.env.COIIN_VALUE || "0.2");
+    if (symbol.toUpperCase() === COIIN) return parseFloat(process.env.COIIN_VALUE || "0.2");
     const symbolData = await MarketData.findOne({ where: { symbol: ILike(symbol) } });
     if (symbolData) {
         return symbolData.price;
@@ -33,11 +32,7 @@ export const getExchangeRateForCrypto = async (symbol: string) => {
 };
 
 export const getTokenValueInUSD = async (token: string, amount: number) => {
-    token = token.toUpperCase();
-    let tokenValue = 1;
-    try {
-        tokenValue = await getExchangeRateForCrypto(token);
-    } catch (error) {}
+    const tokenValue = (await getExchangeRateForCrypto(token)) || 1;
     return tokenValue * amount;
 };
 

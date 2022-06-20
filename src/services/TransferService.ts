@@ -7,7 +7,9 @@ import { WalletService } from "./WalletService";
 import { NotFound } from "@tsed/exceptions";
 import { WALLET_NOT_FOUND } from "../util/errors";
 import { startOfYear } from "date-fns";
-import { COIIN } from "../util/constants";
+import { CacheKeys, COIIN, TransferStatus as TransferStatusEnum, TransferType } from "../util/constants";
+import { UseCache } from "@tsed/common";
+import { prepareCacheKey } from "../util/index";
 
 @Injectable()
 export class TransferService {
@@ -91,6 +93,7 @@ export class TransferService {
         symbol: string;
         action: TransferAction;
         status: TransferStatus;
+        type: TransferType;
         campaign?: Campaign;
     }) {
         return await this.prismaService.transfer.create({
@@ -100,6 +103,7 @@ export class TransferService {
                 status: data.status,
                 currency: data.symbol,
                 walletId: data.walletId,
+                type: data.type,
                 campaignId: data.campaign ? data.campaign.id : null,
             },
         });
@@ -182,5 +186,32 @@ export class TransferService {
             },
         });
         return earnings.reduce((acc, curr) => acc + parseFloat(curr.amount), 0);
+    }
+
+    @UseCache({
+        ttl: 600,
+        refreshThreshold: 300,
+        key: (args: any[]) => prepareCacheKey(CacheKeys.USER_PENDING_TRANSFERS, args),
+    })
+    public async getPendingWalletBalances(walletId: string, symbol: string) {
+        const pendingCreditTransfers = await this.prismaService.transfer.findMany({
+            where: {
+                walletId,
+                currency: symbol,
+                type: TransferType.CREDIT,
+                status: TransferStatusEnum.PENDING,
+            },
+        });
+        const pendingDebitBalances = await this.prismaService.transfer.findMany({
+            where: {
+                walletId,
+                currency: symbol,
+                type: TransferType.DEBIT,
+                status: TransferStatusEnum.PENDING,
+            },
+        });
+        const credit = pendingCreditTransfers.reduce((acc, curr) => acc + parseFloat(curr.amount), 0);
+        const debit = pendingDebitBalances.reduce((acc, curr) => acc + parseFloat(curr.amount), 0);
+        return credit - debit;
     }
 }

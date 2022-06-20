@@ -106,6 +106,7 @@ export const placeOrder = async (parent: any, args: { cart: Array<any>; email: s
             amount: new BN(totalCoiinSpent),
             action: "XOXODAY_REDEMPTION",
             status: "SUCCEEDED",
+            type: "DEBIT",
         });
         return true;
     } catch (error) {

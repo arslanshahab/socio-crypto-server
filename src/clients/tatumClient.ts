@@ -327,7 +327,7 @@ export class TatumClient {
         }
     };
 
-    public static transferFundsBatch = async (data: BatchTransferPayload) => {
+    public static transferFundsBatch = async (data: BatchTransferPayload): Promise<string[]> => {
         try {
             const endpoint = `${TatumClient.baseUrl}/ledger/transaction/batch`;
             const requestData: RequestData = {
@@ -650,6 +650,38 @@ export class TatumClient {
             return ledgerAccount;
         } catch (error) {
             console.log(error);
+            throw new Error(error?.response?.data?.message || error.message);
+        }
+    };
+
+    public static getAccountList = async (symbol: string, page: number, pageSize: number) => {
+        try {
+            const endpoint = `${TatumClient.baseUrl}/ledger/account`;
+            const requestData: RequestData = {
+                method: "GET",
+                url: endpoint,
+                query: { currency: symbol, page, pageSize },
+                headers: { "x-api-key": Secrets.tatumApiKey },
+            };
+            return await doFetch(requestData);
+        } catch (error) {
+            console.log(error?.response?.data || error.message);
+            throw new Error(error?.response?.data?.message || error.message);
+        }
+    };
+
+    public static getTotalAccounts = async (symbol: string) => {
+        try {
+            const endpoint = `${TatumClient.baseUrl}/ledger/account/count`;
+            const requestData: RequestData = {
+                method: "GET",
+                url: endpoint,
+                query: { currency: symbol },
+                headers: { "x-api-key": Secrets.tatumApiKey },
+            };
+            return await doFetch(requestData);
+        } catch (error) {
+            console.log(error?.response?.data || error.message);
             throw new Error(error?.response?.data?.message || error.message);
         }
     };

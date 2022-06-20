@@ -188,7 +188,6 @@ export class TransferResultModel {
     @Nullable(String) public readonly ethAddress: string | null;
     @Nullable(String) public readonly paypalAddress: string | null;
     @Nullable(String) public readonly currency: string | null;
-    @Nullable(String) public readonly network: string | null;
 
     @Property() public symbolImageUrl?: string;
 
@@ -472,19 +471,17 @@ export class SingleUserResultModel {
     @Nullable(String) public readonly referralCode: string | null;
     @Property() public readonly id: string;
     @Nullable(String) public readonly kycStatus: string | null;
-    @Property() public readonly lastLogin: Date;
+    @Nullable(Date) public readonly lastLogin: Date | null;
     @Property() public readonly email: string;
-    @Property() public readonly password: string;
-    @Nullable(String) public readonly profile: Prisma.Profile;
-    @Nullable(String) public readonly social_post: Prisma.SocialPost[];
+    @Property(ProfileResultModel) public readonly profile: ProfileResultModel;
+    @Nullable(SocialPostResultModel) public readonly social_post: Prisma.SocialPost[];
 }
 
 export class UserTransactionResultModel extends TransferResultModel {
-    @Property() public readonly payoutStatus: string;
-    @Property() public readonly payoutId: string;
     @Property() public readonly transactionHash: string;
     @Property() public readonly orgId: string;
     @Property() public readonly stripeCardId: string;
+    @Nullable(String) public readonly type: string;
 }
 
 export class AggregaredMetrics {
@@ -607,4 +604,39 @@ export class RemoveInterestsParams {
     @Property() public readonly country: string;
     @Property() public readonly interests: string;
     @Property() public readonly values: string;
+}
+
+export class UpdateNotificationSettingsParams {
+    @Property() public readonly kyc: boolean;
+    @Property() public readonly withdraw: boolean;
+    @Property() public readonly campaignCreate: boolean;
+    @Property() public readonly campaignUpdates: boolean;
+}
+
+export class UpdateNotificationSettingsResultModel {
+    @Property() public readonly user: Prisma.User;
+    @Property() public readonly notificationSettings: NotificationSettingsResultModel;
+}
+
+export class ReturnSuccessResultModel {
+    @Property() public readonly success: boolean;
+    @Property() public readonly message: string;
+}
+
+export class UserResultModelV2 {
+    @Property() public readonly id: string;
+    @Property() public readonly email: string;
+    @Property() public readonly createdAt: Date;
+    @Property() public readonly lastLogin: Date | null;
+    @Property() public readonly active: boolean;
+    @Nullable(String) public readonly identityId: string | null;
+    @Nullable(String) public readonly kycStatus: string | null;
+    @Nullable(ProfileResultModel) public readonly profile: ProfileResultModel | null;
+
+    public static build(user: Prisma.User & { profile?: Prisma.Profile | null }): UserResultModelV2 {
+        return {
+            ...user,
+            profile: user.profile ? ProfileResultModel.build(user.profile) : null,
+        };
+    }
 }

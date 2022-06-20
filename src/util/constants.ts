@@ -4,6 +4,9 @@ export const MATIC = "MATIC";
 export const BSC = "BSC";
 export const ETH = "ETH";
 export const BNB = "BNB";
+export const ADA = "ADA";
+export const BADA = "BADA";
+export const BBNB = "BBNB";
 export const NETWORK_TO_NATIVE_TOKEN: { [key: string]: string } = {
     BSC: BNB,
     ETH: ETH,
@@ -156,6 +159,11 @@ export enum TransferStatus {
     REJECTED = "REJECTED",
 }
 
+export enum TransferType {
+    CREDIT = "CREDIT",
+    DEBIT = "DEBIT",
+}
+
 export enum CoiinTransferAction {
     ADD = "ADD",
     REMOVE = "REMOVE",
@@ -163,6 +171,9 @@ export enum CoiinTransferAction {
 
 export enum CacheKeys {
     CAMPAIGN_RESET_KEY = "CAMPAIGN-",
+    USER_RESET_KEY = "USER-",
+    WALLET_RESET_KEY = "WALLET-",
+    MARKET_DATA_RESET_KEY = "MARKET-DATA",
     CAMPAIGN_BY_STATUS_SERVICE = "CAMPAIGN-BY-STATUS",
     CAMPAIGN_BY_ID_SERVICE = "CAMPAIGN-BY-ID",
     CAMPAIGN_BY_NAME_SERVICE = "CAMPAIGN-BY-NAME",
@@ -172,6 +183,7 @@ export enum CacheKeys {
     MARKET_DATA_SERVICE = "MARKET-DATA",
     USER_BY_ID_SERVICE = "USER-BY-ID",
     USER_COIIN_ADDRESS_SERVICE = "USER-COIIN-ADDRESS",
+    USER_PENDING_TRANSFERS = "USER-PENDING-TRANSFERS",
     WALLET_BY_ID_SERVICE = "WALLET-BY-ID",
     WALLET_BY_ORG_SERVICE = "WALLET-BY-ORG",
     WALLET_BY_USER_SERVICE = "WALLET-BY-USER",

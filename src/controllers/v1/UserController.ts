@@ -11,15 +11,21 @@ import {
     SuccessResult,
 } from "../../util/entities";
 import {
+    ADMIN_NOT_FOUND,
     ALREADY_PARTICIPATING,
     CAMPAIGN_CLOSED,
     CAMPAIGN_NOT_FOUND,
     CURRENCY_NOT_FOUND,
+    EMAIL_EXISTS,
     GLOBAL_CAMPAIGN_NOT_FOUND,
+    INCORRECT_PASSWORD,
     MISSING_PARAMS,
     NOTIFICATION_SETTING_NOT_FOUND,
     PARTICIPANT_NOT_FOUND,
+    PROFILE_NOT_FOUND,
+    SAME_OLD_AND_NEW_PASSWORD,
     TOKEN_NOT_FOUND,
+    USERNAME_EXISTS,
     USER_NOT_FOUND,
     WALLET_NOT_FOUND,
 } from "../../util/errors";
@@ -30,12 +36,16 @@ import {
     ParticipantMetricsResultModel,
     ProfileResultModel,
     RemoveInterestsParams,
+    ReturnSuccessResultModel,
     SingleUserResultModel,
+    UpdateNotificationSettingsParams,
+    UpdateNotificationSettingsResultModel,
     UpdateProfileInterestsParams,
     UserDailyParticipantMetricResultModel,
     UserParticipateParams,
     UserTransactionResultModel,
     WeeklyRewardsResultModel,
+    UserResultModelV2,
 } from "../../models/RestModels";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 import {
@@ -51,7 +61,6 @@ import { NotificationService } from "../../services/NotificationService";
 import { TransferService } from "../../services/TransferService";
 import { BSC, COIIN, CoiinTransferAction, SHARING_REWARD_AMOUNT, TransferAction } from "../../util/constants";
 import { SocialService } from "../../services/SocialService";
-import { getBalance } from "../helpers";
 import { CampaignService } from "../../services/CampaignService";
 import { ParticipantService } from "../../services/ParticipantService";
 import { TatumClientService } from "../../services/TatumClientService";
@@ -62,6 +71,10 @@ import { WalletService } from "../../services/WalletService";
 import { TokenService } from "../../services/TokenService";
 import { addDays, endOfISOWeek, startOfDay } from "date-fns";
 import { ProfileService } from "../../services/ProfileService";
+import { createPasswordHash } from "../../util";
+import { AdminService } from "../../services/AdminService";
+import { Firebase } from "../../clients/firebase";
+import { VerificationService } from "../../services/VerificationService";
 
 const userResultRelations = {
     profile: true,
@@ -94,6 +107,34 @@ class RewardUserForSharingParams {
     @Required() public readonly participantId: string;
     @Required() public readonly isGlobal: boolean;
 }
+
+class UpdateUserPasswordParams {
+    @Required() public readonly oldPassword: string;
+    @Required() public readonly newPassword: string;
+}
+
+class UpdateUserNameParams {
+    @Required() public readonly username: string;
+}
+
+class PromotePermissionsParams {
+    @Required() public readonly firebaseId: string;
+    @Property() public readonly company: string;
+    @Property() public readonly role: "admin" | "manager";
+}
+
+class SetRecoveryCodeParams {
+    @Required() public readonly code: number;
+}
+
+class SetDeviceParams {
+    @Required() public readonly deviceToken: string;
+}
+
+class StartEmailVerificationParams {
+    @Required() public readonly email: string;
+}
+
 @Controller("/user")
 export class UserController {
     @Inject()
@@ -122,6 +163,10 @@ export class UserController {
     private tokenService: TokenService;
     @Inject()
     private profileService: ProfileService;
+    @Inject()
+    private adminService: AdminService;
+    @Inject()
+    private verificationService: VerificationService;
 
     @Get("/")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserResultModel))
@@ -160,6 +205,7 @@ export class UserController {
             },
         });
         if (!user) throw new BadRequest(USER_NOT_FOUND);
+        console.log(user.participant);
         const keywords = new Set<string>();
         try {
             user.participant.forEach((p) =>
@@ -177,10 +223,11 @@ export class UserController {
         const user = await this.userService.findUserByContext(context.get("user"), {
             wallet: { include: { currency: { include: { token: true } } } },
         });
-        if (!user) throw new BadRequest(USER_NOT_FOUND);
-        const currencies = await getBalance(user);
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        if (!user.wallet) throw new NotFound(WALLET_NOT_FOUND);
+        const balances = await this.userService.getUserWalletBalances(user.wallet);
         return new SuccessArrayResult(
-            currencies.filter(<T>(r: T | null): r is T => !!r),
+            balances.filter(<T>(r: T | null): r is T => !!r),
             BalanceResultModel
         );
     }
@@ -265,8 +312,9 @@ export class UserController {
                 },
             },
         });
-        if (!user) throw new BadRequest(USER_NOT_FOUND);
-        const currencies = await getBalance(user);
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        if (!user.wallet) throw new NotFound(WALLET_NOT_FOUND);
+        const currencies = await this.userService.getUserWalletBalances(user.wallet);
         return new SuccessArrayResult(
             currencies.filter(<T>(r: T | null): r is T => !!r),
             BalanceResultModel
@@ -396,7 +444,7 @@ export class UserController {
         this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
         const user = await this.userService.findUserById(query.userId, ["profile", "social_post"]);
         if (!user) throw new NotFound(USER_NOT_FOUND);
-        return new SuccessResult(user, SingleUserResultModel);
+        return new SuccessResult({ ...user, profile: ProfileResultModel.build(user?.profile!) }, SingleUserResultModel);
     }
 
     @Post("/transfer-user-coiin")
@@ -409,13 +457,13 @@ export class UserController {
         const token = await this.tokenService.findTokenBySymbol({ symbol: COIIN, network: BSC });
         if (!token) throw new NotFound(TOKEN_NOT_FOUND);
         const userWallet = await this.walletService.findWalletByUserId(userId);
-        if (!userWallet) throw new NotFound(WALLET_NOT_FOUND + "for userId");
+        if (!userWallet) throw new NotFound(WALLET_NOT_FOUND + " for userId");
         const orgWallet = await this.walletService.findWalletByOrgId(admin?.orgId!);
-        if (!orgWallet) throw new NotFound(WALLET_NOT_FOUND + "for orgId");
+        if (!orgWallet) throw new NotFound(WALLET_NOT_FOUND + " for orgId");
         const userCurrency = await this.currencyService.findCurrencyByTokenId(token.id, userWallet.id);
-        if (!userCurrency) throw new NotFound(CURRENCY_NOT_FOUND + "for user");
+        if (!userCurrency) throw new NotFound(CURRENCY_NOT_FOUND + " for user");
         const orgCurrency = await this.currencyService.findCurrencyByTokenId(token.id, orgWallet?.id!);
-        if (!orgCurrency) throw new NotFound(CURRENCY_NOT_FOUND + "for org");
+        if (!orgCurrency) throw new NotFound(CURRENCY_NOT_FOUND + " for org");
         try {
             await this.tatumClientService.transferFunds({
                 senderAccountId: action === ADD ? orgCurrency?.tatumId : userCurrency?.tatumId,
@@ -505,5 +553,114 @@ export class UserController {
             campaign: campaign,
         });
         return new SuccessResult({ success: true }, BooleanResultModel);
+    }
+
+    @Put("/update-user-password")
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
+    public async updateUserPassword(@BodyParams() body: UpdateUserPasswordParams, @Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        const { oldPassword, newPassword } = body;
+        if (createPasswordHash({ email: user.email, password: oldPassword }) !== user.password)
+            throw new BadRequest(INCORRECT_PASSWORD);
+        if (
+            createPasswordHash({ email: user.email, password: oldPassword }) ===
+            createPasswordHash({ email: user.email, password: newPassword })
+        )
+            throw new Error(SAME_OLD_AND_NEW_PASSWORD);
+        await this.userService.resetUserPassword(user.id, user.email, newPassword);
+        return new SuccessResult({ success: true }, BooleanResultModel);
+    }
+
+    @Put("/update-user-name")
+    @(Returns(200, SuccessResult).Of(UserResultModelV2))
+    public async updateUserName(@QueryParams() query: UpdateUserNameParams, @Context() context: Context) {
+        const { username } = query;
+        if (await this.profileService.ifUsernameExist(username)) throw new BadRequest(USERNAME_EXISTS);
+        let user = await this.userService.findUserByContext(context.get("user"), { profile: true });
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        user.profile = await this.profileService.updateUsername(user.id, username);
+        return new SuccessResult(UserResultModelV2.build(user!), UserResultModelV2);
+    }
+
+    @Put("/promote-permissions")
+    @(Returns(200, SuccessResult).Of(UpdatedResultModel))
+    public async promotePermissions(@BodyParams() body: PromotePermissionsParams, @Context() context: Context) {
+        const { role, company } = this.userService.checkPermissions(
+            { hasRole: ["admin", "manager"] },
+            context.get("user")
+        );
+        const { firebaseId } = body;
+        if (!firebaseId) throw new BadRequest(MISSING_PARAMS);
+        const admin = await this.adminService.findAdminByFirebaseId(firebaseId);
+        if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
+        try {
+            if (role === "manager") {
+                await Firebase.adminClient.auth().setCustomUserClaims(admin.firebaseId, { role: "manager", company });
+            } else {
+                if (!body.role) throw new BadRequest(MISSING_PARAMS);
+                await Firebase.adminClient.auth().setCustomUserClaims(admin.firebaseId, {
+                    role: body.role,
+                    company: body.company || company,
+                });
+            }
+        } catch (error) {
+            console.log(error);
+        }
+        return new SuccessResult({ message: "User record updated successfully" }, UpdatedResultModel);
+    }
+
+    @Put("/set-recovery-code")
+    @(Returns(200, SuccessResult).Of(UserResultModelV2))
+    public async setRecoveryCode(@BodyParams() body: SetRecoveryCodeParams, @Context() context: Context) {
+        let user = await this.userService.findUserByContext(context.get("user"), { profile: true });
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        if (!user.profile) throw new NotFound(PROFILE_NOT_FOUND);
+        const { code } = body;
+        const profile = await this.profileService.setRecoveryCode(user.profile.id, code);
+        user.profile = profile;
+        return new SuccessResult(UserResultModelV2.build(user!), UserResultModelV2);
+    }
+
+    @Put("/update-notification-settings")
+    @(Returns(200, SuccessResult).Of(UpdateNotificationSettingsResultModel))
+    public async updateNotificationSettings(
+        @BodyParams() body: UpdateNotificationSettingsParams,
+        @Context() context: Context
+    ) {
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        const notificationSettings = await this.notificationService.updateNotificationSettings(user.id, body);
+        return new SuccessResult({ user, notificationSettings }, UpdateNotificationSettingsResultModel);
+    }
+
+    @Put("/set-device")
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
+    public async setDevice(@BodyParams() body: SetDeviceParams, @Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        const { deviceToken } = body;
+        await this.profileService.updateDeviceToken(user.id, deviceToken);
+        return new SuccessResult({ success: true }, BooleanResultModel);
+    }
+
+    @Post("/start-email-verification")
+    @(Returns(200, SuccessResult).Of(ReturnSuccessResultModel))
+    public async startEmailVerification(@BodyParams() body: StartEmailVerificationParams, @Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        const profile = await this.profileService.findProfileByUserId(user.id);
+        if (!profile) throw new NotFound(PROFILE_NOT_FOUND);
+        const { email } = body;
+        if (profile.email === email) throw new BadRequest(EMAIL_EXISTS);
+        const verificationData = await this.verificationService.generateVerification({ email, type: "EMAIL" });
+        await SesClient.emailAddressVerificationEmail(
+            email,
+            this.verificationService.getDecryptedCode(verificationData.code)
+        );
+        return new SuccessResult(
+            { success: true, message: "Email sent to provided email address" },
+            ReturnSuccessResultModel
+        );
     }
 }
