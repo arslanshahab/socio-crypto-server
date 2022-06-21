@@ -30,7 +30,7 @@ cron:
         campaignAudit: "0 * * * *" # At every hour
         fixTransfer: "0 */10 * * *" # At every 10 hours
         marketData: "*/15 * * * *" # At every 15 minutes
-        updateBalance: "0 */6 * * *" # At every 6 hours
+        updateBalance: "0 */12 * * *" # At every 12 hours
 
 # up server replica count
 replicaCount: 2
