@@ -1,19 +1,18 @@
-import { Connection } from "typeorm";
-import { connectDatabase } from "../helpers";
+import { Secrets } from "../../util/secrets";
+import { Application } from "../../app";
 import * as dotenv from "dotenv";
-import { Secrets } from "../../src/util/secrets";
-import { prisma, readPrisma } from "../../src/clients/prisma";
-import { TatumClient } from "../../src/clients/tatumClient";
-import { getCurrencyForTatum } from "../../src/util/tatumHelper";
-dotenv.config();
+import { TatumClient } from "../../clients/tatumClient";
+import { prisma, readPrisma } from "../../clients/prisma";
+import { getCurrencyForTatum } from "../../util/tatumHelper";
 
-(async () => {
-    try {
-        console.log("Preparing to update user balances.");
-        await Secrets.initialize();
-        const connection: Connection = await connectDatabase();
-        const token = await readPrisma.token.findFirst({ where: { symbol: "DOGE", network: "DOGE" } });
-        if (!token) throw new Error("Token not found");
+dotenv.config();
+const app = new Application();
+console.log("APP instance created.");
+
+const updateTatumBalances = async () => {
+    const supportedTokens = await readPrisma.token.findMany({ where: { enabled: true } });
+    for (let tokenIndex = 0; tokenIndex < supportedTokens.length; tokenIndex++) {
+        const token = supportedTokens[tokenIndex];
         const tatumSymbol = getCurrencyForTatum(token);
         const totalAccountForSymbol = (await TatumClient.getTotalAccounts(tatumSymbol)).total;
         console.log(`TOTAL ACCOUNTS FOR: ${tatumSymbol} ${totalAccountForSymbol}`);
@@ -31,7 +30,7 @@ dotenv.config();
                 });
                 if (foundAccount) {
                     console.log(
-                        `${tatumSymbol} CURRENT: ${foundAccount.availableBalance} -- FETCHED: ${account.balance.availableBalance}`
+                        `${foundAccount.id} ${foundAccount.tatumId} ${foundAccount.symbol} CURRENT: ${foundAccount.availableBalance} -- FETCHED: ${account.balance.availableBalance}`
                     );
                     prismaTransactions.push(
                         prisma.currency.update({
@@ -47,9 +46,24 @@ dotenv.config();
             await prisma.$transaction(prismaTransactions);
             page += 1;
         }
-        await connection.close();
-        process.exit(0);
-    } catch (e) {
-        console.log("ERROR:", e);
     }
+};
+
+(async () => {
+    console.log("Starting auto coiin transfer.");
+    await Secrets.initialize();
+    const connection = await app.connectDatabase();
+    console.log("Secrets and connection initialized.");
+    try {
+        await updateTatumBalances();
+    } catch (error) {
+        console.log(error);
+        await connection.close();
+        console.log("DATABASE CONNECTION CLOSED WITH ERROR ----.");
+        process.exit(0);
+    }
+    console.log("COMPLETED CRON TASKS ----.");
+    await connection.close();
+    console.log("DATABASE CONNECTION CLOSED ----.");
+    process.exit(0);
 })();
