@@ -12,7 +12,7 @@ import { TatumClientService } from "./TatumClientService";
 import { PlatformCache, UseCache } from "@tsed/common";
 import { CacheKeys } from "../util/constants";
 import { resetCacheKey } from "../util/index";
-import { readPrisma } from "../../src/clients/prisma";
+import { readPrisma } from "../clients/prisma";
 
 @Injectable()
 export class CampaignService {
