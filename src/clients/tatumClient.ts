@@ -14,11 +14,7 @@ import {
     getWithdrawals,
     assignDepositAddress,
     offchainStoreWithdrawal,
-    sendBitcoinOffchainTransaction,
-    sendLitecoinOffchainTransaction,
-    sendBitcoinCashOffchainTransaction,
     sendAdaOffchainTransaction,
-    sendDogecoinOffchainTransaction,
     sendXrpOffchainTransaction,
     sendCeloOffchainTransaction,
     sendTronOffchainTransaction,
@@ -30,7 +26,12 @@ import {
 } from "@tatumio/tatum";
 import { TatumWallet } from "../models/TatumWallet";
 import { S3Client } from "./s3";
-import { adjustWithdrawableAmount, getCurrencyForTatum, transferFundsToRaiinmaker } from "../util/tatumHelper";
+import {
+    adjustWithdrawableAmount,
+    generateWithdrawEndpoint,
+    getCurrencyForTatum,
+    transferFundsToRaiinmaker,
+} from "../util/tatumHelper";
 import { Currency } from "../models/Currency";
 import { RequestData, doFetch } from "../util/fetchRequest";
 import { Wallet } from "../models/Wallet";
@@ -405,16 +406,17 @@ export class TatumClient {
                 ...(payload.currency.derivationKey && { index: payload.currency.derivationKey }),
                 fee,
             };
+            console.log(body);
             const callWithdrawMethod = async () => {
                 switch (chain) {
                     case "BTC":
-                        return await sendBitcoinOffchainTransaction(false, body as any);
+                        return await TatumClient.sendTokenOffchainTransaction(body);
                     case "XRP":
                         return await sendXrpOffchainTransaction(false, body as any);
                     case "BCH":
-                        return await sendBitcoinCashOffchainTransaction(false, body as any);
+                        return await TatumClient.sendTokenOffchainTransaction(body);
                     case "LTC":
-                        return await sendLitecoinOffchainTransaction(false, body as any);
+                        return await TatumClient.sendTokenOffchainTransaction(body);
                     case "FLOW":
                         return await TatumClient.sendTokenOffchainTransaction(payload);
                     case "CELO":
@@ -432,7 +434,7 @@ export class TatumClient {
                     case "MATIC":
                         return await TatumClient.sendOffchainTransactionFromCustodial(body);
                     case "DOGE":
-                        return await sendDogecoinOffchainTransaction(false, body as any);
+                        return await TatumClient.sendTokenOffchainTransaction(body);
                     default:
                         throw new Error(
                             `Withdraws for ${body.currency.token.symbol} are not supported at this moment.`
@@ -516,11 +518,20 @@ export class TatumClient {
 
     public static sendTokenOffchainTransaction = async (data: WithdrawPayload & WalletKeys) => {
         try {
-            const endpoint = `${TatumClient.baseUrl}/offchain/${data.currency.token.symbol.toLowerCase()}/transfer`;
+            const endpoint = `${TatumClient.baseUrl}${generateWithdrawEndpoint(data.currency.token.symbol)}`;
             const requestData: RequestData = {
                 method: "POST",
                 url: endpoint,
-                payload: data,
+                payload: {
+                    senderAccountId: data.senderAccountId,
+                    amount: data.amount,
+                    address: data.address,
+                    fee: data.fee,
+                    mnemonic: data.mnemonic,
+                    xpub: data.xpub,
+                    paymentId: data.paymentId,
+                    senderNote: data.senderNote,
+                },
                 headers: { "x-api-key": Secrets.tatumApiKey },
             };
             return await doFetch(requestData);

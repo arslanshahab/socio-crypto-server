@@ -18,6 +18,14 @@ export const NETWORK_TO_NATIVE_TOKEN: { [key: string]: string } = {
     ETH: ETH,
     MATIC: MATIC,
 };
+export const TOKEN_TO_WITHDRAW_ENDPOINT: { [key: string]: string } = {
+    BTC: "/offchain/bitcoin/transfer",
+    LTC: "/offchain/litecoin/transfer",
+    BCH: "/offchain/bcash/transfer",
+    DOGE: "/offchain/dogecoin/transfer",
+    BNB: "/offchain/bnb/transfer",
+    FLOW: "/offchain/flow/transfer",
+};
 export const COIIN_ALERT_TRIGGER_LIMIT = 5000;
 export const CUSTODIAL_NETWORKS = [MATIC, ETH, BSC];
 export const WITHDRAW_LIMIT = 1000;
