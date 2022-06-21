@@ -292,4 +292,10 @@ export class TatumClientService {
             throw new Error(error?.response?.data?.message || error.message);
         }
     }
+
+    // Get all currencies
+    public async getAllCurrencies() {
+        const tokens = await this.tokenService.findTokens();
+        return tokens.map((token) => ({ symbol: token.symbol, network: token.network }));
+    }
 }

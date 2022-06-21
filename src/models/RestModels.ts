@@ -648,3 +648,17 @@ export class CryptoCurrencyResultModel {
     @Property() public readonly createdAt: Date;
     @Property() public readonly updatedAt: Date;
 }
+
+export class SupportedCurrenciesResultModel {
+    @Property() public readonly symbol: string;
+    @Property() public readonly network: string;
+}
+
+export class DepositAddressResultModel {
+    @Property() public readonly symbol: string;
+    @Property() public readonly address: string;
+    @Property() public readonly fromTatum: boolean;
+    @Nullable(String) public readonly destinationTag: number | null;
+    @Nullable(String) public readonly memo: string | null;
+    @Nullable(String) public readonly message: string | null;
+}
