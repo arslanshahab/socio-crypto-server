@@ -406,7 +406,6 @@ export class TatumClient {
                 ...(payload.currency.derivationKey && { index: payload.currency.derivationKey }),
                 fee,
             };
-            console.log(body);
             const callWithdrawMethod = async () => {
                 switch (chain) {
                     case "BTC":

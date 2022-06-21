@@ -9,7 +9,7 @@ import { serverBaseUrl } from "../config";
 import { SymbolNetworkParams, WithdrawFeeData } from "../types.d";
 import {
     BSC,
-    // NETWORK_TO_NATIVE_TOKEN,
+    NETWORK_TO_NATIVE_TOKEN,
     COIIN,
     ETH,
     MATIC,
@@ -20,7 +20,6 @@ import {
     XRP_DEFAULT_WITHDRAW_FEE,
     BCH_DEFAULT_WITHDRAW_FEE,
     BNB_DEFAULT_WITHDRAW_FEE,
-    DOGE_DEFAULT_WITHDRAW_FEE,
     TOKEN_TO_WITHDRAW_ENDPOINT,
 } from "./constants";
 
@@ -69,15 +68,15 @@ export const getFeeInSymbol = async (base: string, symbol: string, amount: numbe
 
 export const adjustWithdrawableAmount = async (data: WithdrawPayload): Promise<WithdrawFeeData> => {
     let adjustedAmount = parseFloat(formatFloat(data.amount));
-    // const base = NETWORK_TO_NATIVE_TOKEN[data.currency.token.network];
-    // let fee = await offchainEstimateFee(data);
-    // if (TatumClient.isSubCustodialToken(data.currency.token)) {
-    //     fee = await getFeeInSymbol(base, data.currency.token.symbol, fee);
-    // }
-    adjustedAmount = adjustedAmount - DOGE_DEFAULT_WITHDRAW_FEE;
+    const base = NETWORK_TO_NATIVE_TOKEN[data.currency.token.network];
+    let fee = await offchainEstimateFee(data);
+    if (TatumClient.isSubCustodialToken(data.currency.token)) {
+        fee = await getFeeInSymbol(base, data.currency.token.symbol, fee);
+    }
+    adjustedAmount = adjustedAmount - fee;
     return {
         withdrawAbleAmount: formatFloat(adjustedAmount),
-        fee: formatFloat(DOGE_DEFAULT_WITHDRAW_FEE),
+        fee: formatFloat(fee),
     };
 };
 
