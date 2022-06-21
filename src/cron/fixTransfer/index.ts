@@ -40,7 +40,8 @@ export const fixFailedCoiinTransfers = async (raiinmakerCoiinCurrency: Currency)
                 senderAccountId: raiinmakerCoiinCurrency.tatumId,
                 transaction: [],
             };
-            for (const transfer of failedCoiinTransfers) {
+            for (let transferIndex = 0; transferIndex < failedCoiinTransfers.length; transferIndex++) {
+                const transfer = failedCoiinTransfers[transferIndex];
                 if (transfer) {
                     const userCurrency = await TatumClient.findOrCreateCurrency({
                         walletId: transfer.walletId || "",
@@ -92,44 +93,51 @@ export const fixFailedCampaignTransfers = async () => {
                 take,
                 skip,
             });
-            for (const transfer of failedCampaignTransfers) {
-                const campaign = await readPrisma.campaign.findFirst({ where: { id: transfer.campaignId || "" } });
-                if (!campaign) throw new Error("Campaign not found.");
-                const campaignCurrency = await readPrisma.currency.findFirst({
-                    where: { id: campaign.currencyId || "" },
-                });
-                if (!campaignCurrency) throw new Error("Currency not found for campaign.");
-                const campaignToken = await readPrisma.token.findFirst({
-                    where: { id: campaignCurrency.tokenId || "" },
-                });
-                if (!campaignToken) throw new Error("Token not found for campaign.");
-
-                const userCurrency = await TatumClient.findOrCreateCurrency({
-                    walletId: transfer.walletId || "",
-                    symbol: campaignToken.symbol,
-                    network: campaignToken.network,
-                });
-
-                try {
-                    await TatumClient.transferFunds({
-                        senderAccountId: campaignCurrency.tatumId,
-                        recipientAccountId: userCurrency.tatumId,
-                        amount: transfer.amount.toString(),
-                        recipientNote: "COMPENSATING_FAILED_TRANSFER",
+            const prismaTransactions = [];
+            for (let transferIndex = 0; transferIndex < failedCampaignTransfers.length; transferIndex++) {
+                const transfer = failedCampaignTransfers[transferIndex];
+                if (transfer) {
+                    const campaign = await readPrisma.campaign.findFirst({ where: { id: transfer.campaignId || "" } });
+                    if (!campaign) throw new Error("Campaign not found.");
+                    const campaignCurrency = await readPrisma.currency.findFirst({
+                        where: { id: campaign.currencyId || "" },
                     });
-                    console.log(
-                        "TRANSFER FIX PREPARED: ",
-                        transfer.id,
-                        transfer.amount.toString(),
-                        transfer.walletId,
-                        transfer.action
-                    );
-                    await prisma.transfer.update({
-                        where: { id: transfer.id },
-                        data: { status: TransferStatus.SUCCEEDED },
+                    if (!campaignCurrency) throw new Error("Currency not found for campaign.");
+                    const campaignToken = await readPrisma.token.findFirst({
+                        where: { id: campaignCurrency.tokenId || "" },
                     });
-                } catch (error) {}
+                    if (!campaignToken) throw new Error("Token not found for campaign.");
+
+                    const userCurrency = await TatumClient.findOrCreateCurrency({
+                        walletId: transfer.walletId || "",
+                        symbol: campaignToken.symbol,
+                        network: campaignToken.network,
+                    });
+
+                    try {
+                        await TatumClient.transferFunds({
+                            senderAccountId: campaignCurrency.tatumId,
+                            recipientAccountId: userCurrency.tatumId,
+                            amount: transfer.amount.toString(),
+                            recipientNote: "COMPENSATING_FAILED_TRANSFER",
+                        });
+                        console.log(
+                            "TRANSFER FIX PREPARED: ",
+                            transfer.id,
+                            transfer.amount.toString(),
+                            transfer.walletId,
+                            transfer.action
+                        );
+                        prismaTransactions.push(
+                            prisma.transfer.update({
+                                where: { id: transfer.id },
+                                data: { status: TransferStatus.SUCCEEDED },
+                            })
+                        );
+                    } catch (error) {}
+                }
             }
+            await prisma.$transaction(prismaTransactions);
             skip += take;
         }
     }
@@ -137,7 +145,8 @@ export const fixFailedCampaignTransfers = async () => {
 
 const updateTatumBalances = async () => {
     const supportedTokens = await readPrisma.token.findMany({ where: { enabled: true } });
-    for (const token of supportedTokens) {
+    for (let tokenIndex = 0; tokenIndex < supportedTokens.length; tokenIndex++) {
+        const token = supportedTokens[tokenIndex];
         const tatumSymbol = getCurrencyForTatum(token);
         const totalAccountForSymbol = (await TatumClient.getTotalAccounts(tatumSymbol)).total;
         console.log(`TOTAL ACCOUNTS FOR: ${tatumSymbol} ${totalAccountForSymbol}`);
@@ -145,22 +154,27 @@ const updateTatumBalances = async () => {
         let page = 0;
         const paginatedLoop = Math.ceil(totalAccountForSymbol / pageSize);
         for (let pageIndex = 0; pageIndex < paginatedLoop; pageIndex++) {
-            const accountList = await TatumClient.getAccountList(tatumSymbol, page, pageSize);
+            const accountList: any[] = await TatumClient.getAccountList(tatumSymbol, page, pageSize);
+            const prismaTransactions = [];
             console.log("FETCHED ACCOUNT LIST FOR PAGE: ", tatumSymbol, page);
-            for (const account of accountList) {
+            for (let index = 0; index < accountList.length; index++) {
+                const account = accountList[index];
                 const foundAccount = await readPrisma.currency.findFirst({
                     where: { tatumId: account.id, symbol: account.currency },
                 });
                 if (foundAccount) {
-                    await prisma.currency.update({
-                        where: { id: foundAccount.id },
-                        data: {
-                            accountBalance: parseFloat(account.balance.accountBalance),
-                            availableBalance: parseFloat(account.balance.availableBalance),
-                        },
-                    });
+                    prismaTransactions.push(
+                        prisma.currency.update({
+                            where: { id: foundAccount.id },
+                            data: {
+                                accountBalance: parseFloat(account.balance.accountBalance),
+                                availableBalance: parseFloat(account.balance.availableBalance),
+                            },
+                        })
+                    );
                 }
             }
+            await prisma.$transaction(prismaTransactions);
             page += 1;
         }
     }

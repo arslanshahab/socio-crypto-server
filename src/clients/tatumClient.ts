@@ -660,7 +660,7 @@ export class TatumClient {
             const requestData: RequestData = {
                 method: "GET",
                 url: endpoint,
-                query: { currency: symbol, page, pageSize },
+                query: { currency: symbol, page: page, pageSize: pageSize, sort: "desc", sortBy: "account_balance" },
                 headers: { "x-api-key": Secrets.tatumApiKey },
             };
             return await doFetch(requestData);
