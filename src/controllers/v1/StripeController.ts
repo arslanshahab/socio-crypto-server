@@ -7,7 +7,7 @@ import { OrganizationService } from "../../services/OrganizationService";
 import { ORG_NOT_FOUND } from "../../util/errors";
 import { StripeAPI } from "../../clients/stripe";
 import { NotFound } from "@tsed/exceptions";
-import { PaymentMethodsResultModel } from "src/models/RestModels";
+import { PaymentMethodsResultModel } from "../../models/RestModels";
 
 @Controller("/stripe")
 export class StripeController {
