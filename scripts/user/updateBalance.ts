@@ -5,6 +5,7 @@ import { Secrets } from "../../src/util/secrets";
 import { prisma, readPrisma } from "../../src/clients/prisma";
 import { TatumClient } from "../../src/clients/tatumClient";
 import { getCurrencyForTatum } from "../../src/util/tatumHelper";
+import { ADA, BSC } from "../../src/util/constants";
 dotenv.config();
 
 (async () => {
@@ -12,7 +13,7 @@ dotenv.config();
         console.log("Preparing to update user balances.");
         await Secrets.initialize();
         const connection: Connection = await connectDatabase();
-        const token = await readPrisma.token.findFirst({ where: { symbol: "DOGE", network: "DOGE" } });
+        const token = await readPrisma.token.findFirst({ where: { symbol: ADA, network: BSC } });
         if (!token) throw new Error("Token not found");
         const tatumSymbol = getCurrencyForTatum(token);
         const totalAccountForSymbol = (await TatumClient.getTotalAccounts(tatumSymbol)).total;

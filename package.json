@@ -1,6 +1,6 @@
 {
     "name": "raiinmaker-server",
-    "version": "3.4.15",
+    "version": "3.4.16",
     "main": "index.js",
     "repository": "git@github.com:dragonchain-inc/raiinmaker-server.git",
     "author": "Alex Benedetto <alex061994@gmail.com>",
@@ -42,7 +42,6 @@
         "cron:campaignAudit:run": "AWS_PROFILE=raiinmaker LOAD_ENV=true ts-node src/cron/campaignAudit/index.ts",
         "cron:social:run": "AWS_PROFILE=raiinmaker LOAD_ENV=true ts-node src/cron/social/index.ts",
         "cron:fixTransfer:run": "AWS_PROFILE=raiinmaker LOAD_ENV=true ts-node src/cron/fixTransfer/index.ts",
-        "cron:updateBalance:run": "AWS_PROFILE=raiinmaker LOAD_ENV=true ts-node src/cron/updateBalance/index.ts",
         "cron:marketData:run": "AWS_PROFILE=raiinmaker LOAD_ENV=true ts-node src/cron/marketData/index.ts",
         "cron:qualityScore:run": "AWS_PROFILE=raiinmaker LOAD_ENV=true ts-node src/cron/qualityScore/index.ts",
         "cron:scoreAggregate:run": "AWS_PROFILE=raiinmaker LOAD_ENV=true ts-node src/cron/scoreAggregate/index.ts"
