@@ -640,3 +640,11 @@ export class UserResultModelV2 {
         };
     }
 }
+
+export class CryptoCurrencyResultModel {
+    @Property() public readonly id: string;
+    @Property() public readonly type: string;
+    @Nullable(String) public readonly contractAddress: string | null;
+    @Property() public readonly createdAt: Date;
+    @Property() public readonly updatedAt: Date;
+}
