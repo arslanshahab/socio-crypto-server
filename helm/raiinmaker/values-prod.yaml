@@ -32,6 +32,7 @@ data:
         FEE_RATE: "0.1"
         FIREBASE_API_KEY: "AIzaSyAAXv6aKS3xdrnTLf5hVVJgW60h26vFJok"
         SENTRY_DSN: "https://aedcc11778fe4bbdb489d4ad55eb08de@o1155640.ingest.sentry.io/6237600"
+        PG_HOST_READER: "prod-database.cluster-ro-cuqkwt1n17k6.us-west-1.rds.amazonaws.com"
 
 postgresql:
     host: "prod-database.cluster-cuqkwt1n17k6.us-west-1.rds.amazonaws.com"
