@@ -164,7 +164,7 @@ const updateTatumBalances = async () => {
                 });
                 if (foundAccount) {
                     console.log(
-                        `${tatumSymbol} CURRENT: ${foundAccount.availableBalance} -- FETCHED: ${account.availableBalance}`
+                        `${tatumSymbol} CURRENT: ${foundAccount.availableBalance} -- FETCHED: ${account.balance.availableBalance}`
                     );
                     prismaTransactions.push(
                         prisma.currency.update({
