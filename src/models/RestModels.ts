@@ -662,3 +662,9 @@ export class DepositAddressResultModel {
     @Nullable(String) public readonly memo: string | null;
     @Nullable(String) public readonly message: string | null;
 }
+
+export class PaymentMethodsResultModel {
+    @Property() public readonly id: string;
+    @Nullable(String) public readonly last4: string | null | undefined;
+    @Nullable(String) public readonly brand: string | null | undefined;
+}
