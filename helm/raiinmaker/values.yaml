@@ -65,6 +65,7 @@ data:
         FEE_RATE: "0.1"
         FIREBASE_API_KEY: "AIzaSyAAXv6aKS3xdrnTLf5hVVJgW60h26vFJok"
         SENTRY_DSN: "https://ba0ee0b07cad495bba9d8734bd37cf34@o1155640.ingest.sentry.io/6236187"
+        PG_HOST_READER: "staging-database.cluster-ro-cuqkwt1n17k6.us-west-1.rds.amazonaws.com"
 
 postgresql:
     existingSecret: "raiinmaker"
