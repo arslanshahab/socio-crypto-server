@@ -356,7 +356,7 @@ export class UserController {
             currency: { include: { token: true } },
         });
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
-        if (campaign.type === "raffle" && email) throw new BadRequest(MISSING_PARAMS);
+        if (campaign.type === "raffle" && !email) throw new BadRequest(MISSING_PARAMS);
 
         if (await !this.campaignService.isCampaignOpen(campaign.id)) throw new BadRequest(CAMPAIGN_CLOSED);
         if (await this.participantService.findParticipantByUserAndCampaignIds(user.id, campaign.id))
