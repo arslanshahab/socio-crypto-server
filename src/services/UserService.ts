@@ -21,6 +21,7 @@ import { resetCacheKey } from "../util/index";
 import { getCryptoAssestImageUrl } from "../util/index";
 import { CurrencyService } from "./CurrencyService";
 import { MarketDataService } from "./MarketDataService";
+import { readPrisma } from "../clients/prisma";
 
 type Array2TrueMap<T> = T extends string[] ? { [idx in T[number]]: true } : undefined;
 
@@ -78,7 +79,7 @@ export class UserService {
         userId: string | Prisma.StringFilter,
         include?: T
     ) {
-        return this.prismaService.user.findFirst<{
+        return readPrisma.user.findFirst<{
             where: Prisma.UserWhereInput;
             include: T extends unknown[] ? Array2TrueMap<T> : T;
         }>({
@@ -100,8 +101,8 @@ export class UserService {
         params: { skip: number; take: number },
         include?: T
     ) {
-        return this.prismaService.$transaction([
-            this.prismaService.user.findMany<{
+        return readPrisma.$transaction([
+            readPrisma.user.findMany<{
                 where: Prisma.UserWhereInput;
                 skip: number;
                 take: number;
@@ -115,7 +116,7 @@ export class UserService {
                 take: params.take,
                 where: { deletedAt: null },
             }),
-            this.prismaService.user.count(),
+            readPrisma.user.count(),
         ]);
     }
 
@@ -127,7 +128,7 @@ export class UserService {
      * @returns the admin object, with the requested relations included
      */
     public async findUserByFirebaseId<T extends Prisma.AdminInclude | undefined>(firebaseId: string, include?: T) {
-        return this.prismaService.admin.findFirst<{
+        return readPrisma.admin.findFirst<{
             where: Prisma.AdminWhereInput;
             // this type allows adding additional relations to result tpe
             include: T;
@@ -150,7 +151,7 @@ export class UserService {
 
     public async getAllDeviceTokens(action?: "campaignCreate" | "campaignUpdates") {
         const campaignType = action === "campaignCreate" ? { campaignCreate: true } : { campaignUpdates: true };
-        const response = await this.prismaService.user.findMany({
+        const response = await readPrisma.user.findMany({
             select: {
                 profile: {
                     select: { deviceToken: true },
@@ -219,8 +220,8 @@ export class UserService {
     }
 
     public findUsersRecord(skip: number, take: number, filter: string) {
-        return this.prismaService.$transaction([
-            this.prismaService.user.findMany({
+        return readPrisma.$transaction([
+            readPrisma.user.findMany({
                 where: filter
                     ? {
                           OR: [
@@ -266,7 +267,7 @@ export class UserService {
                 skip,
                 take,
             }),
-            this.prismaService.user.count({}),
+            readPrisma.user.count({}),
         ]);
     }
 
@@ -334,23 +335,23 @@ export class UserService {
 
     public async getUserCount() {
         const currentDate = new Date();
-        return this.prismaService.$transaction([
-            this.prismaService.user.count(),
-            this.prismaService.user.count({
+        return readPrisma.$transaction([
+            readPrisma.user.count(),
+            readPrisma.user.count({
                 where: {
                     createdAt: {
                         gte: subDays(currentDate, 7),
                     },
                 },
             }),
-            this.prismaService.user.count({
+            readPrisma.user.count({
                 where: { active: false },
             }),
         ]);
     }
 
     public async findUserByEmail(email: string) {
-        return await this.prismaService.user.findFirst({
+        return await readPrisma.user.findFirst({
             where: {
                 email: { contains: email, mode: "insensitive" },
             },
@@ -425,6 +426,6 @@ export class UserService {
     }
 
     public async ifEmailExist(email: string) {
-        return Boolean(await this.prismaService.user.findFirst({ where: { email } }));
+        return Boolean(await readPrisma.user.findFirst({ where: { email } }));
     }
 }
