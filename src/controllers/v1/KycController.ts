@@ -131,12 +131,14 @@ export class KycController {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const { userId, status } = query;
         if (!["approve", "reject"].includes(status)) throw new BadRequest("Status must be either approve or reject");
-        const user = await this.userService.findUserById(userId, ["profile", "notification_settings"]);
+        let user = await this.userService.findUserById(userId, ["profile", "notification_settings"]);
         if (!user) throw new NotFound(USER_NOT_FOUND);
+        const updatedStatus = await this.kycService.updateKycStatus(user.id, status);
         if (user.notification_settings?.kyc) {
             if (status === "APPROVED") await Firebase.sendKycApprovalNotification(user.profile?.deviceToken!);
             else await Firebase.sendKycRejectionNotification(user.profile?.deviceToken!);
         }
+        user.kycStatus = updatedStatus.kycStatus;
         return new SuccessResult(user, KycUserResultModel);
     }
 }

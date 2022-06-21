@@ -3,7 +3,7 @@ import { BN } from "../../util";
 import { Participant } from "@prisma/client";
 import { Campaign } from "@prisma/client";
 import { User } from "@prisma/client";
-import { prisma } from "../../clients/prisma";
+import { readPrisma } from "../../clients/prisma";
 
 export class EngagementRate {
     participant: Participant;
@@ -24,11 +24,11 @@ export class EngagementRate {
     }
 
     async getParticipantSocialData() {
-        const totalPosts = await prisma.socialPost.count({
+        const totalPosts = await readPrisma.socialPost.count({
             where: { campaignId: this.campaign.id, userId: this.user.id, type: "twitter" },
         });
         this.postCount = new BN(totalPosts);
-        const socialLink = await prisma.socialLink.findFirst({ where: { userId: this.user.id, type: "twitter" } });
+        const socialLink = await readPrisma.socialLink.findFirst({ where: { userId: this.user.id, type: "twitter" } });
         this.followerCount = new BN(socialLink?.followerCount || 0);
         const { likeCount, shareCount, commentCount } = await this.getUserTotalSocialEngagement(this.user.id);
         this.potentialEngagement = this.postCount.times(this.followerCount);
@@ -48,7 +48,7 @@ export class EngagementRate {
     }
 
     getUserTotalSocialEngagement = async (userId: string) => {
-        const userPosts = await prisma.socialPost.findMany({ where: { userId } });
+        const userPosts = await readPrisma.socialPost.findMany({ where: { userId } });
         const likeCount = userPosts.map((item) => parseFloat(item.likes || "0")).reduce((sum, item) => sum + item, 0);
         const shareCount = userPosts.map((item) => parseFloat(item.shares || "0")).reduce((sum, item) => sum + item, 0);
         const commentCount = userPosts

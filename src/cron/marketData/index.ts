@@ -2,7 +2,7 @@ import { Secrets } from "../../util/secrets";
 import { Application } from "../../app";
 import * as dotenv from "dotenv";
 import { doFetch, RequestData } from "../../util/fetchRequest";
-import { prisma } from "../../clients/prisma";
+import { prisma, readPrisma } from "../../clients/prisma";
 
 dotenv.config();
 const app = new Application();
@@ -20,8 +20,7 @@ console.log("APP instance created.");
         };
         const list = await doFetch(requestData);
         for (const item of list) {
-            let marketSymbol;
-            marketSymbol = await prisma.marketData.findFirst({ where: { symbol: item.symbol } });
+            const marketSymbol = await readPrisma.marketData.findFirst({ where: { symbol: item.symbol } });
             if (marketSymbol) {
                 await prisma.marketData.update({
                     where: { id: marketSymbol.id },
