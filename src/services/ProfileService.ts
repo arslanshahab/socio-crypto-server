@@ -13,7 +13,7 @@ export class ProfileService {
 
     public async findProfileByUsername<T extends Prisma.ProfileInclude | undefined>(username: string, include?: T) {
         return this.prismaService.profile.findFirst({
-            where: { username: { contains: username, mode: "insensitive" } },
+            where: { username: username.toLowerCase() },
             include: include as T,
         });
     }
@@ -22,8 +22,7 @@ export class ProfileService {
         return await this.prismaService.profile.create({
             data: {
                 userId: user.id,
-                email: user.email,
-                username: username,
+                username: username.toLowerCase(),
             },
         });
     }
