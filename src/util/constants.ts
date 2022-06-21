@@ -7,6 +7,12 @@ export const BNB = "BNB";
 export const ADA = "ADA";
 export const BADA = "BADA";
 export const BBNB = "BBNB";
+export const BCH_DEFAULT_WITHDRAW_FEE = 0.001;
+export const BNB_DEFAULT_WITHDRAW_FEE = 0.0005;
+export const XRP_DEFAULT_WITHDRAW_FEE = 0.1;
+export const DOGE_DEFAULT_WITHDRAW_FEE = 5;
+export const LTC_DEFAULT_WITHDRAW_FEE = 0.001;
+export const XLM_DEFAULT_WITHDRAW_FEE = 0.01;
 export const NETWORK_TO_NATIVE_TOKEN: { [key: string]: string } = {
     BSC: BNB,
     ETH: ETH,
@@ -18,6 +24,7 @@ export const WITHDRAW_LIMIT = 1000;
 export const SHARING_REWARD_LIMIT_PER_DAY = 5;
 export const RAIINMAKER_ORG_NAME = "raiinmaker";
 export const AMOUNT_LIMIT_FOR_KYC_IN_XOXODAY = 100;
+
 export const CRYPTO_ICONS_BUCKET_URL = "https://rm-crypto-icons.s3.us-west-2.amazonaws.com";
 export const CRYPTO_ICONS_MAP: { [key: string]: string } = {
     COIIN: "coiin.png",
