@@ -156,13 +156,16 @@ const updateTatumBalances = async () => {
         for (let pageIndex = 0; pageIndex < paginatedLoop; pageIndex++) {
             const accountList: any[] = await TatumClient.getAccountList(tatumSymbol, page, pageSize);
             const prismaTransactions = [];
-            console.log("FETCHED ACCOUNT LIST FOR PAGE: ", tatumSymbol, page);
+            console.log("FETCHED ACCOUNT LIST FOR PAGE: ", page, tatumSymbol);
             for (let index = 0; index < accountList.length; index++) {
                 const account = accountList[index];
                 const foundAccount = await readPrisma.currency.findFirst({
                     where: { tatumId: account.id, symbol: account.currency },
                 });
                 if (foundAccount) {
+                    console.log(
+                        `${tatumSymbol} CURRENT: ${foundAccount.availableBalance} -- FETCHED: ${account.availableBalance}`
+                    );
                     prismaTransactions.push(
                         prisma.currency.update({
                             where: { id: foundAccount.id },
