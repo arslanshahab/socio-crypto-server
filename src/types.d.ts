@@ -211,6 +211,11 @@ export interface TwitterSocialFollowingSpecs {
     minFollower: number;
 }
 
+export interface WithdrawFeeData {
+    withdrawAbleAmount: string;
+    fee: string;
+}
+
 export interface AgeRangeRequirementSpecs {
     version: number;
     "0-17": Boolean;
