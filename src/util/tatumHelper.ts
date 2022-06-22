@@ -119,7 +119,7 @@ export const getCurrencyForTatum = (data: SymbolNetworkParams) => {
 };
 
 export const getWithdrawAddressForTatum = (symbol: string, address: string) => {
-    if (symbol === BTC || symbol === DOGE) address;
+    if (symbol === BTC || symbol === DOGE) return address;
     return address.toLowerCase();
 };
 
