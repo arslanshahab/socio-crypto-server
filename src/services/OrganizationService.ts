@@ -54,4 +54,8 @@ export class OrganizationService {
         const tatumBalance = await this.tatumClientService.getAccountBalance(currency.tatumId);
         return parseFloat(tatumBalance.availableBalance || "0");
     }
+
+    public async initStripeId(orgId: string, stripeId: string) {
+        return await this.prismaService.org.update({ where: { id: orgId }, data: { stripeId } });
+    }
 }
