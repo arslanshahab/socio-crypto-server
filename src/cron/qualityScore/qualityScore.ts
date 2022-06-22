@@ -106,26 +106,31 @@ export const main = async () => {
                     averageSubmissionRate
                 );
                 const clicksTier = calculateQualityTier(clicksStandardDeviation, rate.clickRate, averageClickRate);
-                await prisma.qualityScore.upsert({
-                    where: { id: qualityScore?.id || "" },
-                    update: {
-                        likes: likesTier.toString(),
-                        shares: sharesTier.toString(),
-                        comments: commentsTier.toString(),
-                        views: viewsTier.toString(),
-                        submissions: submissionsTier.toString(),
-                        clicks: clicksTier.toString(),
-                    },
-                    create: {
-                        participantId: rate.participantId,
-                        likes: likesTier.toString(),
-                        shares: sharesTier.toString(),
-                        comments: commentsTier.toString(),
-                        views: viewsTier.toString(),
-                        submissions: submissionsTier.toString(),
-                        clicks: clicksTier.toString(),
-                    },
-                });
+                if (qualityScore) {
+                    await prisma.qualityScore.update({
+                        where: { id: qualityScore?.id || "" },
+                        data: {
+                            likes: likesTier.toString(),
+                            shares: sharesTier.toString(),
+                            comments: commentsTier.toString(),
+                            views: viewsTier.toString(),
+                            submissions: submissionsTier.toString(),
+                            clicks: clicksTier.toString(),
+                        },
+                    });
+                } else {
+                    await prisma.qualityScore.create({
+                        data: {
+                            participantId: rate.participantId,
+                            likes: likesTier.toString(),
+                            shares: sharesTier.toString(),
+                            comments: commentsTier.toString(),
+                            views: viewsTier.toString(),
+                            submissions: submissionsTier.toString(),
+                            clicks: clicksTier.toString(),
+                        },
+                    });
+                }
             }
             skip += take;
         }
