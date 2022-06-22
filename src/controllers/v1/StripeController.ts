@@ -9,6 +9,8 @@ import { StripeAPI } from "../../clients/stripe";
 import { NotFound } from "@tsed/exceptions";
 import { PaymentMethodsResultModel } from "../../models/RestModels";
 import { TransferService } from "../../services/TransferService";
+import { getTokenValueInUSD } from "../../util/exchangeRate";
+import { COIIN } from "../../util/constants";
 
 class PurchaseCoiinParams {
     @Required() public readonly amount: number;
@@ -54,7 +56,7 @@ export class StripeController {
         const org = await this.organizationService.findOrganizationByCompanyName(company, { wallet: true });
         if (!org) throw new NotFound(ORG_NOT_FOUND);
         const { amount, paymentMethodId } = body;
-        const amountInDollar = amount * 0.1;
+        const amountInDollar = await getTokenValueInUSD(COIIN, amount);
         const transfer = await this.transferService.newPendingUsdDeposit(
             org.wallet?.id!,
             org.id,
