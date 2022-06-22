@@ -29,5 +29,5 @@ metadata:
 data:
   redis-config: |
     appendonly no
-    maxmemory 150mb
+    maxmemory 500mb
     maxmemory-policy volatile-ttl

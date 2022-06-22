@@ -8,7 +8,15 @@ import { Pagination, SuccessArrayResult, SuccessResult } from "../../util/entiti
 import { CAMPAIGN_NOT_FOUND, PARTICIPANT_NOT_FOUND, USER_NOT_FOUND } from "../../util/errors";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 import { formatUTCDateForComparision, getDatesBetweenDates } from "../helpers";
-import { AccumulatedMetricsResultModel, CampaignIdModel, ParticipantMetricsResultModel, ParticipantQueryParams } from "../../models/RestModels";
+import {
+    AccumulatedMetricsResultModel,
+    CampaignIdModel,
+    CampaignParticipantResultModel,
+    CampaignResultModel,
+    ParticipantMetricsResultModel,
+    ParticipantQueryParams,
+    UserResultModel,
+} from "../../models/RestModels";
 import { CampaignService } from "../../services/CampaignService";
 import { calculateParticipantPayout, calculateTier } from "../helpers";
 import { BN, formatFloat, getCryptoAssestImageUrl } from "../../util";
@@ -18,6 +26,7 @@ import { BadRequest, NotFound } from "@tsed/exceptions";
 import { getSocialClient } from "../helpers";
 import { Tiers } from "../../types";
 import { SocialLinkService } from "../../services/SocialLinkService";
+import { MarketDataService } from "../../services/MarketDataService";
 
 class ListParticipantVariablesModel {
     @Property() public readonly id: string;
@@ -38,7 +47,9 @@ export class ParticipantController {
     @Inject()
     private userService: UserService;
     @Inject()
-    private socialLinkService:SocialLinkService;
+    private socialLinkService: SocialLinkService;
+    @Inject()
+    private marketDataService: MarketDataService;
 
     @Get()
     @(Returns(200, SuccessResult).Of(ParticipantModel))
@@ -88,8 +99,30 @@ export class ParticipantController {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
         const [items, count] = await this.participantService.findCampaignParticipants(query);
-        return new SuccessResult(new Pagination(items, count, ParticipantModel), Pagination);
+        const data = await Promise.all(
+            items.map(async (item) => {
+                const campaignTokenValueInUSD = await this.marketDataService.getTokenValueInUSD(
+                    item.campaign.currency?.token?.symbol || "",
+                    parseFloat(item.campaign.coiinTotal)
+                );
+                const augmentedCampaign = await CampaignResultModel.build(item.campaign, campaignTokenValueInUSD);
+                const augmentedUser = await UserResultModel.build(item.user);
+                return {
+                    ...item,
+                    campaign: {
+                        ...item.campaign,
+                        ...augmentedCampaign,
+                    },
+                    user: {
+                        ...item.user,
+                        ...augmentedUser,
+                    },
+                };
+            })
+        );
+        return new SuccessResult(new Pagination(data, count, CampaignParticipantResultModel), Pagination);
     }
+
     @Get("/participant-metrics")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(ParticipantMetricsResultModel))
     public async getParticipantMetrics(@QueryParams() query: ParticipantQueryParams, @Context() context: Context) {
@@ -118,7 +151,10 @@ export class ParticipantController {
             }
         }
         const metricsResult = metrics.concat(additionalRows);
-        return new SuccessResult(new Pagination(metricsResult, metricsResult.length, ParticipantMetricsResultModel), Pagination);
+        return new SuccessResult(
+            new Pagination(metricsResult, metricsResult.length, ParticipantMetricsResultModel),
+            Pagination
+        );
     }
     @Get("/accumulated-participant-metrics")
     @(Returns(200, SuccessResult).Of(AccumulatedMetricsResultModel))

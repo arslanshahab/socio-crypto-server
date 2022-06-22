@@ -12,7 +12,7 @@ import { Org } from "../models/Org";
 import { BSC, COIIN, WITHDRAW_LIMIT } from "../util/constants";
 import { Verification } from "../models/Verification";
 import { JWTPayload } from "src/types";
-import { createSubscriptionUrl } from "../util/tatumHelper";
+import { createSubscriptionUrl, getWithdrawAddressForTatum } from "../util/tatumHelper";
 import { getTokenValueInUSD } from "../util/exchangeRate";
 import { errorMap, GLOBAL_WITHDRAW_LIMIT } from "../util/errors";
 import { Firebase } from "../clients/firebase";
@@ -260,7 +260,7 @@ export const withdrawFunds = async (
         if (!(await user.hasKycApproved()))
             throw new Error("You need to get your KYC approved before you can withdraw.");
         let { symbol, network, address, amount, verificationToken } = args;
-        address = address.toLocaleLowerCase();
+        address = getWithdrawAddressForTatum(symbol, address);
         if (symbol.toUpperCase() === COIIN)
             throw new Error(
                 `${symbol} is not available to withdrawal until after the TGE, follow our social channels to learn more!`

@@ -22,6 +22,8 @@ import {
     BNB_DEFAULT_WITHDRAW_FEE,
     TOKEN_TO_WITHDRAW_ENDPOINT,
     DOGE_DEFAULT_WITHDRAW_FEE,
+    BTC,
+    DOGE,
 } from "./constants";
 
 export const offchainEstimateFee = async (data: WithdrawPayload): Promise<number> => {
@@ -114,6 +116,11 @@ export const getCurrencyForTatum = (data: SymbolNetworkParams) => {
     if (symbol === ADA && network === BSC) symbol = BADA;
     if (symbol === BNB && network === BSC) symbol = BBNB;
     return symbol;
+};
+
+export const getWithdrawAddressForTatum = (symbol: string, address: string) => {
+    if (symbol === BTC || symbol === DOGE) address;
+    return address.toLowerCase();
 };
 
 export const generateWithdrawEndpoint = (symbol: string) => {
