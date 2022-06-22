@@ -7,6 +7,8 @@ export const BNB = "BNB";
 export const ADA = "ADA";
 export const BADA = "BADA";
 export const BBNB = "BBNB";
+export const DOGE = "DOGE";
+export const BTC = "BTC";
 export const BCH_DEFAULT_WITHDRAW_FEE = 0.001;
 export const BNB_DEFAULT_WITHDRAW_FEE = 0.0005;
 export const XRP_DEFAULT_WITHDRAW_FEE = 0.1;
@@ -17,6 +19,14 @@ export const NETWORK_TO_NATIVE_TOKEN: { [key: string]: string } = {
     BSC: BNB,
     ETH: ETH,
     MATIC: MATIC,
+};
+export const TOKEN_TO_WITHDRAW_ENDPOINT: { [key: string]: string } = {
+    BTC: "/offchain/bitcoin/transfer",
+    LTC: "/offchain/litecoin/transfer",
+    BCH: "/offchain/bcash/transfer",
+    DOGE: "/offchain/dogecoin/transfer",
+    BNB: "/offchain/bnb/transfer",
+    FLOW: "/offchain/flow/transfer",
 };
 export const COIIN_ALERT_TRIGGER_LIMIT = 5000;
 export const CUSTODIAL_NETWORKS = [MATIC, ETH, BSC];
