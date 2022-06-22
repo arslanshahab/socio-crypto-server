@@ -6,20 +6,21 @@ import { Transfer } from "../models/Transfer";
 import { formatFloat } from "./index";
 import { getExchangeRateForCrypto } from "./exchangeRate";
 import { serverBaseUrl } from "../config";
-import { SymbolNetworkParams } from "../types.d";
-import { BSC, NETWORK_TO_NATIVE_TOKEN, COIIN, ETH, MATIC, ADA, BADA, BNB, BBNB } from "./constants";
-
-interface WithdrawFeeData {
-    withdrawAbleAmount: string;
-    fee: string;
-}
-
-const BCH_DEFAULT_WITHDRAW_FEE = 0.001;
-const BNB_DEFAULT_WITHDRAW_FEE = 0.0005;
-const XRP_DEFAULT_WITHDRAW_FEE = 0.1;
-// const DOGE_DEFAULT_WITHDRAW_FEE = 5;
-// const LTC_DEFAULT_WITHDRAW_FEE = 0.001;
-// const XLM_DEFAULT_WITHDRAW_FEE = 0.01;
+import { SymbolNetworkParams, WithdrawFeeData } from "../types.d";
+import {
+    BSC,
+    NETWORK_TO_NATIVE_TOKEN,
+    COIIN,
+    ETH,
+    MATIC,
+    ADA,
+    BADA,
+    BNB,
+    BBNB,
+    XRP_DEFAULT_WITHDRAW_FEE,
+    BCH_DEFAULT_WITHDRAW_FEE,
+    BNB_DEFAULT_WITHDRAW_FEE,
+} from "./constants";
 
 export const offchainEstimateFee = async (data: WithdrawPayload): Promise<number> => {
     const chain = data.currency.token.network;

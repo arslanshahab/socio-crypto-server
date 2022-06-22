@@ -79,4 +79,11 @@ export class KycService {
         this.prismaService.verificationApplication.delete({ where: { id: verificationApplicationId } });
         return generateFactorsFromKYC(kyc);
     }
+
+    public async updateKycStatus(userId: string, kycStatus: string) {
+        return await this.prismaService.user.update({
+            where: { id: userId },
+            data: { kycStatus: kycStatus.toUpperCase() },
+        });
+    }
 }
