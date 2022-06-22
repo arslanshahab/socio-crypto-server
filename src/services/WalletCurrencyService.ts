@@ -14,4 +14,17 @@ export class WalletCurrencyService {
             },
         });
     }
+
+    public async findWalletCurrencyByWalletId(walletId: string, walletCurrencyId: string) {
+        return await this.prismaService.walletCurrency.findFirst({
+            where: {
+                id: walletCurrencyId,
+                walletId: walletId,
+            },
+        });
+    }
+
+    public async deleteWalletCurrency(id: string) {
+        return await this.prismaService.walletCurrency.delete({ where: { id } });
+    }
 }
