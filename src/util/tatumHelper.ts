@@ -21,6 +21,7 @@ import {
     BCH_DEFAULT_WITHDRAW_FEE,
     BNB_DEFAULT_WITHDRAW_FEE,
     TOKEN_TO_WITHDRAW_ENDPOINT,
+    DOGE_DEFAULT_WITHDRAW_FEE,
 } from "./constants";
 
 export const offchainEstimateFee = async (data: WithdrawPayload): Promise<number> => {
@@ -47,7 +48,7 @@ export const offchainEstimateFee = async (data: WithdrawPayload): Promise<number
         case "BNB":
             return BNB_DEFAULT_WITHDRAW_FEE;
         case "DOGE":
-            return await TatumClient.estimateLedgerToBlockchainFee(data);
+            return await DOGE_DEFAULT_WITHDRAW_FEE;
         case "ETH":
             return await TatumClient.estimateCustodialWithdrawFee(data);
         case "BSC":
