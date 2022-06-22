@@ -1,4 +1,4 @@
-import { Get, Property, Returns } from "@tsed/schema";
+import { Get, Property, Required, Returns } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
 import { Context, QueryParams } from "@tsed/common";
 import { ParticipantModel } from ".prisma/client/entities";
@@ -30,10 +30,16 @@ import { MarketDataService } from "../../services/MarketDataService";
 
 class ListParticipantVariablesModel {
     @Property() public readonly id: string;
-    @Property() public readonly campaignId: string;
-    @Property() public readonly skip: number;
-    @Property() public readonly take: number;
+    @Required() public readonly campaignId: string;
+    @Required() public readonly skip: number;
+    @Required() public readonly take: number;
     @Property() public readonly userRelated: boolean | undefined;
+}
+
+class CampaignParticipantsParams {
+    @Required() public readonly campaignId: string;
+    @Required() public readonly skip: number;
+    @Required() public readonly take: number;
 }
 
 @Controller("/participant")
@@ -93,7 +99,7 @@ export class ParticipantController {
     @Get("/campaign-participants")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(ParticipantModel))
     public async getCampaignParticipants(
-        @QueryParams() query: ListParticipantVariablesModel,
+        @QueryParams() query: CampaignParticipantsParams,
         @Context() context: Context
     ) {
         const user = await this.userService.findUserByContext(context.get("user"));
