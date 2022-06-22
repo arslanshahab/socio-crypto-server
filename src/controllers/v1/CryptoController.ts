@@ -20,4 +20,8 @@ export class CryptoController {
         const crypto = await this.cryptoService.findCryptoCurrencies();
         return new SuccessArrayResult(crypto, CryptoCurrencyResultModel);
     }
+
+    // @Post("/crypto-to-wallet")
+    // @(Returns(200, SuccessArrayResult).Of(Object))
+    // public async addCryptoToWallet(@Context() context: Context) {}
 }

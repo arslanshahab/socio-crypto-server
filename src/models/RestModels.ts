@@ -668,3 +668,10 @@ export class PaymentMethodsResultModel {
     @Nullable(String) public readonly last4: string | null | undefined;
     @Nullable(String) public readonly brand: string | null | undefined;
 }
+
+export class AllCurrenciesResultModel {
+    @Property() public readonly balance: string;
+    @Property() public readonly type: string;
+    @Property() public readonly symbolImageUrl: string;
+    @Property() public readonly network: string;
+}

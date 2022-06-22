@@ -1,6 +1,6 @@
 import { Controller, Inject } from "@tsed/di";
 import { Get, Returns } from "@tsed/schema";
-import { SuccessResult } from "../../util/entities";
+import { SuccessArrayResult } from "../../util/entities";
 import { UserService } from "../../services/UserService";
 import { Context } from "@tsed/common";
 import { OrganizationService } from "../../services/OrganizationService";
@@ -10,6 +10,7 @@ import { WalletService } from "../../services/WalletService";
 import { CurrencyService } from "../../services/CurrencyService";
 import { TatumClientService } from "../../services/TatumClientService";
 import { getCryptoAssestImageUrl } from "../../util";
+import { AllCurrenciesResultModel } from "../../models/RestModels";
 
 @Controller("/funding-wallet")
 export class FundingWalletController {
@@ -25,7 +26,7 @@ export class FundingWalletController {
     private tatumClientService: TatumClientService;
 
     @Get()
-    @(Returns(200, SuccessResult).Of(Object))
+    @(Returns(200, SuccessArrayResult).Of(AllCurrenciesResultModel))
     public async getFundingWallet(@Context() context: Context) {
         const admin = await this.userService.findUserByFirebaseId(context.get("user").id);
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
@@ -45,6 +46,6 @@ export class FundingWalletController {
                 network: currencyItem?.token?.network || "",
             };
         });
-        return new SuccessResult(allCurrencies, Object);
+        return new SuccessArrayResult(allCurrencies, AllCurrenciesResultModel);
     }
 }
