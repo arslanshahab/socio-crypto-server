@@ -285,6 +285,8 @@ export class CampaignMetricsResultModel {
     @Property() public readonly commentCount: number;
     @Property() public readonly shareCount: number;
     @Property() public readonly postCount: number;
+    @Property() public readonly discoveryCount: number;
+    @Property() public readonly conversionCount: number;
 }
 
 export class ParticipantMetricsResultModel {
