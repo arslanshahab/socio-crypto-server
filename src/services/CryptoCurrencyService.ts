@@ -17,4 +17,8 @@ export class CryptoCurrencyService {
     public async findCryptoCurrencies() {
         return this.prismaService.cryptoCurrency.findMany();
     }
+
+    public async findByContractAddress(contractAddress: string) {
+        return this.prismaService.cryptoCurrency.findFirst({ where: { contractAddress } });
+    }
 }
