@@ -15,6 +15,7 @@ import {
     CampaignResultModel,
     ParticipantMetricsResultModel,
     ParticipantQueryParams,
+    UserResultModel,
 } from "../../models/RestModels";
 import { CampaignService } from "../../services/CampaignService";
 import { calculateParticipantPayout, calculateTier } from "../helpers";
@@ -105,11 +106,16 @@ export class ParticipantController {
                     parseFloat(item.campaign.coiinTotal)
                 );
                 const augmentedCampaign = await CampaignResultModel.build(item.campaign, campaignTokenValueInUSD);
+                const augmentedUser = await UserResultModel.build(item.user);
                 return {
                     ...item,
                     campaign: {
                         ...item.campaign,
                         ...augmentedCampaign,
+                    },
+                    user: {
+                        ...item.user,
+                        ...augmentedUser,
                     },
                 };
             })

@@ -71,7 +71,9 @@ export class ParticipantService {
                     participationScore: "desc",
                 },
                 include: {
-                    user: true,
+                    user: {
+                        include: { profile: true },
+                    },
                     campaign: {
                         include: {
                             currency: { include: { token: true } },
