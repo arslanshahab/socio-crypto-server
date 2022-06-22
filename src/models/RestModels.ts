@@ -113,13 +113,6 @@ export class CampaignResultModel {
     }
 }
 
-export class CampaignParticipantResultModel {
-    @Property() public readonly id: string;
-    @Property(Date) public readonly createdAt: Date;
-    @Property(Date) public readonly updatedAt: Date;
-    @Property(CampaignResultModel) public readonly campaign: CampaignResultModel;
-}
-
 export class CurrentCampaignTierModel {
     @Property() public currentTier: number;
     @Property() public currentTotal: number;
@@ -243,6 +236,7 @@ export class SocialPostResultModel {
 export class UserResultModel {
     @Property() public readonly id: string;
     @Property() public readonly email: string;
+    @Property(String) public readonly username: string;
     @Property() public readonly createdAt: Date;
     @Property() public readonly lastLogin: Date | null;
     @Property() public readonly active: boolean;
@@ -256,15 +250,20 @@ export class UserResultModel {
     public static build(
         user: Prisma.User & {
             profile: Prisma.Profile | null;
-            social_link: Prisma.SocialLink[];
-            participant: (Prisma.Participant & { campaign: Prisma.Campaign })[];
-            wallet: Prisma.Wallet | null;
+            social_link?: Prisma.SocialLink[];
+            participant?: (Prisma.Participant & { campaign: Prisma.Campaign })[];
+            wallet?: Prisma.Wallet | null;
         }
     ): UserResultModel {
         return {
             ...user,
+            username: user.profile?.username || "",
             profile: user.profile ? ProfileResultModel.build(user.profile) : null,
-            participant: user.participant.map((participant) => ParticipantResultModel.build(participant)),
+            participant: user.participant
+                ? user.participant.map((participant) => ParticipantResultModel.build(participant))
+                : [],
+            social_link: user.social_link ? user.social_link : [],
+            wallet: user.wallet || null,
         };
     }
 }
@@ -646,4 +645,12 @@ export class UserResultModelV2 {
             profile: user.profile ? ProfileResultModel.build(user.profile) : null,
         };
     }
+}
+
+export class CampaignParticipantResultModel {
+    @Property() public readonly id: string;
+    @Property(Date) public readonly createdAt: Date;
+    @Property(Date) public readonly updatedAt: Date;
+    @Property(CampaignResultModel) public readonly campaign: CampaignResultModel;
+    @Property(UserResultModel) public readonly user: UserResultModel;
 }
