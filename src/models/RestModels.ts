@@ -513,12 +513,8 @@ export class OrgEmployeesResultModel {
 export class OrgDetailsModel {
     @Property() public readonly name: string;
     @Property() public readonly createdAt: Date;
-    @Property() public readonly admins: number;
-    @Property() public readonly campaigns: number;
-}
-
-export class OrganizationDetailsResultModel {
-    @Property() public readonly orgDetails: OrgDetailsModel[];
+    @Property() public readonly adminCount: number;
+    @Property() public readonly campaignCount: number;
 }
 
 export class LoginParams {
