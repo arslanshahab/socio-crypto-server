@@ -2,6 +2,7 @@ import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
 import { LedgerAccountTypes } from "../types";
 import { WalletService } from "./WalletService";
+import { Prisma } from "@prisma/client";
 
 @Injectable()
 export class CurrencyService {
@@ -68,6 +69,13 @@ export class CurrencyService {
         return this.prismaService.currency.update({
             where: { id: currencyId },
             data: { depositAddress: address },
+        });
+    }
+
+    public async findCurrencyByWalletId<T extends Prisma.CurrencyInclude | undefined>(walletId: string, include?: T) {
+        return this.prismaService.currency.findMany({
+            where: { walletId },
+            include: include as T,
         });
     }
 }
