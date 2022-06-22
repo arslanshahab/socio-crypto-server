@@ -63,6 +63,10 @@ export class ParticipantService {
             this.prismaService.participant.findMany({
                 where: {
                     campaignId,
+                    participationScore: { gt: "0" },
+                },
+                orderBy: {
+                    participationScore: "desc",
                 },
                 include: {
                     user: true,
@@ -71,7 +75,7 @@ export class ParticipantService {
                 skip,
                 take,
             }),
-            this.prismaService.participant.count({ where: { campaignId } }),
+            this.prismaService.participant.count({ where: { campaignId, participationScore: { gt: "0" } } }),
         ]);
     }
     public async findSocialPosts(participantId: string) {

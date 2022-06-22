@@ -8,7 +8,12 @@ import { Pagination, SuccessArrayResult, SuccessResult } from "../../util/entiti
 import { CAMPAIGN_NOT_FOUND, PARTICIPANT_NOT_FOUND, USER_NOT_FOUND } from "../../util/errors";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 import { formatUTCDateForComparision, getDatesBetweenDates } from "../helpers";
-import { AccumulatedMetricsResultModel, CampaignIdModel, ParticipantMetricsResultModel, ParticipantQueryParams } from "../../models/RestModels";
+import {
+    AccumulatedMetricsResultModel,
+    CampaignIdModel,
+    ParticipantMetricsResultModel,
+    ParticipantQueryParams,
+} from "../../models/RestModels";
 import { CampaignService } from "../../services/CampaignService";
 import { calculateParticipantPayout, calculateTier } from "../helpers";
 import { BN, formatFloat, getCryptoAssestImageUrl } from "../../util";
@@ -38,7 +43,7 @@ export class ParticipantController {
     @Inject()
     private userService: UserService;
     @Inject()
-    private socialLinkService:SocialLinkService;
+    private socialLinkService: SocialLinkService;
 
     @Get()
     @(Returns(200, SuccessResult).Of(ParticipantModel))
@@ -90,6 +95,7 @@ export class ParticipantController {
         const [items, count] = await this.participantService.findCampaignParticipants(query);
         return new SuccessResult(new Pagination(items, count, ParticipantModel), Pagination);
     }
+
     @Get("/participant-metrics")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(ParticipantMetricsResultModel))
     public async getParticipantMetrics(@QueryParams() query: ParticipantQueryParams, @Context() context: Context) {
@@ -118,7 +124,10 @@ export class ParticipantController {
             }
         }
         const metricsResult = metrics.concat(additionalRows);
-        return new SuccessResult(new Pagination(metricsResult, metricsResult.length, ParticipantMetricsResultModel), Pagination);
+        return new SuccessResult(
+            new Pagination(metricsResult, metricsResult.length, ParticipantMetricsResultModel),
+            Pagination
+        );
     }
     @Get("/accumulated-participant-metrics")
     @(Returns(200, SuccessResult).Of(AccumulatedMetricsResultModel))
