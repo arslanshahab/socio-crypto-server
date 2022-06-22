@@ -113,6 +113,13 @@ export class CampaignResultModel {
     }
 }
 
+export class CampaignParticipantResultModel {
+    @Property() public readonly id: string;
+    @Property(Date) public readonly createdAt: Date;
+    @Property(Date) public readonly updatedAt: Date;
+    @Property(CampaignResultModel) public readonly campaign: CampaignResultModel;
+}
+
 export class CurrentCampaignTierModel {
     @Property() public currentTier: number;
     @Property() public currentTotal: number;
