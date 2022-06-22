@@ -1,13 +1,20 @@
 import { Controller, Inject } from "@tsed/di";
-import { Get, Returns } from "@tsed/schema";
+import { Get, Post, Property, Required, Returns } from "@tsed/schema";
 import { SuccessArrayResult } from "../../util/entities";
 import { UserService } from "../../services/UserService";
-import { Context } from "@tsed/common";
+import { BodyParams, Context } from "@tsed/common";
 import { OrganizationService } from "../../services/OrganizationService";
 import { ORG_NOT_FOUND } from "../../util/errors";
 import { StripeAPI } from "../../clients/stripe";
 import { NotFound } from "@tsed/exceptions";
 import { PaymentMethodsResultModel } from "../../models/RestModels";
+import { TransferService } from "../../services/TransferService";
+
+class PurchaseCoiinParams {
+    @Required() public readonly amount: number;
+    @Required() public readonly paymentMethodId: string;
+    @Property() public readonly campaignId: string;
+}
 
 @Controller("/stripe")
 export class StripeController {
@@ -15,14 +22,16 @@ export class StripeController {
     private userService: UserService;
     @Inject()
     private organizationService: OrganizationService;
+    @Inject()
+    private transferService: TransferService;
 
     @Get("/payment-methods")
-    @(Returns(200, SuccessArrayResult).Of(Object))
+    @(Returns(200, SuccessArrayResult).Of(PaymentMethodsResultModel))
     public async listPaymentMethods(@Context() context: Context) {
         const { company } = await this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        if (!company) throw new Error("company not found for this user");
+        if (!company) throw new NotFound("company not found for this user");
         const org = await this.organizationService.findOrganizationByCompanyName(company);
-        if (!org) throw new Error(ORG_NOT_FOUND);
+        if (!org) throw new NotFound(ORG_NOT_FOUND);
         if (!org.stripeId) throw new NotFound("missing stripe id for this organization");
         const paymentMethods = await StripeAPI.listPaymentMethods(org.stripeId);
         const result = paymentMethods.data.map((method) => ({
@@ -31,5 +40,28 @@ export class StripeController {
             brand: method.card?.brand,
         }));
         return new SuccessArrayResult(result, PaymentMethodsResultModel);
+    }
+
+    @Post("/purchase-coiin")
+    @(Returns(200, SuccessArrayResult).Of(Object))
+    public async purchaseCoiin(@BodyParams() body: PurchaseCoiinParams, @Context() context: Context) {
+        const { company } = await this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        if (!company) throw new NotFound("company not found for this user");
+        const org = await this.organizationService.findOrganizationByCompanyName(company, { wallet: true });
+        if (!org) throw new NotFound(ORG_NOT_FOUND);
+        const { amount, paymentMethodId } = body;
+        const amountInDollar = amount * 0.1;
+        const transfer = await this.transferService.newPendingUsdDeposit(
+            org.wallet?.id!,
+            org.id,
+            amountInDollar.toString(),
+            org.stripeId!
+        );
+        return await StripeAPI.chargePaymentMethod(
+            amountInDollar.toString(),
+            org.stripeId!,
+            paymentMethodId,
+            transfer.id
+        );
     }
 }

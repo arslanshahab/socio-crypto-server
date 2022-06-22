@@ -214,4 +214,25 @@ export class TransferService {
         const debit = pendingDebitBalances.reduce((acc, curr) => acc + parseFloat(curr.amount), 0);
         return credit - debit;
     }
+
+    public async newPendingUsdDeposit(
+        walletId: string,
+        orgId: string,
+        amount: string,
+        stripeCardId?: string,
+        paypalAddress?: string
+    ) {
+        return await this.prismaService.transfer.create({
+            data: {
+                walletId,
+                orgId,
+                amount,
+                status: "PENDING",
+                currency: "usd",
+                action: "DEPOSIT",
+                stripeCardId: stripeCardId && stripeCardId,
+                paypalAddress: paypalAddress && paypalAddress,
+            },
+        });
+    }
 }
