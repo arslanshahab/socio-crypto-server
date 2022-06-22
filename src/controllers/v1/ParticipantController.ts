@@ -37,7 +37,7 @@ class ListParticipantVariablesModel {
 }
 
 class CampaignParticipantsParams {
-    @Required() public readonly campaignId: string;
+    @Property() public readonly campaignId: string;
     @Required() public readonly skip: number;
     @Required() public readonly take: number;
 }
