@@ -42,6 +42,7 @@ export class ParticipantService {
             },
         });
     }
+
     public async findParticipantByCampaignId(campaignId: string) {
         return this.prismaService.participant.findFirst({
             where: {
@@ -57,6 +58,7 @@ export class ParticipantService {
             },
         });
     }
+
     public async findCampaignParticipants(params: FindCampaignById) {
         const { campaignId, skip, take } = params;
         return this.prismaService.$transaction([
@@ -70,7 +72,14 @@ export class ParticipantService {
                 },
                 include: {
                     user: true,
-                    campaign: true,
+                    campaign: {
+                        include: {
+                            currency: { include: { token: true } },
+                            campaign_media: true,
+                            campaign_template: true,
+                            crypto_currency: true,
+                        },
+                    },
                 },
                 skip,
                 take,
