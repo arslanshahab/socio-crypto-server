@@ -322,6 +322,7 @@ export class Transfer extends BaseEntity {
         wallet: Wallet;
         action: TransferAction;
         status: TransferStatus;
+        type: TransferType;
     }) {
         const newTransfer = new Transfer();
         newTransfer.currency = data.symbol;
@@ -332,6 +333,7 @@ export class Transfer extends BaseEntity {
         newTransfer.ethAddress = data.tatumId;
         newTransfer.wallet = data.wallet;
         newTransfer.status = data.status;
+        newTransfer.type = data.type;
         return newTransfer;
     }
 

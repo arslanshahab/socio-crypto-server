@@ -11,7 +11,7 @@ dotenv.config();
         console.log("Preparing to update user balances...");
         await Secrets.initialize();
         const connection: Connection = await connectDatabase();
-        const emails = ["ray@raiinmaker.com"];
+        const emails = ["muradmalik7@gmail.com"];
         const users = await prisma.user.findMany({ where: { email: { in: emails } } });
         for (let index = 0; index < users.length; index++) {
             const user = users[index];
