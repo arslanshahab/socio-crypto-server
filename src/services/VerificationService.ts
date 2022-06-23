@@ -14,7 +14,7 @@ export class VerificationService {
 
     public async findVerificationByEmail(email: string) {
         return this.prismaService.verification.findFirst({
-            where: { email, verified: false },
+            where: { email: email.toLowerCase(), verified: false },
         });
     }
 
@@ -76,7 +76,7 @@ export class VerificationService {
         if (!verification) {
             verification = await this.prismaService.verification.create({
                 data: {
-                    email: data.email,
+                    email: data.email.trim().toLowerCase(),
                     type: data.type,
                     code: encrypt(generateRandomNonce()),
                 },
