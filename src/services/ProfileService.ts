@@ -33,7 +33,7 @@ export class ProfileService {
     }
 
     public async findProfileByEmail(email: string) {
-        return this.prismaService.profile.findFirst({ where: { email } });
+        return this.prismaService.profile.findFirst({ where: { email: email.toLowerCase() } });
     }
 
     public async isUsernameExists(username: string) {
