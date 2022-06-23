@@ -199,6 +199,9 @@ export class TransferResultModel {
             status: transfer.status?.toUpperCase() || "",
         };
     }
+    public static buildArray(transfer: Prisma.Transfer[]): TransferResultModel[] {
+        return transfer.map((transfer) => TransferResultModel.build(transfer));
+    }
 }
 
 export class WalletResultModel {
