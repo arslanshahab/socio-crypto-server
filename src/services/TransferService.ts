@@ -7,7 +7,14 @@ import { WalletService } from "./WalletService";
 import { NotFound } from "@tsed/exceptions";
 import { WALLET_NOT_FOUND } from "../util/errors";
 import { startOfYear } from "date-fns";
-import { CacheKeys, COIIN, TransferStatus as TransferStatusEnum, TransferType } from "../util/constants";
+import {
+    CacheKeys,
+    COIIN,
+    TransferAction as TransferActionEnum,
+    TransferStatus as TransferStatusEnum,
+    TransferType,
+    USD,
+} from "../util/constants";
 import { UseCache } from "@tsed/common";
 import { prepareCacheKey } from "../util/index";
 
@@ -227,9 +234,9 @@ export class TransferService {
                 walletId,
                 orgId,
                 amount,
-                status: "PENDING",
-                currency: "usd",
-                action: "DEPOSIT",
+                status: TransferStatusEnum.PENDING,
+                currency: USD.toLowerCase(),
+                action: TransferActionEnum.DEPOSIT,
                 stripeCardId: stripeCardId && stripeCardId,
                 paypalAddress: paypalAddress && paypalAddress,
             },
@@ -239,6 +246,19 @@ export class TransferService {
     public async transactionHistory(orgId: string) {
         return this.prismaService.transfer.findMany({
             where: { orgId },
+        });
+    }
+
+    public async getAuditedWithdrawals() {
+        return this.prismaService.transfer.findMany({
+            where: {
+                action: TransferActionEnum.WITHDRAW.toLowerCase(),
+                OR: [{ status: TransferStatusEnum.APPROVED }, { status: TransferStatusEnum.REJECTED }],
+            },
+            include: {
+                wallet: { include: { user: { include: { profile: true } } } },
+            },
+            orderBy: { createdAt: "asc" },
         });
     }
 }

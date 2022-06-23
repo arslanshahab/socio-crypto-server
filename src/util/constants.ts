@@ -211,3 +211,6 @@ export enum VerificationType {
     PASSWORD = "PASSWORD",
     WITHDRAW = "WITHDRAW",
 }
+
+export const USD = "USD";
+export const WITHDRAW= "WITHDRAW";
