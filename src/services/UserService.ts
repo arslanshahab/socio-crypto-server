@@ -361,9 +361,9 @@ export class UserService {
     public async initNewUser(email: string, username: string, password: string, referralCode?: string | null) {
         const user = await this.prismaService.user.create({
             data: {
-                email: email.trim(),
+                email: email.trim().toLowerCase(),
                 password: createPasswordHash({ email, password }),
-                referralCode: referralCode ? referralCode : null,
+                referralCode: referralCode && referralCode,
             },
         });
 
@@ -417,11 +417,11 @@ export class UserService {
     public async updateUserEmail(userId: string, email: string) {
         return await this.prismaService.user.update({
             where: { id: userId },
-            data: { email },
+            data: { email: email.toLowerCase() },
         });
     }
 
     public async ifEmailExist(email: string) {
-        return Boolean(await readPrisma.user.findFirst({ where: { email } }));
+        return Boolean(await readPrisma.user.findFirst({ where: { email: email.toLowerCase() } }));
     }
 }

@@ -87,7 +87,7 @@ export class ProfileService {
     public async updateUsername(userId: string, username: string) {
         return await this.prismaService.profile.update({
             where: { userId },
-            data: { username },
+            data: { username: username.toLowerCase() },
         });
     }
 
@@ -113,10 +113,10 @@ export class ProfileService {
     }
 
     public async ifUsernameExist(username: string) {
-        return Boolean(await this.prismaService.profile.findFirst({ where: { username } }));
+        return Boolean(await this.prismaService.profile.findFirst({ where: { username: username.toLowerCase() } }));
     }
 
     public async ifEmailExist(email: string) {
-        return Boolean(await this.prismaService.profile.findFirst({ where: { email } }));
+        return Boolean(await this.prismaService.profile.findFirst({ where: { email: email.toLowerCase() } }));
     }
 }
