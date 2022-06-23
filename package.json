@@ -38,6 +38,7 @@
         "script:userList": "AWS_PROFILE=raiinmaker TS_NODE_FILES=true NODE_ENV=development ts-node scripts/user/userList.ts",
         "script:updateBalance": "AWS_PROFILE=raiinmaker TS_NODE_FILES=true NODE_ENV=development ts-node scripts/user/updateBalance.ts",
         "script:updateUserBalance": "AWS_PROFILE=raiinmaker TS_NODE_FILES=true NODE_ENV=development ts-node scripts/user/updateUserBalance.ts",
+        "script:updateUsername": "AWS_PROFILE=raiinmaker TS_NODE_FILES=true NODE_ENV=development ts-node scripts/user/updateUsername.ts",
         "cron:watcher:run": "AWS_PROFILE=raiinmaker LOAD_ENV=true ts-node src/cron/coiinWatcher/index.ts",
         "cron:coiinMinter:run": "AWS_PROFILE=raiinmaker LOAD_ENV=true ts-node src/cron/coiinMinter/index.ts",
         "cron:campaignAudit:run": "AWS_PROFILE=raiinmaker LOAD_ENV=true ts-node src/cron/campaignAudit/index.ts",
