@@ -1,12 +1,13 @@
 import { Context, QueryParams } from "@tsed/common";
 import { Controller, Inject } from "@tsed/di";
 import { Enum, Get, Property, Returns } from "@tsed/schema";
-import { SuccessResult } from "../../util/entities";
+import { SuccessArrayResult, SuccessResult } from "../../util/entities";
 import { TransferService } from "../../services/TransferService";
 import { UserService } from "../../services/UserService";
 import { NotFound } from "@tsed/exceptions";
 import { TRANSFER_NOT_FOUND } from "../../util/errors";
 import { TransferStatus } from "../../util/constants";
+import { TransferResultModel } from "../../models/RestModels";
 
 export class WithdrawStatusParams {
     @Property() @Enum(TransferStatus) public readonly status: TransferStatus;
@@ -48,5 +49,13 @@ export class WithdrawController {
             }
         }
         return new SuccessResult(Object.values(uniqueUsers), Object);
+    }
+
+    @Get("/history")
+    @(Returns(200, SuccessArrayResult).Of(TransferResultModel))
+    public async getWithdrawalHistory(@Context() context: Context) {
+        const transfers = await this.transferService.getAuditedWithdrawals();
+        const result = transfers.map((items) => TransferResultModel.build(items));
+        return new SuccessArrayResult(result, TransferResultModel);
     }
 }

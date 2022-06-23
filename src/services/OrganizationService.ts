@@ -5,6 +5,7 @@ import { RAIINMAKER_ORG_NAME } from "../util/constants";
 import { NotFound } from "@tsed/exceptions";
 import { TatumClientService } from "./TatumClientService";
 import { CurrencyService } from "./CurrencyService";
+import { Prisma } from "@prisma/client";
 
 @Injectable()
 export class OrganizationService {
@@ -15,23 +16,20 @@ export class OrganizationService {
     @Inject()
     private currencyService: CurrencyService;
 
-    public async findOrganizationByCompanyName(companyName: string) {
+    public async findOrganizationByCompanyName<T extends Prisma.OrgInclude | undefined>(
+        companyName: string,
+        include?: T
+    ) {
         return this.prismaService.org.findFirst({
             where: {
                 name: companyName,
             },
-            include: {
-                wallet: {
-                    include: {
-                        wallet_currency: true,
-                    },
-                },
-            },
+            include: include as T,
         });
     }
 
     public async getCurrencyForRaiinmaker(data: SymbolNetworkParams) {
-        const raiinmakerOrg = await this.findOrganizationByCompanyName(RAIINMAKER_ORG_NAME);
+        const raiinmakerOrg = await this.findOrganizationByCompanyName(RAIINMAKER_ORG_NAME, { wallet: true });
         if (!raiinmakerOrg) throw new NotFound(`Org not found for ${RAIINMAKER_ORG_NAME}.`);
         return await this.tatumClientService.findOrCreateCurrency({ ...data, wallet: raiinmakerOrg.wallet! });
     }
@@ -55,5 +53,9 @@ export class OrganizationService {
         if (!currency) throw new NotFound("Currency not found for org.");
         const tatumBalance = await this.tatumClientService.getAccountBalance(currency.tatumId);
         return parseFloat(tatumBalance.availableBalance || "0");
+    }
+
+    public async initStripeId(orgId: string, stripeId: string) {
+        return await this.prismaService.org.update({ where: { id: orgId }, data: { stripeId } });
     }
 }

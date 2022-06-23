@@ -30,14 +30,14 @@ import { MarketDataService } from "../../services/MarketDataService";
 
 class ListParticipantVariablesModel {
     @Property() public readonly id: string;
-    @Required() public readonly campaignId: string;
-    @Required() public readonly skip: number;
-    @Required() public readonly take: number;
+    @Property() public readonly campaignId: string;
+    @Property() public readonly skip: number;
+    @Property() public readonly take: number;
     @Property() public readonly userRelated: boolean | undefined;
 }
 
 class CampaignParticipantsParams {
-    @Required() public readonly campaignId: string;
+    @Property() public readonly campaignId: string;
     @Required() public readonly skip: number;
     @Required() public readonly take: number;
 }

@@ -18,4 +18,8 @@ export class TokenService {
             where: { symbol: data.symbol.toUpperCase(), network: data.network.toUpperCase() },
         });
     }
+
+    public async getEnabledTokens() {
+        return this.prismaService.token.findMany({ where: { enabled: true } });
+    }
 }
