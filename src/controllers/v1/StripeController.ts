@@ -1,13 +1,13 @@
 import { Controller, Inject } from "@tsed/di";
-import { Get, Post, Property, Required, Returns } from "@tsed/schema";
+import { Delete, Get, Post, Property, Required, Returns } from "@tsed/schema";
 import { SuccessArrayResult, SuccessResult } from "../../util/entities";
 import { UserService } from "../../services/UserService";
 import { BodyParams, Context } from "@tsed/common";
 import { OrganizationService } from "../../services/OrganizationService";
 import { ORG_NOT_FOUND } from "../../util/errors";
 import { StripeAPI } from "../../clients/stripe";
-import { NotFound } from "@tsed/exceptions";
-import { PaymentMethodsResultModel } from "../../models/RestModels";
+import { BadRequest, NotFound } from "@tsed/exceptions";
+import { BooleanResultModel, PaymentMethodsResultModel } from "../../models/RestModels";
 import { TransferService } from "../../services/TransferService";
 import { getTokenValueInUSD } from "../../util/exchangeRate";
 import { COIIN } from "../../util/constants";
@@ -20,6 +20,10 @@ class PurchaseCoiinParams {
 
 class StripeResultModel {
     @Property() public readonly clientSecret: string;
+}
+
+class RemovePaymentMethodParams {
+    @Required() public readonly paymentMethodId: string;
 }
 
 @Controller("/stripe")
@@ -84,5 +88,20 @@ export class StripeController {
         }
         const intent = await StripeAPI.setupIntent(org.stripeId!);
         return new SuccessResult({ clientSecret: intent.client_secret }, StripeResultModel);
+    }
+
+    @Delete("/remove-payment-method")
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
+    public async removePaymentMethod(@BodyParams() body: RemovePaymentMethodParams, @Context() context: Context) {
+        const { company } = await this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        if (!company) throw new NotFound("company not found for this user");
+        const org = await this.organizationService.findOrganizationByCompanyName(company);
+        if (!org) throw new NotFound(ORG_NOT_FOUND);
+        if (!org.stripeId) throw new NotFound("missing stripe id for this organization");
+        const { paymentMethodId } = body;
+        const { customer } = await StripeAPI.getPaymentMethod(paymentMethodId);
+        if (customer !== org.stripeId) throw new BadRequest("card not registered");
+        await StripeAPI.removePaymentMethod(paymentMethodId);
+        return new SuccessResult({ success: true }, BooleanResultModel);
     }
 }
