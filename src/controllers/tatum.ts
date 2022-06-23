@@ -299,6 +299,7 @@ export const withdrawFunds = async (
             type: "DEBIT",
         });
         await newTransfer.save();
+        userCurrency.accountBalance = userCurrency.accountBalance - amount;
         userCurrency.availableBalance = userCurrency.availableBalance - amount;
         await userCurrency.save();
         return {
