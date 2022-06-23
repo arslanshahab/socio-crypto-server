@@ -72,7 +72,7 @@ export class CurrencyService {
         });
     }
 
-    public async findCurrencyByWalletId<T extends Prisma.CurrencyInclude | undefined>(walletId: string, include?: T) {
+    public async findCurrenciesByWalletId<T extends Prisma.CurrencyInclude | undefined>(walletId: string, include?: T) {
         return this.prismaService.currency.findMany({
             where: { walletId },
             include: include as T,
