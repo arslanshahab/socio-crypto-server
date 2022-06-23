@@ -647,6 +647,40 @@ export class UserResultModelV2 {
     }
 }
 
+export class CryptoCurrencyResultModel {
+    @Property() public readonly id: string;
+    @Property() public readonly type: string;
+    @Nullable(String) public readonly contractAddress: string | null;
+    @Property() public readonly createdAt: Date;
+    @Property() public readonly updatedAt: Date;
+}
+
+export class SupportedCurrenciesResultModel {
+    @Property() public readonly symbol: string;
+    @Property() public readonly network: string;
+}
+
+export class DepositAddressResultModel {
+    @Property() public readonly symbol: string;
+    @Property() public readonly address: string;
+    @Property() public readonly fromTatum: boolean;
+    @Nullable(String) public readonly destinationTag: number | null;
+    @Nullable(String) public readonly memo: string | null;
+    @Nullable(String) public readonly message: string | null;
+}
+
+export class PaymentMethodsResultModel {
+    @Property() public readonly id: string;
+    @Nullable(String) public readonly last4: string | null | undefined;
+    @Nullable(String) public readonly brand: string | null | undefined;
+}
+
+export class AllCurrenciesResultModel {
+    @Property() public readonly balance: string;
+    @Property() public readonly type: string;
+    @Property() public readonly symbolImageUrl: string;
+    @Property() public readonly network: string;
+}
 export class CampaignParticipantResultModel {
     @Property() public readonly id: string;
     @Property() public readonly campaignId: string;

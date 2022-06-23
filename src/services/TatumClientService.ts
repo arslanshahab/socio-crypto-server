@@ -4,7 +4,7 @@ import { CustodialAddressPayload, SymbolNetworkParams } from "../types";
 import { RequestData } from "../util/fetchRequest";
 import { Secrets } from "../util/secrets";
 import { BadRequest, NotFound } from "@tsed/exceptions";
-import { Wallet } from "@prisma/client";
+import { Currency, Wallet } from "@prisma/client";
 import { sleep } from "../controllers/helpers";
 import { doFetch } from "../util/fetchRequest";
 import { S3Client } from "../clients/s3";
@@ -287,6 +287,31 @@ export class TatumClientService {
         try {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
             return await storeTransaction(data);
+        } catch (error) {
+            console.log(error?.response?.data || error.message);
+            throw new Error(error?.response?.data?.message || error.message);
+        }
+    }
+
+    // Get all currencies
+    public async getSupportedTokens() {
+        const tokens = await this.tokenService.getEnabledTokens();
+        return tokens.map((token) => ({ symbol: token.symbol, network: token.network }));
+    }
+
+    // Get balance for account list
+    public async getBalanceForAccountList(accounts: Currency[]) {
+        try {
+            process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
+            const promiseArray: Promise<any>[] = [];
+            for (let index = 0; index < accounts.length; index++) {
+                promiseArray.push(getAccountBalance(accounts[index].tatumId));
+            }
+            const response = await Promise.all(promiseArray);
+            for (let responseIndex = 0; responseIndex < accounts.length; responseIndex++) {
+                response[responseIndex]["tatumId"] = accounts[responseIndex].tatumId;
+            }
+            return response;
         } catch (error) {
             console.log(error?.response?.data || error.message);
             throw new Error(error?.response?.data?.message || error.message);
