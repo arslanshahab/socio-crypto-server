@@ -213,4 +213,3 @@ export enum VerificationType {
 }
 
 export const USD = "USD";
-export const WITHDRAW= "WITHDRAW";
