@@ -27,7 +27,7 @@ export class TatumController {
     @(Returns(200, SuccessArrayResult).Of(SupportedCurrenciesResultModel))
     public async getSupportedCurrencies(@Context() context: Context) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        const currencies = await this.tatumClientService.getAllCurrencies();
+        const currencies = await this.tatumClientService.getSupportedTokens();
         return new SuccessArrayResult(currencies, SupportedCurrenciesResultModel);
     }
 

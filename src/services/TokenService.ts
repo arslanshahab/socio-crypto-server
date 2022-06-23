@@ -19,7 +19,7 @@ export class TokenService {
         });
     }
 
-    public async findTokens() {
+    public async getEnabledTokens() {
         return this.prismaService.token.findMany({ where: { enabled: true } });
     }
 }

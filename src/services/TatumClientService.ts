@@ -294,8 +294,8 @@ export class TatumClientService {
     }
 
     // Get all currencies
-    public async getAllCurrencies() {
-        const tokens = await this.tokenService.findTokens();
+    public async getSupportedTokens() {
+        const tokens = await this.tokenService.getEnabledTokens();
         return tokens.map((token) => ({ symbol: token.symbol, network: token.network }));
     }
 

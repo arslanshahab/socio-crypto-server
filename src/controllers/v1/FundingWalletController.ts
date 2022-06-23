@@ -37,7 +37,7 @@ export class FundingWalletController {
         if (!org) throw new NotFound(ORG_NOT_FOUND);
         const wallet = await this.walletService.findWalletByOrgId(org.id);
         if (!wallet) throw new NotFound(WALLET_NOT_FOUND);
-        const currencies = await this.currencyService.findCurrencyByWalletId(wallet.id, { token: true });
+        const currencies = await this.currencyService.findCurrenciesByWalletId(wallet.id, { token: true });
         const balances = await this.tatumClientService.getBalanceForAccountList(currencies);
         let allCurrencies = currencies.map((currencyItem) => {
             const balance = balances.find((balanceItem) => currencyItem.tatumId === balanceItem.tatumId);
