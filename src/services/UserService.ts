@@ -417,7 +417,7 @@ export class UserService {
     public async updateUserEmail(userId: string, email: string) {
         return await this.prismaService.user.update({
             where: { id: userId },
-            data: { email: email.toLowerCase() },
+            data: { email: email.trim().toLowerCase() },
         });
     }
 

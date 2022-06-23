@@ -22,7 +22,7 @@ export class ProfileService {
         return await this.prismaService.profile.create({
             data: {
                 userId: user.id,
-                username: username.toLowerCase(),
+                username: username.trim().toLowerCase(),
             },
         });
     }
@@ -87,7 +87,7 @@ export class ProfileService {
     public async updateUsername(userId: string, username: string) {
         return await this.prismaService.profile.update({
             where: { userId },
-            data: { username: username.toLowerCase() },
+            data: { username: username.trim().toLowerCase() },
         });
     }
 
