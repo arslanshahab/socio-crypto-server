@@ -278,7 +278,7 @@ export const trackClickByLink = asyncHandler(async (req: Request, res: Response)
             await DailyParticipantMetric.upsert(participant.user, campaign, participant, action, pointValue);
             // await Dragonchain.ledgerCampaignAction(action, participant.id, participant.campaign.id);
         }
-        return res.redirect(campaign.target);
+        return res.redirect(campaign.target.includes("https") ? campaign.target : `https://${campaign.target}`);
     } catch (error) {
         throw new FormattedError(error);
     }
