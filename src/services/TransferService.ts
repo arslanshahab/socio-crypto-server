@@ -235,4 +235,10 @@ export class TransferService {
             },
         });
     }
+
+    public async transactionHistory(orgId: string) {
+        return this.prismaService.transfer.findMany({
+            where: { orgId },
+        });
+    }
 }

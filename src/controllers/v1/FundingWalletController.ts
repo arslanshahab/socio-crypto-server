@@ -10,7 +10,8 @@ import { WalletService } from "../../services/WalletService";
 import { CurrencyService } from "../../services/CurrencyService";
 import { TatumClientService } from "../../services/TatumClientService";
 import { getCryptoAssestImageUrl } from "../../util";
-import { AllCurrenciesResultModel } from "../../models/RestModels";
+import { AllCurrenciesResultModel, TransferResultModel } from "../../models/RestModels";
+import { TransferService } from "../../services/TransferService";
 
 @Controller("/funding-wallet")
 export class FundingWalletController {
@@ -24,6 +25,8 @@ export class FundingWalletController {
     private currencyService: CurrencyService;
     @Inject()
     private tatumClientService: TatumClientService;
+    @Inject()
+    private transferService: TransferService;
 
     @Get()
     @(Returns(200, SuccessArrayResult).Of(AllCurrenciesResultModel))
@@ -47,5 +50,17 @@ export class FundingWalletController {
             };
         });
         return new SuccessArrayResult(allCurrencies, AllCurrenciesResultModel);
+    }
+
+    @Get("/transaction-history")
+    @(Returns(200, SuccessArrayResult).Of(Object))
+    public async transactionHistory(@Context() context: Context) {
+        const admin = await this.userService.findUserByFirebaseId(context.get("user").id);
+        if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
+        const org = await this.organizationService.findOrgByAdminId(admin.orgId!);
+        if (!org) throw new NotFound(ORG_NOT_FOUND);
+        const transfer = await this.transferService.transactionHistory(org.id);
+        const result = transfer.map((item) => TransferResultModel.build(item));
+        return new SuccessArrayResult(result, TransferResultModel);
     }
 }

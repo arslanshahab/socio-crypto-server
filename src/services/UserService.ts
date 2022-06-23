@@ -351,7 +351,7 @@ export class UserService {
     }
 
     public async findUserByEmail(email: string) {
-        return await readPrisma.user.findFirst({ where: { email } });
+        return await readPrisma.user.findFirst({ where: { email: email.toLowerCase() } });
     }
 
     public async updateLastLogin(userId: string) {
