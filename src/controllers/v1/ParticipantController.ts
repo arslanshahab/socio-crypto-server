@@ -29,13 +29,13 @@ import { Tiers } from "../../types";
 import { SocialLinkService } from "../../services/SocialLinkService";
 import { MarketDataService } from "../../services/MarketDataService";
 
-class ListParticipantVariablesModel {
-    @Property() public readonly id: string;
-    @Property() public readonly campaignId: string;
-    @Property() public readonly skip: number;
-    @Property() public readonly take: number;
-    @Property() public readonly userRelated: boolean | undefined;
-}
+// class ListParticipantVariablesModel {
+//     @Property() public readonly id: string;
+//     @Property() public readonly campaignId: string;
+//     @Property() public readonly skip: number;
+//     @Property() public readonly take: number;
+//     @Property() public readonly userRelated: boolean | undefined;
+// }
 
 class CampaignParticipantsParams {
     @Property() public readonly campaignId: string;
@@ -241,18 +241,14 @@ export class ParticipantController {
     }
     @Get("/accumulated-user-metrics")
     @(Returns(200, SuccessResult).Of(ParticipantMetricsResultModel))
-    public async getAccumulatedUserMetrics(
-        @QueryParams() query: ListParticipantVariablesModel,
-        @Context() context: Context
-    ) {
+    public async getAccumulatedUserMetrics(@Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
         const participations = await this.participantService.findParticipantsByUserId(user.id);
         const ids = participations.map((p) => p.id);
-        let dailyParticipantMetrics;
+        const dailyParticipantMetrics = await this.dailyParticipantMetricService.getDailyParticipantByIds(ids);
         let participantShare = 0;
         if (ids.length) {
-            dailyParticipantMetrics = await this.dailyParticipantMetricService.getDailyParticipantByIds(ids);
             for (let index = 0; index < participations.length; index++) {
                 const campaign: Campaign = participations[index].campaign;
                 const participant: Participant = participations[index];
@@ -265,7 +261,6 @@ export class ParticipantController {
                 participantShare = participantShare + usdValue;
             }
         }
-        if (!dailyParticipantMetrics) throw new NotFound("Daily participant metrics not found");
         const { clickCount, likeCount, shareCount, viewCount, submissionCount, commentCount, participationScore } =
             dailyParticipantMetrics.reduce(
                 (sum, curr) => {
