@@ -33,12 +33,6 @@ export class DailyParticipantMetricService {
                 userId: user.id,
                 participationScore: "0",
                 totalParticipationScore: lastParticipationScore,
-                clickCount: "0",
-                likeCount: "0",
-                shareCount: "0",
-                submissionCount: "0",
-                viewCount: "0",
-                commentCount: "0",
             },
         });
     }

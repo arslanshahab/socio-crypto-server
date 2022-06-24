@@ -318,8 +318,8 @@ export class ParticipantMetricsResultModel {
     @Property() public readonly email: string;
 }
 
-export class AccumulatedMetricsResultModel {
-    @Property() public readonly id: number;
+export class AccumulatedParticipantMetricsResultModel {
+    @Property() public readonly campaignId: string;
     @Property() public readonly clickCount: number;
     @Property() public readonly viewCount: number;
     @Property() public readonly submissionCount: number;
@@ -328,14 +328,22 @@ export class AccumulatedMetricsResultModel {
     @Property() public readonly commentCount: number;
     @Property() public readonly participationScore: number;
     @Property() public readonly participantId: string;
-    @Property() public readonly campaignId: string;
+    @Property() public readonly symbol: string;
+    @Property() public readonly symbolImageUrl: string;
     @Property() public readonly currentTotal: number;
     @Property() public readonly participantShare: number;
     @Property() public readonly participantShareUSD: number;
-    @Property() public readonly symbol: string;
-    @Property() public readonly symbolImageUrl: string;
-    @Property() public readonly totalShareUSD: number;
+}
+
+export class AccumulatedUserMetricsResultModel {
+    @Property() public readonly clickCount: number;
+    @Property() public readonly viewCount: number;
+    @Property() public readonly submissionCount: number;
+    @Property() public readonly likeCount: number;
+    @Property() public readonly shareCount: number;
+    @Property() public readonly commentCount: number;
     @Property() public readonly totalScore: number;
+    @Property() public readonly totalShareUSD: number;
 }
 
 export class SocialMetricsResultModel {

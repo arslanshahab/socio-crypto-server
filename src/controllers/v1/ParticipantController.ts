@@ -9,7 +9,8 @@ import { CAMPAIGN_NOT_FOUND, PARTICIPANT_NOT_FOUND, USER_NOT_FOUND } from "../..
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 import { formatUTCDateForComparision, getDatesBetweenDates } from "../helpers";
 import {
-    AccumulatedMetricsResultModel,
+    AccumulatedParticipantMetricsResultModel,
+    AccumulatedUserMetricsResultModel,
     CampaignIdModel,
     CampaignParticipantResultModel,
     CampaignResultModel,
@@ -38,7 +39,6 @@ class CampaignParticipantsParams {
 class ParticipantIdParams {
     @Property() public readonly id: string;
 }
-
 
 @Controller("/participant")
 export class ParticipantController {
@@ -102,6 +102,7 @@ export class ParticipantController {
         if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
         return new SuccessResult(ParticipantResultModelV2.build(participant), ParticipantResultModelV2);
     }
+    
     @Get("/campaign-participants")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(ParticipantModel))
     public async getCampaignParticipants(
@@ -143,7 +144,7 @@ export class ParticipantController {
         if (!user) throw new BadRequest(USER_NOT_FOUND);
         const { id } = query;
         const participant = await this.participantService.findParticipantById(id, { campaign: true });
-        if (!participant) throw new Error(PARTICIPANT_NOT_FOUND);
+        if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
         const metrics = await this.dailyParticipantMetricService.getSortedByParticipantId(id);
         if (
             metrics.length > 0 &&
@@ -168,15 +169,19 @@ export class ParticipantController {
             Pagination
         );
     }
+
     @Get("/accumulated-participant-metrics")
-    @(Returns(200, SuccessResult).Of(AccumulatedMetricsResultModel))
+    @(Returns(200, SuccessResult).Of(AccumulatedParticipantMetricsResultModel))
     public async getAccumulatedParticipantMetrics(@QueryParams() query: CampaignIdModel, @Context() context: Context) {
         const { campaignId } = query;
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
         const campaign: Campaign | null = await this.campaignService.findCampaignById(campaignId);
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
-        const participant: Participant | null = await this.participantService.findParticipantByCampaignId(campaignId);
+        const participant: Participant | null = await this.participantService.findParticipantByCampaignId(
+            campaignId,
+            user.id
+        );
         if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
         const participantMetrics = await this.dailyParticipantMetricService.getDailyParticipantById(participant.id);
         const { clickCount, likeCount, shareCount, viewCount, submissionCount, commentCount, participationScore } =
@@ -226,10 +231,11 @@ export class ParticipantController {
             campaignId: campaign.id,
             participantId: participant.id,
         };
-        return new SuccessResult(result, AccumulatedMetricsResultModel);
+        return new SuccessResult(result, AccumulatedParticipantMetricsResultModel);
     }
+
     @Get("/accumulated-user-metrics")
-    @(Returns(200, SuccessResult).Of(ParticipantMetricsResultModel))
+    @(Returns(200, SuccessResult).Of(AccumulatedUserMetricsResultModel))
     public async getAccumulatedUserMetrics(@Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
@@ -283,6 +289,6 @@ export class ParticipantController {
             totalScore: participationScore || 0,
             totalShareUSD: parseFloat(formatFloat(participantShare)) || 0,
         };
-        return new SuccessResult(result, AccumulatedMetricsResultModel);
+        return new SuccessResult(result, AccumulatedUserMetricsResultModel);
     }
 }
