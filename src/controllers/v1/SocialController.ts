@@ -15,12 +15,7 @@ import {
 import { ParticipantService } from "../../services/ParticipantService";
 import { SocialPostService } from "../../services/SocialPostService";
 import { calculateParticipantSocialScoreV2, getSocialClient } from "../helpers";
-import {
-    BooleanResultModel,
-    ParticipantQueryParams,
-    SocialMetricsResultModel,
-    SocialPostResultModel,
-} from "../../models/RestModels";
+import { BooleanResultModel, SocialMetricsResultModel, SocialPostResultModel } from "../../models/RestModels";
 import { Prisma } from "@prisma/client";
 import { PointValueTypes, SocialPostParamTypes, SocialType } from "../../types";
 import { SocialLinkService } from "../../services/SocialLinkService";
@@ -32,23 +27,45 @@ import { addMinutes } from "date-fns";
 import { BSC, COIIN } from "../../util/constants";
 import { TatumClientService } from "../../services/TatumClientService";
 
-export class RegisterSocialLinkResultModel {
+class RegisterSocialLinkResultModel {
     @Property() public readonly registerSocialLink: boolean;
 }
 
-export class SocialLinkType {
+class SocialLinkType {
     @Required() public readonly type: SocialType;
 }
+class SocialPostTimeResultModel {
+    @Property() readonly show_captcha: boolean;
+}
 
-export const allowedSocialLinks = ["twitter", "facebook", "tiktok"];
+class SocialMetricsParams {
+    @Required() public readonly id: string;
+}
+
+class RegisterSocialLInkParams {
+    @Required() public readonly type: SocialType;
+    @Required() public readonly apiKey: string;
+    @Required() public readonly apiSecret: string;
+}
+
+class PostToSocialParams {
+    @Required() public readonly socialType: SocialType;
+    @Required() public readonly text: string;
+    @Required() public readonly participantId: string;
+    @Property() public readonly mediaType: "video" | "photo" | "gif";
+    @Property() public readonly mediaFormat: string;
+    @Property() public readonly media: string;
+    @Property() public readonly mediaId: string;
+    @Property() public readonly defaultMedia: boolean;
+}
+
+const allowedSocialLinks = ["twitter", "facebook", "tiktok"];
+
 const assetUrl =
     process.env.NODE_ENV === "production"
         ? "https://raiinmaker-media.api.raiinmaker.com"
         : "https://raiinmaker-media-staging.api.raiinmaker.com";
 
-export class SocialPostTimeResultModel {
-    @Property() readonly show_captcha: boolean;
-}
 @Controller("/social")
 export class SocialController {
     @Inject()
@@ -70,7 +87,7 @@ export class SocialController {
 
     @Get("/social-metrics")
     @(Returns(200, SuccessResult).Of(SocialMetricsResultModel))
-    public async getSocialMetrics(@QueryParams() query: ParticipantQueryParams, @Context() context: Context) {
+    public async getSocialMetrics(@QueryParams() query: SocialMetricsParams, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
         const { id } = query;
@@ -93,25 +110,21 @@ export class SocialController {
 
     @Post("/register-social-link")
     @(Returns(200, SuccessResult).Of(RegisterSocialLinkResultModel))
-    public async registerSocialLink(
-        @BodyParams() query: { type: SocialType; apiKey: string; apiSecret: string },
-        @Context() context: Context
-    ) {
+    public async registerSocialLink(@BodyParams() body: RegisterSocialLInkParams, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"), ["social_link"]);
         if (!user) throw new NotFound(USER_NOT_FOUND);
-        const { type, apiKey, apiSecret } = query;
+        const { type, apiKey, apiSecret } = body;
         if (!allowedSocialLinks.includes(type)) throw new BadRequest("The type must exist as a predefined type");
         await this.socialLinkService.addTwitterLink(user, apiKey, apiSecret);
-        const result = { registerSocialLink: true };
-        return new SuccessResult(result, RegisterSocialLinkResultModel);
+        return new SuccessResult({ registerSocialLink: true }, RegisterSocialLinkResultModel);
     }
 
     @Post("/post-to-social")
     @(Returns(200, SuccessResult).Of(SocialPostResultModel))
-    public async postToSocial(@BodyParams() query: SocialPostParamTypes, @Context() context: Context) {
+    public async postToSocial(@BodyParams() body: PostToSocialParams, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"), ["wallet"]);
         if (!user) throw new NotFound(USER_NOT_FOUND);
-        let { socialType, text, mediaType, mediaFormat, media, participantId, defaultMedia, mediaId } = query;
+        let { socialType, text, mediaType, mediaFormat, media, participantId, defaultMedia, mediaId } = body;
         if (!allowedSocialLinks.includes(socialType)) throw new BadRequest(`posting to ${socialType} is not allowed`);
         const participant = await this.participantService.findParticipantById(participantId, { campaign: true });
         if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
