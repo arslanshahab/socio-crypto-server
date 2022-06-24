@@ -29,27 +29,16 @@ import { Tiers } from "../../types";
 import { SocialLinkService } from "../../services/SocialLinkService";
 import { MarketDataService } from "../../services/MarketDataService";
 
-// class ListParticipantVariablesModel {
-//     @Property() public readonly id: string;
-//     @Property() public readonly campaignId: string;
-//     @Property() public readonly skip: number;
-//     @Property() public readonly take: number;
-//     @Property() public readonly userRelated: boolean | undefined;
-// }
-
 class CampaignParticipantsParams {
     @Property() public readonly campaignId: string;
     @Required() public readonly skip: number;
     @Required() public readonly take: number;
 }
 
-class GetParticipantParams {
+class ParticipantIdParams {
     @Property() public readonly id: string;
 }
 
-class GetParticipantPostsParams {
-    @Property() public readonly id: string;
-}
 
 @Controller("/participant")
 export class ParticipantController {
@@ -68,7 +57,7 @@ export class ParticipantController {
 
     @Get()
     @(Returns(200, SuccessResult).Of(ParticipantResultModelV2))
-    public async getParticipant(@QueryParams() query: GetParticipantParams, @Context() context: Context) {
+    public async getParticipant(@QueryParams() query: ParticipantIdParams, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
         const { id } = query;
@@ -82,7 +71,7 @@ export class ParticipantController {
 
     @Get("/participant-posts")
     @(Returns(200, SuccessArrayResult).Of(String))
-    public async getParticipantPosts(@QueryParams() query: GetParticipantPostsParams, @Context() context: Context) {
+    public async getParticipantPosts(@QueryParams() query: ParticipantIdParams, @Context() context: Context) {
         const results: string[] = [];
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
