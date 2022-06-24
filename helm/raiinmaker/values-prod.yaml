@@ -10,7 +10,15 @@ ingress:
     host: server.api.raiinmaker.com
 
 # up server replica count
-replicaCount: 16
+replicaCount: 32
+server:
+    resources:
+        limits:
+            cpu: 500m
+            memory: 3Gi
+        requests:
+            cpu: 500m
+            memory: 3Gi
 
 data:
     IAM_ROLE: arn:aws:iam::527252880472:role/raiinmaker-production
