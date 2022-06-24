@@ -680,3 +680,28 @@ export class CampaignParticipantResultModel {
     @Property(CampaignResultModel) public readonly campaign: CampaignResultModel;
     @Property(UserResultModel) public readonly user: UserResultModel;
 }
+
+export class ParticipantResultModelV2 {
+    @Property() public readonly id: string;
+    @Property() public readonly campaignId: string;
+    @Property() public readonly participationScore: string;
+    @Nullable(String) public readonly link: string | null;
+
+    @Property() public readonly currentlyParticipating: boolean;
+    @Property(CampaignResultModel) public readonly campaign: CampaignResultModel;
+    @Property(UserResultModelV2) public readonly user: UserResultModelV2;
+
+    public static build(
+        participant: Prisma.Participant & {
+            campaign: Prisma.Campaign;
+            user: Prisma.User & { profile?: Prisma.Profile | null };
+        }
+    ): ParticipantResultModel {
+        const now = new Date();
+        const currentlyParticipating =
+            new Date(participant.campaign.beginDate).getTime() <= now.getTime() &&
+            new Date(participant.campaign.endDate).getTime() >= now.getTime();
+
+        return { ...participant, currentlyParticipating };
+    }
+}

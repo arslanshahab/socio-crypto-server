@@ -15,7 +15,7 @@ import {
     CampaignResultModel,
     ParticipantMetricsResultModel,
     ParticipantQueryParams,
-    ParticipantResultModel,
+    ParticipantResultModelV2,
     UserResultModel,
 } from "../../models/RestModels";
 import { CampaignService } from "../../services/CampaignService";
@@ -67,14 +67,17 @@ export class ParticipantController {
     private marketDataService: MarketDataService;
 
     @Get()
-    @(Returns(200, SuccessResult).Of(ParticipantResultModel))
+    @(Returns(200, SuccessResult).Of(ParticipantResultModelV2))
     public async getParticipant(@QueryParams() query: GetParticipantParams, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
         const { id } = query;
-        const participant = await this.participantService.findParticipantById(id, { campaign: true });
+        const participant = await this.participantService.findParticipantById(id, {
+            campaign: true,
+            user: { include: { profile: true } },
+        });
         if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
-        return new SuccessResult(ParticipantResultModel.build(participant), ParticipantResultModel);
+        return new SuccessResult(ParticipantResultModelV2.build(participant), ParticipantResultModelV2);
     }
 
     @Get("/participant-posts")
@@ -96,15 +99,19 @@ export class ParticipantController {
         }
         return new SuccessArrayResult(results, String);
     }
+
     @Get("/participant-by-campaign-id")
-    @(Returns(200, SuccessResult).Of(ParticipantResultModel))
+    @(Returns(200, SuccessResult).Of(ParticipantResultModelV2))
     public async getParticipantByCampaignId(@QueryParams() query: CampaignIdModel, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
         const { campaignId } = query;
-        const participant = await this.participantService.findParticipantByCampaignId(campaignId, { campaign: true });
+        const participant = await this.participantService.findParticipantByCampaignId(campaignId, user.id, {
+            campaign: true,
+            user: { include: { profile: true } },
+        });
         if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
-        return new SuccessResult(ParticipantResultModel.build(participant), ParticipantResultModel);
+        return new SuccessResult(ParticipantResultModelV2.build(participant), ParticipantResultModelV2);
     }
     @Get("/campaign-participants")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(ParticipantModel))

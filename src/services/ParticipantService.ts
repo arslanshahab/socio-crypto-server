@@ -34,11 +34,13 @@ export class ParticipantService {
 
     public async findParticipantByCampaignId<T extends Prisma.ParticipantInclude | undefined>(
         campaignId: string,
+        userId?: string,
         include?: T
     ) {
         return this.prismaService.participant.findFirst({
             where: {
                 campaignId,
+                userId: userId && userId,
             },
             include: include as T,
         });
