@@ -554,7 +554,7 @@ export class UserController {
                 participant = await this.participantService.createNewParticipant(user.id, globalCampaign, user.email);
             }
         } else {
-            participant = await this.participantService.findParticipantById(participantId, user);
+            participant = await this.participantService.findParticipantById(participantId, { campaign: true });
             if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
             campaign = participant.campaign;
         }

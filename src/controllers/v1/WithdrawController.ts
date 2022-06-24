@@ -55,7 +55,6 @@ export class WithdrawController {
     @(Returns(200, SuccessArrayResult).Of(TransferResultModel))
     public async getWithdrawalHistory(@Context() context: Context) {
         const transfers = await this.transferService.getAuditedWithdrawals();
-        const result = transfers.map((items) => TransferResultModel.build(items));
-        return new SuccessArrayResult(result, TransferResultModel);
+        return new SuccessArrayResult(TransferResultModel.buildArray(transfers), TransferResultModel);
     }
 }

@@ -199,6 +199,9 @@ export class TransferResultModel {
             status: transfer.status?.toUpperCase() || "",
         };
     }
+    public static buildArray(transfer: Prisma.Transfer[]): TransferResultModel[] {
+        return transfer.map((transfer) => TransferResultModel.build(transfer));
+    }
 }
 
 export class WalletResultModel {
@@ -285,6 +288,8 @@ export class CampaignMetricsResultModel {
     @Property() public readonly commentCount: number;
     @Property() public readonly shareCount: number;
     @Property() public readonly postCount: number;
+    @Property() public readonly discoveryCount: number;
+    @Property() public readonly conversionCount: number;
 }
 
 export class ParticipantMetricsResultModel {
@@ -433,22 +438,6 @@ export class GenerateCampaignAuditReportResultModel {
     @CollectionOf(FlaggedParticipantResultModel) public readonly flaggedParticipants: FlaggedParticipantResultModel[];
 }
 
-export class KycUserResultModel {
-    @Property() public readonly id: string;
-    @Property() public readonly email: string;
-    @Property() public readonly createdAt: Date;
-    @Property() public readonly lastLogin: Date | null;
-    @Property() public readonly active: boolean;
-    @Nullable(String) public readonly identityId: string | null;
-    @Nullable(String) public readonly kycStatus: string | null;
-    @Nullable(String) public readonly referralCode: string | null;
-    @Property() public readonly password: string;
-    @Nullable(String) public readonly updatedAt: Date;
-    @Nullable(String) public readonly deletedAt: Date;
-    @Property() public readonly profile: Prisma.Profile;
-    @Property() public readonly notification_settings: Prisma.NotificationSettings;
-}
-
 export class AcuantApplicationExtractedDetailsModel {
     @Property() public readonly age: number | null;
     @Property() public readonly fullName: string | null;
@@ -456,6 +445,7 @@ export class AcuantApplicationExtractedDetailsModel {
     @Property() public readonly isDocumentValid: boolean | null;
     @Property() public readonly documentDetails: string | null;
     @Property() public readonly documentExpiry: Date | null;
+    @Property() public readonly email: string | null;
 }
 
 export class KycUpdateResultModel {
@@ -526,12 +516,8 @@ export class OrgEmployeesResultModel {
 export class OrgDetailsModel {
     @Property() public readonly name: string;
     @Property() public readonly createdAt: Date;
-    @Property() public readonly admins: number;
-    @Property() public readonly campaigns: number;
-}
-
-export class OrganizationDetailsResultModel {
-    @Property() public readonly orgDetails: OrgDetailsModel[];
+    @Property() public readonly adminCount: number;
+    @Property() public readonly campaignCount: number;
 }
 
 export class LoginParams {
@@ -693,4 +679,29 @@ export class CampaignParticipantResultModel {
     @Property(Date) public readonly updatedAt: Date;
     @Property(CampaignResultModel) public readonly campaign: CampaignResultModel;
     @Property(UserResultModel) public readonly user: UserResultModel;
+}
+
+export class ParticipantResultModelV2 {
+    @Property() public readonly id: string;
+    @Property() public readonly campaignId: string;
+    @Property() public readonly participationScore: string;
+    @Nullable(String) public readonly link: string | null;
+
+    @Property() public readonly currentlyParticipating: boolean;
+    @Property(CampaignResultModel) public readonly campaign: CampaignResultModel;
+    @Property(UserResultModelV2) public readonly user: UserResultModelV2;
+
+    public static build(
+        participant: Prisma.Participant & {
+            campaign: Prisma.Campaign;
+            user: Prisma.User & { profile?: Prisma.Profile | null };
+        }
+    ): ParticipantResultModel {
+        const now = new Date();
+        const currentlyParticipating =
+            new Date(participant.campaign.beginDate).getTime() <= now.getTime() &&
+            new Date(participant.campaign.endDate).getTime() >= now.getTime();
+
+        return { ...participant, currentlyParticipating };
+    }
 }

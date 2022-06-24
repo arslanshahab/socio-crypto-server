@@ -12,9 +12,16 @@ import { Validator } from "../../schemas";
 import { AcuantClient } from "../../clients/acuant";
 import { Firebase } from "../../clients/firebase";
 import { VerificationApplicationService } from "../../services/VerificationApplicationService";
-import { KycApplication, KycUser } from "../../types";
+import { KycUser } from "../../types";
 import { S3Client } from "../../clients/s3";
-import { KycUpdateResultModel, KycUserResultModel } from "../../models/RestModels";
+import { KycUpdateResultModel, UserResultModel } from "../../models/RestModels";
+
+const userResultRelations = {
+    profile: true,
+    social_link: true,
+    participant: { include: { campaign: true } },
+    notification_settings: true,
+};
 
 class KycResultModel {
     @Property() public readonly kycId: string;
@@ -26,6 +33,27 @@ class KycStatusParms {
     @Required() public readonly userId: string;
     @Required() public readonly status: string;
 }
+
+class VerifyKycParams {
+    @Required() public readonly firstName: string;
+    @Required() public readonly middleName: string;
+    @Required() public readonly lastName: string;
+    @Required() public readonly email: string;
+    @Required() public readonly billingStreetAddress: string;
+    @Required() public readonly billingCity: string;
+    @Required() public readonly billingCountry: string;
+    @Required() public readonly billingZip: number;
+    @Required() public readonly zipCode: string;
+    @Required() public readonly gender: string;
+    @Required() public readonly dob: string;
+    @Required() public readonly phoneNumber: string;
+    @Required() public readonly documentType: string;
+    @Required() public readonly documentCountry: string;
+    @Required() public readonly frontDocumentImage: string;
+    @Required() public readonly faceImage: string;
+    @Required() public readonly backDocumentImage: string;
+}
+
 const validator = new Validator();
 
 @Controller("/kyc")
@@ -75,7 +103,7 @@ export class KycController {
 
     @Post("/verify-kyc")
     @(Returns(200, SuccessResult).Of(KycUpdateResultModel))
-    public async verifyKyc(@BodyParams() query: KycApplication, @Context() context: Context) {
+    public async verifyKyc(@BodyParams() query: VerifyKycParams, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"), ["profile"]);
         if (!user) throw new BadRequest(USER_NOT_FOUND);
         const currentKycApplication = await findKycApplicationV2(user);
@@ -126,12 +154,12 @@ export class KycController {
     }
 
     @Put("/update-kyc-status")
-    @(Returns(200, SuccessResult).Of(KycUserResultModel))
+    @(Returns(200, SuccessResult).Of(UserResultModel))
     public async updateKycStatus(@QueryParams() query: KycStatusParms, @Context() context: Context) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const { userId, status } = query;
         if (!["approve", "reject"].includes(status)) throw new BadRequest("Status must be either approve or reject");
-        let user = await this.userService.findUserById(userId, ["profile", "notification_settings"]);
+        let user = await this.userService.findUserById(userId, userResultRelations);
         if (!user) throw new NotFound(USER_NOT_FOUND);
         const updatedStatus = await this.kycService.updateKycStatus(user.id, status);
         if (user.notification_settings?.kyc) {
@@ -139,6 +167,6 @@ export class KycController {
             else await Firebase.sendKycRejectionNotification(user.profile?.deviceToken!);
         }
         user.kycStatus = updatedStatus.kycStatus;
-        return new SuccessResult(user, KycUserResultModel);
+        return new SuccessResult(UserResultModel.build(user), UserResultModel);
     }
 }

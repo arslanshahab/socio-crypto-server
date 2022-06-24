@@ -1,4 +1,4 @@
-import { Campaign, Participant, User } from "@prisma/client";
+import { Campaign, Participant, Prisma } from "@prisma/client";
 import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
 import { FindCampaignById } from "../types";
@@ -23,39 +23,26 @@ export class ParticipantService {
      * Retrieves a paginated list of participants
      *
      * @param params the search parameters for the participants
-     * @param user an optional user include in the participants results (depends on params.userRelated)
      * @returns the list of participants, and a count of total participants, matching the parameters
      */
-    public async findParticipantById(participantId: string, user?: User) {
-        return this.prismaService.participant.findFirst({
-            include: {
-                user: {
-                    include: {
-                        profile: true,
-                    },
-                },
-                campaign: true,
-            },
-            where: {
-                id: participantId,
-                userId: user?.id,
-            },
-        });
+    public async findParticipantById<T extends Prisma.ParticipantInclude | undefined>(
+        participantId: string,
+        include?: T
+    ) {
+        return this.prismaService.participant.findFirst({ where: { id: participantId }, include: include as T });
     }
 
-    public async findParticipantByCampaignId(campaignId: string) {
+    public async findParticipantByCampaignId<T extends Prisma.ParticipantInclude | undefined>(
+        campaignId: string,
+        userId?: string,
+        include?: T
+    ) {
         return this.prismaService.participant.findFirst({
             where: {
                 campaignId,
+                userId: userId && userId,
             },
-            include: {
-                user: {
-                    include: {
-                        profile: true,
-                    },
-                },
-                campaign: true,
-            },
+            include: include as T,
         });
     }
 
