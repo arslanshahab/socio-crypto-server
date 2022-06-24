@@ -60,7 +60,6 @@ export class FundingWalletController {
         const org = await this.organizationService.findOrgByAdminId(admin.orgId!);
         if (!org) throw new NotFound(ORG_NOT_FOUND);
         const transfer = await this.transferService.transactionHistory(org.id);
-        const result = transfer.map((item) => TransferResultModel.build(item));
-        return new SuccessArrayResult(result, TransferResultModel);
+        return new SuccessArrayResult(TransferResultModel.buildArray(transfer), TransferResultModel);
     }
 }

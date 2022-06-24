@@ -15,8 +15,13 @@ import {
 import { ParticipantService } from "../../services/ParticipantService";
 import { SocialPostService } from "../../services/SocialPostService";
 import { calculateParticipantSocialScoreV2, getSocialClient } from "../helpers";
-import { BooleanResultModel, ParticipantQueryParams, SocialMetricsResultModel, SocialPostResultModel } from "../../models/RestModels";
-import { Campaign, Participant, Prisma, Profile, User } from "@prisma/client";
+import {
+    BooleanResultModel,
+    ParticipantQueryParams,
+    SocialMetricsResultModel,
+    SocialPostResultModel,
+} from "../../models/RestModels";
+import { Prisma } from "@prisma/client";
 import { PointValueTypes, SocialPostParamTypes, SocialType } from "../../types";
 import { SocialLinkService } from "../../services/SocialLinkService";
 import { CampaignService } from "../../services/CampaignService";
@@ -69,8 +74,7 @@ export class SocialController {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
         const { id } = query;
-        const participant: (Participant & { user: User & { profile: Profile | null }; campaign: Campaign }) | null =
-            await this.participantService.findParticipantById(id, user);
+        const participant = await this.participantService.findParticipantById(id, { campaign: true });
         if (!participant) throw new Error(PARTICIPANT_NOT_FOUND);
         const socialPost = await this.socialPostService.findSocialPostByParticipantId(participant.id);
         const metrics = await calculateParticipantSocialScoreV2(
@@ -109,7 +113,7 @@ export class SocialController {
         if (!user) throw new NotFound(USER_NOT_FOUND);
         let { socialType, text, mediaType, mediaFormat, media, participantId, defaultMedia, mediaId } = query;
         if (!allowedSocialLinks.includes(socialType)) throw new BadRequest(`posting to ${socialType} is not allowed`);
-        const participant = await this.participantService.findParticipantById(participantId, user);
+        const participant = await this.participantService.findParticipantById(participantId, { campaign: true });
         if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
         if (!(await this.campaignService.isCampaignOpen(participant.campaign.id)))
             throw new BadRequest(CAMPAIGN_CLOSED);
