@@ -141,7 +141,7 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
                 }
             }
 
-            const resp = await TatumClient.transferFundsBatch(batchTransfer);
+            await TatumClient.transferFundsBatch(batchTransfer);
             const transferRecords = [];
             for (let index = 0; index < transferDetails.length; index++) {
                 const transferData = transferDetails[index];
@@ -154,7 +154,7 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
                     ethAddress: transferData.userCurrency.tatumId,
                     walletId: wallet.id,
                     action: "CAMPAIGN_REWARD",
-                    status: resp.includes(transferData.userCurrency.tatumId) ? "SUCCEEDED" : "FAILED",
+                    status: "SUCCEEDED",
                     type: "CREDIT",
                 });
             }
