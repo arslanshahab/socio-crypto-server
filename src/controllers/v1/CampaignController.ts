@@ -1,5 +1,5 @@
 import { Campaign, CampaignMedia, Prisma } from "@prisma/client";
-import { Get, Property, Required, Enum, Returns, Post, Put } from "@tsed/schema";
+import { Get, Property, Required, Enum, Returns, Post, Put, ArrayOf } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
 import { Context, BodyParams, PathParams, QueryParams } from "@tsed/common";
 import { CampaignService } from "../../services/CampaignService";
@@ -29,6 +29,7 @@ import {
     UpdatedResultModel,
     CampaignIdModel,
     CampaignStatsResultModelArray,
+    BooleanResultModel,
 } from "../../models/RestModels";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { ParticipantService } from "../../services/ParticipantService";
@@ -58,6 +59,16 @@ class ListCampaignsVariablesModel extends PaginatedVariablesModel {
     @Property() @Enum(CampaignStatus, "ALL") public readonly status: CampaignStatus | "ALL" | undefined;
     @Property(Boolean) public readonly userRelated: boolean | undefined;
     @Property(String) public readonly auditStatus: CampaignAuditStatus | undefined;
+}
+
+class AdminUpdateCampaignStatusParams {
+    @Required() @Property(String) public readonly campaignId: string;
+    @Required() @Property(String) public readonly status: CampaignStatus;
+}
+
+class PayoutCampaignRewardsParams {
+    @Required() public readonly campaignId: string;
+    @ArrayOf(String) public readonly rejected: string[] | undefined;
 }
 
 @Controller("/campaign")
@@ -449,16 +460,13 @@ export class CampaignController {
     }
     @Post("/payout-campaign-rewards")
     @(Returns(200, SuccessResult).Of(UpdatedResultModel))
-    public async payoutCampaignRewards(@QueryParams() query: CampaignIdModel, @Context() context: Context) {
+    public async payoutCampaignRewards(@QueryParams() query: PayoutCampaignRewardsParams, @Context() context: Context) {
         const { company } = this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
         const { campaignId } = query;
         const campaign = await this.campaignService.findCampaignById(campaignId, undefined, company);
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
         await this.campaignService.updateCampaignStatus(campaignId);
-        const result = {
-            message: "Campaign has been submitted for auditting",
-        };
-        return new SuccessResult(result, UpdatedResultModel);
+        return new SuccessResult({ message: "Campaign has been submitted for auditting" }, UpdatedResultModel);
     }
     @Post("/generate-campaign-audit-report")
     @(Returns(200, SuccessResult).Of(GenerateCampaignAuditReportResultModel))
@@ -636,9 +644,9 @@ export class CampaignController {
     }
 
     @Put("/admin-update-campaign-status")
-    @(Returns(200, SuccessResult).Of(UpdatedResultModel))
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async adminUpdateCampaignStatus(
-        @QueryParams() query: { status: CampaignStatus; campaignId: string },
+        @QueryParams() query: AdminUpdateCampaignStatusParams,
         @Context() context: Context
     ) {
         this.userService.checkPermissions({ restrictCompany: RAIINMAKER_ORG_NAME }, context.get("user"));
@@ -678,6 +686,6 @@ export class CampaignController {
         await this.campaignService.adminUpdateCampaignStatus(campaign.id, campaign.status, campaign.tatumBlockageId!);
         const deviceTokens = await User.getAllDeviceTokens("campaignCreate");
         if (deviceTokens.length > 0) await Firebase.sendCampaignCreatedNotifications(deviceTokens, campaign);
-        return new SuccessResult({ message: "Campaign status updated successfully" }, UpdatedResultModel);
+        return new SuccessResult({ success: true }, BooleanResultModel);
     }
 }

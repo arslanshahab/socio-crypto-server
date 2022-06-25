@@ -6,8 +6,8 @@ import { ORG_NOT_FOUND } from "../../util/errors";
 import { AdminService } from "../../services/AdminService";
 import { OrganizationService } from "../../services/OrganizationService";
 import { UserService } from "../../services/UserService";
-import { SuccessResult, Pagination } from "../../util/entities";
-import { OrganizationDetailsResultModel, OrgEmployeesResultModel } from "../../models/RestModels";
+import { SuccessResult, Pagination, SuccessArrayResult } from "../../util/entities";
+import { OrgDetailsModel, OrgEmployeesResultModel } from "../../models/RestModels";
 
 @Controller("/organization")
 export class OrganizationController {
@@ -37,7 +37,7 @@ export class OrganizationController {
     }
 
     @Get("/org-details")
-    @(Returns(200, SuccessResult).Of(OrganizationDetailsResultModel))
+    @(Returns(200, SuccessResult).Of(OrgDetailsModel))
     public async getOrgDetails(@Context() context: Context) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const organizations = await this.organizationService.orgDetails();
@@ -45,10 +45,10 @@ export class OrganizationController {
             return {
                 name: org.name,
                 createdAt: org.createdAt,
-                admins: org.admin.length,
-                campaigns: org.campaign.length,
+                adminCount: org.admin.length,
+                campaignCount: org.campaign.length,
             };
         });
-        return new SuccessResult({ orgDetails }, OrganizationDetailsResultModel);
+        return new SuccessArrayResult(orgDetails, OrgDetailsModel);
     }
 }
