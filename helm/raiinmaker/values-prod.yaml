@@ -10,7 +10,7 @@ ingress:
     host: server.api.raiinmaker.com
 
 # up server replica count
-replicaCount: 32
+replicaCount: 48
 server:
     resources:
         limits:
