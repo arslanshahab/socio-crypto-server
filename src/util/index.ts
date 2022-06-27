@@ -23,8 +23,7 @@ import { Request, Response, NextFunction } from "express";
 import { BigNumber } from "bignumber.js";
 import { Factor } from "../models/Factor";
 import { CRYPTO_ICONS_MAP, CRYPTO_ICONS_BUCKET_URL, COIIN } from "./constants";
-import { User as PrismaUser, VerificationApplication as PrismaVerficationApplication } from "@prisma/client";
-import { prisma } from "../clients/prisma";
+import { User as PrismaUser } from "@prisma/client";
 import { PlatformCache } from "@tsed/common";
 
 // general helper functions start here
@@ -372,59 +371,6 @@ export const findKycApplication = async (
     return { kyc: recordedApplication };
 };
 
-//! Update Kyc Status
-export const updateStatus = async (newStatus: string, data: PrismaVerficationApplication) => {
-    let updatedApplication;
-    if (data.status !== newStatus && data.status !== "APPROVED") {
-        updatedApplication = await prisma.verificationApplication.update({
-            where: {
-                id: data.id,
-            },
-            data: {
-                status: newStatus,
-            },
-        });
-    }
-    return updatedApplication;
-};
-
-//! Update Kyc Reason
-export const updateReason = async (newReason: string, id: string) => {
-    return await prisma.verificationApplication.update({
-        where: { id },
-        data: {
-            reason: newReason,
-        },
-    });
-};
-
-//! Find kyc appliction
-export const findKycApplicationV2 = async (user: PrismaUser) => {
-    const recordedApplication = await prisma.verificationApplication.findFirst({ where: { userId: user.id } });
-    if (!recordedApplication) return null;
-    let kycApplication;
-    if (recordedApplication.status === "APPROVED") {
-        kycApplication = await S3Client.getAcuantKyc(user.id);
-        return {
-            kyc: recordedApplication,
-            factors: generateFactorsFromKYC(kycApplication),
-        };
-    }
-    if (recordedApplication.status === "PENDING") {
-        kycApplication = await AcuantClient.getApplication(recordedApplication.applicationId);
-        const status = getApplicationStatus(kycApplication);
-        const reason = getKycStatusDetails(kycApplication);
-        let factors;
-        if (status === "APPROVED") {
-            await S3Client.uploadAcuantKyc(user.id, kycApplication);
-            factors = generateFactorsFromKYC(kycApplication);
-        }
-        await updateStatus(status, recordedApplication);
-        await updateReason(reason, recordedApplication.id);
-        return { kyc: recordedApplication, factors };
-    }
-    return { kyc: recordedApplication };
-};
 // Kyc herlpers end here
 
 // authentication helpers here

@@ -12,6 +12,7 @@ import {
 import { User } from "./User";
 import { FactorLink } from "./FactorLink";
 import { KycStatus } from "src/types";
+import { KycLevel } from "../util/constants";
 
 @Entity()
 export class VerificationApplication extends BaseEntity {
@@ -20,6 +21,9 @@ export class VerificationApplication extends BaseEntity {
 
     @Column()
     public applicationId: string;
+
+    @Column({ type: "enum", enum: KycLevel, default: KycLevel.LEVEL1 })
+    public level: KycLevel;
 
     @Column()
     public status: KycStatus;
