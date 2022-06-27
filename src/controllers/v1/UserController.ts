@@ -22,6 +22,7 @@ import {
     INVALID_TOKEN,
     MISSING_PARAMS,
     NOTIFICATION_SETTING_NOT_FOUND,
+    ORG_NOT_FOUND,
     PARTICIPANT_NOT_FOUND,
     PROFILE_NOT_FOUND,
     SAME_OLD_AND_NEW_PASSWORD,
@@ -376,9 +377,10 @@ export class UserController {
         const { campaignId } = query;
         const campaign = await this.campaignService.findCampaignById(campaignId, { org: true });
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
+        if(!campaign.org) throw new NotFound(ORG_NOT_FOUND)
         const participant = await this.participantService.findParticipantByUserAndCampaignIds(user.id, campaign.id);
         if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
-        await this.hourlyCampaignMetricsService.upsertMetrics(campaign.id, campaign.org?.id, "removeParticipant");
+        await this.hourlyCampaignMetricsService.upsertMetrics(campaign.id, campaign.org.id, "removeParticipant");
         await this.participantService.removeParticipant(participant);
         return new SuccessResult({ success: true }, BooleanResultModel);
     }

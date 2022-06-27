@@ -6,8 +6,10 @@ import { SuccessResult } from "../../util/entities";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import {
     CAMPAIGN_CLOSED,
+    CAMPAIGN_NOT_FOUND,
     GLOBAL_CAMPAIGN_NOT_FOUND,
     MEDIA_NOT_FOUND,
+    ORG_NOT_FOUND,
     PARTICIPANT_NOT_FOUND,
     POST_ID_NOT_FOUND,
     USER_NOT_FOUND,
@@ -17,7 +19,7 @@ import { SocialPostService } from "../../services/SocialPostService";
 import { calculateParticipantSocialScoreV2, getSocialClient } from "../helpers";
 import { BooleanResultModel, SocialMetricsResultModel, SocialPostResultModel } from "../../models/RestModels";
 import { Prisma } from "@prisma/client";
-import { PointValueTypes, SocialPostParamTypes, SocialType } from "../../types";
+import { MediaType, PointValueTypes, SocialPostParamTypes, SocialType } from "../../types";
 import { SocialLinkService } from "../../services/SocialLinkService";
 import { CampaignService } from "../../services/CampaignService";
 import { CampaignMediaService } from "../../services/CampaignMediaService";
@@ -52,7 +54,7 @@ class PostToSocialParams {
     @Required() public readonly socialType: SocialType;
     @Required() public readonly text: string;
     @Required() public readonly participantId: string;
-    @Property() public readonly mediaType: "video" | "photo" | "gif";
+    @Property() public readonly mediaType: MediaType;
     @Property() public readonly mediaFormat: string;
     @Property() public readonly media: string;
     @Property() public readonly mediaId: string;
@@ -131,22 +133,22 @@ export class SocialController {
         if (!(await this.campaignService.isCampaignOpen(participant.campaign.id)))
             throw new BadRequest(CAMPAIGN_CLOSED);
         const socialLink = await this.socialLinkService.findSocialLinkByUserId(user.id, socialType);
-
         if (!socialLink) throw new BadRequest(`You have not linked ${socialType} as a social platform`);
         const campaign = await this.campaignService.findCampaignById(participant.campaign.id, {
             org: true,
             campaign_media: true,
         });
-        if (!campaign) throw new NotFound(CAMPAIGN_CLOSED);
+        if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
+        if (!campaign.org) throw new NotFound(ORG_NOT_FOUND);
         const client = getSocialClient(socialType);
-
         if (defaultMedia) {
             let selectedMedia = await this.campaignMediaService.findCampaignMediaById(mediaId, socialType);
             if (!selectedMedia) throw new NotFound(MEDIA_NOT_FOUND);
+            if (!selectedMedia.mediaFormat) throw new BadRequest("Media format is not defined");
             const mediaUrl = `${assetUrl}/campaign/${campaign.id}/${selectedMedia?.media}`;
             const downloaded = await downloadMedia(mediaType, mediaUrl, selectedMedia.mediaFormat!);
             media = downloaded;
-            mediaFormat = selectedMedia.mediaFormat!;
+            mediaFormat = selectedMedia.mediaFormat;
         }
         let postId: string;
         if (mediaType && mediaFormat) {
@@ -155,7 +157,7 @@ export class SocialController {
             postId = await client.postV2(participant.id, socialLink, text);
         }
         if (!postId) throw new NotFound(POST_ID_NOT_FOUND);
-        await this.hourlyCampaignMetricsService.upsertMetrics(campaign.id, campaign.org?.id, "post");
+        await this.hourlyCampaignMetricsService.upsertMetrics(campaign.id, campaign.org.id, "post");
 
         const socialPost = await this.socialPostService.newSocialPost(
             postId,

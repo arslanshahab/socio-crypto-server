@@ -5,7 +5,7 @@ import { getRedis } from "./redis";
 import { extractVideoData, chunkVideo, sleep } from "../controllers/helpers";
 import { Participant } from "../models/Participant";
 import { SocialLink } from "../models/SocialLink";
-import { TwitterLinkCredentials } from "../types";
+import { MediaType, TwitterLinkCredentials } from "../types";
 import { TWITTER_LINK_EXPIRED, FormattedError } from "../util/errors";
 import { isArray } from "lodash";
 import { decrypt } from "../util/crypto";
@@ -144,12 +144,11 @@ export class TwitterClient {
         socialLink: PrismaSocialLink,
         text: string,
         data?: string,
-        mediaType?: "photo" | "video" | "gif",
+        mediaType?: MediaType,
         mediaFormat?: string
     ) => {
         try {
             text = text.replace("@", "#");
-            logger.debug(`posting tweet to twitter with text: ${text}`);
             if (text.length > TwitterClient.textLimit) throw new Error("Text too long for twitter");
             const options: { [key: string]: string } = { status: text };
             const client = TwitterClient.getClient({

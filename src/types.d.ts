@@ -613,3 +613,5 @@ export interface CustodialAddressPayload {
     owner: string;
     batchCount: number;
 }
+
+export type MediaType = "video" | "photo" | "gif";
