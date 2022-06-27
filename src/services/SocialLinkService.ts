@@ -84,11 +84,9 @@ export class SocialLinkService {
             data: {
                 openId: tokens.open_id,
                 accessToken: tokens.access_token,
-                accessTokenExpiry: (new Date(tokens.expires_in * 1000).getTime() + new Date().getTime()).toString(),
+                accessTokenExpiry: (tokens.expires_in * 1000 + new Date().getTime()).toString(),
                 refreshToken: tokens.refresh_token,
-                refreshTokenExpiry: (
-                    new Date(tokens.refresh_expires_in * 1000).getTime() + new Date().getTime()
-                ).toString(),
+                refreshTokenExpiry: (tokens.refresh_expires_in * 1000 + new Date().getTime()).toString(),
             },
         });
         return socialLink;
