@@ -213,3 +213,10 @@ export enum VerificationType {
 }
 
 export const USD = "USD";
+
+export enum SocialLinkType {
+    FACEBOOK = "facebook",
+    TWITTER = "twitter",
+    TIKTOK = "tiktok",
+    INSTAGRAM = "instagram",
+}

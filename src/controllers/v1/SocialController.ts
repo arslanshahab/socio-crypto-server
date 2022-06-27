@@ -69,6 +69,14 @@ class PostContentGloballyParams {
     @Property() public readonly media: string;
 }
 
+class RegisterTiktokParams {
+    @Required() public readonly open_id: string;
+    @Required() public readonly access_token: string;
+    @Required() public readonly expires_in: number;
+    @Required() public readonly refresh_token: string;
+    @Required() public readonly refresh_expires_in: number;
+}
+
 const allowedSocialLinks = ["twitter", "facebook", "tiktok"];
 
 const assetUrl =
@@ -226,6 +234,15 @@ export class SocialController {
             },
             context
         );
+        return new SuccessResult({ success: true }, BooleanResultModel);
+    }
+
+    @Post("/register-tiktok")
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
+    public async registerTiktokSocialLink(@BodyParams() body: RegisterTiktokParams, @Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"), ["social_link"]);
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        await this.socialLinkService.addOrUpdateTiktokLink(user.id, body);
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 }
