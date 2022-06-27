@@ -512,6 +512,7 @@ export class UserController {
             loginRedemptionDate: loginReward?.createdAt?.toString() || "",
             earnedToday: coiinEarnedToday || 0,
             sharingReward: SHARING_REWARD_AMOUNT,
+            sharingRewardType: COIIN,
         };
         return new SuccessResult(result, WeeklyRewardsResultModel);
     }
