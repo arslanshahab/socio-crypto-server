@@ -108,7 +108,7 @@ class TransferUserCoiinParams {
 }
 
 class RewardUserForSharingParams {
-    @Required() public readonly participantId: string;
+    @Property() public readonly participantId: string;
     @Required() public readonly isGlobal: boolean;
 }
 
@@ -360,7 +360,7 @@ export class UserController {
         if (campaign.type === "raffle" && !email) throw new BadRequest(MISSING_PARAMS);
 
         if (await !this.campaignService.isCampaignOpen(campaign.id)) throw new BadRequest(CAMPAIGN_CLOSED);
-        if (await this.participantService.findParticipantByUserAndCampaignIds(user.id, campaign.id))
+        if (await this.participantService.findParticipantByCampaignId(campaign.id, user.id))
             throw new BadRequest(ALREADY_PARTICIPATING);
         await this.tatumClientService.findOrCreateCurrency({ ...campaign?.currency?.token!, wallet: user.wallet! });
         const participant = await this.participantService.createNewParticipant(user.id, campaign, email);
@@ -377,8 +377,8 @@ export class UserController {
         const { campaignId } = query;
         const campaign = await this.campaignService.findCampaignById(campaignId, { org: true });
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
-        if(!campaign.org) throw new NotFound(ORG_NOT_FOUND)
-        const participant = await this.participantService.findParticipantByUserAndCampaignIds(user.id, campaign.id);
+        if (!campaign.org) throw new NotFound(ORG_NOT_FOUND);
+        const participant = await this.participantService.findParticipantByCampaignId(campaign.id, user.id);
         if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
         await this.hourlyCampaignMetricsService.upsertMetrics(campaign.id, campaign.org.id, "removeParticipant");
         await this.participantService.removeParticipant(participant);
@@ -550,7 +550,7 @@ export class UserController {
             const globalCampaign = await this.campaignService.findGlobalCampaign(isGlobal, COIIN);
             if (!globalCampaign) throw new NotFound(GLOBAL_CAMPAIGN_NOT_FOUND);
             campaign = globalCampaign;
-            participant = await this.participantService.findParticipantByUserAndCampaignId(user.id, campaign.id);
+            participant = await this.participantService.findParticipantByCampaignId(campaign.id, user.id);
             if (!participant) {
                 await this.tatumClientService.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet: wallet });
                 participant = await this.participantService.createNewParticipant(user.id, globalCampaign, user.email);
@@ -594,7 +594,7 @@ export class UserController {
         let user = await this.userService.findUserByContext(context.get("user"), { profile: true });
         if (!user) throw new NotFound(USER_NOT_FOUND);
         user.profile = await this.profileService.updateUsername(user.id, username);
-        return new SuccessResult(UserResultModelV2.build(user!), UserResultModelV2);
+        return new SuccessResult(UserResultModelV2.build(user), UserResultModelV2);
     }
 
     @Put("/promote-permissions")
@@ -633,7 +633,7 @@ export class UserController {
         const { code } = body;
         const profile = await this.profileService.setRecoveryCode(user.profile.id, code);
         user.profile = profile;
-        return new SuccessResult(UserResultModelV2.build(user!), UserResultModelV2);
+        return new SuccessResult(UserResultModelV2.build(user), UserResultModelV2);
     }
 
     @Put("/update-notification-settings")
@@ -642,10 +642,13 @@ export class UserController {
         @BodyParams() body: UpdateNotificationSettingsParams,
         @Context() context: Context
     ) {
-        const user = await this.userService.findUserByContext(context.get("user"));
+        const user = await this.userService.findUserByContext(context.get("user"), { profile: true });
         if (!user) throw new NotFound(USER_NOT_FOUND);
         const notificationSettings = await this.notificationService.updateNotificationSettings(user.id, body);
-        return new SuccessResult({ user, notificationSettings }, UpdateNotificationSettingsResultModel);
+        return new SuccessResult(
+            { user: UserResultModelV2.build(user), notificationSettings },
+            UpdateNotificationSettingsResultModel
+        );
     }
 
     @Put("/set-device")

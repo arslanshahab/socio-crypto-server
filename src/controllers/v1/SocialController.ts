@@ -220,7 +220,7 @@ export class SocialController {
         if (!allowedSocialLinks.includes(socialType)) throw new BadRequest(`posting to ${socialType} is not allowed`);
         const globalCampaign = await this.campaignService.findGlobalCampaign(true, COIIN);
         if (!globalCampaign) throw new NotFound(GLOBAL_CAMPAIGN_NOT_FOUND);
-        let participant = await this.participantService.findParticipantByUserAndCampaignIds(user.id, globalCampaign.id);
+        let participant = await this.participantService.findParticipantByCampaignId(globalCampaign.id, user.id);
         if (!participant) {
             await this.tatumClientService.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet: user.wallet! });
             participant = await this.participantService.createNewParticipant(user.id, globalCampaign, user.email);

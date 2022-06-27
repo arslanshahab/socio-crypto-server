@@ -612,11 +612,6 @@ export class UpdateNotificationSettingsParams {
     @Property() public readonly campaignUpdates: boolean;
 }
 
-export class UpdateNotificationSettingsResultModel {
-    @Property() public readonly user: Prisma.User;
-    @Property() public readonly notificationSettings: NotificationSettingsResultModel;
-}
-
 export class ReturnSuccessResultModel {
     @Property() public readonly success: boolean;
     @Property() public readonly message: string;
@@ -711,4 +706,9 @@ export class ParticipantResultModelV2 {
 
         return { ...participant, currentlyParticipating };
     }
+}
+
+export class UpdateNotificationSettingsResultModel {
+    @Property(UserResultModelV2) public readonly user: UserResultModelV2;
+    @Property(NotificationSettingsResultModel) public readonly notificationSettings: NotificationSettingsResultModel;
 }
