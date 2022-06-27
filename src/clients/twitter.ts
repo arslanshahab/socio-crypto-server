@@ -276,7 +276,7 @@ export class TwitterClient {
             apiSecret: decrypt(socialLink.apiSecret || "") || "",
         });
         const twitterResponse = await client.get("/statuses/show", { id });
-        await getRedis().set(cacheKey, JSON.stringify(twitterResponse), "EX", 900); // cache for 15 minutes
+        await getRedis().set(cacheKey, JSON.stringify(twitterResponse), "EX", 3600); // cache for 15 minutes
         return JSON.stringify(twitterResponse);
     };
 }

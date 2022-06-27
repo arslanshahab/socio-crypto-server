@@ -19,7 +19,7 @@ import { SocialPostService } from "../../services/SocialPostService";
 import { calculateParticipantSocialScoreV2, getSocialClient } from "../helpers";
 import { BooleanResultModel, SocialMetricsResultModel, SocialPostResultModel } from "../../models/RestModels";
 import { Prisma } from "@prisma/client";
-import { MediaType, PointValueTypes, SocialPostParamTypes, SocialType } from "../../types";
+import { MediaType, PointValueTypes, SocialType } from "../../types";
 import { SocialLinkService } from "../../services/SocialLinkService";
 import { CampaignService } from "../../services/CampaignService";
 import { CampaignMediaService } from "../../services/CampaignMediaService";
@@ -59,6 +59,14 @@ class PostToSocialParams {
     @Property() public readonly media: string;
     @Property() public readonly mediaId: string;
     @Property() public readonly defaultMedia: boolean;
+}
+
+class PostContentGloballyParams {
+    @Required() public readonly socialType: SocialType;
+    @Required() public readonly text: string;
+    @Property() public readonly mediaType: MediaType;
+    @Property() public readonly mediaFormat: string;
+    @Property() public readonly media: string;
 }
 
 const allowedSocialLinks = ["twitter", "facebook", "tiktok"];
@@ -197,10 +205,10 @@ export class SocialController {
 
     @Post("/post-content-globally")
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
-    public async postContentGlobally(@BodyParams() query: SocialPostParamTypes, @Context() context: Context) {
+    public async postContentGlobally(@BodyParams() body: PostContentGloballyParams, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"), ["wallet"]);
         if (!user) throw new NotFound(USER_NOT_FOUND);
-        let { socialType } = query;
+        let { socialType } = body;
         if (!allowedSocialLinks.includes(socialType)) throw new BadRequest(`posting to ${socialType} is not allowed`);
         const globalCampaign = await this.campaignService.findGlobalCampaign(true, COIIN);
         if (!globalCampaign) throw new NotFound(GLOBAL_CAMPAIGN_NOT_FOUND);
@@ -211,7 +219,7 @@ export class SocialController {
         }
         await this.postToSocial(
             {
-                ...query,
+                ...body,
                 defaultMedia: false,
                 mediaId: "none",
                 participantId: participant.id,

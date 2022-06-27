@@ -135,7 +135,7 @@ export class ParticipantService {
                 participationScore: "0",
                 userId,
                 campaignId: campaign.id,
-                email: email ? encrypt(email) : "",
+                email: email && encrypt(email),
             },
         });
         const url = `${serverBaseUrl}/v1/referral/${participant.id}`;

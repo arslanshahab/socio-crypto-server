@@ -597,16 +597,6 @@ export interface LedgerAccountTypes {
     newLedgerAccount?: LedgerAccount;
 }
 
-export interface SocialPostParamTypes {
-    socialType: "twitter" | "facebook" | "tiktok";
-    text: string;
-    mediaType: "video" | "photo" | "gif";
-    mediaFormat: string;
-    media: string;
-    participantId: string;
-    defaultMedia: boolean;
-    mediaId: string;
-}
 export interface CustodialAddressPayload {
     chain: string;
     fromPrivateKey: string;
