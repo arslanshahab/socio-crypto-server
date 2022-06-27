@@ -214,8 +214,8 @@ export enum VerificationType {
 }
 
 export enum KycLevel {
-    LEVEL1 = 1,
-    LEVEL2 = 2,
+    LEVEL1 = "LEVEL1",
+    LEVEL2 = "LEVEL2",
 }
 
 export enum KycStatus {
