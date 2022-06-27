@@ -1,6 +1,6 @@
-import { Get, Post, Property, Required, Returns } from "@tsed/schema";
+import { Delete, Get, Post, Property, Required, Returns } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
-import { BodyParams, Context, QueryParams } from "@tsed/common";
+import { BodyParams, Context, PathParams, QueryParams } from "@tsed/common";
 import { UserService } from "../../services/UserService";
 import { SuccessResult } from "../../util/entities";
 import { BadRequest, NotFound } from "@tsed/exceptions";
@@ -33,7 +33,7 @@ class RegisterSocialLinkResultModel {
     @Property() public readonly registerSocialLink: boolean;
 }
 
-class SocialLinkType {
+class RemoveSocialLinkParams {
     @Required() public readonly type: SocialType;
 }
 class SocialPostTimeResultModel {
@@ -170,16 +170,15 @@ export class SocialController {
         return new SuccessResult(result, SocialPostResultModel);
     }
 
-    @Post("/remove-social-link")
+    @Delete("/:type")
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
-    public async removeSocialLink(@QueryParams() query: SocialLinkType, @Context() context: Context) {
+    public async removeSocialLink(@PathParams() path: RemoveSocialLinkParams, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"), ["social_link"]);
         if (!user) throw new NotFound(USER_NOT_FOUND);
-        const { type } = query;
+        const { type } = path;
         if (!allowedSocialLinks.includes(type)) throw new BadRequest("Invalid or missing params");
         await this.socialLinkService.removeSocialLink(user.id, type);
-        const result = { success: true };
-        return new SuccessResult(result, BooleanResultModel);
+        return new SuccessResult({ success: true }, BooleanResultModel);
     }
 
     @Get("/user-social-post-time")
