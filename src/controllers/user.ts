@@ -484,6 +484,7 @@ export const getWeeklyRewardEstimation = async (parent: any, args: any, context:
             loginRedemptionDate: loginReward?.createdAt?.toString() || "",
             earnedToday: coiinEarnedToday || 0,
             sharingReward: SHARING_REWARD_AMOUNT,
+            sharingRewardType: COIIN,
         };
     } catch (e) {
         throw new FormattedError(e);
