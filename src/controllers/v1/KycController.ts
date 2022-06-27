@@ -2,11 +2,11 @@ import { BodyParams, Context, PathParams, QueryParams } from "@tsed/common";
 import { Controller, Inject } from "@tsed/di";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { Get, Post, Property, Put, Required, Returns } from "@tsed/schema";
-import { KycLevel, RAIINMAKER_ORG_NAME } from "../../util/constants";
+import { KycLevel, KycLevelMap, KycStatus, RAIINMAKER_ORG_NAME } from "../../util/constants";
 import { KycService } from "../../services/KycService";
 import { UserService } from "../../services/UserService";
 import { SuccessResult } from "../../util/entities";
-import { KYC_NOT_FOUND, USER_NOT_FOUND } from "../../util/errors";
+import { KYC_LEVEL_1_NOT_APPROVED, KYC_NOT_FOUND, USER_NOT_FOUND } from "../../util/errors";
 import { getApplicationStatus, getKycStatusDetails } from "../../util";
 import { Validator } from "../../schemas";
 import { AcuantClient } from "../../clients/acuant";
@@ -35,7 +35,7 @@ class KycStatusParms {
 }
 
 class VerifyKycLevelPathParams {
-    @Required() public readonly level: number;
+    @Required() public readonly step: 1 | 2;
 }
 
 class VerifyKycParams {
@@ -116,7 +116,7 @@ export class KycController {
         );
         let verificationApplication;
         let factors;
-        if (!currentKycApplication || currentKycApplication.kyc.status === "REJECTED") {
+        if (!currentKycApplication || currentKycApplication.kyc.status === KycStatus.REJECTED) {
             validator.validateKycRegistration(query);
             const newAcuantApplication = await AcuantClient.submitApplication(query);
             const status = getApplicationStatus(newAcuantApplication);
@@ -150,16 +150,21 @@ export class KycController {
     ) {
         const user = await this.userService.findUserByContext(context.get("user"), ["profile"]);
         if (!user) throw new BadRequest(USER_NOT_FOUND);
-        // if(pathParams.level === KycLevel.LEVEL2 && )
-        const currentKycApplication = await this.verificationApplicationService.findKycApplication(
-            user,
-            pathParams.level
-        );
+        const level = KycLevelMap[pathParams.step];
+        if (level === KycLevel.LEVEL2) {
+            if (!this.verificationApplicationService.isLevel1Approved(user.id))
+                throw new BadRequest(KYC_LEVEL_1_NOT_APPROVED);
+            query = {
+                ...(await this.verificationApplicationService.getProfileData(user.id, KycLevel.LEVEL1)),
+                ...query,
+            };
+        }
+        const currentKycApplication = await this.verificationApplicationService.findKycApplication(user, level);
         let verificationApplication;
         let factors;
-        if (!currentKycApplication || currentKycApplication.kyc.status === "REJECTED") {
+        if (!currentKycApplication || currentKycApplication.kyc.status === KycStatus.REJECTED) {
             validator.validateKycRegistration(query);
-            const newAcuantApplication = await AcuantClient.submitApplication(query);
+            const newAcuantApplication = await AcuantClient.submitApplicationV2(query, level);
             const status = getApplicationStatus(newAcuantApplication);
             verificationApplication = await this.verificationApplicationService.upsert({
                 appId: newAcuantApplication.mtid,
@@ -168,7 +173,6 @@ export class KycController {
                 reason: getKycStatusDetails(newAcuantApplication),
                 record: currentKycApplication?.kyc,
             });
-
             Firebase.sendKycVerificationUpdate(user?.profile?.deviceToken || "", status);
         } else {
             verificationApplication = currentKycApplication.kyc;

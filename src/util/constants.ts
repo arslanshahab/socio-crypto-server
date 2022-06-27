@@ -218,6 +218,11 @@ export enum KycLevel {
     LEVEL2 = "LEVEL2",
 }
 
+export const KycLevelMap: { [key: number]: KycLevel } = {
+    0: KycLevel.LEVEL1,
+    1: KycLevel.LEVEL2,
+};
+
 export enum KycStatus {
     APPROVED = "APPROVED",
     PENDING = "PENDING",

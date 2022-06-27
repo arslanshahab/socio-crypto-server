@@ -25,6 +25,9 @@ export class VerificationApplication extends BaseEntity {
     @Column({ type: "enum", enum: KycLevel, default: KycLevel.LEVEL1 })
     public level: KycLevel;
 
+    @Column({ nullable: true })
+    public profile: string;
+
     @Column()
     public status: KycStatus;
 

@@ -534,14 +534,16 @@ model Verification {
 }
 
 model VerificationApplication {
-  applicationId String   @db.VarChar
-  status        String   @db.VarChar
-  userId        String?  @unique(map: "UQ_79e9b3d653b00690eae5f235dad") @db.Uuid
-  createdAt     DateTime @default(now()) @db.Timestamp(6)
-  updatedAt     DateTime @default(now()) @updatedAt @db.Timestamp(6)
-  reason        String?  @db.VarChar
-  id            String   @id(map: "PK_9a21866200edef5f625c56bcdf9") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user          User?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_79e9b3d653b00690eae5f235dad")
+  applicationId String                              @db.VarChar
+  status        String                              @db.VarChar
+  userId        String?                             @unique(map: "UQ_79e9b3d653b00690eae5f235dad") @db.Uuid
+  createdAt     DateTime                            @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime                            @default(now()) @updatedAt @db.Timestamp(6)
+  reason        String?                             @db.VarChar
+  id            String                              @id(map: "PK_9a21866200edef5f625c56bcdf9") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  level         verification_application_level_enum @default(LEVEL1)
+  profile       String?                             @db.VarChar
+  user          User?                               @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_79e9b3d653b00690eae5f235dad")
 
   @@map("verification_application")
 }
@@ -615,4 +617,9 @@ model MarketData {
   updatedAt DateTime @default(now()) @db.Timestamp(6)
 
   @@map("market_data")
+}
+
+enum verification_application_level_enum {
+  LEVEL1
+  LEVEL2
 }
