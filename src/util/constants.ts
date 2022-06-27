@@ -1,4 +1,5 @@
 export const FEE_RATE = process.env.FEE_RATE ? parseFloat(process.env.FEE_RATE) : 0.1;
+export const INFLUENCE = "INFLUENCE";
 export const COIIN = "COIIN";
 export const MATIC = "MATIC";
 export const BSC = "BSC";
