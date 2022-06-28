@@ -87,6 +87,8 @@ export const TWITTER_LINK_EXPIRED = "TWITTER_LINK_EXPIRED";
 export const ACCOUNT_RESTRICTED = "ACCOUNT_RESTRICTED";
 export const SERVICE_NOT_AVAILABLE = "SERVICE_NOT_AVAILABLE";
 export const TOKEN_NOT_FOUND = "TOKEN_NOT_FOUND";
+export const KYC_LEVEL_1_NOT_APPROVED = "KYC_LEVEL_1_NOT_APPROVED";
+export const KYC_LEVEL_2_NOT_APPROVED = "KYC_LEVEL_2_NOT_APPROVED";
 
 export const errorMap: { [key: string]: string } = {
     SOMETHING_WENT_WRONG: "Something went wrong with your request. please try again!",

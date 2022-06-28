@@ -6,12 +6,12 @@ import {
     PrimaryGeneratedColumn,
     CreateDateColumn,
     UpdateDateColumn,
-    OneToOne,
-    JoinColumn,
+    ManyToOne,
 } from "typeorm";
 import { User } from "./User";
 import { FactorLink } from "./FactorLink";
 import { KycStatus } from "src/types";
+import { KycLevel } from "../util/constants";
 
 @Entity()
 export class VerificationApplication extends BaseEntity {
@@ -21,14 +21,19 @@ export class VerificationApplication extends BaseEntity {
     @Column()
     public applicationId: string;
 
+    @Column({ type: "enum", enum: KycLevel, default: KycLevel.LEVEL1 })
+    public level: KycLevel;
+
+    @Column({ nullable: true })
+    public profile: string;
+
     @Column()
     public status: KycStatus;
 
     @Column({ nullable: true })
     public reason: string;
 
-    @OneToOne((_type) => User, (user) => user.identityVerification)
-    @JoinColumn()
+    @ManyToOne((_type) => User, (user) => user.identityVerification)
     public user: User;
 
     @OneToMany((_type) => FactorLink, (factor) => factor.verification)
