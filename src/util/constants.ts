@@ -9,6 +9,7 @@ export const BADA = "BADA";
 export const BBNB = "BBNB";
 export const DOGE = "DOGE";
 export const BTC = "BTC";
+export const USD = "USD";
 export const BCH_DEFAULT_WITHDRAW_FEE = 0.001;
 export const BNB_DEFAULT_WITHDRAW_FEE = 0.0005;
 export const XRP_DEFAULT_WITHDRAW_FEE = 0.1;
@@ -212,7 +213,28 @@ export enum VerificationType {
     WITHDRAW = "WITHDRAW",
 }
 
-export const USD = "USD";
+export enum KycLevel {
+    LEVEL1 = "LEVEL1",
+    LEVEL2 = "LEVEL2",
+}
+
+export const KycLevelMap: { [key: number]: KycLevel } = {
+    0: KycLevel.LEVEL1,
+    1: KycLevel.LEVEL2,
+};
+
+export enum KycStatus {
+    APPROVED = "APPROVED",
+    PENDING = "PENDING",
+    REJECTED = "REJECTED",
+}
+
+export enum SocialLinkType {
+    FACEBOOK = "facebook",
+    TWITTER = "twitter",
+    TIKTOK = "tiktok",
+    INSTAGRAM = "instagram",
+}
 
 export enum SharingRewardType {
     COIIN = "COIIN",

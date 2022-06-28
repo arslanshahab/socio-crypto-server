@@ -153,7 +153,7 @@ export const hourlyMetrics = {
     },
 };
 
-export const kycUser = {
+export const kycUserLevel1 = {
     type: "object",
     properties: {
         firstName: { type: "string" },
@@ -164,16 +164,10 @@ export const kycUser = {
         billingStreetAddress: { type: "string" },
         billingCity: { type: "string" },
         billingCountry: { type: "string" },
-        billingZip: { type: "number" },
         zipCode: { type: "string" },
         gender: { type: "string" },
         dob: { type: "string" },
         phoneNumber: { type: "string" },
-        documentType: { type: "string" },
-        documentCountry: { type: "string" },
-        frontDocumentImage: { type: "string" },
-        faceImage: { type: "string" },
-        backDocumentImage: { type: "string" },
     },
     required: [
         "firstName",
@@ -184,12 +178,23 @@ export const kycUser = {
         "gender",
         "dob",
         "phoneNumber",
-        "documentType",
-        "documentCountry",
-        "frontDocumentImage",
-        "backDocumentImage",
-        "faceImage",
+        "ip",
+        "zipCode",
+        "email",
     ],
+};
+
+export const kycUserLevel2 = {
+    type: "object",
+    properties: {
+        phoneNumber: { type: "string" },
+        documentType: { type: "string" },
+        documentCountry: { type: "string" },
+        frontDocumentImage: { type: "string" },
+        faceImage: { type: "string" },
+        backDocumentImage: { type: "string" },
+    },
+    required: ["documentType", "documentCountry", "frontDocumentImage", "backDocumentImage", "faceImage"],
 };
 
 const rafflePrizeSchema = {
@@ -207,6 +212,8 @@ export class Validator {
     private validateAlgorithmCreatePayload: ValidateFunction;
     private validateCampaignRequirementsPayload: ValidateFunction;
     private validateKycUser: ValidateFunction;
+    private validateKycUserLevel1: ValidateFunction;
+    private validateKycUserLevel2: ValidateFunction;
     private validateHourlyMetrics: ValidateFunction;
     private validateRafflePrizePayload: ValidateFunction;
 
@@ -214,7 +221,9 @@ export class Validator {
         this.ajv = new Ajv();
         this.validateAlgorithmCreatePayload = this.ajv.compile(algorithmCreateSchema);
         this.validateCampaignRequirementsPayload = this.ajv.compile(campaignRequirementsSchema);
-        this.validateKycUser = this.ajv.compile(kycUser);
+        this.validateKycUser = this.ajv.compile(kycUserLevel2);
+        this.validateKycUserLevel1 = this.ajv.compile(kycUserLevel1);
+        this.validateKycUserLevel2 = this.ajv.compile(kycUserLevel2);
         this.validateHourlyMetrics = this.ajv.compile(hourlyMetrics);
         this.validateRafflePrizePayload = this.ajv.compile(rafflePrizeSchema);
     }
@@ -242,11 +251,25 @@ export class Validator {
             );
         }
     };
+
     public validateKycRegistration = (payload: object) => {
         if (!this.validateKycUser(payload)) {
             throw new Error(`Invalid kyc registration ${JSON.stringify(this.validateKycUser.errors)}`);
         }
     };
+
+    public validateKycLevel1 = (payload: object) => {
+        if (!this.validateKycUserLevel1(payload)) {
+            throw new Error(`Invalid kyc registration ${JSON.stringify(this.validateKycUserLevel1.errors)}`);
+        }
+    };
+
+    public validateKycLevel2 = (payload: object) => {
+        if (!this.validateKycUserLevel2(payload)) {
+            throw new Error(`Invalid kyc registration ${JSON.stringify(this.validateKycUserLevel2.errors)}`);
+        }
+    };
+
     public validateHourlyMetricsArgs = (payload: object) => {
         if (!this.validateHourlyMetrics(payload)) {
             throw new Error(`Invalid metrics request ${JSON.stringify(this.validateHourlyMetrics.errors)}`);

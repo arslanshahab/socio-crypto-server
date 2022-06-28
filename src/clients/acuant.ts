@@ -1,6 +1,7 @@
 import { Secrets } from "../util/secrets";
 import { RequestData, doFetch } from "../util/fetchRequest";
 import { KycApplication } from "../types.d";
+import { KycLevel } from "../util/constants";
 
 const acuantUrls: { [key: string]: string } = {
     // development: "https://sandbox.identitymind.com",
@@ -83,6 +84,62 @@ export class AcuantClient {
             bgd: vars.gender,
             dob: vars.dob,
             pm: vars.phoneNumber,
+            docType: vars.documentType,
+            docCountry: vars.documentCountry,
+            scanData: vars.frontDocumentImage,
+            faceImages: [vars.faceImage],
+        };
+        if (vars.documentType && ["DL"].includes(vars.documentType)) body.backsideImageData = vars.backDocumentImage;
+        validateImageSizeInMB("frontDocumentImage", body.scanData);
+        validateImageSizeInMB("selfie", body.faceImages[0]);
+        if (body.backsideImageData) validateImageSizeInMB("backDocumentImage", body.backsideImageData);
+        return await this.makeRequest("im/account/consumer", "POST", body);
+    }
+
+    public static async submitApplicationV2(vars: KycApplication, level: KycLevel): Promise<AcuantApplication> {
+        if (level === KycLevel.LEVEL1) {
+            return await AcuantClient.submitLevel1(vars);
+        } else {
+            return await AcuantClient.submitLevel2(vars);
+        }
+    }
+
+    public static async submitLevel1(vars: KycApplication): Promise<AcuantApplication> {
+        const body: { [key: string]: any } = {
+            man: `${vars.firstName}-${vars.middleName}-${vars.lastName}`,
+            tea: vars.email,
+            ip: vars.ip,
+            bfn: vars.firstName,
+            bmn: vars.middleName,
+            bln: vars.lastName,
+            bsn: vars.billingStreetAddress,
+            bco: vars.billingCountry,
+            bz: vars.zipCode,
+            bc: vars.billingCity,
+            bgd: vars.gender,
+            dob: vars.dob,
+            pm: vars.phoneNumber,
+            profile: "DEFAULT",
+        };
+        return await this.makeRequest("im/account/consumer", "POST", body);
+    }
+
+    public static async submitLevel2(vars: KycApplication): Promise<AcuantApplication> {
+        const body: { [key: string]: any } = {
+            man: `${vars.firstName}-${vars.middleName}-${vars.lastName}`,
+            tea: vars.email,
+            ip: vars.ip,
+            bfn: vars.firstName,
+            bmn: vars.middleName,
+            bln: vars.lastName,
+            bsn: vars.billingStreetAddress,
+            bco: vars.billingCountry,
+            bz: vars.zipCode,
+            bc: vars.billingCity,
+            bgd: vars.gender,
+            dob: vars.dob,
+            pm: vars.phoneNumber,
+            profile: "LEVEL2",
             docType: vars.documentType,
             docCountry: vars.documentCountry,
             scanData: vars.frontDocumentImage,

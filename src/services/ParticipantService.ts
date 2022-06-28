@@ -135,7 +135,7 @@ export class ParticipantService {
                 participationScore: "0",
                 userId,
                 campaignId: campaign.id,
-                email: email ? encrypt(email) : "",
+                email: email && encrypt(email),
             },
         });
         const url = `${serverBaseUrl}/v1/referral/${participant.id}`;
@@ -156,14 +156,6 @@ export class ParticipantService {
         return participant;
     }
 
-    public async findParticipantByUserAndCampaignIds(userId: string, campaignId: string) {
-        return this.prismaService.participant.findFirst({
-            where: {
-                AND: [{ userId }, { campaignId }],
-            },
-        });
-    }
-
     public async removeParticipant(participant: Participant) {
         return await this.prismaService.participant.delete({
             where: {
@@ -179,14 +171,6 @@ export class ParticipantService {
     public async findParticipantsCount(campaignId?: string) {
         return this.prismaService.participant.count({
             where: campaignId ? { campaignId } : {},
-        });
-    }
-
-    public async findParticipantByUserAndCampaignId(userId: string, campaignId: string) {
-        return this.prismaService.participant.findFirst({
-            where: {
-                AND: [{ userId }, { campaignId }],
-            },
         });
     }
 }
