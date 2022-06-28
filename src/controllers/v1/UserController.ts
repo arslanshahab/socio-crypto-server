@@ -47,7 +47,7 @@ import {
     UserTransactionResultModel,
     WeeklyRewardsResultModel,
     UserResultModelV2,
-    ParticipateToCampaign,
+    ParticipateToCampaignModel,
 } from "../../models/RestModels";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 import {
@@ -360,7 +360,7 @@ export class UserController {
     }
 
     @Post("/participate")
-    @(Returns(200, SuccessResult).Of(ParticipateToCampaign))
+    @(Returns(200, SuccessResult).Of(ParticipateToCampaignModel))
     public async participate(@BodyParams() body: UserParticipateParams, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"), ["wallet", "profile"]);
         if (!user) throw new NotFound(USER_NOT_FOUND);
@@ -380,12 +380,12 @@ export class UserController {
         if (!campaign.isGlobal)
             await this.userService.transferCoiinReward({ user, type: "PARTICIPATION_REWARD", campaign });
         return new SuccessResult(
-            ParticipateToCampaign.build({
+            ParticipateToCampaignModel.build({
                 ...participant,
                 campaign: campaign,
                 user: user,
             }),
-            ParticipateToCampaign
+            ParticipateToCampaignModel
         );
     }
 

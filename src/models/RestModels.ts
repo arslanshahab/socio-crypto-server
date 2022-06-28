@@ -715,7 +715,7 @@ export class UpdateNotificationSettingsResultModel {
     @Property(NotificationSettingsResultModel) public readonly notificationSettings: NotificationSettingsResultModel;
 }
 
-export class ParticipateToCampaign {
+export class ParticipateToCampaignModel {
     @Property() public readonly id: string;
     @Property() public readonly clickCount: string;
     @Property() public readonly campaignId: string;
@@ -737,7 +737,7 @@ export class ParticipateToCampaign {
             };
             user: Prisma.User & { wallet: Prisma.Wallet | null } & { profile: Prisma.Profile | null };
         }
-    ): ParticipateToCampaign {
+    ): ParticipateToCampaignModel {
         return { ...participant, user: UserResultModel.build(participant.user) };
     }
 }
