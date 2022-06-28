@@ -26,7 +26,7 @@ class KycStatusParms {
 
 class KycLevel1Params {
     @Required() public readonly firstName: string;
-    @Required() public readonly middleName: string;
+    @Nullable(String) public readonly middleName: string;
     @Required() public readonly lastName: string;
     @Required() public readonly email: string;
     @Required() public readonly billingStreetAddress: string;
