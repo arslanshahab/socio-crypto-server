@@ -1,6 +1,7 @@
 import Prisma from "@prisma/client";
 import { ArrayOf, CollectionOf, Nullable, Optional, Property, Required } from "@tsed/schema";
 import { getCryptoAssestImageUrl } from "../util";
+import { SharingRewardType } from "../util/constants";
 
 export class CampaignMediaResultModel {
     @Property() public readonly id: string;
@@ -586,6 +587,7 @@ export class WeeklyRewardsResultModel {
     @Property() public readonly loginRedemptionDate: string;
     @Property() public readonly earnedToday: number;
     @Property() public readonly sharingReward: number;
+    @Property() public readonly sharingRewardType: SharingRewardType;
 }
 export class UpdateProfileInterestsParams {
     @Property() public readonly ageRange: string;

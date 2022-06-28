@@ -400,6 +400,7 @@ export const typeDefs = gql`
         loginRedemptionDate: String!
         earnedToday: Float!
         sharingReward: Int!
+        sharingRewardType: String!
     }
 
     type CampaignCreationResponse {

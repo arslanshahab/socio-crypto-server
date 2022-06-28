@@ -220,3 +220,8 @@ export enum SocialLinkType {
     TIKTOK = "tiktok",
     INSTAGRAM = "instagram",
 }
+
+export enum SharingRewardType {
+    COIIN = "COIIN",
+    INFLUENCE = "INFLUENCE",
+}
