@@ -9,7 +9,7 @@ import { ADMIN_NOT_FOUND, ORG_NOT_FOUND, WALLET_NOT_FOUND } from "../../util/err
 import { WalletService } from "../../services/WalletService";
 import { CurrencyService } from "../../services/CurrencyService";
 import { TatumClientService } from "../../services/TatumClientService";
-import { getCryptoAssestImageUrl } from "../../util";
+import { formatFloat, getCryptoAssestImageUrl } from "../../util";
 import { AllCurrenciesResultModel, TransferResultModel } from "../../models/RestModels";
 import { TransferService } from "../../services/TransferService";
 
@@ -43,7 +43,7 @@ export class FundingWalletController {
             const balance = balances.find((balanceItem) => currencyItem.tatumId === balanceItem.tatumId);
             const symbol = currencyItem?.token?.symbol || "";
             return {
-                balance: balance.availableBalance,
+                balance: formatFloat(balance.availableBalance),
                 type: symbol,
                 symbolImageUrl: getCryptoAssestImageUrl(symbol),
                 network: currencyItem?.token?.network || "",
