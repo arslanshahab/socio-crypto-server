@@ -1,7 +1,7 @@
 import Prisma from "@prisma/client";
 import { ArrayOf, CollectionOf, Nullable, Optional, Property, Required } from "@tsed/schema";
 import { getCryptoAssestImageUrl } from "../util";
-import { SharingRewardType } from "../util/constants";
+import { KycLevel, SharingRewardType } from "../util/constants";
 import { KycStatus } from "src/types";
 
 export class CampaignMediaResultModel {
@@ -245,6 +245,8 @@ export class UserResultModel {
     @Property() public readonly createdAt: Date;
     @Property() public readonly lastLogin: Date | null;
     @Property() public readonly active: boolean;
+    @Nullable(KycLevel) public readonly kycLevel1: KycLevel | null;
+    @Nullable(KycLevel) public readonly kycLevel2: KycLevel | null;
     @Nullable(String) public readonly identityId: string | null;
     @Nullable(String) public readonly kycStatus: string | null;
     @Nullable(ProfileResultModel) public readonly profile: ProfileResultModel | null;
@@ -258,7 +260,8 @@ export class UserResultModel {
             social_link?: Prisma.SocialLink[];
             participant?: (Prisma.Participant & { campaign: Prisma.Campaign })[];
             wallet?: Prisma.Wallet | null;
-        }
+        },
+        kyc?: { level1: KycLevel; level2: KycLevel }
     ): UserResultModel {
         return {
             ...user,
@@ -269,6 +272,8 @@ export class UserResultModel {
                 : [],
             social_link: user.social_link ? user.social_link : [],
             wallet: user.wallet || null,
+            kycLevel1: kyc?.level1 || null,
+            kycLevel2: kyc?.level2 || null,
         };
     }
 }
