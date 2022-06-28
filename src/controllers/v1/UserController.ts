@@ -159,6 +159,11 @@ class UserIdParam {
     @Property() public readonly userId: string;
 }
 
+class UserStatusParams {
+    @Required() public readonly id: string;
+    @Required() public readonly activeStatus: boolean;
+}
+
 @Controller("/user")
 export class UserController {
     @Inject()
@@ -324,8 +329,8 @@ export class UserController {
 
     @Get("/user-balances/:userId")
     @(Returns(200, SuccessResult).Of(UserWalletResultModel))
-    public async getUserBalances(@PathParams() query: { userId: string }, @Context() context: Context) {
-        const user = await this.userService.findUserById(query.userId, {
+    public async getUserBalances(@PathParams() path: UserIdParam, @Context() context: Context) {
+        const user = await this.userService.findUserById(path.userId, {
             wallet: {
                 include: {
                     currency: {
@@ -347,10 +352,7 @@ export class UserController {
 
     @Put("/update-user-status")
     @(Returns(200, SuccessResult).Of(UpdatedResultModel))
-    public async updateUserStatus(
-        @BodyParams() body: { id: string; activeStatus: boolean },
-        @Context() context: Context
-    ) {
+    public async updateUserStatus(@BodyParams() body: UserStatusParams, @Context() context: Context) {
         const { id, activeStatus } = body;
         await this.userService.updateUserStatus(id, activeStatus);
         const result = { message: "User status updated successfully" };
