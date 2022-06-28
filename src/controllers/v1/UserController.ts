@@ -46,7 +46,6 @@ import {
     UserParticipateParams,
     UserTransactionResultModel,
     WeeklyRewardsResultModel,
-    UserResultModelV2,
     ParticipateToCampaignModel,
 } from "../../models/RestModels";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
@@ -647,7 +646,7 @@ export class UserController {
     }
 
     @Put("/set-recovery-code")
-    @(Returns(200, SuccessResult).Of(UserResultModelV2))
+    @(Returns(200, SuccessResult).Of(UserResultModel))
     public async setRecoveryCode(@BodyParams() body: SetRecoveryCodeParams, @Context() context: Context) {
         let user = await this.userService.findUserByContext(context.get("user"), { profile: true });
         if (!user) throw new NotFound(USER_NOT_FOUND);
@@ -655,7 +654,7 @@ export class UserController {
         const { code } = body;
         const profile = await this.profileService.setRecoveryCode(user.profile.id, code);
         user.profile = profile;
-        return new SuccessResult(UserResultModelV2.build(user), UserResultModelV2);
+        return new SuccessResult(UserResultModel.build(user), UserResultModel);
     }
 
     @Put("/update-notification-settings")
@@ -668,7 +667,7 @@ export class UserController {
         if (!user) throw new NotFound(USER_NOT_FOUND);
         const notificationSettings = await this.notificationService.updateNotificationSettings(user.id, body);
         return new SuccessResult(
-            { user: UserResultModelV2.build(user), notificationSettings },
+            { user: UserResultModel.build(user), notificationSettings },
             UpdateNotificationSettingsResultModel
         );
     }

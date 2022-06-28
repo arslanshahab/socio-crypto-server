@@ -619,24 +619,6 @@ export class ReturnSuccessResultModel {
     @Property() public readonly message: string;
 }
 
-export class UserResultModelV2 {
-    @Property() public readonly id: string;
-    @Property() public readonly email: string;
-    @Property() public readonly createdAt: Date;
-    @Property() public readonly lastLogin: Date | null;
-    @Property() public readonly active: boolean;
-    @Nullable(String) public readonly identityId: string | null;
-    @Nullable(String) public readonly kycStatus: string | null;
-    @Nullable(ProfileResultModel) public readonly profile: ProfileResultModel | null;
-
-    public static build(user: Prisma.User & { profile?: Prisma.Profile | null }): UserResultModelV2 {
-        return {
-            ...user,
-            profile: user.profile ? ProfileResultModel.build(user.profile) : null,
-        };
-    }
-}
-
 export class CryptoCurrencyResultModel {
     @Property() public readonly id: string;
     @Property() public readonly type: string;
@@ -693,7 +675,7 @@ export class ParticipantResultModelV2 {
 
     @Property() public readonly currentlyParticipating: boolean;
     @Property(CampaignResultModel) public readonly campaign: CampaignResultModel;
-    @Property(UserResultModelV2) public readonly user: UserResultModelV2;
+    @Property(UserResultModel) public readonly user: UserResultModel;
 
     public static build(
         participant: Prisma.Participant & {
@@ -711,7 +693,7 @@ export class ParticipantResultModelV2 {
 }
 
 export class UpdateNotificationSettingsResultModel {
-    @Property(UserResultModelV2) public readonly user: UserResultModelV2;
+    @Property(UserResultModel) public readonly user: UserResultModel;
     @Property(NotificationSettingsResultModel) public readonly notificationSettings: NotificationSettingsResultModel;
 }
 
