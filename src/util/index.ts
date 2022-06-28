@@ -60,16 +60,6 @@ export const formatFloat = (val?: string | number | null): string => {
     return val === 0 ? "0" : val >= 1 ? val.toFixed(2) : val.toFixed(8);
 };
 
-export const formatFloatV2 = (val?: string | number | null): string => {
-    if (!val) {
-        return "0";
-    }
-    if (typeof val === "string") {
-        val = parseFloat(val);
-    }
-    return val <= 0 ? val.toFixed(2) : val.toFixed(8);
-};
-
 export const getBase64FileExtension = (fileString: string) => {
     if (fileString === "") throw new Error("invalid fileString uploaded");
     return fileString.split(":")[1].split(";")[0];
