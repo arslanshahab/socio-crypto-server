@@ -58,7 +58,17 @@ export const formatFloat = (val?: string | number | null): string => {
     if (typeof val === "string") {
         val = parseFloat(val);
     }
-    return val >= 1 ? val.toFixed(2) : val.toFixed(8);
+    return val === 0 ? "0" : val >= 1 ? val.toFixed(2) : val.toFixed(8);
+};
+
+export const formatFloatV2 = (val?: string | number | null): string => {
+    if (!val) {
+        return "0";
+    }
+    if (typeof val === "string") {
+        val = parseFloat(val);
+    }
+    return val <= 0 ? val.toFixed(2) : val.toFixed(8);
 };
 
 export const getBase64FileExtension = (fileString: string) => {
