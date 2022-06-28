@@ -1,11 +1,15 @@
 import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
-import { User, VerificationApplication } from "@prisma/client";
+import { Profile, User, VerificationApplication } from "@prisma/client";
 import { KycApplication, KycStatus } from "../types";
 import { S3Client } from "../clients/s3";
 import { generateFactorsFromKYC, getApplicationStatus, getKycStatusDetails } from "../util/index";
 import { AcuantClient } from "../clients/acuant";
 import { KycLevel, KycStatus as KycStatusEnum } from "../util/constants";
+import { Firebase } from "../clients/firebase";
+import { Validator } from "../schemas";
+
+const validator = new Validator();
 
 @Injectable()
 export class VerificationApplicationService {
@@ -22,41 +26,46 @@ export class VerificationApplicationService {
     }
 
     public async upsert(data: {
+        level: KycLevel;
         record?: VerificationApplication;
         appId: string;
         status: KycStatus;
-        user: User;
+        userId: string;
         reason: string;
+        profile?: string;
     }) {
         return await this.prismaService.verificationApplication.upsert({
-            where: { id: data.record?.id },
+            where: { id: data.record?.id || data.userId },
             update: {
                 applicationId: data.appId,
                 status: data.status,
-                userId: data.user.id,
+                userId: data.userId,
                 reason: data.reason,
-                updatedAt: new Date(),
             },
             create: {
                 applicationId: data.appId,
                 status: data.status,
-                userId: data.user.id,
+                userId: data.userId,
                 reason: data.reason,
+                level: data.level,
+                profile: data.profile,
             },
         });
     }
 
-    public async findKycApplication(user: User, level: KycLevel) {
+    public async findKycApplication(userId: string, level: KycLevel) {
         const recordedApplication = await this.prismaService.verificationApplication.findFirst({
-            where: { userId: user.id },
+            where: { userId: userId, level },
         });
         if (!recordedApplication) return null;
         let kycApplication;
         if (recordedApplication.status === KycStatusEnum.APPROVED) {
-            kycApplication = await S3Client.getAcuantKyc(user.id);
+            try {
+                kycApplication = await S3Client.getAcuantKyc(userId);
+            } catch (error) {}
             return {
                 kyc: recordedApplication,
-                factors: generateFactorsFromKYC(kycApplication),
+                factors: kycApplication ? generateFactorsFromKYC(kycApplication) : null,
             };
         }
         if (recordedApplication.status === KycStatusEnum.PENDING) {
@@ -65,7 +74,7 @@ export class VerificationApplicationService {
             const reason = getKycStatusDetails(kycApplication);
             let factors;
             if (status === KycStatusEnum.APPROVED) {
-                await S3Client.uploadAcuantKyc(user.id, kycApplication);
+                await S3Client.uploadAcuantKyc(userId, kycApplication);
                 factors = generateFactorsFromKYC(kycApplication);
             }
             await this.updateStatus(status, recordedApplication);
@@ -108,9 +117,45 @@ export class VerificationApplicationService {
 
     public async isLevel2Approved(userId: string) {
         return (
-            (await this.isLevel1Approved(userId)) &&
             (await this.prismaService.verificationApplication.findFirst({ where: { userId, level: KycLevel.LEVEL2 } }))
                 ?.status === KycStatusEnum.APPROVED
         );
+    }
+
+    public async registerKyc(data: {
+        user: User & { profile?: Profile | null };
+        level: KycLevel;
+        query: KycApplication;
+    }) {
+        const { user, level, query } = data;
+        const currentKycApplication = await this.findKycApplication(user?.id, level);
+        let verificationApplication;
+        let factors;
+        if (!currentKycApplication || currentKycApplication.kyc.status === KycStatusEnum.REJECTED) {
+            if (level === KycLevel.LEVEL1) {
+                validator.validateKycLevel1(query);
+            } else {
+                validator.validateKycLevel2(query);
+            }
+            const newAcuantApplication = await AcuantClient.submitApplicationV2(query, level);
+            const status = getApplicationStatus(newAcuantApplication);
+            verificationApplication = await this.upsert({
+                level,
+                appId: newAcuantApplication.mtid,
+                status,
+                userId: user.id,
+                reason: getKycStatusDetails(newAcuantApplication),
+                record: currentKycApplication?.kyc,
+            });
+            Firebase.sendKycVerificationUpdate(user?.profile?.deviceToken || "", status);
+        } else {
+            verificationApplication = currentKycApplication.kyc;
+            factors = currentKycApplication.factors;
+        }
+        return {
+            kycId: verificationApplication?.applicationId,
+            status: verificationApplication?.status,
+            factors,
+        };
     }
 }

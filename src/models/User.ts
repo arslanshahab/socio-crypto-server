@@ -92,8 +92,8 @@ export class User extends BaseEntity {
     @OneToMany((_type) => SocialLink, (link) => link.user)
     public socialLinks: SocialLink[];
 
-    @OneToOne((_type) => VerificationApplication, (verification) => verification.user)
-    public identityVerification: VerificationApplication;
+    @OneToMany((_type) => VerificationApplication, (verification) => verification.user)
+    public identityVerification: VerificationApplication[];
 
     @OneToMany((_type) => FactorLink, (link) => link.user)
     public factorLinks: FactorLink[];
@@ -160,8 +160,8 @@ export class User extends BaseEntity {
                 email: returnedUser.email,
                 hasRecoveryCodeSet: Boolean(this.profile.recoveryCode),
                 username: this.profile.username || "",
-                kycStatus: this?.identityVerification?.status || "",
-                kycStatusDetails: this?.identityVerification?.reason || "",
+                kycStatus: this?.identityVerification[0]?.status || "",
+                kycStatusDetails: this?.identityVerification[0]?.reason || "",
             };
         }
         try {
@@ -197,8 +197,8 @@ export class User extends BaseEntity {
         }
         returnedUser = {
             ...returnedUser,
-            kycStatus: this?.identityVerification?.status || "",
-            kycStatusDetails: this?.identityVerification?.reason || "",
+            kycStatus: this?.identityVerification[0]?.status || "",
+            kycStatusDetails: this?.identityVerification[0]?.reason || "",
         };
         try {
             if (this.posts && this.posts.length > 0) {

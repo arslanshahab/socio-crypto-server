@@ -6,8 +6,7 @@ import {
     PrimaryGeneratedColumn,
     CreateDateColumn,
     UpdateDateColumn,
-    OneToOne,
-    JoinColumn,
+    ManyToOne,
 } from "typeorm";
 import { User } from "./User";
 import { FactorLink } from "./FactorLink";
@@ -34,8 +33,7 @@ export class VerificationApplication extends BaseEntity {
     @Column({ nullable: true })
     public reason: string;
 
-    @OneToOne((_type) => User, (user) => user.identityVerification)
-    @JoinColumn()
+    @ManyToOne((_type) => User, (user) => user.identityVerification)
     public user: User;
 
     @OneToMany((_type) => FactorLink, (factor) => factor.verification)

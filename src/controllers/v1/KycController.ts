@@ -1,8 +1,8 @@
 import { BodyParams, Context, PathParams, QueryParams } from "@tsed/common";
 import { Controller, Inject } from "@tsed/di";
 import { BadRequest, NotFound } from "@tsed/exceptions";
-import { Get, Post, Property, Put, Required, Returns } from "@tsed/schema";
-import { KycLevel, KycLevelMap, KycStatus, RAIINMAKER_ORG_NAME } from "../../util/constants";
+import { Get, Nullable, Post, Property, Put, Required, Returns } from "@tsed/schema";
+import { KycLevel, KycStatus, RAIINMAKER_ORG_NAME } from "../../util/constants";
 import { KycService } from "../../services/KycService";
 import { UserService } from "../../services/UserService";
 import { SuccessResult } from "../../util/entities";
@@ -34,10 +34,6 @@ class KycStatusParms {
     @Required() public readonly status: string;
 }
 
-class VerifyKycLevelPathParams {
-    @Required() public readonly step: 1 | 2;
-}
-
 class VerifyKycParams {
     @Required() public readonly firstName: string;
     @Required() public readonly middleName: string;
@@ -46,11 +42,45 @@ class VerifyKycParams {
     @Required() public readonly billingStreetAddress: string;
     @Required() public readonly billingCity: string;
     @Required() public readonly billingCountry: string;
-    @Required() public readonly billingZip: number;
     @Required() public readonly zipCode: string;
     @Required() public readonly gender: string;
     @Required() public readonly dob: string;
     @Required() public readonly phoneNumber: string;
+    @Required() public readonly documentType: string;
+    @Required() public readonly documentCountry: string;
+    @Required() public readonly frontDocumentImage: string;
+    @Required() public readonly faceImage: string;
+    @Required() public readonly backDocumentImage: string;
+}
+
+class KycLevel1Params {
+    @Required() public readonly firstName: string;
+    @Required() public readonly middleName: string;
+    @Required() public readonly lastName: string;
+    @Required() public readonly email: string;
+    @Required() public readonly billingStreetAddress: string;
+    @Required() public readonly billingCity: string;
+    @Required() public readonly billingCountry: string;
+    @Required() public readonly zipCode: string;
+    @Required() public readonly gender: string;
+    @Required() public readonly dob: string;
+    @Required() public readonly phoneNumber: string;
+    @Nullable(String) public readonly ip: string;
+}
+
+class KycLevel2Params {
+    @Required() public readonly firstName: string;
+    @Required() public readonly middleName: string;
+    @Required() public readonly lastName: string;
+    @Required() public readonly email: string;
+    @Required() public readonly billingStreetAddress: string;
+    @Required() public readonly billingCity: string;
+    @Required() public readonly billingCountry: string;
+    @Required() public readonly zipCode: string;
+    @Required() public readonly gender: string;
+    @Required() public readonly dob: string;
+    @Required() public readonly phoneNumber: string;
+    @Nullable(String) public readonly ip: string;
     @Required() public readonly documentType: string;
     @Required() public readonly documentCountry: string;
     @Required() public readonly frontDocumentImage: string;
@@ -111,7 +141,7 @@ export class KycController {
         const user = await this.userService.findUserByContext(context.get("user"), ["profile"]);
         if (!user) throw new BadRequest(USER_NOT_FOUND);
         const currentKycApplication = await this.verificationApplicationService.findKycApplication(
-            user,
+            user.id,
             KycLevel.LEVEL1
         );
         let verificationApplication;
@@ -121,9 +151,10 @@ export class KycController {
             const newAcuantApplication = await AcuantClient.submitApplication(query);
             const status = getApplicationStatus(newAcuantApplication);
             verificationApplication = await this.verificationApplicationService.upsert({
+                level: KycLevel.LEVEL2,
                 appId: newAcuantApplication.mtid,
                 status,
-                user,
+                userId: user.id,
                 reason: getKycStatusDetails(newAcuantApplication),
                 record: currentKycApplication?.kyc,
             });
@@ -141,48 +172,31 @@ export class KycController {
         return new SuccessResult(result, KycUpdateResultModel);
     }
 
-    @Post("/verify/level/:level")
+    @Post("/verify/level1")
     @(Returns(200, SuccessResult).Of(KycUpdateResultModel))
-    public async verifyKycLevels(
-        @PathParams() pathParams: VerifyKycLevelPathParams,
-        @BodyParams() query: VerifyKycParams,
-        @Context() context: Context
-    ) {
+    public async verifyKycLevel1(@BodyParams() query: KycLevel1Params, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"), ["profile"]);
         if (!user) throw new BadRequest(USER_NOT_FOUND);
-        const level = KycLevelMap[pathParams.step];
-        if (level === KycLevel.LEVEL2) {
-            if (!this.verificationApplicationService.isLevel1Approved(user.id))
-                throw new BadRequest(KYC_LEVEL_1_NOT_APPROVED);
-            query = {
-                ...(await this.verificationApplicationService.getProfileData(user.id, KycLevel.LEVEL1)),
-                ...query,
-            };
-        }
-        const currentKycApplication = await this.verificationApplicationService.findKycApplication(user, level);
-        let verificationApplication;
-        let factors;
-        if (!currentKycApplication || currentKycApplication.kyc.status === KycStatus.REJECTED) {
-            validator.validateKycRegistration(query);
-            const newAcuantApplication = await AcuantClient.submitApplicationV2(query, level);
-            const status = getApplicationStatus(newAcuantApplication);
-            verificationApplication = await this.verificationApplicationService.upsert({
-                appId: newAcuantApplication.mtid,
-                status,
-                user,
-                reason: getKycStatusDetails(newAcuantApplication),
-                record: currentKycApplication?.kyc,
-            });
-            Firebase.sendKycVerificationUpdate(user?.profile?.deviceToken || "", status);
-        } else {
-            verificationApplication = currentKycApplication.kyc;
-            factors = currentKycApplication.factors;
-        }
-        const result = {
-            kycId: verificationApplication?.applicationId,
-            status: verificationApplication?.status,
-            factors,
+        const level = KycLevel.LEVEL1;
+        query = { ...query, ip: context.request.req.socket.remoteAddress || "" };
+        const result = await this.verificationApplicationService.registerKyc({ user, query, level });
+        return new SuccessResult(result, KycUpdateResultModel);
+    }
+
+    @Post("/verify/level2")
+    @(Returns(200, SuccessResult).Of(KycUpdateResultModel))
+    public async verifyKycLevel2(@BodyParams() query: KycLevel2Params, @Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"), { profile: true });
+        if (!user) throw new BadRequest(USER_NOT_FOUND);
+        if (!this.verificationApplicationService.isLevel1Approved(user.id))
+            throw new BadRequest(KYC_LEVEL_1_NOT_APPROVED);
+
+        const level = KycLevel.LEVEL2;
+        query = {
+            ...(await this.verificationApplicationService.getProfileData(user.id, KycLevel.LEVEL1)),
+            ...query,
         };
+        const result = await this.verificationApplicationService.registerKyc({ user, query, level });
         return new SuccessResult(result, KycUpdateResultModel);
     }
 
