@@ -228,3 +228,8 @@ export enum KycStatus {
     PENDING = "PENDING",
     REJECTED = "REJECTED",
 }
+
+export enum SharingRewardType {
+    COIIN = "COIIN",
+    INFLUENCE = "INFLUENCE",
+}

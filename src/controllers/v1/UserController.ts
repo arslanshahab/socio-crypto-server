@@ -60,7 +60,14 @@ import {
 } from "../../models/RestModels";
 import { NotificationService } from "../../services/NotificationService";
 import { TransferService } from "../../services/TransferService";
-import { BSC, COIIN, CoiinTransferAction, SHARING_REWARD_AMOUNT, TransferAction } from "../../util/constants";
+import {
+    BSC,
+    COIIN,
+    CoiinTransferAction,
+    SharingRewardType,
+    SHARING_REWARD_AMOUNT,
+    TransferAction,
+} from "../../util/constants";
 import { SocialService } from "../../services/SocialService";
 import { CampaignService } from "../../services/CampaignService";
 import { ParticipantService } from "../../services/ParticipantService";
@@ -512,6 +519,7 @@ export class UserController {
             loginRedemptionDate: loginReward?.createdAt?.toString() || "",
             earnedToday: coiinEarnedToday || 0,
             sharingReward: SHARING_REWARD_AMOUNT,
+            sharingRewardType: SharingRewardType.COIIN,
         };
         return new SuccessResult(result, WeeklyRewardsResultModel);
     }
