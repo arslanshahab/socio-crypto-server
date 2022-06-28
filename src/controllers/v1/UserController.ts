@@ -559,7 +559,7 @@ export class UserController {
     }
 
     @Post("/reward-user-for-sharing")
-    @(Returns(200, SuccessResult).Of(UpdatedResultModel))
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async rewardUserForSharing(@BodyParams() body: RewardUserForSharingParams, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new NotFound(USER_NOT_FOUND);
