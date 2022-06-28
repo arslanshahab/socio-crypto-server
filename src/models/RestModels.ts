@@ -712,3 +712,30 @@ export class UpdateNotificationSettingsResultModel {
     @Property(UserResultModelV2) public readonly user: UserResultModelV2;
     @Property(NotificationSettingsResultModel) public readonly notificationSettings: NotificationSettingsResultModel;
 }
+
+export class ParticipateToCampaign {
+    @Property() public readonly id: string;
+    @Property() public readonly clickCount: string;
+    @Property() public readonly campaignId: string;
+    @Property() public readonly viewCount: string;
+    @Property() public readonly submissionCount: string;
+    @Property() public readonly participationScore: string;
+    @Nullable(String) public readonly link: string | null;
+    @Property(Date) public readonly createdAt: Date;
+    @Property(Date) public readonly updatedAt: Date;
+    @Property() public readonly userId: string;
+    @Nullable(String) public readonly email: string | null;
+    @Property() public readonly campaign: Prisma.Campaign;
+    @Property(UserResultModel) public readonly user: UserResultModel;
+
+    public static build(
+        participant: Prisma.Participant & {
+            campaign: Prisma.Campaign & { org: Prisma.Org | null } & {
+                currency: (Prisma.Currency & { token: Prisma.Token | null }) | null;
+            };
+            user: Prisma.User & { wallet: Prisma.Wallet | null } & { profile: Prisma.Profile | null };
+        }
+    ): ParticipateToCampaign {
+        return { ...participant, user: UserResultModel.build(participant.user) };
+    }
+}

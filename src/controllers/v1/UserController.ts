@@ -35,7 +35,6 @@ import {
     BooleanResultModel,
     CampaignIdModel,
     DashboardStatsResultModel,
-    ParticipantMetricsResultModel,
     ProfileResultModel,
     RemoveInterestsParams,
     ReturnSuccessResultModel,
@@ -48,6 +47,7 @@ import {
     UserTransactionResultModel,
     WeeklyRewardsResultModel,
     UserResultModelV2,
+    ParticipateToCampaign,
 } from "../../models/RestModels";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 import {
@@ -347,11 +347,11 @@ export class UserController {
     }
 
     @Post("/participate")
-    @(Returns(200, SuccessResult).Of(ParticipantMetricsResultModel))
-    public async participate(@QueryParams() query: UserParticipateParams, @Context() context: Context) {
-        const user = await this.userService.findUserByContext(context.get("user"), ["wallet"]);
+    @(Returns(200, SuccessResult).Of(ParticipateToCampaign))
+    public async participate(@BodyParams() body: UserParticipateParams, @Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"), ["wallet", "profile"]);
         if (!user) throw new NotFound(USER_NOT_FOUND);
-        const { campaignId, email } = query;
+        const { campaignId, email } = body;
         const campaign = await this.campaignService.findCampaignById(campaignId, {
             org: true,
             currency: { include: { token: true } },
@@ -363,18 +363,25 @@ export class UserController {
         if (await this.participantService.findParticipantByCampaignId(campaign.id, user.id))
             throw new BadRequest(ALREADY_PARTICIPATING);
         await this.tatumClientService.findOrCreateCurrency({ ...campaign?.currency?.token!, wallet: user.wallet! });
-        const participant = await this.participantService.createNewParticipant(user.id, campaign, email);
+        let participant = await this.participantService.createNewParticipant(user.id, campaign, email);
         if (!campaign.isGlobal)
             await this.userService.transferCoiinReward({ user, type: "PARTICIPATION_REWARD", campaign });
-        return new SuccessResult(participant, ParticipantMetricsResultModel);
+        return new SuccessResult(
+            ParticipateToCampaign.build({
+                ...participant,
+                campaign: campaign,
+                user: user,
+            }),
+            ParticipateToCampaign
+        );
     }
 
-    @Post("/remove-participation")
+    @Delete("/remove-participation/:campaignId")
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
-    public async removeParticipation(@QueryParams() query: CampaignIdModel, @Context() context: Context) {
+    public async removeParticipation(@PathParams() path: CampaignIdModel, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new NotFound(USER_NOT_FOUND);
-        const { campaignId } = query;
+        const { campaignId } = path;
         const campaign = await this.campaignService.findCampaignById(campaignId, { org: true });
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
         if (!campaign.org) throw new NotFound(ORG_NOT_FOUND);
