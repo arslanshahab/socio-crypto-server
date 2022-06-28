@@ -3,7 +3,6 @@ import { Controller, Inject } from "@tsed/di";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { Get, Nullable, Post, Property, Put, Required, Returns } from "@tsed/schema";
 import { KycLevel, KycStatus, RAIINMAKER_ORG_NAME } from "../../util/constants";
-import { KycService } from "../../services/KycService";
 import { UserService } from "../../services/UserService";
 import { SuccessResult } from "../../util/entities";
 import { KYC_LEVEL_1_NOT_APPROVED, KYC_NOT_FOUND, USER_NOT_FOUND } from "../../util/errors";
@@ -95,8 +94,6 @@ export class KycController {
     @Inject()
     private userService: UserService;
     @Inject()
-    private kycService: KycService;
-    @Inject()
     private verificationApplicationService: VerificationApplicationService;
 
     @Get()
@@ -104,7 +101,7 @@ export class KycController {
     public async get(@Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"), ["verification_application"]);
         if (!user) throw new BadRequest(USER_NOT_FOUND);
-        const application = await this.kycService.getApplication(user);
+        const application = await this.verificationApplicationService.getApplication(user.id);
         if (!application) throw new BadRequest(KYC_NOT_FOUND);
         return new SuccessResult(
             { kycId: application.kyc.applicationId, status: application.kyc.status, factors: application.factors },
@@ -117,13 +114,13 @@ export class KycController {
     public async download(@Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"), ["verification_application"]);
         if (!user) throw new BadRequest(USER_NOT_FOUND);
-        const kycApplication = user.verification_application;
+        const kycApplication = user.verification_application[0];
         if (!kycApplication) throw new BadRequest(KYC_NOT_FOUND);
         if (kycApplication.status === "PENDING")
             return { kycId: kycApplication.applicationId, status: kycApplication.status };
         if (kycApplication.status === "REJECTED")
             return { kycId: kycApplication.applicationId, status: kycApplication.status };
-        return this.kycService.clearApplication(user.id, kycApplication.id);
+        return this.verificationApplicationService.clearApplication(user.id, kycApplication.id);
     }
 
     @Get("/admin/:userId")
@@ -132,7 +129,7 @@ export class KycController {
         this.userService.checkPermissions({ restrictCompany: RAIINMAKER_ORG_NAME }, context.get("user"));
         const user = await this.userService.findUserById(userId);
         if (!user) throw new NotFound(USER_NOT_FOUND);
-        return new SuccessResult(await this.kycService.getRawApplication(user.id), Object);
+        return new SuccessResult(await this.verificationApplicationService.getRawApplication(user.id), Object);
     }
 
     @Post("/verify-kyc")
@@ -177,9 +174,8 @@ export class KycController {
     public async verifyKycLevel1(@BodyParams() query: KycLevel1Params, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"), ["profile"]);
         if (!user) throw new BadRequest(USER_NOT_FOUND);
-        const level = KycLevel.LEVEL1;
         query = { ...query, ip: context.request.req.socket.remoteAddress || "" };
-        const result = await this.verificationApplicationService.registerKyc({ user, query, level });
+        const result = await this.verificationApplicationService.registerKyc({ user, query, level: KycLevel.LEVEL1 });
         return new SuccessResult(result, KycUpdateResultModel);
     }
 
@@ -188,15 +184,13 @@ export class KycController {
     public async verifyKycLevel2(@BodyParams() query: KycLevel2Params, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"), { profile: true });
         if (!user) throw new BadRequest(USER_NOT_FOUND);
-        if (!this.verificationApplicationService.isLevel1Approved(user.id))
+        if (!(await this.verificationApplicationService.isLevel1Approved(user.id)))
             throw new BadRequest(KYC_LEVEL_1_NOT_APPROVED);
-
-        const level = KycLevel.LEVEL2;
         query = {
             ...(await this.verificationApplicationService.getProfileData(user.id, KycLevel.LEVEL1)),
             ...query,
         };
-        const result = await this.verificationApplicationService.registerKyc({ user, query, level });
+        const result = await this.verificationApplicationService.registerKyc({ user, query, level: KycLevel.LEVEL2 });
         return new SuccessResult(result, KycUpdateResultModel);
     }
 
@@ -227,7 +221,7 @@ export class KycController {
         if (!["approve", "reject"].includes(status)) throw new BadRequest("Status must be either approve or reject");
         let user = await this.userService.findUserById(userId, userResultRelations);
         if (!user) throw new NotFound(USER_NOT_FOUND);
-        const updatedStatus = await this.kycService.updateKycStatus(user.id, status);
+        const updatedStatus = await this.verificationApplicationService.updateKycStatus(user.id, status);
         if (user.notification_settings?.kyc) {
             if (status === "APPROVED") await Firebase.sendKycApprovalNotification(user.profile?.deviceToken!);
             else await Firebase.sendKycRejectionNotification(user.profile?.deviceToken!);

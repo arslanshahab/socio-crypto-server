@@ -1,10 +1,10 @@
 import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
+import { S3Client } from "../clients/s3";
+import { generateFactorsFromKYC, getApplicationStatus, getKycStatusDetails } from "../util";
+import { AcuantClient } from "../clients/acuant";
 import { Profile, User, VerificationApplication } from "@prisma/client";
 import { KycApplication, KycStatus } from "../types";
-import { S3Client } from "../clients/s3";
-import { generateFactorsFromKYC, getApplicationStatus, getKycStatusDetails } from "../util/index";
-import { AcuantClient } from "../clients/acuant";
 import { KycLevel, KycStatus as KycStatusEnum } from "../util/constants";
 import { Firebase } from "../clients/firebase";
 import { Validator } from "../schemas";
@@ -15,6 +15,13 @@ const validator = new Validator();
 export class VerificationApplicationService {
     @Inject()
     private prismaService: PrismaService;
+
+    public async updateKycStatus(userId: string, kycStatus: string) {
+        return await this.prismaService.user.update({
+            where: { id: userId },
+            data: { kycStatus: kycStatus.toUpperCase() },
+        });
+    }
 
     public async findByUserIdAndLevel(userId: string, level: KycLevel) {
         return await this.prismaService.verificationApplication.findFirst({ where: { userId, level } });
@@ -146,6 +153,7 @@ export class VerificationApplicationService {
                 userId: user.id,
                 reason: getKycStatusDetails(newAcuantApplication),
                 record: currentKycApplication?.kyc,
+                profile: level === KycLevel.LEVEL1 ? JSON.stringify(query) : undefined,
             });
             Firebase.sendKycVerificationUpdate(user?.profile?.deviceToken || "", status);
         } else {
@@ -157,5 +165,70 @@ export class VerificationApplicationService {
             status: verificationApplication?.status,
             factors,
         };
+    }
+
+    /**
+     * Retrieves a kyc application for the given user
+     *
+     * @param userId the id of user to retrieve the kyc application for
+     * @returns the kyc application for the given user, if one exists
+     */
+    public async getApplication(userId: string) {
+        const recordedApplication = await this.findByUserIdAndLevel(userId, KycLevel.LEVEL1);
+        if (!recordedApplication) return null;
+        let kycApplication;
+        if (recordedApplication.status === "APPROVED") {
+            kycApplication = await S3Client.getAcuantKyc(userId);
+            return {
+                kyc: recordedApplication,
+                factors: generateFactorsFromKYC(kycApplication),
+            };
+        }
+        if (recordedApplication.status === "PENDING") {
+            kycApplication = await AcuantClient.getApplication(recordedApplication.applicationId);
+            const status = getApplicationStatus(kycApplication);
+            const reason = getKycStatusDetails(kycApplication);
+            let factors;
+            if (status === "APPROVED") {
+                await S3Client.uploadAcuantKyc(userId, kycApplication);
+                factors = generateFactorsFromKYC(kycApplication);
+            }
+            // update status and reason
+            this.prismaService.verificationApplication.update({
+                data: { status, reason },
+                where: { id: recordedApplication.id },
+            });
+            return { kyc: recordedApplication, factors };
+        }
+        return { kyc: recordedApplication };
+    }
+
+    /**
+     * Retrieves the raw kyc application stored in S3 for the given user
+     *
+     * @param userId the user to retrieve the kyc application for
+     * @returns the kyc application for the given user, if one exists
+     */
+    public async getRawApplication(userId: string) {
+        const response = await S3Client.getUserObject(userId);
+        if (response) {
+            if (response.hasAddressProof) response.addressProof = await S3Client.getKycImage(userId, "addressProof");
+            if (response.hasIdProof) response.idProof = await S3Client.getKycImage(userId, "idProof");
+        }
+        return response;
+    }
+
+    /**
+     * Clears the kyc application for the given user from S3 and the DB
+     *
+     * @param userId the user to clear the kyc application for
+     * @param verificationApplicationId the id of the verification application to clear
+     * @returns the cleared verification application
+     */
+    public async clearApplication(userId: string, verificationApplicationId: string) {
+        const kyc = await S3Client.getAcuantKyc(userId);
+        if (kyc) await S3Client.deleteAcuantKyc(userId);
+        this.prismaService.verificationApplication.delete({ where: { id: verificationApplicationId } });
+        return generateFactorsFromKYC(kyc);
     }
 }
