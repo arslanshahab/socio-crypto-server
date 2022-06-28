@@ -245,6 +245,8 @@ export class UserResultModel {
     @Property() public readonly createdAt: Date;
     @Property() public readonly lastLogin: Date | null;
     @Property() public readonly active: boolean;
+    @Property() public readonly kycLevel1: boolean;
+    @Property() public readonly kycLevel2: boolean;
     @Nullable(String) public readonly identityId: string | null;
     @Nullable(String) public readonly kycStatus: string | null;
     @Nullable(ProfileResultModel) public readonly profile: ProfileResultModel | null;
@@ -258,7 +260,8 @@ export class UserResultModel {
             social_link?: Prisma.SocialLink[];
             participant?: (Prisma.Participant & { campaign: Prisma.Campaign })[];
             wallet?: Prisma.Wallet | null;
-        }
+        },
+        kyc?: { level1: boolean; level2: boolean }
     ): UserResultModel {
         return {
             ...user,
@@ -269,6 +272,8 @@ export class UserResultModel {
                 : [],
             social_link: user.social_link ? user.social_link : [],
             wallet: user.wallet || null,
+            kycLevel1: kyc ? kyc.level1 : false,
+            kycLevel2: kyc ? kyc.level2 : false,
         };
     }
 }

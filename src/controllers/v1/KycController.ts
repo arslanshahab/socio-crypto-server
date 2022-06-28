@@ -40,18 +40,6 @@ class KycLevel1Params {
 }
 
 class KycLevel2Params {
-    @Required() public readonly firstName: string;
-    @Required() public readonly middleName: string;
-    @Required() public readonly lastName: string;
-    @Required() public readonly email: string;
-    @Required() public readonly billingStreetAddress: string;
-    @Required() public readonly billingCity: string;
-    @Required() public readonly billingCountry: string;
-    @Required() public readonly zipCode: string;
-    @Required() public readonly gender: string;
-    @Required() public readonly dob: string;
-    @Required() public readonly phoneNumber: string;
-    @Nullable(String) public readonly ip: string;
     @Required() public readonly documentType: string;
     @Required() public readonly documentCountry: string;
     @Required() public readonly frontDocumentImage: string;

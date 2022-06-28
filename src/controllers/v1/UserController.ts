@@ -85,6 +85,7 @@ import { Firebase } from "../../clients/firebase";
 import { VerificationService } from "../../services/VerificationService";
 import { decrypt } from "../../util/crypto";
 import { S3Client } from "../../clients/s3";
+import { VerificationApplicationService } from "../../services/VerificationApplicationService";
 
 const userResultRelations = {
     profile: true,
@@ -195,6 +196,8 @@ export class UserController {
     private adminService: AdminService;
     @Inject()
     private verificationService: VerificationService;
+    @Inject()
+    private verificationApplicationService: VerificationApplicationService;
 
     @Get("/")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserResultModel))
@@ -218,8 +221,8 @@ export class UserController {
     public async me(@Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"), userResultRelations);
         if (!user) throw new BadRequest(USER_NOT_FOUND);
-
-        return new SuccessResult(UserResultModel.build(user), UserResultModel);
+        const kyc = await this.verificationApplicationService.getKycData(user.id);
+        return new SuccessResult(UserResultModel.build(user, kyc), UserResultModel);
     }
 
     @Get("/me/participation-keywords")

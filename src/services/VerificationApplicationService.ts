@@ -123,6 +123,13 @@ export class VerificationApplicationService {
         );
     }
 
+    public async getKycData(userId: string) {
+        return {
+            level1: await this.isLevel1Approved(userId),
+            level2: await this.isLevel2Approved(userId),
+        };
+    }
+
     public async registerKyc(data: {
         user: User & { profile?: Profile | null };
         level: KycLevel;

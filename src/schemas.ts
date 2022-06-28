@@ -187,18 +187,6 @@ export const kycUserLevel1 = {
 export const kycUserLevel2 = {
     type: "object",
     properties: {
-        firstName: { type: "string" },
-        middleName: { type: "string" },
-        lastName: { type: "string" },
-        email: { type: "string" },
-        ip: { type: "string" },
-        billingStreetAddress: { type: "string" },
-        billingCity: { type: "string" },
-        billingCountry: { type: "string" },
-        billingZip: { type: "number" },
-        zipCode: { type: "string" },
-        gender: { type: "string" },
-        dob: { type: "string" },
         phoneNumber: { type: "string" },
         documentType: { type: "string" },
         documentCountry: { type: "string" },
@@ -206,21 +194,7 @@ export const kycUserLevel2 = {
         faceImage: { type: "string" },
         backDocumentImage: { type: "string" },
     },
-    required: [
-        "firstName",
-        "lastName",
-        "billingStreetAddress",
-        "billingCity",
-        "billingCountry",
-        "gender",
-        "dob",
-        "phoneNumber",
-        "documentType",
-        "documentCountry",
-        "frontDocumentImage",
-        "backDocumentImage",
-        "faceImage",
-    ],
+    required: ["documentType", "documentCountry", "frontDocumentImage", "backDocumentImage", "faceImage"],
 };
 
 const rafflePrizeSchema = {
