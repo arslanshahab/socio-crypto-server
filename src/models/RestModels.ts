@@ -352,7 +352,6 @@ export class SocialMetricsResultModel {
     @Property() public readonly totalShares: number;
     @Property() public readonly likesScore: number;
     @Property() public readonly shareScore: number;
-    @Property() public readonly createdAt: Date;
 }
 export class UserDailyParticipantMetricResultModel {
     @Property() public readonly id: string;
@@ -615,32 +614,9 @@ export class UpdateNotificationSettingsParams {
     @Property() public readonly campaignUpdates: boolean;
 }
 
-export class UpdateNotificationSettingsResultModel {
-    @Property() public readonly user: Prisma.User;
-    @Property() public readonly notificationSettings: NotificationSettingsResultModel;
-}
-
 export class ReturnSuccessResultModel {
     @Property() public readonly success: boolean;
     @Property() public readonly message: string;
-}
-
-export class UserResultModelV2 {
-    @Property() public readonly id: string;
-    @Property() public readonly email: string;
-    @Property() public readonly createdAt: Date;
-    @Property() public readonly lastLogin: Date | null;
-    @Property() public readonly active: boolean;
-    @Nullable(String) public readonly identityId: string | null;
-    @Nullable(String) public readonly kycStatus: string | null;
-    @Nullable(ProfileResultModel) public readonly profile: ProfileResultModel | null;
-
-    public static build(user: Prisma.User & { profile?: Prisma.Profile | null }): UserResultModelV2 {
-        return {
-            ...user,
-            profile: user.profile ? ProfileResultModel.build(user.profile) : null,
-        };
-    }
 }
 
 export class CryptoCurrencyResultModel {
@@ -699,7 +675,7 @@ export class ParticipantResultModelV2 {
 
     @Property() public readonly currentlyParticipating: boolean;
     @Property(CampaignResultModel) public readonly campaign: CampaignResultModel;
-    @Property(UserResultModelV2) public readonly user: UserResultModelV2;
+    @Property(UserResultModel) public readonly user: UserResultModel;
 
     public static build(
         participant: Prisma.Participant & {
@@ -713,5 +689,37 @@ export class ParticipantResultModelV2 {
             new Date(participant.campaign.endDate).getTime() >= now.getTime();
 
         return { ...participant, currentlyParticipating };
+    }
+}
+
+export class UpdateNotificationSettingsResultModel {
+    @Property(UserResultModel) public readonly user: UserResultModel;
+    @Property(NotificationSettingsResultModel) public readonly notificationSettings: NotificationSettingsResultModel;
+}
+
+export class ParticipateToCampaignModel {
+    @Property() public readonly id: string;
+    @Property() public readonly clickCount: string;
+    @Property() public readonly campaignId: string;
+    @Property() public readonly viewCount: string;
+    @Property() public readonly submissionCount: string;
+    @Property() public readonly participationScore: string;
+    @Nullable(String) public readonly link: string | null;
+    @Property(Date) public readonly createdAt: Date;
+    @Property(Date) public readonly updatedAt: Date;
+    @Property() public readonly userId: string;
+    @Nullable(String) public readonly email: string | null;
+    @Property() public readonly campaign: Prisma.Campaign;
+    @Property(UserResultModel) public readonly user: UserResultModel;
+
+    public static build(
+        participant: Prisma.Participant & {
+            campaign: Prisma.Campaign & { org: Prisma.Org | null } & {
+                currency: (Prisma.Currency & { token: Prisma.Token | null }) | null;
+            };
+            user: Prisma.User & { wallet: Prisma.Wallet | null } & { profile: Prisma.Profile | null };
+        }
+    ): ParticipateToCampaignModel {
+        return { ...participant, user: UserResultModel.build(participant.user) };
     }
 }

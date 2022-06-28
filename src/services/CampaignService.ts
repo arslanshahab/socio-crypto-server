@@ -296,11 +296,7 @@ export class CampaignService {
         const campaign = await this.findCampaignById(campaignId);
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
         const now = new Date();
-        if (
-            new Date(campaign.beginDate).getTime() <= now.getTime() &&
-            new Date(campaign.endDate).getTime() >= now.getTime()
-        )
-            return true;
+        if (new Date(campaign.endDate).getTime() >= now.getTime()) return true;
         return false;
     }
 
