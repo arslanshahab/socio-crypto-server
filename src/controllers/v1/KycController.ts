@@ -1,7 +1,7 @@
 import { BodyParams, Context, PathParams, QueryParams } from "@tsed/common";
 import { Controller, Inject } from "@tsed/di";
 import { BadRequest, NotFound } from "@tsed/exceptions";
-import { Get, Nullable, Post, Property, Put, Required, Returns } from "@tsed/schema";
+import { Get, Nullable, Post, Put, Required, Returns } from "@tsed/schema";
 import { KycLevel, KycStatus, RAIINMAKER_ORG_NAME } from "../../util/constants";
 import { UserService } from "../../services/UserService";
 import { SuccessResult } from "../../util/entities";
@@ -13,7 +13,7 @@ import { Firebase } from "../../clients/firebase";
 import { VerificationApplicationService } from "../../services/VerificationApplicationService";
 import { KycUser } from "../../types";
 import { S3Client } from "../../clients/s3";
-import { KycUpdateResultModel, UserResultModel } from "../../models/RestModels";
+import { KycResultModel, UserResultModel } from "../../models/RestModels";
 
 const userResultRelations = {
     profile: true,
@@ -21,12 +21,6 @@ const userResultRelations = {
     participant: { include: { campaign: true } },
     notification_settings: true,
 };
-
-class KycResultModel {
-    @Property() public readonly kycId: string;
-    @Property() public readonly status: string;
-    @Property(Object) public readonly factors: object | undefined;
-}
 
 class KycStatusParms {
     @Required() public readonly userId: string;
@@ -104,7 +98,7 @@ export class KycController {
         const application = await this.verificationApplicationService.getApplication(user.id);
         if (!application) throw new BadRequest(KYC_NOT_FOUND);
         return new SuccessResult(
-            { kycId: application.kyc.applicationId, status: application.kyc.status, factors: application.factors },
+            { kycId: application.kyc.applicationId, status: application.kyc.status },
             KycResultModel
         );
     }
@@ -133,7 +127,7 @@ export class KycController {
     }
 
     @Post("/verify-kyc")
-    @(Returns(200, SuccessResult).Of(KycUpdateResultModel))
+    @(Returns(200, SuccessResult).Of(KycResultModel))
     public async verifyKyc(@BodyParams() query: VerifyKycParams, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"), ["profile"]);
         if (!user) throw new BadRequest(USER_NOT_FOUND);
@@ -142,7 +136,6 @@ export class KycController {
             KycLevel.LEVEL1
         );
         let verificationApplication;
-        let factors;
         if (!currentKycApplication || currentKycApplication.kyc.status === KycStatus.REJECTED) {
             validator.validateKycRegistration(query);
             const newAcuantApplication = await AcuantClient.submitApplication(query);
@@ -159,28 +152,26 @@ export class KycController {
             Firebase.sendKycVerificationUpdate(user?.profile?.deviceToken || "", status);
         } else {
             verificationApplication = currentKycApplication.kyc;
-            factors = currentKycApplication.factors;
         }
         const result = {
             kycId: verificationApplication?.applicationId,
             status: verificationApplication?.status,
-            factors,
         };
-        return new SuccessResult(result, KycUpdateResultModel);
+        return new SuccessResult(result, KycResultModel);
     }
 
     @Post("/verify/level1")
-    @(Returns(200, SuccessResult).Of(KycUpdateResultModel))
+    @(Returns(200, SuccessResult).Of(KycResultModel))
     public async verifyKycLevel1(@BodyParams() query: KycLevel1Params, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"), ["profile"]);
         if (!user) throw new BadRequest(USER_NOT_FOUND);
         query = { ...query, ip: context.request.req.socket.remoteAddress || "" };
         const result = await this.verificationApplicationService.registerKyc({ user, query, level: KycLevel.LEVEL1 });
-        return new SuccessResult(result, KycUpdateResultModel);
+        return new SuccessResult(result, KycResultModel);
     }
 
     @Post("/verify/level2")
-    @(Returns(200, SuccessResult).Of(KycUpdateResultModel))
+    @(Returns(200, SuccessResult).Of(KycResultModel))
     public async verifyKycLevel2(@BodyParams() query: KycLevel2Params, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"), { profile: true });
         if (!user) throw new BadRequest(USER_NOT_FOUND);
@@ -191,7 +182,7 @@ export class KycController {
             ...query,
         };
         const result = await this.verificationApplicationService.registerKyc({ user, query, level: KycLevel.LEVEL2 });
-        return new SuccessResult(result, KycUpdateResultModel);
+        return new SuccessResult(result, KycResultModel);
     }
 
     @Put("/update-kyc")

@@ -67,26 +67,20 @@ export class VerificationApplicationService {
         if (!recordedApplication) return null;
         let kycApplication;
         if (recordedApplication.status === KycStatusEnum.APPROVED) {
-            try {
-                kycApplication = await S3Client.getAcuantKyc(userId);
-            } catch (error) {}
             return {
                 kyc: recordedApplication,
-                factors: kycApplication ? generateFactorsFromKYC(kycApplication) : null,
             };
         }
         if (recordedApplication.status === KycStatusEnum.PENDING) {
             kycApplication = await AcuantClient.getApplication(recordedApplication.applicationId);
             const status = getApplicationStatus(kycApplication);
             const reason = getKycStatusDetails(kycApplication);
-            let factors;
             if (status === KycStatusEnum.APPROVED) {
                 await S3Client.uploadAcuantKyc(userId, kycApplication);
-                factors = generateFactorsFromKYC(kycApplication);
             }
             await this.updateStatus(status, recordedApplication);
             await this.updateReason(reason, recordedApplication.id);
-            return { kyc: recordedApplication, factors };
+            return { kyc: recordedApplication };
         }
         return { kyc: recordedApplication };
     }
@@ -137,7 +131,6 @@ export class VerificationApplicationService {
         const { user, level, query } = data;
         const currentKycApplication = await this.findKycApplication(user?.id, level);
         let verificationApplication;
-        let factors;
         if (!currentKycApplication || currentKycApplication.kyc.status === KycStatusEnum.REJECTED) {
             if (level === KycLevel.LEVEL1) {
                 validator.validateKycLevel1(query);
@@ -158,12 +151,10 @@ export class VerificationApplicationService {
             Firebase.sendKycVerificationUpdate(user?.profile?.deviceToken || "", status);
         } else {
             verificationApplication = currentKycApplication.kyc;
-            factors = currentKycApplication.factors;
         }
         return {
             kycId: verificationApplication?.applicationId,
             status: verificationApplication?.status,
-            factors,
         };
     }
 
@@ -181,24 +172,21 @@ export class VerificationApplicationService {
             kycApplication = await S3Client.getAcuantKyc(userId);
             return {
                 kyc: recordedApplication,
-                factors: generateFactorsFromKYC(kycApplication),
             };
         }
         if (recordedApplication.status === "PENDING") {
             kycApplication = await AcuantClient.getApplication(recordedApplication.applicationId);
             const status = getApplicationStatus(kycApplication);
             const reason = getKycStatusDetails(kycApplication);
-            let factors;
             if (status === "APPROVED") {
                 await S3Client.uploadAcuantKyc(userId, kycApplication);
-                factors = generateFactorsFromKYC(kycApplication);
             }
             // update status and reason
             this.prismaService.verificationApplication.update({
                 data: { status, reason },
                 where: { id: recordedApplication.id },
             });
-            return { kyc: recordedApplication, factors };
+            return { kyc: recordedApplication };
         }
         return { kyc: recordedApplication };
     }
