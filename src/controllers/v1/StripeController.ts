@@ -23,7 +23,7 @@ class StripeResultModel {
 }
 
 class RemovePaymentMethodParams {
-    @Required() public readonly paymentMethodId: string;
+    @Property() public readonly paymentMethodId: string;
 }
 
 @Controller("/stripe")
@@ -53,7 +53,7 @@ export class StripeController {
     }
 
     @Post("/purchase-coiin")
-    @(Returns(200, SuccessArrayResult).Of(StripeResultModel))
+    @(Returns(200, SuccessResult).Of(StripeResultModel))
     public async purchaseCoiin(@BodyParams() body: PurchaseCoiinParams, @Context() context: Context) {
         const { company } = await this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         if (!company) throw new NotFound("company not found for this user");
@@ -76,8 +76,8 @@ export class StripeController {
     }
 
     @Post("/add-payment-method")
-    @(Returns(200, SuccessArrayResult).Of(StripeResultModel))
-    public async addPaymentMethod(@BodyParams() body: { token: string }, @Context() context: Context) {
+    @(Returns(200, SuccessResult).Of(StripeResultModel))
+    public async addPaymentMethod(@Context() context: Context) {
         const { company } = await this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         if (!company) throw new NotFound("company not found for this user");
         let org = await this.organizationService.findOrganizationByCompanyName(company);
