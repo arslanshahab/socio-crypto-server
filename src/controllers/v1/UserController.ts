@@ -155,6 +155,10 @@ class UploadProfilePictureParams {
     @Required() public readonly image: string;
 }
 
+class UserIdParam {
+    @Property() public readonly userId: string;
+}
+
 @Controller("/user")
 export class UserController {
     @Inject()
@@ -401,9 +405,9 @@ export class UserController {
 
     @Get("/user-transactions-history/:userId")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserTransactionResultModel))
-    public async getUserTransactionHistory(@PathParams() query: { userId: string }, @Context() context: Context) {
+    public async getUserTransactionHistory(@PathParams() path: UserIdParam, @Context() context: Context) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        const { userId } = query;
+        const { userId } = path;
         const transaction = await this.transferService.findUserTransactions(userId);
         return new SuccessResult(
             new Pagination(transaction, transaction.length, UserTransactionResultModel),
@@ -437,8 +441,8 @@ export class UserController {
 
     @Post("/delete-user-by-id/:userId")
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
-    public async deleteUserById(@PathParams() query: { userId: string }, @Context() context: Context) {
-        const { userId } = query;
+    public async deleteUserById(@PathParams() path: UserIdParam, @Context() context: Context) {
+        const { userId } = path;
         const user = await this.userService.findUserById(userId);
         if (!user) throw new NotFound(USER_NOT_FOUND);
         await this.userService.deleteUser(user.id);
@@ -448,9 +452,9 @@ export class UserController {
 
     @Put("/reset-user-password/:userId")
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
-    public async resetUserPassword(@PathParams() query: { userId: string }, @Context() context: Context) {
+    public async resetUserPassword(@PathParams() path: UserIdParam, @Context() context: Context) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        const { userId } = query;
+        const { userId } = path;
         const user = await this.userService.findUserById(userId);
         if (!user) throw new NotFound(USER_NOT_FOUND);
         const chars = process.env.PASSWORD_CHARSET || "789abcdxyz!@#$%^&*";
@@ -462,15 +466,14 @@ export class UserController {
         }
         await this.userService.resetUserPassword(user.id, user.email, password);
         await SesClient.restUserPasswordEmail(user.email, password);
-        const result = { message: "User password reset successfully" };
-        return new SuccessResult(result, UpdatedResultModel);
+        return new SuccessResult({ message: "User password reset successfully" }, UpdatedResultModel);
     }
 
     @Get("/single-user/:userId")
     @(Returns(200, SuccessResult).Of(SingleUserResultModel))
-    public async getUserById(@PathParams() query: { userId: string }, @Context() context: Context) {
+    public async getUserById(@PathParams() path: UserIdParam, @Context() context: Context) {
         this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
-        const user = await this.userService.findUserById(query.userId, ["profile", "social_post"]);
+        const user = await this.userService.findUserById(path.userId, ["profile", "social_post"]);
         if (!user) throw new NotFound(USER_NOT_FOUND);
         return new SuccessResult({ ...user, profile: ProfileResultModel.build(user?.profile!) }, SingleUserResultModel);
     }
@@ -601,10 +604,10 @@ export class UserController {
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 
-    @Put("/update-user-name")
+    @Put("/update-user-name/:username")
     @(Returns(200, SuccessResult).Of(UserResultModelV2))
-    public async updateUserName(@QueryParams() query: UpdateUserNameParams, @Context() context: Context) {
-        const { username } = query;
+    public async updateUserName(@PathParams() path: UpdateUserNameParams, @Context() context: Context) {
+        const { username } = path;
         if (await this.profileService.ifUsernameExist(username)) throw new BadRequest(USERNAME_EXISTS);
         let user = await this.userService.findUserByContext(context.get("user"), { profile: true });
         if (!user) throw new NotFound(USER_NOT_FOUND);
