@@ -539,12 +539,13 @@ export class UserController {
     }
 
     @Post("/update-profile-interests")
-    @(Returns(200, SuccessResult).Of(ProfileResultModel))
+    @(Returns(200, SuccessResult).Of(UserResultModel))
     public async updateProfileInterests(@BodyParams() body: UpdateProfileInterestsParams, @Context() context: Context) {
-        const user = await this.userService.findUserByContext(context.get("user"));
+        const user = await this.userService.findUserByContext(context.get("user"), ["profile"]);
         if (!user) throw new NotFound(USER_NOT_FOUND);
         const profile = await this.profileService.updateProfile(user.id, body);
-        return new SuccessResult(await ProfileResultModel.build(profile), ProfileResultModel);
+        user.profile = profile;
+        return new SuccessResult(UserResultModel.build(user), UserResultModel);
     }
 
     @Post("/remove-profile-interests")
