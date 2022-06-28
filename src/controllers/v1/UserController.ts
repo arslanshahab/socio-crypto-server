@@ -549,12 +549,13 @@ export class UserController {
     }
 
     @Post("/remove-profile-interests")
-    @(Returns(200, SuccessResult).Of(ProfileResultModel))
+    @(Returns(200, SuccessResult).Of(UserResultModel))
     public async removeProfileInterests(@BodyParams() body: RemoveInterestsParams, @Context() context: Context) {
-        const user = await this.userService.findUserByContext(context.get("user"));
+        const user = await this.userService.findUserByContext(context.get("user"), ["profile"]);
         if (!user) throw new NotFound(USER_NOT_FOUND);
         const profile = await this.profileService.removeProfileInterests(user.id, body);
-        return new SuccessResult(ProfileResultModel.build(profile), ProfileResultModel);
+        user.profile = profile;
+        return new SuccessResult(UserResultModel.build(user), UserResultModel);
     }
 
     @Post("/reward-user-for-sharing")
