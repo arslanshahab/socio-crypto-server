@@ -609,14 +609,14 @@ export class UserController {
     }
 
     @Put("/update-user-name/:username")
-    @(Returns(200, SuccessResult).Of(UserResultModelV2))
+    @(Returns(200, SuccessResult).Of(UserResultModel))
     public async updateUserName(@PathParams() path: UpdateUserNameParams, @Context() context: Context) {
         const { username } = path;
         if (await this.profileService.ifUsernameExist(username)) throw new BadRequest(USERNAME_EXISTS);
         let user = await this.userService.findUserByContext(context.get("user"), { profile: true });
         if (!user) throw new NotFound(USER_NOT_FOUND);
         user.profile = await this.profileService.updateUsername(user.id, username);
-        return new SuccessResult(UserResultModelV2.build(user), UserResultModelV2);
+        return new SuccessResult(UserResultModel.build(user), UserResultModel);
     }
 
     @Put("/promote-permissions")
