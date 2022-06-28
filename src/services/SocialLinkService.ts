@@ -4,6 +4,7 @@ import { SocialLink, User } from "@prisma/client";
 import { encrypt } from "../util/crypto";
 import { decrypt } from "../util/crypto";
 import { InternalServerError, NotFound } from "@tsed/exceptions";
+import { SocialLinkType } from "../util/constants";
 
 @Injectable()
 export class SocialLinkService {
@@ -27,7 +28,9 @@ export class SocialLinkService {
     }
 
     public async addTwitterLink(user: User, apiKey: string, apiSecret: string) {
-        const socialLink = await this.prismaService.socialLink.findFirst({ where: { userId: user.id, type: "twitter" } });
+        const socialLink = await this.prismaService.socialLink.findFirst({
+            where: { userId: user.id, type: "twitter" },
+        });
         if (socialLink) {
             return await this.prismaService.socialLink.update({
                 where: { id: socialLink.id },
@@ -53,5 +56,39 @@ export class SocialLinkService {
         return await this.prismaService.socialLink.delete({
             where: { id: socialLink.id },
         });
+    }
+
+    public async addOrUpdateTiktokLink(
+        userId: string,
+        tokens: {
+            open_id: string;
+            access_token: string;
+            expires_in: number;
+            refresh_token: string;
+            refresh_expires_in: number;
+        }
+    ) {
+        let socialLink = await this.prismaService.socialLink.findFirst({
+            where: { userId, type: SocialLinkType.TIKTOK },
+        });
+        if (!socialLink) {
+            socialLink = await this.prismaService.socialLink.create({
+                data: {
+                    userId,
+                    type: SocialLinkType.TIKTOK,
+                },
+            });
+        }
+        socialLink = await this.prismaService.socialLink.update({
+            where: { id: socialLink.id },
+            data: {
+                openId: tokens.open_id,
+                accessToken: tokens.access_token,
+                accessTokenExpiry: (tokens.expires_in * 1000 + new Date().getTime()).toString(),
+                refreshToken: tokens.refresh_token,
+                refreshTokenExpiry: (tokens.refresh_expires_in * 1000 + new Date().getTime()).toString(),
+            },
+        });
+        return socialLink;
     }
 }

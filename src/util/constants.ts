@@ -229,6 +229,13 @@ export enum KycStatus {
     REJECTED = "REJECTED",
 }
 
+export enum SocialLinkType {
+    FACEBOOK = "facebook",
+    TWITTER = "twitter",
+    TIKTOK = "tiktok",
+    INSTAGRAM = "instagram",
+}
+
 export enum SharingRewardType {
     COIIN = "COIIN",
     INFLUENCE = "INFLUENCE",

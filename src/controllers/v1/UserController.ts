@@ -22,6 +22,7 @@ import {
     INVALID_TOKEN,
     MISSING_PARAMS,
     NOTIFICATION_SETTING_NOT_FOUND,
+    ORG_NOT_FOUND,
     PARTICIPANT_NOT_FOUND,
     PROFILE_NOT_FOUND,
     SAME_OLD_AND_NEW_PASSWORD,
@@ -34,7 +35,6 @@ import {
     BooleanResultModel,
     CampaignIdModel,
     DashboardStatsResultModel,
-    ParticipantMetricsResultModel,
     ProfileResultModel,
     RemoveInterestsParams,
     ReturnSuccessResultModel,
@@ -46,7 +46,7 @@ import {
     UserParticipateParams,
     UserTransactionResultModel,
     WeeklyRewardsResultModel,
-    UserResultModelV2,
+    ParticipateToCampaignModel,
 } from "../../models/RestModels";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 import {
@@ -114,7 +114,7 @@ class TransferUserCoiinParams {
 }
 
 class RewardUserForSharingParams {
-    @Required() public readonly participantId: string;
+    @Property() public readonly participantId: string;
     @Required() public readonly isGlobal: boolean;
 }
 
@@ -152,6 +152,15 @@ class CompleteEmailVerificationParams {
 
 class UploadProfilePictureParams {
     @Required() public readonly image: string;
+}
+
+class UserIdParam {
+    @Property() public readonly userId: string;
+}
+
+class UserStatusParams {
+    @Required() public readonly id: string;
+    @Required() public readonly activeStatus: boolean;
 }
 
 @Controller("/user")
@@ -319,8 +328,8 @@ export class UserController {
 
     @Get("/user-balances/:userId")
     @(Returns(200, SuccessResult).Of(UserWalletResultModel))
-    public async getUserBalances(@PathParams() query: { userId: string }, @Context() context: Context) {
-        const user = await this.userService.findUserById(query.userId, {
+    public async getUserBalances(@PathParams() path: UserIdParam, @Context() context: Context) {
+        const user = await this.userService.findUserById(path.userId, {
             wallet: {
                 include: {
                     currency: {
@@ -342,10 +351,7 @@ export class UserController {
 
     @Put("/update-user-status")
     @(Returns(200, SuccessResult).Of(UpdatedResultModel))
-    public async updateUserStatus(
-        @BodyParams() body: { id: string; activeStatus: boolean },
-        @Context() context: Context
-    ) {
+    public async updateUserStatus(@BodyParams() body: UserStatusParams, @Context() context: Context) {
         const { id, activeStatus } = body;
         await this.userService.updateUserStatus(id, activeStatus);
         const result = { message: "User status updated successfully" };
@@ -353,11 +359,11 @@ export class UserController {
     }
 
     @Post("/participate")
-    @(Returns(200, SuccessResult).Of(ParticipantMetricsResultModel))
-    public async participate(@QueryParams() query: UserParticipateParams, @Context() context: Context) {
-        const user = await this.userService.findUserByContext(context.get("user"), ["wallet"]);
+    @(Returns(200, SuccessResult).Of(ParticipateToCampaignModel))
+    public async participate(@BodyParams() body: UserParticipateParams, @Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"), ["wallet", "profile"]);
         if (!user) throw new NotFound(USER_NOT_FOUND);
-        const { campaignId, email } = query;
+        const { campaignId, email } = body;
         const campaign = await this.campaignService.findCampaignById(campaignId, {
             org: true,
             currency: { include: { token: true } },
@@ -366,35 +372,43 @@ export class UserController {
         if (campaign.type === "raffle" && !email) throw new BadRequest(MISSING_PARAMS);
 
         if (await !this.campaignService.isCampaignOpen(campaign.id)) throw new BadRequest(CAMPAIGN_CLOSED);
-        if (await this.participantService.findParticipantByUserAndCampaignIds(user.id, campaign.id))
+        if (await this.participantService.findParticipantByCampaignId(campaign.id, user.id))
             throw new BadRequest(ALREADY_PARTICIPATING);
         await this.tatumClientService.findOrCreateCurrency({ ...campaign?.currency?.token!, wallet: user.wallet! });
-        const participant = await this.participantService.createNewParticipant(user.id, campaign, email);
+        let participant = await this.participantService.createNewParticipant(user.id, campaign, email);
         if (!campaign.isGlobal)
             await this.userService.transferCoiinReward({ user, type: "PARTICIPATION_REWARD", campaign });
-        return new SuccessResult(participant, ParticipantMetricsResultModel);
+        return new SuccessResult(
+            ParticipateToCampaignModel.build({
+                ...participant,
+                campaign: campaign,
+                user: user,
+            }),
+            ParticipateToCampaignModel
+        );
     }
 
-    @Post("/remove-participation")
+    @Delete("/remove-participation/:campaignId")
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
-    public async removeParticipation(@QueryParams() query: CampaignIdModel, @Context() context: Context) {
+    public async removeParticipation(@PathParams() path: CampaignIdModel, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new NotFound(USER_NOT_FOUND);
-        const { campaignId } = query;
+        const { campaignId } = path;
         const campaign = await this.campaignService.findCampaignById(campaignId, { org: true });
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
-        const participant = await this.participantService.findParticipantByUserAndCampaignIds(user.id, campaign.id);
+        if (!campaign.org) throw new NotFound(ORG_NOT_FOUND);
+        const participant = await this.participantService.findParticipantByCampaignId(campaign.id, user.id);
         if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
-        await this.hourlyCampaignMetricsService.upsertMetrics(campaign.id, campaign.org?.id, "removeParticipant");
+        await this.hourlyCampaignMetricsService.upsertMetrics(campaign.id, campaign.org.id, "removeParticipant");
         await this.participantService.removeParticipant(participant);
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 
     @Get("/user-transactions-history/:userId")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserTransactionResultModel))
-    public async getUserTransactionHistory(@PathParams() query: { userId: string }, @Context() context: Context) {
+    public async getUserTransactionHistory(@PathParams() path: UserIdParam, @Context() context: Context) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        const { userId } = query;
+        const { userId } = path;
         const transaction = await this.transferService.findUserTransactions(userId);
         return new SuccessResult(
             new Pagination(transaction, transaction.length, UserTransactionResultModel),
@@ -428,8 +442,8 @@ export class UserController {
 
     @Post("/delete-user-by-id/:userId")
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
-    public async deleteUserById(@PathParams() query: { userId: string }, @Context() context: Context) {
-        const { userId } = query;
+    public async deleteUserById(@PathParams() path: UserIdParam, @Context() context: Context) {
+        const { userId } = path;
         const user = await this.userService.findUserById(userId);
         if (!user) throw new NotFound(USER_NOT_FOUND);
         await this.userService.deleteUser(user.id);
@@ -439,9 +453,9 @@ export class UserController {
 
     @Put("/reset-user-password/:userId")
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
-    public async resetUserPassword(@PathParams() query: { userId: string }, @Context() context: Context) {
+    public async resetUserPassword(@PathParams() path: UserIdParam, @Context() context: Context) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        const { userId } = query;
+        const { userId } = path;
         const user = await this.userService.findUserById(userId);
         if (!user) throw new NotFound(USER_NOT_FOUND);
         const chars = process.env.PASSWORD_CHARSET || "789abcdxyz!@#$%^&*";
@@ -453,15 +467,14 @@ export class UserController {
         }
         await this.userService.resetUserPassword(user.id, user.email, password);
         await SesClient.restUserPasswordEmail(user.email, password);
-        const result = { message: "User password reset successfully" };
-        return new SuccessResult(result, UpdatedResultModel);
+        return new SuccessResult({ message: "User password reset successfully" }, UpdatedResultModel);
     }
 
     @Get("/single-user/:userId")
     @(Returns(200, SuccessResult).Of(SingleUserResultModel))
-    public async getUserById(@PathParams() query: { userId: string }, @Context() context: Context) {
+    public async getUserById(@PathParams() path: UserIdParam, @Context() context: Context) {
         this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
-        const user = await this.userService.findUserById(query.userId, ["profile", "social_post"]);
+        const user = await this.userService.findUserById(path.userId, ["profile", "social_post"]);
         if (!user) throw new NotFound(USER_NOT_FOUND);
         return new SuccessResult({ ...user, profile: ProfileResultModel.build(user?.profile!) }, SingleUserResultModel);
     }
@@ -525,25 +538,27 @@ export class UserController {
     }
 
     @Post("/update-profile-interests")
-    @(Returns(200, SuccessResult).Of(ProfileResultModel))
+    @(Returns(200, SuccessResult).Of(UserResultModel))
     public async updateProfileInterests(@BodyParams() body: UpdateProfileInterestsParams, @Context() context: Context) {
-        const user = await this.userService.findUserByContext(context.get("user"));
+        const user = await this.userService.findUserByContext(context.get("user"), ["profile"]);
         if (!user) throw new NotFound(USER_NOT_FOUND);
         const profile = await this.profileService.updateProfile(user.id, body);
-        return new SuccessResult(await ProfileResultModel.build(profile), ProfileResultModel);
+        user.profile = profile;
+        return new SuccessResult(UserResultModel.build(user), UserResultModel);
     }
 
     @Post("/remove-profile-interests")
-    @(Returns(200, SuccessResult).Of(ProfileResultModel))
+    @(Returns(200, SuccessResult).Of(UserResultModel))
     public async removeProfileInterests(@BodyParams() body: RemoveInterestsParams, @Context() context: Context) {
-        const user = await this.userService.findUserByContext(context.get("user"));
+        const user = await this.userService.findUserByContext(context.get("user"), ["profile"]);
         if (!user) throw new NotFound(USER_NOT_FOUND);
         const profile = await this.profileService.removeProfileInterests(user.id, body);
-        return new SuccessResult(ProfileResultModel.build(profile), ProfileResultModel);
+        user.profile = profile;
+        return new SuccessResult(UserResultModel.build(user), UserResultModel);
     }
 
     @Post("/reward-user-for-sharing")
-    @(Returns(200, SuccessResult).Of(UpdatedResultModel))
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async rewardUserForSharing(@BodyParams() body: RewardUserForSharingParams, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new NotFound(USER_NOT_FOUND);
@@ -556,7 +571,7 @@ export class UserController {
             const globalCampaign = await this.campaignService.findGlobalCampaign(isGlobal, COIIN);
             if (!globalCampaign) throw new NotFound(GLOBAL_CAMPAIGN_NOT_FOUND);
             campaign = globalCampaign;
-            participant = await this.participantService.findParticipantByUserAndCampaignId(user.id, campaign.id);
+            participant = await this.participantService.findParticipantByCampaignId(campaign.id, user.id);
             if (!participant) {
                 await this.tatumClientService.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet: wallet });
                 participant = await this.participantService.createNewParticipant(user.id, globalCampaign, user.email);
@@ -592,15 +607,15 @@ export class UserController {
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 
-    @Put("/update-user-name")
-    @(Returns(200, SuccessResult).Of(UserResultModelV2))
-    public async updateUserName(@QueryParams() query: UpdateUserNameParams, @Context() context: Context) {
-        const { username } = query;
+    @Put("/update-user-name/:username")
+    @(Returns(200, SuccessResult).Of(UserResultModel))
+    public async updateUserName(@PathParams() path: UpdateUserNameParams, @Context() context: Context) {
+        const { username } = path;
         if (await this.profileService.ifUsernameExist(username)) throw new BadRequest(USERNAME_EXISTS);
         let user = await this.userService.findUserByContext(context.get("user"), { profile: true });
         if (!user) throw new NotFound(USER_NOT_FOUND);
         user.profile = await this.profileService.updateUsername(user.id, username);
-        return new SuccessResult(UserResultModelV2.build(user!), UserResultModelV2);
+        return new SuccessResult(UserResultModel.build(user), UserResultModel);
     }
 
     @Put("/promote-permissions")
@@ -631,7 +646,7 @@ export class UserController {
     }
 
     @Put("/set-recovery-code")
-    @(Returns(200, SuccessResult).Of(UserResultModelV2))
+    @(Returns(200, SuccessResult).Of(UserResultModel))
     public async setRecoveryCode(@BodyParams() body: SetRecoveryCodeParams, @Context() context: Context) {
         let user = await this.userService.findUserByContext(context.get("user"), { profile: true });
         if (!user) throw new NotFound(USER_NOT_FOUND);
@@ -639,7 +654,7 @@ export class UserController {
         const { code } = body;
         const profile = await this.profileService.setRecoveryCode(user.profile.id, code);
         user.profile = profile;
-        return new SuccessResult(UserResultModelV2.build(user!), UserResultModelV2);
+        return new SuccessResult(UserResultModel.build(user), UserResultModel);
     }
 
     @Put("/update-notification-settings")
@@ -648,10 +663,13 @@ export class UserController {
         @BodyParams() body: UpdateNotificationSettingsParams,
         @Context() context: Context
     ) {
-        const user = await this.userService.findUserByContext(context.get("user"));
+        const user = await this.userService.findUserByContext(context.get("user"), { profile: true });
         if (!user) throw new NotFound(USER_NOT_FOUND);
         const notificationSettings = await this.notificationService.updateNotificationSettings(user.id, body);
-        return new SuccessResult({ user, notificationSettings }, UpdateNotificationSettingsResultModel);
+        return new SuccessResult(
+            { user: UserResultModel.build(user), notificationSettings },
+            UpdateNotificationSettingsResultModel
+        );
     }
 
     @Put("/set-device")
