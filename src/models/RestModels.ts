@@ -273,11 +273,16 @@ export class UserResultModel {
 }
 
 export class RedemptionRequirementsModel {
-    @Property() public readonly twitterLinked: boolean;
-    @Property() public readonly twitterfollowers: number;
-    @Property() public readonly twitterfollowersRequirement: number;
-    @Property() public readonly participation: boolean;
-    @Property() public readonly orderLimitForTwentyFourHoursReached: boolean;
+    @Property() public accountAgeReached: boolean;
+    @Property() public accountAge: number;
+    @Property() public accountAgeRequirement: number;
+    @Property() public twitterLinked: boolean;
+    @Property() public twitterfollowers: number;
+    @Property() public twitterfollowersRequirement: number;
+    @Property() public participation: boolean;
+    @Property() public participationScore: number;
+    @Property() public participationScoreRequirement: number;
+    @Property() public orderLimitForTwentyFourHoursReached: boolean;
 }
 
 export class CampaignMetricsResultModel {

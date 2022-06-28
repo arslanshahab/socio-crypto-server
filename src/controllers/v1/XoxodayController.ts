@@ -16,10 +16,13 @@ import { TwitterClient } from "../../clients/twitter";
 import { PrismaService } from ".prisma/client/entities";
 
 const userResultRelations = ["social_link" as const];
-class ListXoxoVariablesModel {
-    @Required() public readonly country: string;
-    @Required() public readonly page: number;
-    @Property() public readonly userRelated: boolean | undefined;
+class VoucherParams {
+    @Property() public readonly country: string;
+    @Property() public readonly page: number;
+}
+
+class RedemptionRequirementParam {
+    @Required() public readonly userId: string;
 }
 
 @Controller("/xoxoday")
@@ -35,7 +38,7 @@ export class XoxodayController {
 
     @Get("/voucher")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(XoxodayVoucherResultModel))
-    public async getStoreVouchers(@QueryParams() query: ListXoxoVariablesModel, @Context() context: Context) {
+    public async getStoreVouchers(@QueryParams() query: VoucherParams, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
         const { country, page } = query;
@@ -51,6 +54,7 @@ export class XoxodayController {
             Pagination
         );
     }
+
     @Get("/redemption-requirements")
     @(Returns(200, SuccessResult).Of(RedemptionRequirementsModel))
     public async getRedemptionRequirements(@Context() context: Context) {
@@ -72,10 +76,11 @@ export class XoxodayController {
         };
         return new SuccessResult(result, RedemptionRequirementsModel);
     }
+
     @Get("/redemption-requirements/:userId")
     @(Returns(200, SuccessResult).Of(RedemptionRequirementsModel))
-    public async getRedemptionRequirementsV1(@PathParams() query: { userId: string }, @Context() context: Context) {
-        const { userId } = query;
+    public async getRedemptionRequirementsByUserId(@PathParams() path: RedemptionRequirementParam) {
+        const { userId } = path;
         const { TWITTER } = SocialClientType;
         const recentOrder = await this.xoxodayService.getLast24HourRedemption("XOXODAY_REDEMPTION");
         const socialLink = await this.prismaService.socialLink.findMany({
