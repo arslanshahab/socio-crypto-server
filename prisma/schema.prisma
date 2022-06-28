@@ -489,30 +489,30 @@ model TwentyFourHourMetric {
 }
 
 model User {
-  active                                       Boolean                  @default(true)
-  createdAt                                    DateTime                 @default(now()) @db.Timestamp(6)
-  updatedAt                                    DateTime                 @default(now()) @updatedAt @db.Timestamp(6)
-  identityId                                   String?                  @db.VarChar
-  id                                           String                   @id(map: "PK_cace4a159ff9f2512dd42373760") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  kycStatus                                    String?                  @default("") @db.VarChar
-  lastLogin                                    DateTime?                @db.Timestamp(6)
-  email                                        String                   @db.VarChar
-  password                                     String                   @db.VarChar
-  referralCode                                 String?                  @db.VarChar
-  deletedAt                                    DateTime?                @db.Timestamp(6)
+  active                                       Boolean                   @default(true)
+  createdAt                                    DateTime                  @default(now()) @db.Timestamp(6)
+  updatedAt                                    DateTime                  @default(now()) @updatedAt @db.Timestamp(6)
+  identityId                                   String?                   @db.VarChar
+  id                                           String                    @id(map: "PK_cace4a159ff9f2512dd42373760") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  kycStatus                                    String?                   @default("") @db.VarChar
+  lastLogin                                    DateTime?                 @db.Timestamp(6)
+  email                                        String                    @db.VarChar
+  password                                     String                    @db.VarChar
+  referralCode                                 String?                   @db.VarChar
+  deletedAt                                    DateTime?                 @db.Timestamp(6)
   admin                                        Admin[]
   daily_participant_metric                     DailyParticipantMetric[]
   external_address                             ExternalAddress[]
   external_wallet                              ExternalWallet[]
-  factor_link_factor_link_userIdTouser         FactorLink[]             @relation("factor_link_userIdTouser")
-  factor_link_factor_link_verificationIdTouser FactorLink[]             @relation("factor_link_verificationIdTouser")
+  factor_link_factor_link_userIdTouser         FactorLink[]              @relation("factor_link_userIdTouser")
+  factor_link_factor_link_verificationIdTouser FactorLink[]              @relation("factor_link_verificationIdTouser")
   notification_settings                        NotificationSettings?
   participant                                  Participant[]
   profile                                      Profile?
   social_link                                  SocialLink[]
   social_post                                  SocialPost[]
   twenty_four_hour_metric                      TwentyFourHourMetric[]
-  verification_application                     VerificationApplication?
+  verification_application                     VerificationApplication[]
   wallet                                       Wallet?
   xoxoday_order                                XoxodayOrder[]
 
@@ -534,14 +534,16 @@ model Verification {
 }
 
 model VerificationApplication {
-  applicationId String   @db.VarChar
-  status        String   @db.VarChar
-  userId        String?  @unique(map: "UQ_79e9b3d653b00690eae5f235dad") @db.Uuid
-  createdAt     DateTime @default(now()) @db.Timestamp(6)
-  updatedAt     DateTime @default(now()) @updatedAt @db.Timestamp(6)
-  reason        String?  @db.VarChar
-  id            String   @id(map: "PK_9a21866200edef5f625c56bcdf9") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user          User?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_79e9b3d653b00690eae5f235dad")
+  applicationId String                              @db.VarChar
+  status        String                              @db.VarChar
+  userId        String?                             @db.Uuid
+  createdAt     DateTime                            @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime                            @default(now()) @updatedAt @db.Timestamp(6)
+  reason        String?                             @db.VarChar
+  id            String                              @id(map: "PK_9a21866200edef5f625c56bcdf9") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  level         verification_application_level_enum @default(LEVEL1)
+  profile       String?                             @db.VarChar
+  user          User?                               @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_79e9b3d653b00690eae5f235dad")
 
   @@map("verification_application")
 }
@@ -615,4 +617,9 @@ model MarketData {
   updatedAt DateTime @default(now()) @db.Timestamp(6)
 
   @@map("market_data")
+}
+
+enum verification_application_level_enum {
+  LEVEL1
+  LEVEL2
 }

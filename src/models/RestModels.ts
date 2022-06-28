@@ -2,6 +2,7 @@ import Prisma from "@prisma/client";
 import { ArrayOf, CollectionOf, Nullable, Optional, Property, Required } from "@tsed/schema";
 import { getCryptoAssestImageUrl } from "../util";
 import { SharingRewardType } from "../util/constants";
+import { KycStatus } from "src/types";
 
 export class CampaignMediaResultModel {
     @Property() public readonly id: string;
@@ -461,10 +462,10 @@ export class AcuantApplicationExtractedDetailsModel {
     @Property() public readonly email: string | null;
 }
 
-export class KycUpdateResultModel {
+export class KycResultModel {
     @Property() public readonly kycId: string;
-    @Property() public readonly status: string;
-    @Property() public readonly factors: AcuantApplicationExtractedDetailsModel;
+    @Property() public readonly status: KycStatus;
+    // @Property() public readonly factors: AcuantApplicationExtractedDetailsModel;
 }
 
 export class BooleanResultModel {
