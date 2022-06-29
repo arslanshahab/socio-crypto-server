@@ -98,7 +98,7 @@ export class UserService {
      * @returns the user object, with the requested relations included
      */
     public async findUsers<T extends (keyof Prisma.UserInclude)[] | Prisma.UserInclude | undefined>(
-        params: { skip?: number; take?: number },
+        params?: { skip?: number; take?: number },
         include?: T
     ) {
         return readPrisma.$transaction([
@@ -112,8 +112,8 @@ export class UserService {
                 include: (isArray(include)
                     ? include?.reduce((acc, relation) => ({ ...acc, [relation]: true }), {})
                     : include) as T extends unknown[] ? Array2TrueMap<T> : T,
-                skip: params.skip,
-                take: params.take,
+                skip: params?.skip,
+                take: params?.take,
                 where: { deletedAt: null },
             }),
             readPrisma.user.count(),
@@ -425,18 +425,16 @@ export class UserService {
         return Boolean(await readPrisma.user.findFirst({ where: { email: email.toLowerCase() } }));
     }
 
-    public async findAllUsers() {
-        return await readPrisma.user.findMany({
-            select: {
-                id: true,
-                email: true,
-                active: true,
-                createdAt: true,
-                lastLogin: true,
-                deletedAt: true,
-                kycStatus: true,
-                profile: { select: { username: true } },
-            },
-        });
-    }
+    // public async findAllUsers() {
+    //     return await readPrisma.user.findMany({
+    //         select: {
+    //             id: true,
+    //             email: true,
+    //             active: true,
+    //             createdAt: true,
+    //             lastLogin: true,
+    //             deletedAt: true,
+    //         },
+    //     });
+    // }
 }

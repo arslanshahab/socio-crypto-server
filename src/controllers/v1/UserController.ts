@@ -86,6 +86,7 @@ import { VerificationService } from "../../services/VerificationService";
 import { decrypt } from "../../util/crypto";
 import { S3Client } from "../../clients/s3";
 import { VerificationApplicationService } from "../../services/VerificationApplicationService";
+import { Parser } from "json2csv";
 
 const userResultRelations = {
     profile: true,
@@ -736,18 +737,20 @@ export class UserController {
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 
-    @Get("/detials")
+    @Get("/record")
     @(Returns(200, SuccessArrayResult).Of(Object))
-    public async getUsersDetails(@Context() context: Context) {
+    public async downloadUsersRecord(@Context() context: Context) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        const users = await this.userService.findAllUsers();
-        let kycStatus;
-        for (let i = 0; i <= users.length; i++) {
-            const userId = users[i].id;
-            kycStatus = await this.verificationApplicationService.getKycData(userId);
-            console.log("kyc ---------------", kycStatus);
-        }
-
-        console.log("user record-----------------------", users);
+        const [results] = await this.userService.findUsers();
+        const users = results.map((x) => ({
+            id: x.id,
+            email: x.email,
+            active: x.active,
+            createdAt: x.createdAt,
+            lastLogin: x.lastLogin,
+        }));
+        const parser = new Parser();
+        const csv = parser.parse(users);
+        return csv;
     }
 }
