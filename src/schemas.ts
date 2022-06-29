@@ -187,7 +187,6 @@ export const kycUserLevel1 = {
 export const kycUserLevel2 = {
     type: "object",
     properties: {
-        phoneNumber: { type: "string" },
         documentType: { type: "string" },
         documentCountry: { type: "string" },
         frontDocumentImage: { type: "string" },
