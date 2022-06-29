@@ -735,4 +735,19 @@ export class UserController {
         await this.profileService.updateProfilePicture(user.id, filename);
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
+
+    @Get("/detials")
+    @(Returns(200, SuccessArrayResult).Of(Object))
+    public async getUsersDetails(@Context() context: Context) {
+        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const users = await this.userService.findAllUsers();
+        let kycStatus;
+        for (let i = 0; i <= users.length; i++) {
+            const userId = users[i].id;
+            kycStatus = await this.verificationApplicationService.getKycData(userId);
+            console.log("kyc ---------------", kycStatus);
+        }
+
+        console.log("user record-----------------------", users);
+    }
 }
