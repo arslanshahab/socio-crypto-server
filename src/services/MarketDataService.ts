@@ -15,7 +15,7 @@ export class MarketDataService {
         const cacheKey = `${CacheKeys.MARKET_DATA_SERVICE}:${symbol}`;
         let marketData = await this.cache.get(cacheKey);
         if (marketData) return JSON.parse(marketData as string);
-        marketData = this.prismaService.marketData.findFirst({
+        marketData = await this.prismaService.marketData.findFirst({
             where: { symbol: { contains: symbol, mode: "insensitive" } },
         });
         this.cache.set(cacheKey, JSON.stringify(marketData), { ttl: 900 });
