@@ -363,10 +363,10 @@ export class UserController {
 
     @Post("/participate")
     @(Returns(200, SuccessResult).Of(ParticipateToCampaignModel))
-    public async participate(@BodyParams() body: UserParticipateParams, @Context() context: Context) {
+    public async participate(@QueryParams() query: UserParticipateParams, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"), ["wallet", "profile"]);
         if (!user) throw new NotFound(USER_NOT_FOUND);
-        const { campaignId, email } = body;
+        const { campaignId, email } = query;
         const campaign = await this.campaignService.findCampaignById(campaignId, {
             org: true,
             currency: { include: { token: true } },
@@ -378,7 +378,7 @@ export class UserController {
         if (await this.participantService.findParticipantByCampaignId(campaign.id, user.id))
             throw new BadRequest(ALREADY_PARTICIPATING);
         await this.tatumClientService.findOrCreateCurrency({ ...campaign?.currency?.token!, wallet: user.wallet! });
-        let participant = await this.participantService.createNewParticipant(user.id, campaign, email);
+        const participant = await this.participantService.createNewParticipant(user.id, campaign, email);
         if (!campaign.isGlobal)
             await this.userService.transferCoiinReward({ user, type: "PARTICIPATION_REWARD", campaign });
         return new SuccessResult(
