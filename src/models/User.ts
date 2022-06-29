@@ -35,7 +35,7 @@ import { differenceInHours } from "date-fns";
 import { Transfer } from "./Transfer";
 import { TatumClient } from "../clients/tatumClient";
 import { Org } from "./Org";
-import { BSC, COIIN, REWARD_AMOUNTS, SHARING_REWARD_LIMIT_PER_DAY } from "../util/constants";
+import { BSC, COIIN, KycLevel, REWARD_AMOUNTS, SHARING_REWARD_LIMIT_PER_DAY } from "../util/constants";
 import { Campaign } from "./Campaign";
 import { trim } from "lodash";
 
@@ -220,7 +220,7 @@ export class User extends BaseEntity {
     }
 
     public async hasKycApproved(): Promise<boolean> {
-        const va = await VerificationApplication.findOne({ where: { user: this } });
+        const va = await VerificationApplication.findOne({ where: { user: this, level: KycLevel.LEVEL2 } });
         return !va || va.status !== "APPROVED" ? false : true;
     }
 
