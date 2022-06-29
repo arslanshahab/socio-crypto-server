@@ -258,7 +258,7 @@ export const withdrawFunds = async (
         const user = await User.findUserByContext(context.user, ["wallet"]);
         if (!user) throw new Error("User not found");
         if (!(await user.hasKycApproved()))
-            throw new Error("You need to get your KYC approved before you can withdraw.");
+            throw new Error("You need to be KYC Level 2 approved before you can withdraw.");
         let { symbol, network, address, amount, verificationToken } = args;
         address = getWithdrawAddressForTatum(symbol, address);
         if (symbol.toUpperCase() === COIIN)
