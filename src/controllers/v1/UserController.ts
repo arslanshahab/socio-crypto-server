@@ -738,7 +738,7 @@ export class UserController {
     }
 
     @Get("/record")
-    @(Returns(200, SuccessResult))
+    @Returns(200, SuccessResult)
     public async downloadUsersRecord(@Context() context: Context) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const [results] = await this.userService.findUsers();
@@ -750,7 +750,6 @@ export class UserController {
             lastLogin: x.lastLogin,
         }));
         const parser = new Parser();
-        const csv = parser.parse(users);
-        return csv;
+        return parser.parse(users);
     }
 }
