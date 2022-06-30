@@ -20,8 +20,11 @@ console.log("APP instance created.");
         };
         const list = await doFetch(requestData);
         for (const item of list) {
-            const marketSymbol = await readPrisma.marketData.findFirst({ where: { symbol: item.symbol } });
-            if (marketSymbol) {
+            const marketSymbol = await readPrisma.marketData.findFirst({
+                where: { symbol: item.symbol.toUpperCase() },
+            });
+            if (marketSymbol?.id) {
+                console.log("UPDATING FOR SYMBOL ", marketSymbol?.symbol);
                 await prisma.marketData.update({
                     where: { id: marketSymbol.id },
                     data: { price: parseFloat(item.current_price) },
