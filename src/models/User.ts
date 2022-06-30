@@ -197,8 +197,8 @@ export class User extends BaseEntity {
         }
         returnedUser = {
             ...returnedUser,
-            kycStatus: this?.identityVerification[0]?.status || "",
-            kycStatusDetails: this?.identityVerification[0]?.reason || "",
+            kycStatus: (this.identityVerification && this?.identityVerification[0]?.status) || "",
+            kycStatusDetails: (this.identityVerification && this?.identityVerification[0]?.reason) || "",
         };
         try {
             if (this.posts && this.posts.length > 0) {
