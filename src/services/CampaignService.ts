@@ -8,7 +8,7 @@ import { calculateTier } from "../controllers/helpers";
 import { BN, prepareCacheKey } from "../util";
 import { CurrentCampaignTierModel } from "../models/RestModels";
 import { CAMPAIGN_CREATION_AMOUNT } from "../clients/tatumClient";
-import { TatumClientService } from "./TatumClientService";
+import { TatumService } from "./TatumService";
 import { PlatformCache, UseCache } from "@tsed/common";
 import { CacheKeys } from "../util/constants";
 import { resetCacheKey } from "../util/index";
@@ -21,7 +21,7 @@ export class CampaignService {
     @Inject()
     private cache: PlatformCache;
     @Inject()
-    private tatumClientService: TatumClientService;
+    private tatumService: TatumService;
 
     /**
      * Retrieves a paginated list of campaigns
@@ -311,7 +311,7 @@ export class CampaignService {
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
         if (!campaign.currency) throw new NotFound(CURRENCY_NOT_FOUND);
         const blockageKey = `${CAMPAIGN_CREATION_AMOUNT}:${campaign.id}`;
-        const blockedAmount = await this.tatumClientService.blockAccountBalance(
+        const blockedAmount = await this.tatumService.blockAccountBalance(
             campaign.currency.tatumId,
             campaign.coiinTotal,
             blockageKey

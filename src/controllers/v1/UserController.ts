@@ -71,7 +71,7 @@ import {
 import { SocialService } from "../../services/SocialService";
 import { CampaignService } from "../../services/CampaignService";
 import { ParticipantService } from "../../services/ParticipantService";
-import { TatumClientService } from "../../services/TatumClientService";
+import { TatumService } from "../../services/TatumService";
 import { HourlyCampaignMetricsService } from "../../services/HourlyCampaignMetricsService";
 import { SesClient } from "../../clients/ses";
 import { CurrencyService } from "../../services/CurrencyService";
@@ -182,7 +182,7 @@ export class UserController {
     @Inject()
     private participantService: ParticipantService;
     @Inject()
-    private tatumClientService: TatumClientService;
+    private tatumService: TatumService;
     @Inject()
     private hourlyCampaignMetricsService: HourlyCampaignMetricsService;
     @Inject()
@@ -378,7 +378,7 @@ export class UserController {
         if (await !this.campaignService.isCampaignOpen(campaign.id)) throw new BadRequest(CAMPAIGN_CLOSED);
         if (await this.participantService.findParticipantByCampaignId(campaign.id, user.id))
             throw new BadRequest(ALREADY_PARTICIPATING);
-        await this.tatumClientService.findOrCreateCurrency({ ...campaign?.currency?.token!, wallet: user.wallet! });
+        await this.tatumService.findOrCreateCurrency({ ...campaign?.currency?.token!, wallet: user.wallet! });
         const participant = await this.participantService.createNewParticipant(user.id, campaign, email);
         if (!campaign.isGlobal)
             await this.userService.transferCoiinReward({ user, type: "PARTICIPATION_REWARD", campaign });
@@ -501,7 +501,7 @@ export class UserController {
         const orgCurrency = await this.currencyService.findCurrencyByTokenId(token.id, orgWallet?.id!);
         if (!orgCurrency) throw new NotFound(CURRENCY_NOT_FOUND + " for org");
         try {
-            await this.tatumClientService.transferFunds({
+            await this.tatumService.transferFunds({
                 senderAccountId: action === ADD ? orgCurrency?.tatumId : userCurrency?.tatumId,
                 recipientAccountId: action === ADD ? userCurrency?.tatumId : orgCurrency?.tatumId,
                 amount: coiin,
@@ -577,7 +577,7 @@ export class UserController {
             campaign = globalCampaign;
             participant = await this.participantService.findParticipantByCampaignId(campaign.id, user.id);
             if (!participant) {
-                await this.tatumClientService.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet: wallet });
+                await this.tatumService.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet: wallet });
                 participant = await this.participantService.createNewParticipant(user.id, globalCampaign, user.email);
             }
         } else {

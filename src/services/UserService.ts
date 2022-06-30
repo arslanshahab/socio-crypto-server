@@ -12,7 +12,7 @@ import { WalletService } from "./WalletService";
 import { WALLET_NOT_FOUND } from "../util/errors";
 import { differenceInHours, subDays } from "date-fns";
 import { TransferService } from "./TransferService";
-import { TatumClientService } from "./TatumClientService";
+import { TatumService } from "./TatumService";
 import { createPasswordHash, prepareCacheKey } from "../util";
 import { ProfileService } from "./ProfileService";
 import { NotificationService } from "./NotificationService";
@@ -36,7 +36,7 @@ export class UserService {
     @Inject()
     private transferService: TransferService;
     @Inject()
-    private tatumClientService: TatumClientService;
+    private tatumService: TatumService;
     @Inject()
     private profileService: ProfileService;
     @Inject()
@@ -190,7 +190,7 @@ export class UserService {
         key: (args: any[]) => prepareCacheKey(CacheKeys.USER_COIIN_ADDRESS_SERVICE, args),
     })
     public async getCoiinAddress(user: User & { wallet: Wallet }) {
-        let currency = await this.tatumClientService.findOrCreateCurrency({
+        let currency = await this.tatumService.findOrCreateCurrency({
             symbol: COIIN,
             network: BSC,
             wallet: user.wallet,
@@ -370,7 +370,7 @@ export class UserService {
         const wallet = await this.walletService.createWallet(user);
         await this.profileService.createProfile(user, username);
         await this.notificationService.createNotificationSetting(user.id);
-        await this.tatumClientService.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet: wallet });
+        await this.tatumService.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet: wallet });
         return await user.id;
     }
 

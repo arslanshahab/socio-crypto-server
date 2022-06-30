@@ -27,7 +27,7 @@ import { downloadMedia } from "../../util";
 import { HourlyCampaignMetricsService } from "../../services/HourlyCampaignMetricsService";
 import { addMinutes } from "date-fns";
 import { BSC, COIIN } from "../../util/constants";
-import { TatumClientService } from "../../services/TatumClientService";
+import { TatumService } from "../../services/TatumService";
 
 class RegisterSocialLinkResultModel {
     @Property() public readonly registerSocialLink: boolean;
@@ -101,7 +101,7 @@ export class SocialController {
     @Inject()
     private hourlyCampaignMetricsService: HourlyCampaignMetricsService;
     @Inject()
-    private tatumClientService: TatumClientService;
+    private tatumService: TatumService;
 
     @Get("/social-metrics")
     @(Returns(200, SuccessResult).Of(SocialMetricsResultModel))
@@ -222,7 +222,7 @@ export class SocialController {
         if (!globalCampaign) throw new NotFound(GLOBAL_CAMPAIGN_NOT_FOUND);
         let participant = await this.participantService.findParticipantByCampaignId(globalCampaign.id, user.id);
         if (!participant) {
-            await this.tatumClientService.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet: user.wallet! });
+            await this.tatumService.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet: user.wallet! });
             participant = await this.participantService.createNewParticipant(user.id, globalCampaign, user.email);
         }
         await this.postToSocial(

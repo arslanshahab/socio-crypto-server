@@ -24,7 +24,7 @@ import { CurrencyService } from "./CurrencyService";
 import { WalletService } from "./WalletService";
 
 @Injectable()
-export class TatumClientService {
+export class TatumService {
     @Inject()
     private prismaService: PrismaService;
     @Inject()
@@ -68,22 +68,12 @@ export class TatumClientService {
         }
     }
 
-    // Find supported currency
     public async isCurrencySupported(data: SymbolNetworkParams) {
-        try {
-            return await this.tokenService.findToken(data);
-        } catch (error) {
-            throw new BadRequest(error.message);
-        }
+        return await this.tokenService.findToken(data);
     }
-    // Verify deposit address
+
     public isCustodialWallet(data: SymbolNetworkParams) {
-        try {
-            return CUSTODIAL_NETWORKS.includes(data.network);
-        } catch (error) {
-            console.log(error);
-            throw new BadRequest(error.message);
-        }
+        return CUSTODIAL_NETWORKS.includes(data.network);
     }
 
     // Get wallet
