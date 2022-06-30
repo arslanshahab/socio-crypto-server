@@ -243,12 +243,6 @@ export class TransferService {
         });
     }
 
-    public async transactionHistory(orgId: string) {
-        return this.prismaService.transfer.findMany({
-            where: { orgId },
-        });
-    }
-
     public async getAuditedWithdrawals() {
         return this.prismaService.transfer.findMany({
             where: {
@@ -259,6 +253,12 @@ export class TransferService {
                 wallet: { include: { user: { include: { profile: true } } } },
             },
             orderBy: { createdAt: "asc" },
+        });
+    }
+
+    public async findTransactionsByWalletId(walletId: string) {
+        return this.prismaService.transfer.findMany({
+            where: { walletId },
         });
     }
 }
