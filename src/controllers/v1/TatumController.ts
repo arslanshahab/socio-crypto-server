@@ -3,11 +3,13 @@ import { Controller, Inject } from "@tsed/di";
 import { Get, Required, Returns } from "@tsed/schema";
 import { SuccessArrayResult, SuccessResult } from "../../util/entities";
 import { UserService } from "../../services/UserService";
-import { TatumClientService } from "../../services/TatumClientService";
+import { TatumService } from "../../services/TatumService";
 import { DepositAddressResultModel, SupportedCurrenciesResultModel } from "../../models/RestModels";
 import { NotFound } from "@tsed/exceptions";
 import { WalletService } from "../../services/WalletService";
-import { ADMIN_NOT_FOUND, USER_NOT_FOUND } from "../../util/errors";
+import { ADMIN_NOT_FOUND, KYC_LEVEL_2_NOT_APPROVED, USER_NOT_FOUND } from "../../util/errors";
+import { VerificationApplicationService } from "../../services/VerificationApplicationService";
+import { getWithdrawAddressForTatum } from "../../util/tatumHelper";
 
 class DepositAddressParams {
     @Required() public readonly symbol: string;
@@ -27,15 +29,17 @@ export class TatumController {
     @Inject()
     private userService: UserService;
     @Inject()
-    private tatumClientService: TatumClientService;
+    private tatumService: TatumService;
     @Inject()
     private walletService: WalletService;
+    @Inject()
+    private verificationApplicationService: VerificationApplicationService;
 
     @Get("/supported-currencies")
     @(Returns(200, SuccessArrayResult).Of(SupportedCurrenciesResultModel))
     public async getSupportedCurrencies(@Context() context: Context) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        const currencies = await this.tatumClientService.getSupportedTokens();
+        const currencies = await this.tatumService.getSupportedTokens();
         return new SuccessArrayResult(currencies, SupportedCurrenciesResultModel);
     }
 
@@ -47,9 +51,9 @@ export class TatumController {
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
         const wallet = await this.walletService.findWalletByOrgId(admin.orgId!);
         const { symbol, network } = query;
-        const token = await this.tatumClientService.isCurrencySupported({ symbol, network });
+        const token = await this.tatumService.isCurrencySupported({ symbol, network });
         if (!token) throw new Error("Currency not supported");
-        const ledgerAccount = await this.tatumClientService.findOrCreateCurrency({ network, symbol, wallet: wallet! });
+        const ledgerAccount = await this.tatumService.findOrCreateCurrency({ network, symbol, wallet: wallet! });
         if (!ledgerAccount) throw new Error("Ledger account not found.");
         const result = {
             symbol: token.symbol,
@@ -64,18 +68,18 @@ export class TatumController {
 
     @Get("/withdraw")
     @(Returns(200, SuccessResult).Of(DepositAddressResultModel))
-    public async withdraw(@BodyParams() query: WithdrawBody, @Context() context: Context) {
+    public async withdraw(@BodyParams() body: WithdrawBody, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"), { wallet: true });
         if (!user) throw new NotFound(USER_NOT_FOUND);
-        if (!(await user.hasKycApproved()))
-            throw new Error("You need to be KYC Level 2 approved before you can withdraw.");
-        let { symbol, network, address, amount, verificationToken } = args;
+        if (!(await this.verificationApplicationService.isLevel2Approved(user.id)))
+            throw new Error(KYC_LEVEL_2_NOT_APPROVED);
+        let { symbol, network, address, amount, verificationToken } = body;
         address = getWithdrawAddressForTatum(symbol, address);
         if (symbol.toUpperCase() === COIIN)
             throw new Error(
                 `${symbol} is not available to withdrawal until after the TGE, follow our social channels to learn more!`
             );
-        const token = await TatumClient.isCurrencySupported({ symbol, network });
+        const token = await this.tatumService.isCurrencySupported({ symbol, network });
         if (!token) throw new Error(`Currency "${symbol}" is not supported`);
         await Verification.verifyToken({ verificationToken });
         const userCurrency = await Currency.findOne({ where: { wallet: user.wallet, token }, relations: ["token"] });
