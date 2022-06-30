@@ -424,17 +424,4 @@ export class UserService {
     public async ifEmailExist(email: string) {
         return Boolean(await readPrisma.user.findFirst({ where: { email: email.toLowerCase() } }));
     }
-
-    // public async findAllUsers() {
-    //     return await readPrisma.user.findMany({
-    //         select: {
-    //             id: true,
-    //             email: true,
-    //             active: true,
-    //             createdAt: true,
-    //             lastLogin: true,
-    //             deletedAt: true,
-    //         },
-    //     });
-    // }
 }

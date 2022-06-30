@@ -124,7 +124,6 @@ export class VerificationApplicationService {
     }
 
     public async getKycData(userId: string) {
-        console.log("userid---------", userId);
         const level1Status = (await this.findByUserIdAndLevel(userId, KycLevel.LEVEL2))?.status as KycLevel;
         const level2Status = (await this.findByUserIdAndLevel(userId, KycLevel.LEVEL2))?.status as KycLevel;
         return {
