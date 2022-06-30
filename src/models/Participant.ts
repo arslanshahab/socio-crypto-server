@@ -40,6 +40,9 @@ export class Participant extends BaseEntity {
     @Column({ nullable: true })
     public email: string;
 
+    @Column({ default: true })
+    public blacklist: boolean;
+
     @ManyToOne(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         (_type) => User,
