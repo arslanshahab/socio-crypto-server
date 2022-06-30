@@ -98,7 +98,7 @@ export class UserService {
      * @returns the user object, with the requested relations included
      */
     public async findUsers<T extends (keyof Prisma.UserInclude)[] | Prisma.UserInclude | undefined>(
-        params?: { skip?: number; take?: number },
+        params?: { skip: number; take: number },
         include?: T
     ) {
         return readPrisma.$transaction([

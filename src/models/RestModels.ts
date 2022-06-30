@@ -256,7 +256,7 @@ export class UserResultModel {
 
     public static build(
         user: Prisma.User & {
-            profile?: Prisma.Profile | null;
+            profile: Prisma.Profile | null;
             social_link?: Prisma.SocialLink[];
             participant?: (Prisma.Participant & { campaign: Prisma.Campaign })[];
             wallet?: Prisma.Wallet | null;
