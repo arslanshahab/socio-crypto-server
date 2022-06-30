@@ -86,6 +86,7 @@ import { VerificationService } from "../../services/VerificationService";
 import { decrypt } from "../../util/crypto";
 import { S3Client } from "../../clients/s3";
 import { VerificationApplicationService } from "../../services/VerificationApplicationService";
+import { Parser } from "json2csv";
 
 const userResultRelations = {
     profile: true,
@@ -734,5 +735,21 @@ export class UserController {
         const filename = await S3Client.uploadProfilePicture("profilePicture", user.id, image);
         await this.profileService.updateProfilePicture(user.id, filename);
         return new SuccessResult({ success: true }, BooleanResultModel);
+    }
+
+    @Get("/record")
+    @Returns(200, SuccessResult)
+    public async downloadUsersRecord(@Context() context: Context) {
+        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const [results] = await this.userService.findUsers();
+        const users = results.map((x) => ({
+            id: x.id,
+            email: x.email,
+            active: x.active,
+            createdAt: x.createdAt,
+            lastLogin: x.lastLogin,
+        }));
+        const parser = new Parser();
+        return parser.parse(users);
     }
 }
