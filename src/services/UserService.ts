@@ -98,22 +98,22 @@ export class UserService {
      * @returns the user object, with the requested relations included
      */
     public async findUsers<T extends (keyof Prisma.UserInclude)[] | Prisma.UserInclude | undefined>(
-        params: { skip: number; take: number },
+        params?: { skip: number; take: number },
         include?: T
     ) {
         return readPrisma.$transaction([
             readPrisma.user.findMany<{
                 where: Prisma.UserWhereInput;
-                skip: number;
-                take: number;
+                skip?: number;
+                take?: number;
                 // this type allows adding additional relations to result tpe
                 include: T extends unknown[] ? Array2TrueMap<T> : T;
             }>({
                 include: (isArray(include)
                     ? include?.reduce((acc, relation) => ({ ...acc, [relation]: true }), {})
                     : include) as T extends unknown[] ? Array2TrueMap<T> : T,
-                skip: params.skip,
-                take: params.take,
+                skip: params?.skip,
+                take: params?.take,
                 where: { deletedAt: null },
             }),
             readPrisma.user.count(),
