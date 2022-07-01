@@ -47,13 +47,18 @@ export class ParticipantService {
     }
 
     public async findCampaignParticipants(params: FindCampaignById) {
-        const { campaignId, skip, take } = params;
+        const { campaignId, skip, take, nonZeroScore } = params;
+        const where = nonZeroScore
+            ? {
+                  ...(campaignId && { campaignId }),
+                  participationScore: { gt: "0" },
+              }
+            : {
+                  ...(campaignId && { campaignId }),
+              };
         return this.prismaService.$transaction([
             this.prismaService.participant.findMany({
-                where: {
-                    ...(campaignId && { campaignId }),
-                    participationScore: { gt: "0" },
-                },
+                where,
                 orderBy: {
                     participationScore: "desc",
                 },

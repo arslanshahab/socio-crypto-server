@@ -1,4 +1,4 @@
-import { Get, Property, Required, Returns } from "@tsed/schema";
+import { Get, Property, Returns } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
 import { Context, QueryParams } from "@tsed/common";
 import { ParticipantModel } from ".prisma/client/entities";
@@ -32,8 +32,9 @@ import { MarketDataService } from "../../services/MarketDataService";
 
 class CampaignParticipantsParams {
     @Property() public readonly campaignId: string;
-    @Required() public readonly skip: number;
-    @Required() public readonly take: number;
+    @Property() public readonly skip: number;
+    @Property() public readonly take: number;
+    @Property() public readonly nonZeroScore: boolean;
 }
 
 class ParticipantIdParams {
@@ -102,7 +103,7 @@ export class ParticipantController {
         if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
         return new SuccessResult(ParticipantResultModelV2.build(participant), ParticipantResultModelV2);
     }
-    
+
     @Get("/campaign-participants")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(ParticipantModel))
     public async getCampaignParticipants(
