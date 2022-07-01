@@ -51,10 +51,10 @@ export class ParticipantService {
         const where = nonZeroScore
             ? {
                   ...(campaignId && { campaignId }),
-                  participationScore: { gt: "0" },
               }
             : {
                   ...(campaignId && { campaignId }),
+                  participationScore: { gt: "0" },
               };
         return this.prismaService.$transaction([
             this.prismaService.participant.findMany({
