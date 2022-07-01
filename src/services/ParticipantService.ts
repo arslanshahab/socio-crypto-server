@@ -194,4 +194,43 @@ export class ParticipantService {
             },
         });
     }
+
+    public async findParticipantsByCampaignId(params: {
+        campaignId: string;
+        skip: number;
+        take: number;
+        filter: string;
+    }) {
+        const { campaignId, skip, take, filter } = params;
+        return this.prismaService.$transaction([
+            this.prismaService.participant.findMany({
+                where: { campaignId, user: { email: { contains: filter && filter, mode: "insensitive" } } },
+                select: {
+                    id: true,
+                    userId: true,
+                    campaignId: true,
+                    participationScore: true,
+                    blackList: true,
+                    link: true,
+                    createdAt: true,
+                    user: { select: { id: true, email: true, profile: { select: { id: true, username: true } } } },
+                    campaign: {
+                        select: {
+                            id: true,
+                            coiinTotal: true,
+                            name: true,
+                            auditStatus: true,
+                            symbol: true,
+                            description: true,
+                        },
+                    },
+                },
+                skip,
+                take,
+            }),
+            this.prismaService.participant.count({
+                where: { campaignId, user: { email: { contains: filter && filter, mode: "insensitive" } } },
+            }),
+        ]);
+    }
 }

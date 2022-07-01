@@ -1,6 +1,6 @@
-import { Get, Property, Put, Returns } from "@tsed/schema";
+import { Get, Property, Put, Required, Returns } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
-import { Context, PathParams, QueryParams } from "@tsed/common";
+import { BodyParams, Context, PathParams, QueryParams } from "@tsed/common";
 import { ParticipantModel } from ".prisma/client/entities";
 import { ParticipantService } from "../../services/ParticipantService";
 import { UserService } from "../../services/UserService";
@@ -40,6 +40,13 @@ class CampaignParticipantsParams {
 
 class ParticipantIdParams {
     @Property() public readonly id: string;
+}
+
+class CampaignAllParticipantsParams {
+    @Required() public readonly campaignId: string;
+    @Required() public readonly skip: number;
+    @Required() public readonly take: number;
+    @Property() public readonly filter: string;
 }
 
 @Controller("/participant")
@@ -307,5 +314,19 @@ export class ParticipantController {
             campaignId: participant.campaignId,
         });
         return new SuccessResult({ success: true }, BooleanResultModel);
+    }
+
+    @Get("/campaign-all-participants")
+    @(Returns(200, SuccessArrayResult).Of(Object))
+    public async getParticipants(@BodyParams() body: CampaignAllParticipantsParams, @Context() context: Context) {
+        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const { campaignId, skip, take, filter } = body;
+        const [items, count] = await this.participantService.findParticipantsByCampaignId({
+            campaignId: campaignId,
+            skip: skip,
+            take: take,
+            filter: filter,
+        });
+        return new SuccessResult({ items, count }, Object);
     }
 }
