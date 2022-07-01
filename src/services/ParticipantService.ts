@@ -178,4 +178,20 @@ export class ParticipantService {
             where: campaignId ? { campaignId } : {},
         });
     }
+
+    public async blacklistParticipant(params: { participantId: string; userId: string; campaignId: string }) {
+        const { participantId, userId, campaignId } = params;
+        return await this.prismaService.participant.update({
+            where: {
+                id_campaignId_userId: {
+                    id: participantId,
+                    userId,
+                    campaignId,
+                },
+            },
+            data: {
+                blackList: true,
+            },
+        });
+    }
 }

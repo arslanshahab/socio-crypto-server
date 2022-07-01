@@ -1,6 +1,6 @@
-import { Get, Property, Returns } from "@tsed/schema";
+import { Get, Property, Put, Returns } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
-import { Context, QueryParams } from "@tsed/common";
+import { Context, PathParams, QueryParams } from "@tsed/common";
 import { ParticipantModel } from ".prisma/client/entities";
 import { ParticipantService } from "../../services/ParticipantService";
 import { UserService } from "../../services/UserService";
@@ -11,6 +11,7 @@ import { formatUTCDateForComparision, getDatesBetweenDates } from "../helpers";
 import {
     AccumulatedParticipantMetricsResultModel,
     AccumulatedUserMetricsResultModel,
+    BooleanResultModel,
     CampaignIdModel,
     CampaignParticipantResultModel,
     CampaignResultModel,
@@ -291,5 +292,20 @@ export class ParticipantController {
             totalShareUSD: parseFloat(formatFloat(participantShare)) || 0,
         };
         return new SuccessResult(result, AccumulatedUserMetricsResultModel);
+    }
+
+    @Put("/blacklist/:id")
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
+    public async blacklistParticipant(@PathParams() path: ParticipantIdParams, @Context() context: Context) {
+        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const { id } = path;
+        const participant = await this.participantService.findParticipantById(id);
+        if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
+        await this.participantService.blacklistParticipant({
+            participantId: participant.id,
+            userId: participant.userId,
+            campaignId: participant.campaignId,
+        });
+        return new SuccessResult({ success: true }, BooleanResultModel);
     }
 }
