@@ -35,6 +35,16 @@ export class FormattedError extends ApolloError {
     };
 }
 
+export class CustomError extends Error {
+    public code: string;
+
+    public constructor(code: string) {
+        let errorMessage = errorMap[code] || errorMap[SOMETHING_WENT_WRONG];
+        super(errorMessage);
+        this.message = errorMessage;
+    }
+}
+
 export const SESSION_EXPIRED = "SESION_EXPIRED";
 export const INVALID_TOKEN = "INVALID_TOKEN";
 export const SOMETHING_WENT_WRONG = "SOMETHING_WENT_WRONG";
@@ -89,6 +99,9 @@ export const SERVICE_NOT_AVAILABLE = "SERVICE_NOT_AVAILABLE";
 export const TOKEN_NOT_FOUND = "TOKEN_NOT_FOUND";
 export const KYC_LEVEL_1_NOT_APPROVED = "KYC_LEVEL_1_NOT_APPROVED";
 export const KYC_LEVEL_2_NOT_APPROVED = "KYC_LEVEL_2_NOT_APPROVED";
+export const NOT_ENOUGH_BALANCE_IN_ACCOUNT = "NOT_ENOUGH_BALANCE_IN_ACCOUNT";
+export const USER_CURRENCY_NOT_FOUND = "USER_CURRENCY_NOT_FOUND";
+export const CUSTODIAL_ADDERSS_NOT_FOUND = "CUSTODIAL_ADDERSS_NOT_FOUND";
 
 export const errorMap: { [key: string]: string } = {
     SOMETHING_WENT_WRONG: "Something went wrong with your request. please try again!",
@@ -145,4 +158,7 @@ export const errorMap: { [key: string]: string } = {
     SERVICE_NOT_AVAILABLE:
         "This service has been disabled temporarily. Please contact our support for further assistance.",
     TOKEN_NOT_FOUND: "Token not found.",
+    NOT_ENOUGH_BALANCE_IN_ACCOUNT: "Not enough balance in user account to perform this withdraw.",
+    USER_CURRENCY_NOT_FOUND: "User currency not found.",
+    CUSTODIAL_ADDERSS_NOT_FOUND: "No custodial address available for raiinmaker",
 };

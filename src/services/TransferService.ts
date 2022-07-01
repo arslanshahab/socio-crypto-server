@@ -261,4 +261,31 @@ export class TransferService {
             where: { walletId },
         });
     }
+
+    public async initTatumTransfer(data: {
+        txId?: string;
+        symbol: string;
+        network: string;
+        campaignId?: string;
+        amount: string;
+        tatumId: string;
+        walletId: string;
+        action: TransferAction;
+        status: TransferStatus;
+        type: TransferType;
+    }) {
+        return await this.prismaService.transfer.create({
+            data: {
+                currency: data.symbol,
+                ...(data.campaignId && { campaignId: data.campaignId }),
+                ...(data.txId && { transactionHash: data.txId }),
+                amount: data.amount,
+                action: data.action,
+                ethAddress: data.tatumId,
+                walletId: data.walletId,
+                status: data.status,
+                type: data.type,
+            },
+        });
+    }
 }

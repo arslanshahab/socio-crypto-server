@@ -35,6 +35,12 @@ export const WITHDRAW_LIMIT = 1000;
 export const SHARING_REWARD_LIMIT_PER_DAY = 5;
 export const RAIINMAKER_ORG_NAME = "raiinmaker";
 export const AMOUNT_LIMIT_FOR_KYC_IN_XOXODAY = 100;
+export const CAMPAIGN_CREATION_AMOUNT = "CAMPAIGN_CREATION_AMOUNT";
+export const CAMPAIGN_FEE = "CAMPAIGN_FEE";
+export const CAMPAIGN_REWARD = "CAMPAIGN_REWARD";
+export const USER_WITHDRAW = "USER_WITHDRAW";
+export const USER_WITHDRAW_FEE = "USER_WITHDRAW_FEE";
+export const RAIINMAKER_WITHDRAW = "RAIINMAKER_WITHDRAW";
 
 export const CRYPTO_ICONS_BUCKET_URL = "https://rm-crypto-icons.s3.us-west-2.amazonaws.com";
 export const CRYPTO_ICONS_MAP: { [key: string]: string } = {

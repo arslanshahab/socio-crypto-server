@@ -7,10 +7,9 @@ import { CAMPAIGN_NOT_FOUND, CURRENCY_NOT_FOUND, ERROR_CALCULATING_TIER } from "
 import { calculateTier } from "../controllers/helpers";
 import { BN, prepareCacheKey } from "../util";
 import { CurrentCampaignTierModel } from "../models/RestModels";
-import { CAMPAIGN_CREATION_AMOUNT } from "../clients/tatumClient";
 import { TatumService } from "./TatumService";
 import { PlatformCache, UseCache } from "@tsed/common";
-import { CacheKeys } from "../util/constants";
+import { CacheKeys, CAMPAIGN_CREATION_AMOUNT } from "../util/constants";
 import { resetCacheKey } from "../util/index";
 import { readPrisma } from "../clients/prisma";
 

@@ -496,9 +496,15 @@ export class UserController {
         if (!userWallet) throw new NotFound(WALLET_NOT_FOUND + " for userId");
         const orgWallet = await this.walletService.findWalletByOrgId(admin?.orgId!);
         if (!orgWallet) throw new NotFound(WALLET_NOT_FOUND + " for orgId");
-        const userCurrency = await this.currencyService.findCurrencyByTokenId(token.id, userWallet.id);
+        const userCurrency = await this.currencyService.findCurrencyByTokenAndWallet({
+            tokenId: token.id,
+            walletId: userWallet.id,
+        });
         if (!userCurrency) throw new NotFound(CURRENCY_NOT_FOUND + " for user");
-        const orgCurrency = await this.currencyService.findCurrencyByTokenId(token.id, orgWallet?.id!);
+        const orgCurrency = await this.currencyService.findCurrencyByTokenAndWallet({
+            tokenId: token.id,
+            walletId: orgWallet?.id!,
+        });
         if (!orgCurrency) throw new NotFound(CURRENCY_NOT_FOUND + " for org");
         try {
             await this.tatumService.transferFunds({
