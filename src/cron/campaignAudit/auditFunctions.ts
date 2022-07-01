@@ -67,7 +67,9 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
         if (!campaignCurrency) throw new Error("currency not found for campaign");
         const take = 100;
         let skip = 0;
-        const totalParticipants = await readPrisma.participant.count({ where: { campaignId: campaign.id } });
+        const totalParticipants = await readPrisma.participant.count({
+            where: { campaignId: campaign.id, blackList: false },
+        });
         const paginatedLoop = Math.ceil(totalParticipants / take);
 
         // transfer campaign fee to raiinmaker tatum account
@@ -82,7 +84,7 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
 
         for (let pageIndex = 0; pageIndex < paginatedLoop; pageIndex++) {
             const participants = await readPrisma.participant.findMany({
-                where: { campaignId: campaign.id },
+                where: { campaignId: campaign.id, blackList: false },
                 take,
                 skip,
             });
