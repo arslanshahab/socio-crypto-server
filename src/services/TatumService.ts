@@ -4,7 +4,7 @@ import { CustodialAddressPayload, SymbolNetworkParams, WalletKeys, WithdrawFeeDa
 import { RequestData } from "../util/fetchRequest";
 import { Secrets } from "../util/secrets";
 import { BadRequest, NotFound } from "@tsed/exceptions";
-import { Currency, Wallet } from "@prisma/client";
+import { Currency, Wallet, Prisma } from "@prisma/client";
 import { sleep } from "../controllers/helpers";
 import { doFetch } from "../util/fetchRequest";
 import { S3Client } from "../clients/s3";
@@ -197,7 +197,24 @@ export class TatumService {
         }
     }
 
-    // Get available address
+    /**
+     * Adds a new custodial address to the database
+     *
+     * @param data the address to add
+     * @returns the added address
+     */
+    public async saveAddress(data: { address: string; network: string; wallet: Wallet }) {
+        const address: Prisma.CustodialAddressCreateInput = {
+            address: data.address,
+            chain: data.network,
+        };
+        if (data.wallet) {
+            address.wallet = { connect: { id: data.wallet.id } };
+            address.available = false;
+        }
+        return this.prismaService.custodialAddress.create({ data: address });
+    }
+
     public async getAvailableAddress(data: SymbolNetworkParams & { wallet: Wallet }) {
         let found = await this.prismaService.custodialAddress.findFirst({
             where: { chain: data.network, walletId: data.wallet.id },
@@ -209,22 +226,11 @@ export class TatumService {
         }
         if (!found) {
             const newAddress = await this.generateCustodialAddress(data);
-            let custodialData = data.wallet
-                ? {
-                      address: newAddress,
-                      chain: data.network,
-                      walletId: data.wallet.id,
-                      available: false,
-                  }
-                : { address: newAddress, chain: data.network };
-            found = await this.prismaService.custodialAddress.create({
-                data: custodialData,
-            });
+            found = await this.saveAddress({ ...data, address: newAddress });
         }
         return found;
     }
 
-    // Find or create currency
     public async findOrCreateCurrency(data: SymbolNetworkParams & { wallet: Wallet }) {
         const token = await this.isCurrencySupported(data);
         if (!token) throw new NotFound("No token found.");

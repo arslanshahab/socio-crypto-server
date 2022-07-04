@@ -4,7 +4,6 @@ import { PrismaService } from ".prisma/client/entities";
 import { BadRequest, Forbidden, NotFound } from "@tsed/exceptions";
 import { isArray } from "lodash";
 import { JWTPayload, RewardType } from "../types";
-import { AddressService } from "./AddressService";
 import { BSC, CacheKeys, COIIN, REWARD_AMOUNTS, SHARING_REWARD_LIMIT_PER_DAY, TransferType } from "../util/constants";
 import { TatumClient } from "../clients/tatumClient";
 import { createSubscriptionUrl } from "../util/tatumHelper";
@@ -30,8 +29,6 @@ type Array2TrueMap<T> = T extends string[] ? { [idx in T[number]]: true } : unde
 export class UserService {
     @Inject()
     private prismaService: PrismaService;
-    @Inject()
-    private addressService: AddressService;
     @Inject()
     private walletService: WalletService;
     @Inject()
@@ -200,10 +197,11 @@ export class UserService {
         });
         if (!currency) throw new BadRequest("Currency not found for user.");
         if (!currency.depositAddress) {
-            const availableAddress = await this.addressService.getAvailableAddress(
-                { symbol: COIIN, network: BSC },
-                user.wallet
-            );
+            const availableAddress = await this.tatumService.getAvailableAddress({
+                symbol: COIIN,
+                network: BSC,
+                wallet: user.wallet,
+            });
             if (!availableAddress) throw new Error("No custodial address available.");
             await TatumClient.assignAddressToAccount({
                 accountId: currency.tatumId,
