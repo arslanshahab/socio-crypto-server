@@ -3,7 +3,7 @@ import { PrismaService } from ".prisma/client/entities";
 import { SymbolNetworkParams } from "../types";
 import { RAIINMAKER_ORG_NAME } from "../util/constants";
 import { NotFound } from "@tsed/exceptions";
-import { TatumClientService } from "./TatumClientService";
+import { TatumService } from "./TatumService";
 import { CurrencyService } from "./CurrencyService";
 import { Prisma } from "@prisma/client";
 
@@ -12,7 +12,7 @@ export class OrganizationService {
     @Inject()
     private prismaService: PrismaService;
     @Inject()
-    private tatumClientService: TatumClientService;
+    private tatumService: TatumService;
     @Inject()
     private currencyService: CurrencyService;
 
@@ -31,7 +31,7 @@ export class OrganizationService {
     public async getCurrencyForRaiinmaker(data: SymbolNetworkParams) {
         const raiinmakerOrg = await this.findOrganizationByCompanyName(RAIINMAKER_ORG_NAME, { wallet: true });
         if (!raiinmakerOrg) throw new NotFound(`Org not found for ${RAIINMAKER_ORG_NAME}.`);
-        return await this.tatumClientService.findOrCreateCurrency({ ...data, wallet: raiinmakerOrg.wallet! });
+        return await this.tatumService.findOrCreateCurrency({ ...data, wallet: raiinmakerOrg.wallet! });
     }
 
     public async findOrgByAdminId(adminId: string) {
@@ -51,7 +51,7 @@ export class OrganizationService {
     public async getAvailableBalance(orgId: string, tokenId: string) {
         const currency = await this.currencyService.findCurrencyByOrgId(orgId, tokenId);
         if (!currency) throw new NotFound("Currency not found for org.");
-        const tatumBalance = await this.tatumClientService.getAccountBalance(currency.tatumId);
+        const tatumBalance = await this.tatumService.getAccountBalance(currency.tatumId);
         return parseFloat(tatumBalance.availableBalance || "0");
     }
 

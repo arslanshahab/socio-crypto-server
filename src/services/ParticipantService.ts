@@ -173,4 +173,10 @@ export class ParticipantService {
             where: campaignId ? { campaignId } : {},
         });
     }
+
+    public async userParticipantionCount(userId: string) {
+        return this.prismaService.participant.count({
+            where: { userId },
+        });
+    }
 }

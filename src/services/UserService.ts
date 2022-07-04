@@ -4,7 +4,6 @@ import { PrismaService } from ".prisma/client/entities";
 import { BadRequest, Forbidden, NotFound } from "@tsed/exceptions";
 import { isArray } from "lodash";
 import { JWTPayload, RewardType } from "../types";
-import { AddressService } from "./AddressService";
 import { BSC, CacheKeys, COIIN, REWARD_AMOUNTS, SHARING_REWARD_LIMIT_PER_DAY, TransferType } from "../util/constants";
 import { TatumClient } from "../clients/tatumClient";
 import { createSubscriptionUrl } from "../util/tatumHelper";
@@ -12,7 +11,7 @@ import { WalletService } from "./WalletService";
 import { WALLET_NOT_FOUND } from "../util/errors";
 import { differenceInHours, subDays } from "date-fns";
 import { TransferService } from "./TransferService";
-import { TatumClientService } from "./TatumClientService";
+import { TatumService } from "./TatumService";
 import { createPasswordHash, prepareCacheKey } from "../util";
 import { ProfileService } from "./ProfileService";
 import { NotificationService } from "./NotificationService";
@@ -22,6 +21,7 @@ import { getCryptoAssestImageUrl } from "../util/index";
 import { CurrencyService } from "./CurrencyService";
 import { MarketDataService } from "./MarketDataService";
 import { readPrisma } from "../clients/prisma";
+import { OrganizationService } from "./OrganizationService";
 
 type Array2TrueMap<T> = T extends string[] ? { [idx in T[number]]: true } : undefined;
 
@@ -30,13 +30,11 @@ export class UserService {
     @Inject()
     private prismaService: PrismaService;
     @Inject()
-    private addressService: AddressService;
-    @Inject()
     private walletService: WalletService;
     @Inject()
     private transferService: TransferService;
     @Inject()
-    private tatumClientService: TatumClientService;
+    private tatumService: TatumService;
     @Inject()
     private profileService: ProfileService;
     @Inject()
@@ -45,6 +43,8 @@ export class UserService {
     private currencyService: CurrencyService;
     @Inject()
     private marketDataService: MarketDataService;
+    @Inject()
+    private organizationService: OrganizationService;
     @Inject()
     private cache: PlatformCache;
 
@@ -190,17 +190,18 @@ export class UserService {
         key: (args: any[]) => prepareCacheKey(CacheKeys.USER_COIIN_ADDRESS_SERVICE, args),
     })
     public async getCoiinAddress(user: User & { wallet: Wallet }) {
-        let currency = await this.tatumClientService.findOrCreateCurrency({
+        let currency = await this.tatumService.findOrCreateCurrency({
             symbol: COIIN,
             network: BSC,
             wallet: user.wallet,
         });
         if (!currency) throw new BadRequest("Currency not found for user.");
         if (!currency.depositAddress) {
-            const availableAddress = await this.addressService.getAvailableAddress(
-                { symbol: COIIN, network: BSC },
-                user.wallet
-            );
+            const availableAddress = await this.tatumService.getAvailableAddress({
+                symbol: COIIN,
+                network: BSC,
+                wallet: user.wallet,
+            });
             if (!availableAddress) throw new Error("No custodial address available.");
             await TatumClient.assignAddressToAccount({
                 accountId: currency.tatumId,
@@ -370,7 +371,7 @@ export class UserService {
         const wallet = await this.walletService.createWallet(user);
         await this.profileService.createProfile(user, username);
         await this.notificationService.createNotificationSetting(user.id);
-        await this.tatumClientService.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet: wallet });
+        await this.tatumService.findOrCreateCurrency({ symbol: COIIN, network: BSC, wallet: wallet });
         return await user.id;
     }
 
@@ -423,5 +424,27 @@ export class UserService {
 
     public async ifEmailExist(email: string) {
         return Boolean(await readPrisma.user.findFirst({ where: { email: email.toLowerCase() } }));
+    }
+
+    public async updateCoiinBalance(user: User, operation: "ADD" | "SUBTRACT", amount: number): Promise<any> {
+        const wallet = await this.walletService.findWalletByUserId(user.id);
+        if (!wallet) throw new Error("User wallet not found");
+        const raiinmakerCurrency = await this.organizationService.getCurrencyForRaiinmaker({
+            symbol: COIIN,
+            network: BSC,
+        });
+        const userCurrency = await this.tatumService.findOrCreateCurrency({
+            symbol: COIIN,
+            network: BSC,
+            wallet,
+        });
+        const senderId = operation === "ADD" ? raiinmakerCurrency.tatumId : userCurrency.tatumId;
+        const receipientId = operation === "ADD" ? userCurrency.tatumId : raiinmakerCurrency.tatumId;
+        await TatumClient.transferFunds({
+            senderAccountId: senderId,
+            recipientAccountId: receipientId,
+            amount: amount.toString(),
+            recipientNote: "USER-BALANCE-UPDATES",
+        });
     }
 }

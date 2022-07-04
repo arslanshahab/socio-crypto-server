@@ -1,4 +1,4 @@
-import { RAIINMAKER_WITHDRAW, TatumClient, USER_WITHDRAW } from "../clients/tatumClient";
+import { TatumClient } from "../clients/tatumClient";
 import { Admin } from "../models/Admin";
 import { Request, Response } from "express";
 import { TatumWallet } from "../models/TatumWallet";
@@ -9,7 +9,7 @@ import { Currency } from "../models/Currency";
 import { Transfer } from "../models/Transfer";
 import { ApolloError } from "apollo-server-express";
 import { Org } from "../models/Org";
-import { BSC, COIIN, WITHDRAW_LIMIT } from "../util/constants";
+import { BSC, COIIN, RAIINMAKER_WITHDRAW, USER_WITHDRAW, WITHDRAW_LIMIT } from "../util/constants";
 import { Verification } from "../models/Verification";
 import { JWTPayload } from "src/types";
 import { createSubscriptionUrl, getWithdrawAddressForTatum } from "../util/tatumHelper";

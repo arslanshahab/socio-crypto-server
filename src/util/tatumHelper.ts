@@ -1,4 +1,4 @@
-import { TatumClient, USER_WITHDRAW_FEE, WithdrawPayload } from "../clients/tatumClient";
+import { TatumClient, WithdrawPayload } from "../clients/tatumClient";
 import { Currency } from "../models/Currency";
 import { BN } from ".";
 import { Org } from "../models/Org";
@@ -24,6 +24,7 @@ import {
     DOGE_DEFAULT_WITHDRAW_FEE,
     BTC,
     DOGE,
+    USER_WITHDRAW_FEE,
 } from "./constants";
 
 export const offchainEstimateFee = async (data: WithdrawPayload): Promise<number> => {

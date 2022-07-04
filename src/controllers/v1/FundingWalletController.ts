@@ -8,7 +8,7 @@ import { NotFound } from "@tsed/exceptions";
 import { ADMIN_NOT_FOUND, ORG_NOT_FOUND, WALLET_NOT_FOUND } from "../../util/errors";
 import { WalletService } from "../../services/WalletService";
 import { CurrencyService } from "../../services/CurrencyService";
-import { TatumClientService } from "../../services/TatumClientService";
+import { TatumService } from "../../services/TatumService";
 import { formatFloat, getCryptoAssestImageUrl } from "../../util";
 import { AllCurrenciesResultModel, TransferResultModel } from "../../models/RestModels";
 import { TransferService } from "../../services/TransferService";
@@ -24,7 +24,7 @@ export class FundingWalletController {
     @Inject()
     private currencyService: CurrencyService;
     @Inject()
-    private tatumClientService: TatumClientService;
+    private tatumService: TatumService;
     @Inject()
     private transferService: TransferService;
 
@@ -38,7 +38,7 @@ export class FundingWalletController {
         const wallet = await this.walletService.findWalletByOrgId(org.id);
         if (!wallet) throw new NotFound(WALLET_NOT_FOUND);
         const currencies = await this.currencyService.findCurrenciesByWalletId(wallet.id, { token: true });
-        const balances = await this.tatumClientService.getBalanceForAccountList(currencies);
+        const balances = await this.tatumService.getBalanceForAccountList(currencies);
         let allCurrencies = currencies.map((currencyItem) => {
             const balance = balances.find((balanceItem) => currencyItem.tatumId === balanceItem.tatumId);
             const symbol = currencyItem?.token?.symbol || "";
