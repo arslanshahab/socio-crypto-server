@@ -33,9 +33,8 @@ import { MarketDataService } from "../../services/MarketDataService";
 
 class CampaignParticipantsParams {
     @Property() public readonly campaignId: string;
-    @Property() public readonly skip: number;
-    @Property() public readonly take: number;
-    @Property() public readonly nonZeroScore: boolean;
+    @Required() public readonly skip: number;
+    @Required() public readonly take: number;
 }
 
 class ParticipantIdParams {

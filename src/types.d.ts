@@ -377,7 +377,6 @@ export interface FindCampaignById {
     userRelated?: boolean;
     skip?: number;
     take?: number;
-    nonZeroScore?: boolean;
 }
 export interface SocialLinkVariables {
     id: string;
