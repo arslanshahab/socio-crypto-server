@@ -93,7 +93,7 @@ export class TatumController {
     }
 
     @Post("/withdraw")
-    @(Returns(200, SuccessResult).Of(DepositAddressResultModel))
+    @(Returns(200, SuccessResult).Of(WithdrawResultModel))
     public async withdraw(@BodyParams() body: WithdrawBody, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"), { wallet: true });
         if (!user) throw new NotFound(USER_NOT_FOUND);
