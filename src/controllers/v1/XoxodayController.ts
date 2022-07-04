@@ -26,9 +26,24 @@ class RedemptionRequirementParam {
     @Required() public readonly userId: string;
 }
 
+class XoxodayCartData {
+    @Required() public readonly productId: string;
+    @Required() public readonly name: string;
+    @Required() public readonly imageUrl: string;
+    @Required() public readonly countryCode: string;
+    @Required() public readonly countryName: string;
+    @Required() public readonly currencyCode: string;
+    @Required() public readonly exchangeRate: string;
+    @Required() public readonly valueDenominations: string[];
+    @Required() public readonly denomination: string;
+    @Required() public readonly quantity: number;
+    @Required() public readonly cartId: string;
+    @Required() public readonly coiinPrice: number;
+}
+
 class XoxodayOrderBody {
     @Required() public readonly email: string;
-    @Required() public readonly cart: any[];
+    @Required() public readonly cart: XoxodayCartData[];
 }
 
 @Controller("/xoxoday")
@@ -110,7 +125,7 @@ export class XoxodayController {
     }
 
     @Post("/order")
-    @(Returns(200, SuccessResult).Of(RedemptionRequirementsModel))
+    @(Returns(200, SuccessResult).Of(Boolean))
     public async placeOrder(@BodyParams() body: XoxodayOrderBody, @Context() context: Context) {
         if (SERVICE_NOT_AVAILABLE) throw new Error(SERVICE_NOT_AVAILABLE);
         const { cart, email } = body;
