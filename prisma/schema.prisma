@@ -320,7 +320,7 @@ model Participant {
   updatedAt          DateTime @default(now()) @updatedAt @db.Timestamp(6)
   userId             String   @db.Uuid
   email              String?  @db.VarChar
-  blackList          Boolean  @default(false)
+  blacklist          Boolean  @default(false)
   campaign           Campaign @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_1835802549e230f6cd88c6efef9")
   user               User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_b915e97dea27ffd1e40c8003b3b")
 

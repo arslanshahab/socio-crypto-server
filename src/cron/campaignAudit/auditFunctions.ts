@@ -68,7 +68,7 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
         const take = 100;
         let skip = 0;
         const totalParticipants = await readPrisma.participant.count({
-            where: { campaignId: campaign.id, blackList: false },
+            where: { campaignId: campaign.id, blacklist: false },
         });
         const paginatedLoop = Math.ceil(totalParticipants / take);
 
@@ -84,7 +84,7 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
 
         for (let pageIndex = 0; pageIndex < paginatedLoop; pageIndex++) {
             const participants = await readPrisma.participant.findMany({
-                where: { campaignId: campaign.id, blackList: false },
+                where: { campaignId: campaign.id, blacklist: false },
                 take,
                 skip,
             });

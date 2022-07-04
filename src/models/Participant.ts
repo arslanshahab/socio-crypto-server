@@ -41,7 +41,7 @@ export class Participant extends BaseEntity {
     public email: string;
 
     @Column({ default: false })
-    public blackList: boolean;
+    public blacklist: boolean;
     
     @ManyToOne(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars

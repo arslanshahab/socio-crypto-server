@@ -190,7 +190,7 @@ export class ParticipantService {
                 },
             },
             data: {
-                blackList: true,
+                blacklist: true,
             },
         });
     }
@@ -210,7 +210,7 @@ export class ParticipantService {
                     userId: true,
                     campaignId: true,
                     participationScore: true,
-                    blackList: true,
+                    blacklist: true,
                     link: true,
                     createdAt: true,
                     user: { select: { id: true, email: true, profile: { select: { id: true, username: true } } } },
