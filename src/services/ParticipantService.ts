@@ -242,4 +242,10 @@ export class ParticipantService {
             }),
         ]);
     }
+
+    public async userParticipantionCount(userId: string) {
+        return this.prismaService.participant.count({
+            where: { userId },
+        });
+    }
 }

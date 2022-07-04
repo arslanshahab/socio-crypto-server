@@ -66,7 +66,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
             shares: post.shares,
         },
         where: {
-            id: qualityScore?.id,
+            id: qualityScore?.id || campaign.id,
         },
     });
     const hourlyMetric = await readPrisma.hourlyCampaignMetric.findFirst({ where: { campaignId: campaign.id } });
@@ -86,7 +86,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
         },
     });
     await prisma.dailyParticipantMetric.upsert({
-        where: { id: dailyMetric?.id || "" },
+        where: { id: dailyMetric?.id || campaign.id },
         update: {
             participationScore: (
                 parseInt(dailyMetric?.participationScore || "0") +
@@ -123,7 +123,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
         console.log("TOTAL CAMPAIGNS: ", campaigns.length);
         for (let campaignIndex = 0; campaignIndex < campaigns.length; campaignIndex++) {
             const campaign = campaigns[campaignIndex];
-            const take = 200;
+            const take = 100;
             let skip = 0;
             const totalPosts = await readPrisma.socialPost.count({ where: { campaignId: campaign.id } });
             console.log("TOTAL POSTS FOR CAMPAIGN ID: ", campaign.id, totalPosts);
@@ -174,7 +174,15 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                                 new BN(responseJSON["retweet_count"]),
                                 post
                             );
-                            console.log("UPDATING POST: ", updatedPost.id);
+                            console.log(
+                                "UPDATING POST: ",
+                                updatedPost.id,
+                                post.likes,
+                                post.shares,
+                                " :----: ",
+                                updatedPost.likes,
+                                updatedPost.shares
+                            );
                             await prisma.socialPost.update({
                                 where: {
                                     id_campaignId_userId: {

@@ -652,6 +652,14 @@ export class DepositAddressResultModel {
     @Nullable(String) public readonly message: string | null;
 }
 
+export class WithdrawResultModel {
+    @Property() public readonly symbol: string;
+    @Property() public readonly network: string;
+    @Property() public readonly address: string;
+    @Property() public readonly amount: number;
+    @Property() public readonly message: string;
+}
+
 export class PaymentMethodsResultModel {
     @Property() public readonly id: string;
     @Nullable(String) public readonly last4: string | null | undefined;

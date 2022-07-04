@@ -2,7 +2,16 @@ import express, { Request } from "express";
 import { BigNumber } from "bignumber.js";
 import { Stripe } from "stripe";
 import { CampaignState, CampaignStatus } from "./util/constants";
-import { CampaignMedia, CampaignTemplate, RafflePrize, Token, Wallet } from "@prisma/client";
+import {
+    CampaignMedia,
+    CampaignTemplate,
+    Currency as PrismaCurrency,
+    RafflePrize,
+    Token as PrismaToken,
+    Wallet,
+} from "@prisma/client";
+import { Currency } from "./models/Currency";
+import { Token } from "./models/Token";
 
 interface JWTPayload {
     email: string;
@@ -587,7 +596,7 @@ export interface LedgerAccount {
 export interface LedgerAccountTypes {
     id: string;
     symbol: string;
-    token: Token;
+    token: PrismaToken;
     wallet: Wallet;
     address?: string;
     memo?: string;
@@ -605,3 +614,25 @@ export interface CustodialAddressPayload {
 }
 
 export type MediaType = "video" | "photo" | "gif";
+
+export interface WithdrawPayload {
+    senderAccountId: string;
+    address: string;
+    amount: string;
+    paymentId: string;
+    senderNote: string;
+    fee?: string;
+    index?: number;
+    userCurrency: PrismaCurrency;
+    orgCurrency: PrismaCurrency;
+    token: Token | PrismaToken;
+    custodialAddress?: string;
+}
+
+export interface WalletKeys {
+    xpub?: string;
+    privateKey?: string;
+    walletAddress?: string;
+    secret?: string;
+    mnemonic?: string;
+}
