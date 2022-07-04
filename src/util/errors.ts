@@ -102,6 +102,9 @@ export const KYC_LEVEL_2_NOT_APPROVED = "KYC_LEVEL_2_NOT_APPROVED";
 export const NOT_ENOUGH_BALANCE_IN_ACCOUNT = "NOT_ENOUGH_BALANCE_IN_ACCOUNT";
 export const USER_CURRENCY_NOT_FOUND = "USER_CURRENCY_NOT_FOUND";
 export const CUSTODIAL_ADDERSS_NOT_FOUND = "CUSTODIAL_ADDERSS_NOT_FOUND";
+export const TWITTER_FOLLOWERS_ARE_LESS_THAN_REQUIRED = "TWITTER_FOLLOWERS_ARE_LESS_THAN_REQUIRED";
+export const USER_NEEDS_TO_PARTICIPATE_IN_CAMPAIGN = "USER_NEEDS_TO_PARTICIPATE_IN_CAMPAIGN";
+export const ALREADY_REDEEMED_IN_24_HOURS = "ALREADY_REDEEMED_IN_24_HOURS";
 
 export const errorMap: { [key: string]: string } = {
     SOMETHING_WENT_WRONG: "Something went wrong with your request. please try again!",
@@ -161,4 +164,7 @@ export const errorMap: { [key: string]: string } = {
     NOT_ENOUGH_BALANCE_IN_ACCOUNT: "Not enough balance in user account to perform this withdraw.",
     USER_CURRENCY_NOT_FOUND: "User currency not found.",
     CUSTODIAL_ADDERSS_NOT_FOUND: "No custodial address available for raiinmaker",
+    TWITTER_FOLLOWERS_ARE_LESS_THAN_REQUIRED: "You need to have atleast 20 followers on twitter before you redeem!",
+    USER_NEEDS_TO_PARTICIPATE_IN_CAMPAIGN: "You need to participate in atleast one campaign in order to redeem!",
+    ALREADY_REDEEMED_IN_24_HOURS: "You can only redeem once in 24 hours!",
 };

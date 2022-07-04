@@ -1,19 +1,20 @@
-import { Get, Property, Required, Returns } from "@tsed/schema";
+import { Get, Post, Property, Required, Returns } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
-import { Context, PathParams, QueryParams } from "@tsed/common";
+import { BodyParams, Context, PathParams, QueryParams } from "@tsed/common";
 import { XoxodayService } from "../../services/XoxodayService";
 import { UserService } from "../../services/UserService";
 import { Pagination, SuccessResult } from "../../util/entities";
 import { BadRequest } from "@tsed/exceptions";
-import { USER_NOT_FOUND, MISSING_PARAMS } from "../../util/errors";
+import { USER_NOT_FOUND, MISSING_PARAMS, SERVICE_NOT_AVAILABLE } from "../../util/errors";
 import { supportedCountries } from "../../util";
 import { Xoxoday } from "../../clients/xoxoday";
 import { RedemptionRequirementsModel, XoxodayVoucherResultModel } from "../../models/RestModels";
 import { prepareVouchersList } from "../helpers";
 import { ParticipantService } from "../../services/ParticipantService";
-import { SocialClientType } from "../../util/constants";
+import { SocialClientType, TransferType } from "../../util/constants";
 import { TwitterClient } from "../../clients/twitter";
 import { PrismaService } from ".prisma/client/entities";
+import { TransferService } from "../../services/TransferService";
 
 const userResultRelations = ["social_link" as const];
 class VoucherParams {
@@ -23,6 +24,11 @@ class VoucherParams {
 
 class RedemptionRequirementParam {
     @Required() public readonly userId: string;
+}
+
+class XoxodayOrderBody {
+    @Required() public readonly email: string;
+    @Required() public readonly cart: any[];
 }
 
 @Controller("/xoxoday")
@@ -35,6 +41,8 @@ export class XoxodayController {
     private userService: UserService;
     @Inject()
     private prismaService: PrismaService;
+    @Inject()
+    private transferService: TransferService;
 
     @Get("/voucher")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(XoxodayVoucherResultModel))
@@ -99,5 +107,35 @@ export class XoxodayController {
             orderLimitForTwentyFourHoursReached: Boolean(recentOrder),
         };
         return new SuccessResult(result, RedemptionRequirementsModel);
+    }
+
+    @Post("/order")
+    @(Returns(200, SuccessResult).Of(RedemptionRequirementsModel))
+    public async placeOrder(@BodyParams() body: XoxodayOrderBody, @Context() context: Context) {
+        if (SERVICE_NOT_AVAILABLE) throw new Error(SERVICE_NOT_AVAILABLE);
+        const { cart, email } = body;
+        if (!email) throw new Error(MISSING_PARAMS);
+        const user = await this.userService.findUserByContext(context.get("user"), { wallet: true });
+        if (!user) throw new Error(USER_NOT_FOUND);
+        if (!cart || !cart.length) throw new Error(MISSING_PARAMS);
+        const totalCoiinSpent = await this.xoxodayService.getCoiinSpendingOfCart(cart);
+        await this.xoxodayService.ifUserCanRedeem(user, totalCoiinSpent);
+        const ordersData = await this.xoxodayService.prepareOrderList(cart, email);
+        const orderStatusList = await Xoxoday.placeOrder(ordersData);
+        try {
+            await this.userService.updateCoiinBalance(user, "SUBTRACT", totalCoiinSpent);
+        } catch (error) {
+            throw new Error("There was an error placing your order, please try again later.");
+        }
+        await this.xoxodayService.saveOrderList(cart, orderStatusList, user);
+        await this.transferService.newReward({
+            walletId: user.wallet?.id!,
+            symbol: "COIIN",
+            amount: totalCoiinSpent.toString(),
+            action: "XOXODAY_REDEMPTION",
+            status: "SUCCEEDED",
+            type: TransferType.DEBIT,
+        });
+        return true;
     }
 }

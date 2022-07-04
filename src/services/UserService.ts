@@ -22,6 +22,7 @@ import { getCryptoAssestImageUrl } from "../util/index";
 import { CurrencyService } from "./CurrencyService";
 import { MarketDataService } from "./MarketDataService";
 import { readPrisma } from "../clients/prisma";
+import { OrganizationService } from "./OrganizationService";
 
 type Array2TrueMap<T> = T extends string[] ? { [idx in T[number]]: true } : undefined;
 
@@ -45,6 +46,8 @@ export class UserService {
     private currencyService: CurrencyService;
     @Inject()
     private marketDataService: MarketDataService;
+    @Inject()
+    private organizationService: OrganizationService;
     @Inject()
     private cache: PlatformCache;
 
@@ -423,5 +426,27 @@ export class UserService {
 
     public async ifEmailExist(email: string) {
         return Boolean(await readPrisma.user.findFirst({ where: { email: email.toLowerCase() } }));
+    }
+
+    public async updateCoiinBalance(user: User, operation: "ADD" | "SUBTRACT", amount: number): Promise<any> {
+        const wallet = await this.walletService.findWalletByUserId(user.id);
+        if (!wallet) throw new Error("User wallet not found");
+        const raiinmakerCurrency = await this.organizationService.getCurrencyForRaiinmaker({
+            symbol: COIIN,
+            network: BSC,
+        });
+        const userCurrency = await this.tatumService.findOrCreateCurrency({
+            symbol: COIIN,
+            network: BSC,
+            wallet,
+        });
+        const senderId = operation === "ADD" ? raiinmakerCurrency.tatumId : userCurrency.tatumId;
+        const receipientId = operation === "ADD" ? userCurrency.tatumId : raiinmakerCurrency.tatumId;
+        await TatumClient.transferFunds({
+            senderAccountId: senderId,
+            recipientAccountId: receipientId,
+            amount: amount.toString(),
+            recipientNote: "USER-BALANCE-UPDATES",
+        });
     }
 }

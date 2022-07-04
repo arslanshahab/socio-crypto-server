@@ -19,7 +19,7 @@ import { TransferAction, TransferStatus, TransferType } from "../types";
 import { Org } from "./Org";
 import { RafflePrize } from "./RafflePrize";
 import { performCurrencyTransfer } from "../controllers/helpers";
-import { startOfISOWeek, endOfISOWeek, startOfWeek, endOfWeek, startOfDay, subHours } from "date-fns";
+import { startOfISOWeek, endOfISOWeek, startOfWeek, startOfDay, subHours } from "date-fns";
 import { RAIINMAKER_ORG_NAME, COIIN } from "../util/constants";
 
 @Entity()
@@ -184,7 +184,6 @@ export class Transfer extends BaseEntity {
     public static async getCurrentWeekRedemption(wallet: Wallet, action: TransferAction) {
         const currentDate = new Date();
         const start = startOfWeek(currentDate);
-        const end = endOfWeek(currentDate);
         const { earnings } = await this.createQueryBuilder("transfer")
             .select("SUM(CAST(transfer.amount AS DECIMAL)) as earnings")
             .where(
@@ -192,7 +191,6 @@ export class Transfer extends BaseEntity {
                 {
                     action,
                     start: DateUtils.mixedDateToUtcDatetimeString(start),
-                    end: DateUtils.mixedDateToUtcDatetimeString(end),
                     wallet: wallet.id,
                 }
             )

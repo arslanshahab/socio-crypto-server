@@ -1,7 +1,7 @@
 import { calculateParticipantPayout, calculateTier } from "../../controllers/helpers";
 import { BN } from "../../util";
-import { CampaignAuditStatus, FEE_RATE, RAIINMAKER_ORG_NAME } from "../../util/constants";
-import { TatumClient, CAMPAIGN_FEE, BatchTransferPayload } from "../../clients/tatumClient";
+import { CampaignAuditStatus, CAMPAIGN_FEE, FEE_RATE, RAIINMAKER_ORG_NAME } from "../../util/constants";
+import { TatumClient, BatchTransferPayload } from "../../clients/tatumClient";
 import { Campaign, Prisma } from "@prisma/client";
 import { prisma, readPrisma } from "../../clients/prisma";
 import { Tiers } from "../../types.d";

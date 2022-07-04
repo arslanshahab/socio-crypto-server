@@ -1,7 +1,7 @@
 import { Campaign, Prisma } from "@prisma/client";
 import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
-import { endOfISOWeek, startOfDay, startOfISOWeek, subDays } from "date-fns";
+import { endOfISOWeek, startOfDay, startOfISOWeek, startOfWeek, subDays } from "date-fns";
 import { TransferAction, TransferStatus } from "../types";
 import { WalletService } from "./WalletService";
 import { NotFound } from "@tsed/exceptions";
@@ -287,5 +287,12 @@ export class TransferService {
                 type: data.type,
             },
         });
+    }
+
+    public async getCurrentWeekRedemption(walletId: string, action: TransferAction) {
+        const transfers = await this.prismaService.transfer.findMany({
+            where: { walletId, action, createdAt: { gte: startOfWeek(new Date()) } },
+        });
+        return transfers.reduce((acc, curr) => acc + parseFloat(curr.amount!), 0);
     }
 }
