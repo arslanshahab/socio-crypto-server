@@ -674,7 +674,7 @@ export class CampaignParticipantResultModel {
     @Nullable(String) public readonly link: string | null;
     @Property(Date) public readonly createdAt: Date;
     @Property(Date) public readonly updatedAt: Date;
-    @Property() public readonly blackList: boolean;
+    @Property() public readonly blacklist: boolean;
     @Property(CampaignResultModel) public readonly campaign: CampaignResultModel;
     @Property(UserResultModel) public readonly user: UserResultModel;
 }

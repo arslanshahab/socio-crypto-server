@@ -204,7 +204,21 @@ export class ParticipantService {
         const { campaignId, skip, take, filter } = params;
         return this.prismaService.$transaction([
             this.prismaService.participant.findMany({
-                where: { campaignId, user: { email: { contains: filter && filter, mode: "insensitive" } } },
+                where: {
+                    campaignId,
+                    OR: [
+                        {
+                            user: {
+                                email: { contains: filter && filter, mode: "insensitive" },
+                            },
+                        },
+                        {
+                            user: {
+                                profile: { username: { contains: filter && filter, mode: "insensitive" } },
+                            },
+                        },
+                    ],
+                },
                 select: {
                     id: true,
                     userId: true,
