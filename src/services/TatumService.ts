@@ -399,15 +399,15 @@ export class TatumService {
                 symbol: data.token.symbol,
                 network: data.token.network,
             });
-            const payload = { ...wallet, ...data };
-            const chain = payload.currency.token.network;
+            const payload: WithdrawPayload & WalletKeys = { ...wallet, ...data };
+            const chain = payload.token.network;
             const { withdrawAbleAmount, fee } = await this.adjustWithdrawableAmount(payload);
             if (parseFloat(withdrawAbleAmount) <= 0)
                 throw new Error("Not enough balance in user account to pay gas fee.");
             const body = {
                 ...payload,
                 amount: withdrawAbleAmount,
-                ...(payload.currency.derivationKey && { index: payload.currency.derivationKey }),
+                ...(payload.userCurrency.derivationKey && { index: payload.userCurrency.derivationKey }),
                 fee,
             };
             const callWithdrawMethod = async () => {
@@ -437,9 +437,7 @@ export class TatumService {
                     case "DOGE":
                         return await this.sendTokenOffchainTransaction(body);
                     default:
-                        throw new Error(
-                            `Withdraws for ${body.currency.token.symbol} are not supported at this moment.`
-                        );
+                        throw new Error(`Withdraws for ${body.token.symbol} are not supported at this moment.`);
                 }
             };
             const withdrawTX = await callWithdrawMethod();

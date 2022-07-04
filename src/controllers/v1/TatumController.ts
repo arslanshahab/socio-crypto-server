@@ -1,10 +1,14 @@
 import { BodyParams, Context, QueryParams } from "@tsed/common";
 import { Controller, Inject } from "@tsed/di";
-import { Get, Required, Returns } from "@tsed/schema";
+import { Get, Post, Required, Returns } from "@tsed/schema";
 import { SuccessArrayResult, SuccessResult } from "../../util/entities";
 import { UserService } from "../../services/UserService";
 import { TatumService } from "../../services/TatumService";
-import { DepositAddressResultModel, SupportedCurrenciesResultModel } from "../../models/RestModels";
+import {
+    DepositAddressResultModel,
+    SupportedCurrenciesResultModel,
+    WithdrawResultModel,
+} from "../../models/RestModels";
 import { NotFound } from "@tsed/exceptions";
 import { WalletService } from "../../services/WalletService";
 import {
@@ -17,6 +21,7 @@ import {
     TOKEN_NOT_FOUND,
     USER_CURRENCY_NOT_FOUND,
     USER_NOT_FOUND,
+    VERIFICATION_TOKEN_EXPIRED,
 } from "../../util/errors";
 import { VerificationApplicationService } from "../../services/VerificationApplicationService";
 import { getWithdrawAddressForTatum } from "../../util/tatumHelper";
@@ -87,7 +92,7 @@ export class TatumController {
         return new SuccessResult(result, DepositAddressResultModel);
     }
 
-    @Get("/withdraw")
+    @Post("/withdraw")
     @(Returns(200, SuccessResult).Of(DepositAddressResultModel))
     public async withdraw(@BodyParams() body: WithdrawBody, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"), { wallet: true });
@@ -102,7 +107,11 @@ export class TatumController {
             );
         const token = await this.tatumService.isCurrencySupported({ symbol, network });
         if (!token) throw new Error(TOKEN_NOT_FOUND);
-        await this.verificationService.verifyToken({ verificationToken });
+        try {
+            await this.verificationService.verifyToken({ verificationToken });
+        } catch (error) {
+            throw new CustomError(VERIFICATION_TOKEN_EXPIRED);
+        }
         const userCurrency = await this.currencyService.findCurrencyByTokenAndWallet({
             tokenId: token.id,
             walletId: user.wallet?.id!,
@@ -131,9 +140,6 @@ export class TatumController {
             accountBalance: userCurrency.accountBalance! - amount,
             availableBalance: userCurrency.availableBalance! - amount,
         });
-        return {
-            success: true,
-            message: "Withdraw completed successfully",
-        };
+        return new SuccessResult({ ...body, message: "Withdraw completed cusscesfully" }, WithdrawResultModel);
     }
 }
