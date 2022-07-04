@@ -657,7 +657,7 @@ export class WithdrawResultModel {
     @Property() public readonly network: string;
     @Property() public readonly address: string;
     @Property() public readonly amount: number;
-    @Nullable(String) public readonly message: string;
+    @Property() public readonly message: string;
 }
 
 export class PaymentMethodsResultModel {
