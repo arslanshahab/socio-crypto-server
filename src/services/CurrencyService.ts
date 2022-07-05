@@ -52,9 +52,9 @@ export class CurrencyService {
         });
     }
 
-    public async findCurrencyByTokenId(tokenId: string, walletId: string) {
+    public async findCurrencyByTokenAndWallet(data: { tokenId: string; walletId: string }) {
         return this.prismaService.currency.findFirst({
-            where: { tokenId, walletId },
+            where: { ...data },
         });
     }
 
@@ -76,6 +76,16 @@ export class CurrencyService {
         return this.prismaService.currency.findMany({
             where: { walletId },
             include: include as T,
+        });
+    }
+
+    public async updateBalance(data: { currencyId: string; accountBalance: number; availableBalance: number }) {
+        return await this.prismaService.currency.update({
+            where: { id: data.currencyId },
+            data: {
+                accountBalance: data?.accountBalance,
+                availableBalance: data?.availableBalance,
+            },
         });
     }
 }

@@ -40,7 +40,7 @@ export class SocialPostService {
             },
         });
     }
-    
+
     public async findUserSocialPostTime(userId: string) {
         return this.prismaService.socialPost.findFirst({
             where: { userId },
@@ -49,5 +49,9 @@ export class SocialPostService {
                 createdAt: true,
             },
         });
+    }
+
+    public async getSocialPostCountByParticipantId(participantId: string, campaignId?: string) {
+        return this.prismaService.socialPost.count({ where: { participantId, campaignId } });
     }
 }

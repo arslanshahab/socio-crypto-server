@@ -652,6 +652,14 @@ export class DepositAddressResultModel {
     @Nullable(String) public readonly message: string | null;
 }
 
+export class WithdrawResultModel {
+    @Property() public readonly symbol: string;
+    @Property() public readonly network: string;
+    @Property() public readonly address: string;
+    @Property() public readonly amount: number;
+    @Property() public readonly message: string;
+}
+
 export class PaymentMethodsResultModel {
     @Property() public readonly id: string;
     @Nullable(String) public readonly last4: string | null | undefined;
@@ -674,6 +682,7 @@ export class CampaignParticipantResultModel {
     @Nullable(String) public readonly link: string | null;
     @Property(Date) public readonly createdAt: Date;
     @Property(Date) public readonly updatedAt: Date;
+    @Property() public readonly blacklist: boolean;
     @Property(CampaignResultModel) public readonly campaign: CampaignResultModel;
     @Property(UserResultModel) public readonly user: UserResultModel;
 }
@@ -733,4 +742,27 @@ export class ParticipateToCampaignModel {
     ): ParticipateToCampaignModel {
         return { ...participant, user: UserResultModel.build(participant.user) };
     }
+}
+
+class CampaignParticipantsResultModel {
+    @Property() public readonly id: string;
+    @Property() public readonly userId: string;
+    @Property() public readonly username: string;
+    @Property() public readonly email: string;
+    @Property() public readonly createdAt: Date;
+    @Property() public readonly lastLogin: Date | null;
+    @Property() public readonly campaignName: string;
+    @Property() public readonly twitterUsername: string;
+    @Property() public readonly selfPostCount: number;
+    @Property() public readonly likeScore: number;
+    @Property() public readonly shareScore: number;
+    @Property() public readonly totalLikes: number;
+    @Property() public readonly totalShares: number;
+    @Property() public readonly participationScore: number;
+    @Property() public readonly blacklist: boolean;
+}
+
+export class CampaignDetailsResultModel {
+    @Property() public readonly participants: CampaignParticipantsResultModel[];
+    @Property() public readonly count: number;
 }

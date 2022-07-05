@@ -27,10 +27,10 @@ import { Escrow } from "./Escrow";
 import { CryptoCurrency } from "./CryptoCurrency";
 import { CampaignMedia } from "./CampaignMedia";
 import { CampaignTemplate } from "./CampaignTemplate";
-import { TatumClient, CAMPAIGN_CREATION_AMOUNT } from "../clients/tatumClient";
+import { TatumClient } from "../clients/tatumClient";
 import { Currency } from "./Currency";
 import { getCryptoAssestImageUrl, BN } from "../util";
-import { CampaignStatus, RAIINMAKER_ORG_NAME } from "../util/constants";
+import { CampaignStatus, RAIINMAKER_ORG_NAME, CAMPAIGN_CREATION_AMOUNT } from "../util/constants";
 import { getTokenValueInUSD } from "../util/exchangeRate";
 import { subDays } from "date-fns";
 

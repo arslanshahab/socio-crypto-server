@@ -1,7 +1,7 @@
 import { calculateParticipantPayout, calculateTier } from "../../controllers/helpers";
 import { BN } from "../../util";
-import { CampaignAuditStatus, FEE_RATE, RAIINMAKER_ORG_NAME } from "../../util/constants";
-import { TatumClient, CAMPAIGN_FEE, BatchTransferPayload } from "../../clients/tatumClient";
+import { CampaignAuditStatus, CAMPAIGN_FEE, FEE_RATE, RAIINMAKER_ORG_NAME } from "../../util/constants";
+import { TatumClient, BatchTransferPayload } from "../../clients/tatumClient";
 import { Campaign, Prisma } from "@prisma/client";
 import { prisma, readPrisma } from "../../clients/prisma";
 import { Tiers } from "../../types.d";
@@ -67,7 +67,9 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
         if (!campaignCurrency) throw new Error("currency not found for campaign");
         const take = 100;
         let skip = 0;
-        const totalParticipants = await readPrisma.participant.count({ where: { campaignId: campaign.id } });
+        const totalParticipants = await readPrisma.participant.count({
+            where: { campaignId: campaign.id, blacklist: false },
+        });
         const paginatedLoop = Math.ceil(totalParticipants / take);
 
         // transfer campaign fee to raiinmaker tatum account
@@ -82,7 +84,7 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
 
         for (let pageIndex = 0; pageIndex < paginatedLoop; pageIndex++) {
             const participants = await readPrisma.participant.findMany({
-                where: { campaignId: campaign.id },
+                where: { campaignId: campaign.id, blacklist: false },
                 take,
                 skip,
             });

@@ -70,9 +70,9 @@ export class KycController {
     @Post("/download")
     @(Returns(200, SuccessResult).Of(Object))
     public async download(@Context() context: Context) {
-        const user = await this.userService.findUserByContext(context.get("user"), ["verification_application"]);
+        const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
-        const kycApplication = user.verification_application[0];
+        const kycApplication = await this.verificationApplicationService.findByUserIdAndLevel(user.id, KycLevel.LEVEL2);
         if (!kycApplication) throw new BadRequest(KYC_NOT_FOUND);
         if (kycApplication.status === "PENDING")
             return { kycId: kycApplication.applicationId, status: kycApplication.status };

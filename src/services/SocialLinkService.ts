@@ -11,7 +11,7 @@ export class SocialLinkService {
     @Inject()
     private prismaService: PrismaService;
 
-    public async findSocialLinkByUserId(userId: string, type: string) {
+    public async findSocialLinkByUserId(userId: string, type: SocialLinkType) {
         const response = this.prismaService.socialLink.findFirst({
             where: {
                 userId,
@@ -51,7 +51,7 @@ export class SocialLinkService {
         }
     }
 
-    public async removeSocialLink(userId: string, type: string) {
+    public async removeSocialLink(userId: string, type: SocialLinkType) {
         const socialLink = await this.findSocialLinkByUserId(userId, type);
         return await this.prismaService.socialLink.delete({
             where: { id: socialLink.id },
@@ -90,5 +90,14 @@ export class SocialLinkService {
             },
         });
         return socialLink;
+    }
+
+    public async findSocialLinkByUserAndType(userId: string, type: SocialLinkType) {
+        return this.prismaService.socialLink.findFirst({
+            where: {
+                userId,
+                type,
+            },
+        });
     }
 }

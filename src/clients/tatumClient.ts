@@ -14,7 +14,6 @@ import {
     getWithdrawals,
     assignDepositAddress,
     offchainStoreWithdrawal,
-    sendAdaOffchainTransaction,
     sendXrpOffchainTransaction,
     sendCeloOffchainTransaction,
     sendTronOffchainTransaction,
@@ -41,12 +40,6 @@ import { BSC, CUSTODIAL_NETWORKS, ETH } from "../util/constants";
 import { Token } from "../models/Token";
 import { SymbolNetworkParams } from "../types.d";
 import { sleep } from "../controllers/helpers";
-export const CAMPAIGN_CREATION_AMOUNT = "CAMPAIGN_CREATION_AMOUNT";
-export const CAMPAIGN_FEE = "CAMPAIGN_FEE";
-export const CAMPAIGN_REWARD = "CAMPAIGN_REWARD";
-export const USER_WITHDRAW = "USER_WITHDRAW";
-export const USER_WITHDRAW_FEE = "USER_WITHDRAW_FEE";
-export const RAIINMAKER_WITHDRAW = "RAIINMAKER_WITHDRAW";
 
 export interface WithdrawPayload {
     senderAccountId: string;
@@ -422,8 +415,6 @@ export class TatumClient {
                         return await sendCeloOffchainTransaction(false, body as any);
                     case "TRON":
                         return await sendTronOffchainTransaction(false, body as any);
-                    case "ADA":
-                        return await sendAdaOffchainTransaction(false, body as any);
                     case "BNB":
                         return await TatumClient.sendTokenOffchainTransaction(body);
                     case "ETH":
