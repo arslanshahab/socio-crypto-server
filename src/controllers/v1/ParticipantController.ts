@@ -333,7 +333,7 @@ export class ParticipantController {
         });
         const participants = [];
         for (const participant of items) {
-            const link = await this.socialLinkService.findSocialLinkByUserId(
+            const link = await this.socialLinkService.getSocialLinkByUserId(
                 participant.userId,
                 SocialLinkType.TWITTER
             );

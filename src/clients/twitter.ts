@@ -223,8 +223,8 @@ export class TwitterClient {
     public static getUsernameV2 = async (socialLink: PrismaSocialLink) => {
         try {
             const client = TwitterClient.getClient({
-                apiKey: socialLink.apiKey || "",
-                apiSecret: socialLink.apiSecret || "",
+                apiKey: decrypt(socialLink.apiKey || "") || "",
+                apiSecret: decrypt(socialLink.apiSecret || "") || "",
             });
             const response = await client.get("/account/verify_credentials", { include_entities: false });
             const username = response["screen_name"];

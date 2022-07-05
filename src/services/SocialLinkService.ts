@@ -91,4 +91,13 @@ export class SocialLinkService {
         });
         return socialLink;
     }
+
+    public async getSocialLinkByUserId(userId: string, type: SocialLinkType) {
+        return this.prismaService.socialLink.findFirst({
+            where: {
+                userId,
+                type,
+            },
+        });
+    }
 }
