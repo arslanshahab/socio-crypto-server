@@ -767,17 +767,13 @@ export class CampaignDetailsResultModel {
     @Property() public readonly count: number;
 }
 
-export class UserCampaignsMetricsResultModel {
-    @Property() public readonly clickCount: string;
-    @Property() public readonly viewCount: string;
-    @Property() public readonly likeCount: string;
-    @Property() public readonly shareCount: string;
-    @Property() public readonly submissionCount: string;
-    @Property() public readonly commentCount: string;
-    @Property() public readonly participationScore: string;
-}
-
 export class UserStatisticsResultModel {
-    @Property() public readonly metrics: UserCampaignsMetricsResultModel;
-    // @Property() public readonly participant: ;
+    @Property() public readonly clickCount: number;
+    @Property() public readonly viewCount: number;
+    @Property() public readonly likeCount: number;
+    @Property() public readonly shareCount: number;
+    @Property() public readonly submissionCount: number;
+    @Property() public readonly commentCount: number;
+    @Property() public readonly participationScore: number;
+    @Property() public readonly campaignName: string;
 }

@@ -767,20 +767,23 @@ export class UserController {
     @Get("/statistics")
     @(Returns(200, SuccessResult).Of(UserStatisticsResultModel))
     public async userStatistics(@QueryParams() query: UserStatisticsParams, @Context() context: Context) {
-        // const { userId } = query;
+        const { userId } = query;
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        // const campaigns = await this.participantService.findCampaignByUserId(userId);
-        // const result = [];
-        // for (const campaign of campaigns) {
-        //     const participant = await this.participantService.findParticipantByCampaignId(campaign.campaign.id, userId);
-        //     if (participant) {
-        //         const participantMetrics = await this.dailyParticipantMetricService.getAccumulatedParticipantMetrics(
-        //             participant.id
-        //         );
-        //         result.push(participantMetrics);
-        //     }
-        // }
-
-        // console.log("metrics-------------------------------", result);
+        const campaigns = await this.participantService.findCampaignByUserId(userId);
+        const statistics = [];
+        for (const campaign of campaigns) {
+            const participant = await this.participantService.findParticipantByCampaignId(campaign.campaign.id, userId);
+            if (participant) {
+                const participantMetrics = await this.dailyParticipantMetricService.getAccumulatedParticipantMetrics(
+                    participant.id
+                );
+                statistics.push({
+                    ...participantMetrics,
+                    campaignName: campaign.campaign.name,
+                    campaignId: campaign.campaign.id,
+                });
+            }
+        }
+        return new SuccessArrayResult(statistics, UserStatisticsResultModel);
     }
 }
