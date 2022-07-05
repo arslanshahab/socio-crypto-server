@@ -365,6 +365,7 @@ export class ParticipantController {
                 totalLikes: metrics.likeCount || 0,
                 totalShares: metrics.shareCount || 0,
                 participationScore: metrics.participationScore || 0,
+                blacklist: participant.blacklist,
             });
         }
         return new SuccessResult({ participants, count }, CampaignParticipantsResultModel);

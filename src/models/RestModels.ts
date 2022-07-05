@@ -758,6 +758,7 @@ class CampaignParticipants {
     @Property() public readonly totalLikes: number;
     @Property() public readonly totalShares: number;
     @Property() public readonly participationScore: number;
+    @Property() public readonly blacklist: boolean;
 }
 
 export class CampaignParticipantsResultModel {
