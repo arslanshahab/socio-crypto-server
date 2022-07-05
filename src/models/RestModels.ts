@@ -745,6 +745,7 @@ export class ParticipateToCampaignModel {
 }
 
 class CampaignParticipants {
+    @Property() public readonly id: string;
     @Property() public readonly userId: string;
     @Property() public readonly username: string;
     @Property() public readonly email: string;

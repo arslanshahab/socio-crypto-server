@@ -352,6 +352,7 @@ export class ParticipantController {
                 .pointValues as unknown as PointValueTypes;
 
             participants.push({
+                id: participant.id,
                 userId: participant.userId,
                 username: participant.user.profile?.username || "",
                 email: participant.user.email,
