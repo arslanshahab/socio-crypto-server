@@ -742,3 +742,18 @@ export class ParticipateToCampaignModel {
         return { ...participant, user: UserResultModel.build(participant.user) };
     }
 }
+
+export class UserCampaignsMetricsResultModel {
+    @Property() public readonly clickCount: string;
+    @Property() public readonly viewCount: string;
+    @Property() public readonly likeCount: string;
+    @Property() public readonly shareCount: string;
+    @Property() public readonly submissionCount: string;
+    @Property() public readonly commentCount: string;
+    @Property() public readonly participationScore: string;
+}
+
+export class UserStatisticsResultModel {
+    @Property() public readonly metrics: UserCampaignsMetricsResultModel;
+    // @Property() public readonly participant: ;
+}

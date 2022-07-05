@@ -47,6 +47,7 @@ import {
     UserTransactionResultModel,
     WeeklyRewardsResultModel,
     ParticipateToCampaignModel,
+    UserStatisticsResultModel,
 } from "../../models/RestModels";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 import {
@@ -764,11 +765,22 @@ export class UserController {
     }
 
     @Get("/statistics")
-    @(Returns(200, SuccessResult).Of(Object))
+    @(Returns(200, SuccessResult).Of(UserStatisticsResultModel))
     public async userStatistics(@QueryParams() query: UserStatisticsParams, @Context() context: Context) {
-        const { userId } = query;
+        // const { userId } = query;
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        const campaigns = await this.participantService.findCampaignByUserId(userId);
-        console.log("participants-------------------", campaigns);
+        // const campaigns = await this.participantService.findCampaignByUserId(userId);
+        // const result = [];
+        // for (const campaign of campaigns) {
+        //     const participant = await this.participantService.findParticipantByCampaignId(campaign.campaign.id, userId);
+        //     if (participant) {
+        //         const participantMetrics = await this.dailyParticipantMetricService.getAccumulatedParticipantMetrics(
+        //             participant.id
+        //         );
+        //         result.push(participantMetrics);
+        //     }
+        // }
+
+        // console.log("metrics-------------------------------", result);
     }
 }
