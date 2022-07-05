@@ -174,6 +174,83 @@ export class ParticipantService {
         });
     }
 
+    public async blacklistParticipant(params: { participantId: string; userId: string; campaignId: string }) {
+        const { participantId, userId, campaignId } = params;
+        return await this.prismaService.participant.update({
+            where: {
+                id_campaignId_userId: {
+                    id: participantId,
+                    userId,
+                    campaignId,
+                },
+            },
+            data: {
+                blacklist: true,
+            },
+        });
+    }
+
+    public async findParticipantsByCampaignId(params: {
+        campaignId: string;
+        skip: number;
+        take: number;
+        filter: string;
+    }) {
+        const { campaignId, skip, take, filter } = params;
+        return this.prismaService.$transaction([
+            this.prismaService.participant.findMany({
+                where: {
+                    campaignId,
+                    OR: [
+                        {
+                            user: {
+                                email: { contains: filter && filter, mode: "insensitive" },
+                            },
+                        },
+                        {
+                            user: {
+                                profile: { username: { contains: filter && filter, mode: "insensitive" } },
+                            },
+                        },
+                    ],
+                },
+                select: {
+                    id: true,
+                    userId: true,
+                    campaignId: true,
+                    participationScore: true,
+                    blacklist: true,
+                    link: true,
+                    createdAt: true,
+                    user: {
+                        select: {
+                            id: true,
+                            email: true,
+                            lastLogin: true,
+                            profile: { select: { id: true, username: true } },
+                        },
+                    },
+                    campaign: {
+                        select: {
+                            id: true,
+                            coiinTotal: true,
+                            name: true,
+                            auditStatus: true,
+                            symbol: true,
+                            description: true,
+                            algorithm: true,
+                        },
+                    },
+                },
+                skip,
+                take,
+            }),
+            this.prismaService.participant.count({
+                where: { campaignId, user: { email: { contains: filter && filter, mode: "insensitive" } } },
+            }),
+        ]);
+    }
+
     public async userParticipantionCount(userId: string) {
         return this.prismaService.participant.count({
             where: { userId },

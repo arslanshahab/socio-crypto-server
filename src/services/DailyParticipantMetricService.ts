@@ -142,4 +142,31 @@ export class DailyParticipantMetricService {
             },
         });
     }
+
+    public async getAccumulatedParticipantMetrics(participantId: string) {
+        const participants = await this.prismaService.dailyParticipantMetric.findMany({ where: { participantId } });
+        const { clickCount, likeCount, shareCount, viewCount, submissionCount, commentCount, participationScore } =
+            participants.reduce(
+                (sum, curr) => {
+                    sum.clickCount += parseInt(curr.clickCount);
+                    sum.likeCount += parseInt(curr.likeCount);
+                    sum.shareCount += parseInt(curr.shareCount);
+                    sum.viewCount += parseInt(curr.viewCount);
+                    sum.submissionCount += parseInt(curr.submissionCount);
+                    sum.commentCount += parseInt(curr.commentCount);
+                    sum.participationScore += parseInt(curr.participationScore);
+                    return sum;
+                },
+                {
+                    clickCount: 0,
+                    likeCount: 0,
+                    shareCount: 0,
+                    viewCount: 0,
+                    submissionCount: 0,
+                    commentCount: 0,
+                    participationScore: 0,
+                }
+            );
+        return { clickCount, likeCount, shareCount, viewCount, submissionCount, commentCount, participationScore };
+    }
 }

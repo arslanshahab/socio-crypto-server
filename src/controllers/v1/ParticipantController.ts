@@ -1,6 +1,6 @@
-import { Get, Property, Required, Returns } from "@tsed/schema";
+import { Get, Property, Put, Required, Returns } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
-import { Context, QueryParams } from "@tsed/common";
+import { Context, PathParams, QueryParams } from "@tsed/common";
 import { ParticipantModel } from ".prisma/client/entities";
 import { ParticipantService } from "../../services/ParticipantService";
 import { UserService } from "../../services/UserService";
@@ -11,6 +11,8 @@ import { formatUTCDateForComparision, getDatesBetweenDates } from "../helpers";
 import {
     AccumulatedParticipantMetricsResultModel,
     AccumulatedUserMetricsResultModel,
+    BooleanResultModel,
+    CampaignDetailsResultModel,
     CampaignIdModel,
     CampaignParticipantResultModel,
     CampaignResultModel,
@@ -26,10 +28,12 @@ import { getTokenValueInUSD } from "../../util/exchangeRate";
 import { Campaign, Participant, Prisma } from "@prisma/client";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { getSocialClient } from "../helpers";
-import { Tiers } from "../../types";
+import { PointValueTypes, Tiers } from "../../types";
 import { SocialLinkService } from "../../services/SocialLinkService";
 import { MarketDataService } from "../../services/MarketDataService";
 import { SocialLinkType } from "../../util/constants";
+import { TwitterClient } from "../../clients/twitter";
+import { SocialPostService } from "../../services/SocialPostService";
 
 class CampaignParticipantsParams {
     @Property() public readonly campaignId: string;
@@ -39,6 +43,13 @@ class CampaignParticipantsParams {
 
 class ParticipantIdParams {
     @Property() public readonly id: string;
+}
+
+class CampaignAllParticipantsParams {
+    @Required() public readonly campaignId: string;
+    @Required() public readonly skip: number;
+    @Required() public readonly take: number;
+    @Property() public readonly filter: string;
 }
 
 @Controller("/participant")
@@ -55,6 +66,7 @@ export class ParticipantController {
     private socialLinkService: SocialLinkService;
     @Inject()
     private marketDataService: MarketDataService;
+    @Inject() socialPostService: SocialPostService;
 
     @Get()
     @(Returns(200, SuccessResult).Of(ParticipantResultModelV2))
@@ -184,30 +196,8 @@ export class ParticipantController {
             user.id
         );
         if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
-        const participantMetrics = await this.dailyParticipantMetricService.getDailyParticipantById(participant.id);
         const { clickCount, likeCount, shareCount, viewCount, submissionCount, commentCount, participationScore } =
-            participantMetrics.reduce(
-                (acc, curr) => {
-                    acc.clickCount += parseInt(curr.clickCount);
-                    acc.likeCount += parseInt(curr.likeCount);
-                    acc.shareCount += parseInt(curr.shareCount);
-                    acc.viewCount += parseInt(curr.viewCount);
-                    acc.submissionCount += parseInt(curr.submissionCount);
-                    acc.commentCount += parseInt(curr.commentCount);
-                    acc.participationScore += parseInt(curr.participationScore);
-                    return acc;
-                },
-                {
-                    clickCount: 0,
-                    likeCount: 0,
-                    shareCount: 0,
-                    viewCount: 0,
-                    submissionCount: 0,
-                    commentCount: 0,
-                    participationScore: 0,
-                }
-            );
-
+            await this.dailyParticipantMetricService.getAccumulatedParticipantMetrics(participant.id);
         const { currentTotal } = calculateTier(
             new BN(campaign.totalParticipationScore),
             (campaign.algorithm as Prisma.JsonObject).tiers as Prisma.JsonObject as unknown as Tiers
@@ -291,5 +281,72 @@ export class ParticipantController {
             totalShareUSD: parseFloat(formatFloat(participantShare)) || 0,
         };
         return new SuccessResult(result, AccumulatedUserMetricsResultModel);
+    }
+
+    @Put("/blacklist/:id")
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
+    public async blacklistParticipant(@PathParams() path: ParticipantIdParams, @Context() context: Context) {
+        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const { id } = path;
+        const participant = await this.participantService.findParticipantById(id);
+        if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
+        await this.participantService.blacklistParticipant({
+            participantId: participant.id,
+            userId: participant.userId,
+            campaignId: participant.campaignId,
+        });
+        return new SuccessResult({ success: true }, BooleanResultModel);
+    }
+
+    @Get("/all")
+    @(Returns(200, SuccessArrayResult).Of(CampaignDetailsResultModel))
+    public async getParticipants(@QueryParams() query: CampaignAllParticipantsParams, @Context() context: Context) {
+        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const { campaignId, skip, take, filter } = query;
+        const [items, count] = await this.participantService.findParticipantsByCampaignId({
+            campaignId: campaignId,
+            skip: skip,
+            take: take,
+            filter: filter,
+        });
+        const participants = [];
+        for (const participant of items) {
+            const link = await this.socialLinkService.findSocialLinkByUserAndType(
+                participant.userId,
+                SocialLinkType.TWITTER
+            );
+            let twitterUsername = "";
+            try {
+                if (link) twitterUsername = await TwitterClient.getUsernameV2(link);
+            } catch (error) {
+                console.log("error fetching twitter username ---- ", error);
+            }
+            const metrics = await this.dailyParticipantMetricService.getAccumulatedParticipantMetrics(participant.id);
+            const postCount = await this.socialPostService.getSocialPostCountByParticipantId(
+                participant.id,
+                campaignId
+            );
+            const pointValues = (participant.campaign.algorithm as Prisma.JsonObject)
+                .pointValues as unknown as PointValueTypes;
+
+            participants.push({
+                id: participant.id,
+                userId: participant.userId,
+                username: participant.user.profile?.username || "",
+                email: participant.user.email,
+                createdAt: participant.createdAt,
+                lastLogin: participant.user.lastLogin,
+                campaignName: participant.campaign.name,
+                twitterUsername: twitterUsername,
+                selfPostCount: postCount,
+                likeScore: metrics.likeCount * pointValues.likes,
+                shareScore: metrics.shareCount * pointValues.shares,
+                totalLikes: metrics.likeCount || 0,
+                totalShares: metrics.shareCount || 0,
+                participationScore: metrics.participationScore || 0,
+                blacklist: participant.blacklist,
+            });
+        }
+        return new SuccessResult({ participants, count }, CampaignDetailsResultModel);
     }
 }
