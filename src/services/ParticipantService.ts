@@ -111,8 +111,10 @@ export class ParticipantService {
             where: {
                 userId,
             },
-            include: {
-                campaign: true,
+            select: {
+                id: true,
+                createdAt: true,
+                campaign: { select: { id: true, name: true, createdAt: true } },
             },
         });
     }

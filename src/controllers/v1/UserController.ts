@@ -165,6 +165,10 @@ class UserStatusParams {
     @Required() public readonly activeStatus: boolean;
 }
 
+class UserStatisticsParams {
+    @Required() public readonly userId: string;
+}
+
 @Controller("/user")
 export class UserController {
     @Inject()
@@ -757,5 +761,14 @@ export class UserController {
         }));
         const parser = new Parser();
         return parser.parse(users);
+    }
+
+    @Get("/statistics")
+    @(Returns(200, SuccessResult).Of(Object))
+    public async userStatistics(@QueryParams() query: UserStatisticsParams, @Context() context: Context) {
+        const { userId } = query;
+        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const campaigns = await this.participantService.findCampaignByUserId(userId);
+        console.log("participants-------------------", campaigns);
     }
 }
