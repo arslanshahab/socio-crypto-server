@@ -12,9 +12,9 @@ import {
     AccumulatedParticipantMetricsResultModel,
     AccumulatedUserMetricsResultModel,
     BooleanResultModel,
+    CampaignDetailsResultModel,
     CampaignIdModel,
     CampaignParticipantResultModel,
-    CampaignParticipantsResultModel,
     CampaignResultModel,
     ParticipantMetricsResultModel,
     ParticipantQueryParams,
@@ -320,8 +320,8 @@ export class ParticipantController {
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 
-    @Get("/campaign-all-participants")
-    @(Returns(200, SuccessArrayResult).Of(CampaignParticipantsResultModel))
+    @Get("/all")
+    @(Returns(200, SuccessArrayResult).Of(CampaignDetailsResultModel))
     public async getParticipants(@QueryParams() query: CampaignAllParticipantsParams, @Context() context: Context) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const { campaignId, skip, take, filter } = query;
@@ -333,7 +333,7 @@ export class ParticipantController {
         });
         const participants = [];
         for (const participant of items) {
-            const link = await this.socialLinkService.getSocialLinkByUserId(
+            const link = await this.socialLinkService.findSocialLinkByUserAndType(
                 participant.userId,
                 SocialLinkType.TWITTER
             );
@@ -369,6 +369,6 @@ export class ParticipantController {
                 blacklist: participant.blacklist,
             });
         }
-        return new SuccessResult({ participants, count }, CampaignParticipantsResultModel);
+        return new SuccessResult({ participants, count }, CampaignDetailsResultModel);
     }
 }

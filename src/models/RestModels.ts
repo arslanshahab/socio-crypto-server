@@ -744,7 +744,7 @@ export class ParticipateToCampaignModel {
     }
 }
 
-class CampaignParticipants {
+class CampaignParticipantsResultModel {
     @Property() public readonly id: string;
     @Property() public readonly userId: string;
     @Property() public readonly username: string;
@@ -762,7 +762,7 @@ class CampaignParticipants {
     @Property() public readonly blacklist: boolean;
 }
 
-export class CampaignParticipantsResultModel {
-    @Property() public readonly participants: CampaignParticipants[];
+export class CampaignDetailsResultModel {
+    @Property() public readonly participants: CampaignParticipantsResultModel[];
     @Property() public readonly count: number;
 }
