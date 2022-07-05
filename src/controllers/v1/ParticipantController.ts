@@ -14,6 +14,7 @@ import {
     BooleanResultModel,
     CampaignIdModel,
     CampaignParticipantResultModel,
+    CampaignParticipantsResultModel,
     CampaignResultModel,
     ParticipantMetricsResultModel,
     ParticipantQueryParams,
@@ -27,10 +28,12 @@ import { getTokenValueInUSD } from "../../util/exchangeRate";
 import { Campaign, Participant, Prisma } from "@prisma/client";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { getSocialClient } from "../helpers";
-import { Tiers } from "../../types";
+import { PointValueTypes, Tiers } from "../../types";
 import { SocialLinkService } from "../../services/SocialLinkService";
 import { MarketDataService } from "../../services/MarketDataService";
 import { SocialLinkType } from "../../util/constants";
+import { TwitterClient } from "../../clients/twitter";
+import { SocialPostService } from "../../services/SocialPostService";
 
 class CampaignParticipantsParams {
     @Property() public readonly campaignId: string;
@@ -63,6 +66,7 @@ export class ParticipantController {
     private socialLinkService: SocialLinkService;
     @Inject()
     private marketDataService: MarketDataService;
+    @Inject() socialPostService: SocialPostService;
 
     @Get()
     @(Returns(200, SuccessResult).Of(ParticipantResultModelV2))
@@ -317,7 +321,7 @@ export class ParticipantController {
     }
 
     @Get("/campaign-all-participants")
-    @(Returns(200, SuccessArrayResult).Of(Object))
+    @(Returns(200, SuccessArrayResult).Of(CampaignParticipantsResultModel))
     public async getParticipants(@QueryParams() query: CampaignAllParticipantsParams, @Context() context: Context) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const { campaignId, skip, take, filter } = query;
@@ -327,6 +331,42 @@ export class ParticipantController {
             take: take,
             filter: filter,
         });
-        return new SuccessResult({ items, count }, Object);
+        const participants = [];
+        for (const participant of items) {
+            const link = await this.socialLinkService.findSocialLinkByUserId(
+                participant.userId,
+                SocialLinkType.TWITTER
+            );
+            let twitterUsername = "";
+            try {
+                if (link) twitterUsername = await TwitterClient.getUsernameV2(link);
+            } catch (error) {
+                console.log("error fetching twitter username ---- ", error);
+            }
+            const metrics = await this.dailyParticipantMetricService.getAccumulatedParticipantMetrics(participant.id);
+            const postCount = await this.socialPostService.getSocialPostCountByParticipantId(
+                participant.id,
+                campaignId
+            );
+            const pointValues = (participant.campaign.algorithm as Prisma.JsonObject)
+                .pointValues as unknown as PointValueTypes;
+
+            participants.push({
+                userId: participant.userId,
+                username: participant.user.profile?.username || "",
+                email: participant.user.email,
+                createdAt: participant.createdAt,
+                lastLogin: participant.user.lastLogin,
+                campaignName: participant.campaign.name,
+                twitterUsername: twitterUsername,
+                selfPostCount: postCount,
+                likeScore: metrics.likeCount * pointValues.likes,
+                shareScore: metrics.shareCount * pointValues.shares,
+                totalLikes: metrics.likeCount || 0,
+                totalShares: metrics.shareCount || 0,
+                participationScore: metrics.participationScore || 0,
+            });
+        }
+        return new SuccessResult({ participants, count }, CampaignParticipantsResultModel);
     }
 }

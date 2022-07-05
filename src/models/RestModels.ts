@@ -743,3 +743,24 @@ export class ParticipateToCampaignModel {
         return { ...participant, user: UserResultModel.build(participant.user) };
     }
 }
+
+class CampaignParticipants {
+    @Property() public readonly userId: string;
+    @Property() public readonly username: string;
+    @Property() public readonly email: string;
+    @Property() public readonly createdAt: Date;
+    @Property() public readonly lastLogin: Date | null;
+    @Property() public readonly campaignName: string;
+    @Property() public readonly twitterUsername: string;
+    @Property() public readonly selfPostCount: number;
+    @Property() public readonly likeScore: number;
+    @Property() public readonly shareScore: number;
+    @Property() public readonly totalLikes: number;
+    @Property() public readonly totalShares: number;
+    @Property() public readonly participationScore: number;
+}
+
+export class CampaignParticipantsResultModel {
+    @Property() public readonly participants: CampaignParticipants[];
+    @Property() public readonly count: number;
+}

@@ -222,7 +222,14 @@ export class ParticipantService {
                     blacklist: true,
                     link: true,
                     createdAt: true,
-                    user: { select: { id: true, email: true, profile: { select: { id: true, username: true } } } },
+                    user: {
+                        select: {
+                            id: true,
+                            email: true,
+                            lastLogin: true,
+                            profile: { select: { id: true, username: true } },
+                        },
+                    },
                     campaign: {
                         select: {
                             id: true,
@@ -231,6 +238,7 @@ export class ParticipantService {
                             auditStatus: true,
                             symbol: true,
                             description: true,
+                            algorithm: true,
                         },
                     },
                 },

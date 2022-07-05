@@ -220,6 +220,28 @@ export class TwitterClient {
         }
     };
 
+    public static getUsernameV2 = async (socialLink: PrismaSocialLink) => {
+        try {
+            const client = TwitterClient.getClient({
+                apiKey: socialLink.apiKey || "",
+                apiSecret: socialLink.apiSecret || "",
+            });
+            const response = await client.get("/account/verify_credentials", { include_entities: false });
+            const username = response["screen_name"];
+            return username;
+        } catch (error) {
+            if (isArray(error)) {
+                const [data] = error;
+                if (data?.code === 89) {
+                    await prisma.socialLink.delete({ where: { id: socialLink.id } });
+                    throw new FormattedError(new Error(TWITTER_LINK_EXPIRED));
+                }
+                throw new Error(data?.message || "");
+            }
+            throw new Error(error.message);
+        }
+    };
+
     public static getTotalFollowersV1 = async (socialLink: PrismaSocialLink, id: string, cached = true) => {
         try {
             const apiKey = decrypt(socialLink.apiKey!);
