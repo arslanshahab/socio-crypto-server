@@ -196,30 +196,8 @@ export class ParticipantController {
             user.id
         );
         if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
-        const participantMetrics = await this.dailyParticipantMetricService.getDailyParticipantById(participant.id);
         const { clickCount, likeCount, shareCount, viewCount, submissionCount, commentCount, participationScore } =
-            participantMetrics.reduce(
-                (acc, curr) => {
-                    acc.clickCount += parseInt(curr.clickCount);
-                    acc.likeCount += parseInt(curr.likeCount);
-                    acc.shareCount += parseInt(curr.shareCount);
-                    acc.viewCount += parseInt(curr.viewCount);
-                    acc.submissionCount += parseInt(curr.submissionCount);
-                    acc.commentCount += parseInt(curr.commentCount);
-                    acc.participationScore += parseInt(curr.participationScore);
-                    return acc;
-                },
-                {
-                    clickCount: 0,
-                    likeCount: 0,
-                    shareCount: 0,
-                    viewCount: 0,
-                    submissionCount: 0,
-                    commentCount: 0,
-                    participationScore: 0,
-                }
-            );
-
+            await this.dailyParticipantMetricService.getAccumulatedParticipantMetrics(participant.id);
         const { currentTotal } = calculateTier(
             new BN(campaign.totalParticipationScore),
             (campaign.algorithm as Prisma.JsonObject).tiers as Prisma.JsonObject as unknown as Tiers
