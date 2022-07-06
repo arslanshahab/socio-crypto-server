@@ -691,9 +691,9 @@ export class CampaignController {
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 
-    @Get("/crypto/:campaignId")
+    @Get("/payout/:campaignId")
     @(Returns(200, SuccessResult).Of(PaidOutCryptoResultModel))
-    public async getPaidOutCrypto(@PathParams() path: CampaignIdModel, @Context() context: Context) {
+    public async getPayout(@PathParams() path: CampaignIdModel, @Context() context: Context) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const { campaignId } = path;
         const transfers = await this.transferService.findTransferByCampaignIdAndAction(campaignId, CAMPAIGN_REWARD);
