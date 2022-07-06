@@ -78,13 +78,6 @@ export class ParticipantService {
             }),
         ]);
     }
-    public async findSocialPosts(participantId: string) {
-        return this.prismaService.socialPost.findMany({
-            where: {
-                participantId: participantId,
-            },
-        });
-    }
 
     public async findParticipantsCountByUserId(userId: string) {
         return this.prismaService.participant.count({

@@ -96,7 +96,7 @@ export class ParticipantController {
         const { id } = query;
         const participant = await this.participantService.findParticipantById(id);
         if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
-        const posts = await this.participantService.findSocialPosts(participant.id);
+        const posts = await this.socialPostService.findSocialPostByParticipantId(participant.id);
         for (let i = 0; i < posts.length; i++) {
             const post = posts[i];
             const socialLink = await this.socialLinkService.findSocialLinkByUserId(user.id, SocialLinkType.TWITTER);
