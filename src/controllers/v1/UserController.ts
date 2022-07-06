@@ -765,7 +765,7 @@ export class UserController {
     }
 
     @Get("/statistics")
-    @(Returns(200, SuccessResult).Of(UserStatisticsResultModel))
+    @(Returns(200, SuccessArrayResult).Of(UserStatisticsResultModel))
     public async userStatistics(@QueryParams() query: UserStatisticsParams, @Context() context: Context) {
         const { userId } = query;
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
