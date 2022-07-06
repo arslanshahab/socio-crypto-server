@@ -776,4 +776,5 @@ export class UserStatisticsResultModel {
     @Property() public readonly commentCount: number;
     @Property() public readonly participationScore: number;
     @Property() public readonly campaignName: string;
+    @Property() public readonly participationDate: Date;
 }

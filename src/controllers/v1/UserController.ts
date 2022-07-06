@@ -781,6 +781,7 @@ export class UserController {
                     ...participantMetrics,
                     campaignName: campaign.campaign.name,
                     campaignId: campaign.campaign.id,
+                    participationDate: participant.createdAt,
                 });
             }
         }

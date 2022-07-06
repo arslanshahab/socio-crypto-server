@@ -114,6 +114,7 @@ export class ParticipantService {
             select: {
                 campaign: { select: { id: true, name: true, createdAt: true } },
             },
+            orderBy: { createdAt: "desc" },
         });
     }
 
