@@ -78,13 +78,6 @@ export class ParticipantService {
             }),
         ]);
     }
-    public async findSocialPosts(participantId: string) {
-        return this.prismaService.socialPost.findMany({
-            where: {
-                participantId: participantId,
-            },
-        });
-    }
 
     public async findParticipantsCountByUserId(userId: string) {
         return this.prismaService.participant.count({
@@ -98,22 +91,13 @@ export class ParticipantService {
             where: { campaignId },
         });
     }
-    public async findParticipantsByUserId(userId: string) {
+    public async findParticipantsByUserId<T extends Prisma.ParticipantInclude | undefined>(
+        userId: string,
+        include?: T
+    ) {
         return this.prismaService.participant.findMany({
             where: { userId },
-            include: {
-                campaign: true,
-            },
-        });
-    }
-    public async findCampaignByUserId(userId: string) {
-        return this.prismaService.participant.findMany({
-            where: {
-                userId,
-            },
-            include: {
-                campaign: true,
-            },
+            include: include as T,
         });
     }
 
