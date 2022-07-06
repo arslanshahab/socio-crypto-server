@@ -98,23 +98,13 @@ export class ParticipantService {
             where: { campaignId },
         });
     }
-    public async findParticipantsByUserId(userId: string) {
+    public async findParticipantsByUserId<T extends Prisma.ParticipantInclude | undefined>(
+        userId: string,
+        include?: T
+    ) {
         return this.prismaService.participant.findMany({
             where: { userId },
-            include: {
-                campaign: true,
-            },
-        });
-    }
-    public async findCampaignByUserId(userId: string) {
-        return this.prismaService.participant.findMany({
-            where: {
-                userId,
-            },
-            select: {
-                campaign: { select: { id: true, name: true, createdAt: true } },
-            },
-            orderBy: { createdAt: "desc" },
+            include: include as T,
         });
     }
 

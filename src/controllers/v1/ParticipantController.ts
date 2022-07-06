@@ -235,7 +235,7 @@ export class ParticipantController {
     public async getAccumulatedUserMetrics(@Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
-        const participations = await this.participantService.findParticipantsByUserId(user.id);
+        const participations = await this.participantService.findParticipantsByUserId(user.id, { campaign: true });
         const ids = participations.map((p) => p.id);
         const dailyParticipantMetrics = await this.dailyParticipantMetricService.getDailyParticipantByIds(ids);
         let participantShare = 0;
@@ -361,18 +361,17 @@ export class ParticipantController {
     public async userStatistics(@QueryParams() query: UserStatisticsParams, @Context() context: Context) {
         const { userId } = query;
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        const campaigns = await this.participantService.findCampaignByUserId(userId);
+        const participants = await this.participantService.findParticipantsByUserId(userId, { campaign: true });
         const statistics = [];
-        for (const campaign of campaigns) {
-            const participant = await this.participantService.findParticipantByCampaignId(campaign.campaign.id, userId);
+        for (const participant of participants) {
             if (participant) {
                 const participantMetrics = await this.dailyParticipantMetricService.getAccumulatedParticipantMetrics(
                     participant.id
                 );
                 statistics.push({
                     ...participantMetrics,
-                    campaignName: campaign.campaign.name,
-                    campaignId: campaign.campaign.id,
+                    campaignName: participant.campaign.name,
+                    campaignId: participant.campaign.id,
                     participationDate: participant.createdAt,
                 });
             }
