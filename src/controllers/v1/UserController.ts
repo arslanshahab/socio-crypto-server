@@ -47,7 +47,6 @@ import {
     UserTransactionResultModel,
     WeeklyRewardsResultModel,
     ParticipateToCampaignModel,
-    UserStatisticsResultModel,
 } from "../../models/RestModels";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 import {
@@ -164,10 +163,6 @@ class UserIdParam {
 class UserStatusParams {
     @Required() public readonly id: string;
     @Required() public readonly activeStatus: boolean;
-}
-
-class UserStatisticsParams {
-    @Required() public readonly userId: string;
 }
 
 @Controller("/user")
@@ -762,29 +757,5 @@ export class UserController {
         }));
         const parser = new Parser();
         return parser.parse(users);
-    }
-
-    @Get("/statistics")
-    @(Returns(200, SuccessArrayResult).Of(UserStatisticsResultModel))
-    public async userStatistics(@QueryParams() query: UserStatisticsParams, @Context() context: Context) {
-        const { userId } = query;
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        const campaigns = await this.participantService.findCampaignByUserId(userId);
-        const statistics = [];
-        for (const campaign of campaigns) {
-            const participant = await this.participantService.findParticipantByCampaignId(campaign.campaign.id, userId);
-            if (participant) {
-                const participantMetrics = await this.dailyParticipantMetricService.getAccumulatedParticipantMetrics(
-                    participant.id
-                );
-                statistics.push({
-                    ...participantMetrics,
-                    campaignName: campaign.campaign.name,
-                    campaignId: campaign.campaign.id,
-                    participationDate: participant.createdAt,
-                });
-            }
-        }
-        return new SuccessArrayResult(statistics, UserStatisticsResultModel);
     }
 }

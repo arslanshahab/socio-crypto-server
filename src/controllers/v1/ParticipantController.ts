@@ -20,6 +20,7 @@ import {
     ParticipantQueryParams,
     ParticipantResultModelV2,
     UserResultModel,
+    UserStatisticsResultModel,
 } from "../../models/RestModels";
 import { CampaignService } from "../../services/CampaignService";
 import { calculateParticipantPayout, calculateTier } from "../helpers";
@@ -50,6 +51,10 @@ class CampaignAllParticipantsParams {
     @Required() public readonly skip: number;
     @Required() public readonly take: number;
     @Property() public readonly filter: string;
+}
+
+class UserStatisticsParams {
+    @Required() public readonly userId: string;
 }
 
 @Controller("/participant")
@@ -348,5 +353,30 @@ export class ParticipantController {
             });
         }
         return new SuccessResult({ participants, count }, CampaignDetailsResultModel);
+    }
+
+    // For admin-panel
+    @Get("/statistics")
+    @(Returns(200, SuccessArrayResult).Of(UserStatisticsResultModel))
+    public async userStatistics(@QueryParams() query: UserStatisticsParams, @Context() context: Context) {
+        const { userId } = query;
+        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const campaigns = await this.participantService.findCampaignByUserId(userId);
+        const statistics = [];
+        for (const campaign of campaigns) {
+            const participant = await this.participantService.findParticipantByCampaignId(campaign.campaign.id, userId);
+            if (participant) {
+                const participantMetrics = await this.dailyParticipantMetricService.getAccumulatedParticipantMetrics(
+                    participant.id
+                );
+                statistics.push({
+                    ...participantMetrics,
+                    campaignName: campaign.campaign.name,
+                    campaignId: campaign.campaign.id,
+                    participationDate: participant.createdAt,
+                });
+            }
+        }
+        return new SuccessArrayResult(statistics, UserStatisticsResultModel);
     }
 }
