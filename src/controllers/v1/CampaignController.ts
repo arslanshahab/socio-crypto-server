@@ -4,7 +4,7 @@ import { Controller, Inject } from "@tsed/di";
 import { Context, BodyParams, PathParams, QueryParams } from "@tsed/common";
 import { CampaignService } from "../../services/CampaignService";
 import { UserService } from "../../services/UserService";
-import { CampaignState, CampaignStatus, RAIINMAKER_ORG_NAME } from "../../util/constants";
+import { CampaignState, CampaignStatus, CAMPAIGN_REWARD, RAIINMAKER_ORG_NAME } from "../../util/constants";
 import { calculateParticipantPayoutV2, calculateParticipantSocialScoreV2 } from "../helpers";
 import {
     ADMIN_NOT_FOUND,
@@ -30,6 +30,7 @@ import {
     CampaignIdModel,
     CampaignStatsResultModelArray,
     BooleanResultModel,
+    PaidOutCryptoResultModel,
 } from "../../models/RestModels";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { ParticipantService } from "../../services/ParticipantService";
@@ -51,6 +52,7 @@ import { EscrowService } from "../../services/EscrowService";
 import { CampaignTemplateService } from "../../services/CampaignTemplateService";
 import { TatumService } from "../../services/TatumService";
 import { MarketDataService } from "../../services/MarketDataService";
+import { formatFloat } from "../../util";
 
 const validator = new Validator();
 
@@ -687,5 +689,15 @@ export class CampaignController {
         const deviceTokens = await User.getAllDeviceTokens("campaignCreate");
         if (deviceTokens.length > 0) await Firebase.sendCampaignCreatedNotifications(deviceTokens, campaign);
         return new SuccessResult({ success: true }, BooleanResultModel);
+    }
+
+    @Get("/payout/:campaignId")
+    @(Returns(200, SuccessResult).Of(PaidOutCryptoResultModel))
+    public async getPayout(@PathParams() path: CampaignIdModel, @Context() context: Context) {
+        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const { campaignId } = path;
+        const transfers = await this.transferService.findTransferByCampaignIdAndAction(campaignId, CAMPAIGN_REWARD);
+        const totalCrypto = transfers.reduce((acc, curr) => (acc += parseFloat(curr.amount)), 0);
+        return new SuccessResult({ totalCrypto: formatFloat(totalCrypto) }, PaidOutCryptoResultModel);
     }
 }

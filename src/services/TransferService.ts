@@ -295,4 +295,8 @@ export class TransferService {
         });
         return transfers.reduce((acc, curr) => acc + parseFloat(curr.amount!), 0);
     }
+
+    public async findTransferByCampaignIdAndAction(campaignId: string, action: TransferAction) {
+        return this.prismaService.transfer.findMany({ where: { campaignId, action } });
+    }
 }

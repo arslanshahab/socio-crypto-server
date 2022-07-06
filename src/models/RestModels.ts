@@ -767,6 +767,10 @@ export class CampaignDetailsResultModel {
     @Property() public readonly count: number;
 }
 
+export class PaidOutCryptoResultModel {
+    @Property() public readonly totalCrypto: string;
+}
+
 export class UserStatisticsResultModel {
     @Property() public readonly clickCount: number;
     @Property() public readonly viewCount: number;
