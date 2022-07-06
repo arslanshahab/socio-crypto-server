@@ -766,3 +766,7 @@ export class CampaignDetailsResultModel {
     @Property() public readonly participants: CampaignParticipantsResultModel[];
     @Property() public readonly count: number;
 }
+
+export class PaidOutCryptoResultModel {
+    @Property() public readonly totalCrypto: string;
+}
