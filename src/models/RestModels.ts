@@ -766,3 +766,15 @@ export class CampaignDetailsResultModel {
     @Property() public readonly participants: CampaignParticipantsResultModel[];
     @Property() public readonly count: number;
 }
+
+export class UserStatisticsResultModel {
+    @Property() public readonly clickCount: number;
+    @Property() public readonly viewCount: number;
+    @Property() public readonly likeCount: number;
+    @Property() public readonly shareCount: number;
+    @Property() public readonly submissionCount: number;
+    @Property() public readonly commentCount: number;
+    @Property() public readonly participationScore: number;
+    @Property() public readonly campaignName: string;
+    @Property() public readonly participationDate: Date;
+}
