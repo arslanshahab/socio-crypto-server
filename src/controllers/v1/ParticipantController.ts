@@ -20,6 +20,7 @@ import {
     ParticipantQueryParams,
     ParticipantResultModelV2,
     UserResultModel,
+    UserStatisticsResultModel,
 } from "../../models/RestModels";
 import { CampaignService } from "../../services/CampaignService";
 import { calculateParticipantPayout, calculateTier } from "../helpers";
@@ -50,6 +51,10 @@ class CampaignAllParticipantsParams {
     @Required() public readonly skip: number;
     @Required() public readonly take: number;
     @Property() public readonly filter: string;
+}
+
+class UserStatisticsParams {
+    @Required() public readonly userId: string;
 }
 
 @Controller("/participant")
@@ -91,7 +96,7 @@ export class ParticipantController {
         const { id } = query;
         const participant = await this.participantService.findParticipantById(id);
         if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
-        const posts = await this.participantService.findSocialPosts(participant.id);
+        const posts = await this.socialPostService.findSocialPostByParticipantId(participant.id);
         for (let i = 0; i < posts.length; i++) {
             const post = posts[i];
             const socialLink = await this.socialLinkService.findSocialLinkByUserId(user.id, SocialLinkType.TWITTER);
@@ -230,7 +235,7 @@ export class ParticipantController {
     public async getAccumulatedUserMetrics(@Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
-        const participations = await this.participantService.findParticipantsByUserId(user.id);
+        const participations = await this.participantService.findParticipantsByUserId(user.id, { campaign: true });
         const ids = participations.map((p) => p.id);
         const dailyParticipantMetrics = await this.dailyParticipantMetricService.getDailyParticipantByIds(ids);
         let participantShare = 0;
@@ -298,6 +303,7 @@ export class ParticipantController {
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 
+    //For admin-panel
     @Get("/all")
     @(Returns(200, SuccessArrayResult).Of(CampaignDetailsResultModel))
     public async getParticipants(@QueryParams() query: CampaignAllParticipantsParams, @Context() context: Context) {
@@ -348,5 +354,29 @@ export class ParticipantController {
             });
         }
         return new SuccessResult({ participants, count }, CampaignDetailsResultModel);
+    }
+
+    // For admin-panel
+    @Get("/statistics")
+    @(Returns(200, SuccessArrayResult).Of(UserStatisticsResultModel))
+    public async userStatistics(@QueryParams() query: UserStatisticsParams, @Context() context: Context) {
+        const { userId } = query;
+        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const participants = await this.participantService.findParticipantsByUserId(userId, { campaign: true });
+        const statistics = [];
+        for (const participant of participants) {
+            if (participant) {
+                const participantMetrics = await this.dailyParticipantMetricService.getAccumulatedParticipantMetrics(
+                    participant.id
+                );
+                statistics.push({
+                    ...participantMetrics,
+                    campaignName: participant.campaign.name,
+                    campaignId: participant.campaign.id,
+                    participationDate: participant.createdAt,
+                });
+            }
+        }
+        return new SuccessArrayResult(statistics, UserStatisticsResultModel);
     }
 }

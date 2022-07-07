@@ -4,8 +4,9 @@ import fs from "fs";
 import { doFetch, RequestData } from "../util/fetchRequest";
 import { SocialLink } from "../models/SocialLink";
 import { Secrets } from "../util/secrets";
-import { SocialLinkVariables, TiktokLinkCredentials } from "src/types";
+import { TiktokLinkCredentials } from "../types";
 import path from "path";
+import { SocialLink as PrismaSocialLink } from "@prisma/client";
 
 export class TikTokClient {
     public static baseUrl = "https://open-api.tiktok.com";
@@ -138,7 +139,7 @@ export class TikTokClient {
         return 1;
     };
 
-    public static getPost = async (socialLink: SocialLinkVariables, id: string, cached = true) => {
+    public static getPost = async (socialLink: PrismaSocialLink, id: string, cached = true) => {
         return "There is no post found on tiktok";
     };
 }

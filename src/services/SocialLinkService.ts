@@ -2,7 +2,6 @@ import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
 import { SocialLink, User } from "@prisma/client";
 import { encrypt } from "../util/crypto";
-import { decrypt } from "../util/crypto";
 import { InternalServerError, NotFound } from "@tsed/exceptions";
 import { SocialLinkType } from "../util/constants";
 
@@ -20,11 +19,9 @@ export class SocialLinkService {
         });
         const socialLink: SocialLink | null = await response;
         if (!socialLink) throw new NotFound("Social Link not found");
-        const apiKey = decrypt(socialLink.apiKey!);
-        const apiSecret = decrypt(socialLink.apiSecret!);
         const { userId: slUserId } = socialLink;
         if (!slUserId) throw new InternalServerError("Invalid Social Link");
-        return { ...socialLink, apiKey, apiSecret, userId: slUserId };
+        return { ...socialLink, userId: slUserId };
     }
 
     public async addTwitterLink(user: User, apiKey: string, apiSecret: string) {
