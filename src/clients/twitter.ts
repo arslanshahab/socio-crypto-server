@@ -299,7 +299,7 @@ export class TwitterClient {
                 apiSecret: socialLink.apiSecret || "",
             });
             const twitterResponse = await client.get("/statuses/show", { id });
-            await getRedis().set(cacheKey, JSON.stringify(twitterResponse), "EX", 900000); // cache for  minutes
+            await getRedis().set(cacheKey, JSON.stringify(twitterResponse), "EX", 3600); // cache for 15 minutes
             return JSON.stringify(twitterResponse);
         } catch (error) {
             console.log("Twitter error---", error);

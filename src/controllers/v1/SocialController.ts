@@ -2,7 +2,7 @@ import { Delete, Get, Post, Property, Required, Returns } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
 import { BodyParams, Context, PathParams, QueryParams } from "@tsed/common";
 import { UserService } from "../../services/UserService";
-import { SuccessArrayResult, SuccessResult } from "../../util/entities";
+import { SuccessResult } from "../../util/entities";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import {
     CAMPAIGN_CLOSED,
@@ -17,12 +17,7 @@ import {
 import { ParticipantService } from "../../services/ParticipantService";
 import { SocialPostService } from "../../services/SocialPostService";
 import { calculateParticipantSocialScoreV2, getSocialClient } from "../helpers";
-import {
-    BooleanResultModel,
-    CampaignIdModel,
-    SocialMetricsResultModel,
-    SocialPostResultModel,
-} from "../../models/RestModels";
+import { BooleanResultModel, SocialMetricsResultModel, SocialPostResultModel } from "../../models/RestModels";
 import { Prisma } from "@prisma/client";
 import { MediaType, PointValueTypes, SocialType } from "../../types";
 import { SocialLinkService } from "../../services/SocialLinkService";
@@ -81,6 +76,12 @@ class RegisterTiktokParams {
     @Required() public readonly expires_in: number;
     @Required() public readonly refresh_token: string;
     @Required() public readonly refresh_expires_in: number;
+}
+
+class CampaignPostParams {
+    @Required() public readonly campaignId: string;
+    @Required() public readonly skip: number;
+    @Required() public readonly take: number;
 }
 
 const allowedSocialLinks = ["twitter", "facebook", "tiktok"];
@@ -253,13 +254,13 @@ export class SocialController {
     }
 
     // For Admin-panel
-    @Get("/posts/:campaignId")
-    @(Returns(200, SuccessArrayResult).Of(String))
-    public async getCampaignPosts(@PathParams() path: CampaignIdModel, @Context() context: Context) {
+    @Get("/posts")
+    @(Returns(200, SuccessResult).Of(Object))
+    public async getCampaignPosts(@QueryParams() query: CampaignPostParams, @Context() context: Context) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        const { campaignId } = path;
-        const results: string[] = [];
-        const posts = await this.socialPostService.findSocialPostByCampaignId(campaignId);
+        const { campaignId, skip = 0, take = 10 } = query;
+        const socialPosts: string[] = [];
+        const [posts, count] = await this.socialPostService.findSocialPostByCampaignId(campaignId, skip, take);
         for (let i = 0; i < posts.length; i++) {
             const post = posts[i];
             let socialLink = await this.socialLinkService.findSocialLinkByUserAndType(
@@ -274,9 +275,9 @@ export class SocialController {
                     apiSecret: decrypt(socialLink.apiSecret),
                 };
                 const response = await client?.getPost(socialLink, post.id);
-                if (response) results.push(response);
+                if (response) socialPosts.push(JSON.parse(response));
             }
         }
-        return new SuccessArrayResult(results, String);
+        return new SuccessResult({ socialPosts, count }, Object);
     }
 }
