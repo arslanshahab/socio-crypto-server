@@ -1,4 +1,4 @@
-import { SocialLinkVariables } from "src/types";
+import { SocialLink } from "@prisma/client";
 import { FacebookGraphApi } from "./facebookApi";
 
 export class FacebookClient {
@@ -19,5 +19,5 @@ export class FacebookClient {
         return payload;
     }
 
-    public static getPost = async (socialLink: SocialLinkVariables, id: string, cached = true) => {};
+    public static getPost = async (socialLink: SocialLink, id: string, cached = true) => {};
 }

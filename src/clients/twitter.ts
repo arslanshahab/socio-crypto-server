@@ -287,18 +287,22 @@ export class TwitterClient {
         }
     };
 
-    public static getPost = async (socialLink: PrismaSocialLink, id: string, cached = true): Promise<string> => {
-        let cacheKey = `twitter:${id}`;
-        if (cached) {
-            const cachedResponse = await getRedis().get(cacheKey);
-            if (cachedResponse) return cachedResponse;
+    public static getPost = async (socialLink: PrismaSocialLink, id: string, cached = true) => {
+        try {
+            let cacheKey = `twitter:${id}`;
+            if (cached) {
+                const cachedResponse = await getRedis().get(cacheKey);
+                if (cachedResponse) return cachedResponse;
+            }
+            const client = TwitterClient.getClient({
+                apiKey: socialLink.apiKey || "",
+                apiSecret: socialLink.apiSecret || "",
+            });
+            const twitterResponse = await client.get("/statuses/show", { id });
+            await getRedis().set(cacheKey, JSON.stringify(twitterResponse), "EX", 900000); // cache for  minutes
+            return JSON.stringify(twitterResponse);
+        } catch (error) {
+            console.log("Twitter error---", error);
         }
-        const client = TwitterClient.getClient({
-            apiKey: socialLink.apiKey || "",
-            apiSecret: socialLink.apiSecret || "",
-        });
-        const twitterResponse = await client.get("/statuses/show", { id });
-        await getRedis().set(cacheKey, JSON.stringify(twitterResponse), "EX", 3600); // cache for 15 minutes
-        return JSON.stringify(twitterResponse);
     };
 }

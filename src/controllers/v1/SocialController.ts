@@ -2,7 +2,7 @@ import { Delete, Get, Post, Property, Required, Returns } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
 import { BodyParams, Context, PathParams, QueryParams } from "@tsed/common";
 import { UserService } from "../../services/UserService";
-import { SuccessResult } from "../../util/entities";
+import { SuccessArrayResult, SuccessResult } from "../../util/entities";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import {
     CAMPAIGN_CLOSED,
@@ -17,7 +17,12 @@ import {
 import { ParticipantService } from "../../services/ParticipantService";
 import { SocialPostService } from "../../services/SocialPostService";
 import { calculateParticipantSocialScoreV2, getSocialClient } from "../helpers";
-import { BooleanResultModel, SocialMetricsResultModel, SocialPostResultModel } from "../../models/RestModels";
+import {
+    BooleanResultModel,
+    CampaignIdModel,
+    SocialMetricsResultModel,
+    SocialPostResultModel,
+} from "../../models/RestModels";
 import { Prisma } from "@prisma/client";
 import { MediaType, PointValueTypes, SocialType } from "../../types";
 import { SocialLinkService } from "../../services/SocialLinkService";
@@ -28,6 +33,7 @@ import { HourlyCampaignMetricsService } from "../../services/HourlyCampaignMetri
 import { addMinutes } from "date-fns";
 import { BSC, COIIN, SocialLinkType } from "../../util/constants";
 import { TatumService } from "../../services/TatumService";
+import { decrypt } from "../../util/crypto";
 
 class RegisterSocialLinkResultModel {
     @Property() public readonly registerSocialLink: boolean;
@@ -244,5 +250,33 @@ export class SocialController {
         if (!user) throw new NotFound(USER_NOT_FOUND);
         await this.socialLinkService.addOrUpdateTiktokLink(user.id, body);
         return new SuccessResult({ success: true }, BooleanResultModel);
+    }
+
+    // For Admin-panel
+    @Get("/posts/:campaignId")
+    @(Returns(200, SuccessArrayResult).Of(String))
+    public async getCampaignPosts(@PathParams() path: CampaignIdModel, @Context() context: Context) {
+        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const { campaignId } = path;
+        const results: string[] = [];
+        const posts = await this.socialPostService.findSocialPostByCampaignId(campaignId);
+        for (let i = 0; i < posts.length; i++) {
+            const post = posts[i];
+            let socialLink = await this.socialLinkService.findSocialLinkByUserAndType(
+                post.userId,
+                SocialLinkType.TWITTER
+            );
+            const client = getSocialClient(post.type);
+            if (socialLink && socialLink.apiKey && socialLink.apiSecret) {
+                socialLink = {
+                    ...socialLink,
+                    apiKey: decrypt(socialLink.apiKey),
+                    apiSecret: decrypt(socialLink.apiSecret),
+                };
+                const response = await client?.getPost(socialLink, post.id);
+                if (response) results.push(response);
+            }
+        }
+        return new SuccessArrayResult(results, String);
     }
 }
