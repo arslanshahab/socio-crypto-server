@@ -295,8 +295,8 @@ export class TwitterClient {
                 if (cachedResponse) return cachedResponse;
             }
             const client = TwitterClient.getClient({
-                apiKey: socialLink.apiKey || "",
-                apiSecret: socialLink.apiSecret || "",
+                apiKey: decrypt(socialLink.apiKey || "") || "",
+                apiSecret: decrypt(socialLink.apiSecret || "") || "",
             });
             const twitterResponse = await client.get("/statuses/show", { id });
             await getRedis().set(cacheKey, JSON.stringify(twitterResponse), "EX", 3600); // cache for 15 minutes
