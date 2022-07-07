@@ -28,6 +28,7 @@ import { HourlyCampaignMetricsService } from "../../services/HourlyCampaignMetri
 import { addMinutes } from "date-fns";
 import { BSC, COIIN, SocialLinkType } from "../../util/constants";
 import { TatumService } from "../../services/TatumService";
+import { decrypt } from "../../util/crypto";
 
 class RegisterSocialLinkResultModel {
     @Property() public readonly registerSocialLink: boolean;
@@ -75,6 +76,12 @@ class RegisterTiktokParams {
     @Required() public readonly expires_in: number;
     @Required() public readonly refresh_token: string;
     @Required() public readonly refresh_expires_in: number;
+}
+
+class CampaignPostParams {
+    @Required() public readonly campaignId: string;
+    @Required() public readonly skip: number;
+    @Required() public readonly take: number;
 }
 
 const allowedSocialLinks = ["twitter", "facebook", "tiktok"];
@@ -244,5 +251,33 @@ export class SocialController {
         if (!user) throw new NotFound(USER_NOT_FOUND);
         await this.socialLinkService.addOrUpdateTiktokLink(user.id, body);
         return new SuccessResult({ success: true }, BooleanResultModel);
+    }
+
+    // For Admin-panel
+    @Get("/posts")
+    @(Returns(200, SuccessResult).Of(Object))
+    public async getCampaignPosts(@QueryParams() query: CampaignPostParams, @Context() context: Context) {
+        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const { campaignId, skip = 0, take = 10 } = query;
+        const socialPosts: string[] = [];
+        const [posts, count] = await this.socialPostService.findSocialPostByCampaignId(campaignId, skip, take);
+        for (let i = 0; i < posts.length; i++) {
+            const post = posts[i];
+            let socialLink = await this.socialLinkService.findSocialLinkByUserAndType(
+                post.userId,
+                SocialLinkType.TWITTER
+            );
+            const client = getSocialClient(post.type);
+            if (socialLink && socialLink.apiKey && socialLink.apiSecret) {
+                socialLink = {
+                    ...socialLink,
+                    apiKey: decrypt(socialLink.apiKey),
+                    apiSecret: decrypt(socialLink.apiSecret),
+                };
+                const response = await client?.getPost(socialLink, post.id);
+                if (response) socialPosts.push(JSON.parse(response));
+            }
+        }
+        return new SuccessResult({ socialPosts, count }, Object);
     }
 }

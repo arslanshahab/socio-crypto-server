@@ -303,6 +303,7 @@ export class ParticipantController {
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 
+    //For admin-panel
     @Get("/all")
     @(Returns(200, SuccessArrayResult).Of(CampaignDetailsResultModel))
     public async getParticipants(@QueryParams() query: CampaignAllParticipantsParams, @Context() context: Context) {

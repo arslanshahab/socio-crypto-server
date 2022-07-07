@@ -431,7 +431,7 @@ export class CampaignController {
         const { campaignId } = query;
         const { company } = this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
 
-        const socialPost = await this.socialPostService.findSocialPostByCampaignId(campaignId);
+        const [socialPost] = await this.socialPostService.findSocialPostByCampaignId(campaignId);
         if (socialPost.length > 0) this.socialPostService.deleteSocialPost(campaignId);
         const payouts = await this.transferService.findTransferByCampaignId(campaignId);
         if (payouts.length > 0) this.transferService.deleteTransferPayouts(campaignId);

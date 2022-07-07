@@ -1,5 +1,6 @@
 import { Inject, Injectable } from "@tsed/di";
 import { PrismaService } from ".prisma/client/entities";
+import { readPrisma } from "../clients/prisma";
 
 @Injectable()
 export class SocialPostService {
@@ -17,10 +18,15 @@ export class SocialPostService {
         });
     }
 
-    public async findSocialPostByCampaignId(campaignId: string) {
-        return this.prismaService.socialPost.findMany({
-            where: { campaignId },
-        });
+    public async findSocialPostByCampaignId(campaignId: string, skip?: number, take?: number) {
+        return readPrisma.$transaction([
+            readPrisma.socialPost.findMany({
+                where: { campaignId },
+                skip: skip && skip,
+                take: take && take,
+            }),
+            readPrisma.socialPost.count({ where: { campaignId } }),
+        ]);
     }
 
     public async deleteSocialPost(campaignId: string) {
