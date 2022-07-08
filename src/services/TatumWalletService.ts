@@ -1,12 +1,9 @@
-import { Inject, Injectable } from "@tsed/di";
-import { PrismaService } from ".prisma/client/entities";
+import { Injectable } from "@tsed/di";
+import { readPrisma } from "../clients/prisma";
 
 @Injectable()
 export class TatumWalletService {
-    @Inject()
-    private prismaService: PrismaService;
-
     public async findTatumWallet(symbol: string) {
-        return this.prismaService.tatumWallet.findFirst({ where: { currency: symbol } });
+        return readPrisma.tatumWallet.findFirst({ where: { currency: symbol } });
     }
 }
