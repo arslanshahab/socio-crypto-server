@@ -1,6 +1,5 @@
 import { Campaign, Prisma, User, Wallet, Currency, Token } from "@prisma/client";
 import { Inject, Injectable } from "@tsed/di";
-import { PrismaService } from ".prisma/client/entities";
 import { BadRequest, Forbidden, NotFound } from "@tsed/exceptions";
 import { isArray } from "lodash";
 import { JWTPayload, RewardType } from "../types";
@@ -20,15 +19,13 @@ import { resetCacheKey } from "../util/index";
 import { getCryptoAssestImageUrl } from "../util/index";
 import { CurrencyService } from "./CurrencyService";
 import { MarketDataService } from "./MarketDataService";
-import { readPrisma } from "../clients/prisma";
+import { prisma, readPrisma } from "../clients/prisma";
 import { OrganizationService } from "./OrganizationService";
 
 type Array2TrueMap<T> = T extends string[] ? { [idx in T[number]]: true } : undefined;
 
 @Injectable()
 export class UserService {
-    @Inject()
-    private prismaService: PrismaService;
     @Inject()
     private walletService: WalletService;
     @Inject()
@@ -274,21 +271,21 @@ export class UserService {
 
     public async updateUserStatus(userId: string, activeStatus: boolean) {
         await resetCacheKey(CacheKeys.USER_BY_ID_SERVICE, this.cache, [userId]);
-        return await this.prismaService.user.update({
+        return await prisma.user.update({
             where: { id: userId },
             data: { active: activeStatus },
         });
     }
 
     public async deleteUser(userId: string) {
-        return await this.prismaService.user.update({
+        return await prisma.user.update({
             where: { id: userId },
             data: { deletedAt: new Date() },
         });
     }
 
     public async recoverUser(userId: string) {
-        return await this.prismaService.user.update({
+        return await prisma.user.update({
             where: { id: userId },
             data: { deletedAt: undefined },
         });
@@ -326,7 +323,7 @@ export class UserService {
 
     public async resetUserPassword(userId: string, email: string, password: string) {
         const hashedPassword = createPasswordHash({ email, password });
-        return await this.prismaService.user.update({
+        return await prisma.user.update({
             where: { id: userId },
             data: {
                 password: hashedPassword,
@@ -356,11 +353,11 @@ export class UserService {
     }
 
     public async updateLastLogin(userId: string) {
-        return await this.prismaService.user.update({ where: { id: userId }, data: { lastLogin: new Date() } });
+        return await prisma.user.update({ where: { id: userId }, data: { lastLogin: new Date() } });
     }
 
     public async initNewUser(email: string, username: string, password: string, referralCode?: string | null) {
-        const user = await this.prismaService.user.create({
+        const user = await prisma.user.create({
             data: {
                 email: email.trim().toLowerCase(),
                 password: createPasswordHash({ email, password }),
@@ -376,7 +373,7 @@ export class UserService {
     }
 
     public async updateEmailPassword(email: string, password: string) {
-        return await this.prismaService.user.create({
+        return await prisma.user.create({
             data: { email, password },
         });
     }
@@ -386,11 +383,11 @@ export class UserService {
         if (!user) {
             const profile = await this.profileService.findProfileByEmail(email);
             if (profile) {
-                await this.prismaService.user.update({
+                await prisma.user.update({
                     where: { id: profile.userId! },
                     data: { email: profile.email! },
                 });
-                await this.prismaService.profile.update({ where: { id: profile.id }, data: { email: "" } });
+                await prisma.profile.update({ where: { id: profile.id }, data: { email: "" } });
             }
         }
         return user;
@@ -416,7 +413,7 @@ export class UserService {
     }
 
     public async updateUserEmail(userId: string, email: string) {
-        return await this.prismaService.user.update({
+        return await prisma.user.update({
             where: { id: userId },
             data: { email: email.trim().toLowerCase() },
         });
