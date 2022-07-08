@@ -1,26 +1,23 @@
-import { Inject, Injectable } from "@tsed/di";
-import { PrismaService } from ".prisma/client/entities";
+import { Injectable } from "@tsed/di";
 import { CampaignMedia } from "@prisma/client";
+import { prisma, readPrisma } from "../clients/prisma";
 
 @Injectable()
 export class CampaignMediaService {
-    @Inject()
-    private prismaService: PrismaService;
-
     public async findCampaignMediaByCampaignId(campaignId: string) {
-        return this.prismaService.campaignMedia.findMany({
+        return readPrisma.campaignMedia.findMany({
             where: { campaignId },
         });
     }
 
     public async deleteCampaignMedia(campaignId: string) {
-        return await this.prismaService.campaignMedia.deleteMany({
+        return await prisma.campaignMedia.deleteMany({
             where: { campaignId },
         });
     }
 
     public async findCampaignMediaById(campaignMediaId: string, socialType?: string) {
-        return this.prismaService.campaignMedia.findFirst({
+        return readPrisma.campaignMedia.findFirst({
             where: socialType
                 ? { id: campaignMediaId, channel: { contains: socialType, mode: "insensitive" } }
                 : { id: campaignMediaId },
@@ -28,7 +25,7 @@ export class CampaignMediaService {
     }
 
     public async updateNewCampaignMedia(campaignMedia: CampaignMedia, campaignId: string) {
-        return await this.prismaService.campaignMedia.create({
+        return await prisma.campaignMedia.create({
             data: {
                 channel: campaignMedia.channel,
                 media: campaignMedia.media,
@@ -41,7 +38,7 @@ export class CampaignMediaService {
     }
 
     public async updateCampaignMedia(campaignMedia: CampaignMedia) {
-        return await this.prismaService.campaignMedia.update({
+        return await prisma.campaignMedia.update({
             where: {
                 id: campaignMedia.id,
             },
