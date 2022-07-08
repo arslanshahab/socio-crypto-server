@@ -1,5 +1,4 @@
 import { Inject, Injectable } from "@tsed/di";
-import { PrismaService } from ".prisma/client/entities";
 import { CustodialAddressPayload, SymbolNetworkParams, WalletKeys, WithdrawFeeData, WithdrawPayload } from "../types";
 import { RequestData } from "../util/fetchRequest";
 import { Secrets } from "../util/secrets";
@@ -44,11 +43,10 @@ import { WalletService } from "./WalletService";
 import { formatFloat } from "../util";
 import { MarketDataService } from "./MarketDataService";
 import { TransferService } from "./TransferService";
+import { prisma, readPrisma } from "../clients/prisma";
 
 @Injectable()
 export class TatumService {
-    @Inject()
-    private prismaService: PrismaService;
     @Inject()
     private tokenService: TokenService;
     @Inject()
@@ -212,15 +210,15 @@ export class TatumService {
             address.wallet = { connect: { id: data.wallet.id } };
             address.available = false;
         }
-        return this.prismaService.custodialAddress.create({ data: address });
+        return prisma.custodialAddress.create({ data: address });
     }
 
     public async getAvailableAddress(data: SymbolNetworkParams & { wallet: Wallet }) {
-        let found = await this.prismaService.custodialAddress.findFirst({
+        let found = await readPrisma.custodialAddress.findFirst({
             where: { chain: data.network, walletId: data.wallet.id },
         });
         if (!found) {
-            found = await this.prismaService.custodialAddress.findFirst({
+            found = await readPrisma.custodialAddress.findFirst({
                 where: { chain: data.network, available: true },
             });
         }
