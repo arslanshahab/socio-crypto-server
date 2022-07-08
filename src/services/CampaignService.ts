@@ -1,6 +1,5 @@
 import { CampaignMedia, CampaignTemplate, Org, Prisma, User } from "@prisma/client";
 import { Inject, Injectable } from "@tsed/di";
-import { PrismaService } from ".prisma/client/entities";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { CurrencyResultType, ListCampaignsVariablesV2, Tiers } from "../types";
 import { CAMPAIGN_NOT_FOUND, CURRENCY_NOT_FOUND, ERROR_CALCULATING_TIER } from "../util/errors";
@@ -11,12 +10,10 @@ import { TatumService } from "./TatumService";
 import { PlatformCache, UseCache } from "@tsed/common";
 import { CacheKeys, CAMPAIGN_CREATION_AMOUNT } from "../util/constants";
 import { resetCacheKey } from "../util/index";
-import { readPrisma } from "../clients/prisma";
+import { prisma, readPrisma } from "../clients/prisma";
 
 @Injectable()
 export class CampaignService {
-    @Inject()
-    private prismaService: PrismaService;
     @Inject()
     private cache: PlatformCache;
     @Inject()
@@ -159,7 +156,7 @@ export class CampaignService {
         campaignTemplates: CampaignTemplate[]
     ) {
         await resetCacheKey(CacheKeys.CAMPAIGN_RESET_KEY, this.cache);
-        const response = await this.prismaService.campaign.create({
+        const response = await prisma.campaign.create({
             data: {
                 name: name,
                 beginDate: new Date(beginDate),
@@ -219,7 +216,7 @@ export class CampaignService {
         showUrl: boolean
     ) {
         await resetCacheKey(CacheKeys.CAMPAIGN_RESET_KEY, this.cache);
-        return await this.prismaService.campaign.update({
+        return await prisma.campaign.update({
             where: { id },
             data: {
                 name,
@@ -246,14 +243,14 @@ export class CampaignService {
 
     public async deleteCampaign(campaignId: string) {
         await resetCacheKey(CacheKeys.CAMPAIGN_RESET_KEY, this.cache);
-        return await this.prismaService.campaign.delete({
+        return await prisma.campaign.delete({
             where: { id: campaignId },
         });
     }
 
     public async updateCampaignStatus(campaignId: string) {
         await resetCacheKey(CacheKeys.CAMPAIGN_RESET_KEY, this.cache);
-        return await this.prismaService.campaign.update({
+        return await prisma.campaign.update({
             where: {
                 id: campaignId,
             },
@@ -319,7 +316,7 @@ export class CampaignService {
     }
 
     public async adminUpdateCampaignStatus(campaignId: string, status: string, tatumBlockageId?: string) {
-        return await this.prismaService.campaign.update({
+        return await prisma.campaign.update({
             where: { id: campaignId },
             data: {
                 status,
