@@ -1,16 +1,13 @@
 import { SocialLink } from "@prisma/client";
-import { Inject, Injectable } from "@tsed/di";
-import { PrismaService } from ".prisma/client/entities";
+import { Injectable } from "@tsed/di";
 import { TwitterClient } from "../clients/twitter";
 import { FacebookClient } from "../clients/facebook";
 import { TikTokClient } from "../clients/tiktok";
 import { decrypt } from "../util/crypto";
+import { prisma } from "../clients/prisma";
 
 @Injectable()
 export class SocialService {
-    @Inject()
-    private prismaService: PrismaService;
-
     /**
      * Retrieves the latest list of follower counts for all social links provided
      * This will update the counts in the DB if necessary
@@ -51,7 +48,7 @@ export class SocialService {
             }
             // if any follower count was changed, save the new count
             if (updateLink) {
-                await this.prismaService.socialLink.update({
+                await prisma.socialLink.update({
                     where: { id: link.id },
                     data: { followerCount: link.followerCount },
                 });
