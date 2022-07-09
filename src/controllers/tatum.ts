@@ -216,6 +216,8 @@ export const getCoiinAddressForUser = async (parent: any, args: any, context: { 
     try {
         const user = await User.findUserByContext(context.user, ["wallet"]);
         if (!user) throw new Error("User not found.");
+        if (COIIN)
+            throw new Error("This feature is currently disabled. Please contact our support for further assistance.");
         let currency = await TatumClient.findOrCreateCurrency({
             symbol: COIIN,
             network: BSC,

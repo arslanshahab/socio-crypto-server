@@ -290,6 +290,8 @@ export class UserController {
     public async getCoiinAddress(@Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new BadRequest(USER_NOT_FOUND);
+        if (COIIN)
+            throw new Error("This feature is currently disabled. Please contact our support for further assistance.");
         const wallet = await this.walletService.findWalletByUserId(user.id);
         if (!wallet) throw new BadRequest(WALLET_NOT_FOUND);
         return new SuccessResult(await this.userService.getCoiinAddress({ ...user, wallet }), AddressResultModel);

@@ -2,30 +2,37 @@ import { EngagementRate } from "./EngagementRate";
 import { StandardDeviation } from "./StandardDeviation";
 import { BigNumber } from "bignumber.js";
 import { ParticipantEngagement } from "../../types";
-import { BN } from "../../util";
 import { prisma, readPrisma } from "../../clients/prisma";
-// import { CampaignAuditStatus, CampaignStatus } from "src/util/constants";
-
-const calculateQualityTier = (deviation: BigNumber, engagement: BigNumber, average: BigNumber) => {
-    const scoreDeviation = engagement.minus(average).div(deviation);
-    let tier;
-    if (scoreDeviation.lt(-2) || scoreDeviation.gt(2)) {
-        tier = 1;
-    } else if (scoreDeviation.gte(-2) && scoreDeviation.lt(-1)) {
-        tier = 2;
-    } else if (scoreDeviation.gte(-1) && scoreDeviation.lt(1)) {
-        tier = 3;
-    } else if (scoreDeviation.gte(1) && scoreDeviation.lte(2)) {
-        tier = 4;
-    } else {
-        tier = 0;
-    }
-    return new BN(tier);
-};
+// import { createObjectCsvWriter } from "csv-writer";
+import { calculateQualityTier } from "../../util/index";
 
 export const main = async () => {
-    // const currentDate = new Date();
     const campaigns = await readPrisma.campaign.findMany();
+    // const csvWriter = createObjectCsvWriter({
+    //     path: "quality-score.csv",
+    //     header: [
+    //         { id: "participantId", title: "participantId" },
+    //         { id: "likeRate", title: "likeRate" },
+    //         { id: "commentRate", title: "commentRate" },
+    //         { id: "shareRate", title: "shareRate" },
+    //         { id: "clickRate", title: "clickRate" },
+    //         { id: "viewRate", title: "viewRate" },
+    //         { id: "submissionRate", title: "submissionRate" },
+    //         { id: "likesStandardDeviation", title: "likesStandardDeviation" },
+    //         { id: "sharesStandardDeviation", title: "sharesStandardDeviation" },
+    //         { id: "commentsStandardDeviation", title: "commentsStandardDeviation" },
+    //         { id: "viewsStandardDeviation", title: "viewsStandardDeviation" },
+    //         { id: "submissionsStandardDeviation", title: "submissionsStandardDeviation" },
+    //         { id: "clicksStandardDeviation", title: "clicksStandardDeviation" },
+    //         { id: "likesTier", title: "likesTier" },
+    //         { id: "sharesTier", title: "sharesTier" },
+    //         { id: "commentsTier", title: "commentsTier" },
+    //         { id: "viewsTier", title: "viewsTier" },
+    //         { id: "submissionsTier", title: "submissionsTier" },
+    //         { id: "clicksTier", title: "clicksTier" },
+    //     ],
+    // });
+    // const csvData = [];
 
     for (const campaign of campaigns) {
         const likesEngagementData: BigNumber[] = [];
@@ -45,6 +52,7 @@ export const main = async () => {
                 skip,
                 take,
             });
+            let prismaTransactions = [];
             for (const participant of participants) {
                 const user = await readPrisma.user.findFirst({ where: { id: participant.userId } });
                 if (!user) throw new Error("User not found.");
@@ -70,6 +78,14 @@ export const main = async () => {
                     submissionRate,
                     clickRate,
                 });
+                console.log(
+                    likeRate.toNumber(),
+                    commentRate.toNumber(),
+                    shareRate.toNumber(),
+                    clickRate.toNumber(),
+                    viewRate.toNumber(),
+                    submissionRate.toNumber()
+                );
             }
             const { standardDeviation: likesStandardDeviation, average: averageLikeRate } = new StandardDeviation(
                 likesEngagementData
@@ -106,10 +122,31 @@ export const main = async () => {
                     averageSubmissionRate
                 );
                 const clicksTier = calculateQualityTier(clicksStandardDeviation, rate.clickRate, averageClickRate);
-                if (qualityScore) {
-                    await prisma.qualityScore.update({
-                        where: { id: qualityScore?.id || "" },
-                        data: {
+                // csvData.push({
+                //     participantId: rate.participantId,
+                //     likeRate: rate.likeRate.toString(),
+                //     commentRate: rate.commentRate.toString(),
+                //     shareRate: rate.shareRate.toString(),
+                //     clickRate: rate.clickRate.toString(),
+                //     viewRate: rate.viewRate.toString(),
+                //     submissionRate: rate.submissionRate.toString(),
+                //     likesStandardDeviation: likesStandardDeviation.toString(),
+                //     sharesStandardDeviation: sharesStandardDeviation.toString(),
+                //     commentsStandardDeviation: commentsStandardDeviation.toString(),
+                //     viewsStandardDeviation: viewsStandardDeviation.toString(),
+                //     submissionsStandardDeviation: submissionsStandardDeviation.toString(),
+                //     clicksStandardDeviation: clicksStandardDeviation.toString(),
+                //     likesTier: likesTier.toString(),
+                //     sharesTier: sharesTier.toString(),
+                //     commentsTier: commentsTier.toString(),
+                //     viewsTier: viewsTier.toString(),
+                //     submissionsTier: submissionsTier.toString(),
+                //     clicksTier: clicksTier.toString(),
+                // });
+                prismaTransactions.push(
+                    prisma.qualityScore.upsert({
+                        where: { id: qualityScore?.id || rate.participantId },
+                        update: {
                             likes: likesTier.toString(),
                             shares: sharesTier.toString(),
                             comments: commentsTier.toString(),
@@ -117,10 +154,7 @@ export const main = async () => {
                             submissions: submissionsTier.toString(),
                             clicks: clicksTier.toString(),
                         },
-                    });
-                } else {
-                    await prisma.qualityScore.create({
-                        data: {
+                        create: {
                             participantId: rate.participantId,
                             likes: likesTier.toString(),
                             shares: sharesTier.toString(),
@@ -129,10 +163,20 @@ export const main = async () => {
                             submissions: submissionsTier.toString(),
                             clicks: clicksTier.toString(),
                         },
-                    });
-                }
+                    })
+                );
+                console.log("QUALITY SCORE RUN --- ", rate.participantId);
             }
             skip += take;
+            console.log("PROMISES - ", prismaTransactions.length);
+            await prisma.$transaction(prismaTransactions);
+            prismaTransactions.splice(0, take);
         }
     }
+    // try {
+    //     await csvWriter.writeRecords(csvData);
+    //     console.log("The CSV file was written successfully");
+    // } catch (error) {
+    //     console.log(error);
+    // }
 };

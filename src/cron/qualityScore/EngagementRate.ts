@@ -4,6 +4,7 @@ import { Participant } from "@prisma/client";
 import { Campaign } from "@prisma/client";
 import { User } from "@prisma/client";
 import { readPrisma } from "../../clients/prisma";
+import { TwitterClient } from "../../clients/twitter";
 
 export class EngagementRate {
     participant: Participant;
@@ -29,7 +30,13 @@ export class EngagementRate {
         });
         this.postCount = new BN(totalPosts);
         const socialLink = await readPrisma.socialLink.findFirst({ where: { userId: this.user.id, type: "twitter" } });
-        this.followerCount = new BN(socialLink?.followerCount || 0);
+        try {
+            this.followerCount = socialLink
+                ? await TwitterClient.getTotalFollowersV1(socialLink, socialLink?.id, false)
+                : new BN(0);
+        } catch (error) {
+            this.followerCount = new BN(socialLink?.followerCount || 0);
+        }
         const { likeCount, shareCount, commentCount } = await this.getUserTotalSocialEngagement(this.user.id);
         this.potentialEngagement = this.postCount.times(this.followerCount);
         this.likeCount = new BN(likeCount);
@@ -40,28 +47,32 @@ export class EngagementRate {
     async social() {
         await this.getParticipantSocialData();
         return {
-            likeRate: this.likeCount.div(this.potentialEngagement),
-            shareRate: this.shareCount.div(this.potentialEngagement),
-            commentRate: this.commentCount.div(this.potentialEngagement),
-            clickRate: new BN(this.participant.clickCount).div(this.potentialEngagement),
+            likeRate: this.likeCount.div(this.potentialEngagement.toNumber() || Number.POSITIVE_INFINITY),
+            shareRate: this.shareCount.div(this.potentialEngagement.toNumber() || Number.POSITIVE_INFINITY),
+            commentRate: this.commentCount.div(this.potentialEngagement.toNumber() || Number.POSITIVE_INFINITY),
+            clickRate: new BN(this.participant.clickCount).div(
+                this.potentialEngagement.toNumber() || Number.POSITIVE_INFINITY
+            ),
         };
     }
 
     getUserTotalSocialEngagement = async (userId: string) => {
         const userPosts = await readPrisma.socialPost.findMany({ where: { userId } });
-        const likeCount = userPosts.map((item) => parseFloat(item.likes || "0")).reduce((sum, item) => sum + item, 0);
-        const shareCount = userPosts.map((item) => parseFloat(item.shares || "0")).reduce((sum, item) => sum + item, 0);
-        const commentCount = userPosts
-            .map((item) => parseFloat(item.comments || "0"))
-            .reduce((sum, item) => sum + item, 0);
+        const likeCount = userPosts.map((item) => parseFloat(item.likes)).reduce((sum, item) => sum + item, 0);
+        const shareCount = userPosts.map((item) => parseFloat(item.shares)).reduce((sum, item) => sum + item, 0);
+        const commentCount = userPosts.map((item) => parseFloat(item.comments)).reduce((sum, item) => sum + item, 0);
         return { likeCount, shareCount, commentCount };
     };
 
     views() {
-        return new BN(this.participant.clickCount).div(this.participant.viewCount);
+        return new BN(this.participant.clickCount).div(
+            parseFloat(this.participant.viewCount) || Number.POSITIVE_INFINITY
+        );
     }
 
     submissions() {
-        return new BN(this.participant.clickCount).div(this.participant.submissionCount);
+        return new BN(this.participant.clickCount).div(
+            parseFloat(this.participant.submissionCount) || Number.POSITIVE_INFINITY
+        );
     }
 }
