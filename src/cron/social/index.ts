@@ -2,7 +2,7 @@ import { TwitterClient } from "../../clients/twitter";
 import { Secrets } from "../../util/secrets";
 import { Application } from "../../app";
 import { BigNumber } from "bignumber.js";
-import { BN, calculateQualityMultiplier } from "../../util";
+import { BN, calculateQualityTierMultiplier } from "../../util";
 import * as dotenv from "dotenv";
 import { SocialPost, Prisma } from "@prisma/client";
 import { prisma, readPrisma } from "../../clients/prisma";
@@ -22,9 +22,9 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
     if (!campaign) throw new Error("campaign not found");
     const user = await readPrisma.user.findFirst({ where: { id: post.userId } });
     if (!user) throw new Error("user not found");
-    let qualityScore = await readPrisma.qualityScore.findFirst({ where: { participantId: participant.id } });
-    const likesMultiplier = calculateQualityMultiplier(new BN(qualityScore?.likes || 0));
-    const sharesMultiplier = calculateQualityMultiplier(new BN(qualityScore?.shares || 0));
+    const qualityScore = await readPrisma.qualityScore.findFirst({ where: { participantId: participant.id } });
+    const likesMultiplier = calculateQualityTierMultiplier(new BN(qualityScore?.likes || 0));
+    const sharesMultiplier = calculateQualityTierMultiplier(new BN(qualityScore?.shares || 0));
     const pointValues = (campaign.algorithm as Prisma.JsonObject)
         .pointValues as Prisma.JsonObject as unknown as PointValueTypes;
     const likesAdjustedScore = likes.minus(post.likes).times(pointValues.likes).times(likesMultiplier);
@@ -59,16 +59,16 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
             id: campaign.id || "",
         },
     });
-    await prisma.qualityScore.upsert({
-        create: { likes: post.likes, shares: post.shares, participantId: participant.id },
-        update: {
-            likes: post.likes,
-            shares: post.shares,
-        },
-        where: {
-            id: qualityScore?.id || campaign.id,
-        },
-    });
+    // await prisma.qualityScore.upsert({
+    //     create: { likes: post.likes, shares: post.shares, participantId: participant.id },
+    //     update: {
+    //         likes: post.likes,
+    //         shares: post.shares,
+    //     },
+    //     where: {
+    //         id: qualityScore?.id || campaign.id,
+    //     },
+    // });
     const hourlyMetric = await readPrisma.hourlyCampaignMetric.findFirst({ where: { campaignId: campaign.id } });
     await prisma.hourlyCampaignMetric.create({
         data: {

@@ -8,7 +8,7 @@ import { Participant } from "../models/Participant";
 import { SocialPost } from "../models/SocialPost";
 import { getTweetById } from "../controllers/social";
 import { getRedis } from "../clients/redis";
-import { BN, asyncHandler, calculateQualityMultiplier, getCryptoAssestImageUrl, formatFloat } from "../util";
+import { BN, asyncHandler, calculateQualityTierMultiplier, getCryptoAssestImageUrl, formatFloat } from "../util";
 import { DailyParticipantMetric } from "../models/DailyParticipantMetric";
 import {
     getDatesBetweenDates,
@@ -74,11 +74,11 @@ export const trackAction = async (
     switch (args.action) {
         case "views":
             participant.viewCount = participant.viewCount.plus(new BN(1));
-            multiplier = calculateQualityMultiplier(qualityScore.views);
+            multiplier = calculateQualityTierMultiplier(qualityScore.views);
             break;
         case "submissions":
             participant.submissionCount = participant.submissionCount.plus(new BN(1));
-            multiplier = calculateQualityMultiplier(qualityScore.submissions);
+            multiplier = calculateQualityTierMultiplier(qualityScore.submissions);
             break;
         default:
             throw new Error("Action not supported");
@@ -266,7 +266,7 @@ export const trackClickByLink = asyncHandler(async (req: Request, res: Response)
         if (!shouldRateLimit) {
             let qualityScore = await QualityScore.findOne({ where: { participantId: participant.id } });
             if (!qualityScore) qualityScore = QualityScore.newQualityScore(participant.id);
-            const multiplier = calculateQualityMultiplier(qualityScore.clicks);
+            const multiplier = calculateQualityTierMultiplier(qualityScore.clicks);
             participant.clickCount = participant.clickCount.plus(new BN(1));
             const pointValue = campaign.algorithm.pointValues[action].times(multiplier);
             campaign.totalParticipationScore = campaign.totalParticipationScore.plus(pointValue);
