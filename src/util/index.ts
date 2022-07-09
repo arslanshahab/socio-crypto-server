@@ -203,7 +203,23 @@ export const paginateList = (items: any[], maxItems = 100) => {
     return pages;
 };
 
-export const calculateQualityMultiplier = (tier: BigNumber) => {
+export const calculateQualityTier = (deviation: BigNumber, engagement: BigNumber, average: BigNumber) => {
+    const scoreDeviation = engagement.minus(average).div(deviation);
+    let tier = 0;
+    if (engagement.isEqualTo(0)) return tier;
+    if (scoreDeviation.lt(-2) || scoreDeviation.gt(2)) {
+        tier = 1;
+    } else if (scoreDeviation.gte(-2) && scoreDeviation.lt(-1)) {
+        tier = 2;
+    } else if (scoreDeviation.gte(-1) && scoreDeviation.lt(1)) {
+        tier = 3;
+    } else if (scoreDeviation.gte(1) && scoreDeviation.lte(2)) {
+        tier = 4;
+    }
+    return new BN(tier);
+};
+
+export const calculateQualityTierMultiplier = (tier: BigNumber) => {
     const tierValue = (value: number) => new BN(value);
     switch (tier) {
         case tierValue(1):

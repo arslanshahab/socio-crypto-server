@@ -11,7 +11,6 @@ import { isArray } from "lodash";
 import { decrypt } from "../util/crypto";
 import { SocialLink as PrismaSocialLink } from "@prisma/client";
 import { prisma } from "./prisma";
-import { BadRequest } from "@tsed/exceptions";
 
 export class TwitterClient {
     public static textLimit = 280;
@@ -167,11 +166,11 @@ export class TwitterClient {
             if (isArray(error)) {
                 const [data] = error;
                 if (data?.code === 89) {
-                    throw new BadRequest(TWITTER_LINK_EXPIRED);
+                    throw new Error(TWITTER_LINK_EXPIRED);
                 }
-                throw new BadRequest(data?.message || "");
+                throw new Error(data?.message || "");
             }
-            throw new BadRequest(error.message);
+            throw new Error(error.message);
         }
     };
 
