@@ -3,36 +3,36 @@ import { StandardDeviation } from "./StandardDeviation";
 import { BigNumber } from "bignumber.js";
 import { ParticipantEngagement } from "../../types";
 import { prisma, readPrisma } from "../../clients/prisma";
-import { createObjectCsvWriter } from "csv-writer";
+// import { createObjectCsvWriter } from "csv-writer";
 import { calculateQualityTier } from "../../util/index";
 
 export const main = async () => {
-    const campaigns = await readPrisma.campaign.findMany({ take: 1, orderBy: { createdAt: "desc" } });
-    const csvWriter = createObjectCsvWriter({
-        path: "quality-score.csv",
-        header: [
-            { id: "participantId", title: "participantId" },
-            { id: "likeRate", title: "likeRate" },
-            { id: "commentRate", title: "commentRate" },
-            { id: "shareRate", title: "shareRate" },
-            { id: "clickRate", title: "clickRate" },
-            { id: "viewRate", title: "viewRate" },
-            { id: "submissionRate", title: "submissionRate" },
-            { id: "likesStandardDeviation", title: "likesStandardDeviation" },
-            { id: "sharesStandardDeviation", title: "sharesStandardDeviation" },
-            { id: "commentsStandardDeviation", title: "commentsStandardDeviation" },
-            { id: "viewsStandardDeviation", title: "viewsStandardDeviation" },
-            { id: "submissionsStandardDeviation", title: "submissionsStandardDeviation" },
-            { id: "clicksStandardDeviation", title: "clicksStandardDeviation" },
-            { id: "likesTier", title: "likesTier" },
-            { id: "sharesTier", title: "sharesTier" },
-            { id: "commentsTier", title: "commentsTier" },
-            { id: "viewsTier", title: "viewsTier" },
-            { id: "submissionsTier", title: "submissionsTier" },
-            { id: "clicksTier", title: "clicksTier" },
-        ],
-    });
-    const csvData = [];
+    const campaigns = await readPrisma.campaign.findMany();
+    // const csvWriter = createObjectCsvWriter({
+    //     path: "quality-score.csv",
+    //     header: [
+    //         { id: "participantId", title: "participantId" },
+    //         { id: "likeRate", title: "likeRate" },
+    //         { id: "commentRate", title: "commentRate" },
+    //         { id: "shareRate", title: "shareRate" },
+    //         { id: "clickRate", title: "clickRate" },
+    //         { id: "viewRate", title: "viewRate" },
+    //         { id: "submissionRate", title: "submissionRate" },
+    //         { id: "likesStandardDeviation", title: "likesStandardDeviation" },
+    //         { id: "sharesStandardDeviation", title: "sharesStandardDeviation" },
+    //         { id: "commentsStandardDeviation", title: "commentsStandardDeviation" },
+    //         { id: "viewsStandardDeviation", title: "viewsStandardDeviation" },
+    //         { id: "submissionsStandardDeviation", title: "submissionsStandardDeviation" },
+    //         { id: "clicksStandardDeviation", title: "clicksStandardDeviation" },
+    //         { id: "likesTier", title: "likesTier" },
+    //         { id: "sharesTier", title: "sharesTier" },
+    //         { id: "commentsTier", title: "commentsTier" },
+    //         { id: "viewsTier", title: "viewsTier" },
+    //         { id: "submissionsTier", title: "submissionsTier" },
+    //         { id: "clicksTier", title: "clicksTier" },
+    //     ],
+    // });
+    // const csvData = [];
 
     for (const campaign of campaigns) {
         const likesEngagementData: BigNumber[] = [];
@@ -122,27 +122,27 @@ export const main = async () => {
                     averageSubmissionRate
                 );
                 const clicksTier = calculateQualityTier(clicksStandardDeviation, rate.clickRate, averageClickRate);
-                csvData.push({
-                    participantId: rate.participantId,
-                    likeRate: rate.likeRate.toString(),
-                    commentRate: rate.commentRate.toString(),
-                    shareRate: rate.shareRate.toString(),
-                    clickRate: rate.clickRate.toString(),
-                    viewRate: rate.viewRate.toString(),
-                    submissionRate: rate.submissionRate.toString(),
-                    likesStandardDeviation: likesStandardDeviation.toString(),
-                    sharesStandardDeviation: sharesStandardDeviation.toString(),
-                    commentsStandardDeviation: commentsStandardDeviation.toString(),
-                    viewsStandardDeviation: viewsStandardDeviation.toString(),
-                    submissionsStandardDeviation: submissionsStandardDeviation.toString(),
-                    clicksStandardDeviation: clicksStandardDeviation.toString(),
-                    likesTier: likesTier.toString(),
-                    sharesTier: sharesTier.toString(),
-                    commentsTier: commentsTier.toString(),
-                    viewsTier: viewsTier.toString(),
-                    submissionsTier: submissionsTier.toString(),
-                    clicksTier: clicksTier.toString(),
-                });
+                // csvData.push({
+                //     participantId: rate.participantId,
+                //     likeRate: rate.likeRate.toString(),
+                //     commentRate: rate.commentRate.toString(),
+                //     shareRate: rate.shareRate.toString(),
+                //     clickRate: rate.clickRate.toString(),
+                //     viewRate: rate.viewRate.toString(),
+                //     submissionRate: rate.submissionRate.toString(),
+                //     likesStandardDeviation: likesStandardDeviation.toString(),
+                //     sharesStandardDeviation: sharesStandardDeviation.toString(),
+                //     commentsStandardDeviation: commentsStandardDeviation.toString(),
+                //     viewsStandardDeviation: viewsStandardDeviation.toString(),
+                //     submissionsStandardDeviation: submissionsStandardDeviation.toString(),
+                //     clicksStandardDeviation: clicksStandardDeviation.toString(),
+                //     likesTier: likesTier.toString(),
+                //     sharesTier: sharesTier.toString(),
+                //     commentsTier: commentsTier.toString(),
+                //     viewsTier: viewsTier.toString(),
+                //     submissionsTier: submissionsTier.toString(),
+                //     clicksTier: clicksTier.toString(),
+                // });
                 prismaTransactions.push(
                     prisma.qualityScore.upsert({
                         where: { id: qualityScore?.id || rate.participantId },
@@ -173,10 +173,10 @@ export const main = async () => {
             prismaTransactions.splice(0, take);
         }
     }
-    try {
-        await csvWriter.writeRecords(csvData);
-        console.log("The CSV file was written successfully");
-    } catch (error) {
-        console.log(error);
-    }
+    // try {
+    //     await csvWriter.writeRecords(csvData);
+    //     console.log("The CSV file was written successfully");
+    // } catch (error) {
+    //     console.log(error);
+    // }
 };
