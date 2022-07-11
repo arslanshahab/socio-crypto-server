@@ -42,13 +42,15 @@ export const main = async () => {
         const submissionEngagementData: BigNumber[] = [];
         const clickEngagementData: BigNumber[] = [];
         const participantEngagementRates: ParticipantEngagement[] = [];
-        const totalParticipants = await readPrisma.participant.count({ where: { campaignId: campaign.id } });
+        const totalParticipants = await readPrisma.participant.count({
+            where: { campaignId: campaign.id, blacklist: false },
+        });
         const take = 200;
         let skip = 0;
         const paginatedParticipantLoop = Math.ceil(totalParticipants / take);
         for (let pageIndex = 0; pageIndex < paginatedParticipantLoop; pageIndex++) {
             const participants = await readPrisma.participant.findMany({
-                where: { campaignId: campaign.id },
+                where: { campaignId: campaign.id, blacklist: false },
                 skip,
                 take,
             });
