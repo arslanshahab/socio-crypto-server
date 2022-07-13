@@ -8,7 +8,7 @@ import { HourlyCampaignMetricsService } from "./HourlyCampaignMetricsService";
 import { PlatformCache } from "@tsed/common";
 import { resetCacheKey } from "../util/index";
 import { CacheKeys } from "../util/constants";
-import { prisma, readPrisma } from "../clients/prisma";
+import { prisma } from "../clients/prisma";
 
 @Injectable()
 export class ParticipantService {
@@ -27,7 +27,7 @@ export class ParticipantService {
         participantId: string,
         include?: T
     ) {
-        return readPrisma.participant.findFirst({ where: { id: participantId }, include: include as T });
+        return prisma.participant.findFirst({ where: { id: participantId }, include: include as T });
     }
 
     public async findParticipantByCampaignId<T extends Prisma.ParticipantInclude | undefined>(
@@ -35,7 +35,7 @@ export class ParticipantService {
         userId?: string,
         include?: T
     ) {
-        return readPrisma.participant.findFirst({
+        return prisma.participant.findFirst({
             where: {
                 campaignId,
                 userId: userId && userId,
@@ -46,8 +46,8 @@ export class ParticipantService {
 
     public async findCampaignParticipants(params: FindCampaignById) {
         const { campaignId, skip, take } = params;
-        return readPrisma.$transaction([
-            readPrisma.participant.findMany({
+        return prisma.$transaction([
+            prisma.participant.findMany({
                 where: {
                     ...(campaignId && { campaignId }),
                     participationScore: { gt: "0" },
@@ -71,21 +71,21 @@ export class ParticipantService {
                 skip,
                 take,
             }),
-            readPrisma.participant.count({
+            prisma.participant.count({
                 where: { ...(campaignId && { campaignId }), participationScore: { gt: "0" } },
             }),
         ]);
     }
 
     public async findParticipantsCountByUserId(userId: string) {
-        return readPrisma.participant.count({
+        return prisma.participant.count({
             where: {
                 userId,
             },
         });
     }
     public async findParticipants(campaignId: string) {
-        return readPrisma.participant.findMany({
+        return prisma.participant.findMany({
             where: { campaignId },
         });
     }
@@ -93,7 +93,7 @@ export class ParticipantService {
         userId: string,
         include?: T
     ) {
-        return readPrisma.participant.findMany({
+        return prisma.participant.findMany({
             where: { userId },
             include: include as T,
         });
@@ -151,7 +151,7 @@ export class ParticipantService {
     }
 
     public async findParticipantsCount(campaignId?: string) {
-        return readPrisma.participant.count({
+        return prisma.participant.count({
             where: campaignId ? { campaignId } : {},
         });
     }
@@ -179,8 +179,8 @@ export class ParticipantService {
         filter: string;
     }) {
         const { campaignId, skip, take, filter } = params;
-        return readPrisma.$transaction([
-            readPrisma.participant.findMany({
+        return prisma.$transaction([
+            prisma.participant.findMany({
                 where: {
                     campaignId,
                     OR: [
@@ -227,14 +227,14 @@ export class ParticipantService {
                 skip,
                 take,
             }),
-            readPrisma.participant.count({
+            prisma.participant.count({
                 where: { campaignId, user: { email: { contains: filter && filter, mode: "insensitive" } } },
             }),
         ]);
     }
 
     public async userParticipantionCount(userId: string) {
-        return readPrisma.participant.count({
+        return prisma.participant.count({
             where: { userId },
         });
     }
