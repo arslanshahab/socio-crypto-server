@@ -43,7 +43,7 @@ import { WalletService } from "./WalletService";
 import { formatFloat } from "../util";
 import { MarketDataService } from "./MarketDataService";
 import { TransferService } from "./TransferService";
-import { prisma, readPrisma } from "../clients/prisma";
+import { prisma } from "../clients/prisma";
 
 @Injectable()
 export class TatumService {
@@ -214,11 +214,11 @@ export class TatumService {
     }
 
     public async getAvailableAddress(data: SymbolNetworkParams & { wallet: Wallet }) {
-        let found = await readPrisma.custodialAddress.findFirst({
+        let found = await prisma.custodialAddress.findFirst({
             where: { chain: data.network, walletId: data.wallet.id },
         });
         if (!found) {
-            found = await readPrisma.custodialAddress.findFirst({
+            found = await prisma.custodialAddress.findFirst({
                 where: { chain: data.network, available: true },
             });
         }
