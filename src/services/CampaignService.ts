@@ -10,7 +10,7 @@ import { TatumService } from "./TatumService";
 import { PlatformCache, UseCache } from "@tsed/common";
 import { CacheKeys, CAMPAIGN_CREATION_AMOUNT } from "../util/constants";
 import { resetCacheKey } from "../util/index";
-import { prisma, readPrisma } from "../clients/prisma";
+import { prisma } from "../clients/prisma";
 
 @Injectable()
 export class CampaignService {
@@ -42,8 +42,8 @@ export class CampaignService {
             auditStatus: params.auditStatus,
         };
 
-        return readPrisma.$transaction([
-            readPrisma.campaign.findMany({
+        return prisma.$transaction([
+            prisma.campaign.findMany({
                 where,
                 include: {
                     participant: params.userRelated
@@ -67,7 +67,7 @@ export class CampaignService {
                 skip: params.skip,
                 take: params.take,
             }),
-            readPrisma.campaign.count({ where }),
+            prisma.campaign.count({ where }),
         ]);
     }
 
@@ -81,7 +81,7 @@ export class CampaignService {
         include?: T,
         company?: string
     ) {
-        return readPrisma.campaign.findFirst<{
+        return prisma.campaign.findFirst<{
             where: Prisma.CampaignWhereInput;
             // this type allows adding additional relations to result tpe
             include: T;
@@ -102,7 +102,7 @@ export class CampaignService {
         key: (args: any[]) => prepareCacheKey(CacheKeys.CAMPAIGN_GLOBAL_SERVICE, args),
     })
     public async findGlobalCampaign(isGlobal: true, symbol: string) {
-        return readPrisma.campaign.findFirst({
+        return prisma.campaign.findFirst({
             where: {
                 isGlobal,
                 symbol,
@@ -117,7 +117,7 @@ export class CampaignService {
         key: (args: any[]) => prepareCacheKey(CacheKeys.CAMPAIGN_BY_NAME_SERVICE, args),
     })
     public async findCampaingByName(name: string) {
-        return readPrisma.campaign.findFirst({
+        return prisma.campaign.findFirst({
             where: {
                 name: {
                     contains: name,
@@ -266,7 +266,7 @@ export class CampaignService {
         key: (args: any[]) => prepareCacheKey(CacheKeys.CAMPAIGN_BY_ORG_SERVICE, args),
     })
     public async findCampaignsByOrgId(orgId: string) {
-        return await readPrisma.campaign.findMany({ where: { orgId } });
+        return await prisma.campaign.findMany({ where: { orgId } });
     }
 
     public async currentCampaignTier(campaignId: string) {
@@ -297,7 +297,7 @@ export class CampaignService {
     }
 
     public async findCampaigns() {
-        return await readPrisma.campaign.findMany({
+        return await prisma.campaign.findMany({
             select: { id: true, name: true },
         });
     }
