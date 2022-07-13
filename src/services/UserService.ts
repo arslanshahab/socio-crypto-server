@@ -19,7 +19,7 @@ import { resetCacheKey } from "../util/index";
 import { getCryptoAssestImageUrl } from "../util/index";
 import { CurrencyService } from "./CurrencyService";
 import { MarketDataService } from "./MarketDataService";
-import { prisma, readPrisma } from "../clients/prisma";
+import { prisma } from "../clients/prisma";
 import { OrganizationService } from "./OrganizationService";
 
 type Array2TrueMap<T> = T extends string[] ? { [idx in T[number]]: true } : undefined;
@@ -76,7 +76,7 @@ export class UserService {
         userId: string | Prisma.StringFilter,
         include?: T
     ) {
-        return readPrisma.user.findFirst<{
+        return prisma.user.findFirst<{
             where: Prisma.UserWhereInput;
             include: T extends unknown[] ? Array2TrueMap<T> : T;
         }>({
@@ -98,8 +98,8 @@ export class UserService {
         params?: { skip: number; take: number },
         include?: T
     ) {
-        return readPrisma.$transaction([
-            readPrisma.user.findMany<{
+        return prisma.$transaction([
+            prisma.user.findMany<{
                 where: Prisma.UserWhereInput;
                 skip?: number;
                 take?: number;
@@ -113,7 +113,7 @@ export class UserService {
                 take: params?.take,
                 where: { deletedAt: null },
             }),
-            readPrisma.user.count(),
+            prisma.user.count(),
         ]);
     }
 
@@ -125,7 +125,7 @@ export class UserService {
      * @returns the admin object, with the requested relations included
      */
     public async findUserByFirebaseId<T extends Prisma.AdminInclude | undefined>(firebaseId: string, include?: T) {
-        return readPrisma.admin.findFirst<{
+        return prisma.admin.findFirst<{
             where: Prisma.AdminWhereInput;
             // this type allows adding additional relations to result tpe
             include: T;
@@ -148,7 +148,7 @@ export class UserService {
 
     public async getAllDeviceTokens(action?: "campaignCreate" | "campaignUpdates") {
         const campaignType = action === "campaignCreate" ? { campaignCreate: true } : { campaignUpdates: true };
-        const response = await readPrisma.user.findMany({
+        const response = await prisma.user.findMany({
             select: {
                 profile: {
                     select: { deviceToken: true },
@@ -218,8 +218,8 @@ export class UserService {
     }
 
     public findUsersRecord(skip: number, take: number, filter: string) {
-        return readPrisma.$transaction([
-            readPrisma.user.findMany({
+        return prisma.$transaction([
+            prisma.user.findMany({
                 where: filter
                     ? {
                           OR: [
@@ -265,7 +265,7 @@ export class UserService {
                 skip,
                 take,
             }),
-            readPrisma.user.count({}),
+            prisma.user.count({}),
         ]);
     }
 
@@ -333,23 +333,23 @@ export class UserService {
 
     public async getUserCount() {
         const currentDate = new Date();
-        return readPrisma.$transaction([
-            readPrisma.user.count(),
-            readPrisma.user.count({
+        return prisma.$transaction([
+            prisma.user.count(),
+            prisma.user.count({
                 where: {
                     createdAt: {
                         gte: subDays(currentDate, 7),
                     },
                 },
             }),
-            readPrisma.user.count({
+            prisma.user.count({
                 where: { active: false },
             }),
         ]);
     }
 
     public async findUserByEmail(email: string) {
-        return await readPrisma.user.findFirst({ where: { email: email.toLowerCase() } });
+        return await prisma.user.findFirst({ where: { email: email.toLowerCase() } });
     }
 
     public async updateLastLogin(userId: string) {
@@ -420,7 +420,7 @@ export class UserService {
     }
 
     public async ifEmailExist(email: string) {
-        return Boolean(await readPrisma.user.findFirst({ where: { email: email.toLowerCase() } }));
+        return Boolean(await prisma.user.findFirst({ where: { email: email.toLowerCase() } }));
     }
 
     public async updateCoiinBalance(user: User, operation: "ADD" | "SUBTRACT", amount: number): Promise<any> {
