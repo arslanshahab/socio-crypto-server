@@ -10,7 +10,6 @@ const app = new Application();
     await Secrets.initialize();
     const connection = await app.connectDatabase();
     await cron.main();
-
     logger.info("closing connection");
     await connection.close();
     process.exit(0);
