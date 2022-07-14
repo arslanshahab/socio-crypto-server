@@ -1,13 +1,10 @@
-import { Inject, Injectable } from "@tsed/di";
-import { PrismaService } from ".prisma/client/entities";
+import { Injectable } from "@tsed/di";
+import { readPrisma } from "../clients/prisma";
 
 @Injectable()
 export class AdminService {
-    @Inject()
-    private prismaService: PrismaService;
-
     public async findAdminByUserId(userId: string) {
-        return await this.prismaService.admin.findFirst({
+        return await readPrisma.admin.findFirst({
             where: {
                 firebaseId: userId,
             },
@@ -16,7 +13,7 @@ export class AdminService {
     }
 
     public async listAdminsByOrg(orgId: string) {
-        return await this.prismaService.admin.findMany({
+        return await readPrisma.admin.findMany({
             where: {
                 org: { id: orgId },
             },
@@ -24,7 +21,7 @@ export class AdminService {
     }
 
     public async findAdminByFirebaseId(firebaseId: string) {
-        return await this.prismaService.admin.findFirst({
+        return await readPrisma.admin.findFirst({
             where: {
                 firebaseId,
             },

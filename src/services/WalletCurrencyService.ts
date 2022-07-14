@@ -1,13 +1,10 @@
-import { Inject, Injectable } from "@tsed/di";
-import { PrismaService } from ".prisma/client/entities";
+import { Injectable } from "@tsed/di";
+import { prisma, readPrisma } from "../clients/prisma";
 
 @Injectable()
 export class WalletCurrencyService {
-    @Inject()
-    private prismaService: PrismaService;
-
     public async newWalletCurrency(type: string, walletId?: string) {
-        return await this.prismaService.walletCurrency.create({
+        return await prisma.walletCurrency.create({
             data: {
                 type: type.toLowerCase(),
                 walletId: walletId && walletId,
@@ -16,7 +13,7 @@ export class WalletCurrencyService {
     }
 
     public async findWalletCurrencyByWalletId(walletId: string, walletCurrencyId: string) {
-        return await this.prismaService.walletCurrency.findFirst({
+        return await readPrisma.walletCurrency.findFirst({
             where: {
                 id: walletCurrencyId,
                 walletId: walletId,
@@ -25,6 +22,6 @@ export class WalletCurrencyService {
     }
 
     public async deleteWalletCurrency(id: string) {
-        return await this.prismaService.walletCurrency.delete({ where: { id } });
+        return await prisma.walletCurrency.delete({ where: { id } });
     }
 }

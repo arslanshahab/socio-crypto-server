@@ -1,6 +1,5 @@
 import { Campaign, Prisma, User, Wallet, Currency, Token } from "@prisma/client";
 import { Inject, Injectable } from "@tsed/di";
-import { PrismaService } from ".prisma/client/entities";
 import { BadRequest, Forbidden, NotFound } from "@tsed/exceptions";
 import { isArray } from "lodash";
 import { JWTPayload, RewardType } from "../types";
@@ -20,15 +19,13 @@ import { resetCacheKey } from "../util/index";
 import { getCryptoAssestImageUrl } from "../util/index";
 import { CurrencyService } from "./CurrencyService";
 import { MarketDataService } from "./MarketDataService";
-import { readPrisma } from "../clients/prisma";
+import { prisma } from "../clients/prisma";
 import { OrganizationService } from "./OrganizationService";
 
 type Array2TrueMap<T> = T extends string[] ? { [idx in T[number]]: true } : undefined;
 
 @Injectable()
 export class UserService {
-    @Inject()
-    private prismaService: PrismaService;
     @Inject()
     private walletService: WalletService;
     @Inject()
@@ -79,7 +76,7 @@ export class UserService {
         userId: string | Prisma.StringFilter,
         include?: T
     ) {
-        return readPrisma.user.findFirst<{
+        return prisma.user.findFirst<{
             where: Prisma.UserWhereInput;
             include: T extends unknown[] ? Array2TrueMap<T> : T;
         }>({
@@ -101,8 +98,8 @@ export class UserService {
         params?: { skip: number; take: number },
         include?: T
     ) {
-        return readPrisma.$transaction([
-            readPrisma.user.findMany<{
+        return prisma.$transaction([
+            prisma.user.findMany<{
                 where: Prisma.UserWhereInput;
                 skip?: number;
                 take?: number;
@@ -116,7 +113,7 @@ export class UserService {
                 take: params?.take,
                 where: { deletedAt: null },
             }),
-            readPrisma.user.count(),
+            prisma.user.count(),
         ]);
     }
 
@@ -128,7 +125,7 @@ export class UserService {
      * @returns the admin object, with the requested relations included
      */
     public async findUserByFirebaseId<T extends Prisma.AdminInclude | undefined>(firebaseId: string, include?: T) {
-        return readPrisma.admin.findFirst<{
+        return prisma.admin.findFirst<{
             where: Prisma.AdminWhereInput;
             // this type allows adding additional relations to result tpe
             include: T;
@@ -151,7 +148,7 @@ export class UserService {
 
     public async getAllDeviceTokens(action?: "campaignCreate" | "campaignUpdates") {
         const campaignType = action === "campaignCreate" ? { campaignCreate: true } : { campaignUpdates: true };
-        const response = await readPrisma.user.findMany({
+        const response = await prisma.user.findMany({
             select: {
                 profile: {
                     select: { deviceToken: true },
@@ -221,8 +218,8 @@ export class UserService {
     }
 
     public findUsersRecord(skip: number, take: number, filter: string) {
-        return readPrisma.$transaction([
-            readPrisma.user.findMany({
+        return prisma.$transaction([
+            prisma.user.findMany({
                 where: filter
                     ? {
                           OR: [
@@ -268,27 +265,27 @@ export class UserService {
                 skip,
                 take,
             }),
-            readPrisma.user.count({}),
+            prisma.user.count({}),
         ]);
     }
 
     public async updateUserStatus(userId: string, activeStatus: boolean) {
         await resetCacheKey(CacheKeys.USER_BY_ID_SERVICE, this.cache, [userId]);
-        return await this.prismaService.user.update({
+        return await prisma.user.update({
             where: { id: userId },
             data: { active: activeStatus },
         });
     }
 
     public async deleteUser(userId: string) {
-        return await this.prismaService.user.update({
+        return await prisma.user.update({
             where: { id: userId },
             data: { deletedAt: new Date() },
         });
     }
 
     public async recoverUser(userId: string) {
-        return await this.prismaService.user.update({
+        return await prisma.user.update({
             where: { id: userId },
             data: { deletedAt: undefined },
         });
@@ -326,7 +323,7 @@ export class UserService {
 
     public async resetUserPassword(userId: string, email: string, password: string) {
         const hashedPassword = createPasswordHash({ email, password });
-        return await this.prismaService.user.update({
+        return await prisma.user.update({
             where: { id: userId },
             data: {
                 password: hashedPassword,
@@ -336,31 +333,31 @@ export class UserService {
 
     public async getUserCount() {
         const currentDate = new Date();
-        return readPrisma.$transaction([
-            readPrisma.user.count(),
-            readPrisma.user.count({
+        return prisma.$transaction([
+            prisma.user.count(),
+            prisma.user.count({
                 where: {
                     createdAt: {
                         gte: subDays(currentDate, 7),
                     },
                 },
             }),
-            readPrisma.user.count({
+            prisma.user.count({
                 where: { active: false },
             }),
         ]);
     }
 
     public async findUserByEmail(email: string) {
-        return await readPrisma.user.findFirst({ where: { email: email.toLowerCase() } });
+        return await prisma.user.findFirst({ where: { email: email.toLowerCase() } });
     }
 
     public async updateLastLogin(userId: string) {
-        return await this.prismaService.user.update({ where: { id: userId }, data: { lastLogin: new Date() } });
+        return await prisma.user.update({ where: { id: userId }, data: { lastLogin: new Date() } });
     }
 
     public async initNewUser(email: string, username: string, password: string, referralCode?: string | null) {
-        const user = await this.prismaService.user.create({
+        const user = await prisma.user.create({
             data: {
                 email: email.trim().toLowerCase(),
                 password: createPasswordHash({ email, password }),
@@ -376,7 +373,7 @@ export class UserService {
     }
 
     public async updateEmailPassword(email: string, password: string) {
-        return await this.prismaService.user.create({
+        return await prisma.user.create({
             data: { email, password },
         });
     }
@@ -386,11 +383,11 @@ export class UserService {
         if (!user) {
             const profile = await this.profileService.findProfileByEmail(email);
             if (profile) {
-                await this.prismaService.user.update({
+                await prisma.user.update({
                     where: { id: profile.userId! },
                     data: { email: profile.email! },
                 });
-                await this.prismaService.profile.update({ where: { id: profile.id }, data: { email: "" } });
+                await prisma.profile.update({ where: { id: profile.id }, data: { email: "" } });
             }
         }
         return user;
@@ -416,14 +413,14 @@ export class UserService {
     }
 
     public async updateUserEmail(userId: string, email: string) {
-        return await this.prismaService.user.update({
+        return await prisma.user.update({
             where: { id: userId },
             data: { email: email.trim().toLowerCase() },
         });
     }
 
     public async ifEmailExist(email: string) {
-        return Boolean(await readPrisma.user.findFirst({ where: { email: email.toLowerCase() } }));
+        return Boolean(await prisma.user.findFirst({ where: { email: email.toLowerCase() } }));
     }
 
     public async updateCoiinBalance(user: User, operation: "ADD" | "SUBTRACT", amount: number): Promise<any> {

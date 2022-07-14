@@ -1,25 +1,22 @@
-import { Inject, Injectable } from "@tsed/di";
-import { PrismaService } from ".prisma/client/entities";
+import { Injectable } from "@tsed/di";
 import { decrypt, encrypt } from "../util/crypto";
 import { BadRequest } from "@tsed/exceptions";
 import { EMAIL_NOT_VERIFIED, INCORRECT_CODE_OR_EMAIL, VERIFICATION_TOKEN_EXPIRED } from "../util/errors";
 import { addMinutes, isPast } from "date-fns";
 import { VerificationType } from "../types";
 import { generateRandomNonce } from "../util";
+import { prisma, readPrisma } from "../clients/prisma";
 
 @Injectable()
 export class VerificationService {
-    @Inject()
-    private prismaService: PrismaService;
-
     public async findVerificationByEmail(email: string) {
-        return this.prismaService.verification.findFirst({
+        return readPrisma.verification.findFirst({
             where: { email: email.toLowerCase(), verified: false },
         });
     }
 
     public async findVerificationByToken(verificationToken: string) {
-        return this.prismaService.verification.findFirst({ where: { id: decrypt(verificationToken), verified: true } });
+        return readPrisma.verification.findFirst({ where: { id: decrypt(verificationToken), verified: true } });
     }
 
     public isCodeExpired(expiry: Date) {
@@ -35,21 +32,21 @@ export class VerificationService {
     }
 
     public async expireToken(verificationId: string) {
-        return await this.prismaService.verification.update({
+        return await prisma.verification.update({
             where: { id: verificationId },
             data: { expiry: new Date() },
         });
     }
 
     public async addExpiryTime(verificationId: string) {
-        return await this.prismaService.verification.update({
+        return await prisma.verification.update({
             where: { id: verificationId },
             data: { expiry: addMinutes(new Date(), 60) },
         });
     }
 
     public async updateVerificationStatus(status: boolean, verificationId: string) {
-        return await this.prismaService.verification.update({
+        return await prisma.verification.update({
             where: { id: verificationId },
             data: { verified: status },
         });
@@ -74,7 +71,7 @@ export class VerificationService {
     public async generateVerification(data: { email: string; type: VerificationType }) {
         let verification = await this.findVerificationByEmail(data.email);
         if (!verification) {
-            verification = await this.prismaService.verification.create({
+            verification = await prisma.verification.create({
                 data: {
                     email: data.email.trim().toLowerCase(),
                     type: data.type,

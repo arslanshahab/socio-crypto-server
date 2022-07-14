@@ -28,7 +28,6 @@ import { HourlyCampaignMetricsService } from "../../services/HourlyCampaignMetri
 import { addMinutes } from "date-fns";
 import { BSC, COIIN, SocialLinkType } from "../../util/constants";
 import { TatumService } from "../../services/TatumService";
-import { decrypt } from "../../util/crypto";
 
 class RegisterSocialLinkResultModel {
     @Property() public readonly registerSocialLink: boolean;
@@ -263,17 +262,12 @@ export class SocialController {
         const [posts, count] = await this.socialPostService.findSocialPostByCampaignId(campaignId, skip, take);
         for (let i = 0; i < posts.length; i++) {
             const post = posts[i];
-            let socialLink = await this.socialLinkService.findSocialLinkByUserAndType(
+            const socialLink = await this.socialLinkService.findSocialLinkByUserAndType(
                 post.userId,
                 SocialLinkType.TWITTER
             );
             const client = getSocialClient(post.type);
             if (socialLink && socialLink.apiKey && socialLink.apiSecret) {
-                socialLink = {
-                    ...socialLink,
-                    apiKey: decrypt(socialLink.apiKey),
-                    apiSecret: decrypt(socialLink.apiSecret),
-                };
                 const response = await client?.getPost(socialLink, post.id);
                 if (response) socialPosts.push(JSON.parse(response));
             }

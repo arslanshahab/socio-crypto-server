@@ -1,19 +1,15 @@
-import { Inject, Injectable } from "@tsed/di";
-import { PrismaService } from ".prisma/client/entities";
-import { readPrisma } from "../clients/prisma";
+import { Injectable } from "@tsed/di";
+import { prisma, readPrisma } from "../clients/prisma";
 
 @Injectable()
 export class SocialPostService {
-    @Inject()
-    private prismaService: PrismaService;
-
     public async findSocialPostMetricsById(campaignId: string) {
-        return this.prismaService.socialPost.findMany({
+        return readPrisma.socialPost.findMany({
             where: { campaignId },
         });
     }
     public async findSocialPostByParticipantId(participantId: string) {
-        return this.prismaService.socialPost.findMany({
+        return readPrisma.socialPost.findMany({
             where: { participantId },
         });
     }
@@ -30,13 +26,13 @@ export class SocialPostService {
     }
 
     public async deleteSocialPost(campaignId: string) {
-        return await this.prismaService.socialPost.deleteMany({
+        return await prisma.socialPost.deleteMany({
             where: { campaignId },
         });
     }
 
     public async newSocialPost(id: string, type: string, participantId: string, userId: string, campaignId: string) {
-        return await this.prismaService.socialPost.create({
+        return await prisma.socialPost.create({
             data: {
                 id,
                 type,
@@ -48,7 +44,7 @@ export class SocialPostService {
     }
 
     public async findUserSocialPostTime(userId: string) {
-        return this.prismaService.socialPost.findFirst({
+        return readPrisma.socialPost.findFirst({
             where: { userId },
             orderBy: { createdAt: "desc" },
             select: {
@@ -58,6 +54,6 @@ export class SocialPostService {
     }
 
     public async getSocialPostCountByParticipantId(participantId: string, campaignId?: string) {
-        return this.prismaService.socialPost.count({ where: { participantId, campaignId } });
+        return readPrisma.socialPost.count({ where: { participantId, campaignId } });
     }
 }

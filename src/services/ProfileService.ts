@@ -1,25 +1,22 @@
-import { Inject, Injectable } from "@tsed/di";
-import { PrismaService } from ".prisma/client/entities";
+import { Injectable } from "@tsed/di";
 import { Prisma, User } from "@prisma/client";
 import { sha256Hash } from "../util/crypto";
 import { UpdateProfileInterestsParams, RemoveInterestsParams } from "../models/RestModels";
 import { NotFound } from "@tsed/exceptions";
 import { PROFILE_NOT_FOUND } from "../util/errors";
+import { prisma, readPrisma } from "../clients/prisma";
 
 @Injectable()
 export class ProfileService {
-    @Inject()
-    private prismaService: PrismaService;
-
     public async findProfileByUsername<T extends Prisma.ProfileInclude | undefined>(username: string, include?: T) {
-        return this.prismaService.profile.findFirst({
+        return readPrisma.profile.findFirst({
             where: { username: username.toLowerCase() },
             include: include as T,
         });
     }
 
     public async createProfile(user: User, username: string) {
-        return await this.prismaService.profile.create({
+        return await prisma.profile.create({
             data: {
                 userId: user.id,
                 username: username.trim().toLowerCase(),
@@ -33,19 +30,19 @@ export class ProfileService {
     }
 
     public async findProfileByEmail(email: string) {
-        return this.prismaService.profile.findFirst({ where: { email: email.toLowerCase() } });
+        return readPrisma.profile.findFirst({ where: { email: email.toLowerCase() } });
     }
 
     public async isUsernameExists(username: string) {
-        return this.prismaService.profile.findFirst({ where: { username } });
+        return readPrisma.profile.findFirst({ where: { username } });
     }
 
     public async findProfileByUserId(userId: string) {
-        return this.prismaService.profile.findFirst({ where: { userId } });
+        return readPrisma.profile.findFirst({ where: { userId } });
     }
 
     public async updateProfile(userId: string, data: UpdateProfileInterestsParams) {
-        return await this.prismaService.profile.update({
+        return await prisma.profile.update({
             where: { userId },
             data: {
                 ageRange: data.ageRange && data.ageRange,
@@ -71,7 +68,7 @@ export class ProfileService {
             const index = values.indexOf(data.values);
             if (index > -1) values.splice(index, 1);
         }
-        return await this.prismaService.profile.update({
+        return await prisma.profile.update({
             where: { userId },
             data: {
                 ageRange: data.ageRange && null,
@@ -85,38 +82,38 @@ export class ProfileService {
     }
 
     public async updateUsername(userId: string, username: string) {
-        return await this.prismaService.profile.update({
+        return await prisma.profile.update({
             where: { userId },
             data: { username: username.trim().toLowerCase() },
         });
     }
 
     public async setRecoveryCode(profileId: string, code: number) {
-        return await this.prismaService.profile.update({
+        return await prisma.profile.update({
             where: { id: profileId },
             data: { recoveryCode: sha256Hash(code.toString()) },
         });
     }
 
     public async updateDeviceToken(userId: string, deviceToken: string) {
-        return await this.prismaService.profile.update({
+        return await prisma.profile.update({
             where: { userId },
             data: { deviceToken },
         });
     }
 
     public async updateProfilePicture(userId: string, picture: string) {
-        return await this.prismaService.profile.update({
+        return await prisma.profile.update({
             where: { userId },
             data: { profilePicture: picture },
         });
     }
 
     public async ifUsernameExist(username: string) {
-        return Boolean(await this.prismaService.profile.findFirst({ where: { username: username.toLowerCase() } }));
+        return Boolean(await readPrisma.profile.findFirst({ where: { username: username.toLowerCase() } }));
     }
 
     public async ifEmailExist(email: string) {
-        return Boolean(await this.prismaService.profile.findFirst({ where: { email: email.toLowerCase() } }));
+        return Boolean(await readPrisma.profile.findFirst({ where: { email: email.toLowerCase() } }));
     }
 }

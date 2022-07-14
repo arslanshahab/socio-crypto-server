@@ -1,13 +1,10 @@
-import { Inject, Injectable } from "@tsed/di";
-import { PrismaService } from ".prisma/client/entities";
+import { Injectable } from "@tsed/di";
+import { readPrisma } from "../clients/prisma";
 
 @Injectable()
 export class CryptoCurrencyService {
-    @Inject()
-    private prismaService: PrismaService;
-
     public async findCryptoCurrencyById(cryptoId: string) {
-        return this.prismaService.cryptoCurrency.findFirst({
+        return readPrisma.cryptoCurrency.findFirst({
             where: {
                 id: cryptoId,
             },
@@ -15,10 +12,10 @@ export class CryptoCurrencyService {
     }
 
     public async findCryptoCurrencies() {
-        return this.prismaService.cryptoCurrency.findMany();
+        return readPrisma.cryptoCurrency.findMany();
     }
 
     public async findByContractAddress(contractAddress: string) {
-        return this.prismaService.cryptoCurrency.findFirst({ where: { contractAddress } });
+        return readPrisma.cryptoCurrency.findFirst({ where: { contractAddress } });
     }
 }
