@@ -1,8 +1,8 @@
-import Prisma from "@prisma/client";
+import Prisma, { CampaignMedia, CampaignTemplate, RafflePrize } from "@prisma/client";
 import { ArrayOf, CollectionOf, Nullable, Optional, Property, Required } from "@tsed/schema";
 import { getCryptoAssestImageUrl } from "../util";
 import { KycLevel, SharingRewardType } from "../util/constants";
-import { KycStatus } from "src/types";
+import { AlgorithmJsonValueType, CampaignRequirementTypes, KycStatus } from "../types";
 
 export class CampaignMediaResultModel {
     @Property() public readonly id: string;
@@ -781,4 +781,37 @@ export class UserStatisticsResultModel {
     @Property() public readonly participationScore: number;
     @Property() public readonly campaignName: string;
     @Property() public readonly participationDate: Date;
+}
+
+export class CreateCampaignParams {
+    @Required() public readonly name: string;
+    @Required() public readonly coiinTotal: string;
+    @Required() public readonly target: string;
+    @Property() public readonly targetVideo: string;
+    @Required() public readonly beginDate: Date;
+    @Required() public readonly endDate: Date;
+    @Property() public readonly description: string;
+    @Property() public readonly instructions: string;
+    @Required() public readonly symbol: string;
+    @Required() public readonly network: string;
+    @Property() public readonly company: string;
+    @Required() public readonly algorithm: AlgorithmJsonValueType;
+    @Property() public readonly requirements: CampaignRequirementTypes;
+    @Required() public readonly imagePath: string;
+    @Property() public readonly campaignType: string;
+    @Property() public readonly socialMediaType: string[];
+    @Property() public readonly tagline: string;
+    @Property() public readonly suggestedPosts: string[];
+    @Property() public readonly suggestedTags: string[];
+    @Property() public readonly keywords: string[];
+    @Property() public readonly type: string;
+    @Property() public readonly raffle_prize: RafflePrize;
+    @Property() public readonly campaignMedia: CampaignMedia[];
+    @Property() public readonly campaignTemplates: CampaignTemplate[];
+    @Property() public readonly isGlobal: boolean;
+    @Required() public readonly showUrl: boolean;
+}
+
+export class UpdateCampaignParams extends CreateCampaignParams {
+    @Property() public readonly id: string;
 }

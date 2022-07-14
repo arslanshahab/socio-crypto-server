@@ -31,11 +31,13 @@ import {
     CampaignStatsResultModelArray,
     BooleanResultModel,
     PaidOutCryptoResultModel,
+    CreateCampaignParams,
+    UpdateCampaignParams,
 } from "../../models/RestModels";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { ParticipantService } from "../../services/ParticipantService";
 import { SocialPostService } from "../../services/SocialPostService";
-import { CampaignAuditStatus, CampaignCreateTypes, PointValueTypes } from "../../types";
+import { CampaignAuditStatus, PointValueTypes } from "../../types";
 import { addYears } from "date-fns";
 import { Validator } from "../../schemas";
 import { OrganizationService } from "../../services/OrganizationService";
@@ -182,7 +184,7 @@ export class CampaignController {
 
     @Post("/create-campaign")
     @(Returns(200, SuccessResult).Of(CreateCampaignResultModel))
-    public async createCampaign(@BodyParams() body: CampaignCreateTypes, @Context() context: Context) {
+    public async createCampaign(@BodyParams() body: CreateCampaignParams, @Context() context: Context) {
         const { role, company } = this.userService.checkPermissions(
             { hasRole: ["admin", "manager"] },
             context.get("user")
@@ -312,7 +314,7 @@ export class CampaignController {
 
     @Post("/update-campaign")
     @(Returns(200, SuccessResult).Of(UpdateCampaignResultModel))
-    public async updateCampaign(@BodyParams() body: CampaignCreateTypes, @Context() context: Context) {
+    public async updateCampaign(@BodyParams() body: UpdateCampaignParams, @Context() context: Context) {
         const { role, company } = this.userService.checkPermissions(
             { hasRole: ["admin", "manager"] },
             context.get("user")
