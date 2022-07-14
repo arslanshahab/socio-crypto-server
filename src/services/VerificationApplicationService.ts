@@ -1,5 +1,4 @@
-import { Inject, Injectable } from "@tsed/di";
-import { PrismaService } from ".prisma/client/entities";
+import { Injectable } from "@tsed/di";
 import { S3Client } from "../clients/s3";
 import { generateFactorsFromKYC, getApplicationStatus, getKycStatusDetails } from "../util";
 import { AcuantClient } from "../clients/acuant";
@@ -8,27 +7,25 @@ import { KycApplication, KycStatus } from "../types";
 import { KycLevel, KycStatus as KycStatusEnum } from "../util/constants";
 import { Firebase } from "../clients/firebase";
 import { Validator } from "../schemas";
+import { prisma, readPrisma } from "../clients/prisma";
 
 const validator = new Validator();
 
 @Injectable()
 export class VerificationApplicationService {
-    @Inject()
-    private prismaService: PrismaService;
-
     public async updateKycStatus(userId: string, kycStatus: string) {
-        return await this.prismaService.user.update({
+        return await prisma.user.update({
             where: { id: userId },
             data: { kycStatus: kycStatus.toUpperCase() },
         });
     }
 
     public async findByUserIdAndLevel(userId: string, level: KycLevel) {
-        return await this.prismaService.verificationApplication.findFirst({ where: { userId, level } });
+        return await readPrisma.verificationApplication.findFirst({ where: { userId, level } });
     }
 
     public async getProfileData(userId: string, level: KycLevel): Promise<KycApplication> {
-        const app = await this.prismaService.verificationApplication.findFirst({ where: { userId, level } });
+        const app = await readPrisma.verificationApplication.findFirst({ where: { userId, level } });
         return app?.profile ? JSON.parse(app.profile) : {};
     }
 
@@ -41,7 +38,7 @@ export class VerificationApplicationService {
         reason: string;
         profile?: string;
     }) {
-        return await this.prismaService.verificationApplication.upsert({
+        return await prisma.verificationApplication.upsert({
             where: { id: data.record?.id || data.userId },
             update: {
                 applicationId: data.appId,
@@ -61,7 +58,7 @@ export class VerificationApplicationService {
     }
 
     public async findKycApplication(userId: string, level: KycLevel) {
-        const recordedApplication = await this.prismaService.verificationApplication.findFirst({
+        const recordedApplication = await readPrisma.verificationApplication.findFirst({
             where: { userId: userId, level },
         });
         if (!recordedApplication) return null;
@@ -88,7 +85,7 @@ export class VerificationApplicationService {
     public async updateStatus(newStatus: string, data: VerificationApplication) {
         let updatedApplication;
         if (data.status !== newStatus && data.status !== "APPROVED") {
-            updatedApplication = await this.prismaService.verificationApplication.update({
+            updatedApplication = await prisma.verificationApplication.update({
                 where: {
                     id: data.id,
                 },
@@ -101,7 +98,7 @@ export class VerificationApplicationService {
     }
 
     public async updateReason(newReason: string, id: string) {
-        return await this.prismaService.verificationApplication.update({
+        return await prisma.verificationApplication.update({
             where: { id },
             data: {
                 reason: newReason,
@@ -111,14 +108,14 @@ export class VerificationApplicationService {
 
     public async isLevel1Approved(userId: string) {
         return (
-            (await this.prismaService.verificationApplication.findFirst({ where: { userId, level: KycLevel.LEVEL1 } }))
+            (await readPrisma.verificationApplication.findFirst({ where: { userId, level: KycLevel.LEVEL1 } }))
                 ?.status === KycStatusEnum.APPROVED
         );
     }
 
     public async isLevel2Approved(userId: string) {
         return (
-            (await this.prismaService.verificationApplication.findFirst({ where: { userId, level: KycLevel.LEVEL2 } }))
+            (await readPrisma.verificationApplication.findFirst({ where: { userId, level: KycLevel.LEVEL2 } }))
                 ?.status === KycStatusEnum.APPROVED
         );
     }
@@ -191,7 +188,7 @@ export class VerificationApplicationService {
                 await S3Client.uploadAcuantKyc(userId, kycApplication);
             }
             // update status and reason
-            this.prismaService.verificationApplication.update({
+            prisma.verificationApplication.update({
                 data: { status, reason },
                 where: { id: recordedApplication.id },
             });
@@ -225,7 +222,7 @@ export class VerificationApplicationService {
     public async clearApplication(userId: string, verificationApplicationId: string) {
         const kyc = await S3Client.getAcuantKyc(userId);
         if (kyc) await S3Client.deleteAcuantKyc(userId);
-        this.prismaService.verificationApplication.delete({ where: { id: verificationApplicationId } });
+        prisma.verificationApplication.delete({ where: { id: verificationApplicationId } });
         return generateFactorsFromKYC(kyc);
     }
 }

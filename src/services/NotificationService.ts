@@ -1,20 +1,17 @@
-import { Inject, Injectable } from "@tsed/di";
-import { PrismaService } from ".prisma/client/entities";
+import { Injectable } from "@tsed/di";
+import { prisma, readPrisma } from "../clients/prisma";
 import { UpdateNotificationSettingsParams } from "../models/RestModels";
 
 @Injectable()
 export class NotificationService {
-    @Inject()
-    private prismaService: PrismaService;
-
     public async findNotificationSettingByUserId(userId: string) {
-        return this.prismaService.notificationSettings.findFirst({
+        return readPrisma.notificationSettings.findFirst({
             where: { userId },
         });
     }
 
     public async createNotificationSetting(userId: string) {
-        return await this.prismaService.notificationSettings.create({
+        return await prisma.notificationSettings.create({
             data: {
                 userId,
             },
@@ -23,7 +20,7 @@ export class NotificationService {
 
     public async updateNotificationSettings(userId: string, data: UpdateNotificationSettingsParams) {
         const { kyc, withdraw, campaignCreate, campaignUpdates } = data;
-        return await this.prismaService.notificationSettings.update({
+        return await prisma.notificationSettings.update({
             where: { userId },
             data: {
                 kyc: kyc && kyc,

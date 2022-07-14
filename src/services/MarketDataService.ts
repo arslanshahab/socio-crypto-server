@@ -1,13 +1,11 @@
 import { Inject, Injectable } from "@tsed/di";
-import { PrismaService } from ".prisma/client/entities";
 import { CacheKeys, COIIN } from "../util/constants";
 import { PlatformCache } from "@tsed/common";
 import { MarketData } from "../models/MarketData";
+import { readPrisma } from "../clients/prisma";
 
 @Injectable()
 export class MarketDataService {
-    @Inject()
-    private prismaService: PrismaService;
     @Inject()
     private cache: PlatformCache;
 
@@ -15,7 +13,7 @@ export class MarketDataService {
         const cacheKey = `${CacheKeys.MARKET_DATA_SERVICE}:${symbol}`;
         let marketData = await this.cache.get(cacheKey);
         if (marketData) return JSON.parse(marketData as string);
-        marketData = await this.prismaService.marketData.findFirst({
+        marketData = await readPrisma.marketData.findFirst({
             where: { symbol: { contains: symbol, mode: "insensitive" } },
         });
         this.cache.set(cacheKey, JSON.stringify(marketData), { ttl: 900 });

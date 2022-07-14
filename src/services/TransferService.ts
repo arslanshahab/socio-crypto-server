@@ -1,6 +1,5 @@
 import { Campaign, Prisma } from "@prisma/client";
 import { Inject, Injectable } from "@tsed/di";
-import { PrismaService } from ".prisma/client/entities";
 import { endOfISOWeek, startOfDay, startOfISOWeek, startOfWeek, subDays } from "date-fns";
 import { TransferAction, TransferStatus } from "../types";
 import { WalletService } from "./WalletService";
@@ -17,11 +16,10 @@ import {
 } from "../util/constants";
 import { UseCache } from "@tsed/common";
 import { prepareCacheKey } from "../util/index";
+import { prisma, readPrisma } from "../clients/prisma";
 
 @Injectable()
 export class TransferService {
-    @Inject()
-    private prismaService: PrismaService;
     @Inject()
     private walletService: WalletService;
 
@@ -42,24 +40,24 @@ export class TransferService {
             ...(params.type !== "ALL" && { action: params.type }),
         };
 
-        return this.prismaService.$transaction([
-            this.prismaService.transfer.findMany({
+        return readPrisma.$transaction([
+            readPrisma.transfer.findMany({
                 where,
                 skip: params.skip,
                 take: params.take,
             }),
-            this.prismaService.transfer.count({ where }),
+            readPrisma.transfer.count({ where }),
         ]);
     }
 
     public async findTransferByCampaignId(campaignId: string) {
-        return this.prismaService.transfer.findMany({
+        return readPrisma.transfer.findMany({
             where: { campaignId },
         });
     }
 
     public async deleteTransferPayouts(campaignId: string) {
-        return await this.prismaService.transfer.deleteMany({
+        return await prisma.transfer.deleteMany({
             where: { campaignId },
         });
     }
@@ -68,7 +66,7 @@ export class TransferService {
         const currentDate = new Date();
         const start = startOfISOWeek(currentDate);
         const end = endOfISOWeek(currentDate);
-        return await this.prismaService.transfer.findFirst({
+        return await readPrisma.transfer.findFirst({
             where: {
                 walletId,
                 action: type,
@@ -83,7 +81,7 @@ export class TransferService {
     public async getLast24HourRedemption(walletId: string, type: TransferAction) {
         const currentDate = new Date();
         const date = subDays(currentDate, 1);
-        return this.prismaService.transfer.count({
+        return readPrisma.transfer.count({
             where: {
                 walletId,
                 action: type,
@@ -103,7 +101,7 @@ export class TransferService {
         type: TransferType;
         campaign?: Campaign;
     }) {
-        return await this.prismaService.transfer.create({
+        return await prisma.transfer.create({
             data: {
                 amount: data.amount,
                 action: data.action,
@@ -119,17 +117,17 @@ export class TransferService {
     public async findUserTransactions(userId: string) {
         const wallet = await this.walletService.findWalletByUserId(userId);
         if (!wallet) throw new NotFound(WALLET_NOT_FOUND);
-        return this.prismaService.transfer.findMany({
+        return readPrisma.transfer.findMany({
             where: { walletId: wallet.id },
         });
     }
 
     public async getCoiinRecord() {
-        return this.prismaService.$transaction([
-            this.prismaService.transfer.findMany({
+        return readPrisma.$transaction([
+            readPrisma.transfer.findMany({
                 where: { OR: [{ action: "WITHDRAW" }, { action: "XOXODAY_REDEMPTION" }] },
             }),
-            this.prismaService.transfer.findMany({
+            readPrisma.transfer.findMany({
                 where: {
                     OR: [
                         { action: "LOGIN_REWARD" },
@@ -145,7 +143,7 @@ export class TransferService {
     }
 
     public async getWithdrawalsByStatus(status: TransferStatus) {
-        return this.prismaService.transfer.findMany({
+        return readPrisma.transfer.findMany({
             where: { status, action: "withdraw" },
             include: {
                 wallet: {
@@ -163,7 +161,7 @@ export class TransferService {
     }
 
     public async getTotalAnnualWithdrawalByWallet(walletId: string) {
-        const usdAmount = await this.prismaService.transfer.findMany({
+        const usdAmount = await readPrisma.transfer.findMany({
             where: {
                 action: "withdraw",
                 status: "APPROVED",
@@ -177,7 +175,7 @@ export class TransferService {
     }
 
     public async getTotalPendingByCurrencyInUsd(walletId: string) {
-        return this.prismaService.transfer.findMany({
+        return readPrisma.transfer.findMany({
             where: { action: "withdraw", status: "PENDING", walletId },
             select: { currency: true, amount: true, usdAmount: true },
         });
@@ -185,7 +183,7 @@ export class TransferService {
 
     public async getCoinnEarnedToday(walletId: string) {
         const today = startOfDay(new Date());
-        const earnings = await this.prismaService.transfer.findMany({
+        const earnings = await readPrisma.transfer.findMany({
             where: {
                 currency: COIIN,
                 createdAt: { gte: today },
@@ -201,7 +199,7 @@ export class TransferService {
         key: (args: any[]) => prepareCacheKey(CacheKeys.USER_PENDING_TRANSFERS, args),
     })
     public async getPendingWalletBalances(walletId: string, symbol: string) {
-        const pendingCreditTransfers = await this.prismaService.transfer.findMany({
+        const pendingCreditTransfers = await readPrisma.transfer.findMany({
             where: {
                 walletId,
                 currency: symbol,
@@ -209,7 +207,7 @@ export class TransferService {
                 status: TransferStatusEnum.PENDING,
             },
         });
-        const pendingDebitBalances = await this.prismaService.transfer.findMany({
+        const pendingDebitBalances = await readPrisma.transfer.findMany({
             where: {
                 walletId,
                 currency: symbol,
@@ -229,7 +227,7 @@ export class TransferService {
         stripeCardId?: string,
         paypalAddress?: string
     ) {
-        return await this.prismaService.transfer.create({
+        return await prisma.transfer.create({
             data: {
                 walletId,
                 orgId,
@@ -244,7 +242,7 @@ export class TransferService {
     }
 
     public async getAuditedWithdrawals() {
-        return this.prismaService.transfer.findMany({
+        return readPrisma.transfer.findMany({
             where: {
                 action: TransferActionEnum.WITHDRAW.toLowerCase(),
                 OR: [{ status: TransferStatusEnum.APPROVED }, { status: TransferStatusEnum.REJECTED }],
@@ -257,7 +255,7 @@ export class TransferService {
     }
 
     public async findTransactionsByWalletId(walletId: string) {
-        return this.prismaService.transfer.findMany({
+        return readPrisma.transfer.findMany({
             where: { walletId },
         });
     }
@@ -274,7 +272,7 @@ export class TransferService {
         status: TransferStatus;
         type: TransferType;
     }) {
-        return await this.prismaService.transfer.create({
+        return await prisma.transfer.create({
             data: {
                 currency: data.symbol,
                 ...(data.campaignId && { campaignId: data.campaignId }),
@@ -290,13 +288,13 @@ export class TransferService {
     }
 
     public async getCurrentWeekRedemption(walletId: string, action: TransferAction) {
-        const transfers = await this.prismaService.transfer.findMany({
+        const transfers = await readPrisma.transfer.findMany({
             where: { walletId, action, createdAt: { gte: startOfWeek(new Date()) } },
         });
         return transfers.reduce((acc, curr) => acc + parseFloat(curr.amount!), 0);
     }
 
     public async findTransferByCampaignIdAndAction(campaignId: string, action: TransferAction) {
-        return this.prismaService.transfer.findMany({ where: { campaignId, action } });
+        return readPrisma.transfer.findMany({ where: { campaignId, action } });
     }
 }

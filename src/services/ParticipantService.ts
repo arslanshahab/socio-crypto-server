@@ -1,6 +1,5 @@
 import { Campaign, Participant, Prisma } from "@prisma/client";
 import { Inject, Injectable } from "@tsed/di";
-import { PrismaService } from ".prisma/client/entities";
 import { FindCampaignById } from "../types";
 import { encrypt } from "../util/crypto";
 import { serverBaseUrl } from "../config";
@@ -9,11 +8,10 @@ import { HourlyCampaignMetricsService } from "./HourlyCampaignMetricsService";
 import { PlatformCache } from "@tsed/common";
 import { resetCacheKey } from "../util/index";
 import { CacheKeys } from "../util/constants";
+import { prisma } from "../clients/prisma";
 
 @Injectable()
 export class ParticipantService {
-    @Inject()
-    private prismaService: PrismaService;
     @Inject()
     private hourlyCampaignMetricsService: HourlyCampaignMetricsService;
     @Inject()
@@ -29,7 +27,7 @@ export class ParticipantService {
         participantId: string,
         include?: T
     ) {
-        return this.prismaService.participant.findFirst({ where: { id: participantId }, include: include as T });
+        return prisma.participant.findFirst({ where: { id: participantId }, include: include as T });
     }
 
     public async findParticipantByCampaignId<T extends Prisma.ParticipantInclude | undefined>(
@@ -37,7 +35,7 @@ export class ParticipantService {
         userId?: string,
         include?: T
     ) {
-        return this.prismaService.participant.findFirst({
+        return prisma.participant.findFirst({
             where: {
                 campaignId,
                 userId: userId && userId,
@@ -48,8 +46,8 @@ export class ParticipantService {
 
     public async findCampaignParticipants(params: FindCampaignById) {
         const { campaignId, skip, take } = params;
-        return this.prismaService.$transaction([
-            this.prismaService.participant.findMany({
+        return prisma.$transaction([
+            prisma.participant.findMany({
                 where: {
                     ...(campaignId && { campaignId }),
                     participationScore: { gt: "0" },
@@ -73,21 +71,21 @@ export class ParticipantService {
                 skip,
                 take,
             }),
-            this.prismaService.participant.count({
+            prisma.participant.count({
                 where: { ...(campaignId && { campaignId }), participationScore: { gt: "0" } },
             }),
         ]);
     }
 
     public async findParticipantsCountByUserId(userId: string) {
-        return this.prismaService.participant.count({
+        return prisma.participant.count({
             where: {
                 userId,
             },
         });
     }
     public async findParticipants(campaignId: string) {
-        return this.prismaService.participant.findMany({
+        return prisma.participant.findMany({
             where: { campaignId },
         });
     }
@@ -95,14 +93,14 @@ export class ParticipantService {
         userId: string,
         include?: T
     ) {
-        return this.prismaService.participant.findMany({
+        return prisma.participant.findMany({
             where: { userId },
             include: include as T,
         });
     }
 
     public async deleteParticipant(campaignId: string) {
-        return await this.prismaService.participant.deleteMany({
+        return await prisma.participant.deleteMany({
             where: {
                 campaignId,
             },
@@ -111,7 +109,7 @@ export class ParticipantService {
 
     public async createNewParticipant(userId: string, campaign: Campaign, email?: string) {
         await resetCacheKey(CacheKeys.USER_RESET_KEY, this.cache);
-        let participant = await this.prismaService.participant.create({
+        let participant = await prisma.participant.create({
             data: {
                 clickCount: "0",
                 viewCount: "0",
@@ -125,7 +123,7 @@ export class ParticipantService {
         const url = `${serverBaseUrl}/v1/referral/${participant.id}`;
         const link = await TinyUrl.shorten(url);
         await this.hourlyCampaignMetricsService.upsertMetrics(campaign.id, campaign?.orgId!, "participate");
-        participant = await this.prismaService.participant.update({
+        participant = await prisma.participant.update({
             where: {
                 id_campaignId_userId: {
                     id: participant.id,
@@ -141,7 +139,7 @@ export class ParticipantService {
     }
 
     public async removeParticipant(participant: Participant) {
-        return await this.prismaService.participant.delete({
+        return await prisma.participant.delete({
             where: {
                 id_campaignId_userId: {
                     id: participant.id,
@@ -153,14 +151,14 @@ export class ParticipantService {
     }
 
     public async findParticipantsCount(campaignId?: string) {
-        return this.prismaService.participant.count({
+        return prisma.participant.count({
             where: campaignId ? { campaignId } : {},
         });
     }
 
     public async blacklistParticipant(params: { participantId: string; userId: string; campaignId: string }) {
         const { participantId, userId, campaignId } = params;
-        return await this.prismaService.participant.update({
+        return await prisma.participant.update({
             where: {
                 id_campaignId_userId: {
                     id: participantId,
@@ -181,8 +179,8 @@ export class ParticipantService {
         filter: string;
     }) {
         const { campaignId, skip, take, filter } = params;
-        return this.prismaService.$transaction([
-            this.prismaService.participant.findMany({
+        return prisma.$transaction([
+            prisma.participant.findMany({
                 where: {
                     campaignId,
                     OR: [
@@ -229,14 +227,14 @@ export class ParticipantService {
                 skip,
                 take,
             }),
-            this.prismaService.participant.count({
+            prisma.participant.count({
                 where: { campaignId, user: { email: { contains: filter && filter, mode: "insensitive" } } },
             }),
         ]);
     }
 
     public async userParticipantionCount(userId: string) {
-        return this.prismaService.participant.count({
+        return prisma.participant.count({
             where: { userId },
         });
     }

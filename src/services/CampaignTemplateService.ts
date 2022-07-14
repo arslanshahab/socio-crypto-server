@@ -1,25 +1,22 @@
-import { Inject, Injectable } from "@tsed/di";
-import { PrismaService } from ".prisma/client/entities";
+import { Injectable } from "@tsed/di";
 import { CampaignTemplate } from "@prisma/client";
+import { prisma, readPrisma } from "../clients/prisma";
 
 @Injectable()
 export class CampaignTemplateService {
-    @Inject()
-    private prismaService: PrismaService;
-
     public async findCampaignTemplateByCampaignId(campaignId: string) {
-        return this.prismaService.campaignTemplate.findMany({
+        return readPrisma.campaignTemplate.findMany({
             where: { campaignId },
         });
     }
     public async deleteCampaignTemplate(campaignId: string) {
-        return await this.prismaService.campaignTemplate.deleteMany({
+        return await prisma.campaignTemplate.deleteMany({
             where: { campaignId },
         });
     }
 
     public async updateCampaignTemplate(campaignTemplates: CampaignTemplate) {
-        return await this.prismaService.campaignTemplate.update({
+        return await prisma.campaignTemplate.update({
             where: { id: campaignTemplates.id },
             data: {
                 post: campaignTemplates.post,
@@ -27,9 +24,9 @@ export class CampaignTemplateService {
             },
         });
     }
-   
+
     public async updateNewCampaignTemplate(campaignTemplate: CampaignTemplate, campaignId: string) {
-        return await this.prismaService.campaignTemplate.create({
+        return await prisma.campaignTemplate.create({
             data: {
                 channel: campaignTemplate.channel,
                 post: campaignTemplate.post,
@@ -40,7 +37,7 @@ export class CampaignTemplateService {
     }
 
     public async findCampaignTemplateById(campaignTemplateId: string) {
-        return this.prismaService.campaignTemplate.findFirst({
+        return readPrisma.campaignTemplate.findFirst({
             where: { id: campaignTemplateId },
         });
     }

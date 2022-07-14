@@ -1,16 +1,14 @@
 import { Inject, Injectable } from "@tsed/di";
-import { PrismaService } from ".prisma/client/entities";
 import { SymbolNetworkParams } from "../types";
 import { RAIINMAKER_ORG_NAME } from "../util/constants";
 import { NotFound } from "@tsed/exceptions";
 import { TatumService } from "./TatumService";
 import { CurrencyService } from "./CurrencyService";
 import { Prisma } from "@prisma/client";
+import { prisma, readPrisma } from "../clients/prisma";
 
 @Injectable()
 export class OrganizationService {
-    @Inject()
-    private prismaService: PrismaService;
     @Inject()
     private tatumService: TatumService;
     @Inject()
@@ -20,7 +18,7 @@ export class OrganizationService {
         companyName: string,
         include?: T
     ) {
-        return this.prismaService.org.findFirst({
+        return readPrisma.org.findFirst({
             where: {
                 name: companyName,
             },
@@ -35,7 +33,7 @@ export class OrganizationService {
     }
 
     public async findOrgByAdminId(adminId: string) {
-        return this.prismaService.org.findFirst({
+        return readPrisma.org.findFirst({
             where: {
                 id: adminId,
             },
@@ -43,7 +41,7 @@ export class OrganizationService {
     }
 
     public async orgDetails() {
-        return this.prismaService.org.findMany({
+        return readPrisma.org.findMany({
             include: { campaign: true, admin: true },
         });
     }
@@ -56,6 +54,6 @@ export class OrganizationService {
     }
 
     public async initStripeId(orgId: string, stripeId: string) {
-        return await this.prismaService.org.update({ where: { id: orgId }, data: { stripeId } });
+        return await prisma.org.update({ where: { id: orgId }, data: { stripeId } });
     }
 }
