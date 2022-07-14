@@ -350,15 +350,33 @@ export class CampaignController {
             validator.validateRafflePrizeSchema(raffle_prize);
         }
         if (role === "admin" && !body.company) throw new NotFound(COMPANY_NOT_SPECIFIED);
-        if (!company) throw new NotFound(COMPANY_NOT_SPECIFIED);
-        const org = await this.organizationService.findOrganizationByCompanyName(company);
+        const org = await this.organizationService.findOrganizationByCompanyName(company!);
         if (!org) throw new NotFound(ORG_NOT_FOUND);
         const campaign: Campaign | null = await this.campaignService.findCampaignById(id);
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
         let campaignImageSignedURL = "";
         const mediaUrls: { name: string | null; channel: string | null; signedUrl: string }[] = [];
+        await this.campaignService.updateCampaign(
+            id,
+            name,
+            beginDate,
+            endDate,
+            target,
+            description,
+            instructions,
+            algorithm,
+            targetVideo,
+            imagePath,
+            tagline,
+            requirements,
+            suggestedPosts,
+            suggestedTags,
+            keywords,
+            campaignType,
+            socialMediaType,
+            showUrl
+        );
         if (imagePath && campaign.imagePath !== imagePath) {
-            imagePath;
             campaignImageSignedURL = await S3Client.generateCampaignSignedURL(`campaign/${campaign.id}/${imagePath}`);
         }
         if (campaignTemplates) {
@@ -373,6 +391,13 @@ export class CampaignController {
                     }
                 } else {
                     await this.campaignTemplateService.updateNewCampaignTemplate(receivedTemplate, campaign.id);
+                }
+            }
+            const templates = await this.campaignTemplateService.findCampaignTemplateByCampaignId(campaign.id);
+            for (let index = 0; index < templates.length; index++) {
+                const template = templates[index];
+                if (!campaignTemplates.find((item) => item.id === template.id)) {
+                    await this.campaignTemplateService.deleteCampaignTemplate(template.id);
                 }
             }
         }
@@ -399,26 +424,6 @@ export class CampaignController {
                 }
             }
         }
-        await this.campaignService.updateCampaign(
-            id,
-            name,
-            beginDate,
-            endDate,
-            target,
-            description,
-            instructions,
-            algorithm,
-            targetVideo,
-            imagePath,
-            tagline,
-            requirements,
-            suggestedPosts,
-            suggestedTags,
-            keywords,
-            campaignType,
-            socialMediaType,
-            showUrl
-        );
         const result = {
             campaignId: campaign.id,
             campaignImageSignedURL,
