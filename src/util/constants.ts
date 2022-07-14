@@ -247,3 +247,21 @@ export enum SharingRewardType {
     COIIN = "COIIN",
     INFLUENCE = "INFLUENCE",
 }
+
+export const transactionTypes = ["campaign", "trackAction", "campaignAudit", "accountRecovery", "socialShare"];
+export enum TransactionType {
+    CAMPAIGN = "campaign",
+    TRACK_ACTION = "trackAction",
+    CAMPAIGN_AUDIT = "campaignAudit",
+    ACCOUNT_RECOVERY = "accountRecovery",
+    SOCIAL_SHARE = "socialShare",
+}
+
+export enum ParticipantAction {
+    CLICKS = "clicks",
+    VIEWS = "views",
+    LIKES = "likes",
+    SHARES = "shares",
+    COMMENTS = "comments",
+    SUBMISSIONS = "submissions",
+}

@@ -3,7 +3,7 @@ import { getManager } from "typeorm";
 import { RedisStore, getGraphQLRateLimiter } from "graphql-rate-limit";
 import { Campaign } from "../models/Campaign";
 import { User } from "../models/User";
-// import { Dragonchain } from "../clients/dragonchain";
+import { Dragonchain } from "../clients/dragonchain";
 import { Participant } from "../models/Participant";
 import { SocialPost } from "../models/SocialPost";
 import { getTweetById } from "../controllers/social";
@@ -97,7 +97,7 @@ export const trackAction = async (
         false
     );
     await getManager().save([campaign, participant, hourlyMetric, dailyMetric, qualityScore]);
-    // await Dragonchain.ledgerCampaignAction(args.action, participant.id, participant.campaign.id);
+    await Dragonchain.ledgerCampaignAction(args.action, participant.id, participant.campaign.id);
     return participant.asV1();
 };
 
@@ -276,7 +276,7 @@ export const trackClickByLink = asyncHandler(async (req: Request, res: Response)
             await qualityScore.save();
             await HourlyCampaignMetric.upsert(campaign, campaign.org, action);
             await DailyParticipantMetric.upsert(participant.user, campaign, participant, action, pointValue);
-            // await Dragonchain.ledgerCampaignAction(action, participant.id, participant.campaign.id);
+            await Dragonchain.ledgerCampaignAction(action, participant.id, participant.campaign.id);
         }
         return res.redirect(campaign.target.includes("https") ? campaign.target : `https://${campaign.target}`);
     } catch (error) {

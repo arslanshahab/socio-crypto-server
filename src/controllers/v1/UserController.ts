@@ -66,6 +66,7 @@ import {
     CoiinTransferAction,
     SharingRewardType,
     SHARING_REWARD_AMOUNT,
+    SocialClientType,
     TransferAction,
 } from "../../util/constants";
 import { SocialService } from "../../services/SocialService";
@@ -87,6 +88,7 @@ import { decrypt } from "../../util/crypto";
 import { S3Client } from "../../clients/s3";
 import { VerificationApplicationService } from "../../services/VerificationApplicationService";
 import { Parser } from "json2csv";
+import { DragonChainService } from "../../services/DragonChainService";
 
 const userResultRelations = {
     profile: true,
@@ -118,6 +120,7 @@ class TransferUserCoiinParams {
 class RewardUserForSharingParams {
     @Property() public readonly participantId: string;
     @Required() public readonly isGlobal: boolean;
+    @Property() public readonly socialType: SocialClientType;
 }
 
 class UpdateUserPasswordParams {
@@ -199,6 +202,8 @@ export class UserController {
     private verificationService: VerificationService;
     @Inject()
     private verificationApplicationService: VerificationApplicationService;
+    @Inject()
+    private dragonchainService: DragonChainService;
 
     @Get("/")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserResultModel))
@@ -574,7 +579,7 @@ export class UserController {
     public async rewardUserForSharing(@BodyParams() body: RewardUserForSharingParams, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new NotFound(USER_NOT_FOUND);
-        const { participantId, isGlobal } = body;
+        const { participantId, isGlobal, socialType } = body;
         const wallet = await this.walletService.findWalletByUserId(user.id);
         if (!wallet) throw new NotFound(WALLET_NOT_FOUND);
         let participant;
@@ -599,6 +604,8 @@ export class UserController {
             type: "SHARING_REWARD",
             campaign: campaign,
         });
+        const txId = await this.dragonchainService.ledgerSocialShare({ socialType, participantId });
+        console.log("TX HASH: ", txId);
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 

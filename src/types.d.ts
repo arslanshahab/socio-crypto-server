@@ -10,7 +10,6 @@ import {
     Token as PrismaToken,
     Wallet,
 } from "@prisma/client";
-import { Currency } from "./models/Currency";
 import { Token } from "./models/Token";
 
 interface JWTPayload {
