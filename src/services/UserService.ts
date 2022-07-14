@@ -2,8 +2,16 @@ import { Campaign, Prisma, User, Wallet, Currency, Token } from "@prisma/client"
 import { Inject, Injectable } from "@tsed/di";
 import { BadRequest, Forbidden, NotFound } from "@tsed/exceptions";
 import { isArray } from "lodash";
-import { JWTPayload, RewardType } from "../types";
-import { BSC, CacheKeys, COIIN, REWARD_AMOUNTS, SHARING_REWARD_LIMIT_PER_DAY, TransferType } from "../util/constants";
+import { JWTPayload } from "../types";
+import {
+    BSC,
+    CacheKeys,
+    COIIN,
+    REWARD_AMOUNTS,
+    SHARING_REWARD_LIMIT_PER_DAY,
+    TransferType,
+    UserRewardType,
+} from "../util/constants";
 import { TatumClient } from "../clients/tatumClient";
 import { createSubscriptionUrl } from "../util/tatumHelper";
 import { WalletService } from "./WalletService";
@@ -291,7 +299,7 @@ export class UserService {
         });
     }
 
-    public async transferCoiinReward(data: { user: User; type: RewardType; campaign?: Campaign }) {
+    public async transferCoiinReward(data: { user: User; type: UserRewardType; campaign?: Campaign }) {
         const { user, type, campaign } = data;
         const wallet = await this.walletService.findWalletByUserId(user.id);
         if (!wallet) throw new NotFound(WALLET_NOT_FOUND);

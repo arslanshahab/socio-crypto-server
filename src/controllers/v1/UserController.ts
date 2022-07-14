@@ -68,6 +68,7 @@ import {
     SHARING_REWARD_AMOUNT,
     SocialClientType,
     TransferAction,
+    UserRewardType,
 } from "../../util/constants";
 import { SocialService } from "../../services/SocialService";
 import { CampaignService } from "../../services/CampaignService";
@@ -388,7 +389,7 @@ export class UserController {
         await this.tatumService.findOrCreateCurrency({ ...campaign?.currency?.token!, wallet: user.wallet! });
         const participant = await this.participantService.createNewParticipant(user.id, campaign, email);
         if (!campaign.isGlobal)
-            await this.userService.transferCoiinReward({ user, type: "PARTICIPATION_REWARD", campaign });
+            await this.userService.transferCoiinReward({ user, type: UserRewardType.PARTICIPATION_REWARD, campaign });
         return new SuccessResult(
             ParticipateToCampaignModel.build({
                 ...participant,
@@ -601,7 +602,7 @@ export class UserController {
         if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
         await this.userService.transferCoiinReward({
             user: user,
-            type: "SHARING_REWARD",
+            type: UserRewardType.SHARING_REWARD,
             campaign: campaign,
         });
         const txId = await this.dragonchainService.ledgerSocialShare({ socialType, participantId });

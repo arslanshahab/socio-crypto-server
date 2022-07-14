@@ -27,7 +27,7 @@ import { DailyParticipantMetric } from "./DailyParticipantMetric";
 import { NotificationSettings } from "./NotificationSettings";
 import { Admin } from "./Admin";
 import { ExternalAddress } from "./ExternalAddress";
-import { KycStatus, RewardType } from "../types";
+import { KycStatus } from "../types";
 import { VerificationApplication } from "./VerificationApplication";
 import { JWTPayload } from "src/types";
 import { XoxodayOrder } from "./XoxodayOrder";
@@ -35,7 +35,7 @@ import { differenceInHours } from "date-fns";
 import { Transfer } from "./Transfer";
 import { TatumClient } from "../clients/tatumClient";
 import { Org } from "./Org";
-import { BSC, COIIN, KycLevel, REWARD_AMOUNTS, SHARING_REWARD_LIMIT_PER_DAY } from "../util/constants";
+import { BSC, COIIN, KycLevel, REWARD_AMOUNTS, SHARING_REWARD_LIMIT_PER_DAY, UserRewardType } from "../util/constants";
 import { Campaign } from "./Campaign";
 import { trim } from "lodash";
 
@@ -244,7 +244,7 @@ export class User extends BaseEntity {
         });
     }
 
-    public transferCoiinReward = async (data: { type: RewardType; campaign?: Campaign }): Promise<any> => {
+    public transferCoiinReward = async (data: { type: UserRewardType; campaign?: Campaign }): Promise<any> => {
         const user = this;
         const { type, campaign } = data;
         const wallet = await Wallet.findOne({ where: { user } });
