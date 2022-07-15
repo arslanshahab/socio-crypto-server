@@ -1,14 +1,11 @@
-import { Inject, Injectable } from "@tsed/di";
-import { PrismaService } from ".prisma/client/entities";
+import { Injectable } from "@tsed/di";
 import { Campaign, User, Participant } from "@prisma/client";
+import { prisma, readPrisma } from "../clients/prisma";
 
 @Injectable()
 export class DailyParticipantMetricService {
-    @Inject()
-    private prismaService: PrismaService;
-
     public async getSortedByParticipantId(participantId: string) {
-        return this.prismaService.dailyParticipantMetric.findMany({
+        return readPrisma.dailyParticipantMetric.findMany({
             where: {
                 participantId,
             },
@@ -24,7 +21,7 @@ export class DailyParticipantMetricService {
         user: User,
         participant: Participant
     ) {
-        return await this.prismaService.dailyParticipantMetric.create({
+        return await prisma.dailyParticipantMetric.create({
             data: {
                 createdAt: new Date(date),
                 updatedAt: new Date(date),
@@ -37,12 +34,12 @@ export class DailyParticipantMetricService {
         });
     }
     public async getDailyParticipantById(participantId: string) {
-        return this.prismaService.dailyParticipantMetric.findMany({
+        return readPrisma.dailyParticipantMetric.findMany({
             where: { participantId },
         });
     }
     public async getDailyParticipantByIds(participantIds: string[]) {
-        return this.prismaService.dailyParticipantMetric.findMany({
+        return readPrisma.dailyParticipantMetric.findMany({
             where: {
                 participantId: {
                     in: participantIds,
@@ -67,7 +64,7 @@ export class DailyParticipantMetricService {
             : {
                   userId,
               };
-        return this.prismaService.dailyParticipantMetric.findMany({
+        return readPrisma.dailyParticipantMetric.findMany({
             where: filter,
             orderBy: {
                 createdAt: "asc",
@@ -89,7 +86,7 @@ export class DailyParticipantMetricService {
         todayDate.setMilliseconds(0);
         const today = todayDate.toISOString();
 
-        const response = this.prismaService.dailyParticipantMetric.findMany({
+        const response = readPrisma.dailyParticipantMetric.findMany({
             where: {
                 createdAt: { lt: new Date(today), gte: new Date(yesterday) },
                 campaign: {
@@ -108,19 +105,19 @@ export class DailyParticipantMetricService {
     }
 
     public async deleteDailyParticipantMetrics(id: string[]) {
-        return await this.prismaService.dailyParticipantMetric.deleteMany({
+        return await prisma.dailyParticipantMetric.deleteMany({
             where: { id: { in: id } },
         });
     }
 
     public async findDailyParticipantByCampaignId(campaignId: string) {
-        return this.prismaService.dailyParticipantMetric.findMany({
+        return readPrisma.dailyParticipantMetric.findMany({
             where: { campaignId },
         });
     }
 
     public async getAggregatedOrgMetrics(campaignId?: string) {
-        return this.prismaService.dailyParticipantMetric.findMany({
+        return readPrisma.dailyParticipantMetric.findMany({
             where: campaignId ? { campaignId } : {},
             select: {
                 clickCount: true,
@@ -132,7 +129,7 @@ export class DailyParticipantMetricService {
     }
 
     public async getOrgMetrics(campaignId?: string) {
-        return this.prismaService.dailyParticipantMetric.findMany({
+        return readPrisma.dailyParticipantMetric.findMany({
             where: campaignId ? { campaignId } : {},
             select: {
                 clickCount: true,
@@ -144,7 +141,7 @@ export class DailyParticipantMetricService {
     }
 
     public async getAccumulatedParticipantMetrics(participantId: string) {
-        const participants = await this.prismaService.dailyParticipantMetric.findMany({ where: { participantId } });
+        const participants = await readPrisma.dailyParticipantMetric.findMany({ where: { participantId } });
         const { clickCount, likeCount, shareCount, viewCount, submissionCount, commentCount, participationScore } =
             participants.reduce(
                 (sum, curr) => {

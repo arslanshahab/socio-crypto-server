@@ -1,5 +1,4 @@
 import { Inject, Injectable } from "@tsed/di";
-import { PrismaService } from ".prisma/client/entities";
 import { initDateFromParams } from "../util/date";
 import { getCurrencyValueInUSD } from "../util/exchangeRate";
 import { VerificationApplicationService } from "./VerificationApplicationService";
@@ -34,11 +33,10 @@ import { TatumService } from "./TatumService";
 import { BN } from "../util";
 import { generateRandomId } from "../util/index";
 import { XoxodayOrder } from "src/types";
+import { prisma, readPrisma } from "../clients/prisma";
 
 @Injectable()
 export class XoxodayService {
-    @Inject()
-    private prismaService: PrismaService;
     @Inject()
     private verificationApplicationService: VerificationApplicationService;
     @Inject()
@@ -54,7 +52,7 @@ export class XoxodayService {
 
     public async getLast24HourRedemption(type: string) {
         const date = initDateFromParams({ date: new Date(), d: new Date().getDate() - 0, h: 0, i: 0, s: 0 });
-        return this.prismaService.transfer.findFirst({
+        return readPrisma.transfer.findFirst({
             where: {
                 action: type,
                 createdAt: {
@@ -112,13 +110,16 @@ export class XoxodayService {
                 userId: user.id,
             });
         }
-        return await this.prismaService.xoxodayOrder.createMany({ data: orders });
+        return await prisma.xoxodayOrder.createMany({ data: orders });
     }
 
     public async ifUserCanRedeem(user: User & { wallet: Wallet | null }, totalCoiinSpent: number) {
         if (!(await this.verificationApplicationService.isLevel2Approved(user.id)))
             throw new CustomError(KYC_LEVEL_2_NOT_APPROVED);
-        const twitterAccount = await this.socialLinkService.findSocialLinkByUserId(user.id, SocialLinkType.TWITTER);
+        const twitterAccount = await this.socialLinkService.findSocialLinkByUserAndType(
+            user.id,
+            SocialLinkType.TWITTER
+        );
         if (!twitterAccount) throw new Error(ERROR_LINKING_TWITTER);
         const twitterFollowers = await TwitterClient.getTotalFollowersV1(twitterAccount, twitterAccount?.id);
         if (twitterFollowers < TWITTER_FOLLOWER_REQUIREMENT)

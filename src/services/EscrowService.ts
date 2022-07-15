@@ -1,19 +1,16 @@
-import { Inject, Injectable } from "@tsed/di";
-import { PrismaService } from ".prisma/client/entities";
+import { Injectable } from "@tsed/di";
+import { prisma, readPrisma } from "../clients/prisma";
 
 @Injectable()
 export class EscrowService {
-    @Inject()
-    private prismaService: PrismaService;
-
     public async findEscrowByCampaignId(campaignId: string) {
-        return this.prismaService.escrow.findMany({
+        return readPrisma.escrow.findMany({
             where: { campaignId },
         });
     }
 
     public async deleteEscrow(campaignId: string) {
-        return await this.prismaService.escrow.deleteMany({
+        return await prisma.escrow.deleteMany({
             where: { campaignId },
         });
     }

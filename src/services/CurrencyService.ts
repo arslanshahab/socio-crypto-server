@@ -1,18 +1,16 @@
 import { Inject, Injectable } from "@tsed/di";
-import { PrismaService } from ".prisma/client/entities";
 import { LedgerAccountTypes } from "../types";
 import { WalletService } from "./WalletService";
 import { Prisma } from "@prisma/client";
+import { prisma, readPrisma } from "../clients/prisma";
 
 @Injectable()
 export class CurrencyService {
     @Inject()
-    private prismaService: PrismaService;
-    @Inject()
     private walletService: WalletService;
 
     public async findLedgerAccount(walletId: string, tokenId: string) {
-        return this.prismaService.currency.findFirst({
+        return readPrisma.currency.findFirst({
             where: {
                 walletId,
                 tokenId,
@@ -21,7 +19,7 @@ export class CurrencyService {
     }
 
     public async getCurrenciesByUserId(userId: string) {
-        return this.prismaService.currency.findMany({
+        return readPrisma.currency.findMany({
             where: {
                 wallet: { userId },
             },
@@ -30,7 +28,7 @@ export class CurrencyService {
     }
 
     public async addNewAccount(data: LedgerAccountTypes) {
-        return await this.prismaService.currency.create({
+        return await prisma.currency.create({
             data: {
                 tatumId: data?.id,
                 tokenId: data.token.id,
@@ -47,13 +45,13 @@ export class CurrencyService {
 
     public async findCurrencyByOrgId(orgId: string, tokenId: string) {
         const wallet = await this.walletService.findWalletByOrgId(orgId);
-        return this.prismaService.currency.findFirst({
+        return readPrisma.currency.findFirst({
             where: { walletId: wallet?.id, tokenId },
         });
     }
 
     public async findCurrencyByTokenAndWallet(data: { tokenId: string; walletId: string }) {
-        return this.prismaService.currency.findFirst({
+        return readPrisma.currency.findFirst({
             where: { ...data },
         });
     }
@@ -66,21 +64,21 @@ export class CurrencyService {
      * @returns the updated currency
      */
     public async updateDepositAddress(currencyId: string, address: string) {
-        return this.prismaService.currency.update({
+        return prisma.currency.update({
             where: { id: currencyId },
             data: { depositAddress: address },
         });
     }
 
     public async findCurrenciesByWalletId<T extends Prisma.CurrencyInclude | undefined>(walletId: string, include?: T) {
-        return this.prismaService.currency.findMany({
+        return readPrisma.currency.findMany({
             where: { walletId },
             include: include as T,
         });
     }
 
     public async updateBalance(data: { currencyId: string; accountBalance: number; availableBalance: number }) {
-        return await this.prismaService.currency.update({
+        return await prisma.currency.update({
             where: { id: data.currencyId },
             data: {
                 accountBalance: data?.accountBalance,

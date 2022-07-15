@@ -1,35 +1,34 @@
-import { Inject, Injectable } from "@tsed/di";
-import { PrismaService } from ".prisma/client/entities";
-import { SocialLink, User } from "@prisma/client";
-import { encrypt } from "../util/crypto";
-import { InternalServerError, NotFound } from "@tsed/exceptions";
+import { Injectable } from "@tsed/di";
+import { User, SocialLink } from "@prisma/client";
+import { encrypt, decrypt } from "../util/crypto";
 import { SocialLinkType } from "../util/constants";
+import { prisma, readPrisma } from "../clients/prisma";
 
 @Injectable()
 export class SocialLinkService {
-    @Inject()
-    private prismaService: PrismaService;
-
-    public async findSocialLinkByUserId(userId: string, type: SocialLinkType) {
-        const response = this.prismaService.socialLink.findFirst({
+    public async findSocialLinkByUserAndType(userId: string, type: SocialLinkType) {
+        const socialLink = await readPrisma.socialLink.findFirst({
             where: {
                 userId,
                 type,
             },
         });
-        const socialLink: SocialLink | null = await response;
-        if (!socialLink) throw new NotFound("Social Link not found");
-        const { userId: slUserId } = socialLink;
-        if (!slUserId) throw new InternalServerError("Invalid Social Link");
-        return { ...socialLink, userId: slUserId };
+        return {
+            ...socialLink,
+            ...(socialLink?.apiKey &&
+                socialLink.apiSecret && {
+                    apiKey: decrypt(socialLink?.apiKey!),
+                    apiSecret: decrypt(socialLink?.apiSecret!),
+                }),
+        } as SocialLink;
     }
 
     public async addTwitterLink(user: User, apiKey: string, apiSecret: string) {
-        const socialLink = await this.prismaService.socialLink.findFirst({
+        const socialLink = await readPrisma.socialLink.findFirst({
             where: { userId: user.id, type: "twitter" },
         });
         if (socialLink) {
-            return await this.prismaService.socialLink.update({
+            return await prisma.socialLink.update({
                 where: { id: socialLink.id },
                 data: {
                     apiKey: encrypt(apiKey),
@@ -37,7 +36,7 @@ export class SocialLinkService {
                 },
             });
         } else {
-            return await this.prismaService.socialLink.create({
+            return await prisma.socialLink.create({
                 data: {
                     userId: user.id,
                     type: "twitter",
@@ -49,9 +48,9 @@ export class SocialLinkService {
     }
 
     public async removeSocialLink(userId: string, type: SocialLinkType) {
-        const socialLink = await this.findSocialLinkByUserId(userId, type);
-        return await this.prismaService.socialLink.delete({
-            where: { id: socialLink.id },
+        const socialLink = await this.findSocialLinkByUserAndType(userId, type);
+        return await prisma.socialLink.delete({
+            where: { id: socialLink?.id },
         });
     }
 
@@ -65,18 +64,18 @@ export class SocialLinkService {
             refresh_expires_in: number;
         }
     ) {
-        let socialLink = await this.prismaService.socialLink.findFirst({
+        let socialLink = await readPrisma.socialLink.findFirst({
             where: { userId, type: SocialLinkType.TIKTOK },
         });
         if (!socialLink) {
-            socialLink = await this.prismaService.socialLink.create({
+            socialLink = await prisma.socialLink.create({
                 data: {
                     userId,
                     type: SocialLinkType.TIKTOK,
                 },
             });
         }
-        socialLink = await this.prismaService.socialLink.update({
+        socialLink = await prisma.socialLink.update({
             where: { id: socialLink.id },
             data: {
                 openId: tokens.open_id,
@@ -87,14 +86,5 @@ export class SocialLinkService {
             },
         });
         return socialLink;
-    }
-
-    public async findSocialLinkByUserAndType(userId: string, type: SocialLinkType) {
-        return this.prismaService.socialLink.findFirst({
-            where: {
-                userId,
-                type,
-            },
-        });
     }
 }

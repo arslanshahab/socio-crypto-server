@@ -1,14 +1,11 @@
-import { Inject, Injectable } from "@tsed/di";
-import { PrismaService } from ".prisma/client/entities";
+import { Injectable } from "@tsed/di";
 import { Campaign, RafflePrize } from "@prisma/client";
+import { prisma, readPrisma } from "../clients/prisma";
 
 @Injectable()
 export class RafflePrizeService {
-    @Inject()
-    private prismaService: PrismaService;
-
     public async createRafflePrize(campaign: Campaign, prize: RafflePrize) {
-        const response = await this.prismaService.rafflePrize.create({
+        const response = await prisma.rafflePrize.create({
             data: {
                 campaignId: campaign.id,
                 displayName: prize.displayName,
@@ -20,13 +17,13 @@ export class RafflePrizeService {
     }
 
     public async findRafflePrizeByCampaignId(campaignId: string) {
-        return await this.prismaService.rafflePrize.findMany({
+        return await readPrisma.rafflePrize.findMany({
             where: { campaignId },
         });
     }
 
     public async deleteRafflePrize(campaignId: string) {
-        return await this.prismaService.rafflePrize.deleteMany({
+        return await prisma.rafflePrize.deleteMany({
             where: { campaignId },
         });
     }
