@@ -812,6 +812,30 @@ export class CreateCampaignParams {
     @Required() public readonly showUrl: boolean;
 }
 
-export class UpdateCampaignParams extends CreateCampaignParams {
+export class UpdateCampaignParams {
     @Property() public readonly id: string;
+    @Required() public readonly name: string;
+    @Required() public readonly coiinTotal: string;
+    @Required() public readonly target: string;
+    @Property() public readonly targetVideo: string;
+    @Required() public readonly beginDate: Date;
+    @Required() public readonly endDate: Date;
+    @Property() public readonly description: string;
+    @Property() public readonly instructions: string;
+    @Property() public readonly isGlobal: boolean;
+    @Required() public readonly showUrl: boolean;
+    @Property() public readonly company: string;
+    @Required() public readonly algorithm: string;
+    @Property() public readonly requirements: JSON;
+    @Property() public readonly imagePath: string;
+    @Property() public readonly campaignType: string;
+    @Property() public readonly socialMediaType: string[];
+    @Property() public readonly tagline: string;
+    @Property() public readonly suggestedPosts: string[];
+    @Property() public readonly suggestedTags: string[];
+    @Property() public readonly keywords: string[];
+    @Property() public readonly type: string;
+    @Property() public readonly raffle_prize: RafflePrize;
+    @Property() public readonly campaignMedia: CampaignMedia[];
+    @Property() public readonly campaignTemplates: CampaignTemplate[];
 }
