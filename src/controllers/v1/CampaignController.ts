@@ -223,7 +223,7 @@ export class CampaignController {
                 throw new BadRequest("Global campaign already exists");
             endDate = addYears(new Date(endDate), 100);
         }
-        validator.validateAlgorithmCreateSchema(algorithm);
+        validator.validateAlgorithmCreateSchema(JSON.parse(algorithm));
         if (!!requirements) validator.validateCampaignRequirementsSchema(requirements);
         if (type === "raffle") {
             if (!raffle_prize) throw new BadRequest(RAFFLE_PRIZE_MISSING);
@@ -343,7 +343,7 @@ export class CampaignController {
             campaignTemplates,
             showUrl,
         } = body;
-        validator.validateAlgorithmCreateSchema(algorithm);
+        validator.validateAlgorithmCreateSchema(JSON.parse(algorithm));
         if (!!requirements) validator.validateCampaignRequirementsSchema(requirements);
         if (type === "raffle") {
             if (!raffle_prize) throw new BadRequest(RAFFLE_PRIZE_MISSING);
