@@ -8,7 +8,7 @@ import { BN, prepareCacheKey } from "../util";
 import { CurrentCampaignTierModel } from "../models/RestModels";
 import { TatumService } from "./TatumService";
 import { PlatformCache, UseCache } from "@tsed/common";
-import { CacheKeys, CAMPAIGN_CREATION_AMOUNT } from "../util/constants";
+import { CacheKeys, CampaignStatus, CAMPAIGN_CREATION_AMOUNT } from "../util/constants";
 import { resetCacheKey } from "../util/index";
 import { prisma } from "../clients/prisma";
 
@@ -167,16 +167,16 @@ export class CampaignService {
                 instructions: instructions && instructions,
                 company: campaignCompany,
                 symbol: symbol,
-                algorithm: algorithm,
+                algorithm: JSON.parse(algorithm),
                 tagline: tagline && tagline,
                 requirements: requirements && requirements,
-                suggestedPosts: suggestedPosts && suggestedPosts.toString(),
-                suggestedTags: suggestedTags && suggestedTags.toString(),
-                keywords: keywords && keywords.toString(),
+                suggestedPosts: suggestedPosts && JSON.stringify(suggestedPosts),
+                suggestedTags: suggestedTags && JSON.stringify(suggestedTags),
+                keywords: keywords && JSON.stringify(keywords),
                 type,
                 imagePath,
                 campaignType,
-                socialMediaType: socialMediaType.toString(),
+                socialMediaType: JSON.stringify(socialMediaType),
                 isGlobal,
                 showUrl,
                 targetVideo: targetVideo && targetVideo,
@@ -184,6 +184,7 @@ export class CampaignService {
                 currencyId: currency?.id,
                 createdAt: new Date(),
                 updatedAt: new Date(),
+                status: CampaignStatus.PENDING,
                 campaign_media: {
                     create: campaignMedia,
                 },
@@ -225,16 +226,16 @@ export class CampaignService {
                 target: target && target,
                 description: description && description,
                 instructions: instructions && instructions,
-                algorithm: algorithm && algorithm,
+                algorithm: algorithm && JSON.parse(algorithm),
                 targetVideo: targetVideo && targetVideo,
                 imagePath: imagePath && imagePath,
                 tagline: tagline && tagline,
                 requirements: requirements && requirements,
-                suggestedPosts: suggestedPosts && suggestedPosts.toString(),
-                suggestedTags: suggestedTags && suggestedTags.toString(),
-                keywords: keywords && keywords.toString(),
+                suggestedPosts: suggestedPosts && JSON.stringify(suggestedPosts),
+                suggestedTags: suggestedTags && JSON.stringify(suggestedTags),
+                keywords: keywords && JSON.stringify(keywords),
                 campaignType: campaignType && campaignType,
-                socialMediaType: socialMediaType && socialMediaType.toString(),
+                socialMediaType: socialMediaType && JSON.stringify(socialMediaType),
                 showUrl,
                 updatedAt: new Date(),
             },
