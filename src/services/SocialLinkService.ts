@@ -1,24 +1,26 @@
 import { Injectable } from "@tsed/di";
-import { SocialLink, User } from "@prisma/client";
-import { encrypt } from "../util/crypto";
-import { InternalServerError, NotFound } from "@tsed/exceptions";
+import { User, SocialLink } from "@prisma/client";
+import { encrypt, decrypt } from "../util/crypto";
 import { SocialLinkType } from "../util/constants";
 import { prisma, readPrisma } from "../clients/prisma";
 
 @Injectable()
 export class SocialLinkService {
-    public async findSocialLinkByUserId(userId: string, type: SocialLinkType) {
-        const response = readPrisma.socialLink.findFirst({
+    public async findSocialLinkByUserAndType(userId: string, type: SocialLinkType) {
+        const socialLink = await readPrisma.socialLink.findFirst({
             where: {
                 userId,
                 type,
             },
         });
-        const socialLink: SocialLink | null = await response;
-        if (!socialLink) throw new NotFound("Social Link not found");
-        const { userId: slUserId } = socialLink;
-        if (!slUserId) throw new InternalServerError("Invalid Social Link");
-        return { ...socialLink, userId: slUserId };
+        return {
+            ...socialLink,
+            ...(socialLink?.apiKey &&
+                socialLink.apiSecret && {
+                    apiKey: decrypt(socialLink?.apiKey!),
+                    apiSecret: decrypt(socialLink?.apiSecret!),
+                }),
+        } as SocialLink;
     }
 
     public async addTwitterLink(user: User, apiKey: string, apiSecret: string) {
@@ -46,9 +48,9 @@ export class SocialLinkService {
     }
 
     public async removeSocialLink(userId: string, type: SocialLinkType) {
-        const socialLink = await this.findSocialLinkByUserId(userId, type);
+        const socialLink = await this.findSocialLinkByUserAndType(userId, type);
         return await prisma.socialLink.delete({
-            where: { id: socialLink.id },
+            where: { id: socialLink?.id },
         });
     }
 
@@ -84,14 +86,5 @@ export class SocialLinkService {
             },
         });
         return socialLink;
-    }
-
-    public async findSocialLinkByUserAndType(userId: string, type: SocialLinkType) {
-        return readPrisma.socialLink.findFirst({
-            where: {
-                userId,
-                type,
-            },
-        });
     }
 }

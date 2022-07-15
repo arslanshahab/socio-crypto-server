@@ -116,7 +116,10 @@ export class XoxodayService {
     public async ifUserCanRedeem(user: User & { wallet: Wallet | null }, totalCoiinSpent: number) {
         if (!(await this.verificationApplicationService.isLevel2Approved(user.id)))
             throw new CustomError(KYC_LEVEL_2_NOT_APPROVED);
-        const twitterAccount = await this.socialLinkService.findSocialLinkByUserId(user.id, SocialLinkType.TWITTER);
+        const twitterAccount = await this.socialLinkService.findSocialLinkByUserAndType(
+            user.id,
+            SocialLinkType.TWITTER
+        );
         if (!twitterAccount) throw new Error(ERROR_LINKING_TWITTER);
         const twitterFollowers = await TwitterClient.getTotalFollowersV1(twitterAccount, twitterAccount?.id);
         if (twitterFollowers < TWITTER_FOLLOWER_REQUIREMENT)
