@@ -36,7 +36,7 @@ import {
 } from "../util/errors";
 import { addDays, endOfISOWeek, startOfDay } from "date-fns";
 import { Transfer } from "../models/Transfer";
-import { BSC, COIIN, RAIINMAKER_ORG_NAME } from "../util/constants";
+import { BSC, COIIN, RAIINMAKER_ORG_NAME, UserRewardType } from "../util/constants";
 import { JWTPayload } from "src/types";
 import { SHARING_REWARD_AMOUNT } from "../util/constants";
 import { NotificationSettings } from "../models/NotificationSettings";
@@ -61,7 +61,7 @@ export const participate = async (
         if (await Participant.findOne({ where: { campaign, user } })) throw new Error(ALREADY_PARTICIPATING);
         await TatumClient.findOrCreateCurrency({ ...campaign.currency.token, walletId: user.wallet.id });
         const participant = await Participant.createNewParticipant(user, campaign, args.email);
-        if (!campaign.isGlobal) await user.transferCoiinReward({ type: "PARTICIPATION_REWARD", campaign });
+        if (!campaign.isGlobal) await user.transferCoiinReward({ type: UserRewardType.PARTICIPATION_REWARD, campaign });
         return await participant.asV2();
     } catch (error) {
         throw new FormattedError(error);
@@ -525,7 +525,7 @@ export const rewardUserForSharing = async (
             campaign = participant.campaign;
         }
         if (!participant) throw new Error(PARTICIPANT_NOT_FOUND);
-        await user.transferCoiinReward({ campaign, type: "SHARING_REWARD" });
+        await user.transferCoiinReward({ campaign, type: UserRewardType.SHARING_REWARD });
         return { success: true };
     } catch (error) {
         throw new FormattedError(error);

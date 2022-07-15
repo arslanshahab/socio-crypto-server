@@ -620,6 +620,18 @@ model MarketData {
   @@map("market_data")
 }
 
+model transaction {
+  id              String   @id(map: "PK_89eadb93a89810556e1cbcd6ab9") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tag             String   @db.VarChar
+  chain           String   @db.VarChar
+  action          String?  @db.VarChar
+  socialType      String   @db.VarChar
+  transactionType String   @db.VarChar
+  participantId   String   @db.VarChar
+  createdAt       DateTime @default(now()) @db.Timestamp(6)
+  updatedAt       DateTime @default(now()) @db.Timestamp(6)
+}
+
 enum verification_application_level_enum {
   LEVEL1
   LEVEL2

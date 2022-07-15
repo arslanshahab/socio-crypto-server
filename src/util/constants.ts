@@ -274,3 +274,8 @@ export enum UserRewardType {
     CAMPAIGN_REWARD = "CAMPAIGN_REWARD",
     NETWORK_REWARD = "NETWORK_REWARD",
 }
+
+export enum TransactionChainType {
+    DRAGONCHAIN = "dragonchain",
+    MYFII = "myfii",
+}
