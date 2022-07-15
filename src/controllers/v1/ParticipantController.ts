@@ -99,7 +99,10 @@ export class ParticipantController {
         const posts = await this.socialPostService.findSocialPostByParticipantId(participant.id);
         for (let i = 0; i < posts.length; i++) {
             const post = posts[i];
-            const socialLink = await this.socialLinkService.findSocialLinkByUserId(user.id, SocialLinkType.TWITTER);
+            const socialLink = await this.socialLinkService.findSocialLinkByUserAndType(
+                user.id,
+                SocialLinkType.TWITTER
+            );
             const client = getSocialClient(post.type);
             const response = await client?.getPost(socialLink, post.id);
             if (response) results.push(response);
