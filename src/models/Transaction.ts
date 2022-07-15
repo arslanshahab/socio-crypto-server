@@ -10,6 +10,9 @@ export class Transaction extends BaseEntity {
     public tag: string;
 
     @Column({ nullable: false })
+    public txId: string;
+
+    @Column({ nullable: false })
     public chain: TransactionChainType;
 
     @Column({ nullable: true })
