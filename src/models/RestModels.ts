@@ -249,6 +249,8 @@ export class UserResultModel {
     @Nullable(KycLevel) public readonly kycLevel2: KycLevel | null;
     @Nullable(String) public readonly identityId: string | null;
     @Nullable(String) public readonly kycStatus: string | null;
+    @Nullable(String) public readonly referralCode: string | null;
+    @Nullable(String) public readonly promoCode: string | null;
     @Nullable(ProfileResultModel) public readonly profile: ProfileResultModel | null;
     @CollectionOf(SocialLinkResultModel) public readonly social_link: Partial<SocialLinkResultModel>[];
     @CollectionOf(ParticipantResultModel) public readonly participant: ParticipantResultModel[];
@@ -274,6 +276,8 @@ export class UserResultModel {
             wallet: user.wallet || null,
             kycLevel1: kyc?.level1 || null,
             kycLevel2: kyc?.level2 || null,
+            referralCode: user.referralCode,
+            promoCode: user.promoCode,
         };
     }
 }

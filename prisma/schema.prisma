@@ -501,6 +501,7 @@ model User {
   password                                     String                    @db.VarChar
   referralCode                                 String?                   @db.VarChar
   deletedAt                                    DateTime?                 @db.Timestamp(6)
+  promoCode                                    String?                   @db.VarChar
   admin                                        Admin[]
   daily_participant_metric                     DailyParticipantMetric[]
   external_address                             ExternalAddress[]
