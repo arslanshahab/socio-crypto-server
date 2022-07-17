@@ -19,7 +19,7 @@ import { WALLET_NOT_FOUND } from "../util/errors";
 import { differenceInHours, subDays } from "date-fns";
 import { TransferService } from "./TransferService";
 import { TatumService } from "./TatumService";
-import { createPasswordHash, prepareCacheKey } from "../util";
+import { createPasswordHash, generatePromoCode, prepareCacheKey } from "../util";
 import { ProfileService } from "./ProfileService";
 import { NotificationService } from "./NotificationService";
 import { PlatformCache, UseCache } from "@tsed/common";
@@ -365,11 +365,19 @@ export class UserService {
     }
 
     public async initNewUser(email: string, username: string, password: string, referralCode?: string | null) {
+        let promoCode = null;
+        while (!promoCode) {
+            promoCode = generatePromoCode();
+            if (await prisma.user.findFirst({ where: { promoCode } })) {
+                promoCode = null;
+            }
+        }
         const user = await prisma.user.create({
             data: {
                 email: email.trim().toLowerCase(),
                 password: createPasswordHash({ email, password }),
-                referralCode: referralCode && referralCode,
+                ...(referralCode && { referralCode }),
+                promoCode,
             },
         });
 

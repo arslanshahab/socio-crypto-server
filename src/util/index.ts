@@ -252,6 +252,15 @@ export const generateRandomId = () => {
     return Array.apply(null, Array(stringLength)).map(pickRandom).join("");
 };
 
+export const generatePromoCode = () => {
+    const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    const stringLength = 6;
+    function pickRandom() {
+        return possible[Math.floor(Math.random() * possible.length)];
+    }
+    return Array.apply(null, Array(stringLength)).map(pickRandom).join("");
+};
+
 export const supportedCountries = (): Array<SupportedCountryType> => {
     return [
         { name: "Austria", currency: "EUR", enabled: true, filterValue: "austria" },

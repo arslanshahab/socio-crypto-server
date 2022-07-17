@@ -152,13 +152,15 @@ export class SocialController {
         const user = await this.userService.findUserByContext(context.get("user"), ["wallet"]);
         if (!user) throw new NotFound(USER_NOT_FOUND);
         let { socialType, text, mediaType, mediaFormat, media, participantId, defaultMedia, mediaId } = body;
-        if (!allowedSocialLinks.includes(socialType)) throw new BadRequest(`posting to ${socialType} is not allowed`);
+        if (!allowedSocialLinks.includes(socialType)) throw new Error(`posting to ${socialType} is not allowed`);
         const participant = await this.participantService.findParticipantById(participantId, { campaign: true });
         if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
-        if (!(await this.campaignService.isCampaignOpen(participant.campaign.id)))
-            throw new BadRequest(CAMPAIGN_CLOSED);
-        const socialLink = await this.socialLinkService.findSocialLinkByUserId(user.id, socialType as SocialLinkType);
-        if (!socialLink) throw new BadRequest(`You have not linked ${socialType} as a social platform`);
+        if (!(await this.campaignService.isCampaignOpen(participant.campaign.id))) throw new Error(CAMPAIGN_CLOSED);
+        const socialLink = await this.socialLinkService.findSocialLinkByUserAndType(
+            user.id,
+            socialType as SocialLinkType
+        );
+        if (!socialLink) throw new Error(`You have not linked ${socialType} as a social platform`);
         const campaign = await this.campaignService.findCampaignById(participant.campaign.id, {
             org: true,
             campaign_media: true,
@@ -169,7 +171,7 @@ export class SocialController {
         if (defaultMedia) {
             let selectedMedia = await this.campaignMediaService.findCampaignMediaById(mediaId, socialType);
             if (!selectedMedia) throw new NotFound(MEDIA_NOT_FOUND);
-            if (!selectedMedia.mediaFormat) throw new BadRequest("Media format is not defined");
+            if (!selectedMedia.mediaFormat) throw new Error("Media format is not defined");
             const mediaUrl = `${assetUrl}/campaign/${campaign.id}/${selectedMedia?.media}`;
             const downloaded = await downloadMedia(mediaType, mediaUrl, selectedMedia.mediaFormat!);
             media = downloaded;
