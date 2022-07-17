@@ -52,6 +52,9 @@ export class User extends BaseEntity {
     public email: string;
 
     @Column({ nullable: true })
+    public promoCode: string;
+
+    @Column({ nullable: true })
     public referralCode: string;
 
     @Column({ nullable: false })
