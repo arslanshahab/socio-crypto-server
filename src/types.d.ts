@@ -460,7 +460,7 @@ export interface KycApplication {
     billingStreetAddress?: string;
     billingCity?: string;
     billingCountry?: string;
-    billingZip?: number;
+    billingZip?: string;
     zipCode?: string;
     gender?: string;
     dob?: string;
