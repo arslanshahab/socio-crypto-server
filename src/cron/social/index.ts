@@ -159,7 +159,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                 console.log("TWITTER TOTAL PROMISES ---- ", twitterPromiseArray.length);
                 // console.log("TIKTOK TOTAL PROMISES ---- ", tiktokPromiseArray.length);
                 let fulfilledTwitterPromises = 0;
-                let fulfilledTiktokPromises = 0;
+                // let fulfilledTiktokPromises = 0;
 
                 try {
                     const twitterResponses = await Promise.allSettled(twitterPromiseArray);
@@ -227,7 +227,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                 // }
                 skip += take;
                 console.log("FULFILLED TWITTER PROMISES ----.", fulfilledTwitterPromises);
-                console.log("FULFILLED TIKTOK PROMISES ----.", fulfilledTiktokPromises);
+                // console.log("FULFILLED TIKTOK PROMISES ----.", fulfilledTiktokPromises);
             }
         }
     } catch (error) {

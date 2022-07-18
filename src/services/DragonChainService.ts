@@ -1,11 +1,15 @@
-import { Injectable } from "@tsed/di";
+import { Injectable, Inject } from "@tsed/di";
 import { getActionKey, getCampaignAuditKey, getAccountRecoveryAttemptKey, getSocialShareKey } from "../util/index";
 import { Dragonchain } from "../clients/dragonchain";
 import { TransactionType, ParticipantAction, SocialClientType } from "../util/constants";
+import { BulkTransactionPayload } from "dragonchain-sdk";
+import { TransactionService } from "./TransactionService";
 
 @Injectable()
-export class DragonChainService {
+export class DragonchainService {
     private client = Dragonchain.client;
+    @Inject()
+    private transactionService: TransactionService;
 
     public async ledgerCampaignAction(data: { action: ParticipantAction; participantId: string; campaignId: string }) {
         const { action, participantId, campaignId } = data;
@@ -16,7 +20,17 @@ export class DragonChainService {
             payload: { action, participantId, campaignId },
         });
         if (!res.ok) throw new Error("Failed to ledger action to the Dragonchain");
-        return res.response.transaction_id;
+        const txId = res.response.transaction_id;
+        if (this.transactionService) {
+            await this.transactionService.saveDragonchainTransaction({
+                participantId,
+                action,
+                tag,
+                txId,
+                type: TransactionType.SOCIAL_SHARE,
+            });
+        }
+        return txId;
     }
 
     public async ledgerSocialShare(data: { socialType: SocialClientType; participantId: string }) {
@@ -28,34 +42,25 @@ export class DragonChainService {
             payload: { participantId, socialType },
         });
         if (!res.ok) throw new Error("Failed to ledger action to the Dragonchain");
-        return res.response.transaction_id;
+        const txId = res.response.transaction_id;
+        if (this.transactionService) {
+            await this.transactionService.saveDragonchainTransaction({
+                participantId,
+                socialType,
+                tag,
+                txId,
+                type: TransactionType.SOCIAL_SHARE,
+            });
+        }
+        return txId;
     }
 
-    public async ledgerCoiinCampaignAudit(
-        payouts: { [key: string]: number },
-        rejectedUsers: string[],
-        campaignId: string
-    ) {
+    public async ledgerCampaignAudit(payouts: { [key: string]: number }, campaignId: string) {
         const tag = getCampaignAuditKey(campaignId);
         const res = await this.client.createTransaction({
             transactionType: TransactionType.CAMPAIGN_AUDIT,
             tag,
-            payload: { payouts, rejectedUsers },
-        });
-        if (!res.ok) throw new Error("Failed to ledger campaign audit to the Dragonchain");
-        return res.response.transaction_id;
-    }
-
-    public async ledgerRaffleCampaignAudit(
-        prizes: { [key: string]: string },
-        rejectedUsers: string[],
-        campaignId: string
-    ) {
-        const tag = getCampaignAuditKey(campaignId);
-        const res = await this.client.createTransaction({
-            transactionType: TransactionType.CAMPAIGN_AUDIT,
-            tag,
-            payload: { prizes, rejectedUsers },
+            payload: { payouts },
         });
         if (!res.ok) throw new Error("Failed to ledger campaign audit to the Dragonchain");
         return res.response.transaction_id;
@@ -76,5 +81,11 @@ export class DragonChainService {
         });
         if (!res.ok) throw new Error("Failed to ledger account recovery to the Dragonchain");
         return res.response.transaction_id;
+    }
+
+    public async createBulkTransactions(list: BulkTransactionPayload[]) {
+        const res = await this.client.createBulkTransaction({ transactionList: list });
+        if (!res.ok) throw new Error("Failed to ledger account recovery to the Dragonchain");
+        return res.response;
     }
 }

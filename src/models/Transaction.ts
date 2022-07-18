@@ -18,7 +18,7 @@ export class Transaction extends BaseEntity {
     @Column({ nullable: true })
     public action: ParticipantAction;
 
-    @Column({ nullable: false })
+    @Column({ nullable: true })
     public socialType: SocialClientType;
 
     @Column({ nullable: false })

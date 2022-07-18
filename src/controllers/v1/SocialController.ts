@@ -28,7 +28,7 @@ import { HourlyCampaignMetricsService } from "../../services/HourlyCampaignMetri
 import { addMinutes } from "date-fns";
 import { BSC, COIIN, SocialClientType, SocialLinkType } from "../../util/constants";
 import { TatumService } from "../../services/TatumService";
-import { DragonChainService } from "../../services/DragonChainService";
+import { DragonchainService } from "../../services/DragonchainService";
 
 class RegisterSocialLinkResultModel {
     @Property() public readonly registerSocialLink: boolean;
@@ -110,7 +110,7 @@ export class SocialController {
     @Inject()
     private tatumService: TatumService;
     @Inject()
-    private dragonchainService: DragonChainService;
+    private dragonchainService: DragonchainService;
 
     @Get("/social-metrics")
     @(Returns(200, SuccessResult).Of(SocialMetricsResultModel))
