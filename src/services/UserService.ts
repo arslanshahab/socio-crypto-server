@@ -302,6 +302,13 @@ export class UserService {
             thisWeeksReward = await this.transferService.getRewardForThisWeek(wallet.id, type);
         const amount = REWARD_AMOUNTS[type] || 0;
         if (
+            type === "SHARING_REWARD" &&
+            (await this.transferService.getLast24HourRedemption(wallet.id, "SHARING_REWARD")) >=
+                SHARING_REWARD_LIMIT_PER_DAY
+        ) {
+            throw new BadRequest("Limit reached for sharing reward");
+        }
+        if (
             (type === "LOGIN_REWARD" && accountAgeInHours > 24 && !thisWeeksReward) ||
             (type === "PARTICIPATION_REWARD" && !thisWeeksReward) ||
             (type === "SHARING_REWARD" &&
