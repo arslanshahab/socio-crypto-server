@@ -194,9 +194,7 @@ export class DailyParticipantMetricService {
                 data: { participantId: participant.id, userId: user.id, campaignId: campaign.id },
             });
         }
-        let totalParticipationScore = new BN(campaign.totalParticipationScore)
-            .plus(additiveParticipationScore)
-            .toString();
+        let totalParticipationScore = participant.participationScore;
         let participationScore = participant.participationScore;
         let clickCount = record.clickCount;
         let viewCount = record.viewCount;

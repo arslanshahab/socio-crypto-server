@@ -2,7 +2,7 @@ import { Context, Middleware, Req, Res } from "@tsed/common";
 import { Inject } from "@tsed/di";
 import { ParticipantAction } from "../util/constants";
 import { limit } from "../util/rateLimiter";
-import { prisma } from "../clients/prisma";
+import { prisma, readPrisma } from "../clients/prisma";
 import { calculateQualityTierMultiplier, BN } from "../util/index";
 import { Prisma } from "@prisma/client";
 import { PointValueTypes } from "../types.d";
@@ -36,19 +36,17 @@ export class ParticipantClickTracking {
             return res.status(400).json({ code: "MALFORMED_INPUT", message: "missing participant ID in request" });
         let participant;
         try {
-            participant = await prisma.participant.findFirst({
-                where: { id: participantId },
-                include: { campaign: true, user: true },
-            });
+            participant = await prisma.participant.findFirst({ where: { id: participantId } });
         } catch (error) {
             return res.status(404).json({ code: "NOT_FOUND", message: "participant not found" });
         }
         if (!participant) return res.status(404).json({ code: "NOT_FOUND", message: "participant not found" });
-        const campaign = await prisma.campaign.findFirst({
-            where: { id: participant.campaign.id },
-            include: { org: true },
-        });
+        let user = await prisma.user.findFirst({ where: { id: participant.userId } });
+        if (!user) return res.status(404).json({ code: "NOT_FOUND", message: "user not found" });
+        let campaign = await prisma.campaign.findFirst({ where: { id: participant.campaignId } });
         if (!campaign) return res.status(404).json({ code: "NOT_FOUND", message: "campaign not found" });
+        const campaignOrg = await readPrisma.org.findFirst({ where: { id: campaign.orgId! } });
+        if (!campaignOrg) return res.status(404).json({ code: "NOT_FOUND", message: "org not found" });
         if (!shouldRateLimit) {
             let qualityScore = await this.qualityScoreService.findByParticipantOrCreate(participant.id);
             const multiplier = calculateQualityTierMultiplier(new BN(qualityScore?.clicks || 0));
@@ -59,19 +57,19 @@ export class ParticipantClickTracking {
                 .plus(pointValue)
                 .toString();
             const participationScore = new BN(participant.participationScore).plus(pointValue).toString();
-            await prisma.campaign.update({
+            campaign = await prisma.campaign.update({
                 where: { id: campaign.id },
                 data: { totalParticipationScore: campaignTotalParticipationScore },
             });
-            await prisma.participant.update({
+            participant = await prisma.participant.update({
                 where: {
-                    id_campaignId_userId: { id: participant.id, campaignId: campaign.id, userId: participant.user.id },
+                    id_campaignId_userId: { id: participant.id, campaignId: campaign.id, userId: user.id },
                 },
                 data: { participationScore: participationScore, clickCount },
             });
-            await this.hourlyCampaignMetricService.upsertMetrics(campaign.id, campaign.org?.id!, action);
+            await this.hourlyCampaignMetricService.upsertMetrics(campaign.id, campaignOrg.id!, action);
             await this.dailyParticipantMetricService.upsertMetrics({
-                user: participant.user,
+                user,
                 campaign,
                 participant,
                 action,
@@ -80,7 +78,7 @@ export class ParticipantClickTracking {
             await this.dragonchainService.ledgerCampaignAction({
                 action,
                 participantId: participant.id,
-                campaignId: participant.campaign.id,
+                campaignId: participant.campaignId,
             });
         }
         return res.redirect(campaign.target.includes("https") ? campaign.target : `https://${campaign.target}`);

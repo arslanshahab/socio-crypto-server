@@ -13,7 +13,7 @@ const userService = new UserService();
         console.log("Preparing to generate user promo codes.");
         await Secrets.initialize();
         const connection: Connection = await connectDatabase();
-        const take = 200;
+        const take = 50;
         let skip = 0;
         const totalUsers = await readPrisma.user.count({ where: { promoCode: null } });
         console.log("TOTAL USERS: ", totalUsers);
