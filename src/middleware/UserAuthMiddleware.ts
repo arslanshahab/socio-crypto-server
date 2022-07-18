@@ -24,7 +24,12 @@ export class UserAuthMiddleware {
             return;
         }
 
-        if (ctx.has("user") || ctx.request.url.startsWith("/v1/docs/") || ctx.request.url.startsWith("/v1/auth/")) {
+        if (
+            ctx.has("user") ||
+            ctx.request.url.startsWith("/v1/docs/") ||
+            ctx.request.url.startsWith("/v1/auth/") ||
+            ctx.request.url.startsWith("/v1/referral/")
+        ) {
             return;
         }
 

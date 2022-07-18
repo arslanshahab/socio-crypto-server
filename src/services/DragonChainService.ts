@@ -27,7 +27,7 @@ export class DragonchainService {
                 action,
                 tag,
                 txId,
-                type: TransactionType.SOCIAL_SHARE,
+                type: TransactionType.TRACK_ACTION,
             });
         }
         return txId;

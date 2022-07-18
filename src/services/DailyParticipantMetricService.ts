@@ -1,6 +1,10 @@
 import { Injectable } from "@tsed/di";
-import { Campaign, User, Participant } from "@prisma/client";
+import { Campaign, User, Participant, DailyParticipantMetric } from "@prisma/client";
 import { prisma, readPrisma } from "../clients/prisma";
+import { BN } from "../util/index";
+import { BigNumber } from "bignumber.js";
+import { ParticipantAction } from "../util/constants";
+import { startOfDay } from "date-fns";
 
 @Injectable()
 export class DailyParticipantMetricService {
@@ -165,5 +169,94 @@ export class DailyParticipantMetricService {
                 }
             );
         return { clickCount, likeCount, shareCount, viewCount, submissionCount, commentCount, participationScore };
+    }
+
+    public async upsertMetrics(data: {
+        user: User;
+        campaign: Campaign;
+        participant: Participant;
+        action: ParticipantAction;
+        additiveParticipationScore: BigNumber;
+        actionCount?: number;
+    }): Promise<DailyParticipantMetric> {
+        const { user, campaign, participant, action, additiveParticipationScore, actionCount = 1 } = data;
+
+        if (!["clicks", "views", "submissions", "likes", "shares", "comments"].includes(action))
+            throw new Error("action not supported");
+        let record = await readPrisma.dailyParticipantMetric.findFirst({
+            where: {
+                participantId: participant.id,
+                createdAt: { gte: startOfDay(new Date()) },
+            },
+        });
+        if (!record) {
+            record = await prisma.dailyParticipantMetric.create({
+                data: { participantId: participant.id, userId: user.id, campaignId: campaign.id },
+            });
+        }
+        let totalParticipationScore = new BN(campaign.totalParticipationScore)
+            .plus(additiveParticipationScore)
+            .toString();
+        let participationScore = participant.participationScore;
+        let clickCount = record.clickCount;
+        let viewCount = record.viewCount;
+        let submissionCount = record.submissionCount;
+        let likeCount = record.likeCount;
+        let shareCount = record.shareCount;
+        let commentCount = record.commentCount;
+        switch (action) {
+            case "clicks":
+                clickCount = (
+                    record.clickCount ? new BN(record.clickCount).plus(new BN(actionCount)) : new BN(actionCount)
+                ).toString();
+                break;
+            case "views":
+                viewCount = (
+                    record.viewCount ? new BN(record.viewCount).plus(new BN(actionCount)) : new BN(actionCount)
+                ).toString();
+                break;
+            case "submissions":
+                submissionCount = (
+                    record.submissionCount
+                        ? new BN(record.submissionCount).plus(new BN(actionCount))
+                        : new BN(actionCount)
+                ).toString();
+                break;
+            case "likes":
+                likeCount = (
+                    record.likeCount ? new BN(record.likeCount).plus(new BN(actionCount)) : new BN(actionCount)
+                ).toString();
+                break;
+            case "shares":
+                shareCount = (
+                    record.shareCount ? new BN(record.shareCount).plus(new BN(actionCount)) : new BN(actionCount)
+                ).toString();
+                break;
+            case "comments":
+                commentCount = (
+                    record.commentCount ? new BN(record.commentCount).plus(new BN(actionCount)) : new BN(actionCount)
+                ).toString();
+                break;
+        }
+        participationScore = (
+            record.participationScore
+                ? new BN(record.participationScore).plus(additiveParticipationScore)
+                : new BN(additiveParticipationScore)
+        ).toString();
+        return await prisma.dailyParticipantMetric.update({
+            where: {
+                id: record.id,
+            },
+            data: {
+                totalParticipationScore: totalParticipationScore,
+                participationScore,
+                clickCount,
+                shareCount,
+                viewCount,
+                likeCount,
+                commentCount,
+                submissionCount,
+            },
+        });
     }
 }

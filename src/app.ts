@@ -14,7 +14,6 @@ import { Firebase } from "./clients/firebase";
 // import { paypalWebhook } from "./controllers/withdraw";
 import { adminResolvers, publicResolvers, resolvers } from "./graphql/resolvers";
 import { adminLogin, adminLogout, updateUserPassword } from "./controllers/authentication";
-import { trackClickByLink } from "./controllers/participant";
 import cookieParser from "cookie-parser";
 import { StripeAPI } from "./clients/stripe";
 import { stripeWebhook } from "./controllers/stripe";
@@ -235,7 +234,6 @@ export class Application {
         //     }),
         //     FactorController.recover
         // );
-        this.app.use("/v1/referral/:participantId", trackClickByLink);
         this.app.use("/v1/tatum/subscription/:userId/:accountId", trackCoiinTransactionForUser);
 
         this.platform = await PlatformExpress.bootstrap(RestServer, {
