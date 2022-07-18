@@ -365,19 +365,12 @@ export class UserService {
     }
 
     public async initNewUser(email: string, username: string, password: string, referralCode?: string | null) {
-        let promoCode = null;
-        while (!promoCode) {
-            promoCode = generatePromoCode();
-            if (await prisma.user.findFirst({ where: { promoCode } })) {
-                promoCode = null;
-            }
-        }
         const user = await prisma.user.create({
             data: {
                 email: email.trim().toLowerCase(),
                 password: createPasswordHash({ email, password }),
                 ...(referralCode && { referralCode }),
-                promoCode,
+                promoCode: await this.getUniquePromoCode(),
             },
         });
 
@@ -459,5 +452,16 @@ export class UserService {
             amount: amount.toString(),
             recipientNote: "USER-BALANCE-UPDATES",
         });
+    }
+
+    public async getUniquePromoCode() {
+        let promoCode = null;
+        while (!promoCode) {
+            promoCode = generatePromoCode();
+            if (await prisma.user.findFirst({ where: { promoCode } })) {
+                promoCode = null;
+            }
+        }
+        return promoCode;
     }
 }
