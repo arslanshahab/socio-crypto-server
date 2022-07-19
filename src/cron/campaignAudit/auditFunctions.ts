@@ -1,6 +1,14 @@
 import { calculateParticipantPayout, calculateTier } from "../../controllers/helpers";
 import { BN } from "../../util";
-import { CampaignAuditStatus, CAMPAIGN_FEE, FEE_RATE, RAIINMAKER_ORG_NAME } from "../../util/constants";
+import {
+    CampaignAuditStatus,
+    CAMPAIGN_FEE,
+    FEE_RATE,
+    RAIINMAKER_ORG_NAME,
+    TransferAction,
+    TransferStatus,
+    TransferType,
+} from "../../util/constants";
 import { TatumClient, BatchTransferPayload } from "../../clients/tatumClient";
 import { Campaign, Prisma } from "@prisma/client";
 import { prisma, readPrisma } from "../../clients/prisma";
@@ -47,6 +55,7 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
         );
         let totalRewardAmount = new BN(currentTotal);
         let raiinmakerFee = new BN(0);
+        let totalPayout = new BN(0);
         const campaignFee = totalRewardAmount.multipliedBy(FEE_RATE);
         raiinmakerFee = raiinmakerFee.plus(campaignFee);
         totalRewardAmount = totalRewardAmount.minus(campaignFee);
@@ -125,6 +134,7 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
                         recipientAccountId: userCurrency.tatumId,
                         amount: participantShare.toString(),
                     });
+                    totalPayout = totalPayout.plus(participantShare);
                     transferDetails.push({
                         campaignCurrency,
                         userCurrency,
@@ -155,9 +165,9 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
                     amount: transferData.amount.toString(),
                     ethAddress: transferData.userCurrency.tatumId,
                     walletId: wallet.id,
-                    action: "CAMPAIGN_REWARD",
-                    status: "SUCCEEDED",
-                    type: "CREDIT",
+                    action: TransferAction.CAMPAIGN_REWARD,
+                    status: TransferStatus.SUCCEEDED,
+                    type: TransferType.CREDIT,
                 });
             }
             await prisma.transfer.createMany({ data: transferRecords });
@@ -166,6 +176,18 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
         await prisma.campaign.update({
             where: { id: campaign.id },
             data: { auditStatus: CampaignAuditStatus.AUDITED },
+        });
+        await prisma.transfer.create({
+            data: {
+                walletId: raiinmakerWallet?.id!,
+                amount: totalPayout.toString(),
+                status: TransferStatus.SUCCEEDED,
+                action: TransferAction.CAMPAIGN_REWARD_PAYOUT,
+                type: TransferType.DEBIT,
+                campaignId: campaign.id,
+                ethAddress: raiinmakerCurrency.tatumId,
+                currency: campaignToken.symbol,
+            },
         });
         return userDeviceIds;
     } catch (error) {
