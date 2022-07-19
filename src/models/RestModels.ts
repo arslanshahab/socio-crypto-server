@@ -786,3 +786,7 @@ export class UserStatisticsResultModel {
     @Property() public readonly campaignName: string;
     @Property() public readonly participationDate: Date;
 }
+
+export class TransactionFeeResultModel {
+    @Property() public readonly fee: number;
+}

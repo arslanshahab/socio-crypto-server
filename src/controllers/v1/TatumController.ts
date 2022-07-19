@@ -7,6 +7,7 @@ import { TatumService } from "../../services/TatumService";
 import {
     DepositAddressResultModel,
     SupportedCurrenciesResultModel,
+    TransactionFeeResultModel,
     WithdrawResultModel,
 } from "../../models/RestModels";
 import { NotFound } from "@tsed/exceptions";
@@ -141,5 +142,34 @@ export class TatumController {
             availableBalance: userCurrency.availableBalance! - amount,
         });
         return new SuccessResult({ ...body, message: "Withdraw completed cusscesfully" }, WithdrawResultModel);
+    }
+
+    @Get("/transaction-fee")
+    @(Returns(200, SuccessResult).Of(TransactionFeeResultModel))
+    public async getTransactionFee(@BodyParams() body: WithdrawBody, @Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"), { wallet: true });
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        let { symbol, network, address, amount } = body;
+        address = getWithdrawAddressForTatum(symbol, address);
+        const token = await this.tatumService.isCurrencySupported({ symbol, network });
+        if (!token) throw new Error(TOKEN_NOT_FOUND);
+        const userCurrency = await this.currencyService.findCurrencyByTokenAndWallet({
+            tokenId: token.id,
+            walletId: user.wallet?.id!,
+        });
+        if (!userCurrency) throw new CustomError(USER_CURRENCY_NOT_FOUND);
+        const orgCurrency = await this.organizationService.getCurrencyForRaiinmaker(token);
+        const fee = await this.tatumService.offchainEstimateFee({
+            senderAccountId: userCurrency.tatumId,
+            paymentId: `${USER_WITHDRAW}:${user.id}`,
+            senderNote: RAIINMAKER_WITHDRAW,
+            address,
+            amount: amount.toString(),
+            userCurrency,
+            orgCurrency,
+            token,
+            custodialAddress: orgCurrency?.depositAddress || "",
+        });
+        return new SuccessResult({ fee }, TransactionFeeResultModel);
     }
 }
