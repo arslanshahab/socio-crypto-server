@@ -194,7 +194,11 @@ export class SocialController {
             participant.campaign.id
         );
         const result = { id: socialPost.id };
-        await this.dragonchainService.ledgerSocialShare({ socialType: SocialClientType.TWITTER, participantId });
+        await this.dragonchainService.ledgerSocialShare({
+            socialType: SocialClientType.TWITTER,
+            participantId,
+            campaignId: campaign.id,
+        });
         return new SuccessResult(result, SocialPostResultModel);
     }
 

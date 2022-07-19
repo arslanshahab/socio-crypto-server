@@ -33,6 +33,7 @@ import { getCryptoAssestImageUrl, BN } from "../util";
 import { CampaignStatus, RAIINMAKER_ORG_NAME, CAMPAIGN_CREATION_AMOUNT } from "../util/constants";
 import { getTokenValueInUSD } from "../util/exchangeRate";
 import { subDays } from "date-fns";
+import { Transaction } from "./Transaction";
 
 @Entity()
 export class Campaign extends BaseEntity {
@@ -158,12 +159,11 @@ export class Campaign extends BaseEntity {
     public symbolImageUrl = "";
     public network = "";
 
-    @OneToMany(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => Participant,
-        (participant) => participant.campaign
-    )
+    @OneToMany((_type) => Participant, (participant) => participant.campaign)
     public participants: Participant[];
+
+    @OneToMany((_type) => Transaction, (transaction) => transaction.campaign)
+    public transactions: Transaction[];
 
     @OneToMany((_type) => CampaignMedia, (campaignMedia) => campaignMedia.campaign)
     public campaignMedia: CampaignMedia[];

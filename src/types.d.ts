@@ -635,10 +635,16 @@ export interface WalletKeys {
     mnemonic?: string;
 }
 
-export interface DragonchainCampaignLedgerPayload {
+export interface DragonchainCampaignActionLedgerPayload {
     action: ParticipantAction;
     participantId: string;
     campaignId: string;
     socialType?: SocialClientType;
+    payload: any;
+}
+
+export interface DragonchainCampaignPayoutLedgerPayload {
+    participantId?: string;
+    campaignId: string;
     payload: any;
 }

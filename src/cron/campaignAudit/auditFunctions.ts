@@ -12,7 +12,10 @@ import {
 import { TatumClient, BatchTransferPayload } from "../../clients/tatumClient";
 import { Campaign, Prisma } from "@prisma/client";
 import { prisma, readPrisma } from "../../clients/prisma";
-import { Tiers } from "../../types.d";
+import { Tiers, DragonchainCampaignPayoutLedgerPayload } from "../../types.d";
+import { DragonchainService } from "../../services/DragonchainService";
+
+const dragonchainService = new DragonchainService();
 
 // export const payoutRaffleCampaignRewards = async (
 //     entityManager: EntityManager,
@@ -79,6 +82,9 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
         const totalParticipants = await readPrisma.participant.count({
             where: { campaignId: campaign.id, blacklist: false },
         });
+        const blacklistedParticipants = await readPrisma.participant.count({
+            where: { campaignId: campaign.id, blacklist: true },
+        });
         const paginatedLoop = Math.ceil(totalParticipants / take);
 
         // transfer campaign fee to raiinmaker tatum account
@@ -97,7 +103,8 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
                 take,
                 skip,
             });
-            const transferDetails = [];
+            const transferRecords = [];
+            const dragonchainTransactions: DragonchainCampaignPayoutLedgerPayload[] = [];
             const batchTransfer: BatchTransferPayload = {
                 senderAccountId: "",
                 transaction: [],
@@ -135,13 +142,25 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
                         amount: participantShare.toString(),
                     });
                     totalPayout = totalPayout.plus(participantShare);
-                    transferDetails.push({
-                        campaignCurrency,
-                        userCurrency,
-                        campaign,
-                        participant,
-                        user: userData,
+                    transferRecords.push({
+                        currency: campaignToken?.symbol,
+                        campaignId: campaign.id,
                         amount: participantShare.toString(),
+                        ethAddress: userCurrency.tatumId,
+                        walletId: userWallet.id,
+                        action: TransferAction.CAMPAIGN_REWARD,
+                        status: TransferStatus.SUCCEEDED,
+                        type: TransferType.CREDIT,
+                    });
+                    dragonchainTransactions.push({
+                        campaignId: campaign.id,
+                        participantId: participant.id,
+                        payload: {
+                            symbol: campaignToken.symbol,
+                            network: campaignToken.network,
+                            amount: participantShare.toString(),
+                            participationScore: participant.participationScore.toString(),
+                        },
                     });
                     console.log(
                         "TRANSFER PREPARED ---- ",
@@ -154,23 +173,8 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
             }
 
             await TatumClient.transferFundsBatch(batchTransfer);
-            const transferRecords = [];
-            for (let index = 0; index < transferDetails.length; index++) {
-                const transferData = transferDetails[index];
-                const wallet = await readPrisma.wallet.findFirst({ where: { userId: transferData.user.id } });
-                if (!wallet) throw new Error("wallet not found for user.");
-                transferRecords.push({
-                    currency: campaignToken?.symbol,
-                    campaignId: transferData.campaign.id,
-                    amount: transferData.amount.toString(),
-                    ethAddress: transferData.userCurrency.tatumId,
-                    walletId: wallet.id,
-                    action: TransferAction.CAMPAIGN_REWARD,
-                    status: TransferStatus.SUCCEEDED,
-                    type: TransferType.CREDIT,
-                });
-            }
             await prisma.transfer.createMany({ data: transferRecords });
+            await dragonchainService.ledgerBulkCampaignPayout(dragonchainTransactions);
             skip += take;
         }
         await prisma.campaign.update({
@@ -187,6 +191,19 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
                 campaignId: campaign.id,
                 ethAddress: raiinmakerCurrency.tatumId,
                 currency: campaignToken.symbol,
+            },
+        });
+        await dragonchainService.ledgerCampaignAudit({
+            campaignId: campaign.id,
+            payload: {
+                totalPayout: totalPayout.toString(),
+                totalParticipants,
+                blacklistedParticipants,
+                totalParticipationScore: campaign.totalParticipationScore,
+                campaignName: campaign.name,
+                symbol: campaignToken.symbol,
+                network: campaignToken.network,
+                totalBudget: campaign.coiinTotal,
             },
         });
         return userDeviceIds;

@@ -7,7 +7,7 @@ import * as dotenv from "dotenv";
 import { SocialPost, Prisma, PrismaPromise } from "@prisma/client";
 import { prisma, readPrisma } from "../../clients/prisma";
 import { CampaignStatus, CampaignAuditStatus, SocialClientType } from "../../util/constants";
-import { DragonchainCampaignLedgerPayload, PointValueTypes } from "../../types.d";
+import { DragonchainCampaignActionLedgerPayload, PointValueTypes } from "../../types.d";
 import { QualityScoreService } from "../../services/QualityScoreService";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 import { ParticipantAction } from "../../util/constants";
@@ -144,7 +144,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                 let fulfilledTwitterPromises = 0;
                 // let fulfilledTiktokPromises = 0;
                 const prismaTransactions: PrismaPromise<SocialPost>[] = [];
-                const dragonchainTransactionList: DragonchainCampaignLedgerPayload[] = [];
+                const dragonchainTransactionList: DragonchainCampaignActionLedgerPayload[] = [];
 
                 try {
                     const twitterResponses = await Promise.allSettled(twitterPromiseArray);

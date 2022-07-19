@@ -36,7 +36,7 @@ import {
 } from "../util/errors";
 import { addDays, endOfISOWeek, startOfDay } from "date-fns";
 import { Transfer } from "../models/Transfer";
-import { BSC, COIIN, RAIINMAKER_ORG_NAME, UserRewardType } from "../util/constants";
+import { BSC, COIIN, RAIINMAKER_ORG_NAME, TransferAction, UserRewardType } from "../util/constants";
 import { JWTPayload } from "src/types";
 import { SHARING_REWARD_AMOUNT } from "../util/constants";
 import { NotificationSettings } from "../models/NotificationSettings";
@@ -468,8 +468,11 @@ export const getWeeklyRewardEstimation = async (parent: any, args: any, context:
     try {
         const user = await User.findUserByContext(context.user, ["wallet"]);
         if (!user) throw new Error(USER_NOT_FOUND);
-        const loginReward = await Transfer.getRewardForThisWeek(user.wallet, "LOGIN_REWARD");
-        const participationReward = await Transfer.getRewardForThisWeek(user.wallet, "PARTICIPATION_REWARD");
+        const loginReward = await Transfer.getRewardForThisWeek(user.wallet, TransferAction.LOGIN_REWARD);
+        const participationReward = await Transfer.getRewardForThisWeek(
+            user.wallet,
+            TransferAction.PARTICIPATION_REWARD
+        );
         const nextReward = startOfDay(addDays(endOfISOWeek(user.lastLogin), 1));
         const coiinEarnedToday = await Transfer.getCoinnEarnedToday(user.wallet);
         return {

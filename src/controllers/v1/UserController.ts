@@ -605,7 +605,7 @@ export class UserController {
             type: UserRewardType.SHARING_REWARD,
             campaign: campaign,
         });
-        await this.dragonchainService.ledgerSocialShare({ socialType, participantId });
+        await this.dragonchainService.ledgerSocialShare({ socialType, participantId, campaignId: campaign.id });
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 

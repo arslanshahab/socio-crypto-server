@@ -35,7 +35,17 @@ import { differenceInHours } from "date-fns";
 import { Transfer } from "./Transfer";
 import { TatumClient } from "../clients/tatumClient";
 import { Org } from "./Org";
-import { BSC, COIIN, KycLevel, REWARD_AMOUNTS, SHARING_REWARD_LIMIT_PER_DAY, UserRewardType } from "../util/constants";
+import {
+    BSC,
+    COIIN,
+    KycLevel,
+    REWARD_AMOUNTS,
+    SHARING_REWARD_LIMIT_PER_DAY,
+    TransferAction,
+    TransferStatus,
+    TransferType,
+    UserRewardType,
+} from "../util/constants";
 import { Campaign } from "./Campaign";
 import { trim } from "lodash";
 
@@ -257,22 +267,22 @@ export class User extends BaseEntity {
         if (type === UserRewardType.LOGIN_REWARD)
             accountAgeInHours = differenceInHours(new Date(), new Date(user.createdAt));
         if (type === UserRewardType.LOGIN_REWARD || type === UserRewardType.PARTICIPATION_REWARD)
-            thisWeeksReward = await Transfer.getRewardForThisWeek(wallet, type);
+            thisWeeksReward = await Transfer.getRewardForThisWeek(wallet, TransferAction[type]);
         const amount = REWARD_AMOUNTS[type] || 0;
         if (
             (type === UserRewardType.LOGIN_REWARD && accountAgeInHours > 24 && !thisWeeksReward) ||
             (type === UserRewardType.PARTICIPATION_REWARD && !thisWeeksReward) ||
             (type === UserRewardType.SHARING_REWARD &&
-                (await Transfer.getLast24HourRedemption(user.wallet, UserRewardType.SHARING_REWARD)) <
+                (await Transfer.getLast24HourRedemption(user.wallet, TransferAction.SHARING_REWARD)) <
                     SHARING_REWARD_LIMIT_PER_DAY)
         ) {
             await Transfer.newReward({
                 wallet,
-                action: type,
-                status: "PENDING",
+                action: TransferAction[type],
+                status: TransferStatus.PENDING,
                 symbol: COIIN,
                 amount: new BN(amount),
-                type: "CREDIT",
+                type: TransferType.CREDIT,
                 campaign,
             });
         }

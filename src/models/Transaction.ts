@@ -1,5 +1,14 @@
 import { ParticipantAction, SocialClientType, TransactionChainType, TransactionType } from "../util/constants";
-import { BaseEntity, Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import {
+    BaseEntity,
+    Column,
+    CreateDateColumn,
+    Entity,
+    PrimaryGeneratedColumn,
+    UpdateDateColumn,
+    ManyToOne,
+} from "typeorm";
+import { Campaign } from "./Campaign";
 
 @Entity()
 export class Transaction extends BaseEntity {
@@ -24,8 +33,11 @@ export class Transaction extends BaseEntity {
     @Column({ nullable: false })
     public transactionType: TransactionType;
 
-    @Column({ nullable: false })
+    @Column({ nullable: true })
     public participantId: string;
+
+    @ManyToOne((_type) => Campaign, (campaign) => campaign.participants, { primary: true, eager: true })
+    public campaign: Campaign;
 
     @CreateDateColumn()
     public createdAt: Date;
