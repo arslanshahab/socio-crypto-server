@@ -6,18 +6,21 @@ import { BN, calculateQualityTierMultiplier } from "../../util";
 import * as dotenv from "dotenv";
 import { SocialPost, Prisma, PrismaPromise } from "@prisma/client";
 import { prisma, readPrisma } from "../../clients/prisma";
-import { CampaignStatus, CampaignAuditStatus } from "../../util/constants";
-import { PointValueTypes } from "../../types.d";
+import { CampaignStatus, CampaignAuditStatus, SocialClientType } from "../../util/constants";
+import { DragonchainCampaignLedgerPayload, PointValueTypes } from "../../types.d";
 import { QualityScoreService } from "../../services/QualityScoreService";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 import { ParticipantAction } from "../../util/constants";
 import { HourlyCampaignMetricsService } from "../../services/HourlyCampaignMetricsService";
+import { DragonchainService } from "../../services/DragonchainService";
+import { Dragonchain } from "../../clients/dragonchain";
 
 dotenv.config();
 const app = new Application();
 const qualityScoreService = new QualityScoreService();
 const dailyParticipantMetricService = new DailyParticipantMetricService();
 const hourlyCampaignMetricService = new HourlyCampaignMetricsService();
+const dragonchainService = new DragonchainService();
 
 const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: SocialPost) => {
     const participant = await readPrisma.participant.findFirst({
@@ -89,6 +92,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
 (async () => {
     console.log("STARTING CRON.");
     await Secrets.initialize();
+    await Dragonchain.initialize();
     const connection = await app.connectDatabase();
     console.log("DATABASE CONNECTED.");
     try {
@@ -140,6 +144,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                 let fulfilledTwitterPromises = 0;
                 // let fulfilledTiktokPromises = 0;
                 const prismaTransactions: PrismaPromise<SocialPost>[] = [];
+                const dragonchainTransactionList: DragonchainCampaignLedgerPayload[] = [];
 
                 try {
                     const twitterResponses = await Promise.allSettled(twitterPromiseArray);
@@ -179,6 +184,32 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                                 })
                             );
                             fulfilledTwitterPromises += 1;
+
+                            // prepare transaction data to log on dragon chain
+                            const prevLikes = parseFloat(post.likes);
+                            const currLikes = parseFloat(updatedPost.likes);
+                            // const likeDiff = currLikes - prevLikes;
+                            if (prevLikes && currLikes) {
+                                dragonchainTransactionList.push({
+                                    action: ParticipantAction.LIKES,
+                                    socialType: SocialClientType.TWITTER,
+                                    campaignId: post.campaignId,
+                                    participantId: post.participantId,
+                                    payload: { likes: currLikes },
+                                });
+                            }
+                            const prevShares = parseFloat(post.shares);
+                            const currShares = parseFloat(updatedPost.shares);
+                            // const shareDiff = currShares - prevShares;
+                            if (prevShares && currShares) {
+                                dragonchainTransactionList.push({
+                                    action: ParticipantAction.SHARES,
+                                    socialType: SocialClientType.TWITTER,
+                                    campaignId: post.campaignId,
+                                    participantId: post.participantId,
+                                    payload: { shares: currShares },
+                                });
+                            }
                         }
                     }
                 } catch (error) {
@@ -211,7 +242,9 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                 console.log("FULFILLED TWITTER PROMISES ----.", fulfilledTwitterPromises);
                 // console.log("FULFILLED TIKTOK PROMISES ----.", fulfilledTiktokPromises);
                 console.log("PRISMA PROMISES ----.", prismaTransactions.length);
+                console.log("DRAGONCHAIN TRANSACTIONS ----.", dragonchainTransactionList.length);
                 await prisma.$transaction(prismaTransactions);
+                await dragonchainService.ledgerBulkCampaignAction(dragonchainTransactionList);
             }
         }
     } catch (error) {

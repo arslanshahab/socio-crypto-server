@@ -621,7 +621,7 @@ model MarketData {
   @@map("market_data")
 }
 
-model transaction {
+model Transaction {
   id              String   @id(map: "PK_89eadb93a89810556e1cbcd6ab9") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tag             String   @db.VarChar
   txId            String   @db.VarChar
@@ -632,6 +632,8 @@ model transaction {
   participantId   String   @db.VarChar
   createdAt       DateTime @default(now()) @db.Timestamp(6)
   updatedAt       DateTime @default(now()) @db.Timestamp(6)
+
+  @@map("transaction")
 }
 
 enum verification_application_level_enum {

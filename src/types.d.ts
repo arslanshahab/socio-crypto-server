@@ -1,7 +1,7 @@
 import express, { Request } from "express";
 import { BigNumber } from "bignumber.js";
 import { Stripe } from "stripe";
-import { CampaignState, CampaignStatus } from "./util/constants";
+import { CampaignState, CampaignStatus, ParticipantAction, SocialClientType, TransactionType } from "./util/constants";
 import {
     CampaignMedia,
     CampaignTemplate,
@@ -633,4 +633,12 @@ export interface WalletKeys {
     walletAddress?: string;
     secret?: string;
     mnemonic?: string;
+}
+
+export interface DragonchainCampaignLedgerPayload {
+    action: ParticipantAction;
+    participantId: string;
+    campaignId: string;
+    socialType?: SocialClientType;
+    payload: any;
 }
