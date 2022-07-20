@@ -172,9 +172,10 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
                 }
             }
 
-            await TatumClient.transferFundsBatch(batchTransfer);
+            if (batchTransfer.transaction.length) await TatumClient.transferFundsBatch(batchTransfer);
             await prisma.transfer.createMany({ data: transferRecords });
-            await dragonchainService.ledgerBulkCampaignPayout(dragonchainTransactions);
+            if (dragonchainTransactions.length)
+                await dragonchainService.ledgerBulkCampaignPayout(dragonchainTransactions);
             skip += take;
         }
         await prisma.campaign.update({

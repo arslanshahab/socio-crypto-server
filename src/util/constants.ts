@@ -249,11 +249,19 @@ export enum SharingRewardType {
     INFLUENCE = "INFLUENCE",
 }
 
-export const transactionTypes = ["campaign", "trackAction", "campaignAudit", "accountRecovery", "socialShare"];
+export const transactionTypes = [
+    "campaign",
+    "trackAction",
+    "campaignAudit",
+    "campaignPayout",
+    "accountRecovery",
+    "socialShare",
+];
 export enum TransactionType {
     CAMPAIGN = "campaign",
     TRACK_ACTION = "trackAction",
     CAMPAIGN_AUDIT = "campaignAudit",
+    CAMPAIGN_PAYOUT = "campaignPayout",
     ACCOUNT_RECOVERY = "accountRecovery",
     SOCIAL_SHARE = "socialShare",
 }

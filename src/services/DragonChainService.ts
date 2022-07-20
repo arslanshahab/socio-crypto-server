@@ -149,7 +149,7 @@ export class DragonchainService {
             });
         }
         const res = await Dragonchain.client.createBulkTransaction({ transactionList: bulkPayload });
-        if (!res.ok) throw new Error("Failed to ledger bulk campaign actions to the Dragonchain");
+        if (!res.ok) throw new Error("Failed to ledger bulk campaign payouts to the Dragonchain");
         const success = res.response[201];
         const failed = res.response[400];
         for (let index = 0; index < bulkPayload.length; index++) {
@@ -164,7 +164,7 @@ export class DragonchainService {
                         tag: bulkData.tag!,
                         campaignId: dataItem.campaignId,
                         txId,
-                        transactionType: TransactionType.TRACK_ACTION,
+                        transactionType: TransactionType.CAMPAIGN_PAYOUT,
                         chain: TransactionChainType.DRAGONCHAIN,
                     },
                 })
