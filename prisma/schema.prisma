@@ -71,6 +71,7 @@ model Campaign {
   participant              Participant[]
   raffle_prize             RafflePrize?
   social_post              SocialPost[]
+  transaction              Transaction[]            @relation("campaignToTransaction")
   transfer                 Transfer[]
 
   @@index([status], map: "IDX_08135474cffdb8282c4ff37271")
@@ -516,6 +517,7 @@ model User {
   twenty_four_hour_metric                      TwentyFourHourMetric[]
   verification_application                     VerificationApplication[]
   wallet                                       Wallet?
+  weekly_reward                                WeeklyReward[]            @relation("userToweekly_reward")
   xoxoday_order                                XoxodayOrder[]
 
   @@index([identityId], map: "IDX_dea97e26c765a4cdb575957a14")
@@ -589,6 +591,7 @@ model WeeklyReward {
   rewardType    String   @db.VarChar
   createdAt     DateTime @default(now()) @db.Timestamp(6)
   updatedAt     DateTime @default(now()) @updatedAt @db.Timestamp(6)
+  user          User?    @relation("userToweekly_reward", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ba2529b7af668bbc111475272b1")
 
   @@map("weekly_reward")
 }
@@ -619,6 +622,23 @@ model MarketData {
   updatedAt DateTime @default(now()) @db.Timestamp(6)
 
   @@map("market_data")
+}
+
+model Transaction {
+  id              String    @id(map: "PK_89eadb93a89810556e1cbcd6ab9") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tag             String    @db.VarChar
+  txId            String    @db.VarChar
+  chain           String    @db.VarChar
+  action          String?   @db.VarChar
+  socialType      String?   @db.VarChar
+  transactionType String    @db.VarChar
+  participantId   String?   @db.VarChar
+  createdAt       DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt       DateTime  @default(now()) @db.Timestamp(6)
+  campaignId      String?   @db.Uuid
+  campaign        Campaign? @relation("campaignToTransaction", fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_3f3891eefaf8dcce48eae8c709f")
+
+  @@map("transaction")
 }
 
 enum verification_application_level_enum {

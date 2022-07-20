@@ -66,7 +66,9 @@ import {
     CoiinTransferAction,
     SharingRewardType,
     SHARING_REWARD_AMOUNT,
+    SocialClientType,
     TransferAction,
+    UserRewardType,
 } from "../../util/constants";
 import { SocialService } from "../../services/SocialService";
 import { CampaignService } from "../../services/CampaignService";
@@ -87,6 +89,7 @@ import { decrypt } from "../../util/crypto";
 import { S3Client } from "../../clients/s3";
 import { VerificationApplicationService } from "../../services/VerificationApplicationService";
 import { Parser } from "json2csv";
+import { DragonchainService } from "../../services/DragonchainService";
 
 const userResultRelations = {
     profile: true,
@@ -118,6 +121,7 @@ class TransferUserCoiinParams {
 class RewardUserForSharingParams {
     @Property() public readonly participantId: string;
     @Required() public readonly isGlobal: boolean;
+    @Property() public readonly socialType: SocialClientType;
 }
 
 class UpdateUserPasswordParams {
@@ -199,6 +203,8 @@ export class UserController {
     private verificationService: VerificationService;
     @Inject()
     private verificationApplicationService: VerificationApplicationService;
+    @Inject()
+    private dragonchainService: DragonchainService;
 
     @Get("/")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserResultModel))
@@ -383,7 +389,7 @@ export class UserController {
         await this.tatumService.findOrCreateCurrency({ ...campaign?.currency?.token!, wallet: user.wallet! });
         const participant = await this.participantService.createNewParticipant(user.id, campaign, email);
         if (!campaign.isGlobal)
-            await this.userService.transferCoiinReward({ user, type: "PARTICIPATION_REWARD", campaign });
+            await this.userService.transferCoiinReward({ user, type: UserRewardType.PARTICIPATION_REWARD, campaign });
         return new SuccessResult(
             ParticipateToCampaignModel.build({
                 ...participant,
@@ -574,7 +580,7 @@ export class UserController {
     public async rewardUserForSharing(@BodyParams() body: RewardUserForSharingParams, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new NotFound(USER_NOT_FOUND);
-        const { participantId, isGlobal } = body;
+        const { participantId, isGlobal, socialType } = body;
         const wallet = await this.walletService.findWalletByUserId(user.id);
         if (!wallet) throw new NotFound(WALLET_NOT_FOUND);
         let participant;
@@ -596,9 +602,10 @@ export class UserController {
         if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
         await this.userService.transferCoiinReward({
             user: user,
-            type: "SHARING_REWARD",
+            type: UserRewardType.SHARING_REWARD,
             campaign: campaign,
         });
+        await this.dragonchainService.ledgerSocialShare({ socialType, participantId, campaignId: campaign.id });
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 

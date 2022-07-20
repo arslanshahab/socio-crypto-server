@@ -26,8 +26,9 @@ import { CampaignMediaService } from "../../services/CampaignMediaService";
 import { downloadMedia } from "../../util";
 import { HourlyCampaignMetricsService } from "../../services/HourlyCampaignMetricsService";
 import { addMinutes } from "date-fns";
-import { BSC, COIIN, SocialLinkType } from "../../util/constants";
+import { BSC, COIIN, SocialClientType, SocialLinkType } from "../../util/constants";
 import { TatumService } from "../../services/TatumService";
+import { DragonchainService } from "../../services/DragonchainService";
 
 class RegisterSocialLinkResultModel {
     @Property() public readonly registerSocialLink: boolean;
@@ -108,6 +109,8 @@ export class SocialController {
     private hourlyCampaignMetricsService: HourlyCampaignMetricsService;
     @Inject()
     private tatumService: TatumService;
+    @Inject()
+    private dragonchainService: DragonchainService;
 
     @Get("/social-metrics")
     @(Returns(200, SuccessResult).Of(SocialMetricsResultModel))
@@ -191,6 +194,11 @@ export class SocialController {
             participant.campaign.id
         );
         const result = { id: socialPost.id };
+        await this.dragonchainService.ledgerSocialShare({
+            socialType: SocialClientType.TWITTER,
+            participantId,
+            campaignId: campaign.id,
+        });
         return new SuccessResult(result, SocialPostResultModel);
     }
 

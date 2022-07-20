@@ -1,13 +1,8 @@
 import { createClient, DragonchainClient } from "dragonchain-sdk";
 import { Secrets } from "../util/secrets";
 import { BigNumber } from "bignumber.js";
-
-const transactionTypes = ["campaign", "trackAction", "campaignAudit", "accountRecovery"];
-const getActionKey = (action: string, participantId: string) => `${participantId.replace(/-/g, ":")}-${action}`;
-const getCampaignAuditKey = (campaignId: string) => campaignId.replace(/-/g, ":");
-
-const getAccountRecoveryAttemptKey = (accountId: string | undefined, username: string) =>
-    `${accountId ? accountId.replace(/-/g, ":") + ":" : ""}${username.replace(/-/g, ":")}`;
+import { transactionTypes } from "../util/constants";
+import { getActionKey, getCampaignAuditKey, getAccountRecoveryAttemptKey } from "../util/index";
 
 export class Dragonchain {
     public static client: DragonchainClient;

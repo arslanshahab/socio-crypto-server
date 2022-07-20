@@ -167,6 +167,7 @@ export enum TransferAction {
     CAMPAIGN_REWARD = "CAMPAIGN_REWARD",
     NETWORK_REWARD = "NETWORK_REWARD",
     XOXODAY_REDEMPTION = "XOXODAY_REDEMPTION",
+    CAMPAIGN_REWARD_PAYOUT = "CAMPAIGN_REWARD_PAYOUT",
 }
 
 export enum TransferStatus {
@@ -246,4 +247,44 @@ export enum SocialLinkType {
 export enum SharingRewardType {
     COIIN = "COIIN",
     INFLUENCE = "INFLUENCE",
+}
+
+export const transactionTypes = [
+    "campaign",
+    "trackAction",
+    "campaignAudit",
+    "campaignPayout",
+    "accountRecovery",
+    "socialShare",
+];
+export enum TransactionType {
+    CAMPAIGN = "campaign",
+    TRACK_ACTION = "trackAction",
+    CAMPAIGN_AUDIT = "campaignAudit",
+    CAMPAIGN_PAYOUT = "campaignPayout",
+    ACCOUNT_RECOVERY = "accountRecovery",
+    SOCIAL_SHARE = "socialShare",
+}
+
+export enum ParticipantAction {
+    CLICKS = "clicks",
+    VIEWS = "views",
+    LIKES = "likes",
+    SHARES = "shares",
+    COMMENTS = "comments",
+    SUBMISSIONS = "submissions",
+}
+
+export enum UserRewardType {
+    LOGIN_REWARD = "LOGIN_REWARD",
+    REGISTRATION_REWARD = "REGISTRATION_REWARD",
+    PARTICIPATION_REWARD = "PARTICIPATION_REWARD",
+    SHARING_REWARD = "SHARING_REWARD",
+    CAMPAIGN_REWARD = "CAMPAIGN_REWARD",
+    NETWORK_REWARD = "NETWORK_REWARD",
+}
+
+export enum TransactionChainType {
+    DRAGONCHAIN = "dragonchain",
+    MYFII = "myfii",
 }

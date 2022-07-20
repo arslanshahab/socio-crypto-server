@@ -7,14 +7,13 @@ import { PlatformBuilder } from "@tsed/common";
 import logger from "./util/logger";
 import { Secrets } from "./util/secrets";
 import { authenticateAdmin, authenticateUser } from "./middleware/authentication";
-// import { Dragonchain } from "./clients/dragonchain";
+import { Dragonchain } from "./clients/dragonchain";
 import { Firebase } from "./clients/firebase";
 // import * as FactorController from "./controllers/factor";
 // import * as Dragonfactor from "@myfii-dev/dragonfactor-auth";
 // import { paypalWebhook } from "./controllers/withdraw";
 import { adminResolvers, publicResolvers, resolvers } from "./graphql/resolvers";
 import { adminLogin, adminLogout, updateUserPassword } from "./controllers/authentication";
-import { trackClickByLink } from "./controllers/participant";
 import cookieParser from "cookie-parser";
 import { StripeAPI } from "./clients/stripe";
 import { stripeWebhook } from "./controllers/stripe";
@@ -62,7 +61,7 @@ export class Application {
         this.databaseConnection = await this.connectDatabase();
         await Secrets.initialize();
         await Firebase.initialize();
-        // await Dragonchain.initialize();
+        await Dragonchain.initialize();
         StripeAPI.initialize();
         this.app = express();
         Sentry.init({
@@ -235,7 +234,6 @@ export class Application {
         //     }),
         //     FactorController.recover
         // );
-        this.app.use("/v1/referral/:participantId", trackClickByLink);
         this.app.use("/v1/tatum/subscription/:userId/:accountId", trackCoiinTransactionForUser);
 
         this.platform = await PlatformExpress.bootstrap(RestServer, {

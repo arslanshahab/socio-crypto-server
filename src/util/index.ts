@@ -22,7 +22,7 @@ import { serverBaseUrl } from "../config";
 import { Request, Response, NextFunction } from "express";
 import { BigNumber } from "bignumber.js";
 import { Factor } from "../models/Factor";
-import { CRYPTO_ICONS_MAP, CRYPTO_ICONS_BUCKET_URL, COIIN } from "./constants";
+import { CRYPTO_ICONS_MAP, CRYPTO_ICONS_BUCKET_URL, COIIN, SocialClientType } from "./constants";
 import { User as PrismaUser } from "@prisma/client";
 import { PlatformCache } from "@tsed/common";
 
@@ -449,3 +449,12 @@ export const resetCacheKey = async (baseKey: string, cacheInstance: PlatformCach
         }
     }
 };
+
+export const getActionKey = (action: string, participantId: string) => `${participantId.replace(/-/g, ":")}-${action}`;
+export const getSocialShareKey = (socialType: SocialClientType, participantId: string) =>
+    `${participantId.replace(/-/g, ":")}-${socialType}`;
+export const getCampaignAuditKey = (campaignId: string, participantId?: string) =>
+    `${campaignId.replace(/-/g, ":")}-${participantId ? participantId.replace(/-/g, ":") : ""}`;
+
+export const getAccountRecoveryAttemptKey = (accountId: string | undefined, username: string) =>
+    `${accountId ? accountId.replace(/-/g, ":") + ":" : ""}${username.replace(/-/g, ":")}`;
