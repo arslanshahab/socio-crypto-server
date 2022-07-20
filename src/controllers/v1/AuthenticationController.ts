@@ -53,6 +53,11 @@ class UpdateAdminPasswordParams {
     @Required() public readonly idToken: string;
     @Required() public readonly password: string;
 }
+
+class ForgetAdminPasswordParams {
+    @Required() public readonly email: string;
+    @Required() public readonly password: string;
+}
 @Controller("/auth")
 export class AuthenticationController {
     @Inject()
@@ -176,6 +181,17 @@ export class AuthenticationController {
         if (!user.customClaims) return new Unauthorized("Unauthorized!");
         await Firebase.updateUserPassword(user.uid, password);
         await Firebase.setCustomUserClaims(user.uid, user.customClaims.company, user.customClaims.role, false);
+        return new SuccessResult({ success: true }, BooleanResultModel);
+    }
+
+    @Put("/forgot-admin-password")
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
+    public async forgetAdminPassword(@BodyParams() body: ForgetAdminPasswordParams) {
+        const { email, password } = body;
+        const user = await Firebase.getUserByEmail(email);
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        await Firebase.updateUserPassword(user.uid, password);
+        await SesClient.restAdminPasswordEmail(email);
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 }
