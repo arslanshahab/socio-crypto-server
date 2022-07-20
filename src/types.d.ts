@@ -636,3 +636,9 @@ export interface WalletKeys {
     secret?: string;
     mnemonic?: string;
 }
+
+export interface AdminTypes {
+    firebaseId: string;
+    orgId: string;
+    name: string;
+}

@@ -1,13 +1,21 @@
-import { Context } from "@tsed/common";
+import { BodyParams, Context } from "@tsed/common";
 import { Controller, Inject } from "@tsed/di";
 import { NotFound } from "@tsed/exceptions";
-import { Get, Returns } from "@tsed/schema";
+import { Get, Post, Required, Returns } from "@tsed/schema";
 import { ORG_NOT_FOUND } from "../../util/errors";
 import { AdminService } from "../../services/AdminService";
 import { OrganizationService } from "../../services/OrganizationService";
 import { UserService } from "../../services/UserService";
 import { SuccessResult, Pagination, SuccessArrayResult } from "../../util/entities";
-import { OrgDetailsModel, OrgEmployeesResultModel } from "../../models/RestModels";
+import { BooleanResultModel, OrgDetailsModel, OrgEmployeesResultModel } from "../../models/RestModels";
+import { Firebase } from "../../clients/firebase";
+import { SesClient } from "../../clients/ses";
+
+class NewUserParams {
+    @Required() public readonly name: string;
+    @Required() public readonly email: string;
+    @Required() public readonly role: string;
+}
 
 @Controller("/organization")
 export class OrganizationController {
@@ -50,5 +58,22 @@ export class OrganizationController {
             };
         });
         return new SuccessArrayResult(orgDetails, OrgDetailsModel);
+    }
+
+    // For admin panel
+    @Post("/new-user")
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
+    public async newUser(@BodyParams() body: NewUserParams, @Context() context: Context) {
+        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const { company } = this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const { email, name, role } = body;
+        const password = Math.random().toString(16).substr(2, 15);
+        const org = await this.organizationService.findOrganizationByCompanyName(company!);
+        if (!org) throw new NotFound(ORG_NOT_FOUND);
+        const user = await Firebase.createNewUser(email, password);
+        const userRole = role === "admin" ? "admin" : "manager";
+        await Firebase.setCustomUserClaims(user.uid, company!, userRole, true);
+        await this.adminService.createAdmin({ firebaseId: user.uid, orgId: org.id, name });
+        await SesClient.sendNewUserConfirmationEmail(org.name, email, password);
     }
 }

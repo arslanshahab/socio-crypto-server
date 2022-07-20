@@ -1,5 +1,6 @@
 import { Injectable } from "@tsed/di";
-import { readPrisma } from "../clients/prisma";
+import { AdminTypes } from "../types";
+import { readPrisma, prisma } from "../clients/prisma";
 
 @Injectable()
 export class AdminService {
@@ -24,6 +25,16 @@ export class AdminService {
         return await readPrisma.admin.findFirst({
             where: {
                 firebaseId,
+            },
+        });
+    }
+
+    public async createAdmin(data: AdminTypes) {
+        return await prisma.admin.create({
+            data: {
+                firebaseId: data.firebaseId,
+                name: data.name,
+                orgId: data.orgId,
             },
         });
     }
