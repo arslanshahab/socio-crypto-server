@@ -9,6 +9,7 @@ export class TransactionService {
         type: TransactionType;
         tag: string;
         participantId: string;
+        campaignId: string;
         action?: ParticipantAction;
         socialType?: SocialClientType;
     }) {
