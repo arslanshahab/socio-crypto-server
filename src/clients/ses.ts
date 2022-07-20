@@ -39,8 +39,8 @@ export class SesClient {
                     Data: subject,
                 },
             },
-            ReturnPath: "no-reply@raiinmaker.com",
-            Source: "no-reply@raiinmaker.com",
+            ReturnPath: "no-response@raiinmaker.com",
+            Source: "no-response@raiinmaker.com",
         };
     }
 
