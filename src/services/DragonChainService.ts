@@ -8,7 +8,7 @@ import { Transaction, PrismaPromise } from "@prisma/client";
 import { prisma } from "../clients/prisma";
 
 @Injectable()
-export class DragonchainService {
+export class DragonChainService {
     public async ledgerCampaignAction(data: { action: ParticipantAction; participantId: string; campaignId: string }) {
         const { action, participantId, campaignId } = data;
         const tag = getActionKey(action, participantId);

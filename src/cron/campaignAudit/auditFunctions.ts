@@ -13,9 +13,9 @@ import { TatumClient, BatchTransferPayload } from "../../clients/tatumClient";
 import { Campaign, Prisma } from "@prisma/client";
 import { prisma, readPrisma } from "../../clients/prisma";
 import { Tiers, DragonchainCampaignPayoutLedgerPayload } from "../../types.d";
-import { DragonchainService } from "../../services/DragonchainService";
+import { DragonChainService } from "../../services/DragonChainService";
 
-const dragonchainService = new DragonchainService();
+const dragonChainService = new DragonChainService();
 
 // export const payoutRaffleCampaignRewards = async (
 //     entityManager: EntityManager,
@@ -175,7 +175,7 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
             if (batchTransfer.transaction.length) await TatumClient.transferFundsBatch(batchTransfer);
             await prisma.transfer.createMany({ data: transferRecords });
             if (dragonchainTransactions.length)
-                await dragonchainService.ledgerBulkCampaignPayout(dragonchainTransactions);
+                await dragonChainService.ledgerBulkCampaignPayout(dragonchainTransactions);
             skip += take;
         }
         await prisma.campaign.update({
@@ -194,7 +194,7 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
                 currency: campaignToken.symbol,
             },
         });
-        await dragonchainService.ledgerCampaignAudit({
+        await dragonChainService.ledgerCampaignAudit({
             campaignId: campaign.id,
             payload: {
                 totalPayout: totalPayout.toString(),

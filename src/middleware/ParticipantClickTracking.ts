@@ -9,7 +9,7 @@ import { PointValueTypes } from "../types.d";
 import { QualityScoreService } from "../services/QualityScoreService";
 import { HourlyCampaignMetricsService } from "../services/HourlyCampaignMetricsService";
 import { DailyParticipantMetricService } from "../services/DailyParticipantMetricService";
-import { DragonchainService } from "../services/DragonchainService";
+import { DragonChainService } from "../services/DragonChainService";
 
 const { RATE_LIMIT_MAX = "3" } = process.env;
 
@@ -19,7 +19,7 @@ const { RATE_LIMIT_MAX = "3" } = process.env;
 @Middleware()
 export class ParticipantClickTracking {
     @Inject()
-    private dragonchainService: DragonchainService;
+    private dragonChainService: DragonChainService;
     @Inject()
     private qualityScoreService: QualityScoreService;
     @Inject()
@@ -75,7 +75,7 @@ export class ParticipantClickTracking {
                 action,
                 additiveParticipationScore: pointValue,
             });
-            await this.dragonchainService.ledgerCampaignAction({
+            await this.dragonChainService.ledgerCampaignAction({
                 action,
                 participantId: participant.id,
                 campaignId: participant.campaignId,
