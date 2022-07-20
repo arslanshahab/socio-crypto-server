@@ -532,36 +532,6 @@ export interface CampaignRequirementTypes {
     };
 }
 
-export interface CampaignCreateTypes {
-    id: string;
-    name: string;
-    beginDate: Date;
-    endDate: Date;
-    coiinTotal: string;
-    target: string;
-    description: string;
-    instructions: string;
-    algorithm: AlgorithmJsonValueType;
-    targetVideo: string;
-    imagePath: string;
-    tagline: string;
-    requirements: CampaignRequirementTypes;
-    suggestedPosts: string[];
-    suggestedTags: string[];
-    keywords: string[];
-    type: string;
-    raffle_prize: RafflePrize;
-    symbol: string;
-    network: string;
-    campaignType: string;
-    socialMediaType: string[];
-    campaignMedia: CampaignMedia[];
-    campaignTemplates: CampaignTemplate[];
-    isGlobal: boolean;
-    showUrl: boolean;
-    company: string;
-}
-
 export interface CurrencyResultType {
     id: string;
     tatumId: string;
