@@ -5,6 +5,7 @@ import { payoutCryptoCampaignRewards } from "./auditFunctions";
 import { Firebase } from "../../clients/firebase";
 import { CampaignAuditStatus, CampaignStatus } from "../../util/constants";
 import { readPrisma } from "../../clients/prisma";
+import { Dragonchain } from "../../clients/dragonchain";
 
 dotenv.config();
 const app = new Application();
@@ -14,6 +15,7 @@ console.log("APP instance created.");
     console.log("Starting campaign audit.");
     await Secrets.initialize();
     await Firebase.initialize();
+    await Dragonchain.initialize();
     const connection = await app.connectDatabase();
     console.log("Secrets and connection initialized.");
     const now = new Date();

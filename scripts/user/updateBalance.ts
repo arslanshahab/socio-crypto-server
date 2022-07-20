@@ -6,6 +6,7 @@ import { prisma, readPrisma } from "../../src/clients/prisma";
 import { TatumClient } from "../../src/clients/tatumClient";
 import { getCurrencyForTatum } from "../../src/util/tatumHelper";
 import { ADA, BSC } from "../../src/util/constants";
+import { PrismaPromise } from "@prisma/client";
 dotenv.config();
 
 (async () => {
@@ -23,7 +24,7 @@ dotenv.config();
         const paginatedLoop = Math.ceil(totalAccountForSymbol / pageSize);
         for (let pageIndex = 0; pageIndex < paginatedLoop; pageIndex++) {
             const accountList: any[] = await TatumClient.getAccountList(tatumSymbol, page, pageSize);
-            const prismaTransactions = [];
+            const prismaTransactions: PrismaPromise<any>[] = [];
             console.log("FETCHED ACCOUNT LIST FOR PAGE: ", page, tatumSymbol);
             for (let index = 0; index < accountList.length; index++) {
                 const account = accountList[index];

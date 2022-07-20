@@ -42,21 +42,11 @@ export class Participant extends BaseEntity {
 
     @Column({ default: false })
     public blacklist: boolean;
-    
-    @ManyToOne(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => User,
-        (user) => user.campaigns,
-        { primary: true, eager: true }
-    )
+
+    @ManyToOne((_type) => User, (user) => user.campaigns, { primary: true, eager: true })
     public user: User;
 
-    @ManyToOne(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => Campaign,
-        (campaign) => campaign.participants,
-        { primary: true, eager: true }
-    )
+    @ManyToOne((_type) => Campaign, (campaign) => campaign.participants, { primary: true, eager: true })
     public campaign: Campaign;
 
     @CreateDateColumn()

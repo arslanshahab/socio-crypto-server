@@ -12,6 +12,7 @@ import RedisClient from "cache-manager-redis-store";
 // import * as compress from "compression";
 // import * as cookieParser from "cookie-parser";
 // import * as methodOverride from "method-override";
+import { ParticipantClickTracking } from "./middleware/ParticipantClickTracking";
 
 // based on https://tsed.io/getting-started/migrate-from-express.html#create-server
 // todo uncomment this code when all the routes are migrated
@@ -51,6 +52,7 @@ export class RestServer {
         this.server.keepAliveTimeout = 90000;
 
         this.app.use(UserAuthMiddleware);
+        this.app.use("/v1/referral/:participantId", ParticipantClickTracking);
         // Add middlewares here only when all of your legacy routes are migrated to Ts.ED
         //   .use(cookieParser())
         //   .use(compress({}))

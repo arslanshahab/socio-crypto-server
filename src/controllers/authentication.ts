@@ -19,6 +19,7 @@ import {
     USER_NOT_FOUND,
     ACCOUNT_RESTRICTED,
 } from "../util/errors";
+import { UserRewardType } from "../util/constants";
 
 const isSecure = process.env.NODE_ENV === "production";
 
@@ -112,7 +113,7 @@ export const loginUser = async (parent: any, args: { email: string; password: st
         if (!user.active) throw new Error(ACCOUNT_RESTRICTED);
         if (user.password !== createPasswordHash({ email, password })) throw new Error(INCORRECT_PASSWORD);
         await user.updateLastLogin();
-        await user.transferCoiinReward({ type: "LOGIN_REWARD" });
+        await user.transferCoiinReward({ type: UserRewardType.LOGIN_REWARD });
         return { token: createSessionToken(user) };
     } catch (error) {
         return new FormattedError(error);

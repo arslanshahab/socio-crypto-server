@@ -6,6 +6,7 @@ import { Secrets } from "../util/secrets";
 import { Transfer } from "../models/Transfer";
 import { PaymentIntent } from "../types";
 import { performCurrencyAction, updateOrgCampaignsStatusOnDeposit } from "./helpers";
+import { TransferStatus } from "../util/constants";
 
 export const addPaymentMethod = async (parent: any, args: any, context: { user: any }) => {
     const { company } = context.user;
@@ -86,7 +87,7 @@ export const stripeWebhook = asyncHandler(async (req: Request, res: Response) =>
                 console.log("transfer");
                 console.log(transfer);
                 if (!transfer) throw new Error("transfer not found");
-                transfer.status = "SUCCEEDED";
+                transfer.status = TransferStatus.SUCCEEDED;
                 const amountInCoiin = amountInDollars.div(USD_PER_COIIN);
                 console.log("a");
                 console.log(amountInCoiin);
@@ -104,7 +105,7 @@ export const stripeWebhook = asyncHandler(async (req: Request, res: Response) =>
                     relations: ["wallet"],
                 });
                 if (!transfer) throw new Error("transfer not found");
-                transfer.status = "FAILED";
+                transfer.status = TransferStatus.FAILED;
                 await transfer.save();
                 break;
             default:

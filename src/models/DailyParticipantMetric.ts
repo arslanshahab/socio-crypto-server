@@ -95,18 +95,10 @@ export class DailyParticipantMetric extends BaseEntity {
     @UpdateDateColumn()
     public updatedAt: Date;
 
-    @ManyToOne(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => User,
-        (user) => user.dailyMetrics
-    )
+    @ManyToOne((_type) => User, (user) => user.dailyMetrics)
     public user: User;
 
-    @ManyToOne(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => Campaign,
-        (campaign) => campaign.dailyMetrics
-    )
+    @ManyToOne((_type) => Campaign, (campaign) => campaign.dailyMetrics)
     public campaign: Campaign;
 
     public asV1() {
