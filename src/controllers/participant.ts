@@ -30,7 +30,7 @@ import {
     PARTICIPANT_NOT_FOUND,
     USER_NOT_FOUND,
 } from "../util/errors";
-import { DragonchainService } from "../services/DragonchainService";
+import { DragonChainService } from "../services/DragonChainService";
 import { ParticipantAction } from "../util/constants";
 
 const { RATE_LIMIT_MAX = "3", RATE_LIMIT_WINDOW = "1m" } = process.env;
@@ -266,7 +266,7 @@ export const trackClickByLink = asyncHandler(async (req: Request, res: Response)
         const campaign = await Campaign.findOne({ where: { id: participant.campaign.id }, relations: ["org"] });
         if (!campaign) return res.status(404).json({ code: "NOT_FOUND", message: "campaign not found" });
         if (!shouldRateLimit) {
-            const dragonchainService = new DragonchainService();
+            const dragonchainService = new DragonChainService();
             let qualityScore = await QualityScore.findOne({ where: { participantId: participant.id } });
             if (!qualityScore) qualityScore = QualityScore.newQualityScore(participant.id);
             const multiplier = calculateQualityTierMultiplier(qualityScore.clicks);

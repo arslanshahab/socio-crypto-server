@@ -12,7 +12,7 @@ import { QualityScoreService } from "../../services/QualityScoreService";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 import { ParticipantAction } from "../../util/constants";
 import { HourlyCampaignMetricsService } from "../../services/HourlyCampaignMetricsService";
-import { DragonchainService } from "../../services/DragonchainService";
+import { DragonChainService } from "../../services/DragonChainService";
 import { Dragonchain } from "../../clients/dragonchain";
 
 dotenv.config();
@@ -20,7 +20,7 @@ const app = new Application();
 const qualityScoreService = new QualityScoreService();
 const dailyParticipantMetricService = new DailyParticipantMetricService();
 const hourlyCampaignMetricService = new HourlyCampaignMetricsService();
-const dragonchainService = new DragonchainService();
+const dragonChainService = new DragonChainService();
 
 const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: SocialPost) => {
     const participant = await readPrisma.participant.findFirst({
@@ -244,7 +244,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                 console.log("PRISMA PROMISES ----.", prismaTransactions.length);
                 console.log("DRAGONCHAIN TRANSACTIONS ----.", dragonchainTransactionList.length);
                 await prisma.$transaction(prismaTransactions);
-                await dragonchainService.ledgerBulkCampaignAction(dragonchainTransactionList);
+                await dragonChainService.ledgerBulkCampaignAction(dragonchainTransactionList);
             }
         }
     } catch (error) {

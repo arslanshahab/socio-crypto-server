@@ -89,7 +89,7 @@ import { decrypt } from "../../util/crypto";
 import { S3Client } from "../../clients/s3";
 import { VerificationApplicationService } from "../../services/VerificationApplicationService";
 import { Parser } from "json2csv";
-import { DragonchainService } from "../../services/DragonchainService";
+import { DragonChainService } from "../../services/DragonChainService";
 
 const userResultRelations = {
     profile: true,
@@ -204,7 +204,7 @@ export class UserController {
     @Inject()
     private verificationApplicationService: VerificationApplicationService;
     @Inject()
-    private dragonchainService: DragonchainService;
+    private dragonChainService: DragonChainService;
 
     @Get("/")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserResultModel))
@@ -605,7 +605,7 @@ export class UserController {
             type: UserRewardType.SHARING_REWARD,
             campaign: campaign,
         });
-        await this.dragonchainService.ledgerSocialShare({ socialType, participantId, campaignId: campaign.id });
+        await this.dragonChainService.ledgerSocialShare({ socialType, participantId, campaignId: campaign.id });
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 
