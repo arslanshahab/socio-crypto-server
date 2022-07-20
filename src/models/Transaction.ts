@@ -36,7 +36,7 @@ export class Transaction extends BaseEntity {
     @Column({ nullable: true })
     public participantId: string;
 
-    @ManyToOne((_type) => Campaign, (campaign) => campaign.participants, { primary: true, eager: true })
+    @ManyToOne((_type) => Campaign, (campaign) => campaign.participants, { nullable: true })
     public campaign: Campaign;
 
     @CreateDateColumn()
