@@ -5,6 +5,7 @@ import { BN } from "../util/index";
 import { BigNumber } from "bignumber.js";
 import { ParticipantAction } from "../util/constants";
 import { startOfDay } from "date-fns";
+import { AggregatedCampaignMetricType } from "../types";
 
 @Injectable()
 export class DailyParticipantMetricService {
@@ -120,30 +121,6 @@ export class DailyParticipantMetricService {
         });
     }
 
-    public async getAggregatedOrgMetrics(campaignId?: string) {
-        return readPrisma.dailyParticipantMetric.findMany({
-            where: campaignId ? { campaignId } : {},
-            select: {
-                clickCount: true,
-                viewCount: true,
-                shareCount: true,
-                participationScore: true,
-            },
-        });
-    }
-
-    public async getOrgMetrics(campaignId?: string) {
-        return readPrisma.dailyParticipantMetric.findMany({
-            where: campaignId ? { campaignId } : {},
-            select: {
-                clickCount: true,
-                viewCount: true,
-                shareCount: true,
-                participationScore: true,
-            },
-        });
-    }
-
     public async getAccumulatedParticipantMetrics(participantId: string) {
         const participants = await readPrisma.dailyParticipantMetric.findMany({ where: { participantId } });
         const { clickCount, likeCount, shareCount, viewCount, submissionCount, commentCount, participationScore } =
@@ -256,5 +233,38 @@ export class DailyParticipantMetricService {
                 submissionCount,
             },
         });
+    }
+    public async getAggregatedOrgMetrics(orgId: string) {
+        const result: AggregatedCampaignMetricType[] =
+            await prisma.$queryRaw`SELECT sum(cast(d."clickCount" as int)) as "clickCount", sum(cast(d."viewCount" as int))
+         as "viewCount", sum(cast(d."shareCount" as int)) as "shareCount", sum(cast(d."participationScore" as float)) as "participationScore" 
+         FROM daily_participant_metric as d inner join campaign as c on d."campaignId"=c.id inner join org as o on c."orgId"=o.id where
+        o.id=${orgId} group by o.id`;
+        return result;
+    }
+
+    public async getOrgMetrics(orgId: string) {
+        const result: AggregatedCampaignMetricType[] =
+            await prisma.$queryRaw`SELECT sum(cast(d."clickCount" as int)) as "clickCount", sum(cast(d."viewCount" as int))
+         as "viewCount", sum(cast(d."shareCount" as int)) as "shareCount", sum(cast(d."participationScore" as float)) as "participationScore" 
+         FROM daily_participant_metric as d inner join campaign as c on d."campaignId"=c.id inner join org as o on c."orgId"=o.id where
+        o.id=${orgId} group by c.id`;
+        return result;
+    }
+
+    public async getAggregatedCampaignMetrics(campaignId: string) {
+        const result: AggregatedCampaignMetricType[] =
+            await prisma.$queryRaw`SELECT c.name, sum(cast(d."clickCount" as int)) as "clickCount", sum(cast(d."viewCount" as int))
+         as "viewCount", sum(cast(d."shareCount" as int)) as "shareCount", sum(cast(d."participationScore" as float)) as "participationScore" 
+         FROM daily_participant_metric as d inner join campaign as c on d."campaignId"=c.id where d."campaignId"=${campaignId} group by c.id`;
+        return result;
+    }
+
+    public async getCampaignMetrics(campaignId: string) {
+        const result: AggregatedCampaignMetricType[] =
+            await prisma.$queryRaw`SELECT  sum(cast(d."clickCount" as int)) as "clickCount", sum(cast(d."viewCount" as int))
+         as "viewCount", sum(cast(d."shareCount" as int)) as "shareCount", sum(cast(d."participationScore" as float)) as "participationScore" 
+         FROM daily_participant_metric as d where d."campaignId"=${campaignId} group by d.id`;
+        return result;
     }
 }
