@@ -254,9 +254,9 @@ export class DailyParticipantMetricService {
 
     public async getAggregatedCampaignMetrics(campaignId: string) {
         const result: AggregatedCampaignMetricType[] =
-            await prisma.$queryRaw`SELECT c.name, sum(cast(d."clickCount" as int)) as "clickCount", sum(cast(d."viewCount" as int))
-         as "viewCount", sum(cast(d."shareCount" as int)) as "shareCount", sum(cast(d."participationScore" as float)) as "participationScore" 
-         FROM daily_participant_metric as d inner join campaign as c on d."campaignId"=c.id where d."campaignId"=${campaignId} group by c.id`;
+            await prisma.$queryRaw`SELECT c.name, COALESCE(sum(cast(d."clickCount" as int)),0) as "clickCount", COALESCE(sum(cast(d."viewCount" as int)),0) as "viewCount", 
+            COALESCE(sum(cast(d."shareCount" as int)),0) as "shareCount", COALESCE(sum(cast(d."participationScore" as float)),0) as "participationScore" FROM
+            daily_participant_metric as d right join campaign as c on d."campaignId"=c.id where c.id=${campaignId} group by c.id;`;
         return result;
     }
 
