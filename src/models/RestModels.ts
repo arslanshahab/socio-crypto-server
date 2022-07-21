@@ -527,8 +527,8 @@ export class CampaignStatsResultModel {
 }
 
 export class CampaignStatsResultModelArray {
-    @Property() public readonly aggregaredMetrics: AggregaredMetrics;
-    @Property() public readonly calculateCampaignMetrics: CampaignStatsResultModel[];
+    @Property() public readonly aggregatedMetrics: AggregaredMetrics;
+    @Property() public readonly rawMetrics: CampaignStatsResultModel[];
 }
 
 export class OrgEmployeesResultModel {
