@@ -184,7 +184,8 @@ export class AuthenticationController {
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 
-    @Put("/forgot-admin-password")
+    // For admin-panel
+    @Put("/reset-password")
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async forgetAdminPassword(@BodyParams() body: ForgetAdminPasswordParams) {
         const { email, password } = body;
