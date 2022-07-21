@@ -122,26 +122,6 @@ export class TransferService {
         });
     }
 
-    public async getCoiinRecord() {
-        return readPrisma.$transaction([
-            readPrisma.transfer.findMany({
-                where: { OR: [{ action: "WITHDRAW" }, { action: "XOXODAY_REDEMPTION" }] },
-            }),
-            readPrisma.transfer.findMany({
-                where: {
-                    OR: [
-                        { action: "LOGIN_REWARD" },
-                        { action: "REGISTRATION_REWARD" },
-                        { action: "PARTICIPATION_REWARD" },
-                        { action: "SHARING_REWARD" },
-                        { action: "CAMPAIGN_REWARD" },
-                        { action: "NETWORK_REWARD" },
-                    ],
-                },
-            }),
-        ]);
-    }
-
     public async getWithdrawalsByStatus(status: TransferStatus) {
         return readPrisma.transfer.findMany({
             where: { status, action: "withdraw" },
@@ -296,5 +276,18 @@ export class TransferService {
 
     public async findTransferByCampaignIdAndAction(campaignId: string, action: TransferAction) {
         return readPrisma.transfer.findMany({ where: { campaignId, action } });
+    }
+
+    public async getRedeemedAmount() {
+        const result: { amount: number }[] =
+            await readPrisma.$queryRaw`SELECT SUM(CAST(amount as float)) as amount FROM transfer WHERE action = 'WITHDRAW' OR action = 'XOXODAY_REDEMPTION'`;
+        return result;
+    }
+
+    public async getDistributedAmount() {
+        const result: { amount: number }[] =
+            await readPrisma.$queryRaw`SELECT SUM(CAST(amount as float)) as amount FROM transfer WHERE action = 'LOGIN_REWARD' OR 
+        action = 'REGISTRATION_REWARD' OR action = 'PARTICIPATION_REWARD' OR action = 'SHARING_REWARD' OR action = 'CAMPAIGN_REWARD' OR action = 'NETWORK_REWARD'`;
+        return result;
     }
 }

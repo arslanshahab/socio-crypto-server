@@ -539,6 +539,7 @@ export class CampaignController {
         return new SuccessResult(report, GenerateCampaignAuditReportResultModel);
     }
 
+    // For admin panel
     @Get("/dashboard-metrics/:campaignId")
     @(Returns(200, SuccessResult).Of(CampaignStatsResultModelArray))
     public async getDashboardMetrics(@PathParams() query: CampaignIdModel, @Context() context: Context) {
