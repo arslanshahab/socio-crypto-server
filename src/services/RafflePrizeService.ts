@@ -5,15 +5,14 @@ import { prisma, readPrisma } from "../clients/prisma";
 @Injectable()
 export class RafflePrizeService {
     public async createRafflePrize(campaign: Campaign, prize: RafflePrize) {
-        const response = await prisma.rafflePrize.create({
+        return await prisma.rafflePrize.create({
             data: {
                 campaignId: campaign.id,
                 displayName: prize.displayName,
-                affiliateLink: prize.affiliateLink,
-                image: prize.image,
+                affiliateLink: prize.affiliateLink && prize.affiliateLink,
+                image: prize.image && prize.image,
             },
         });
-        return response;
     }
 
     public async findRafflePrizeByCampaignId(campaignId: string) {

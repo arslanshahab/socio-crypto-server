@@ -15,12 +15,11 @@ import { Wallet } from "./Wallet";
 import { Campaign } from "./Campaign";
 import { BN, getCryptoAssestImageUrl } from "../util";
 import { BigNumberEntityTransformer } from "../util/transformers";
-import { TransferAction, TransferStatus, TransferType } from "../types";
 import { Org } from "./Org";
 import { RafflePrize } from "./RafflePrize";
 import { performCurrencyTransfer } from "../controllers/helpers";
 import { startOfISOWeek, endOfISOWeek, startOfWeek, startOfDay, subHours } from "date-fns";
-import { RAIINMAKER_ORG_NAME, COIIN } from "../util/constants";
+import { RAIINMAKER_ORG_NAME, COIIN, TransferAction, TransferStatus, TransferType } from "../util/constants";
 
 @Entity()
 export class Transfer extends BaseEntity {
@@ -157,7 +156,7 @@ export class Transfer extends BaseEntity {
         const org = await Org.findOne({ where: { name: RAIINMAKER_ORG_NAME }, relations: ["wallet"] });
         if (!org) throw new Error("raiinmaker org not found for payout");
         const transfer = new Transfer();
-        transfer.action = "FEE";
+        transfer.action = TransferAction.FEE;
         transfer.campaign = campaign;
         transfer.amount = amount;
         transfer.wallet = org.wallet;
@@ -224,7 +223,7 @@ export class Transfer extends BaseEntity {
 
     public static newFromWalletPayout(wallet: Wallet, campaign: Campaign, amount: BigNumber): Transfer {
         const transfer = new Transfer();
-        transfer.action = "TRANSFER";
+        transfer.action = TransferAction.TRANSFER;
         transfer.campaign = campaign;
         transfer.amount = amount;
         transfer.wallet = wallet;
@@ -233,7 +232,7 @@ export class Transfer extends BaseEntity {
 
     public static newFromCampaignPayout(wallet: Wallet, campaign: Campaign, amount: BigNumber): Transfer {
         const transfer = new Transfer();
-        transfer.action = "TRANSFER";
+        transfer.action = TransferAction.TRANSFER;
         transfer.campaign = campaign;
         transfer.amount = amount;
         transfer.wallet = wallet;
@@ -244,7 +243,7 @@ export class Transfer extends BaseEntity {
 
     public static newFromCampaignPayoutRefund(wallet: Wallet, campaign: Campaign, amount: BigNumber): Transfer {
         const transfer = new Transfer();
-        transfer.action = "REFUND";
+        transfer.action = TransferAction.REFUND;
         transfer.campaign = campaign;
         transfer.amount = amount;
         transfer.wallet = wallet;
@@ -261,9 +260,9 @@ export class Transfer extends BaseEntity {
     ): Transfer {
         const transfer = new Transfer();
         transfer.amount = amount;
-        transfer.action = "WITHDRAW";
+        transfer.action = TransferAction.WITHDRAW;
         transfer.wallet = wallet;
-        transfer.status = "PENDING";
+        transfer.status = TransferStatus.PENDING;
         transfer.currency = currency;
         transfer.usdAmount = currencyPrice;
         if (ethAddress) transfer.ethAddress = ethAddress;
@@ -282,9 +281,9 @@ export class Transfer extends BaseEntity {
         transfer.wallet = wallet;
         transfer.org = org;
         transfer.amount = amount;
-        transfer.status = "PENDING";
+        transfer.status = TransferStatus.PENDING;
         transfer.currency = "usd";
-        transfer.action = "DEPOSIT";
+        transfer.action = TransferAction.DEPOSIT;
         if (stripeCardId) transfer.stripeCardId = stripeCardId;
         if (paypalAddress) transfer.paypalAddress = paypalAddress;
         return transfer;
@@ -293,7 +292,7 @@ export class Transfer extends BaseEntity {
     public static newFromDeposit(wallet: Wallet, amount: BigNumber, ethAddress: string, transactionHash: string) {
         const transfer = new Transfer();
         transfer.amount = amount;
-        transfer.action = "DEPOSIT";
+        transfer.action = TransferAction.DEPOSIT;
         transfer.ethAddress = ethAddress;
         transfer.transactionHash = transactionHash;
         transfer.wallet = wallet as Wallet;
@@ -303,7 +302,7 @@ export class Transfer extends BaseEntity {
     public static newFromRaffleSelection(wallet: Wallet, campaign: Campaign, prize: RafflePrize) {
         const transfer = new Transfer();
         transfer.amount = new BN(0);
-        transfer.action = "PRIZE";
+        transfer.action = TransferAction.PRIZE;
         transfer.wallet = wallet;
         transfer.campaign = campaign;
         transfer.rafflePrize = prize;

@@ -1,25 +1,22 @@
-import { Inject, Injectable } from "@tsed/di";
-import { PrismaService } from ".prisma/client/entities";
+import { Injectable } from "@tsed/di";
 import { SymbolNetworkParams } from "../types";
+import { readPrisma } from "../clients/prisma";
 
 @Injectable()
 export class TokenService {
-    @Inject()
-    private prismaService: PrismaService;
-
     public async findToken(data: SymbolNetworkParams) {
-        return await this.prismaService.token.findFirst({
+        return await readPrisma.token.findFirst({
             where: { symbol: data.symbol.toUpperCase(), network: data.network.toUpperCase(), enabled: true },
         });
     }
 
     public async findTokenBySymbol(data: SymbolNetworkParams) {
-        return this.prismaService.token.findFirst({
+        return readPrisma.token.findFirst({
             where: { symbol: data.symbol.toUpperCase(), network: data.network.toUpperCase() },
         });
     }
 
     public async getEnabledTokens() {
-        return this.prismaService.token.findMany({ where: { enabled: true } });
+        return readPrisma.token.findMany({ where: { enabled: true } });
     }
 }

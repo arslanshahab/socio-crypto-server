@@ -1,7 +1,7 @@
 import express, { Request } from "express";
 import { BigNumber } from "bignumber.js";
 import { Stripe } from "stripe";
-import { CampaignState, CampaignStatus } from "./util/constants";
+import { CampaignState, CampaignStatus, ParticipantAction, SocialClientType, TransactionType } from "./util/constants";
 import {
     CampaignMedia,
     CampaignTemplate,
@@ -10,7 +10,6 @@ import {
     Token as PrismaToken,
     Wallet,
 } from "@prisma/client";
-import { Currency } from "./models/Currency";
 import { Token } from "./models/Token";
 
 interface JWTPayload {
@@ -28,7 +27,6 @@ export interface SymbolNetworkParams {
 }
 
 export type CustodialAddressChain = "ETH" | "MATIC" | "BSC" | "ONE" | "XDC";
-export type RewardType = "LOGIN_REWARD" | "PARTICIPATION_REWARD" | "REGISTRATION_REWARD" | "SHARING_REWARD";
 
 export interface NewCampaignVariables {
     id?: string;
@@ -534,36 +532,6 @@ export interface CampaignRequirementTypes {
     };
 }
 
-export interface CampaignCreateTypes {
-    id: string;
-    name: string;
-    beginDate: Date;
-    endDate: Date;
-    coiinTotal: string;
-    target: string;
-    description: string;
-    instructions: string;
-    algorithm: AlgorithmJsonValueType;
-    targetVideo: string;
-    imagePath: string;
-    tagline: string;
-    requirements: CampaignRequirementTypes;
-    suggestedPosts: string[];
-    suggestedTags: string[];
-    keywords: string[];
-    type: string;
-    raffle_prize: RafflePrize;
-    symbol: string;
-    network: string;
-    campaignType: string;
-    socialMediaType: string[];
-    campaignMedia: CampaignMedia[];
-    campaignTemplates: CampaignTemplate[];
-    isGlobal: boolean;
-    showUrl: boolean;
-    company: string;
-}
-
 export interface CurrencyResultType {
     id: string;
     tatumId: string;
@@ -641,4 +609,18 @@ export interface AdminTypes {
     firebaseId: string;
     orgId: string;
     name: string;
+}
+
+export interface DragonchainCampaignActionLedgerPayload {
+    action: ParticipantAction;
+    participantId: string;
+    campaignId: string;
+    socialType?: SocialClientType;
+    payload: any;
+}
+
+export interface DragonchainCampaignPayoutLedgerPayload {
+    participantId?: string;
+    campaignId: string;
+    payload: any;
 }

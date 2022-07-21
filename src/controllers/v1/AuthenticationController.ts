@@ -31,7 +31,7 @@ import { createPasswordHash, createSessionTokenV2 } from "../../util";
 import { ProfileService } from "../../services/ProfileService";
 import { VerificationService } from "../../services/VerificationService";
 import { JWTPayload } from "../../types";
-import { VerificationType } from "../../util/constants";
+import { UserRewardType, VerificationType } from "../../util/constants";
 import { SesClient } from "../../clients/ses";
 import { Firebase } from "../../clients/firebase";
 
@@ -91,7 +91,7 @@ export class AuthenticationController {
         if (!user.active) throw new BadRequest(ACCOUNT_RESTRICTED);
         if (user.password !== createPasswordHash({ email, password })) throw new Error(INCORRECT_PASSWORD);
         await this.userService.updateLastLogin(user.id);
-        await this.userService.transferCoiinReward({ user, type: "LOGIN_REWARD" });
+        await this.userService.transferCoiinReward({ user, type: UserRewardType.LOGIN_REWARD });
         return new SuccessResult({ token: createSessionTokenV2(user) }, UserTokenReturnModel);
     }
 

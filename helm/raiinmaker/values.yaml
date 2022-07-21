@@ -26,7 +26,7 @@ cron:
         social: "0 */2 * * *" # At minute 0 every 2 hours
         daily: "0 0 * * *" # At minute 0 every day
         # coiinWatcher: "*/5 * * * *" # At every 5 minutes
-        qualityScore: "0 */4 * * *" # At minute 0 every hour
+        qualityScore: "0 */3 * * *" # At minute 0 every hour
         campaignAudit: "0 * * * *" # At every hour
         fixTransfer: "0 */6 * * *" # At every 6 hour
         marketData: "*/15 * * * *" # At every 15 minutes

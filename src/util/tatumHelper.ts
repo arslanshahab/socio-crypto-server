@@ -25,6 +25,9 @@ import {
     BTC,
     DOGE,
     USER_WITHDRAW_FEE,
+    TransferAction,
+    TransferStatus,
+    TransferType,
 } from "./constants";
 
 export const offchainEstimateFee = async (data: WithdrawPayload): Promise<number> => {
@@ -98,11 +101,11 @@ export const transferFundsToRaiinmaker = async (data: { currency: Currency; amou
         symbol: data.currency.token.symbol,
         network: data.currency.token.network,
         amount: new BN(data.amount),
-        action: "FEE",
+        action: TransferAction.FEE,
         wallet: raiinmakerCurrency.wallet,
         tatumId: raiinmakerCurrency.tatumId,
-        status: "SUCCEEDED",
-        type: "CREDIT",
+        status: TransferStatus.SUCCEEDED,
+        type: TransferType.CREDIT,
     });
     newTransfer.save();
 };
