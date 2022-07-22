@@ -164,16 +164,4 @@ export class SesClient {
             throw new Error(error.message);
         }
     }
-
-    public static async restAdminPasswordEmail(emailAddress: string) {
-        const title = `Admin Reset Password`;
-        const text = "Your Password Reset Successfully";
-        const template = SesClient.getTemplate(title, text, "Password Reset Request", emailAddress);
-        try {
-            await SesClient.client.sendEmail(template).promise();
-            return true;
-        } catch (error) {
-            throw new Error(error.message);
-        }
-    }
 }
