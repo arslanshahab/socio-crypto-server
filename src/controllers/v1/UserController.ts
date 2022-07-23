@@ -428,17 +428,21 @@ export class UserController {
         );
     }
 
+    // For admin panel
     @Get("/user-stats")
     @(Returns(200, SuccessResult).Of(DashboardStatsResultModel))
     public async getDashboardStats(@Context() context: Context) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const [totalUsers, lastWeekUsers, bannedUsers] = await this.userService.getUserCount();
-        const [redeemTransactions, distributedTransactions] = await this.transferService.getCoiinRecord();
-        let redeemedTotalAmount = redeemTransactions.reduce((acc, cur) => acc + parseFloat(cur.amount), 0);
-        let distributedTotalAmount = distributedTransactions.reduce((acc, cur) => acc + parseFloat(cur.amount), 0);
-        redeemedTotalAmount = parseFloat(redeemedTotalAmount.toFixed(2));
-        distributedTotalAmount = parseFloat(distributedTotalAmount.toFixed(2));
-        const result = { totalUsers, lastWeekUsers, bannedUsers, distributedTotalAmount, redeemedTotalAmount };
+        const [redeemedTotalAmount] = await this.transferService.getRedeemedAmount();
+        const [distributedTotalAmount] = await this.transferService.getDistributedAmount();
+        const result = {
+            totalUsers,
+            lastWeekUsers,
+            bannedUsers,
+            distributedTotalAmount: parseFloat(distributedTotalAmount.amount.toFixed(2)),
+            redeemedTotalAmount: parseFloat(redeemedTotalAmount.amount.toFixed(2)),
+        };
         return new SuccessResult(result, DashboardStatsResultModel);
     }
 

@@ -618,3 +618,11 @@ export interface DragonchainCampaignPayoutLedgerPayload {
     campaignId: string;
     payload: any;
 }
+
+export type AggregatedCampaignMetricType = {
+    clickCount: number;
+    viewCount: number;
+    shareCount: number;
+    participationScore: number;
+    name?: string;
+};
