@@ -30,8 +30,9 @@ export class ParticipantClickTracking {
     public async use(@Req() req: Req, @Res() res: Res, @Context() ctx: Context) {
         const { participantId } = req.params;
         const action = ParticipantAction.CLICKS;
-        const ipAddress = req.connection.remoteAddress || req.socket.remoteAddress;
-        const shouldRateLimit = await limit(`${ipAddress}-${participantId}-click`, Number(RATE_LIMIT_MAX), "minute");
+        const ipAddress = req.socket.remoteAddress;
+        console.log(ipAddress);
+        const shouldRateLimit = await limit(`${ipAddress}-${participantId}-click`, Number(RATE_LIMIT_MAX), "hour");
         if (!participantId)
             return res.status(400).json({ code: "MALFORMED_INPUT", message: "missing participant ID in request" });
         let participant;

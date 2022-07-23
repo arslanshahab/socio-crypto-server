@@ -15,21 +15,20 @@ export class UserAuthMiddleware {
     private userService: UserService;
 
     public async use(@Req() req: Req, @Context() ctx: Context) {
-        // ADMIN authorization
-        // check if the cookie has session value
+        const isPublicRoute =
+            ctx.request.url.startsWith("/v1/docs/") ||
+            ctx.request.url.startsWith("/v1/auth/") ||
+            ctx.request.url.startsWith("/v1/referral/");
+
         const adminToken = req.headers.cookie?.split("session=")[1];
-        if (adminToken) {
+
+        if (adminToken && !isPublicRoute) {
             const admin = await getActiveAdmin(adminToken);
             ctx.set("user", admin);
             return;
         }
 
-        if (
-            ctx.has("user") ||
-            ctx.request.url.startsWith("/v1/docs/") ||
-            ctx.request.url.startsWith("/v1/auth/") ||
-            ctx.request.url.startsWith("/v1/referral/")
-        ) {
+        if (ctx.has("user") || isPublicRoute) {
             return;
         }
 
