@@ -18,7 +18,7 @@ export class DragonChainService {
                 tag,
                 payload: { action, participantId, campaignId },
             });
-            if (!res.ok) throw new Error("Failed to ledger action to the Dragonchain");
+            if (!res.ok) throw new Error(JSON.stringify(res));
             const txId = res.response.transaction_id;
             await prisma.transaction.create({
                 data: {
@@ -47,7 +47,7 @@ export class DragonChainService {
                 tag,
                 payload: { participantId, socialType },
             });
-            if (!res.ok) throw new Error("Failed to ledger action to the Dragonchain");
+            if (!res.ok) throw new Error(JSON.stringify(res));
             const txId = res.response.transaction_id;
             await prisma.transaction.create({
                 data: {
@@ -76,7 +76,7 @@ export class DragonChainService {
                 tag,
                 payload: { ...payload, campaignId },
             });
-            if (!res.ok) throw new Error("Failed to ledger campaign audit to the Dragonchain");
+            if (!res.ok) throw new Error(JSON.stringify(res));
             const txId = res.response.transaction_id;
             await prisma.transaction.create({
                 data: {
@@ -108,7 +108,7 @@ export class DragonChainService {
                 tag,
                 payload: { identityId, accountId, username, recoveryCode, successful },
             });
-            if (!res.ok) throw new Error("Failed to ledger account recovery to the Dragonchain");
+            if (!res.ok) throw new Error(JSON.stringify(res));
             return res.response.transaction_id;
         } catch (error) {
             console.log(error);
@@ -130,7 +130,7 @@ export class DragonChainService {
                 });
             }
             const res = await Dragonchain.client.createBulkTransaction({ transactionList: bulkPayload });
-            if (!res.ok) throw new Error("Failed to ledger bulk campaign actions to the Dragonchain");
+            if (!res.ok) throw new Error(JSON.stringify(res));
             const success = res.response[201];
             const failed = res.response[400];
             for (let index = 0; index < bulkPayload.length; index++) {
@@ -175,7 +175,7 @@ export class DragonChainService {
                 });
             }
             const res = await Dragonchain.client.createBulkTransaction({ transactionList: bulkPayload });
-            if (!res.ok) throw new Error("Failed to ledger bulk campaign payouts to the Dragonchain");
+            if (!res.ok) throw new Error(JSON.stringify(res));
             const success = res.response[201];
             const failed = res.response[400];
             for (let index = 0; index < bulkPayload.length; index++) {
