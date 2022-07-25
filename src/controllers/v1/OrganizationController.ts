@@ -64,7 +64,6 @@ export class OrganizationController {
     @Post("/new-user")
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async newUser(@BodyParams() body: NewUserParams, @Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const { company } = this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const { email, name, role } = body;
         const password = Math.random().toString(16).substr(2, 15);
