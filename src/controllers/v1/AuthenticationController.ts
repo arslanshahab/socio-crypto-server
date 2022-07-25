@@ -196,4 +196,18 @@ export class AuthenticationController {
         await Firebase.updateUserPassword(user.uid, password);
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
+
+    //For admin-panel
+    @Post("/start-admin-verification")
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
+    public async startAdminVerification(@BodyParams() body: StartVerificationParams) {
+        const { email, type } = body;
+        if (!email || !type) throw new BadRequest(MISSING_PARAMS);
+        const verificationData = await this.verificationService.generateVerification({ email, type });
+        await SesClient.emailAddressVerificationEmail(
+            email,
+            this.verificationService.getDecryptedCode(verificationData.code)
+        );
+        return new SuccessResult({ success: true }, BooleanResultModel);
+    }
 }
