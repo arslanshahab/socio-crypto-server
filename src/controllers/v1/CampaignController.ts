@@ -551,6 +551,9 @@ export class CampaignController {
         let totalParticipants;
         if (campaignId === "-1") {
             [aggregatedMetrics] = await this.dailyParticipantMetricService.getAggregatedOrgMetrics(admin.orgId!);
+            if (!aggregatedMetrics) {
+                aggregatedMetrics = { clickCount: 0, viewCount: 0, shareCount: 0, participationScore: 0 };
+            }
             aggregatedMetrics = {
                 ...aggregatedMetrics,
                 participationScore: Math.round(aggregatedMetrics.participationScore),
