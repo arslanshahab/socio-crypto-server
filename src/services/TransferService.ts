@@ -280,13 +280,13 @@ export class TransferService {
 
     public async getRedeemedAmount() {
         const result: { amount: number }[] =
-            await readPrisma.$queryRaw`SELECT SUM(CAST(amount as float)) as amount FROM transfer WHERE action = 'WITHDRAW' OR action = 'XOXODAY_REDEMPTION'`;
+            await readPrisma.$queryRaw`SELECT COALESCE(SUM(CAST(amount as float)),0) as amount FROM transfer WHERE action = 'WITHDRAW' OR action = 'XOXODAY_REDEMPTION'`;
         return result;
     }
 
     public async getDistributedAmount() {
         const result: { amount: number }[] =
-            await readPrisma.$queryRaw`SELECT SUM(CAST(amount as float)) as amount FROM transfer WHERE action = 'LOGIN_REWARD' OR 
+            await readPrisma.$queryRaw`SELECT COALESCE(SUM(CAST(amount as float)),0) as amount FROM transfer WHERE action = 'LOGIN_REWARD' OR 
         action = 'REGISTRATION_REWARD' OR action = 'PARTICIPATION_REWARD' OR action = 'SHARING_REWARD' OR action = 'CAMPAIGN_REWARD' OR action = 'NETWORK_REWARD'`;
         return result;
     }
