@@ -605,6 +605,12 @@ export interface WalletKeys {
     mnemonic?: string;
 }
 
+export interface AdminTypes {
+    firebaseId: string;
+    orgId: string;
+    name: string;
+}
+
 export interface DragonchainCampaignActionLedgerPayload {
     action: ParticipantAction;
     participantId: string;
