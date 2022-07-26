@@ -1,4 +1,4 @@
-import { BodyParams, Context } from "@tsed/common";
+import { BodyParams, Context, PathParams } from "@tsed/common";
 import { Controller, Inject } from "@tsed/di";
 import { NotFound } from "@tsed/exceptions";
 import { Get, Post, Required, Returns } from "@tsed/schema";
@@ -17,7 +17,7 @@ class NewUserParams {
     @Required() public readonly role: string;
 }
 class DeleteUserParams {
-    @Required() public readonly firebaseId: string;
+    @Required() public readonly adminId: string;
 }
 
 @Controller("/organization")
@@ -39,7 +39,9 @@ export class OrganizationController {
         const orgName = org?.name;
         const adminsDetails = await admins.map((admin) => {
             return {
+                id: admin.id,
                 name: admin.name,
+                firebaseId: admin.firebaseId,
                 createdAt: admin.createdAt,
             };
         });
@@ -80,16 +82,16 @@ export class OrganizationController {
     }
 
     //For admin panel
-    @Post("/delete-user")
+    @Post("/delete-user/:adminId")
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
-    public async deleteUser(@BodyParams() body: DeleteUserParams, @Context() context: Context) {
-        const { firebaseId } = body;
+    public async deleteUser(@PathParams() path: DeleteUserParams, @Context() context: Context) {
+        const { adminId } = path;
         const { company } = this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const org = await this.organizationService.findOrganizationByCompanyName(company!);
         if (!org) throw new NotFound(ORG_NOT_FOUND);
-        const admin = await this.adminService.findAdminByFirebaseId(firebaseId);
+        const admin = await this.adminService.findAdminById(adminId);
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
-        await Firebase.deleteUser(firebaseId);
+        await Firebase.deleteUser(admin.firebaseId);
         await this.adminService.deleteAdmin(admin.id);
         return new SuccessResult({ success: true }, BooleanResultModel);
     }

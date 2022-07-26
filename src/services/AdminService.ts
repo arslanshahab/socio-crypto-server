@@ -46,4 +46,8 @@ export class AdminService {
             },
         });
     }
+
+    public async findAdminById(adminId: string) {
+        return await readPrisma.admin.findFirst({ where: { id: adminId } });
+    }
 }
