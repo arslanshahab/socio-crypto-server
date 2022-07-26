@@ -38,4 +38,12 @@ export class AdminService {
             },
         });
     }
+
+    public async deleteAdmin(adminId: string) {
+        return await prisma.admin.delete({
+            where: {
+                id: adminId,
+            },
+        });
+    }
 }
