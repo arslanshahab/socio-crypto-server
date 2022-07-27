@@ -627,8 +627,8 @@ export class TatumClient {
             let newDepositAddress;
             if (!ledgerAccount) {
                 const newLedgerAccount = await TatumClient.createLedgerAccount({ ...data, isCustodial });
-                if (isCustodial) {
-                    if (foundWallet?.org) {
+                if (foundWallet?.org) {
+                    if (isCustodial) {
                         const availableAddress = await CustodialAddress.getAvailableAddress({ ...data, wallet });
                         if (!availableAddress) throw new Error("No custodial address available.");
                         await TatumClient.assignAddressToAccount({
@@ -636,9 +636,9 @@ export class TatumClient {
                             address: availableAddress.address,
                         });
                         newDepositAddress = availableAddress;
+                    } else {
+                        newDepositAddress = await TatumClient.generateDepositAddress(newLedgerAccount.id);
                     }
-                } else {
-                    newDepositAddress = await TatumClient.generateDepositAddress(newLedgerAccount.id);
                 }
                 ledgerAccount = await Currency.addAccount({
                     ...newLedgerAccount,
