@@ -22,6 +22,7 @@ import {
     sendXrpOffchainTransaction,
     storeTransaction,
     Currency as TatumCurrency,
+    removeDepositAddress,
 } from "@tatumio/tatum";
 import {
     CUSTODIAL_NETWORKS,
@@ -125,15 +126,20 @@ export class TatumService {
     }
 
     // Create ledger account
-    public async createLedgerAccount(data: { symbol: string; network: string; isCustodial: boolean }) {
+    public async createLedgerAccount(data: {
+        symbol: string;
+        network: string;
+        isCustodial: boolean;
+        isOrgWallet: boolean;
+    }) {
         try {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
-            let { symbol, isCustodial } = data;
+            let { symbol, isCustodial, isOrgWallet } = data;
             const wallet = await this.getWallet({ symbol: data.symbol, network: data.network });
             symbol = getCurrencyForTatum(data);
             return await createAccount({
                 currency: symbol,
-                ...(!isCustodial && { xpub: wallet?.xpub || wallet?.address }),
+                ...(!isCustodial && isOrgWallet && { xpub: wallet?.xpub || wallet?.address }),
             });
         } catch (error) {
             console.log(error?.response?.data || error.message);
@@ -235,12 +241,13 @@ export class TatumService {
         const foundWallet = await this.walletService.findWalletById(data.wallet.id);
         if (!foundWallet) throw new NotFound("Wallet not found");
         const isCustodial = this.isCustodialWallet(data);
+        const isOrgWallet = Boolean(await this.walletService.ifWalletBelongsToOrg(foundWallet.id));
         let ledgerAccount = await this.currenyService.findLedgerAccount(data.wallet.id, token.id);
         let newDepositAddress;
         if (!ledgerAccount) {
-            const newLedgerAccount = await this.createLedgerAccount({ ...data, isCustodial });
-            if (isCustodial) {
-                if (await this.walletService.ifWalletBelongsToOrg(foundWallet.id)) {
+            const newLedgerAccount = await this.createLedgerAccount({ ...data, isCustodial, isOrgWallet });
+            if (isOrgWallet) {
+                if (isCustodial) {
                     const availableAddress = await this.getAvailableAddress(data);
                     if (!availableAddress) throw new NotFound("No custodial address available.");
                     await this.assignAddressToAccount({
@@ -248,9 +255,9 @@ export class TatumService {
                         address: availableAddress.address,
                     });
                     newDepositAddress = availableAddress;
+                } else {
+                    newDepositAddress = await this.generateDepositAddress(newLedgerAccount.id);
                 }
-            } else {
-                newDepositAddress = await this.generateDepositAddress(newLedgerAccount.id);
             }
             ledgerAccount = await this.currenyService.addNewAccount({
                 ...newLedgerAccount,
@@ -592,6 +599,16 @@ export class TatumService {
                 return await this.estimateCustodialWithdrawFee(data);
             default:
                 throw new Error("There was an error calculating withdraw fee.");
+        }
+    }
+
+    public async removeAddressFromAccount(data: { accountId: string; address: string }) {
+        try {
+            process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
+            return await removeDepositAddress(data.accountId, data.address);
+        } catch (error) {
+            console.log(error?.response?.data || error.message);
+            throw new Error(error?.response?.data?.message || error.message);
         }
     }
 }
