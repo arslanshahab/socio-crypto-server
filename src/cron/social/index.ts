@@ -154,7 +154,6 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                         if (twitterResp.status === "fulfilled" && twitterResp.value) {
                             // console.log("preparing and updating social score.");
                             const responseJSON = JSON.parse(twitterResp.value);
-                            console.log(responseJSON);
                             const updatedPost = await updatePostMetrics(
                                 new BN(responseJSON["favorite_count"]),
                                 new BN(responseJSON["retweet_count"]),
