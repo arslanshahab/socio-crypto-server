@@ -6,7 +6,7 @@ import { prisma, readPrisma } from "../clients/prisma";
 
 @Injectable()
 export class SocialLinkService {
-    public async findSocialLinkByUserAndType(userId: string, type: SocialLinkType) {
+    public async findSocialLinkByUserAndType(userId: string, type: SocialLinkType | string) {
         const socialLink = await readPrisma.socialLink.findFirst({
             where: {
                 userId,
@@ -17,8 +17,8 @@ export class SocialLinkService {
             ...socialLink,
             ...(socialLink?.apiKey &&
                 socialLink.apiSecret && {
-                    apiKey: decrypt(socialLink?.apiKey!),
-                    apiSecret: decrypt(socialLink?.apiSecret!),
+                    apiKey: decrypt(socialLink?.apiKey),
+                    apiSecret: decrypt(socialLink?.apiSecret),
                 }),
         } as SocialLink;
     }

@@ -14,6 +14,7 @@ import { ParticipantAction } from "../../util/constants";
 import { HourlyCampaignMetricsService } from "../../services/HourlyCampaignMetricsService";
 import { DragonChainService } from "../../services/DragonChainService";
 import { Dragonchain } from "../../clients/dragonchain";
+import { SocialLinkService } from "../../services/SocialLinkService";
 
 dotenv.config();
 const app = new Application();
@@ -21,6 +22,7 @@ const qualityScoreService = new QualityScoreService();
 const dailyParticipantMetricService = new DailyParticipantMetricService();
 const hourlyCampaignMetricService = new HourlyCampaignMetricsService();
 const dragonChainService = new DragonChainService();
+const socialLinkService = new SocialLinkService();
 
 const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: SocialPost) => {
     const participant = await readPrisma.participant.findFirst({
@@ -123,9 +125,10 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                 const twitterPosts = [];
                 // const tiktokPosts = [];
                 for (const post of posts) {
-                    const socialLink = await readPrisma.socialLink.findFirst({
-                        where: { userId: post.user.id, type: post.type },
-                    });
+                    // const socialLink = await readPrisma.socialLink.findFirst({
+                    //     where: { userId: post.user.id, type: post.type },
+                    // });
+                    const socialLink = await socialLinkService.findSocialLinkByUserAndType(post.user.id, post.type);
                     if (!socialLink) continue;
                     try {
                         if (socialLink.type === "twitter") {
