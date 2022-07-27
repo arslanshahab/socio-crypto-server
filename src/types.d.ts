@@ -458,7 +458,7 @@ export interface KycApplication {
     billingStreetAddress?: string;
     billingCity?: string;
     billingCountry?: string;
-    billingZip?: number;
+    billingZip?: string;
     zipCode?: string;
     gender?: string;
     dob?: string;
@@ -603,6 +603,12 @@ export interface WalletKeys {
     walletAddress?: string;
     secret?: string;
     mnemonic?: string;
+}
+
+export interface AdminTypes {
+    firebaseId: string;
+    orgId: string;
+    name: string;
 }
 
 export interface DragonchainCampaignActionLedgerPayload {

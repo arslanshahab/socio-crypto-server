@@ -107,14 +107,14 @@ export const USER_NEEDS_TO_PARTICIPATE_IN_CAMPAIGN = "USER_NEEDS_TO_PARTICIPATE_
 export const ALREADY_REDEEMED_IN_24_HOURS = "ALREADY_REDEEMED_IN_24_HOURS";
 
 export const errorMap: { [key: string]: string } = {
-    SOMETHING_WENT_WRONG: "Something went wrong with your request. please try again!",
+    SOMETHING_WENT_WRONG: "Looks like something is wrong, we are working to fix it.",
     NO_TOKEN_PROVIDED: "Access token is missing.",
     MISSING_PARAMS: "Missing required parameters.",
     EMAIL_EXISTS: "A user has already registered with this email.",
     USER_EMAIL_EXISTS: "User has already attached his email address.",
     EMAIL_NOT_VERIFIED: "Provided email isn't verfied by our system.",
-    EMAIL_NOT_EXISTS: "Provided email doesn't exist in our records.",
-    INCORRECT_PASSWORD: "Password is not correct, please try again.",
+    EMAIL_NOT_EXISTS: "The email does not exist in our system.",
+    INCORRECT_PASSWORD: "Your password is incorrect, please reset your password below.",
     USER_NOT_FOUND: "No user found against provided parameters.",
     USERNAME_NOT_EXISTS: "Provided username doesn't exist in our records.",
     INCORRECT_CODE: "Provided code is not correct.",

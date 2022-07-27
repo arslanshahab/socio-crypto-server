@@ -128,6 +128,10 @@ export class Firebase {
         return Firebase.adminClient.auth().setCustomUserClaims(uid, { company: orgName, role, tempPass });
     }
 
+    public static async deleteUser(uid: string) {
+        return Firebase.adminClient.auth().deleteUser(uid);
+    }
+
     public static async createSessionCookie(token: string, expiresIn: number) {
         return Firebase.adminClient.auth().createSessionCookie(token, { expiresIn });
     }
