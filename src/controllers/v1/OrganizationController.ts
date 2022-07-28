@@ -10,7 +10,7 @@ import { SuccessResult, Pagination, SuccessArrayResult } from "../../util/entiti
 import { BooleanResultModel, OrgDetailsModel, OrgEmployeesResultModel } from "../../models/RestModels";
 import { Firebase } from "../../clients/firebase";
 import { SesClient } from "../../clients/ses";
-import { COIIN, RAIINMAKER_ORG_NAME } from "src/util/constants";
+import { COIIN, RAIINMAKER_ORG_NAME } from "../../util/constants";
 import { WalletService } from "../../services/WalletService";
 import { WalletCurrencyService } from "../../services/WalletCurrencyService";
 
