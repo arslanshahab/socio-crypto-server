@@ -7,7 +7,12 @@ import { AdminService } from "../../services/AdminService";
 import { OrganizationService } from "../../services/OrganizationService";
 import { UserService } from "../../services/UserService";
 import { SuccessResult, Pagination, SuccessArrayResult } from "../../util/entities";
-import { BooleanResultModel, OrgDetailsModel, OrgEmployeesResultModel } from "../../models/RestModels";
+import {
+    BooleanResultModel,
+    OrgDetailsModel,
+    OrgEmployeesResultModel,
+    VerifySessionResultModel,
+} from "../../models/RestModels";
 import { Firebase } from "../../clients/firebase";
 import { SesClient } from "../../clients/ses";
 
@@ -94,5 +99,18 @@ export class OrganizationController {
         await Firebase.deleteUser(admin.firebaseId);
         await this.adminService.deleteAdmin(admin.id);
         return new SuccessResult({ success: true }, BooleanResultModel);
+    }
+
+    // For admin panel
+    @Get("/verify-session")
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
+    public async getUserRole(@Context() context: Context) {
+        context = context.get("user");
+        const result = {
+            role: context.role ? context.role : null,
+            company: context.company ? context.company : null,
+            tempPass: context.tempPass ? context.tempPass : null,
+        };
+        return new SuccessResult(result, VerifySessionResultModel);
     }
 }
