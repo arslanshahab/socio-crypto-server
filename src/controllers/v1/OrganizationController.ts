@@ -1,8 +1,8 @@
 import { BodyParams, Context, PathParams } from "@tsed/common";
 import { Controller, Inject } from "@tsed/di";
-import { NotFound } from "@tsed/exceptions";
+import { BadRequest, NotFound } from "@tsed/exceptions";
 import { Get, Post, Required, Returns } from "@tsed/schema";
-import { ADMIN_NOT_FOUND, ORG_NOT_FOUND } from "../../util/errors";
+import { ADMIN_NOT_FOUND, INVALID_USER_COMPANY, ORG_NOT_FOUND } from "../../util/errors";
 import { AdminService } from "../../services/AdminService";
 import { OrganizationService } from "../../services/OrganizationService";
 import { UserService } from "../../services/UserService";
@@ -10,6 +10,9 @@ import { SuccessResult, Pagination, SuccessArrayResult } from "../../util/entiti
 import { BooleanResultModel, OrgDetailsModel, OrgEmployeesResultModel } from "../../models/RestModels";
 import { Firebase } from "../../clients/firebase";
 import { SesClient } from "../../clients/ses";
+import { COIIN, RAIINMAKER_ORG_NAME } from "../../util/constants";
+import { WalletService } from "../../services/WalletService";
+import { WalletCurrencyService } from "../../services/WalletCurrencyService";
 
 class NewUserParams {
     @Required() public readonly name: string;
@@ -20,6 +23,12 @@ class DeleteUserParams {
     @Required() public readonly adminId: string;
 }
 
+class RegisterOrgParams {
+    @Required() public readonly orgName: string;
+    @Required() public readonly email: string;
+    @Required() public readonly name: string;
+}
+
 @Controller("/organization")
 export class OrganizationController {
     @Inject()
@@ -28,6 +37,10 @@ export class OrganizationController {
     private adminService: AdminService;
     @Inject()
     private userService: UserService;
+    @Inject()
+    private walletService: WalletService;
+    @Inject()
+    private walletCurrencyService: WalletCurrencyService;
 
     @Get("/list-employees")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(OrgEmployeesResultModel))
@@ -81,7 +94,7 @@ export class OrganizationController {
         await SesClient.sendNewUserConfirmationEmail(org.name, email, password);
     }
 
-    //For admin panel
+    // For admin panel
     @Post("/delete-user/:adminId")
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async deleteUser(@PathParams() path: DeleteUserParams, @Context() context: Context) {
@@ -93,6 +106,25 @@ export class OrganizationController {
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
         await Firebase.deleteUser(admin.firebaseId);
         await this.adminService.deleteAdmin(admin.id);
+        return new SuccessResult({ success: true }, BooleanResultModel);
+    }
+
+    // For admin panel
+    @Post("/register")
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
+    public async newOrg(@BodyParams() body: RegisterOrgParams, @Context() context: Context) {
+        const { company } = this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const { orgName, email, name } = body;
+        if (company !== RAIINMAKER_ORG_NAME) throw new BadRequest(INVALID_USER_COMPANY);
+        const orgNameToLower = orgName.toLowerCase();
+        const password = Math.random().toString(16).substr(2, 15);
+        const user = await Firebase.createNewUser(email, password);
+        await Firebase.setCustomUserClaims(user.uid, orgNameToLower, "admin", true);
+        const org = await this.organizationService.createOrganization(orgNameToLower);
+        await this.adminService.createAdmin({ firebaseId: user.uid, orgId: org.id, name });
+        const wallet = await this.walletService.createOrgWallet(org.id);
+        await this.walletCurrencyService.newWalletCurrency(COIIN, wallet.id);
+        await SesClient.sendNewOrgConfirmationEmail(orgName, email, password);
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 }
