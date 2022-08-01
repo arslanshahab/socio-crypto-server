@@ -12,6 +12,7 @@ import { OrganizationService } from "../../services/OrganizationService";
 
 export class WithdrawStatusParams {
     @Property() @Enum(TransferStatus) public readonly status: TransferStatus;
+    @Property(Boolean) public readonly isAdmin: boolean | undefined;
 }
 
 @Controller("/withdraw")
@@ -26,9 +27,15 @@ export class WithdrawController {
     @Get()
     @(Returns(200, SuccessResult).Of(Object))
     public async getWithdrawalsV2(@QueryParams() query: WithdrawStatusParams, @Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        const { status = "PENDING" } = query;
-        const transfers = await this.transferService.getWithdrawalsByStatus(status);
+        let orgId: string = "";
+        const { status = "PENDING", isAdmin = false } = query;
+        if (isAdmin) {
+            const { company } = this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+            const org = await this.organizationService.findOrganizationByCompanyName(company!);
+            if (!org) throw new NotFound(ORG_NOT_FOUND);
+            orgId = org.id;
+        }
+        const transfers = await this.transferService.getWithdrawalsByStatus(status, orgId);
         if (!transfers) throw new NotFound(TRANSFER_NOT_FOUND);
         const uniqueUsers: { [key: string]: any } = {};
         for (let i = 0; i < transfers.length; i++) {

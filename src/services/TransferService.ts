@@ -122,9 +122,9 @@ export class TransferService {
         });
     }
 
-    public async getWithdrawalsByStatus(status: TransferStatus) {
+    public async getWithdrawalsByStatus(status: TransferStatus, orgId?: string) {
         return readPrisma.transfer.findMany({
-            where: { status, action: "withdraw" },
+            where: { status, action: "withdraw", orgId: orgId ? { equals: orgId } : null },
             include: {
                 wallet: {
                     include: {
