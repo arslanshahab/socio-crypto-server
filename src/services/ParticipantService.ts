@@ -150,9 +150,9 @@ export class ParticipantService {
         });
     }
 
-    public async findParticipantsCount(campaignId?: string) {
+    public async findParticipantsCount(campaignId?: string, campaignIds?: string[]) {
         return prisma.participant.count({
-            where: campaignId ? { campaignId } : {},
+            where: campaignId ? { campaignId } : { campaignId: { in: campaignIds } },
         });
     }
 
