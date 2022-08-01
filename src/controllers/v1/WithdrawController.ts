@@ -5,9 +5,10 @@ import { SuccessArrayResult, SuccessResult } from "../../util/entities";
 import { TransferService } from "../../services/TransferService";
 import { UserService } from "../../services/UserService";
 import { NotFound } from "@tsed/exceptions";
-import { TRANSFER_NOT_FOUND } from "../../util/errors";
+import { ORG_NOT_FOUND, TRANSFER_NOT_FOUND } from "../../util/errors";
 import { TransferStatus } from "../../util/constants";
 import { TransferResultModel } from "../../models/RestModels";
+import { OrganizationService } from "../../services/OrganizationService";
 
 export class WithdrawStatusParams {
     @Property() @Enum(TransferStatus) public readonly status: TransferStatus;
@@ -19,6 +20,8 @@ export class WithdrawController {
     private transferService: TransferService;
     @Inject()
     private userService: UserService;
+    @Inject()
+    private organizationService: OrganizationService;
 
     @Get()
     @(Returns(200, SuccessResult).Of(Object))
@@ -51,10 +54,14 @@ export class WithdrawController {
         return new SuccessResult(Object.values(uniqueUsers), Object);
     }
 
+    // For admin panel
     @Get("/history")
     @(Returns(200, SuccessArrayResult).Of(TransferResultModel))
     public async getWithdrawalHistory(@Context() context: Context) {
-        const transfers = await this.transferService.getAuditedWithdrawals();
+        const { company } = this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const org = await this.organizationService.findOrganizationByCompanyName(company!);
+        if (!org) throw new NotFound(ORG_NOT_FOUND);
+        const transfers = await this.transferService.getAuditedWithdrawals(org.id);
         return new SuccessArrayResult(TransferResultModel.buildArray(transfers), TransferResultModel);
     }
 }

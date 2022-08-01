@@ -221,11 +221,12 @@ export class TransferService {
         });
     }
 
-    public async getAuditedWithdrawals() {
+    public async getAuditedWithdrawals(orgId?: string) {
         return readPrisma.transfer.findMany({
             where: {
                 action: TransferActionEnum.WITHDRAW.toLowerCase(),
                 OR: [{ status: TransferStatusEnum.APPROVED }, { status: TransferStatusEnum.REJECTED }],
+                orgId: orgId && orgId,
             },
             include: {
                 wallet: { include: { user: { include: { profile: true } } } },
