@@ -60,4 +60,8 @@ export class WalletService {
             },
         });
     }
+
+    public async createOrgWallet(orgId: string) {
+        return await prisma.wallet.create({ data: { orgId } });
+    }
 }
