@@ -843,3 +843,9 @@ export class UpdateCampaignParams {
     @Property() public readonly campaignMedia: CampaignMedia[];
     @Property() public readonly campaignTemplates: CampaignTemplate[];
 }
+
+export class VerifySessionResultModel {
+    @Property() public readonly role: string;
+    @Property() public readonly company: string;
+    @Nullable(Boolean) public readonly tempPass: boolean | null;
+}
