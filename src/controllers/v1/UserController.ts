@@ -760,10 +760,11 @@ export class UserController {
     @Returns(200, SuccessResult)
     public async downloadUsersRecord(@Context() context: Context) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        const [results] = await this.userService.findUsers();
+        const [results] = await this.userService.findUsers(undefined, { profile: true });
         const users = results.map((x) => ({
             id: x.id,
             email: x.email,
+            userName: x.profile?.username,
             active: x.active,
             createdAt: x.createdAt,
             lastLogin: x.lastLogin,
