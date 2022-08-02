@@ -114,12 +114,18 @@ export class TransferService {
         });
     }
 
-    public async findUserTransactions(userId: string) {
+    public async findUserTransactions(userId: string, skip?: number, take?: number) {
         const wallet = await this.walletService.findWalletByUserId(userId);
         if (!wallet) throw new NotFound(WALLET_NOT_FOUND);
-        return readPrisma.transfer.findMany({
-            where: { walletId: wallet.id },
-        });
+        return readPrisma.$transaction([
+            readPrisma.transfer.findMany({
+                where: { walletId: wallet.id },
+                skip: skip && skip,
+                take: take && take,
+                orderBy: { createdAt: "desc" },
+            }),
+            readPrisma.transfer.count({ where: { walletId: wallet.id } }),
+        ]);
     }
 
     public async getWithdrawalsByStatus(status: TransferStatus) {
