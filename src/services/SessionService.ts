@@ -70,6 +70,7 @@ export class SessionService {
         }
         if (session?.user?.deletedAt) throw new Forbidden(ACCOUNT_NOT_EXISTS_ANYMORE);
         if (!session?.user?.active) throw new Forbidden(ACCOUNT_RESTRICTED);
+        await this.updateLastLogin(session.id);
         return { userId: session.userId };
     }
 
