@@ -191,8 +191,8 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                             // prepare transaction data to log on dragon chain
                             const prevLikes = parseFloat(post.likes);
                             const currLikes = parseFloat(updatedPost.likes);
-                            // const likeDiff = currLikes - prevLikes;
-                            if (prevLikes && currLikes) {
+                            const likeDiff = currLikes - prevLikes;
+                            if (prevLikes && currLikes && likeDiff) {
                                 dragonchainTransactionList.push({
                                     action: ParticipantAction.LIKES,
                                     socialType: SocialClientType.TWITTER,
@@ -203,8 +203,8 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                             }
                             const prevShares = parseFloat(post.shares);
                             const currShares = parseFloat(updatedPost.shares);
-                            // const shareDiff = currShares - prevShares;
-                            if (prevShares && currShares) {
+                            const shareDiff = currShares - prevShares;
+                            if (prevShares && currShares && shareDiff) {
                                 dragonchainTransactionList.push({
                                     action: ParticipantAction.SHARES,
                                     socialType: SocialClientType.TWITTER,
