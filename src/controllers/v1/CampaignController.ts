@@ -63,7 +63,6 @@ class ListCampaignsVariablesModel extends PaginatedVariablesModel {
     @Property() @Enum(CampaignStatus, "ALL") public readonly status: CampaignStatus | "ALL" | undefined;
     @Property(Boolean) public readonly userRelated: boolean | undefined;
     @Property(String) public readonly auditStatus: CampaignAuditStatus | undefined;
-    @Property(String) public readonly isAdmin: boolean | undefined;
 }
 
 class AdminUpdateCampaignStatusParams {
@@ -113,7 +112,7 @@ export class CampaignController {
     @(Returns(200, SuccessResult).Of(Pagination).Nested(CampaignResultModel))
     public async list(@QueryParams() query: ListCampaignsVariablesModel, @Context() context: Context) {
         let orgId;
-        if (query.isAdmin) {
+        if (context.get("user").company) {
             const { company } = this.userService.checkPermissions(
                 { hasRole: ["admin", "manager"] },
                 context.get("user")
