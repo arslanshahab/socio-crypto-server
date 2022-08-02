@@ -849,3 +849,25 @@ export class VerifySessionResultModel {
     @Property() public readonly company: string;
     @Nullable(Boolean) public readonly tempPass: boolean | null;
 }
+
+export class TransactionResultModel {
+    @Property() public readonly id: string;
+    @Property() public readonly txId: string;
+    @Property() public readonly chain: string;
+    @Nullable(String) public readonly action: string | null;
+    @Nullable(String) public readonly socialType: string | null;
+    // @Property() public readonly tag: string;
+    // @Nullable(String) public readonly campaignId: string | null;
+    // @Nullable(String) public readonly participantId: string | null;
+    // @Property() public readonly transactionType: string;
+    // @Property() public readonly createdAt: Date;
+    // @Property() public readonly updatedAt: Date;
+
+    public static build(transaction: Prisma.Transaction): TransactionResultModel {
+        return {
+            ...transaction,
+            chain: transaction.chain,
+            action: transaction.action,
+        };
+    }
+}
