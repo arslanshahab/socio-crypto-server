@@ -7,7 +7,7 @@ import { PlatformBuilder } from "@tsed/common";
 import logger from "./util/logger";
 import { Secrets } from "./util/secrets";
 import { authenticateAdmin, authenticateUser } from "./middleware/authentication";
-// import { Dragonchain } from "./clients/dragonchain";
+import { Dragonchain } from "./clients/dragonchain";
 import { Firebase } from "./clients/firebase";
 // import * as FactorController from "./controllers/factor";
 // import * as Dragonfactor from "@myfii-dev/dragonfactor-auth";
@@ -61,7 +61,7 @@ export class Application {
         this.databaseConnection = await this.connectDatabase();
         await Secrets.initialize();
         await Firebase.initialize();
-        // await Dragonchain.initialize();
+        await Dragonchain.initialize();
         StripeAPI.initialize();
         this.app = express();
         Sentry.init({
