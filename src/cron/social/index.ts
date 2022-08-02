@@ -14,6 +14,7 @@ import { ParticipantAction } from "../../util/constants";
 import { HourlyCampaignMetricsService } from "../../services/HourlyCampaignMetricsService";
 import { DragonChainService } from "../../services/DragonChainService";
 import { Dragonchain } from "../../clients/dragonchain";
+import { SocialLinkService } from "../../services/SocialLinkService";
 
 dotenv.config();
 const app = new Application();
@@ -21,6 +22,7 @@ const qualityScoreService = new QualityScoreService();
 const dailyParticipantMetricService = new DailyParticipantMetricService();
 const hourlyCampaignMetricService = new HourlyCampaignMetricsService();
 const dragonChainService = new DragonChainService();
+const socialLinkService = new SocialLinkService();
 
 const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: SocialPost) => {
     const participant = await readPrisma.participant.findFirst({
@@ -123,9 +125,10 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                 const twitterPosts = [];
                 // const tiktokPosts = [];
                 for (const post of posts) {
-                    const socialLink = await readPrisma.socialLink.findFirst({
-                        where: { userId: post.user.id, type: post.type },
-                    });
+                    // const socialLink = await readPrisma.socialLink.findFirst({
+                    //     where: { userId: post.user.id, type: post.type },
+                    // });
+                    const socialLink = await socialLinkService.findSocialLinkByUserAndType(post.user.id, post.type);
                     if (!socialLink) continue;
                     try {
                         if (socialLink.type === "twitter") {
@@ -188,8 +191,8 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                             // prepare transaction data to log on dragon chain
                             const prevLikes = parseFloat(post.likes);
                             const currLikes = parseFloat(updatedPost.likes);
-                            // const likeDiff = currLikes - prevLikes;
-                            if (prevLikes && currLikes) {
+                            const likeDiff = currLikes - prevLikes;
+                            if (prevLikes && currLikes && likeDiff) {
                                 dragonchainTransactionList.push({
                                     action: ParticipantAction.LIKES,
                                     socialType: SocialClientType.TWITTER,
@@ -200,8 +203,8 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                             }
                             const prevShares = parseFloat(post.shares);
                             const currShares = parseFloat(updatedPost.shares);
-                            // const shareDiff = currShares - prevShares;
-                            if (prevShares && currShares) {
+                            const shareDiff = currShares - prevShares;
+                            if (prevShares && currShares && shareDiff) {
                                 dragonchainTransactionList.push({
                                     action: ParticipantAction.SHARES,
                                     socialType: SocialClientType.TWITTER,

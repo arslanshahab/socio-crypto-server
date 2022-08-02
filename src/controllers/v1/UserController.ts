@@ -57,6 +57,7 @@ import {
     UserWalletResultModel,
     TransferResultModel,
     UpdatedResultModel,
+    TransactionResultModel,
 } from "../../models/RestModels";
 import { NotificationService } from "../../services/NotificationService";
 import { TransferService } from "../../services/TransferService";
@@ -90,6 +91,7 @@ import { S3Client } from "../../clients/s3";
 import { VerificationApplicationService } from "../../services/VerificationApplicationService";
 import { Parser } from "json2csv";
 import { DragonChainService } from "../../services/DragonChainService";
+import { TransactionService } from "../../services/TransactionService";
 
 const userResultRelations = {
     profile: true,
@@ -205,6 +207,8 @@ export class UserController {
     private verificationApplicationService: VerificationApplicationService;
     @Inject()
     private dragonChainService: DragonChainService;
+    @Inject()
+    private transactionService: TransactionService;
 
     @Get("/")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserResultModel))
@@ -760,15 +764,35 @@ export class UserController {
     @Returns(200, SuccessResult)
     public async downloadUsersRecord(@Context() context: Context) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        const [results] = await this.userService.findUsers();
+        const [results] = await this.userService.findUsers(undefined, { profile: true });
         const users = results.map((x) => ({
             id: x.id,
             email: x.email,
+            userName: x.profile?.username,
             active: x.active,
             createdAt: x.createdAt,
             lastLogin: x.lastLogin,
         }));
         const parser = new Parser();
         return parser.parse(users);
+    }
+
+    @Get("/action-logs")
+    @(Returns(200, SuccessResult).Of(Pagination).Nested(TransactionResultModel))
+    public async actionLogs(@QueryParams() query: PaginatedVariablesModel, @Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        const [results, total] = await this.transactionService.getPaginatedUserTransactions({
+            ...query,
+            userId: user.id,
+        });
+        return new SuccessResult(
+            new Pagination(
+                results.map((r) => TransactionResultModel.build(r)),
+                total,
+                TransactionResultModel
+            ),
+            Pagination
+        );
     }
 }
