@@ -1,4 +1,4 @@
-import { BodyParams, QueryParams } from "@tsed/common";
+import { BodyParams, QueryParams, Request } from "@tsed/common";
 import { Controller, Inject } from "@tsed/di";
 import { BadRequest, NotFound, Unauthorized } from "@tsed/exceptions";
 import { Enum, Post, Get, Property, Required, Returns, Put } from "@tsed/schema";
@@ -10,6 +10,7 @@ import {
     INCORRECT_PASSWORD,
     INVALID_TOKEN,
     MISSING_PARAMS,
+    SESSION_ALREADY_EXISTS,
     USERNAME_EXISTS,
     USERNAME_NOT_EXISTS,
     USER_NOT_FOUND,
@@ -34,6 +35,7 @@ import { JWTPayload } from "../../types";
 import { UserRewardType, VerificationType } from "../../util/constants";
 import { SesClient } from "../../clients/ses";
 import { Firebase } from "../../clients/firebase";
+import { SessionService } from "../../services/SessionService";
 
 export class StartVerificationParams {
     @Required() public readonly email: string;
@@ -67,10 +69,12 @@ export class AuthenticationController {
     private profileService: ProfileService;
     @Inject()
     private verificationService: VerificationService;
+    @Inject()
+    private sessionService: SessionService;
 
     @Post("/register-user")
     @(Returns(200, SuccessResult).Of(UserTokenReturnModel))
-    public async registerUser(@BodyParams() body: RegisterUserParams) {
+    public async registerUser(@Request() req: Request, @BodyParams() body: RegisterUserParams) {
         const { email, username, password, verificationToken, referralCode } = body;
         if (!email || !password || !username || !verificationToken) throw new BadRequest(MISSING_PARAMS);
         if (await this.userService.findUserByEmail(email)) throw new BadRequest(EMAIL_EXISTS);
@@ -79,21 +83,29 @@ export class AuthenticationController {
         const userId = await this.userService.initNewUser(email, username, password, referralCode);
         const user = await this.userService.findUserByContext({ userId } as JWTPayload, ["wallet"]);
         if (!user) throw new NotFound(USER_NOT_FOUND);
-        return new SuccessResult({ token: createSessionTokenV2(user) }, UserTokenReturnModel);
+        const token = await this.sessionService.initSession(user, {
+            ip: req.socket.remoteAddress,
+            device: req.headers["user-agent"],
+        });
+        return new SuccessResult({ token }, UserTokenReturnModel);
     }
 
     @Post("/user-login")
     @(Returns(200, SuccessResult).Of(UserTokenReturnModel))
-    public async loginUser(@BodyParams() body: LoginParams) {
+    public async loginUser(@Request() req: Request, @BodyParams() body: LoginParams) {
         const { email, password } = body;
         if (!email || !password) throw new BadRequest(MISSING_PARAMS);
         const user = await this.userService.findUserByEmail(email);
         if (!user) throw new BadRequest(EMAIL_NOT_EXISTS);
         if (!user.active) throw new BadRequest(ACCOUNT_RESTRICTED);
         if (user.password !== createPasswordHash({ email, password })) throw new Error(INCORRECT_PASSWORD);
-        await this.userService.updateLastLogin(user.id);
+        if (await this.sessionService.ifSessionExist(user)) throw new Error(SESSION_ALREADY_EXISTS);
         await this.userService.transferCoiinReward({ user, type: UserRewardType.LOGIN_REWARD });
-        return new SuccessResult({ token: createSessionTokenV2(user) }, UserTokenReturnModel);
+        const token = await this.sessionService.initSession(user, {
+            ip: req.socket.remoteAddress,
+            device: req.headers["user-agent"],
+        });
+        return new SuccessResult({ token }, UserTokenReturnModel);
     }
 
     @Post("/reset-user-password")
