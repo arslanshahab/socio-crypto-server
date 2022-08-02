@@ -26,7 +26,7 @@ export class WithdrawController {
     @Get()
     @(Returns(200, SuccessResult).Of(Object))
     public async getWithdrawalsV2(@QueryParams() query: WithdrawStatusParams, @Context() context: Context) {
-        let orgId: string = "";
+        let orgId;
         if (context.get("user").company) {
             const { company } = this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
             const org = await this.organizationService.findOrganizationByCompanyName(company!);
