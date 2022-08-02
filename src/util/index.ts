@@ -243,9 +243,8 @@ export const getDecimal = (str: string) => {
     return [str.slice(0, pos), str.slice(pos)].join(".");
 };
 
-export const generateRandomId = () => {
+export const generateRandomId = (stringLength = 20) => {
     const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    const stringLength = 20;
     function pickRandom() {
         return possible[Math.floor(Math.random() * possible.length)];
     }
