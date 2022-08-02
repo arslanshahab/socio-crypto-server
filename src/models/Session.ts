@@ -14,7 +14,7 @@ export class Session extends BaseEntity {
     @PrimaryGeneratedColumn("uuid")
     public id: string;
 
-    @Column({ nullable: false })
+    @Column({ nullable: false, type: "varchar" })
     public token: string;
 
     @Column({ nullable: true })
@@ -29,14 +29,11 @@ export class Session extends BaseEntity {
     @Column({ nullable: true })
     public lastLogin: Date;
 
-    @Column({ nullable: true })
-    public loggedInAt: Date;
+    @Column({ nullable: true, default: false })
+    public logout: boolean;
 
     @Column({ nullable: true })
-    public loggedout: boolean;
-
-    @Column({ nullable: true })
-    public loggedOutAt: Date;
+    public logoutAt: Date;
 
     @Column({ nullable: false })
     public expiry: Date;

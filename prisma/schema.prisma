@@ -643,19 +643,18 @@ model Transaction {
 }
 
 model Session {
-  id          String    @id(map: "PK_f55da76ac1c3ac420f444d2ff11") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  token       String    @db.VarChar
-  ip          String?   @db.VarChar
-  deviceInfo  String?   @db.VarChar
-  lastLogin   DateTime? @db.Timestamp(6)
-  loggedInAt  DateTime? @db.Timestamp(6)
-  loggedout   Boolean?
-  loggedOutAt DateTime? @db.Timestamp(6)
-  expiry      DateTime  @db.Timestamp(6)
-  createdAt   DateTime  @default(now()) @db.Timestamp(6)
-  updatedAt   DateTime  @default(now()) @db.Timestamp(6)
-  userId      String?   @db.Uuid
-  user        User?     @relation("SessionTouser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_3d2f174ef04fb312fdebd0ddc53")
+  id         String    @id(map: "PK_f55da76ac1c3ac420f444d2ff11") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  token      String    @db.VarChar
+  ip         String?   @db.VarChar
+  deviceInfo String?   @db.VarChar
+  lastLogin  DateTime? @db.Timestamp(6)
+  logout     Boolean?  @default(false)
+  logoutAt   DateTime? @db.Timestamp(6)
+  expiry     DateTime  @db.Timestamp(6)
+  createdAt  DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt  DateTime  @default(now()) @db.Timestamp(6)
+  userId     String?   @db.Uuid
+  user       User?     @relation("SessionTouser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_3d2f174ef04fb312fdebd0ddc53")
 
   @@map("session")
 }
