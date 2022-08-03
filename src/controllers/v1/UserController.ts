@@ -172,6 +172,11 @@ class UserStatusParams {
     @Required() public readonly activeStatus: boolean;
 }
 
+class UserTransactionHistoryParam extends UserIdParam {
+    @Property() public readonly skip: number;
+    @Property() public readonly take: number;
+}
+
 @Controller("/user")
 export class UserController {
     @Inject()
@@ -423,16 +428,17 @@ export class UserController {
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 
-    @Get("/user-transactions-history/:userId")
+    // For admin panel
+    @Get("/user-transactions-history")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserTransactionResultModel))
-    public async getUserTransactionHistory(@PathParams() path: UserIdParam, @Context() context: Context) {
-        await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        const { userId } = path;
-        const transaction = await this.transferService.findUserTransactions(userId);
-        return new SuccessResult(
-            new Pagination(transaction, transaction.length, UserTransactionResultModel),
-            Pagination
-        );
+    public async getUserTransactionHistory(
+        @QueryParams() query: UserTransactionHistoryParam,
+        @Context() context: Context
+    ) {
+        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const { userId, skip, take } = query;
+        const [transaction, total] = await this.transferService.findUserTransactions(userId, skip, take);
+        return new SuccessResult(new Pagination(transaction, total, UserTransactionResultModel), Pagination);
     }
 
     // For admin panel
