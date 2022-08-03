@@ -9,6 +9,7 @@ import { ORG_NOT_FOUND, TRANSFER_NOT_FOUND } from "../../util/errors";
 import { TransferStatus } from "../../util/constants";
 import { TransferResultModel } from "../../models/RestModels";
 import { OrganizationService } from "../../services/OrganizationService";
+import { AdminService } from "../../services/AdminService";
 
 export class WithdrawStatusParams {
     @Property() @Enum(TransferStatus) public readonly status: TransferStatus;
@@ -22,16 +23,16 @@ export class WithdrawController {
     private userService: UserService;
     @Inject()
     private organizationService: OrganizationService;
+    @Inject()
+    private adminService: AdminService;
 
     @Get()
     @(Returns(200, SuccessResult).Of(Object))
     public async getWithdrawalsV2(@QueryParams() query: WithdrawStatusParams, @Context() context: Context) {
         let orgId;
         if (context.get("user").company) {
-            const { company } = this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-            const org = await this.organizationService.findOrganizationByCompanyName(company!);
-            if (!org) throw new NotFound(ORG_NOT_FOUND);
-            orgId = org.id;
+            const response = await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+            orgId = response.orgId;
         }
         const { status = "PENDING" } = query;
         const transfers = await this.transferService.getWithdrawalsByStatus(status, orgId);

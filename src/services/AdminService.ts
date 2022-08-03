@@ -1,9 +1,14 @@
-import { Injectable } from "@tsed/di";
-import { AdminTypes } from "../types";
+import { Inject, Injectable } from "@tsed/di";
+import { AdminTypes, JWTPayload } from "../types";
 import { readPrisma, prisma } from "../clients/prisma";
+import { Forbidden } from "@tsed/exceptions";
+import { OrganizationService } from "./OrganizationService";
 
 @Injectable()
 export class AdminService {
+    @Inject()
+    private organizationService: OrganizationService;
+
     public async findAdminByUserId(userId: string) {
         return await readPrisma.admin.findFirst({
             where: {
@@ -49,5 +54,21 @@ export class AdminService {
 
     public async findAdminById(adminId: string) {
         return await readPrisma.admin.findFirst({ where: { id: adminId } });
+    }
+
+    /**
+     * Asserts that the user has the given permissions
+     *
+     * @param opts permissions to check for
+     * @param context the user from the request context
+     * @returns the user's role, company and orgId
+     */
+    public async checkPermissions(opts: { hasRole?: string[]; restrictCompany?: string }, user: JWTPayload) {
+        const { role, company } = user;
+        if (opts.hasRole && (!role || !opts.hasRole.includes(role))) throw new Forbidden("Forbidden");
+        if (opts.restrictCompany && company !== opts.restrictCompany) throw new Forbidden("Forbidden");
+        if (role === "manager" && !company) throw new Forbidden("Forbidden, company not specified");
+        const org = await this.organizationService.findOrganizationByCompanyName(company!);
+        return { role, company, orgId: org?.id };
     }
 }

@@ -55,6 +55,7 @@ import { CampaignTemplateService } from "../../services/CampaignTemplateService"
 import { TatumService } from "../../services/TatumService";
 import { MarketDataService } from "../../services/MarketDataService";
 import { formatFloat } from "../../util";
+import { AdminService } from "../../services/AdminService";
 
 const validator = new Validator();
 
@@ -107,18 +108,19 @@ export class CampaignController {
     private tatumService: TatumService;
     @Inject()
     private marketDataService: MarketDataService;
+    @Inject()
+    private adminService: AdminService;
 
     @Get()
     @(Returns(200, SuccessResult).Of(Pagination).Nested(CampaignResultModel))
     public async list(@QueryParams() query: ListCampaignsVariablesModel, @Context() context: Context) {
         let orgId;
         if (context.get("user").company) {
-            const { company } = this.userService.checkPermissions(
+            const response = await this.adminService.checkPermissions(
                 { hasRole: ["admin", "manager"] },
                 context.get("user")
             );
-            const org = await this.organizationService.findOrganizationByCompanyName(company!);
-            orgId = org?.id;
+            orgId = response.orgId;
         }
         const user = await this.userService.findUserByContext(context.get("user"));
         const [items, total] = await this.campaignService.findCampaignsByStatus(
