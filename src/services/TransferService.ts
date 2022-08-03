@@ -128,9 +128,9 @@ export class TransferService {
         ]);
     }
 
-    public async getWithdrawalsByStatus(status: TransferStatus) {
+    public async getWithdrawalsByStatus(status: TransferStatus, orgId?: string) {
         return readPrisma.transfer.findMany({
-            where: { status, action: "withdraw" },
+            where: { status, action: "withdraw", orgId: orgId ? { equals: orgId } : null },
             include: {
                 wallet: {
                     include: {
@@ -227,11 +227,12 @@ export class TransferService {
         });
     }
 
-    public async getAuditedWithdrawals() {
+    public async getAuditedWithdrawals(orgId?: string) {
         return readPrisma.transfer.findMany({
             where: {
                 action: TransferActionEnum.WITHDRAW.toLowerCase(),
                 OR: [{ status: TransferStatusEnum.APPROVED }, { status: TransferStatusEnum.REJECTED }],
+                orgId: orgId && orgId,
             },
             include: {
                 wallet: { include: { user: { include: { profile: true } } } },

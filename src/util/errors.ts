@@ -95,6 +95,8 @@ export const ALREADY_PARTICIPATING = "ALREADY_PARTICIPATING";
 export const MEDIA_NOT_FOUND = "MEDIA_NOT_FOUND";
 export const TWITTER_LINK_EXPIRED = "TWITTER_LINK_EXPIRED";
 export const ACCOUNT_RESTRICTED = "ACCOUNT_RESTRICTED";
+export const ACCOUNT_NOT_EXISTS_ANYMORE = "ACCOUNT_NOT_EXISTS_ANYMORE";
+export const SESSION_ALREADY_EXISTS = "SESSION_ALREADY_EXISTS";
 export const SERVICE_NOT_AVAILABLE = "SERVICE_NOT_AVAILABLE";
 export const TOKEN_NOT_FOUND = "TOKEN_NOT_FOUND";
 export const KYC_LEVEL_1_NOT_APPROVED = "KYC_LEVEL_1_NOT_APPROVED";
@@ -167,4 +169,6 @@ export const errorMap: { [key: string]: string } = {
     TWITTER_FOLLOWERS_ARE_LESS_THAN_REQUIRED: "You need to have atleast 20 followers on twitter before you redeem!",
     USER_NEEDS_TO_PARTICIPATE_IN_CAMPAIGN: "You need to participate in atleast one campaign in order to redeem!",
     ALREADY_REDEEMED_IN_24_HOURS: "You can only redeem once in 24 hours!",
+    ACCOUNT_NOT_EXISTS_ANYMORE: "This account doesn't exist anymore.",
+    SESSION_ALREADY_EXISTS: "You have already logged in from another device.",
 };

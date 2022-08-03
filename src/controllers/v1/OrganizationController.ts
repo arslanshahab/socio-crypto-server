@@ -67,6 +67,7 @@ export class OrganizationController {
         return new SuccessResult(result, OrgEmployeesResultModel);
     }
 
+    // For admin panel
     @Get("/org-details")
     @(Returns(200, SuccessResult).Of(OrgDetailsModel))
     public async getOrgDetails(@Context() context: Context) {

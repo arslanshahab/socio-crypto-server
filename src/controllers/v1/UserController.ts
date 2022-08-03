@@ -92,6 +92,7 @@ import { VerificationApplicationService } from "../../services/VerificationAppli
 import { Parser } from "json2csv";
 import { DragonChainService } from "../../services/DragonChainService";
 import { TransactionService } from "../../services/TransactionService";
+import { SessionService } from "../../services/SessionService";
 
 const userResultRelations = {
     profile: true,
@@ -214,6 +215,8 @@ export class UserController {
     private dragonChainService: DragonChainService;
     @Inject()
     private transactionService: TransactionService;
+    @Inject()
+    private sessionService: SessionService;
 
     @Get("/")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserResultModel))
@@ -766,6 +769,7 @@ export class UserController {
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 
+    // For admin panel
     @Get("/record")
     @Returns(200, SuccessResult)
     public async downloadUsersRecord(@Context() context: Context) {
@@ -775,6 +779,7 @@ export class UserController {
             id: x.id,
             email: x.email,
             userName: x.profile?.username,
+            promoCode: x.promoCode,
             active: x.active,
             createdAt: x.createdAt,
             lastLogin: x.lastLogin,
@@ -800,5 +805,14 @@ export class UserController {
             ),
             Pagination
         );
+    }
+
+    @Post("/logout")
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
+    public async logoutUser(@Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new Error(USER_NOT_FOUND);
+        await this.sessionService.logoutUser(user);
+        return new SuccessResult({ success: true }, BooleanResultModel);
     }
 }
