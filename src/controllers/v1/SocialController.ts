@@ -29,6 +29,7 @@ import { addMinutes } from "date-fns";
 import { BSC, COIIN, SocialClientType, SocialLinkType } from "../../util/constants";
 import { TatumService } from "../../services/TatumService";
 import { DragonChainService } from "../../services/DragonChainService";
+import { AdminService } from "../../services/AdminService";
 
 class RegisterSocialLinkResultModel {
     @Property() public readonly registerSocialLink: boolean;
@@ -111,6 +112,8 @@ export class SocialController {
     private tatumService: TatumService;
     @Inject()
     private dragonChainService: DragonChainService;
+    @Inject()
+    private adminService: AdminService;
 
     @Get("/social-metrics")
     @(Returns(200, SuccessResult).Of(SocialMetricsResultModel))
@@ -266,7 +269,7 @@ export class SocialController {
     @Get("/posts")
     @(Returns(200, SuccessResult).Of(Object))
     public async getCampaignPosts(@QueryParams() query: CampaignPostParams, @Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const { campaignId, skip = 0, take = 10 } = query;
         const socialPosts: string[] = [];
         const [posts, count] = await this.socialPostService.findSocialPostByCampaignId(campaignId, skip, take);

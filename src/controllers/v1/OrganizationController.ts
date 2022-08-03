@@ -2,10 +2,9 @@ import { BodyParams, Context, PathParams } from "@tsed/common";
 import { Controller, Inject } from "@tsed/di";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { Get, Post, Required, Returns } from "@tsed/schema";
-import { ADMIN_NOT_FOUND, INVALID_USER_COMPANY, ORG_NOT_FOUND } from "../../util/errors";
+import { ADMIN_NOT_FOUND, INVALID_USER_COMPANY } from "../../util/errors";
 import { AdminService } from "../../services/AdminService";
 import { OrganizationService } from "../../services/OrganizationService";
-import { UserService } from "../../services/UserService";
 import { SuccessResult, Pagination, SuccessArrayResult } from "../../util/entities";
 import {
     BooleanResultModel,
@@ -41,8 +40,6 @@ export class OrganizationController {
     @Inject()
     private adminService: AdminService;
     @Inject()
-    private userService: UserService;
-    @Inject()
     private walletService: WalletService;
     @Inject()
     private walletCurrencyService: WalletCurrencyService;
@@ -50,11 +47,11 @@ export class OrganizationController {
     @Get("/list-employees")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(OrgEmployeesResultModel))
     public async listEmployees(@Context() context: Context) {
-        const { company } = this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        const org = await this.organizationService.findOrganizationByCompanyName(company!);
-        if (!org) throw new NotFound(ORG_NOT_FOUND);
-        const admins = await this.adminService.listAdminsByOrg(org.id);
-        const orgName = org?.name;
+        const { orgId, company } = await this.adminService.checkPermissions(
+            { hasRole: ["admin"] },
+            context.get("user")
+        );
+        const admins = await this.adminService.listAdminsByOrg(orgId!);
         const adminsDetails = await admins.map((admin) => {
             return {
                 id: admin.id,
@@ -63,7 +60,7 @@ export class OrganizationController {
                 createdAt: admin.createdAt,
             };
         });
-        const result = { adminsDetails, orgName };
+        const result = { adminsDetails, orgName: company };
         return new SuccessResult(result, OrgEmployeesResultModel);
     }
 
@@ -71,7 +68,7 @@ export class OrganizationController {
     @Get("/org-details")
     @(Returns(200, SuccessResult).Of(OrgDetailsModel))
     public async getOrgDetails(@Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const organizations = await this.organizationService.orgDetails();
         const orgDetails = organizations.map((org) => {
             return {
@@ -88,16 +85,17 @@ export class OrganizationController {
     @Post("/new-user")
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async newUser(@BodyParams() body: NewUserParams, @Context() context: Context) {
-        const { company } = this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const { company, orgId } = await this.adminService.checkPermissions(
+            { hasRole: ["admin"] },
+            context.get("user")
+        );
         const { email, name, role } = body;
         const password = Math.random().toString(16).substr(2, 15);
-        const org = await this.organizationService.findOrganizationByCompanyName(company!);
-        if (!org) throw new NotFound(ORG_NOT_FOUND);
         const user = await Firebase.createNewUser(email, password);
         const userRole = role === "admin" ? "admin" : "manager";
         await Firebase.setCustomUserClaims(user.uid, company!, userRole, true);
-        await this.adminService.createAdmin({ firebaseId: user.uid, orgId: org.id, name });
-        await SesClient.sendNewUserConfirmationEmail(org.name, email, password);
+        await this.adminService.createAdmin({ firebaseId: user.uid, orgId: orgId!, name });
+        await SesClient.sendNewUserConfirmationEmail(company!, email, password);
     }
 
     // For admin panel
@@ -105,9 +103,7 @@ export class OrganizationController {
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async deleteUser(@PathParams() path: DeleteUserParams, @Context() context: Context) {
         const { adminId } = path;
-        const { company } = this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        const org = await this.organizationService.findOrganizationByCompanyName(company!);
-        if (!org) throw new NotFound(ORG_NOT_FOUND);
+        await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const admin = await this.adminService.findAdminById(adminId);
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
         await Firebase.deleteUser(admin.firebaseId);
@@ -132,7 +128,7 @@ export class OrganizationController {
     @Post("/register")
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async newOrg(@BodyParams() body: RegisterOrgParams, @Context() context: Context) {
-        const { company } = this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const { company } = await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const { orgName, email, name } = body;
         if (company !== RAIINMAKER_ORG_NAME) throw new BadRequest(INVALID_USER_COMPANY);
         const orgNameToLower = orgName.toLowerCase();

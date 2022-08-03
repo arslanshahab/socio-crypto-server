@@ -35,6 +35,7 @@ import { MarketDataService } from "../../services/MarketDataService";
 import { SocialLinkType } from "../../util/constants";
 import { TwitterClient } from "../../clients/twitter";
 import { SocialPostService } from "../../services/SocialPostService";
+import { AdminService } from "../../services/AdminService";
 
 class CampaignParticipantsParams {
     @Property() public readonly campaignId: string;
@@ -71,7 +72,10 @@ export class ParticipantController {
     private socialLinkService: SocialLinkService;
     @Inject()
     private marketDataService: MarketDataService;
-    @Inject() socialPostService: SocialPostService;
+    @Inject()
+    private socialPostService: SocialPostService;
+    @Inject()
+    private adminService: AdminService;
 
     @Get()
     @(Returns(200, SuccessResult).Of(ParticipantResultModelV2))
@@ -294,7 +298,7 @@ export class ParticipantController {
     @Put("/blacklist/:id")
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async blacklistParticipant(@PathParams() path: ParticipantIdParams, @Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const { id } = path;
         const participant = await this.participantService.findParticipantById(id);
         if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
@@ -310,7 +314,7 @@ export class ParticipantController {
     @Get("/all")
     @(Returns(200, SuccessArrayResult).Of(CampaignDetailsResultModel))
     public async getParticipants(@QueryParams() query: CampaignAllParticipantsParams, @Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const { campaignId, skip, take, filter } = query;
         const [items, count] = await this.participantService.findParticipantsByCampaignId({
             campaignId: campaignId,
@@ -364,7 +368,7 @@ export class ParticipantController {
     @(Returns(200, SuccessArrayResult).Of(UserStatisticsResultModel))
     public async userStatistics(@QueryParams() query: UserStatisticsParams, @Context() context: Context) {
         const { userId } = query;
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+       await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const participants = await this.participantService.findParticipantsByUserId(userId, { campaign: true });
         const statistics = [];
         for (const participant of participants) {

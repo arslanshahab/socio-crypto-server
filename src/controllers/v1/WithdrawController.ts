@@ -17,7 +17,6 @@ export class WithdrawStatusParams {
 export class WithdrawController {
     @Inject()
     private transferService: TransferService;
-
     @Inject()
     private adminService: AdminService;
 
