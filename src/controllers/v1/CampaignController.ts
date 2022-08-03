@@ -171,7 +171,7 @@ export class CampaignController {
     @Get("/campaign-metrics")
     @(Returns(200, SuccessResult).Of(CampaignMetricsResultModel))
     public async getCampaignMetrics(@QueryParams() query: CampaignIdModel, @Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const { campaignId } = query;
         const participant = await this.participantService.findParticipants(campaignId);
         const clickCount = participant.reduce((sum, item) => sum + parseInt(item.clickCount), 0);
@@ -200,7 +200,7 @@ export class CampaignController {
     @Post("/create-campaign")
     @(Returns(200, SuccessResult).Of(CreateCampaignResultModel))
     public async createCampaign(@BodyParams() body: CreateCampaignParams, @Context() context: Context) {
-        const { role, company } = this.userService.checkPermissions(
+        const { role, company } = await this.adminService.checkPermissions(
             { hasRole: ["admin", "manager"] },
             context.get("user")
         );
@@ -330,7 +330,7 @@ export class CampaignController {
     @Post("/update-campaign")
     @(Returns(200, SuccessResult).Of(UpdateCampaignResultModel))
     public async updateCampaign(@BodyParams() body: UpdateCampaignParams, @Context() context: Context) {
-        const { role, company } = this.userService.checkPermissions(
+        const { role, company } = await this.adminService.checkPermissions(
             { hasRole: ["admin", "manager"] },
             context.get("user")
         );
@@ -451,7 +451,10 @@ export class CampaignController {
     @(Returns(200, SuccessResult).Of(DeleteCampaignResultModel))
     public async deleteCampaign(@QueryParams() query: CampaignIdModel, @Context() context: Context) {
         const { campaignId } = query;
-        const { company } = this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
+        const { company } = await this.adminService.checkPermissions(
+            { hasRole: ["admin", "manager"] },
+            context.get("user")
+        );
 
         const [socialPost] = await this.socialPostService.findSocialPostByCampaignId(campaignId);
         if (socialPost.length > 0) this.socialPostService.deleteSocialPost(campaignId);
@@ -485,7 +488,10 @@ export class CampaignController {
     @Post("/payout-campaign-rewards")
     @(Returns(200, SuccessResult).Of(UpdatedResultModel))
     public async payoutCampaignRewards(@QueryParams() query: PayoutCampaignRewardsParams, @Context() context: Context) {
-        const { company } = this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
+        const { company } = await this.adminService.checkPermissions(
+            { hasRole: ["admin", "manager"] },
+            context.get("user")
+        );
         const { campaignId } = query;
         const campaign = await this.campaignService.findCampaignById(campaignId, undefined, company);
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
@@ -495,7 +501,10 @@ export class CampaignController {
     @Post("/generate-campaign-audit-report")
     @(Returns(200, SuccessResult).Of(GenerateCampaignAuditReportResultModel))
     public async generateCampaignAuditReport(@QueryParams() query: CampaignIdModel, @Context() context: Context) {
-        const { company } = this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
+        const { company } = await this.adminService.checkPermissions(
+            { hasRole: ["admin", "manager"] },
+            context.get("user")
+        );
         let { campaignId } = query;
         const campaign = await this.campaignService.findCampaignById(campaignId, { participant: true }, company);
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
@@ -604,9 +613,15 @@ export class CampaignController {
     @Get("/campaigns-lite")
     @(Returns(200, SuccessArrayResult).Of(CampaignResultModel))
     public async getCampaignsLite(@Context() context: Context) {
-        const { company } = this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
-        const org = await this.organizationService.findOrganizationByCompanyName(company!);
-        const campaigns = await this.campaignService.findCampaigns(org?.id);
+        let orgId;
+        if (context.get("user").company) {
+            const response = await this.adminService.checkPermissions(
+                { hasRole: ["admin", "manager"] },
+                context.get("user")
+            );
+            orgId = response.orgId;
+        }
+        const campaigns = await this.campaignService.findCampaigns(orgId);
         return new SuccessArrayResult(campaigns, CampaignResultModel);
     }
 
@@ -616,7 +631,7 @@ export class CampaignController {
         @QueryParams() query: AdminUpdateCampaignStatusParams,
         @Context() context: Context
     ) {
-        this.userService.checkPermissions({ restrictCompany: RAIINMAKER_ORG_NAME }, context.get("user"));
+        await this.adminService.checkPermissions({ restrictCompany: RAIINMAKER_ORG_NAME }, context.get("user"));
         const { status, campaignId } = query;
 
         const campaign = await this.campaignService.findCampaignById(campaignId, {
@@ -659,7 +674,7 @@ export class CampaignController {
     @Get("/payout/:campaignId")
     @(Returns(200, SuccessResult).Of(PaidOutCryptoResultModel))
     public async getPayout(@PathParams() path: CampaignIdModel, @Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const { campaignId } = path;
         const transfers = await this.transferService.findTransferByCampaignIdAndAction(campaignId, CAMPAIGN_REWARD);
         const totalCrypto = transfers.reduce((acc, curr) => (acc += parseFloat(curr.amount)), 0);

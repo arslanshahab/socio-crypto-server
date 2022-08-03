@@ -216,7 +216,7 @@ export class UserController {
     @Get("/")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserResultModel))
     public async list(@QueryParams() query: PaginatedVariablesModel, @Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const { skip = 0, take = 10 } = query;
         const [results, total] = await this.userService.findUsers({ skip, take }, userResultRelations);
 
@@ -426,7 +426,7 @@ export class UserController {
     @Get("/user-transactions-history/:userId")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserTransactionResultModel))
     public async getUserTransactionHistory(@PathParams() path: UserIdParam, @Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const { userId } = path;
         const transaction = await this.transferService.findUserTransactions(userId);
         return new SuccessResult(
@@ -439,7 +439,7 @@ export class UserController {
     @Get("/user-stats")
     @(Returns(200, SuccessResult).Of(DashboardStatsResultModel))
     public async getDashboardStats(@Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const [totalUsers, lastWeekUsers, bannedUsers] = await this.userService.getUserCount();
         const [redeemedTotalAmount] = await this.transferService.getRedeemedAmount();
         const [distributedTotalAmount] = await this.transferService.getDistributedAmount();
@@ -477,7 +477,7 @@ export class UserController {
     @Put("/reset-user-password/:userId")
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async resetUserPassword(@PathParams() path: UserIdParam, @Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const { userId } = path;
         const user = await this.userService.findUserById(userId);
         if (!user) throw new NotFound(USER_NOT_FOUND);
@@ -496,7 +496,7 @@ export class UserController {
     @Get("/single-user/:userId")
     @(Returns(200, SuccessResult).Of(SingleUserResultModel))
     public async getUserById(@PathParams() path: UserIdParam, @Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
         const user = await this.userService.findUserById(path.userId, ["profile", "social_post"]);
         if (!user) throw new NotFound(USER_NOT_FOUND);
         return new SuccessResult({ ...user, profile: ProfileResultModel.build(user?.profile!) }, SingleUserResultModel);
@@ -505,7 +505,7 @@ export class UserController {
     @Post("/transfer-user-coiin")
     @(Returns(200, SuccessResult).Of(UpdatedResultModel))
     public async transferUserCoiin(@BodyParams() body: TransferUserCoiinParams, @Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const admin = await this.userService.findUserByFirebaseId(context.get("user").firebaseId);
         const { coiin, userId, action } = body;
         const { ADD } = CoiinTransferAction;
@@ -651,7 +651,7 @@ export class UserController {
     @Put("/promote-permissions")
     @(Returns(200, SuccessResult).Of(UpdatedResultModel))
     public async promotePermissions(@BodyParams() body: PromotePermissionsParams, @Context() context: Context) {
-        const { role, company } = this.userService.checkPermissions(
+        const { role, company } = await this.adminService.checkPermissions(
             { hasRole: ["admin", "manager"] },
             context.get("user")
         );
@@ -767,7 +767,7 @@ export class UserController {
     @Get("/record")
     @Returns(200, SuccessResult)
     public async downloadUsersRecord(@Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const [results] = await this.userService.findUsers(undefined, { profile: true });
         const users = results.map((x) => ({
             id: x.id,

@@ -30,6 +30,7 @@ import { VerificationService } from "../../services/VerificationService";
 import { getTokenValueInUSD } from "../../util/exchangeRate";
 import { OrganizationService } from "../../services/OrganizationService";
 import { CurrencyService } from "../../services/CurrencyService";
+import { AdminService } from "../../services/AdminService";
 
 class DepositAddressParams {
     @Required() public readonly symbol: string;
@@ -60,11 +61,13 @@ export class TatumController {
     private verificationService: VerificationService;
     @Inject()
     private organizationService: OrganizationService;
+    @Inject()
+    private adminService: AdminService;
 
     @Get("/supported-currencies")
     @(Returns(200, SuccessArrayResult).Of(SupportedCurrenciesResultModel))
     public async getSupportedCurrencies(@Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const currencies = await this.tatumService.getSupportedTokens();
         return new SuccessArrayResult(currencies, SupportedCurrenciesResultModel);
     }
@@ -72,7 +75,7 @@ export class TatumController {
     @Get("/deposit-address")
     @(Returns(200, SuccessResult).Of(DepositAddressResultModel))
     public async getDepositAddress(@QueryParams() query: DepositAddressParams, @Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const admin = await this.userService.findUserByFirebaseId(context.get("user").id);
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
         const wallet = await this.walletService.findWalletByOrgId(admin.orgId!);

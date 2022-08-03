@@ -11,6 +11,7 @@ import { VerificationApplicationService } from "../../services/VerificationAppli
 import { KycUser } from "../../types";
 import { S3Client } from "../../clients/s3";
 import { KycResultModel, UserResultModel } from "../../models/RestModels";
+import { AdminService } from "../../services/AdminService";
 
 const userResultRelations = {
     profile: true,
@@ -53,6 +54,8 @@ export class KycController {
     private userService: UserService;
     @Inject()
     private verificationApplicationService: VerificationApplicationService;
+    @Inject()
+    private adminService: AdminService;
 
     @Get()
     @(Returns(200, SuccessResult).Of(KycResultModel))
@@ -84,7 +87,7 @@ export class KycController {
     @Get("/admin/:userId")
     @(Returns(200, SuccessResult).Of(Object))
     public async getAdmin(@PathParams("userId") userId: string, @Context() context: Context) {
-        this.userService.checkPermissions({ restrictCompany: RAIINMAKER_ORG_NAME }, context.get("user"));
+        await this.adminService.checkPermissions({ restrictCompany: RAIINMAKER_ORG_NAME }, context.get("user"));
         const user = await this.userService.findUserById(userId);
         if (!user) throw new NotFound(USER_NOT_FOUND);
         return new SuccessResult(await this.verificationApplicationService.getRawApplication(user.id), Object);
@@ -137,7 +140,7 @@ export class KycController {
     @Put("/update-kyc-status")
     @(Returns(200, SuccessResult).Of(UserResultModel))
     public async updateKycStatus(@QueryParams() query: KycStatusParms, @Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+       await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const { userId, status } = query;
         if (!["approve", "reject"].includes(status)) throw new BadRequest("Status must be either approve or reject");
         let user = await this.userService.findUserById(userId, userResultRelations);

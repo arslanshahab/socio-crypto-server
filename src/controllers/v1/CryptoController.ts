@@ -2,13 +2,13 @@ import { Controller, Inject } from "@tsed/di";
 import { Delete, Get, Post, Required, Returns } from "@tsed/schema";
 import { SuccessArrayResult, SuccessResult } from "../../util/entities";
 import { CryptoCurrencyService } from "../../services/CryptoCurrencyService";
-import { UserService } from "../../services/UserService";
 import { BodyParams, Context } from "@tsed/common";
 import { BooleanResultModel, CryptoCurrencyResultModel, WalletCurrencyResultModel } from "../../models/RestModels";
 import { OrganizationService } from "../../services/OrganizationService";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { ORG_NOT_FOUND } from "../../util/errors";
 import { WalletCurrencyService } from "../../services/WalletCurrencyService";
+import { AdminService } from "../../services/AdminService";
 
 class CryptoToWalletParams {
     @Required() public readonly contractAddress: string;
@@ -23,16 +23,16 @@ export class CryptoController {
     @Inject()
     private cryptoCurrencyService: CryptoCurrencyService;
     @Inject()
-    private userService: UserService;
-    @Inject()
     private organizationService: OrganizationService;
     @Inject()
     private walletCurrencyService: WalletCurrencyService;
+    @Inject()
+    private adminService: AdminService;
 
     @Get("/supported-crypto")
     @(Returns(200, SuccessArrayResult).Of(CryptoCurrencyResultModel))
     public async listSupportedCrypto(@Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const crypto = await this.cryptoCurrencyService.findCryptoCurrencies();
         return new SuccessArrayResult(crypto, CryptoCurrencyResultModel);
     }
@@ -40,7 +40,10 @@ export class CryptoController {
     @Post("/add-to-wallet")
     @(Returns(200, SuccessArrayResult).Of(WalletCurrencyResultModel))
     public async addCryptoToWallet(@BodyParams() body: CryptoToWalletParams, @Context() context: Context) {
-        const { company } = this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
+        const { company } = await this.adminService.checkPermissions(
+            { hasRole: ["admin", "manager"] },
+            context.get("user")
+        );
         if (!company) throw new NotFound("Company not found");
         const { contractAddress } = body;
         const org = await this.organizationService.findOrganizationByCompanyName(company!, { wallet: true });
@@ -54,7 +57,10 @@ export class CryptoController {
     @Delete("/delete-from-wallet")
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async deleteCryptoFromWallet(@BodyParams() body: DeleteCryptoFromWalletParams, @Context() context: Context) {
-        const { company } = this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
+        const { company } = await this.adminService.checkPermissions(
+            { hasRole: ["admin", "manager"] },
+            context.get("user")
+        );
         if (!company) throw new NotFound("Company not found");
         const { id } = body;
         const org = await this.organizationService.findOrganizationByCompanyName(company!, { wallet: true });
