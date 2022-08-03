@@ -55,6 +55,7 @@ import { CampaignTemplateService } from "../../services/CampaignTemplateService"
 import { TatumService } from "../../services/TatumService";
 import { MarketDataService } from "../../services/MarketDataService";
 import { formatFloat } from "../../util";
+import { AdminService } from "../../services/AdminService";
 
 const validator = new Validator();
 
@@ -107,12 +108,22 @@ export class CampaignController {
     private tatumService: TatumService;
     @Inject()
     private marketDataService: MarketDataService;
+    @Inject()
+    private adminService: AdminService;
 
     @Get()
     @(Returns(200, SuccessResult).Of(Pagination).Nested(CampaignResultModel))
     public async list(@QueryParams() query: ListCampaignsVariablesModel, @Context() context: Context) {
+        const {orgId} = await this.adminService.checkPermissions(
+            { hasRole: ["admin", "manager"] },
+            context.get("user")
+        );
         const user = await this.userService.findUserByContext(context.get("user"));
-        const [items, total] = await this.campaignService.findCampaignsByStatus(query, user || undefined);
+        const [items, total] = await this.campaignService.findCampaignsByStatus(
+            query,
+            user || undefined,
+            orgId || undefined
+        );
         const modelItems = await Promise.all(
             items.map(async (i) => {
                 const campaignTokenValueInUSD = await this.marketDataService.getTokenValueInUSD(
@@ -543,7 +554,7 @@ export class CampaignController {
     @Get("/dashboard-metrics/:campaignId")
     @(Returns(200, SuccessResult).Of(CampaignStatsResultModelArray))
     public async getDashboardMetrics(@PathParams() query: CampaignIdModel, @Context() context: Context) {
-        const admin = await this.userService.findUserByFirebaseId(context.get("user").firebaseId);
+        const admin = await this.userService.findUserByFirebaseId(context.get("user").id);
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
         const { campaignId } = query;
         let aggregatedMetrics;
@@ -560,7 +571,9 @@ export class CampaignController {
                 name: "All",
             };
             rawMetrics = await this.dailyParticipantMetricService.getOrgMetrics(admin.orgId!);
-            totalParticipants = await this.participantService.findParticipantsCount();
+            const campaigns = await this.campaignService.findCampaigns(admin.orgId!);
+            const campaignIds = campaigns.map((campaign) => campaign.id);
+            totalParticipants = await this.participantService.findParticipantsCount(undefined, campaignIds);
         }
         if (campaignId && campaignId != "-1") {
             [aggregatedMetrics] = await this.dailyParticipantMetricService.getAggregatedCampaignMetrics(campaignId);
@@ -587,8 +600,9 @@ export class CampaignController {
     @Get("/campaigns-lite")
     @(Returns(200, SuccessArrayResult).Of(CampaignResultModel))
     public async getCampaignsLite(@Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
-        const campaigns = await this.campaignService.findCampaigns();
+        const { company } = this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
+        const org = await this.organizationService.findOrganizationByCompanyName(company!);
+        const campaigns = await this.campaignService.findCampaigns(org?.id);
         return new SuccessArrayResult(campaigns, CampaignResultModel);
     }
 

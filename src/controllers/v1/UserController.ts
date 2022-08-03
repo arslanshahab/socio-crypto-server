@@ -763,6 +763,7 @@ export class UserController {
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 
+    // For admin panel
     @Get("/record")
     @Returns(200, SuccessResult)
     public async downloadUsersRecord(@Context() context: Context) {
@@ -772,6 +773,7 @@ export class UserController {
             id: x.id,
             email: x.email,
             userName: x.profile?.username,
+            promoCode: x.promoCode,
             active: x.active,
             createdAt: x.createdAt,
             lastLogin: x.lastLogin,

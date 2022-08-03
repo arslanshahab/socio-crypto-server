@@ -31,7 +31,7 @@ export class CampaignService {
         refreshThreshold: 300,
         key: (args: any[]) => prepareCacheKey(CacheKeys.CAMPAIGN_BY_STATUS_SERVICE, args),
     })
-    public async findCampaignsByStatus(params: ListCampaignsVariablesV2, user?: User) {
+    public async findCampaignsByStatus(params: ListCampaignsVariablesV2, user?: User, orgId?: string) {
         const now = new Date();
 
         const where: Prisma.CampaignWhereInput = {
@@ -40,6 +40,7 @@ export class CampaignService {
             status: params.status || "APPROVED",
             isGlobal: false,
             auditStatus: params.auditStatus,
+            orgId: orgId && orgId,
         };
 
         return prisma.$transaction([
@@ -297,8 +298,9 @@ export class CampaignService {
         return false;
     }
 
-    public async findCampaigns() {
+    public async findCampaigns(orgId?: string) {
         return await prisma.campaign.findMany({
+            where: { orgId: orgId && orgId },
             select: { id: true, name: true },
         });
     }
