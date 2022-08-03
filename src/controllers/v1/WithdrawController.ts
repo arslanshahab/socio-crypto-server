@@ -24,11 +24,7 @@ export class WithdrawController {
     @Get()
     @(Returns(200, SuccessResult).Of(Object))
     public async getWithdrawalsV2(@QueryParams() query: WithdrawStatusParams, @Context() context: Context) {
-        let orgId;
-        if (context.get("user").company) {
-            const response = await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-            orgId = response.orgId;
-        }
+        const { orgId } = await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const { status = "PENDING" } = query;
         const transfers = await this.transferService.getWithdrawalsByStatus(status, orgId);
         if (!transfers) throw new NotFound(TRANSFER_NOT_FOUND);

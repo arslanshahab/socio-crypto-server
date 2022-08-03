@@ -114,14 +114,10 @@ export class CampaignController {
     @Get()
     @(Returns(200, SuccessResult).Of(Pagination).Nested(CampaignResultModel))
     public async list(@QueryParams() query: ListCampaignsVariablesModel, @Context() context: Context) {
-        let orgId;
-        if (context.get("user").company) {
-            const response = await this.adminService.checkPermissions(
-                { hasRole: ["admin", "manager"] },
-                context.get("user")
-            );
-            orgId = response.orgId;
-        }
+        const {orgId} = await this.adminService.checkPermissions(
+            { hasRole: ["admin", "manager"] },
+            context.get("user")
+        );
         const user = await this.userService.findUserByContext(context.get("user"));
         const [items, total] = await this.campaignService.findCampaignsByStatus(
             query,
