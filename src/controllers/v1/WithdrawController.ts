@@ -3,12 +3,10 @@ import { Controller, Inject } from "@tsed/di";
 import { Enum, Get, Property, Returns } from "@tsed/schema";
 import { SuccessArrayResult, SuccessResult } from "../../util/entities";
 import { TransferService } from "../../services/TransferService";
-import { UserService } from "../../services/UserService";
 import { NotFound } from "@tsed/exceptions";
-import { ORG_NOT_FOUND, TRANSFER_NOT_FOUND } from "../../util/errors";
+import { TRANSFER_NOT_FOUND } from "../../util/errors";
 import { TransferStatus } from "../../util/constants";
 import { TransferResultModel } from "../../models/RestModels";
-import { OrganizationService } from "../../services/OrganizationService";
 import { AdminService } from "../../services/AdminService";
 
 export class WithdrawStatusParams {
@@ -19,10 +17,7 @@ export class WithdrawStatusParams {
 export class WithdrawController {
     @Inject()
     private transferService: TransferService;
-    @Inject()
-    private userService: UserService;
-    @Inject()
-    private organizationService: OrganizationService;
+
     @Inject()
     private adminService: AdminService;
 
