@@ -65,10 +65,8 @@ export class WithdrawController {
     @Get("/history")
     @(Returns(200, SuccessArrayResult).Of(TransferResultModel))
     public async getWithdrawalHistory(@Context() context: Context) {
-        const { company } = this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        const org = await this.organizationService.findOrganizationByCompanyName(company!);
-        if (!org) throw new NotFound(ORG_NOT_FOUND);
-        const transfers = await this.transferService.getAuditedWithdrawals(org.id);
+        const { orgId } = await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const transfers = await this.transferService.getAuditedWithdrawals(orgId);
         return new SuccessArrayResult(TransferResultModel.buildArray(transfers), TransferResultModel);
     }
 }
