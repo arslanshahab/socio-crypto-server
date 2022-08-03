@@ -114,7 +114,7 @@ export class CampaignController {
     @Get()
     @(Returns(200, SuccessResult).Of(Pagination).Nested(CampaignResultModel))
     public async list(@QueryParams() query: ListCampaignsVariablesModel, @Context() context: Context) {
-        const {orgId} = await this.adminService.checkPermissions(
+        const { orgId } = await this.adminService.checkPermissions(
             { hasRole: ["admin", "manager"] },
             context.get("user")
         );
@@ -609,14 +609,10 @@ export class CampaignController {
     @Get("/campaigns-lite")
     @(Returns(200, SuccessArrayResult).Of(CampaignResultModel))
     public async getCampaignsLite(@Context() context: Context) {
-        let orgId;
-        if (context.get("user").company) {
-            const response = await this.adminService.checkPermissions(
-                { hasRole: ["admin", "manager"] },
-                context.get("user")
-            );
-            orgId = response.orgId;
-        }
+        const { orgId } = await this.adminService.checkPermissions(
+            { hasRole: ["admin", "manager"] },
+            context.get("user")
+        );
         const campaigns = await this.campaignService.findCampaigns(orgId);
         return new SuccessArrayResult(campaigns, CampaignResultModel);
     }
