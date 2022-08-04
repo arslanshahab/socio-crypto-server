@@ -3,6 +3,7 @@ import { Application } from "../../app";
 import * as dotenv from "dotenv";
 import { doFetch, RequestData } from "../../util/fetchRequest";
 import { prisma, readPrisma } from "../../clients/prisma";
+import { SlackClient } from "../../clients/slack";
 
 dotenv.config();
 const app = new Application();
@@ -40,8 +41,10 @@ console.log("APP instance created.");
         }
     } catch (error) {
         console.log(error);
+        await SlackClient.sendNotification({ name: "Market Data Cron", error: error });
+        console.log("EXITING BECAUSE OF AN ERROR ----.");
         await connection.close();
-        console.log("DATABASE CONNECTION CLOSED WITH ERROR ----.");
+        console.log("DATABASE CONNECTION CLOSED ----.");
         process.exit(0);
     }
     console.log("COMPLETED CRON TASKS ----.");
