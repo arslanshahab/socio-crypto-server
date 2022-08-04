@@ -15,6 +15,7 @@ import { HourlyCampaignMetricsService } from "../../services/HourlyCampaignMetri
 import { DragonChainService } from "../../services/DragonChainService";
 import { Dragonchain } from "../../clients/dragonchain";
 import { SocialLinkService } from "../../services/SocialLinkService";
+import { SlackClient } from "../../clients/slack";
 
 dotenv.config();
 const app = new Application();
@@ -252,6 +253,11 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
         }
     } catch (error) {
         console.log(error);
+        await SlackClient.sendNotification({ name: "Social Metrics Cron", error: error });
+        console.log("EXITING BECAUSE OF AN ERROR ----.");
+        await connection.close();
+        console.log("DATABASE CONNECTION CLOSED ----.");
+        process.exit(0);
     }
     console.log("COMPLETED CRON TASKS ----.");
     await connection.close();
