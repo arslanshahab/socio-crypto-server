@@ -376,7 +376,30 @@ export class TatumService {
             };
             return await doFetch(requestData);
         } catch (error) {
-            console.log(error?.response?.data || error.message);
+            throw new Error(error?.response?.data?.message || error.message);
+        }
+    }
+
+    public async sendBNBTokenOffchainTransaction(data: WithdrawPayload & WalletKeys) {
+        try {
+            const endpoint = `${this.baseUrl}/offchain/bnb/transfer`;
+            const requestData: RequestData = {
+                method: "POST",
+                url: endpoint,
+                payload: {
+                    senderAccountId: data.senderAccountId,
+                    amount: data.amount,
+                    address: data.address,
+                    fee: data.fee,
+                    fromAddress: data.walletAddress,
+                    privateKey: data.privateKey,
+                    paymentId: data.paymentId,
+                    senderNote: data.senderNote,
+                },
+                headers: { "x-api-key": Secrets.tatumApiKey },
+            };
+            return await doFetch(requestData);
+        } catch (error) {
             throw new Error(error?.response?.data?.message || error.message);
         }
     }
@@ -438,7 +461,7 @@ export class TatumService {
                     case "TRON":
                         return await sendTronOffchainTransaction(false, body as any);
                     case "BNB":
-                        return await this.sendTokenOffchainTransaction(body);
+                        return await this.sendBNBTokenOffchainTransaction(body);
                     case "ETH":
                         return await this.sendOffchainTransactionFromCustodial(body);
                     case "BSC":
