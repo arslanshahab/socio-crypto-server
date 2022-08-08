@@ -871,3 +871,7 @@ export class TransactionResultModel {
         };
     }
 }
+
+export class SocialPostCountResultModel {
+    @Property() public readonly count: number;
+}
