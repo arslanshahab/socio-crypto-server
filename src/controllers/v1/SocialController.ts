@@ -300,7 +300,7 @@ export class SocialController {
     public async getCampaignPostsByCampaignId(@PathParams() path: CampaignIdModel, @Context() context: Context) {
         await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const { campaignId } = path;
-        const socialPostsCount = await this.socialPostService.getPostCountByCampaignId(campaignId);
+        const socialPostsCount = await this.socialPostService.getSocialPostCount(campaignId);
         return new SuccessResult({ count: socialPostsCount }, SocialPostCountResultModel);
     }
 }
