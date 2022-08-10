@@ -251,7 +251,7 @@ export const generateRandomId = (stringLength = 20) => {
     return Array.apply(null, Array(stringLength)).map(pickRandom).join("");
 };
 
-export const generatePromoCode = () => {
+export const generate6DigitCode = () => {
     const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     const stringLength = 6;
     function pickRandom() {

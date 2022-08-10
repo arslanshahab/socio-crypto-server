@@ -16,7 +16,8 @@ export class UserAuthMiddleware {
         const isPublicRoute =
             ctx.request.url.startsWith("/v1/docs/") ||
             ctx.request.url.startsWith("/v1/auth/") ||
-            ctx.request.url.startsWith("/v1/referral/");
+            ctx.request.url.startsWith("/v1/referral/") ||
+            ctx.request.url.startsWith("/v1/organization/register/");
 
         const adminToken = req.headers.cookie?.split("session=")[1];
 

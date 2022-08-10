@@ -4,7 +4,7 @@ import { BadRequest } from "@tsed/exceptions";
 import { EMAIL_NOT_VERIFIED, INCORRECT_CODE_OR_EMAIL, VERIFICATION_TOKEN_EXPIRED } from "../util/errors";
 import { addMinutes, isPast } from "date-fns";
 import { VerificationType } from "../types";
-import { generateRandomNonce } from "../util";
+import { generate6DigitCode } from "../util";
 import { prisma, readPrisma } from "../clients/prisma";
 
 @Injectable()
@@ -41,7 +41,7 @@ export class VerificationService {
     public async addExpiryTime(verificationId: string) {
         return await prisma.verification.update({
             where: { id: verificationId },
-            data: { expiry: addMinutes(new Date(), 60) },
+            data: { expiry: addMinutes(new Date(), 15) },
         });
     }
 
@@ -75,7 +75,7 @@ export class VerificationService {
                 data: {
                     email: data.email.trim().toLowerCase(),
                     type: data.type,
-                    code: encrypt(generateRandomNonce()),
+                    code: encrypt(generate6DigitCode()),
                 },
             });
         }
