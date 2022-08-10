@@ -769,6 +769,7 @@ export class UserController {
             id: x.id,
             email: x.email,
             userName: x.profile?.username,
+            promoCode: x.promoCode,
             active: x.active,
             createdAt: x.createdAt,
             lastLogin: x.lastLogin,
