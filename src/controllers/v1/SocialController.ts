@@ -35,7 +35,6 @@ import { BSC, COIIN, SocialClientType, SocialLinkType } from "../../util/constan
 import { TatumService } from "../../services/TatumService";
 import { DragonChainService } from "../../services/DragonChainService";
 import { AdminService } from "../../services/AdminService";
-import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 
 class RegisterSocialLinkResultModel {
     @Property() public readonly registerSocialLink: boolean;
@@ -120,8 +119,6 @@ export class SocialController {
     private dragonChainService: DragonChainService;
     @Inject()
     private adminService: AdminService;
-    @Inject()
-    private dailyParticipantMetricService: DailyParticipantMetricService;
 
     @Get("/social-metrics")
     @(Returns(200, SuccessResult).Of(SocialMetricsResultModel))
@@ -304,7 +301,7 @@ export class SocialController {
         const { campaignId } = path;
         const campaign = await this.campaignService.findCampaignById(campaignId);
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
-        let [averageClickRate] = await this.dailyParticipantMetricService.getAverageClicks(campaignId);
+        let [averageClickRate] = await this.participantService.getAverageClicks(campaignId);
         if (!averageClickRate.clickCount) {
             averageClickRate = { clickCount: 0 };
         }
