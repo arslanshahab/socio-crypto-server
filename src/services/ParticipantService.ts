@@ -8,7 +8,7 @@ import { HourlyCampaignMetricsService } from "./HourlyCampaignMetricsService";
 import { PlatformCache } from "@tsed/common";
 import { resetCacheKey } from "../util/index";
 import { CacheKeys } from "../util/constants";
-import { prisma } from "../clients/prisma";
+import { prisma, readPrisma } from "../clients/prisma";
 
 @Injectable()
 export class ParticipantService {
@@ -237,5 +237,18 @@ export class ParticipantService {
         return prisma.participant.count({
             where: { userId },
         });
+    }
+
+    public async getParticipantMetrics(campaignId: string) {
+        const result: { clickCount: number; viewCount: number; submissionCount: number }[] =
+            await readPrisma.$queryRaw`Select sum(cast("clickCount" as int)) as "clickCount", sum(cast("viewCount" as int)) as "viewCount",
+            sum(cast("submissionCount" as int)) as "submissionCount" from participant where "campaignId" = ${campaignId}`;
+        return result;
+    }
+
+    public async getAverageClicks(campaignId: string) {
+        const result: { clickCount: number }[] =
+            await readPrisma.$queryRaw`SELECT avg(cast("clickCount" as int)) as "clickCount" from participant where "campaignId"=${campaignId}`;
+        return result;
     }
 }

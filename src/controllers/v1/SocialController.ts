@@ -16,8 +16,13 @@ import {
 } from "../../util/errors";
 import { ParticipantService } from "../../services/ParticipantService";
 import { SocialPostService } from "../../services/SocialPostService";
-import { calculateParticipantSocialScoreV2, getSocialClient } from "../helpers";
-import { BooleanResultModel, SocialMetricsResultModel, SocialPostResultModel } from "../../models/RestModels";
+import { calculateParticipantSocialScoreV2, engagementRate, getSocialClient } from "../helpers";
+import {
+    BooleanResultModel,
+    CampaignIdModel,
+    SocialMetricsResultModel,
+    SocialPostResultModel,
+} from "../../models/RestModels";
 import { Prisma } from "@prisma/client";
 import { MediaType, PointValueTypes, SocialType } from "../../types";
 import { SocialLinkService } from "../../services/SocialLinkService";
@@ -30,6 +35,7 @@ import { BSC, COIIN, SocialClientType, SocialLinkType } from "../../util/constan
 import { TatumService } from "../../services/TatumService";
 import { DragonChainService } from "../../services/DragonChainService";
 import { AdminService } from "../../services/AdminService";
+import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 
 class RegisterSocialLinkResultModel {
     @Property() public readonly registerSocialLink: boolean;
@@ -114,6 +120,8 @@ export class SocialController {
     private dragonChainService: DragonChainService;
     @Inject()
     private adminService: AdminService;
+    @Inject()
+    private dailyParticipantMetricService: DailyParticipantMetricService;
 
     @Get("/social-metrics")
     @(Returns(200, SuccessResult).Of(SocialMetricsResultModel))
@@ -286,5 +294,37 @@ export class SocialController {
             }
         }
         return new SuccessResult({ socialPosts, count }, Object);
+    }
+
+    // For Admin-panel
+    @Get("/average-progress/:campaignId")
+    @(Returns(200, SuccessResult).Of(Object))
+    public async getCampaignProgress(@PathParams() path: CampaignIdModel, @Context() context: Context) {
+        await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const { campaignId } = path;
+        const campaign = await this.campaignService.findCampaignById(campaignId);
+        if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
+        let [averageClickRate] = await this.dailyParticipantMetricService.getAverageClicks(campaignId);
+        if (!averageClickRate.clickCount) {
+            averageClickRate = { clickCount: 0 };
+        }
+        let engagementRates = [];
+        const { likeRate, commentRate, shareRate, clickRate } = (await engagementRate(campaignId)).social();
+        const viewRate = (await engagementRate(campaignId)).views();
+        const submissionRate = (await engagementRate(campaignId)).submissions();
+        engagementRates.push({
+            campaignId: campaign.id,
+            likeRate,
+            commentRate,
+            shareRate,
+            viewRate,
+            submissionRate,
+            clickRate,
+        });
+        console.log(
+            "aggregated click count----------------------",
+            averageClickRate.clickCount.toFixed(2),
+            engagementRates
+        );
     }
 }

@@ -39,6 +39,13 @@ import { Forbidden, NotFound } from "@tsed/exceptions";
 import { TatumClient } from "../clients/tatumClient";
 import { BalanceResultModel } from "../models/RestModels";
 import { Currency, Token, User, Wallet as PrismaWallet } from "@prisma/client";
+import { SocialPostService } from "../services/SocialPostService";
+import { SocialLinkService } from "../services/SocialLinkService";
+import { ParticipantService } from "../services/ParticipantService";
+
+const socialPostService = new SocialPostService();
+const socialLinkService = new SocialLinkService();
+const participantService = new ParticipantService();
 
 export const feeMultiplier = () => new BN(1).minus(FEE_RATE);
 
@@ -474,4 +481,27 @@ export const getBalance = async (
         }) || []
     );
     return currencies;
+};
+
+export const engagementRate = async (campaignId: string) => {
+    const [result] = await socialLinkService.getFollowersAggregation(campaignId);
+    const potentialEngagement = result.followerCount;
+    const [metrics] = await socialPostService.getSocialPostMetrics(campaignId);
+    const { comments, likes, shares } = metrics;
+    const [{ clickCount, viewCount, submissionCount }] = await participantService.getParticipantMetrics(campaignId);
+    const social = () => {
+        return {
+            likeRate: likes / (potentialEngagement || Number.POSITIVE_INFINITY),
+            shareRate: shares / (potentialEngagement || Number.POSITIVE_INFINITY),
+            commentRate: comments / (potentialEngagement || Number.POSITIVE_INFINITY),
+            clickRate: clickCount / (potentialEngagement || Number.POSITIVE_INFINITY),
+        };
+    };
+    const views = () => {
+        return clickCount / (viewCount || Number.POSITIVE_INFINITY);
+    };
+    const submissions = () => {
+        return clickCount / (submissionCount || Number.POSITIVE_INFINITY);
+    };
+    return { social, views, submissions };
 };
