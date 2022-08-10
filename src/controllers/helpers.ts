@@ -505,9 +505,11 @@ export const engagementRate = async (campaignId: string) => {
     return { social, views, submissions };
 };
 
-export const standardDeviation = async (value: number, total: number, rawValues: string[]) => {
-    const mean = value / total;
+export const standardDeviation = async (value: number, count: number, rawValues: string[]) => {
+    const mean = value / count;
+    const distribution = rawValues.map((x) => Math.pow(parseInt(x) - mean, 2)).reduce((acc, curr) => acc + curr, 0);
+    const standardDeviation = Math.sqrt(distribution / count);
+    console.log("standardDeviation--------", standardDeviation);
 
-    const distribution = rawValues.map((x) => (parseInt(x) - mean).toExponential());
-    console.log("mean-------------------", mean, distribution);
+    return { mean, standardDeviation };
 };

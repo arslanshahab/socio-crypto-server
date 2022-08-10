@@ -36,7 +36,6 @@ import { BSC, COIIN, SocialClientType, SocialLinkType } from "../../util/constan
 import { TatumService } from "../../services/TatumService";
 import { DragonChainService } from "../../services/DragonChainService";
 import { AdminService } from "../../services/AdminService";
-import { readPrisma } from "../../clients/prisma";
 
 class RegisterSocialLinkResultModel {
     @Property() public readonly registerSocialLink: boolean;
@@ -331,25 +330,24 @@ export class SocialController {
             submissionRate,
             clickRate,
         });
-        // standard deviation
-        const likeCount = await readPrisma.socialPost.count({
-            where: { campaignId: campaign.id, type: SocialLinkType.TWITTER, likes: { gt: "0" } },
-        });
-        let rawSocialPostMetrics = await this.socialPostService.findSocialPostMetricsById(campaignId);
-        let [{ rawLikes }] = rawSocialPostMetrics.map((item) => ({
-            rawLikes: item.likes,
-            rawComments: item.comments,
-            rawShares: item.shares,
-        }));
-        console.log("raw likes---------", rawLikes);
 
-        const likeStandardDeviation = await standardDeviation(likeRate, likeCount, rawLikes);
+        const postCount = await this.socialPostService.getSocialPostCount(campaignId);
+        let rawSocialPostMetrics = await this.socialPostService.findSocialPostMetricsById(campaignId);
+        const rawLikes = rawSocialPostMetrics.map((x) => x.likes);
+        const rawComments = rawSocialPostMetrics.map((x) => x.comments);
+        const rawShares = rawSocialPostMetrics.map((x) => x.shares);
+
+        const likeStandardDeviation = await standardDeviation(likeRate, postCount, rawLikes);
+        const commentStandardDeviation = await standardDeviation(commentRate, postCount, rawComments);
+        const sharesStandardDeviation = await standardDeviation(shareRate, postCount, rawShares);
 
         console.log(
             "aggregated click count----------------------",
             averageClickRate.clickCount.toFixed(2),
             engagementRates,
-            likeStandardDeviation
+            likeStandardDeviation.standardDeviation.toFixed(2),
+            commentStandardDeviation.standardDeviation.toFixed(2),
+            sharesStandardDeviation.standardDeviation.toFixed(2)
         );
     }
 }
