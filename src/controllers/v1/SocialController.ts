@@ -16,7 +16,7 @@ import {
 } from "../../util/errors";
 import { ParticipantService } from "../../services/ParticipantService";
 import { SocialPostService } from "../../services/SocialPostService";
-import { calculateParticipantSocialScoreV2, engagementRate, getSocialClient } from "../helpers";
+import { calculateParticipantSocialScoreV2, engagementRate, getSocialClient, standardDeviation } from "../helpers";
 import {
     BooleanResultModel,
     CampaignIdModel,
@@ -36,6 +36,7 @@ import { BSC, COIIN, SocialClientType, SocialLinkType } from "../../util/constan
 import { TatumService } from "../../services/TatumService";
 import { DragonChainService } from "../../services/DragonChainService";
 import { AdminService } from "../../services/AdminService";
+import { readPrisma } from "../../clients/prisma";
 
 class RegisterSocialLinkResultModel {
     @Property() public readonly registerSocialLink: boolean;
@@ -320,6 +321,7 @@ export class SocialController {
         const { likeRate, commentRate, shareRate, clickRate } = (await engagementRate(campaignId)).social();
         const viewRate = (await engagementRate(campaignId)).views();
         const submissionRate = (await engagementRate(campaignId)).submissions();
+        // engagement rates
         engagementRates.push({
             campaignId: campaign.id,
             likeRate,
@@ -329,10 +331,25 @@ export class SocialController {
             submissionRate,
             clickRate,
         });
+        // standard deviation
+        const likeCount = await readPrisma.socialPost.count({
+            where: { campaignId: campaign.id, type: SocialLinkType.TWITTER, likes: { gt: "0" } },
+        });
+        let rawSocialPostMetrics = await this.socialPostService.findSocialPostMetricsById(campaignId);
+        let [{ rawLikes }] = rawSocialPostMetrics.map((item) => ({
+            rawLikes: item.likes,
+            rawComments: item.comments,
+            rawShares: item.shares,
+        }));
+        console.log("raw likes---------", rawLikes);
+
+        const likeStandardDeviation = await standardDeviation(likeRate, likeCount, rawLikes);
+
         console.log(
             "aggregated click count----------------------",
             averageClickRate.clickCount.toFixed(2),
-            engagementRates
+            engagementRates,
+            likeStandardDeviation
         );
     }
 }

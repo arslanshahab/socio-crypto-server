@@ -486,8 +486,7 @@ export const getBalance = async (
 export const engagementRate = async (campaignId: string) => {
     const [result] = await socialLinkService.getFollowersAggregation(campaignId);
     const potentialEngagement = result.followerCount;
-    const [metrics] = await socialPostService.getSocialPostMetrics(campaignId);
-    const { comments, likes, shares } = metrics;
+    const [{ comments, likes, shares }] = await socialPostService.getSocialPostMetrics(campaignId);
     const [{ clickCount, viewCount, submissionCount }] = await participantService.getParticipantMetrics(campaignId);
     const social = () => {
         return {
@@ -504,4 +503,11 @@ export const engagementRate = async (campaignId: string) => {
         return clickCount / (submissionCount || Number.POSITIVE_INFINITY);
     };
     return { social, views, submissions };
+};
+
+export const standardDeviation = async (value: number, total: number, rawValues: string[]) => {
+    const mean = value / total;
+
+    const distribution = rawValues.map((x) => (parseInt(x) - mean).toExponential());
+    console.log("mean-------------------", mean, distribution);
 };
