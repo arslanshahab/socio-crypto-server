@@ -21,6 +21,7 @@ import {
     BooleanResultModel,
     CampaignIdModel,
     SocialMetricsResultModel,
+    SocialPostCountResultModel,
     SocialPostResultModel,
 } from "../../models/RestModels";
 import { Prisma } from "@prisma/client";
@@ -291,6 +292,16 @@ export class SocialController {
             }
         }
         return new SuccessResult({ socialPosts, count }, Object);
+    }
+
+    // Fort Admin-panel
+    @Get("/posts/:campaignId")
+    @(Returns(200, SuccessResult).Of(SocialPostCountResultModel))
+    public async getCampaignPostsByCampaignId(@PathParams() path: CampaignIdModel, @Context() context: Context) {
+        await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const { campaignId } = path;
+        const socialPostsCount = await this.socialPostService.getSocialPostCount(campaignId);
+        return new SuccessResult({ count: socialPostsCount }, SocialPostCountResultModel);
     }
 
     // For Admin-panel

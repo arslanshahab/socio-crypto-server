@@ -53,8 +53,10 @@ export class SocialPostService {
         });
     }
 
-    public async getSocialPostCountByParticipantId(participantId: string, campaignId?: string) {
-        return readPrisma.socialPost.count({ where: { participantId, campaignId } });
+    public async getSocialPostCount(campaignId?: string, participantId?: string) {
+        return readPrisma.socialPost.count({
+            where: { campaignId: campaignId && campaignId, participantId: participantId && participantId },
+        });
     }
 
     public async getSocialPostMetrics(campaignId: string) {
