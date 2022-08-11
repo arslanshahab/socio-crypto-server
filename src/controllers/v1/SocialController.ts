@@ -306,7 +306,7 @@ export class SocialController {
     }
 
     // For Admin-panel
-    @Get("/campaign-average-stats/:campaignId")
+    @Get("/campaign-daviation/:campaignId")
     @(Returns(200, SuccessResult).Of(Object))
     public async getCampaignProgress(@PathParams() path: CampaignIdModel, @Context() context: Context) {
         await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
@@ -317,19 +317,17 @@ export class SocialController {
         if (!clickCount) {
             clickCount = 0;
         }
-        let engagementRates = [];
         const { likeRate, commentRate, shareRate, clickRate } = (await engagementRate(campaignId)).social();
         const viewRate = (await engagementRate(campaignId)).views();
         const submissionRate = (await engagementRate(campaignId)).submissions();
-        // engagement rates
-        engagementRates.push({
-            likeRate,
-            commentRate,
-            shareRate,
-            viewRate,
-            submissionRate,
-            clickRate,
-        });
+        const engagementRates = {
+            likeRate: likeRate.toFixed(2),
+            commentRate: commentRate.toFixed(2),
+            shareRate: shareRate.toFixed(2),
+            viewRate: viewRate.toFixed(2),
+            submissionRate: submissionRate.toFixed(2),
+            clickRate: clickRate.toFixed(2),
+        };
         // standard deviation
         const postCount = await this.socialPostService.getSocialPostCount(campaignId);
         const socialPostMetrics = await this.socialPostService.findSocialPostMetricsById(campaignId);

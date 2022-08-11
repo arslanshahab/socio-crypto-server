@@ -878,19 +878,20 @@ export class SocialPostCountResultModel {
 }
 
 export class EngagementRateResultModel {
-    @Property() public readonly likeRate: number;
-    @Property() public readonly commentRate: number;
-    @Property() public readonly shareRate: number;
-    @Property() public readonly viewRate: number;
-    @Property() public readonly submissionRate: number;
-    @Property() public readonly clickRate: number;
+    @Property() public readonly likeRate: string;
+    @Property() public readonly commentRate: string;
+    @Property() public readonly shareRate: string;
+    @Property() public readonly viewRate: string;
+    @Property() public readonly submissionRate: string;
+    @Property() public readonly clickRate: string;
 }
 export class CampaignAverageStatsResultModel {
     @Property() public readonly averageClicks: string;
-    @Property() public readonly engagementRates: EngagementRateResultModel[];
+    @Property() public readonly engagementRates: EngagementRateResultModel;
     @Property() public readonly likeStandardDeviation: string;
     @Property() public readonly commentStandardDeviation: string;
     @Property() public readonly sharesStandardDeviation: string;
     @Property() public readonly clicksStandardDeviation: string;
     @Property() public readonly viewsStandardDeviation: string;
+    @Property() public readonly submissionsStandardDeviation: string;
 }
