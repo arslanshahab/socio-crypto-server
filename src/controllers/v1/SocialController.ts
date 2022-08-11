@@ -330,24 +330,33 @@ export class SocialController {
             submissionRate,
             clickRate,
         });
-
+        // standard deviation
         const postCount = await this.socialPostService.getSocialPostCount(campaignId);
-        let rawSocialPostMetrics = await this.socialPostService.findSocialPostMetricsById(campaignId);
-        const rawLikes = rawSocialPostMetrics.map((x) => x.likes);
-        const rawComments = rawSocialPostMetrics.map((x) => x.comments);
-        const rawShares = rawSocialPostMetrics.map((x) => x.shares);
+        let socialPostMetrics = await this.socialPostService.findSocialPostMetricsById(campaignId);
+        const rawLikes = socialPostMetrics.map((x) => x.likes);
+        const rawComments = socialPostMetrics.map((x) => x.comments);
+        const rawShares = socialPostMetrics.map((x) => x.shares);
+        const participants = await this.participantService.findParticipants(campaignId);
+        const rawClicks = participants.map((x) => x.clickCount);
+        const rawViews = participants.map((x) => x.viewCount);
+        const participantCount = await this.participantService.findParticipantsCount(campaignId);
 
         const likeStandardDeviation = await standardDeviation(likeRate, postCount, rawLikes);
         const commentStandardDeviation = await standardDeviation(commentRate, postCount, rawComments);
         const sharesStandardDeviation = await standardDeviation(shareRate, postCount, rawShares);
+        const clicksStandardDeviation = await standardDeviation(clickRate, participantCount, rawClicks);
+        const viewsStandardDeviation = await standardDeviation(viewRate, participantCount, rawViews);
 
         console.log(
+            clicksStandardDeviation.mean,
             "aggregated click count----------------------",
             averageClickRate.clickCount.toFixed(2),
             engagementRates,
             likeStandardDeviation.standardDeviation.toFixed(2),
             commentStandardDeviation.standardDeviation.toFixed(2),
-            sharesStandardDeviation.standardDeviation.toFixed(2)
+            sharesStandardDeviation.standardDeviation.toFixed(2),
+            clicksStandardDeviation.standardDeviation.toFixed(2),
+            viewsStandardDeviation.standardDeviation.toFixed(2)
         );
     }
 }

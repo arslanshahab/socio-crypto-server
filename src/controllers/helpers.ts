@@ -484,8 +484,8 @@ export const getBalance = async (
 };
 
 export const engagementRate = async (campaignId: string) => {
-    const [result] = await socialLinkService.getFollowersAggregation(campaignId);
-    const potentialEngagement = result.followerCount;
+    const [{ followerCount }] = await socialLinkService.getFollowersAggregation(campaignId);
+    const potentialEngagement = followerCount;
     const [{ comments, likes, shares }] = await socialPostService.getSocialPostMetrics(campaignId);
     const [{ clickCount, viewCount, submissionCount }] = await participantService.getParticipantMetrics(campaignId);
     const social = () => {
@@ -509,7 +509,5 @@ export const standardDeviation = async (value: number, count: number, rawValues:
     const mean = value / count;
     const distribution = rawValues.map((x) => Math.pow(parseInt(x) - mean, 2)).reduce((acc, curr) => acc + curr, 0);
     const standardDeviation = Math.sqrt(distribution / count);
-    console.log("standardDeviation--------", standardDeviation);
-
     return { mean, standardDeviation };
 };
