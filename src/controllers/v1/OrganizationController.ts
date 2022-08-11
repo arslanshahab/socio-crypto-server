@@ -1,8 +1,8 @@
 import { BodyParams, Context, PathParams } from "@tsed/common";
 import { Controller, Inject } from "@tsed/di";
-import { BadRequest, NotFound } from "@tsed/exceptions";
+import { NotFound } from "@tsed/exceptions";
 import { Get, Post, Required, Returns } from "@tsed/schema";
-import { ADMIN_NOT_FOUND, INVALID_USER_COMPANY } from "../../util/errors";
+import { ADMIN_NOT_FOUND, ORGANIZATION_NAME_ALREADY_EXISTS } from "../../util/errors";
 import { AdminService } from "../../services/AdminService";
 import { OrganizationService } from "../../services/OrganizationService";
 import { SuccessResult, Pagination, SuccessArrayResult } from "../../util/entities";
@@ -14,9 +14,8 @@ import {
 } from "../../models/RestModels";
 import { Firebase } from "../../clients/firebase";
 import { SesClient } from "../../clients/ses";
-import { COIIN, RAIINMAKER_ORG_NAME } from "../../util/constants";
 import { WalletService } from "../../services/WalletService";
-import { WalletCurrencyService } from "../../services/WalletCurrencyService";
+import { VerificationService } from "../../services/VerificationService";
 
 class NewUserParams {
     @Required() public readonly name: string;
@@ -28,9 +27,11 @@ class DeleteUserParams {
 }
 
 class RegisterOrgParams {
-    @Required() public readonly orgName: string;
+    @Required() public readonly company: string;
     @Required() public readonly email: string;
     @Required() public readonly name: string;
+    @Required() public readonly password: string;
+    @Required() public readonly verificationToken: string;
 }
 
 @Controller("/organization")
@@ -42,7 +43,7 @@ export class OrganizationController {
     @Inject()
     private walletService: WalletService;
     @Inject()
-    private walletCurrencyService: WalletCurrencyService;
+    private verificationService: VerificationService;
 
     @Get("/list-employees")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(OrgEmployeesResultModel))
@@ -127,19 +128,19 @@ export class OrganizationController {
     // For admin panel
     @Post("/register")
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
-    public async newOrg(@BodyParams() body: RegisterOrgParams, @Context() context: Context) {
-        const { company } = await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        const { orgName, email, name } = body;
-        if (company !== RAIINMAKER_ORG_NAME) throw new BadRequest(INVALID_USER_COMPANY);
-        const orgNameToLower = orgName.toLowerCase();
-        const password = Math.random().toString(16).substr(2, 15);
+    public async newOrg(@BodyParams() body: RegisterOrgParams) {
+        let { company, email, name, password, verificationToken } = body;
+        company = company.toLowerCase();
+        if (await this.organizationService.findOrganizationByCompanyName(name)) {
+            throw new Error(ORGANIZATION_NAME_ALREADY_EXISTS);
+        }
+        await this.verificationService.verifyToken({ verificationToken, email });
         const user = await Firebase.createNewUser(email, password);
-        await Firebase.setCustomUserClaims(user.uid, orgNameToLower, "admin", true);
-        const org = await this.organizationService.createOrganization(orgNameToLower);
+        await Firebase.setCustomUserClaims(user.uid, company, "admin", false);
+        const org = await this.organizationService.createOrganization(company);
         await this.adminService.createAdmin({ firebaseId: user.uid, orgId: org.id, name });
-        const wallet = await this.walletService.createOrgWallet(org.id);
-        await this.walletCurrencyService.newWalletCurrency(COIIN, wallet.id);
-        await SesClient.sendNewOrgConfirmationEmail(orgName, email, password);
+        await this.walletService.createOrgWallet(org.id);
+        await SesClient.sendNewOrgCreationEmail(company, email);
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 }

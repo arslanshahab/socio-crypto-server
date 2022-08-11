@@ -54,7 +54,7 @@ export class VerificationService {
 
     public async verifyToken(data: { verificationToken: string; email?: string }) {
         const verification = await this.findVerificationByToken(data.verificationToken);
-        if (!verification) throw new BadRequest(EMAIL_NOT_VERIFIED);
+        if (!verification) throw new Error(EMAIL_NOT_VERIFIED);
         if (data.email && data.email.toLowerCase() !== verification.email) throw new Error(EMAIL_NOT_VERIFIED);
         if (this.isCodeExpired(verification.expiry!)) throw new Error(VERIFICATION_TOKEN_EXPIRED);
         await this.expireToken(verification.id);
