@@ -243,7 +243,7 @@ export class CampaignController {
         if (role === "admin" && !body.company) throw new NotFound(COMPANY_NOT_SPECIFIED);
         const campaignCompany = role === "admin" ? body.company : company;
         if (!campaignCompany) throw new NotFound(COMPANY_NOT_SPECIFIED);
-        const org = await this.organizationService.findOrganizationByCompanyName(company!);
+        const org = await this.organizationService.findOrganizationByName(company!);
         if (!org) throw new NotFound(ORG_NOT_FOUND);
         const wallet = await this.walletService.findWalletByOrgId(org.id);
         if (!wallet) throw new NotFound(WALLET_NOT_FOUND);
@@ -361,7 +361,7 @@ export class CampaignController {
             validator.validateRafflePrizeSchema(raffle_prize);
         }
         if (role === "admin" && !body.company) throw new NotFound(COMPANY_NOT_SPECIFIED);
-        const org = await this.organizationService.findOrganizationByCompanyName(company!);
+        const org = await this.organizationService.findOrganizationByName(company!);
         if (!org) throw new NotFound(ORG_NOT_FOUND);
         const campaign: Campaign | null = await this.campaignService.findCampaignById(id);
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);

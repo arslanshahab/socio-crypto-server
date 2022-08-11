@@ -131,9 +131,9 @@ export class OrganizationController {
     public async newOrg(@BodyParams() body: RegisterOrgParams) {
         let { company, email, name, password, verificationToken } = body;
         company = company.toLowerCase();
-        if (await this.organizationService.findOrganizationByCompanyName(name)) {
-            throw new Error(ORGANIZATION_NAME_ALREADY_EXISTS);
-        }
+        const foundOrg = await this.organizationService.findOrganizationByName(company);
+        console.log(foundOrg);
+        if (foundOrg) throw new Error(ORGANIZATION_NAME_ALREADY_EXISTS);
         await this.verificationService.verifyToken({ verificationToken, email });
         const user = await Firebase.createNewUser(email, password);
         await Firebase.setCustomUserClaims(user.uid, company, "admin", false);
