@@ -876,3 +876,21 @@ export class TransactionResultModel {
 export class SocialPostCountResultModel {
     @Property() public readonly count: number;
 }
+
+export class EngagementRateResultModel {
+    @Property() public readonly likeRate: number;
+    @Property() public readonly commentRate: number;
+    @Property() public readonly shareRate: number;
+    @Property() public readonly viewRate: number;
+    @Property() public readonly submissionRate: number;
+    @Property() public readonly clickRate: number;
+}
+export class CampaignAverageStatsResultModel {
+    @Property() public readonly averageClicks: string;
+    @Property() public readonly engagementRates: EngagementRateResultModel[];
+    @Property() public readonly likeStandardDeviation: string;
+    @Property() public readonly commentStandardDeviation: string;
+    @Property() public readonly sharesStandardDeviation: string;
+    @Property() public readonly clicksStandardDeviation: string;
+    @Property() public readonly viewsStandardDeviation: string;
+}

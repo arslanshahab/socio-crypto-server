@@ -19,6 +19,7 @@ import { SocialPostService } from "../../services/SocialPostService";
 import { calculateParticipantSocialScoreV2, engagementRate, getSocialClient, standardDeviation } from "../helpers";
 import {
     BooleanResultModel,
+    CampaignAverageStatsResultModel,
     CampaignIdModel,
     SocialMetricsResultModel,
     SocialPostCountResultModel,
@@ -305,16 +306,16 @@ export class SocialController {
     }
 
     // For Admin-panel
-    @Get("/average-progress/:campaignId")
+    @Get("/campaign-average-stats/:campaignId")
     @(Returns(200, SuccessResult).Of(Object))
     public async getCampaignProgress(@PathParams() path: CampaignIdModel, @Context() context: Context) {
         await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const { campaignId } = path;
         const campaign = await this.campaignService.findCampaignById(campaignId);
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
-        let [averageClickRate] = await this.participantService.getAverageClicks(campaignId);
-        if (!averageClickRate.clickCount) {
-            averageClickRate = { clickCount: 0 };
+        let [{ clickCount }] = await this.participantService.getAverageClicks(campaignId);
+        if (!clickCount) {
+            clickCount = 0;
         }
         let engagementRates = [];
         const { likeRate, commentRate, shareRate, clickRate } = (await engagementRate(campaignId)).social();
@@ -322,7 +323,6 @@ export class SocialController {
         const submissionRate = (await engagementRate(campaignId)).submissions();
         // engagement rates
         engagementRates.push({
-            campaignId: campaign.id,
             likeRate,
             commentRate,
             shareRate,
@@ -332,31 +332,31 @@ export class SocialController {
         });
         // standard deviation
         const postCount = await this.socialPostService.getSocialPostCount(campaignId);
-        let socialPostMetrics = await this.socialPostService.findSocialPostMetricsById(campaignId);
+        const socialPostMetrics = await this.socialPostService.findSocialPostMetricsById(campaignId);
         const rawLikes = socialPostMetrics.map((x) => x.likes);
         const rawComments = socialPostMetrics.map((x) => x.comments);
         const rawShares = socialPostMetrics.map((x) => x.shares);
         const participants = await this.participantService.findParticipants(campaignId);
         const rawClicks = participants.map((x) => x.clickCount);
         const rawViews = participants.map((x) => x.viewCount);
+        const rawSubmissions = participants.map((x) => x.submissionCount);
         const participantCount = await this.participantService.findParticipantsCount(campaignId);
-
         const likeStandardDeviation = await standardDeviation(likeRate, postCount, rawLikes);
         const commentStandardDeviation = await standardDeviation(commentRate, postCount, rawComments);
         const sharesStandardDeviation = await standardDeviation(shareRate, postCount, rawShares);
         const clicksStandardDeviation = await standardDeviation(clickRate, participantCount, rawClicks);
         const viewsStandardDeviation = await standardDeviation(viewRate, participantCount, rawViews);
-
-        console.log(
-            clicksStandardDeviation.mean,
-            "aggregated click count----------------------",
-            averageClickRate.clickCount.toFixed(2),
+        const submissionsStandardDeviation = await standardDeviation(submissionRate, participantCount, rawSubmissions);
+        const result = {
+            averageClicks: clickCount.toFixed(2),
             engagementRates,
-            likeStandardDeviation.standardDeviation.toFixed(2),
-            commentStandardDeviation.standardDeviation.toFixed(2),
-            sharesStandardDeviation.standardDeviation.toFixed(2),
-            clicksStandardDeviation.standardDeviation.toFixed(2),
-            viewsStandardDeviation.standardDeviation.toFixed(2)
-        );
+            likeStandardDeviation: likeStandardDeviation.standardDeviation.toFixed(2),
+            commentStandardDeviation: commentStandardDeviation.standardDeviation.toFixed(2),
+            sharesStandardDeviation: sharesStandardDeviation.standardDeviation.toFixed(2),
+            clicksStandardDeviation: clicksStandardDeviation.standardDeviation.toFixed(2),
+            viewsStandardDeviation: viewsStandardDeviation.standardDeviation.toFixed(2),
+            submissionsStandardDeviation: submissionsStandardDeviation.standardDeviation.toFixed(2),
+        };
+        return new SuccessResult(result, CampaignAverageStatsResultModel);
     }
 }
