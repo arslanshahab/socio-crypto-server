@@ -503,7 +503,7 @@ export class UserController {
     @(Returns(200, SuccessResult).Of(UpdatedResultModel))
     public async transferUserCoiin(@BodyParams() body: TransferUserCoiinParams, @Context() context: Context) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        const admin = await this.userService.findUserByFirebaseId(context.get("user").firebaseId);
+        const admin = await this.userService.findUserByFirebaseId(context.get("user").id);
         const { coiin, userId, action } = body;
         const { ADD } = CoiinTransferAction;
         const token = await this.tokenService.findTokenBySymbol({ symbol: COIIN, network: BSC });
