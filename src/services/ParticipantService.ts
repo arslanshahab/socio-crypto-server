@@ -239,7 +239,7 @@ export class ParticipantService {
         });
     }
 
-    public async getParticipantMetrics(campaignId: string) {
+    public async getMetricsByCampaign(campaignId: string) {
         const result: { clickCount: number; viewCount: number; submissionCount: number }[] =
             await readPrisma.$queryRaw`Select sum(cast("clickCount" as int)) as "clickCount", sum(cast("viewCount" as int)) as "viewCount",
             sum(cast("submissionCount" as int)) as "submissionCount" from participant where "campaignId" = ${campaignId}`;

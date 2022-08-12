@@ -487,7 +487,7 @@ export const engagementRate = async (campaignId: string, postCount: number) => {
     const [{ followerCount }] = await socialLinkService.getFollowersAggregation(campaignId);
     const potentialEngagement = postCount * followerCount;
     const [{ comments, likes, shares }] = await socialPostService.getSocialPostMetrics(campaignId);
-    const [{ clickCount, viewCount, submissionCount }] = await participantService.getParticipantMetrics(campaignId);
+    const [{ clickCount, viewCount, submissionCount }] = await participantService.getMetricsByCampaign(campaignId);
     const social = () => {
         return {
             likeRate: likes / (potentialEngagement || Number.POSITIVE_INFINITY),
