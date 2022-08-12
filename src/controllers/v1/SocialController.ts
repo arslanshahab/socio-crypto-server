@@ -318,10 +318,11 @@ export class SocialController {
         if (!clickCount) {
             clickCount = 0;
         }
+        const postCount = await this.socialPostService.getSocialPostCount(campaignId);
         // engagement rate
-        const { likeRate, commentRate, shareRate, clickRate } = (await engagementRate(campaignId)).social();
-        const viewRate = (await engagementRate(campaignId)).views();
-        const submissionRate = (await engagementRate(campaignId)).submissions();
+        const { likeRate, commentRate, shareRate, clickRate } = (await engagementRate(campaignId, postCount)).social();
+        const viewRate = (await engagementRate(campaignId, postCount)).views();
+        const submissionRate = (await engagementRate(campaignId, postCount)).submissions();
         const engagementRates = {
             likeRate: likeRate.toFixed(2),
             commentRate: commentRate.toFixed(2),
@@ -331,7 +332,6 @@ export class SocialController {
             clickRate: clickRate.toFixed(2),
         };
         // standard deviation
-        const postCount = await this.socialPostService.getSocialPostCount(campaignId);
         const socialPostMetrics = await this.socialPostService.findSocialPostMetricsById(campaignId);
         const rawLikes = socialPostMetrics.map((x) => x.likes);
         const rawComments = socialPostMetrics.map((x) => x.comments);

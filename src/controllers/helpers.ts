@@ -483,9 +483,9 @@ export const getBalance = async (
     return currencies;
 };
 
-export const engagementRate = async (campaignId: string) => {
+export const engagementRate = async (campaignId: string, postCount: number) => {
     const [{ followerCount }] = await socialLinkService.getFollowersAggregation(campaignId);
-    const potentialEngagement = followerCount;
+    const potentialEngagement = postCount * followerCount;
     const [{ comments, likes, shares }] = await socialPostService.getSocialPostMetrics(campaignId);
     const [{ clickCount, viewCount, submissionCount }] = await participantService.getParticipantMetrics(campaignId);
     const social = () => {
