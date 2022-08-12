@@ -885,7 +885,7 @@ export class EngagementRateResultModel {
     @Property() public readonly submissionRate: string;
     @Property() public readonly clickRate: string;
 }
-export class CampaignAverageStatsResultModel {
+export class CampaignScoreResultModel {
     @Property() public readonly averageClicks: string;
     @Property() public readonly engagementRates: EngagementRateResultModel;
     @Property() public readonly likeStandardDeviation: string;

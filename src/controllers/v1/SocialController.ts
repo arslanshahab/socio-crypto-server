@@ -19,8 +19,8 @@ import { SocialPostService } from "../../services/SocialPostService";
 import { calculateParticipantSocialScoreV2, engagementRate, getSocialClient, standardDeviation } from "../helpers";
 import {
     BooleanResultModel,
-    CampaignAverageStatsResultModel,
     CampaignIdModel,
+    CampaignScoreResultModel,
     SocialMetricsResultModel,
     SocialPostCountResultModel,
     SocialPostResultModel,
@@ -307,16 +307,18 @@ export class SocialController {
 
     // For Admin-panel
     @Get("/campaign-score/:campaignId")
-    @(Returns(200, SuccessResult).Of(Object))
-    public async getCampaignProgress(@PathParams() path: CampaignIdModel, @Context() context: Context) {
+    @(Returns(200, SuccessResult).Of(CampaignScoreResultModel))
+    public async getCampaignScore(@PathParams() path: CampaignIdModel, @Context() context: Context) {
         await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const { campaignId } = path;
         const campaign = await this.campaignService.findCampaignById(campaignId);
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
+        // average clicks
         let [{ clickCount }] = await this.participantService.getAverageClicks(campaignId);
         if (!clickCount) {
             clickCount = 0;
         }
+        // engagement rate
         const { likeRate, commentRate, shareRate, clickRate } = (await engagementRate(campaignId)).social();
         const viewRate = (await engagementRate(campaignId)).views();
         const submissionRate = (await engagementRate(campaignId)).submissions();
@@ -355,6 +357,6 @@ export class SocialController {
             viewsStandardDeviation: viewsStandardDeviation.standardDeviation.toFixed(2),
             submissionsStandardDeviation: submissionsStandardDeviation.standardDeviation.toFixed(2),
         };
-        return new SuccessResult(result, CampaignAverageStatsResultModel);
+        return new SuccessResult(result, CampaignScoreResultModel);
     }
 }
