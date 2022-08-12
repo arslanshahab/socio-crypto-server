@@ -107,6 +107,7 @@ export const CUSTODIAL_ADDERSS_NOT_FOUND = "CUSTODIAL_ADDERSS_NOT_FOUND";
 export const TWITTER_FOLLOWERS_ARE_LESS_THAN_REQUIRED = "TWITTER_FOLLOWERS_ARE_LESS_THAN_REQUIRED";
 export const USER_NEEDS_TO_PARTICIPATE_IN_CAMPAIGN = "USER_NEEDS_TO_PARTICIPATE_IN_CAMPAIGN";
 export const ALREADY_REDEEMED_IN_24_HOURS = "ALREADY_REDEEMED_IN_24_HOURS";
+export const ORGANIZATION_NAME_ALREADY_EXISTS = "ORGANIZATION_NAME_ALREADY_EXISTS";
 
 export const errorMap: { [key: string]: string } = {
     SOMETHING_WENT_WRONG: "Looks like something is wrong, we are working to fix it.",
@@ -171,4 +172,5 @@ export const errorMap: { [key: string]: string } = {
     ALREADY_REDEEMED_IN_24_HOURS: "You can only redeem once in 24 hours!",
     ACCOUNT_NOT_EXISTS_ANYMORE: "This account doesn't exist anymore.",
     SESSION_ALREADY_EXISTS: "You have already logged in from another device.",
+    ORGANIZATION_NAME_ALREADY_EXISTS: "Organization already exists with this name.",
 };

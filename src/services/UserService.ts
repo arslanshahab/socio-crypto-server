@@ -19,7 +19,7 @@ import { WALLET_NOT_FOUND } from "../util/errors";
 import { differenceInHours, subDays } from "date-fns";
 import { TransferService } from "./TransferService";
 import { TatumService } from "./TatumService";
-import { createPasswordHash, generatePromoCode, prepareCacheKey } from "../util";
+import { createPasswordHash, generate6DigitCode, prepareCacheKey } from "../util";
 import { ProfileService } from "./ProfileService";
 import { NotificationService } from "./NotificationService";
 import { PlatformCache, UseCache } from "@tsed/common";
@@ -464,7 +464,7 @@ export class UserService {
     public async getUniquePromoCode() {
         let promoCode = null;
         while (!promoCode) {
-            promoCode = generatePromoCode();
+            promoCode = generate6DigitCode();
             if (await prisma.user.findFirst({ where: { promoCode } })) {
                 promoCode = null;
             }

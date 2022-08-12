@@ -73,9 +73,9 @@ export class SesClient {
         }
     }
 
-    public static async sendNewOrgConfirmationEmail(orgName: string, email: string, tempPassword: string) {
+    public static async sendNewOrgCreationEmail(orgName: string, email: string) {
         const title = `Your brand ${orgName} has been created on Raiinmaker`;
-        const text = `Please login with email: ${email} and temporary password ${tempPassword}. Please change password upon initial login\n`;
+        const text = `Please login with email and password you added\n`;
         const template = SesClient.getTemplate(title, text, "New Brand Account on Raiinmaker!", email);
         try {
             const data = await SesClient.client.sendEmail(template).promise();

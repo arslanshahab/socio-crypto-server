@@ -40,7 +40,7 @@ export class StripeController {
     public async listPaymentMethods(@Context() context: Context) {
         const { company } = await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         if (!company) throw new NotFound("company not found for this user");
-        const org = await this.organizationService.findOrganizationByCompanyName(company);
+        const org = await this.organizationService.findOrganizationByName(company);
         if (!org) throw new NotFound(ORG_NOT_FOUND);
         if (!org.stripeId) throw new NotFound("missing stripe id for this organization");
         const paymentMethods = await StripeAPI.listPaymentMethods(org.stripeId);
@@ -57,7 +57,7 @@ export class StripeController {
     public async purchaseCoiin(@BodyParams() body: PurchaseCoiinParams, @Context() context: Context) {
         const { company } = await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         if (!company) throw new NotFound("company not found for this user");
-        const org = await this.organizationService.findOrganizationByCompanyName(company, { wallet: true });
+        const org = await this.organizationService.findOrganizationByName(company, { wallet: true });
         if (!org) throw new NotFound(ORG_NOT_FOUND);
         const { amount, paymentMethodId } = body;
         const amountInDollar = await getTokenValueInUSD(COIIN, amount);
@@ -80,7 +80,7 @@ export class StripeController {
     public async addPaymentMethod(@Context() context: Context) {
         const { company } = await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         if (!company) throw new NotFound("company not found for this user");
-        let org = await this.organizationService.findOrganizationByCompanyName(company);
+        let org = await this.organizationService.findOrganizationByName(company);
         if (!org) throw new NotFound(ORG_NOT_FOUND);
         if (!org.stripeId) {
             const stripe = await StripeAPI.createCustomer();
@@ -95,7 +95,7 @@ export class StripeController {
     public async removePaymentMethod(@BodyParams() body: RemovePaymentMethodParams, @Context() context: Context) {
         const { company } = await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         if (!company) throw new NotFound("company not found for this user");
-        const org = await this.organizationService.findOrganizationByCompanyName(company);
+        const org = await this.organizationService.findOrganizationByName(company);
         if (!org) throw new NotFound(ORG_NOT_FOUND);
         if (!org.stripeId) throw new NotFound("missing stripe id for this organization");
         const { paymentMethodId } = body;
