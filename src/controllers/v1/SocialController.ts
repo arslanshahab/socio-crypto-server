@@ -306,7 +306,7 @@ export class SocialController {
     }
 
     // For Admin-panel
-    @Get("/campaign-daviation/:campaignId")
+    @Get("/campaign-score/:campaignId")
     @(Returns(200, SuccessResult).Of(Object))
     public async getCampaignProgress(@PathParams() path: CampaignIdModel, @Context() context: Context) {
         await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
