@@ -335,10 +335,7 @@ export class ParticipantController {
                 console.log("error fetching twitter username ---- ", error);
             }
             const metrics = await this.dailyParticipantMetricService.getAccumulatedParticipantMetrics(participant.id);
-            const postCount = await this.socialPostService.getSocialPostCountByParticipantId(
-                participant.id,
-                campaignId
-            );
+            const postCount = await this.socialPostService.getSocialPostCount(campaignId, participant.id);
             const pointValues = (participant.campaign.algorithm as Prisma.JsonObject)
                 .pointValues as unknown as PointValueTypes;
 
@@ -368,7 +365,7 @@ export class ParticipantController {
     @(Returns(200, SuccessArrayResult).Of(UserStatisticsResultModel))
     public async userStatistics(@QueryParams() query: UserStatisticsParams, @Context() context: Context) {
         const { userId } = query;
-       await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const participants = await this.participantService.findParticipantsByUserId(userId, { campaign: true });
         const statistics = [];
         for (const participant of participants) {

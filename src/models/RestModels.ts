@@ -190,6 +190,7 @@ export class TransferResultModel {
     @Nullable(String) public readonly ethAddress: string | null;
     @Nullable(String) public readonly paypalAddress: string | null;
     @Nullable(String) public readonly currency: string | null;
+    @Nullable(String) public readonly transactionHash: string | null;
 
     @Property() public symbolImageUrl?: string;
 
@@ -870,4 +871,8 @@ export class TransactionResultModel {
             action: transaction.action,
         };
     }
+}
+
+export class SocialPostCountResultModel {
+    @Property() public readonly count: number;
 }

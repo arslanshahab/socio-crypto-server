@@ -17,7 +17,13 @@ import {
 import { ParticipantService } from "../../services/ParticipantService";
 import { SocialPostService } from "../../services/SocialPostService";
 import { calculateParticipantSocialScoreV2, getSocialClient } from "../helpers";
-import { BooleanResultModel, SocialMetricsResultModel, SocialPostResultModel } from "../../models/RestModels";
+import {
+    BooleanResultModel,
+    CampaignIdModel,
+    SocialMetricsResultModel,
+    SocialPostCountResultModel,
+    SocialPostResultModel,
+} from "../../models/RestModels";
 import { Prisma } from "@prisma/client";
 import { MediaType, PointValueTypes, SocialType } from "../../types";
 import { SocialLinkService } from "../../services/SocialLinkService";
@@ -286,5 +292,15 @@ export class SocialController {
             }
         }
         return new SuccessResult({ socialPosts, count }, Object);
+    }
+
+    // Fort Admin-panel
+    @Get("/posts/:campaignId")
+    @(Returns(200, SuccessResult).Of(SocialPostCountResultModel))
+    public async getCampaignPostsByCampaignId(@PathParams() path: CampaignIdModel, @Context() context: Context) {
+        await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const { campaignId } = path;
+        const socialPostsCount = await this.socialPostService.getSocialPostCount(campaignId);
+        return new SuccessResult({ count: socialPostsCount }, SocialPostCountResultModel);
     }
 }
