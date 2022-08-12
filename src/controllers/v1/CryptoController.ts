@@ -46,7 +46,7 @@ export class CryptoController {
         );
         if (!company) throw new NotFound("Company not found");
         const { contractAddress } = body;
-        const org = await this.organizationService.findOrganizationByCompanyName(company!, { wallet: true });
+        const org = await this.organizationService.findOrganizationByName(company!, { wallet: true });
         if (!org) throw new NotFound(ORG_NOT_FOUND);
         const cryptoCurrency = await this.cryptoCurrencyService.findByContractAddress(contractAddress);
         if (!cryptoCurrency) throw new NotFound("crypto currency not found");
@@ -63,7 +63,7 @@ export class CryptoController {
         );
         if (!company) throw new NotFound("Company not found");
         const { id } = body;
-        const org = await this.organizationService.findOrganizationByCompanyName(company!, { wallet: true });
+        const org = await this.organizationService.findOrganizationByName(company!, { wallet: true });
         if (!org) throw new NotFound(ORG_NOT_FOUND);
         const currency = await this.walletCurrencyService.findWalletCurrencyByWalletId(org.wallet?.id!, id);
         if (!currency) throw new NotFound("Currency not found");

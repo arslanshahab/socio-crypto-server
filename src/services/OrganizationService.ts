@@ -14,20 +14,17 @@ export class OrganizationService {
     @Inject()
     private currencyService: CurrencyService;
 
-    public async findOrganizationByCompanyName<T extends Prisma.OrgInclude | undefined>(
-        companyName: string,
-        include?: T
-    ) {
+    public async findOrganizationByName<T extends Prisma.OrgInclude | undefined>(companyName: string, include?: T) {
         return readPrisma.org.findFirst({
             where: {
-                name: companyName,
+                name: companyName.toLowerCase(),
             },
             include: include as T,
         });
     }
 
     public async getCurrencyForRaiinmaker(data: SymbolNetworkParams) {
-        const raiinmakerOrg = await this.findOrganizationByCompanyName(RAIINMAKER_ORG_NAME, { wallet: true });
+        const raiinmakerOrg = await this.findOrganizationByName(RAIINMAKER_ORG_NAME, { wallet: true });
         if (!raiinmakerOrg) throw new NotFound(`Org not found for ${RAIINMAKER_ORG_NAME}.`);
         return await this.tatumService.findOrCreateCurrency({ ...data, wallet: raiinmakerOrg.wallet! });
     }

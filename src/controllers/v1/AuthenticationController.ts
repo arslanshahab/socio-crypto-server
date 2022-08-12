@@ -40,6 +40,7 @@ import { SessionService } from "../../services/SessionService";
 export class StartVerificationParams {
     @Required() public readonly email: string;
     @Required() @Enum(VerificationType) public readonly type: VerificationType | undefined;
+    @Property() public readonly admin: boolean;
 }
 class UserIdResultModel {
     @Property() public readonly userId: string;
@@ -150,12 +151,21 @@ export class AuthenticationController {
     @Post("/start-verification")
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async startVerification(@BodyParams() body: StartVerificationParams) {
-        const { email, type } = body;
+        const { email, type, admin } = body;
         if (!email || !type) throw new BadRequest(MISSING_PARAMS);
-        const userWithEmail = await this.userService.updatedUserEmail(email);
-        if (type === "EMAIL" && userWithEmail) throw new BadRequest(EMAIL_EXISTS);
-        if (type === "PASSWORD" && !userWithEmail) throw new BadRequest(EMAIL_NOT_EXISTS);
-        if (type === "WITHDRAW" && !userWithEmail) throw new BadRequest(EMAIL_NOT_EXISTS);
+        if (!admin) {
+            const userWithEmail = await this.userService.updatedUserEmail(email);
+            if (type === "EMAIL" && userWithEmail) throw new BadRequest(EMAIL_EXISTS);
+            if (type === "PASSWORD" && !userWithEmail) throw new BadRequest(EMAIL_NOT_EXISTS);
+            if (type === "WITHDRAW" && !userWithEmail) throw new BadRequest(EMAIL_NOT_EXISTS);
+        } else {
+            let adminFound = false;
+            try {
+                await Firebase.getUserByEmail(email);
+                adminFound = true;
+            } catch (error) {}
+            if (type === "EMAIL" && adminFound) throw new Error(EMAIL_EXISTS);
+        }
         const verificationData = await this.verificationService.generateVerification({ email, type });
         await SesClient.emailAddressVerificationEmail(
             email,
