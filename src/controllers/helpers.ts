@@ -39,6 +39,13 @@ import { Forbidden, NotFound } from "@tsed/exceptions";
 import { TatumClient } from "../clients/tatumClient";
 import { BalanceResultModel } from "../models/RestModels";
 import { Currency, Token, User, Wallet as PrismaWallet } from "@prisma/client";
+import { SocialPostService } from "../services/SocialPostService";
+import { SocialLinkService } from "../services/SocialLinkService";
+import { ParticipantService } from "../services/ParticipantService";
+
+const socialPostService = new SocialPostService();
+const socialLinkService = new SocialLinkService();
+const participantService = new ParticipantService();
 
 export const feeMultiplier = () => new BN(1).minus(FEE_RATE);
 
@@ -475,4 +482,33 @@ export const getBalance = async (
         }) || []
     );
     return currencies;
+};
+
+export const engagementRate = async (campaignId: string, postCount: number) => {
+    const [{ followerCount }] = await socialLinkService.getFollowersAggregation(campaignId);
+    const potentialEngagement = postCount * followerCount;
+    const [{ comments, likes, shares }] = await socialPostService.getSocialPostMetrics(campaignId);
+    const [{ clickCount, viewCount, submissionCount }] = await participantService.getMetricsByCampaign(campaignId);
+    const social = () => {
+        return {
+            likeRate: likes / (potentialEngagement || Number.POSITIVE_INFINITY),
+            shareRate: shares / (potentialEngagement || Number.POSITIVE_INFINITY),
+            commentRate: comments / (potentialEngagement || Number.POSITIVE_INFINITY),
+            clickRate: clickCount / (potentialEngagement || Number.POSITIVE_INFINITY),
+        };
+    };
+    const views = () => {
+        return clickCount / (viewCount || Number.POSITIVE_INFINITY);
+    };
+    const submissions = () => {
+        return clickCount / (submissionCount || Number.POSITIVE_INFINITY);
+    };
+    return { social, views, submissions };
+};
+
+export const standardDeviation = async (value: number, count: number, rawValues: string[]) => {
+    const mean = value / count;
+    const distribution = rawValues.map((x) => Math.pow(parseInt(x) - mean, 2)).reduce((acc, curr) => acc + curr, 0);
+    const standardDeviation = Math.sqrt(distribution / count);
+    return { mean, standardDeviation };
 };

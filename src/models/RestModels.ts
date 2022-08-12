@@ -190,6 +190,7 @@ export class TransferResultModel {
     @Nullable(String) public readonly ethAddress: string | null;
     @Nullable(String) public readonly paypalAddress: string | null;
     @Nullable(String) public readonly currency: string | null;
+    @Nullable(String) public readonly transactionHash: string | null;
 
     @Property() public symbolImageUrl?: string;
 
@@ -871,4 +872,27 @@ export class TransactionResultModel {
             action: transaction.action,
         };
     }
+}
+
+export class SocialPostCountResultModel {
+    @Property() public readonly count: number;
+}
+
+export class EngagementRateResultModel {
+    @Property() public readonly likeRate: string;
+    @Property() public readonly commentRate: string;
+    @Property() public readonly shareRate: string;
+    @Property() public readonly viewRate: string;
+    @Property() public readonly submissionRate: string;
+    @Property() public readonly clickRate: string;
+}
+export class CampaignScoreResultModel {
+    @Property() public readonly averageClicks: string;
+    @Property() public readonly engagementRates: EngagementRateResultModel;
+    @Property() public readonly likeStandardDeviation: string;
+    @Property() public readonly commentStandardDeviation: string;
+    @Property() public readonly sharesStandardDeviation: string;
+    @Property() public readonly clicksStandardDeviation: string;
+    @Property() public readonly viewsStandardDeviation: string;
+    @Property() public readonly submissionsStandardDeviation: string;
 }
