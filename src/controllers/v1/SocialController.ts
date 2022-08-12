@@ -30,7 +30,7 @@ import { MediaType, PointValueTypes, SocialType } from "../../types";
 import { SocialLinkService } from "../../services/SocialLinkService";
 import { CampaignService } from "../../services/CampaignService";
 import { CampaignMediaService } from "../../services/CampaignMediaService";
-import { downloadMedia } from "../../util";
+import { downloadMedia, formatFloat } from "../../util";
 import { HourlyCampaignMetricsService } from "../../services/HourlyCampaignMetricsService";
 import { addMinutes } from "date-fns";
 import { BSC, COIIN, SocialClientType, SocialLinkType } from "../../util/constants";
@@ -324,12 +324,12 @@ export class SocialController {
         const viewRate = (await engagementRate(campaignId, postCount)).views();
         const submissionRate = (await engagementRate(campaignId, postCount)).submissions();
         const engagementRates = {
-            likeRate: likeRate.toFixed(2),
-            commentRate: commentRate.toFixed(2),
-            shareRate: shareRate.toFixed(2),
-            viewRate: viewRate.toFixed(2),
-            submissionRate: submissionRate.toFixed(2),
-            clickRate: clickRate.toFixed(2),
+            likeRate: formatFloat(likeRate),
+            commentRate: formatFloat(commentRate),
+            shareRate: formatFloat(shareRate),
+            viewRate: formatFloat(viewRate),
+            submissionRate: formatFloat(submissionRate),
+            clickRate: formatFloat(clickRate),
         };
         // standard deviation
         const socialPostMetrics = await this.socialPostService.findSocialPostMetricsById(campaignId);
@@ -350,12 +350,12 @@ export class SocialController {
         const result = {
             averageClicks: clickCount.toFixed(2),
             engagementRates,
-            likeStandardDeviation: likeStandardDeviation.standardDeviation.toFixed(2),
-            commentStandardDeviation: commentStandardDeviation.standardDeviation.toFixed(2),
-            sharesStandardDeviation: sharesStandardDeviation.standardDeviation.toFixed(2),
-            clicksStandardDeviation: clicksStandardDeviation.standardDeviation.toFixed(2),
-            viewsStandardDeviation: viewsStandardDeviation.standardDeviation.toFixed(2),
-            submissionsStandardDeviation: submissionsStandardDeviation.standardDeviation.toFixed(2),
+            likeStandardDeviation: formatFloat(likeStandardDeviation.standardDeviation),
+            commentStandardDeviation: formatFloat(commentStandardDeviation.standardDeviation),
+            sharesStandardDeviation: formatFloat(sharesStandardDeviation.standardDeviation),
+            clicksStandardDeviation: formatFloat(clicksStandardDeviation.standardDeviation),
+            viewsStandardDeviation: formatFloat(viewsStandardDeviation.standardDeviation),
+            submissionsStandardDeviation: formatFloat(submissionsStandardDeviation.standardDeviation),
         };
         return new SuccessResult(result, CampaignScoreResultModel);
     }
