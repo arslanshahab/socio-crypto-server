@@ -592,8 +592,8 @@ export interface WithdrawPayload {
     senderNote: string;
     fee?: string;
     index?: number;
-    userCurrency: PrismaCurrency;
-    orgCurrency: PrismaCurrency;
+    currency: PrismaCurrency;
+    baseCurrency: PrismaCurrency;
     token: Token | PrismaToken;
     custodialAddress?: string;
 }

@@ -33,7 +33,7 @@ export class FundingWalletController {
     public async getFundingWallet(@Context() context: Context) {
         const admin = await this.userService.findUserByFirebaseId(context.get("user").id);
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
-        const org = await this.organizationService.findOrgByAdminId(admin.orgId!);
+        const org = await this.organizationService.findOrgById(admin.orgId!);
         if (!org) throw new NotFound(ORG_NOT_FOUND);
         const wallet = await this.walletService.findWalletByOrgId(org.id);
         if (!wallet) throw new NotFound(WALLET_NOT_FOUND);
@@ -57,7 +57,7 @@ export class FundingWalletController {
     public async transactionHistory(@Context() context: Context) {
         const admin = await this.userService.findUserByFirebaseId(context.get("user").id);
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
-        const org = await this.organizationService.findOrgByAdminId(admin.orgId!);
+        const org = await this.organizationService.findOrgById(admin.orgId!);
         if (!org) throw new NotFound(ORG_NOT_FOUND);
         const wallet = await this.walletService.findWalletByOrgId(org.id);
         if (!wallet) throw new NotFound(WALLET_NOT_FOUND);

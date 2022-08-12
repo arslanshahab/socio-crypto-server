@@ -114,13 +114,14 @@ export class OrganizationController {
 
     // For admin panel
     @Get("/verify-session")
-    @(Returns(200, SuccessResult).Of(BooleanResultModel))
+    @(Returns(200, SuccessResult).Of(VerifySessionResultModel))
     public async getUserRole(@Context() context: Context) {
-        context = context.get("user");
+        const admin = context.get("user");
         const result = {
-            role: context.role ? context.role : null,
-            company: context.company ? context.company : null,
-            tempPass: context.tempPass ? context.tempPass : null,
+            role: admin.role || null,
+            company: admin.company || null,
+            tempPass: admin.tempPass || null,
+            email: admin.email || null,
         };
         return new SuccessResult(result, VerifySessionResultModel);
     }

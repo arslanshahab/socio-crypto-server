@@ -437,6 +437,7 @@ export const getActiveAdmin = async (token: string) => {
     const admin = {
         id: decodedToken.uid,
         method: "firebase",
+        email: firebaseUser.email,
         ...decodedToken,
         ...(firebaseUser.customClaims && {
             role: firebaseUser.customClaims.role,
