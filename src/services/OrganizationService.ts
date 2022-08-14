@@ -29,12 +29,8 @@ export class OrganizationService {
         return await this.tatumService.findOrCreateCurrency({ ...data, wallet: raiinmakerOrg.wallet! });
     }
 
-    public async findOrgByAdminId(adminId: string) {
-        return readPrisma.org.findFirst({
-            where: {
-                id: adminId,
-            },
-        });
+    public async findOrgById<T extends Prisma.OrgInclude | undefined>(id: string, include?: T) {
+        return readPrisma.org.findFirst({ where: { id }, include: include as T });
     }
 
     public async orgDetails() {

@@ -848,6 +848,7 @@ export class UpdateCampaignParams {
 export class VerifySessionResultModel {
     @Property() public readonly role: string;
     @Property() public readonly company: string;
+    @Property() public readonly email: string;
     @Nullable(Boolean) public readonly tempPass: boolean | null;
 }
 
