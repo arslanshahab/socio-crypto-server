@@ -896,3 +896,9 @@ export class CampaignScoreResultModel {
     @Property() public readonly viewsStandardDeviation: string;
     @Property() public readonly submissionsStandardDeviation: string;
 }
+
+export class AdminProfileResultModel {
+    @Property() public readonly name: string;
+    @Property() public readonly email: string;
+    @Property() public readonly company: string;
+}

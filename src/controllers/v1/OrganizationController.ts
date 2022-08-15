@@ -7,6 +7,7 @@ import { AdminService } from "../../services/AdminService";
 import { OrganizationService } from "../../services/OrganizationService";
 import { SuccessResult, Pagination, SuccessArrayResult } from "../../util/entities";
 import {
+    AdminProfileResultModel,
     BooleanResultModel,
     OrgDetailsModel,
     OrgEmployeesResultModel,
@@ -16,6 +17,7 @@ import { Firebase } from "../../clients/firebase";
 import { SesClient } from "../../clients/ses";
 import { WalletService } from "../../services/WalletService";
 import { VerificationService } from "../../services/VerificationService";
+import { UserService } from "../../services/UserService";
 
 class NewUserParams {
     @Required() public readonly name: string;
@@ -44,6 +46,8 @@ export class OrganizationController {
     private walletService: WalletService;
     @Inject()
     private verificationService: VerificationService;
+    @Inject()
+    private userService: UserService;
 
     @Get("/list-employees")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(OrgEmployeesResultModel))
@@ -143,5 +147,18 @@ export class OrganizationController {
         await this.walletService.createOrgWallet(org.id);
         await SesClient.sendNewOrgCreationEmail(company, email);
         return new SuccessResult({ success: true }, BooleanResultModel);
+    }
+
+    // For admin panel
+    @Get("/profile")
+    @(Returns(200, SuccessResult).Of(AdminProfileResultModel))
+    public async getProfile(@Context() context: Context) {
+        const { company, email } = await this.adminService.checkPermissions(
+            { hasRole: ["admin"] },
+            context.get("user")
+        );
+        const admin = await this.userService.findUserByFirebaseId(context.get("user").uid);
+        const result = { name: admin?.name, email: email, company: company };
+        return new SuccessResult(result, AdminProfileResultModel);
     }
 }
