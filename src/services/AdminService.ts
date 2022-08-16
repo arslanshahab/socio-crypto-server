@@ -76,7 +76,7 @@ export class AdminService {
     }
 
     public async updateAdminAuth(adminId: string, twoFactorEnabled: boolean) {
-        await prisma.admin.update({
+        return await prisma.admin.update({
             where: { id: adminId },
             data: { twoFactorEnabled },
         });

@@ -174,7 +174,7 @@ export class OrganizationController {
         const admin = await this.userService.findUserByFirebaseId(context.get("user").uid);
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
         const { twoFactorEnabled } = body;
-        await this.adminService.updateAdminAuth(admin.id, twoFactorEnabled);
-        return new SuccessResult({ success: true }, BooleanResultModel);
+        const updatedAdmin = await this.adminService.updateAdminAuth(admin.id, twoFactorEnabled);
+        return new SuccessResult({ success: updatedAdmin.twoFactorEnabled }, BooleanResultModel);
     }
 }
