@@ -2,7 +2,7 @@ import { BodyParams, Context, PathParams } from "@tsed/common";
 import { Controller, Inject } from "@tsed/di";
 import { NotFound } from "@tsed/exceptions";
 import { Get, Post, Property, Put, Required, Returns } from "@tsed/schema";
-import { ADMIN_NOT_FOUND, ORGANIZATION_NAME_ALREADY_EXISTS } from "../../util/errors";
+import { ADMIN_NOT_FOUND, ORGANIZATION_NAME_ALREADY_EXISTS, ORG_NOT_FOUND } from "../../util/errors";
 import { AdminService } from "../../services/AdminService";
 import { OrganizationService } from "../../services/OrganizationService";
 import { SuccessResult, Pagination, SuccessArrayResult } from "../../util/entities";
@@ -197,8 +197,13 @@ export class OrganizationController {
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
         const { name, imagePath } = body;
         if (name) await this.adminService.updateAdmin(admin.id, name);
-        await this.organizationService.updateOrganizationLogo(orgId!, imagePath);
-        const signedOrgUrl = await S3Client.generateOrgSignedURL(`organization/${orgId}/${imagePath}`);
+        const org = await this.organizationService.findOrgById(orgId!);
+        if (!org) throw new NotFound(ORG_NOT_FOUND);
+        let signedOrgUrl = "";
+        if (org.logo !== imagePath) {
+            await this.organizationService.updateOrganizationLogo(orgId!, imagePath);
+            signedOrgUrl = await S3Client.generateOrgSignedURL(`organization/${orgId}/${imagePath}`);
+        }
         return new SuccessResult({ orgId, brand: company, signedOrgUrl }, UpdateBrandLogoResultModel);
     }
 }
