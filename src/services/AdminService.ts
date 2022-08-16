@@ -74,4 +74,11 @@ export class AdminService {
         }
         return {};
     }
+
+    public async updateAdminAuth(adminId: string, twoFactorEnabled: boolean) {
+        await prisma.admin.update({
+            where: { id: adminId },
+            data: { twoFactorEnabled },
+        });
+    }
 }

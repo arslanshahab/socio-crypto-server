@@ -1,7 +1,7 @@
 import { BodyParams, Context, PathParams } from "@tsed/common";
 import { Controller, Inject } from "@tsed/di";
 import { NotFound } from "@tsed/exceptions";
-import { Get, Post, Required, Returns } from "@tsed/schema";
+import { Get, Post, Put, Required, Returns } from "@tsed/schema";
 import { ADMIN_NOT_FOUND, ORGANIZATION_NAME_ALREADY_EXISTS } from "../../util/errors";
 import { AdminService } from "../../services/AdminService";
 import { OrganizationService } from "../../services/OrganizationService";
@@ -34,6 +34,10 @@ class RegisterOrgParams {
     @Required() public readonly name: string;
     @Required() public readonly password: string;
     @Required() public readonly verificationToken: string;
+}
+
+class TwoFactorAuthParms {
+    @Required() public readonly twoFactorEnabled: boolean;
 }
 
 @Controller("/organization")
@@ -160,5 +164,17 @@ export class OrganizationController {
         const admin = await this.userService.findUserByFirebaseId(context.get("user").uid);
         const result = { name: admin?.name, email: email, company: company };
         return new SuccessResult(result, AdminProfileResultModel);
+    }
+
+    // For admin panel
+    @Put("/two-factor-auth")
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
+    public async twoFactorAuth(@BodyParams() body: TwoFactorAuthParms, @Context() context: Context) {
+        await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const admin = await this.userService.findUserByFirebaseId(context.get("user").uid);
+        if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
+        const { twoFactorEnabled } = body;
+        await this.adminService.updateAdminAuth(admin.id, twoFactorEnabled);
+        return new SuccessResult({ success: true }, BooleanResultModel);
     }
 }
