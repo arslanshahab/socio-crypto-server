@@ -13,15 +13,16 @@ datasource db {
 }
 
 model Admin {
-  id         String   @id(map: "PK_e032310bcef831fb83101899b10") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  firebaseId String   @db.VarChar
-  userId     String?  @db.Uuid
-  orgId      String?  @db.Uuid
-  name       String   @default("raiinmaker") @db.VarChar
-  createdAt  DateTime @default(now()) @db.Timestamp(6)
-  updatedAt  DateTime @default(now()) @updatedAt @db.Timestamp(6)
-  org        Org?     @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_6d94bbdb1be6d107f3d971fc808")
-  user       User?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f8a889c4362d78f056960ca6dad")
+  id               String   @id(map: "PK_e032310bcef831fb83101899b10") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  firebaseId       String   @db.VarChar
+  userId           String?  @db.Uuid
+  orgId            String?  @db.Uuid
+  name             String   @default("raiinmaker") @db.VarChar
+  createdAt        DateTime @default(now()) @db.Timestamp(6)
+  updatedAt        DateTime @default(now()) @updatedAt @db.Timestamp(6)
+  twoFactorEnabled Boolean  @default(false)
+  org              Org?     @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_6d94bbdb1be6d107f3d971fc808")
+  user             User?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f8a889c4362d78f056960ca6dad")
 
   @@map("admin")
 }
@@ -299,6 +300,7 @@ model Org {
   createdAt              DateTime               @default(now()) @db.Timestamp(6)
   updatedAt              DateTime               @default(now()) @updatedAt @db.Timestamp(6)
   stripeId               String?                @db.VarChar
+  logo                   String?                @db.VarChar
   admin                  Admin[]
   campaign               Campaign[]
   external_wallet        ExternalWallet[]
