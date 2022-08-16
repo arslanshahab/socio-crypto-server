@@ -332,4 +332,12 @@ export class S3Client {
             return null;
         }
     }
+
+    public static async generateOrgSignedURL(key: string) {
+        return S3Client.client.getSignedUrl("putObject", {
+            Bucket: BUCKET_NAME || "rm-raiinmaker-staging",
+            Key: key,
+            Expires: 3600,
+        });
+    }
 }

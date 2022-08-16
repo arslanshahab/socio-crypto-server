@@ -903,3 +903,9 @@ export class AdminProfileResultModel {
     @Property() public readonly company: string;
     @Property() public readonly enabled: boolean;
 }
+
+export class UpdateBrandLogoResultModel {
+    @Property() public readonly orgId: string;
+    @Property() public readonly brand: string;
+    @Property() public readonly signedOrgUrl: string;
+}

@@ -1,7 +1,7 @@
 import { BodyParams, Context, PathParams } from "@tsed/common";
 import { Controller, Inject } from "@tsed/di";
 import { NotFound } from "@tsed/exceptions";
-import { Get, Post, Put, Required, Returns } from "@tsed/schema";
+import { Get, Post, Property, Put, Required, Returns } from "@tsed/schema";
 import { ADMIN_NOT_FOUND, ORGANIZATION_NAME_ALREADY_EXISTS } from "../../util/errors";
 import { AdminService } from "../../services/AdminService";
 import { OrganizationService } from "../../services/OrganizationService";
@@ -11,6 +11,7 @@ import {
     BooleanResultModel,
     OrgDetailsModel,
     OrgEmployeesResultModel,
+    UpdateBrandLogoResultModel,
     VerifySessionResultModel,
 } from "../../models/RestModels";
 import { Firebase } from "../../clients/firebase";
@@ -18,6 +19,7 @@ import { SesClient } from "../../clients/ses";
 import { WalletService } from "../../services/WalletService";
 import { VerificationService } from "../../services/VerificationService";
 import { UserService } from "../../services/UserService";
+import { S3Client } from "../../clients/s3";
 
 class NewUserParams {
     @Required() public readonly name: string;
@@ -40,7 +42,10 @@ class TwoFactorAuthParms {
     @Required() public readonly twoFactorEnabled: boolean;
 }
 
-class BrandParams {}
+class BrandParams {
+    @Property() public readonly name: string;
+    @Property() public readonly imagePath: string;
+}
 
 @Controller("/organization")
 export class OrganizationController {
@@ -181,7 +186,19 @@ export class OrganizationController {
     }
 
     // For admin panel
-    @Put("/brand")
-    @(Returns(200, SuccessResult).Of(BooleanResultModel))
-    public async updateBrand(@BodyParams() body: BrandParams, @Context() context: Context) {}
+    @Put("/profile")
+    @(Returns(200, SuccessResult).Of(UpdateBrandLogoResultModel))
+    public async updateProfile(@BodyParams() body: BrandParams, @Context() context: Context) {
+        const { orgId, company } = await this.adminService.checkPermissions(
+            { hasRole: ["admin"] },
+            context.get("user")
+        );
+        const admin = await this.userService.findUserByFirebaseId(context.get("user").uid);
+        if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
+        const { name, imagePath } = body;
+        if (name) await this.adminService.updateAdmin(admin.id, name);
+        await this.organizationService.updateOrganizationLogo(orgId!, imagePath);
+        const signedOrgUrl = await S3Client.generateOrgSignedURL(`organization/${orgId}/${imagePath}`);
+        return new SuccessResult({ orgId, brand: company, signedOrgUrl }, UpdateBrandLogoResultModel);
+    }
 }
