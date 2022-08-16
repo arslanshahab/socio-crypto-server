@@ -22,6 +22,10 @@ export class Admin extends BaseEntity {
     @Column({ nullable: false, default: RAIINMAKER_ORG_NAME })
     public name: string;
 
+    //  2FA
+    @Column({ default: false })
+    public twoFactorEnabled: boolean;
+
     @ManyToOne((_type) => User, (user) => user.admins)
     public user: User;
 
