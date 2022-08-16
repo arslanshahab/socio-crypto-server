@@ -40,6 +40,8 @@ class TwoFactorAuthParms {
     @Required() public readonly twoFactorEnabled: boolean;
 }
 
+class BrandParams {}
+
 @Controller("/organization")
 export class OrganizationController {
     @Inject()
@@ -162,7 +164,7 @@ export class OrganizationController {
             context.get("user")
         );
         const admin = await this.userService.findUserByFirebaseId(context.get("user").uid);
-        const result = { name: admin?.name, email: email, company: company };
+        const result = { name: admin?.name, email: email, company: company, enabled: admin?.twoFactorEnabled };
         return new SuccessResult(result, AdminProfileResultModel);
     }
 
@@ -177,4 +179,9 @@ export class OrganizationController {
         const updatedAdmin = await this.adminService.updateAdminAuth(admin.id, twoFactorEnabled);
         return new SuccessResult({ success: updatedAdmin.twoFactorEnabled }, BooleanResultModel);
     }
+
+    // For admin panel
+    @Put("/brand")
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
+    public async updateBrand(@BodyParams() body: BrandParams, @Context() context: Context) {}
 }

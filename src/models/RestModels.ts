@@ -901,4 +901,5 @@ export class AdminProfileResultModel {
     @Property() public readonly name: string;
     @Property() public readonly email: string;
     @Property() public readonly company: string;
+    @Property() public readonly enabled: boolean;
 }
