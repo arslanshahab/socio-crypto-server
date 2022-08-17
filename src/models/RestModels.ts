@@ -904,7 +904,6 @@ export class AdminProfileResultModel {
     @Property() public readonly enabled: boolean;
     @Property() public readonly orgId: string;
     @Property() public readonly imagePath: string;
-
 }
 
 export class UpdateBrandLogoResultModel {
