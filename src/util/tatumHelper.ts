@@ -28,7 +28,14 @@ import {
     TransferAction,
     TransferStatus,
     TransferType,
+    EGLD,
+    ONE,
+    FLOW,
+    BEP2_RPC_URL,
+    TRON,
 } from "./constants";
+import { BncClient } from "@binance-chain/javascript-sdk";
+import { validate as addressValidator } from "multicoin-address-validator";
 
 export const offchainEstimateFee = async (data: WithdrawPayload): Promise<number> => {
     const chain = data.currency.token.network;
@@ -124,10 +131,21 @@ export const getCurrencyForTatum = (data: SymbolNetworkParams) => {
 };
 
 export const getWithdrawAddressForTatum = (symbol: string, address: string) => {
-    if (symbol === BTC || symbol === DOGE) return address;
+    if ([BTC, DOGE, TRON].includes(symbol)) return address;
     return address.toLowerCase();
 };
 
 export const generateWithdrawEndpoint = (symbol: string) => {
     return TOKEN_TO_WITHDRAW_ENDPOINT[symbol];
+};
+
+export const verifyAddress = (address: string, symbol: string, network: string) => {
+    if ([EGLD, ONE, FLOW].includes(symbol)) return true;
+    if (network === BNB) {
+        const client = new BncClient(BEP2_RPC_URL);
+        return client.checkAddress(address, "bnb");
+    }
+    if (network === ETH) symbol = network;
+    if (network === BSC) symbol = BNB;
+    return addressValidator(address, symbol);
 };

@@ -9,6 +9,13 @@ export const BADA = "BADA";
 export const BBNB = "BBNB";
 export const DOGE = "DOGE";
 export const BTC = "BTC";
+export const XRP = "XRP";
+export const CELO = "CELO";
+export const TRON = "TRON";
+export const QTUM = "QTUM";
+export const EGLD = "EGLD";
+export const ONE = "ONE";
+export const FLOW = "FLOW";
 export const USD = "USD";
 export const BCH_DEFAULT_WITHDRAW_FEE = 0.001;
 export const BNB_DEFAULT_WITHDRAW_FEE = 0.0005;
@@ -29,6 +36,7 @@ export const TOKEN_TO_WITHDRAW_ENDPOINT: { [key: string]: string } = {
     BNB: "/offchain/bnb/transfer",
     FLOW: "/offchain/flow/transfer",
 };
+export const BEP2_RPC_URL = "https://rpc.ankr.com/bsc";
 export const COIIN_ALERT_TRIGGER_LIMIT = 5000;
 export const CUSTODIAL_NETWORKS = [MATIC, ETH, BSC];
 export const WITHDRAW_LIMIT = 1000;
