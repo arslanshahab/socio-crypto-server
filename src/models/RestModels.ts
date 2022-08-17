@@ -902,6 +902,9 @@ export class AdminProfileResultModel {
     @Property() public readonly email: string;
     @Property() public readonly company: string;
     @Property() public readonly enabled: boolean;
+    @Property() public readonly orgId: string;
+    @Property() public readonly imagePath: string;
+
 }
 
 export class UpdateBrandLogoResultModel {

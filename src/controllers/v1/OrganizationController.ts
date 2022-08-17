@@ -164,12 +164,20 @@ export class OrganizationController {
     @Get("/profile")
     @(Returns(200, SuccessResult).Of(AdminProfileResultModel))
     public async getProfile(@Context() context: Context) {
-        const { company, email } = await this.adminService.checkPermissions(
+        const { company, email, orgId } = await this.adminService.checkPermissions(
             { hasRole: ["admin"] },
             context.get("user")
         );
         const admin = await this.userService.findUserByFirebaseId(context.get("user").uid);
-        const result = { name: admin?.name, email: email, company: company, enabled: admin?.twoFactorEnabled };
+        const org = await this.organizationService.findOrgById(orgId!);
+        const result = {
+            name: admin?.name,
+            email: email,
+            company: company,
+            enabled: admin?.twoFactorEnabled,
+            orgId,
+            imagePath: org?.logo || "",
+        };
         return new SuccessResult(result, AdminProfileResultModel);
     }
 
