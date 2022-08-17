@@ -1,16 +1,20 @@
 import { Injectable } from "@tsed/di";
 import { prisma } from "../clients/prisma";
 import { User, Prisma, Session } from "@prisma/client";
-import { isPast, addMinutes } from "date-fns";
+import { isPast, addDays } from "date-fns";
 import { SESSION_EXPIRED, ACCOUNT_RESTRICTED, ACCOUNT_NOT_EXISTS_ANYMORE } from "../util/errors";
 import { Forbidden } from "@tsed/exceptions";
 import crypto from "crypto";
 import { Secrets } from "../util/secrets";
+import { generateRandomId } from "../util";
 
 @Injectable()
 export class SessionService {
-    private createToken(data: string) {
-        return crypto.createHash("sha256").update(`${data}:${Secrets.encryptionKey}`).digest("base64");
+    private createToken(email: string) {
+        return crypto
+            .createHash("sha512")
+            .update(`${email}:${generateRandomId()}:${Secrets.encryptionKey}`)
+            .digest("base64");
     }
 
     public async findSessionByUserId(userId: string) {
@@ -51,7 +55,7 @@ export class SessionService {
         await prisma.session.create({
             data: {
                 token,
-                expiry: addMinutes(currentDate, 1),
+                expiry: addDays(currentDate, 7),
                 userId: user.id,
                 lastLogin: currentDate,
                 ip: deviceData?.ip,
