@@ -17,6 +17,7 @@ import {
     CUSTODIAL_ADDERSS_NOT_FOUND,
     CustomError,
     GLOBAL_WITHDRAW_LIMIT,
+    INVALID_ADDRESS,
     KYC_LEVEL_2_NOT_APPROVED,
     NOT_ENOUGH_BALANCE_IN_ACCOUNT,
     ORG_NOT_FOUND,
@@ -26,7 +27,7 @@ import {
     VERIFICATION_TOKEN_EXPIRED,
 } from "../../util/errors";
 import { VerificationApplicationService } from "../../services/VerificationApplicationService";
-import { getWithdrawAddressForTatum } from "../../util/tatumHelper";
+import { getWithdrawAddressForTatum, verifyAddress } from "../../util/tatumHelper";
 import { COIIN, RAIINMAKER_WITHDRAW, WITHDRAW_LIMIT, USER_WITHDRAW } from "../../util/constants";
 import { VerificationService } from "../../services/VerificationService";
 import { getTokenValueInUSD } from "../../util/exchangeRate";
@@ -112,6 +113,7 @@ export class TatumController {
             );
         const token = await this.tatumService.isCurrencySupported({ symbol, network });
         if (!token) throw new Error(TOKEN_NOT_FOUND);
+        if (!verifyAddress(address, symbol, network)) throw new Error(INVALID_ADDRESS);
         try {
             await this.verificationService.verifyToken({ verificationToken });
         } catch (error) {
@@ -164,6 +166,7 @@ export class TatumController {
             );
         const token = await this.tatumService.isCurrencySupported({ symbol, network });
         if (!token) throw new Error(TOKEN_NOT_FOUND);
+        if (!verifyAddress(address, symbol, network)) throw new Error(INVALID_ADDRESS);
         try {
             await this.verificationService.verifyToken({ verificationToken });
         } catch (error) {
