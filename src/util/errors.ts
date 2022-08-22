@@ -109,6 +109,7 @@ export const USER_NEEDS_TO_PARTICIPATE_IN_CAMPAIGN = "USER_NEEDS_TO_PARTICIPATE_
 export const ALREADY_REDEEMED_IN_24_HOURS = "ALREADY_REDEEMED_IN_24_HOURS";
 export const ORGANIZATION_NAME_ALREADY_EXISTS = "ORGANIZATION_NAME_ALREADY_EXISTS";
 export const INVALID_ADDRESS = "INVALID_ADDRESS";
+export const ACTION_NOT_PERMITTED = "ACTION_NOT_PERMITTED";
 
 export const errorMap: { [key: string]: string } = {
     SOMETHING_WENT_WRONG: "Looks like something is wrong, we are working to fix it.",
@@ -175,4 +176,5 @@ export const errorMap: { [key: string]: string } = {
     SESSION_ALREADY_EXISTS: "You have already logged in from another device.",
     ORGANIZATION_NAME_ALREADY_EXISTS: "Organization already exists with this name.",
     INVALID_ADDRESS: "Your provided address is not valid.",
+    ACTION_NOT_PERMITTED: "Action not permitted!",
 };
