@@ -9,6 +9,7 @@ import { BadRequest, NotFound } from "@tsed/exceptions";
 import { ORG_NOT_FOUND } from "../../util/errors";
 import { WalletCurrencyService } from "../../services/WalletCurrencyService";
 import { AdminService } from "../../services/AdminService";
+import { ADMIN, MANAGER } from "../../util/constants";
 
 class CryptoToWalletParams {
     @Required() public readonly contractAddress: string;
@@ -32,7 +33,7 @@ export class CryptoController {
     @Get("/supported-crypto")
     @(Returns(200, SuccessArrayResult).Of(CryptoCurrencyResultModel))
     public async listSupportedCrypto(@Context() context: Context) {
-        await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));
         const crypto = await this.cryptoCurrencyService.findCryptoCurrencies();
         return new SuccessArrayResult(crypto, CryptoCurrencyResultModel);
     }
@@ -41,7 +42,7 @@ export class CryptoController {
     @(Returns(200, SuccessArrayResult).Of(WalletCurrencyResultModel))
     public async addCryptoToWallet(@BodyParams() body: CryptoToWalletParams, @Context() context: Context) {
         const { company } = await this.adminService.checkPermissions(
-            { hasRole: ["admin", "manager"] },
+            { hasRole: [ADMIN, MANAGER] },
             context.get("user")
         );
         if (!company) throw new NotFound("Company not found");
@@ -58,7 +59,7 @@ export class CryptoController {
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async deleteCryptoFromWallet(@BodyParams() body: DeleteCryptoFromWalletParams, @Context() context: Context) {
         const { company } = await this.adminService.checkPermissions(
-            { hasRole: ["admin", "manager"] },
+            { hasRole: [ADMIN, MANAGER] },
             context.get("user")
         );
         if (!company) throw new NotFound("Company not found");

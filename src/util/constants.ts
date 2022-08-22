@@ -50,6 +50,8 @@ export const CAMPAIGN_REWARD = "CAMPAIGN_REWARD";
 export const USER_WITHDRAW = "USER_WITHDRAW";
 export const USER_WITHDRAW_FEE = "USER_WITHDRAW_FEE";
 export const RAIINMAKER_WITHDRAW = "RAIINMAKER_WITHDRAW";
+export const ADMIN = "admin";
+export const MANAGER = "manager";
 
 export const CRYPTO_ICONS_BUCKET_URL = "https://rm-crypto-icons.s3.us-west-2.amazonaws.com";
 export const CRYPTO_ICONS_MAP: { [key: string]: string } = {
@@ -295,4 +297,9 @@ export enum UserRewardType {
 export enum TransactionChainType {
     DRAGONCHAIN = "dragonchain",
     MYFII = "myfii",
+}
+
+export enum ADMIN_ROLES {
+    ADMIN,
+    MANAGER,
 }
