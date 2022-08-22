@@ -38,13 +38,14 @@ export class SessionService {
         });
     }
 
-    public async updateLastLogin(id: string) {
+    public async updateLastLogin(session: Session) {
         return await prisma.session.update({
             where: {
-                id,
+                id: session.id,
             },
             data: {
                 lastLogin: new Date(),
+                expiry: addDays(session.expiry, 1),
             },
         });
     }
@@ -55,7 +56,7 @@ export class SessionService {
         await prisma.session.create({
             data: {
                 token,
-                expiry: addDays(currentDate, 7),
+                expiry: addDays(currentDate, 1),
                 userId: user.id,
                 lastLogin: currentDate,
                 ip: deviceData?.ip,
@@ -74,7 +75,7 @@ export class SessionService {
         }
         if (session?.user?.deletedAt) throw new Forbidden(ACCOUNT_NOT_EXISTS_ANYMORE);
         if (!session?.user?.active) throw new Forbidden(ACCOUNT_RESTRICTED);
-        await this.updateLastLogin(session.id);
+        await this.updateLastLogin(session);
         return { userId: session.userId };
     }
 
