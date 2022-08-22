@@ -1,6 +1,6 @@
 import { Injectable } from "@tsed/di";
 import { decrypt, encrypt } from "../util/crypto";
-import { BadRequest } from "@tsed/exceptions";
+import { Forbidden } from "@tsed/exceptions";
 import { EMAIL_NOT_VERIFIED, INCORRECT_CODE_OR_EMAIL, VERIFICATION_TOKEN_EXPIRED } from "../util/errors";
 import { addMinutes, isPast } from "date-fns";
 import { VerificationType } from "../types";
@@ -54,16 +54,16 @@ export class VerificationService {
 
     public async verifyToken(data: { verificationToken: string; email?: string }) {
         const verification = await this.findVerificationByToken(data.verificationToken);
-        if (!verification) throw new Error(EMAIL_NOT_VERIFIED);
-        if (data.email && data.email.toLowerCase() !== verification.email) throw new Error(EMAIL_NOT_VERIFIED);
-        if (this.isCodeExpired(verification.expiry!)) throw new Error(VERIFICATION_TOKEN_EXPIRED);
+        if (!verification) throw new Forbidden(EMAIL_NOT_VERIFIED);
+        if (data.email && data.email.toLowerCase() !== verification.email) throw new Forbidden(EMAIL_NOT_VERIFIED);
+        if (this.isCodeExpired(verification.expiry!)) throw new Forbidden(VERIFICATION_TOKEN_EXPIRED);
         await this.expireToken(verification.id);
         return verification;
     }
 
     public async verifyCode(email: string, code: string) {
         const verification = await this.findVerificationByEmail(email);
-        if (!verification || code !== decrypt(verification.code)) throw new BadRequest(INCORRECT_CODE_OR_EMAIL);
+        if (!verification || code !== decrypt(verification.code)) throw new Forbidden(INCORRECT_CODE_OR_EMAIL);
         await this.addExpiryTime(verification.id);
         return await this.updateVerificationStatus(true, verification.id);
     }
