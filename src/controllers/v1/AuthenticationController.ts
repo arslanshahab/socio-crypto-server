@@ -89,7 +89,8 @@ export class AuthenticationController {
             ip: req.socket.remoteAddress,
             device: req.headers["user-agent"],
         });
-        await S3Client.uploadUserEmails(await this.userService.getAllEmails());
+        if (process.env.NODE_ENV === "production")
+            await S3Client.uploadUserEmails(await this.userService.getAllEmails());
         return new SuccessResult({ token }, UserTokenReturnModel);
     }
 
