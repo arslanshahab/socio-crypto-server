@@ -63,7 +63,7 @@ export const NO_TOKEN_PROVIDED = "NO_TOKEN_PROVIDED";
 export const ERROR_LINKING_TIKTOK = "ERROR_LINKING_TIKTOK";
 export const ERROR_LINKING_TWITTER = "ERROR_LINKING_TWITTER";
 export const GLOBAL_CAMPAIGN_NOT_FOUND = "GLOBAL_CAMPAIGN_NOT_FOUND";
-export const VERIFICATION_TOKEN_EXPIRED = "VERIFICATION_TOKEN_EXPIRED";
+export const INVALID_VERIFICATION_TOKEN = "INVALID_VERIFICATION_TOKEN";
 export const ORG_NOT_FOUND = "ORG_NOT_FOUND";
 export const ERROR_CALCULATING_TIER = "ERROR_CALCULATING_TIER";
 export const GLOBAL_CAMPAIGN_EXIST_FOR_CURRENCY = "GLOBAL_CAMPAIGN_EXIST_FOR_CURRENCY";
@@ -130,7 +130,7 @@ export const errorMap: { [key: string]: string } = {
     ERROR_LINKING_TIKTOK: "There was an error linking your tiktok social account.",
     ERROR_LINKING_TWITTER: "You need to link your twitter account before you redeem!",
     GLOBAL_CAMPAIGN_NOT_FOUND: "Global campaign doesn't exists.",
-    VERIFICATION_TOKEN_EXPIRED: "Verification token expired.",
+    INVALID_VERIFICATION_TOKEN: "Verification token is not valid.",
     ORG_NOT_FOUND: "Organization not found.",
     ERROR_CALCULATING_TIER: "Failure calculating current tier.",
     GLOBAL_CAMPAIGN_EXIST_FOR_CURRENCY: "A global campaign already exists for this currency.",

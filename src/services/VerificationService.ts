@@ -1,7 +1,7 @@
 import { Injectable } from "@tsed/di";
 import { decrypt, encrypt } from "../util/crypto";
 import { Forbidden } from "@tsed/exceptions";
-import { EMAIL_NOT_VERIFIED, INCORRECT_CODE_OR_EMAIL, VERIFICATION_TOKEN_EXPIRED } from "../util/errors";
+import { EMAIL_NOT_VERIFIED, INCORRECT_CODE_OR_EMAIL, INVALID_VERIFICATION_TOKEN } from "../util/errors";
 import { addMinutes, isPast } from "date-fns";
 import { VerificationType } from "../types";
 import { generate6DigitCode } from "../util";
@@ -16,7 +16,9 @@ export class VerificationService {
     }
 
     public async findVerificationByToken(verificationToken: string) {
-        return readPrisma.verification.findFirst({ where: { id: decrypt(verificationToken), verified: true } });
+        return readPrisma.verification.findFirst({
+            where: { id: decrypt(verificationToken) || undefined, verified: true },
+        });
     }
 
     public isCodeExpired(expiry: Date) {
@@ -56,7 +58,7 @@ export class VerificationService {
         const verification = await this.findVerificationByToken(data.verificationToken);
         if (!verification) throw new Forbidden(EMAIL_NOT_VERIFIED);
         if (data.email && data.email.toLowerCase() !== verification.email) throw new Forbidden(EMAIL_NOT_VERIFIED);
-        if (this.isCodeExpired(verification.expiry!)) throw new Forbidden(VERIFICATION_TOKEN_EXPIRED);
+        if (this.isCodeExpired(verification.expiry!)) throw new Forbidden(INVALID_VERIFICATION_TOKEN);
         await this.expireToken(verification.id);
         return verification;
     }

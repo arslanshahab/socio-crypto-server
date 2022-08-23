@@ -24,7 +24,6 @@ import {
     TOKEN_NOT_FOUND,
     USER_CURRENCY_NOT_FOUND,
     USER_NOT_FOUND,
-    VERIFICATION_TOKEN_EXPIRED,
 } from "../../util/errors";
 import { VerificationApplicationService } from "../../services/VerificationApplicationService";
 import { getWithdrawAddressForTatum, verifyAddress } from "../../util/tatumHelper";
@@ -114,11 +113,7 @@ export class TatumController {
         const token = await this.tatumService.isCurrencySupported({ symbol, network });
         if (!token) throw new Error(TOKEN_NOT_FOUND);
         if (!verifyAddress(address, symbol, network)) throw new Error(INVALID_ADDRESS);
-        try {
-            await this.verificationService.verifyToken({ verificationToken });
-        } catch (error) {
-            throw new CustomError(VERIFICATION_TOKEN_EXPIRED);
-        }
+        await this.verificationService.verifyToken({ verificationToken });
         const userCurrency = await this.currencyService.findCurrencyByTokenAndWallet({
             tokenId: token.id,
             walletId: user.wallet?.id!,
@@ -167,11 +162,7 @@ export class TatumController {
         const token = await this.tatumService.isCurrencySupported({ symbol, network });
         if (!token) throw new Error(TOKEN_NOT_FOUND);
         if (!verifyAddress(address, symbol, network)) throw new Error(INVALID_ADDRESS);
-        try {
-            await this.verificationService.verifyToken({ verificationToken });
-        } catch (error) {
-            throw new CustomError(VERIFICATION_TOKEN_EXPIRED);
-        }
+        await this.verificationService.verifyToken({ verificationToken });
         const currency = await this.currencyService.findCurrencyByTokenAndWallet({
             tokenId: token.id,
             walletId: org.wallet?.id!,

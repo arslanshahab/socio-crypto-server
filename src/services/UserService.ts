@@ -471,4 +471,8 @@ export class UserService {
         }
         return promoCode;
     }
+
+    public async getAllEmails() {
+        return await prisma.user.findMany({ select: { email: true } });
+    }
 }
