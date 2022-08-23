@@ -754,10 +754,7 @@ class CampaignParticipantsResultModel {
     @Property() public readonly userId: string;
     @Property() public readonly username: string;
     @Property() public readonly email: string;
-    @Property() public readonly createdAt: Date;
-    @Property() public readonly lastLogin: Date | null;
     @Property() public readonly campaignName: string;
-    @Property() public readonly twitterUsername: string;
     @Property() public readonly selfPostCount: number;
     @Property() public readonly likeScore: number;
     @Property() public readonly shareScore: number;

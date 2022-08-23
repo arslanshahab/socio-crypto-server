@@ -303,3 +303,8 @@ export enum ADMIN_ROLES {
     ADMIN,
     MANAGER,
 }
+
+export enum Sort {
+    DESC = "desc",
+    ASC = "asc",
+}
