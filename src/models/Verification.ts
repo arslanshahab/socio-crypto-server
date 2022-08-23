@@ -9,7 +9,7 @@ import {
 } from "typeorm";
 import { decrypt, encrypt } from "../util/crypto";
 import { generate6DigitCode } from "../util";
-import { EMAIL_NOT_VERIFIED, INCORRECT_CODE_OR_EMAIL, VERIFICATION_TOKEN_EXPIRED } from "../util/errors";
+import { EMAIL_NOT_VERIFIED, INCORRECT_CODE_OR_EMAIL, INVALID_VERIFICATION_TOKEN } from "../util/errors";
 import { addMinutes, isPast } from "date-fns";
 import { VerificationType } from "src/types";
 @Entity()
@@ -97,7 +97,7 @@ export class Verification extends BaseEntity {
         });
         if (!verification) throw new Error(EMAIL_NOT_VERIFIED);
         if (data.email && data.email.toLowerCase() !== verification.email) throw new Error(EMAIL_NOT_VERIFIED);
-        if (verification.isCodeExpired()) throw new Error(VERIFICATION_TOKEN_EXPIRED);
+        if (verification.isCodeExpired()) throw new Error(INVALID_VERIFICATION_TOKEN);
         await verification.expireToken();
         return verification;
     };

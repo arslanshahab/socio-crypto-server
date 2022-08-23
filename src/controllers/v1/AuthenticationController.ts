@@ -83,7 +83,7 @@ export class AuthenticationController {
         if (await this.profileService.findProfileByUsername(username)) throw new Forbidden(USERNAME_EXISTS);
         await this.verificationService.verifyToken({ verificationToken, email });
         const userId = await this.userService.initNewUser(email, username, password, referralCode);
-        const user = await this.userService.findUserByContext({ userId } as JWTPayload, ["wallet"]);
+        const user = await this.userService.findUserByContext({ userId } as JWTPayload, { wallet: true });
         if (!user) throw new NotFound(USER_NOT_FOUND);
         const token = await this.sessionService.initSession(user, {
             ip: req.socket.remoteAddress,
@@ -105,8 +105,8 @@ export class AuthenticationController {
         if (await this.sessionService.ifSessionExist(user)) throw new Forbidden(SESSION_ALREADY_EXISTS);
         await this.userService.transferCoiinReward({ user, type: UserRewardType.LOGIN_REWARD });
         const token = await this.sessionService.initSession(user, {
-            ip: req.socket.remoteAddress,
-            device: req.headers["user-agent"],
+            ip: req?.socket?.remoteAddress || "",
+            device: req?.headers["user-agent"] || "",
         });
         return new SuccessResult({ token }, UserTokenReturnModel);
     }
@@ -171,7 +171,7 @@ export class AuthenticationController {
         const verificationData = await this.verificationService.generateVerification({ email, type });
         await SesClient.emailAddressVerificationEmail(
             email,
-            this.verificationService.getDecryptedCode(verificationData.code)
+            this.verificationService.getDecryptedCode(verificationData.code)!
         );
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
@@ -230,7 +230,7 @@ export class AuthenticationController {
         const verificationData = await this.verificationService.generateVerification({ email, type });
         await SesClient.emailAddressVerificationEmail(
             email,
-            this.verificationService.getDecryptedCode(verificationData.code)
+            this.verificationService.getDecryptedCode(verificationData.code)!
         );
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
