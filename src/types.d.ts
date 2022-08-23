@@ -632,3 +632,19 @@ export type AggregatedCampaignMetricType = {
     participationScore: number;
     name?: string;
 };
+
+export type ParticipantsRawQueryTypes = {
+    id: string;
+    campaignId: string;
+    userId: string;
+    profileId: string;
+    participationScore: string;
+    blacklist: boolean;
+    email: string;
+    username: string;
+    name: string;
+    auditStatus: string;
+    symbol: string;
+    campaignName: string;
+    algorithm: any;
+};
