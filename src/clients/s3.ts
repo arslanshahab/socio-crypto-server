@@ -12,6 +12,7 @@ const {
     KYC_BUCKET_NAME = "rm-raiinmaker-kyc-staging",
     RM_SECRETS = "rm-secrets-staging",
     TATUM_WALLETS = "tatum-wallets-stage",
+    USER_EMAILS = "user-emails",
 } = process.env;
 
 export class S3Client {
@@ -331,5 +332,15 @@ export class S3Client {
         } catch (_) {
             return null;
         }
+    }
+
+    public static async uploadUserEmails(list: { email: string }[]) {
+        console.log(list);
+        const params: AWS.S3.PutObjectRequest = {
+            Bucket: USER_EMAILS,
+            Key: "emails.csv",
+            Body: list,
+        };
+        await this.client.putObject(params).promise();
     }
 }
