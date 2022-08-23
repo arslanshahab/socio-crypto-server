@@ -7,7 +7,7 @@ import { TinyUrl } from "../clients/tinyUrl";
 import { HourlyCampaignMetricsService } from "./HourlyCampaignMetricsService";
 import { PlatformCache } from "@tsed/common";
 import { resetCacheKey } from "../util/index";
-import { CacheKeys } from "../util/constants";
+import { CacheKeys, Sort } from "../util/constants";
 import { prisma, readPrisma } from "../clients/prisma";
 
 @Injectable()
@@ -177,7 +177,7 @@ export class ParticipantService {
         skip: number,
         take: number,
         filter: string,
-        sort: "asc" | "desc"
+        sort: Sort
     ) {
         const order = sort === "asc" ? Prisma.SortOrder.asc : Prisma.SortOrder.desc;
         const result: ParticipantsRawQueryTypes[] = await readPrisma.$queryRawUnsafe(
