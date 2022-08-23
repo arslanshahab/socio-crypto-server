@@ -3,11 +3,11 @@ import { Controller, Inject } from "@tsed/di";
 import { Enum, Get, Property, Returns } from "@tsed/schema";
 import { SuccessArrayResult, SuccessResult } from "../../util/entities";
 import { TransferService } from "../../services/TransferService";
-import { UserService } from "../../services/UserService";
 import { NotFound } from "@tsed/exceptions";
 import { TRANSFER_NOT_FOUND } from "../../util/errors";
 import { TransferStatus } from "../../util/constants";
 import { TransferResultModel } from "../../models/RestModels";
+import { AdminService } from "../../services/AdminService";
 
 export class WithdrawStatusParams {
     @Property() @Enum(TransferStatus) public readonly status: TransferStatus;
@@ -18,14 +18,14 @@ export class WithdrawController {
     @Inject()
     private transferService: TransferService;
     @Inject()
-    private userService: UserService;
+    private adminService: AdminService;
 
     @Get()
     @(Returns(200, SuccessResult).Of(Object))
     public async getWithdrawalsV2(@QueryParams() query: WithdrawStatusParams, @Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const { orgId } = await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const { status = "PENDING" } = query;
-        const transfers = await this.transferService.getWithdrawalsByStatus(status);
+        const transfers = await this.transferService.getWithdrawalsByStatus(status, orgId);
         if (!transfers) throw new NotFound(TRANSFER_NOT_FOUND);
         const uniqueUsers: { [key: string]: any } = {};
         for (let i = 0; i < transfers.length; i++) {
@@ -51,10 +51,12 @@ export class WithdrawController {
         return new SuccessResult(Object.values(uniqueUsers), Object);
     }
 
+    // For admin panel
     @Get("/history")
     @(Returns(200, SuccessArrayResult).Of(TransferResultModel))
     public async getWithdrawalHistory(@Context() context: Context) {
-        const transfers = await this.transferService.getAuditedWithdrawals();
+        const { orgId } = await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const transfers = await this.transferService.getAuditedWithdrawals(orgId);
         return new SuccessArrayResult(TransferResultModel.buildArray(transfers), TransferResultModel);
     }
 }

@@ -512,12 +512,12 @@ model User {
   notification_settings                        NotificationSettings?
   participant                                  Participant[]
   profile                                      Profile?
+  session                                      Session[]                 @relation("SessionTouser")
   social_link                                  SocialLink[]
   social_post                                  SocialPost[]
   twenty_four_hour_metric                      TwentyFourHourMetric[]
   verification_application                     VerificationApplication[]
   wallet                                       Wallet?
-  weekly_reward                                WeeklyReward[]            @relation("userToweekly_reward")
   xoxoday_order                                XoxodayOrder[]
 
   @@index([identityId], map: "IDX_dea97e26c765a4cdb575957a14")
@@ -591,7 +591,6 @@ model WeeklyReward {
   rewardType    String   @db.VarChar
   createdAt     DateTime @default(now()) @db.Timestamp(6)
   updatedAt     DateTime @default(now()) @updatedAt @db.Timestamp(6)
-  user          User?    @relation("userToweekly_reward", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ba2529b7af668bbc111475272b1")
 
   @@map("weekly_reward")
 }
@@ -639,6 +638,23 @@ model Transaction {
   campaign        Campaign? @relation("campaignToTransaction", fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_3f3891eefaf8dcce48eae8c709f")
 
   @@map("transaction")
+}
+
+model Session {
+  id         String    @id(map: "PK_f55da76ac1c3ac420f444d2ff11") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  token      String    @db.VarChar
+  ip         String?   @db.VarChar
+  deviceInfo String?   @db.VarChar
+  lastLogin  DateTime? @db.Timestamp(6)
+  logout     Boolean?  @default(false)
+  logoutAt   DateTime? @db.Timestamp(6)
+  expiry     DateTime  @db.Timestamp(6)
+  createdAt  DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt  DateTime  @default(now()) @db.Timestamp(6)
+  userId     String?   @db.Uuid
+  user       User?     @relation("SessionTouser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_3d2f174ef04fb312fdebd0ddc53")
+
+  @@map("session")
 }
 
 enum verification_application_level_enum {

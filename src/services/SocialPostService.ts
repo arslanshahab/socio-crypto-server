@@ -53,7 +53,17 @@ export class SocialPostService {
         });
     }
 
-    public async getSocialPostCountByParticipantId(participantId: string, campaignId?: string) {
-        return readPrisma.socialPost.count({ where: { participantId, campaignId } });
+    public async getSocialPostCount(campaignId?: string, participantId?: string) {
+        return readPrisma.socialPost.count({
+            where: { campaignId: campaignId && campaignId, participantId: participantId && participantId },
+        });
+    }
+
+    public async getSocialPostMetrics(campaignId: string) {
+        const result: { likes: number; shares: number; comments: number }[] =
+            await prisma.$queryRaw`SELECT COALESCE(sum(cast(s."likes" as int)),0) as "likes", 
+                COALESCE(sum(cast(s."shares" as int)),0) as "shares", COALESCE(sum(cast(s."comments" as int)),0) as "comments" FROM
+                social_post as s left join campaign as c on s."campaignId"=c.id where c.id=${campaignId} group by c.id;`;
+        return result;
     }
 }

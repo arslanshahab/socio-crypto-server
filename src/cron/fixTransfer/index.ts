@@ -8,6 +8,7 @@ import { BatchTransferPayload, TatumClient } from "../../clients/tatumClient";
 import { prisma, readPrisma } from "../../clients/prisma";
 import { Currency } from "@prisma/client";
 import { getCurrencyForTatum } from "../../util/tatumHelper";
+import { SlackClient } from "../../clients/slack";
 
 dotenv.config();
 const app = new Application();
@@ -213,8 +214,10 @@ const updateTatumBalances = async () => {
         await updateTatumBalances();
     } catch (error) {
         console.log(error);
+        await SlackClient.sendNotification({ name: "Fix Transfers Cron", error: error });
+        console.log("EXITING BECAUSE OF AN ERROR ----.");
         await connection.close();
-        console.log("DATABASE CONNECTION CLOSED WITH ERROR ----.");
+        console.log("DATABASE CONNECTION CLOSED ----.");
         process.exit(0);
     }
     console.log("COMPLETED CRON TASKS ----.");

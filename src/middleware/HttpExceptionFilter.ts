@@ -1,6 +1,7 @@
 import { Catch, ExceptionFilterMethods, PlatformContext, ResponseErrorObject } from "@tsed/common";
 import { Exception } from "@tsed/exceptions";
 import { SentryClient } from "../clients/sentry";
+import { errorMap, SOMETHING_WENT_WRONG } from "../util/errors";
 
 /**
  * Processes all error responses
@@ -20,10 +21,13 @@ export class HttpExceptionFilter implements ExceptionFilterMethods {
     }
 
     protected mapError(error: any) {
+        const code = errorMap[error.message] ? error.message : SOMETHING_WENT_WRONG;
+        const message = errorMap[error.message] ? errorMap[error.message] : error.message;
         return {
             success: false,
             name: error.origin?.name || error.name,
-            message: error.message,
+            code,
+            message,
             status: error.status || 500,
             errors: this.getErrors(error),
         };

@@ -16,19 +16,27 @@ import {
 } from "../../util/errors";
 import { ParticipantService } from "../../services/ParticipantService";
 import { SocialPostService } from "../../services/SocialPostService";
-import { calculateParticipantSocialScoreV2, getSocialClient } from "../helpers";
-import { BooleanResultModel, SocialMetricsResultModel, SocialPostResultModel } from "../../models/RestModels";
+import { calculateParticipantSocialScoreV2, engagementRate, getSocialClient, standardDeviation } from "../helpers";
+import {
+    BooleanResultModel,
+    CampaignIdModel,
+    CampaignScoreResultModel,
+    SocialMetricsResultModel,
+    SocialPostCountResultModel,
+    SocialPostResultModel,
+} from "../../models/RestModels";
 import { Prisma } from "@prisma/client";
 import { MediaType, PointValueTypes, SocialType } from "../../types";
 import { SocialLinkService } from "../../services/SocialLinkService";
 import { CampaignService } from "../../services/CampaignService";
 import { CampaignMediaService } from "../../services/CampaignMediaService";
-import { downloadMedia } from "../../util";
+import { downloadMedia, formatFloat } from "../../util";
 import { HourlyCampaignMetricsService } from "../../services/HourlyCampaignMetricsService";
 import { addMinutes } from "date-fns";
-import { BSC, COIIN, SocialClientType, SocialLinkType } from "../../util/constants";
+import { BSC, COIIN, SocialClientType, SocialLinkType, ADMIN, MANAGER } from "../../util/constants";
 import { TatumService } from "../../services/TatumService";
 import { DragonChainService } from "../../services/DragonChainService";
+import { AdminService } from "../../services/AdminService";
 
 class RegisterSocialLinkResultModel {
     @Property() public readonly registerSocialLink: boolean;
@@ -111,6 +119,8 @@ export class SocialController {
     private tatumService: TatumService;
     @Inject()
     private dragonChainService: DragonChainService;
+    @Inject()
+    private adminService: AdminService;
 
     @Get("/social-metrics")
     @(Returns(200, SuccessResult).Of(SocialMetricsResultModel))
@@ -266,7 +276,7 @@ export class SocialController {
     @Get("/posts")
     @(Returns(200, SuccessResult).Of(Object))
     public async getCampaignPosts(@QueryParams() query: CampaignPostParams, @Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
         const { campaignId, skip = 0, take = 10 } = query;
         const socialPosts: string[] = [];
         const [posts, count] = await this.socialPostService.findSocialPostByCampaignId(campaignId, skip, take);
@@ -283,5 +293,70 @@ export class SocialController {
             }
         }
         return new SuccessResult({ socialPosts, count }, Object);
+    }
+
+    // Fort Admin-panel
+    @Get("/posts/:campaignId")
+    @(Returns(200, SuccessResult).Of(SocialPostCountResultModel))
+    public async getCampaignPostsByCampaignId(@PathParams() path: CampaignIdModel, @Context() context: Context) {
+        await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
+        const { campaignId } = path;
+        const socialPostsCount = await this.socialPostService.getSocialPostCount(campaignId);
+        return new SuccessResult({ count: socialPostsCount }, SocialPostCountResultModel);
+    }
+
+    // For Admin-panel
+    @Get("/campaign-score/:campaignId")
+    @(Returns(200, SuccessResult).Of(CampaignScoreResultModel))
+    public async getCampaignScore(@PathParams() path: CampaignIdModel, @Context() context: Context) {
+        await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
+        const { campaignId } = path;
+        const campaign = await this.campaignService.findCampaignById(campaignId);
+        if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
+        // average clicks
+        let [{ clickCount }] = await this.participantService.getAverageClicks(campaignId);
+        if (!clickCount) {
+            clickCount = 0;
+        }
+        const postCount = await this.socialPostService.getSocialPostCount(campaignId);
+        // engagement rate
+        const { likeRate, commentRate, shareRate, clickRate } = (await engagementRate(campaignId, postCount)).social();
+        const viewRate = (await engagementRate(campaignId, postCount)).views();
+        const submissionRate = (await engagementRate(campaignId, postCount)).submissions();
+        const engagementRates = {
+            likeRate: formatFloat(likeRate),
+            commentRate: formatFloat(commentRate),
+            shareRate: formatFloat(shareRate),
+            viewRate: formatFloat(viewRate),
+            submissionRate: formatFloat(submissionRate),
+            clickRate: formatFloat(clickRate),
+        };
+        // standard deviation
+        const socialPostMetrics = await this.socialPostService.findSocialPostMetricsById(campaignId);
+        const rawLikes = socialPostMetrics.map((x) => x.likes);
+        const rawComments = socialPostMetrics.map((x) => x.comments);
+        const rawShares = socialPostMetrics.map((x) => x.shares);
+        const participants = await this.participantService.findParticipants(campaignId);
+        const rawClicks = participants.map((x) => x.clickCount);
+        const rawViews = participants.map((x) => x.viewCount);
+        const rawSubmissions = participants.map((x) => x.submissionCount);
+        const participantCount = await this.participantService.findParticipantsCount(campaignId);
+        const likeStandardDeviation = await standardDeviation(likeRate, postCount, rawLikes);
+        const commentStandardDeviation = await standardDeviation(commentRate, postCount, rawComments);
+        const sharesStandardDeviation = await standardDeviation(shareRate, postCount, rawShares);
+        const clicksStandardDeviation = await standardDeviation(clickRate, participantCount, rawClicks);
+        const viewsStandardDeviation = await standardDeviation(viewRate, participantCount, rawViews);
+        const submissionsStandardDeviation = await standardDeviation(submissionRate, participantCount, rawSubmissions);
+        const result = {
+            averageClicks: clickCount.toFixed(2),
+            engagementRates,
+            likeStandardDeviation: formatFloat(likeStandardDeviation.standardDeviation),
+            commentStandardDeviation: formatFloat(commentStandardDeviation.standardDeviation),
+            sharesStandardDeviation: formatFloat(sharesStandardDeviation.standardDeviation),
+            clicksStandardDeviation: formatFloat(clicksStandardDeviation.standardDeviation),
+            viewsStandardDeviation: formatFloat(viewsStandardDeviation.standardDeviation),
+            submissionsStandardDeviation: formatFloat(submissionsStandardDeviation.standardDeviation),
+        };
+        return new SuccessResult(result, CampaignScoreResultModel);
     }
 }

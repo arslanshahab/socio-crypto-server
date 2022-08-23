@@ -62,6 +62,8 @@ import {
 import { NotificationService } from "../../services/NotificationService";
 import { TransferService } from "../../services/TransferService";
 import {
+    ADMIN,
+    MANAGER,
     BSC,
     COIIN,
     CoiinTransferAction,
@@ -70,6 +72,7 @@ import {
     SocialClientType,
     TransferAction,
     UserRewardType,
+    ADMIN_ROLES,
 } from "../../util/constants";
 import { SocialService } from "../../services/SocialService";
 import { CampaignService } from "../../services/CampaignService";
@@ -92,6 +95,7 @@ import { VerificationApplicationService } from "../../services/VerificationAppli
 import { Parser } from "json2csv";
 import { DragonChainService } from "../../services/DragonChainService";
 import { TransactionService } from "../../services/TransactionService";
+import { SessionService } from "../../services/SessionService";
 
 const userResultRelations = {
     profile: true,
@@ -138,7 +142,7 @@ class UpdateUserNameParams {
 class PromotePermissionsParams {
     @Required() public readonly firebaseId: string;
     @Property() public readonly company: string;
-    @Property() public readonly role: "admin" | "manager";
+    @Property() public readonly role: ADMIN_ROLES;
 }
 
 class SetRecoveryCodeParams {
@@ -169,6 +173,11 @@ class UserIdParam {
 class UserStatusParams {
     @Required() public readonly id: string;
     @Required() public readonly activeStatus: boolean;
+}
+
+class UserTransactionHistoryParam extends UserIdParam {
+    @Property() public readonly skip: number;
+    @Property() public readonly take: number;
 }
 
 @Controller("/user")
@@ -209,11 +218,13 @@ export class UserController {
     private dragonChainService: DragonChainService;
     @Inject()
     private transactionService: TransactionService;
+    @Inject()
+    private sessionService: SessionService;
 
     @Get("/")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserResultModel))
     public async list(@QueryParams() query: PaginatedVariablesModel, @Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
         const { skip = 0, take = 10 } = query;
         const [results, total] = await this.userService.findUsers({ skip, take }, userResultRelations);
 
@@ -420,23 +431,24 @@ export class UserController {
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 
-    @Get("/user-transactions-history/:userId")
+    // For admin panel
+    @Get("/user-transactions-history")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserTransactionResultModel))
-    public async getUserTransactionHistory(@PathParams() path: UserIdParam, @Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        const { userId } = path;
-        const transaction = await this.transferService.findUserTransactions(userId);
-        return new SuccessResult(
-            new Pagination(transaction, transaction.length, UserTransactionResultModel),
-            Pagination
-        );
+    public async getUserTransactionHistory(
+        @QueryParams() query: UserTransactionHistoryParam,
+        @Context() context: Context
+    ) {
+        this.userService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));
+        const { userId, skip, take } = query;
+        const [transaction, total] = await this.transferService.findUserTransactions(userId, skip, take);
+        return new SuccessResult(new Pagination(transaction, total, UserTransactionResultModel), Pagination);
     }
 
     // For admin panel
     @Get("/user-stats")
     @(Returns(200, SuccessResult).Of(DashboardStatsResultModel))
     public async getDashboardStats(@Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
         const [totalUsers, lastWeekUsers, bannedUsers] = await this.userService.getUserCount();
         const [redeemedTotalAmount] = await this.transferService.getRedeemedAmount();
         const [distributedTotalAmount] = await this.transferService.getDistributedAmount();
@@ -474,7 +486,7 @@ export class UserController {
     @Put("/reset-user-password/:userId")
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async resetUserPassword(@PathParams() path: UserIdParam, @Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));
         const { userId } = path;
         const user = await this.userService.findUserById(userId);
         if (!user) throw new NotFound(USER_NOT_FOUND);
@@ -493,7 +505,7 @@ export class UserController {
     @Get("/single-user/:userId")
     @(Returns(200, SuccessResult).Of(SingleUserResultModel))
     public async getUserById(@PathParams() path: UserIdParam, @Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
         const user = await this.userService.findUserById(path.userId, ["profile", "social_post"]);
         if (!user) throw new NotFound(USER_NOT_FOUND);
         return new SuccessResult({ ...user, profile: ProfileResultModel.build(user?.profile!) }, SingleUserResultModel);
@@ -648,17 +660,14 @@ export class UserController {
     @Put("/promote-permissions")
     @(Returns(200, SuccessResult).Of(UpdatedResultModel))
     public async promotePermissions(@BodyParams() body: PromotePermissionsParams, @Context() context: Context) {
-        const { role, company } = this.userService.checkPermissions(
-            { hasRole: ["admin", "manager"] },
-            context.get("user")
-        );
+        const { role, company } = await this.adminService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));
         const { firebaseId } = body;
         if (!firebaseId) throw new BadRequest(MISSING_PARAMS);
         const admin = await this.adminService.findAdminByFirebaseId(firebaseId);
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
         try {
-            if (role === "manager") {
-                await Firebase.adminClient.auth().setCustomUserClaims(admin.firebaseId, { role: "manager", company });
+            if (role === MANAGER) {
+                await Firebase.adminClient.auth().setCustomUserClaims(admin.firebaseId, { role: MANAGER, company });
             } else {
                 if (!body.role) throw new BadRequest(MISSING_PARAMS);
                 await Firebase.adminClient.auth().setCustomUserClaims(admin.firebaseId, {
@@ -760,10 +769,11 @@ export class UserController {
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 
+    // For admin panel
     @Get("/record")
     @Returns(200, SuccessResult)
     public async downloadUsersRecord(@Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
         const [results] = await this.userService.findUsers(undefined, { profile: true });
         const users = results.map((x) => ({
             id: x.id,
@@ -796,5 +806,14 @@ export class UserController {
             ),
             Pagination
         );
+    }
+
+    @Post("/logout")
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
+    public async logoutUser(@Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new Error(USER_NOT_FOUND);
+        await this.sessionService.logoutUser(user);
+        return new SuccessResult({ success: true }, BooleanResultModel);
     }
 }

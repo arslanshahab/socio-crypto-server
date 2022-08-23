@@ -63,7 +63,7 @@ export const NO_TOKEN_PROVIDED = "NO_TOKEN_PROVIDED";
 export const ERROR_LINKING_TIKTOK = "ERROR_LINKING_TIKTOK";
 export const ERROR_LINKING_TWITTER = "ERROR_LINKING_TWITTER";
 export const GLOBAL_CAMPAIGN_NOT_FOUND = "GLOBAL_CAMPAIGN_NOT_FOUND";
-export const VERIFICATION_TOKEN_EXPIRED = "VERIFICATION_TOKEN_EXPIRED";
+export const INVALID_VERIFICATION_TOKEN = "INVALID_VERIFICATION_TOKEN";
 export const ORG_NOT_FOUND = "ORG_NOT_FOUND";
 export const ERROR_CALCULATING_TIER = "ERROR_CALCULATING_TIER";
 export const GLOBAL_CAMPAIGN_EXIST_FOR_CURRENCY = "GLOBAL_CAMPAIGN_EXIST_FOR_CURRENCY";
@@ -95,6 +95,8 @@ export const ALREADY_PARTICIPATING = "ALREADY_PARTICIPATING";
 export const MEDIA_NOT_FOUND = "MEDIA_NOT_FOUND";
 export const TWITTER_LINK_EXPIRED = "TWITTER_LINK_EXPIRED";
 export const ACCOUNT_RESTRICTED = "ACCOUNT_RESTRICTED";
+export const ACCOUNT_NOT_EXISTS_ANYMORE = "ACCOUNT_NOT_EXISTS_ANYMORE";
+export const SESSION_ALREADY_EXISTS = "SESSION_ALREADY_EXISTS";
 export const SERVICE_NOT_AVAILABLE = "SERVICE_NOT_AVAILABLE";
 export const TOKEN_NOT_FOUND = "TOKEN_NOT_FOUND";
 export const KYC_LEVEL_1_NOT_APPROVED = "KYC_LEVEL_1_NOT_APPROVED";
@@ -105,16 +107,18 @@ export const CUSTODIAL_ADDERSS_NOT_FOUND = "CUSTODIAL_ADDERSS_NOT_FOUND";
 export const TWITTER_FOLLOWERS_ARE_LESS_THAN_REQUIRED = "TWITTER_FOLLOWERS_ARE_LESS_THAN_REQUIRED";
 export const USER_NEEDS_TO_PARTICIPATE_IN_CAMPAIGN = "USER_NEEDS_TO_PARTICIPATE_IN_CAMPAIGN";
 export const ALREADY_REDEEMED_IN_24_HOURS = "ALREADY_REDEEMED_IN_24_HOURS";
+export const ORGANIZATION_NAME_ALREADY_EXISTS = "ORGANIZATION_NAME_ALREADY_EXISTS";
+export const INVALID_ADDRESS = "INVALID_ADDRESS";
+export const ACTION_NOT_PERMITTED = "ACTION_NOT_PERMITTED";
 
 export const errorMap: { [key: string]: string } = {
     SOMETHING_WENT_WRONG: "Looks like something is wrong, we are working to fix it.",
     NO_TOKEN_PROVIDED: "Access token is missing.",
     MISSING_PARAMS: "Missing required parameters.",
     EMAIL_EXISTS: "A user has already registered with this email.",
-    USER_EMAIL_EXISTS: "User has already attached his email address.",
     EMAIL_NOT_VERIFIED: "Provided email isn't verfied by our system.",
-    EMAIL_NOT_EXISTS: "The email does not exist in our system.",
-    INCORRECT_PASSWORD: "Your password is incorrect, please reset your password below.",
+    EMAIL_NOT_EXISTS: "This email does not exist in our system.",
+    INCORRECT_PASSWORD: "Entered password is incorrect.",
     USER_NOT_FOUND: "No user found against provided parameters.",
     USERNAME_NOT_EXISTS: "Provided username doesn't exist in our records.",
     INCORRECT_CODE: "Provided code is not correct.",
@@ -126,7 +130,7 @@ export const errorMap: { [key: string]: string } = {
     ERROR_LINKING_TIKTOK: "There was an error linking your tiktok social account.",
     ERROR_LINKING_TWITTER: "You need to link your twitter account before you redeem!",
     GLOBAL_CAMPAIGN_NOT_FOUND: "Global campaign doesn't exists.",
-    VERIFICATION_TOKEN_EXPIRED: "Verification token expired.",
+    INVALID_VERIFICATION_TOKEN: "Verification token is not valid.",
     ORG_NOT_FOUND: "Organization not found.",
     ERROR_CALCULATING_TIER: "Failure calculating current tier.",
     GLOBAL_CAMPAIGN_EXIST_FOR_CURRENCY: "A global campaign already exists for this currency.",
@@ -167,4 +171,9 @@ export const errorMap: { [key: string]: string } = {
     TWITTER_FOLLOWERS_ARE_LESS_THAN_REQUIRED: "You need to have atleast 20 followers on twitter before you redeem!",
     USER_NEEDS_TO_PARTICIPATE_IN_CAMPAIGN: "You need to participate in atleast one campaign in order to redeem!",
     ALREADY_REDEEMED_IN_24_HOURS: "You can only redeem once in 24 hours!",
+    ACCOUNT_NOT_EXISTS_ANYMORE: "This account doesn't exist anymore.",
+    SESSION_ALREADY_EXISTS: "You have already logged in from another device.",
+    ORGANIZATION_NAME_ALREADY_EXISTS: "Organization already exists with this name.",
+    INVALID_ADDRESS: "Your provided address is not valid.",
+    ACTION_NOT_PERMITTED: "Action not permitted!",
 };

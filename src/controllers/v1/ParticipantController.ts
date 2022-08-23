@@ -1,4 +1,4 @@
-import { Get, Property, Put, Required, Returns } from "@tsed/schema";
+import { Enum, Get, Property, Put, Required, Returns } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
 import { Context, PathParams, QueryParams } from "@tsed/common";
 import { ParticipantModel } from ".prisma/client/entities";
@@ -32,8 +32,7 @@ import { getSocialClient } from "../helpers";
 import { PointValueTypes, Tiers } from "../../types";
 import { SocialLinkService } from "../../services/SocialLinkService";
 import { MarketDataService } from "../../services/MarketDataService";
-import { SocialLinkType } from "../../util/constants";
-import { TwitterClient } from "../../clients/twitter";
+import { SocialLinkType, Sort } from "../../util/constants";
 import { SocialPostService } from "../../services/SocialPostService";
 
 class CampaignParticipantsParams {
@@ -51,6 +50,7 @@ class CampaignAllParticipantsParams {
     @Required() public readonly skip: number;
     @Required() public readonly take: number;
     @Property() public readonly filter: string;
+    @Property() @Enum(Sort) public readonly sort: Sort;
 }
 
 class UserStatisticsParams {
@@ -311,42 +311,26 @@ export class ParticipantController {
     @(Returns(200, SuccessArrayResult).Of(CampaignDetailsResultModel))
     public async getParticipants(@QueryParams() query: CampaignAllParticipantsParams, @Context() context: Context) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        const { campaignId, skip, take, filter } = query;
-        const [items, count] = await this.participantService.findParticipantsByCampaignId({
-            campaignId: campaignId,
-            skip: skip,
-            take: take,
-            filter: filter,
-        });
+        const { campaignId, skip, take, filter, sort = Sort.DESC } = query;
+        const allParticipants = await this.participantService.findParticipantsByCampaignId(
+            campaignId,
+            skip,
+            take,
+            filter,
+            sort
+        );
         const participants = [];
-        for (const participant of items) {
-            const link = await this.socialLinkService.findSocialLinkByUserAndType(
-                participant.userId,
-                SocialLinkType.TWITTER
-            );
-            let twitterUsername = "";
-            try {
-                if (link) twitterUsername = await TwitterClient.getUsernameV2(link);
-            } catch (error) {
-                console.log("error fetching twitter username ---- ", error);
-            }
+        for (const participant of allParticipants) {
             const metrics = await this.dailyParticipantMetricService.getAccumulatedParticipantMetrics(participant.id);
-            const postCount = await this.socialPostService.getSocialPostCountByParticipantId(
-                participant.id,
-                campaignId
-            );
-            const pointValues = (participant.campaign.algorithm as Prisma.JsonObject)
-                .pointValues as unknown as PointValueTypes;
+            const postCount = await this.socialPostService.getSocialPostCount(participant.id, campaignId);
+            const pointValues = (participant.algorithm as Prisma.JsonObject).pointValues as unknown as PointValueTypes;
 
             participants.push({
                 id: participant.id,
                 userId: participant.userId,
-                username: participant.user.profile?.username || "",
-                email: participant.user.email,
-                createdAt: participant.createdAt,
-                lastLogin: participant.user.lastLogin,
-                campaignName: participant.campaign.name,
-                twitterUsername: twitterUsername,
+                username: participant.username || "",
+                email: participant.email,
+                campaignName: participant.campaignName,
                 selfPostCount: postCount,
                 likeScore: metrics.likeCount * pointValues.likes,
                 shareScore: metrics.shareCount * pointValues.shares,
@@ -356,6 +340,7 @@ export class ParticipantController {
                 blacklist: participant.blacklist,
             });
         }
+        const count = await this.participantService.findParticipantCountByCampaignId(campaignId, filter);
         return new SuccessResult({ participants, count }, CampaignDetailsResultModel);
     }
 

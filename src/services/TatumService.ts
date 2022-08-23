@@ -407,7 +407,7 @@ export class TatumService {
     public async sendOffchainTransactionFromCustodial(data: WithdrawPayload & WalletKeys): Promise<{ txId: string }> {
         try {
             const ledgerTX = await offchainStoreWithdrawal({
-                senderAccountId: data.userCurrency.tatumId,
+                senderAccountId: data.currency.tatumId,
                 address: data.address,
                 amount: data.amount,
                 fee: data.fee,
@@ -441,7 +441,7 @@ export class TatumService {
             const body = {
                 ...payload,
                 amount: withdrawAbleAmount,
-                ...(payload.userCurrency.derivationKey && { index: payload.userCurrency.derivationKey }),
+                ...(payload.currency.derivationKey && { index: payload.currency.derivationKey }),
                 fee,
             };
             const callWithdrawMethod = async () => {
@@ -481,7 +481,7 @@ export class TatumService {
                 network: data.token.network,
                 amount: withdrawAbleAmount,
                 action: TransferAction.WITHDRAW,
-                walletId: data.userCurrency.walletId!,
+                walletId: data.currency.walletId!,
                 tatumId: data.address,
                 status: TransferStatus.SUCCEEDED,
                 type: TransferType.DEBIT,
@@ -490,8 +490,8 @@ export class TatumService {
             if (this.isSubCustodialToken(data.token)) {
                 try {
                     const transferData = await this.transferFunds({
-                        senderAccountId: data.userCurrency.tatumId,
-                        recipientAccountId: data.orgCurrency.tatumId,
+                        senderAccountId: data.currency.tatumId,
+                        recipientAccountId: data.baseCurrency.tatumId,
                         amount: fee,
                         recipientNote: USER_WITHDRAW_FEE,
                     });
@@ -501,8 +501,8 @@ export class TatumService {
                         network: data.token.network,
                         amount: data.amount,
                         action: TransferAction.FEE,
-                        walletId: data.orgCurrency.walletId!,
-                        tatumId: data.orgCurrency.tatumId,
+                        walletId: data.baseCurrency.walletId!,
+                        tatumId: data.baseCurrency.tatumId,
                         status: TransferStatus.SUCCEEDED,
                         type: TransferType.CREDIT,
                     });

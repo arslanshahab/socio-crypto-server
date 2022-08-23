@@ -13,23 +13,26 @@ import { NotFound } from "@tsed/exceptions";
 import { WalletService } from "../../services/WalletService";
 import {
     ADMIN_NOT_FOUND,
+    CURRENCY_NOT_FOUND,
     CUSTODIAL_ADDERSS_NOT_FOUND,
     CustomError,
     GLOBAL_WITHDRAW_LIMIT,
+    INVALID_ADDRESS,
     KYC_LEVEL_2_NOT_APPROVED,
     NOT_ENOUGH_BALANCE_IN_ACCOUNT,
+    ORG_NOT_FOUND,
     TOKEN_NOT_FOUND,
     USER_CURRENCY_NOT_FOUND,
     USER_NOT_FOUND,
-    VERIFICATION_TOKEN_EXPIRED,
 } from "../../util/errors";
 import { VerificationApplicationService } from "../../services/VerificationApplicationService";
-import { getWithdrawAddressForTatum } from "../../util/tatumHelper";
-import { COIIN, RAIINMAKER_WITHDRAW, WITHDRAW_LIMIT, USER_WITHDRAW } from "../../util/constants";
+import { getWithdrawAddressForTatum, verifyAddress } from "../../util/tatumHelper";
+import { COIIN, RAIINMAKER_WITHDRAW, WITHDRAW_LIMIT, USER_WITHDRAW, ADMIN, MANAGER } from "../../util/constants";
 import { VerificationService } from "../../services/VerificationService";
 import { getTokenValueInUSD } from "../../util/exchangeRate";
 import { OrganizationService } from "../../services/OrganizationService";
 import { CurrencyService } from "../../services/CurrencyService";
+import { AdminService } from "../../services/AdminService";
 
 class DepositAddressParams {
     @Required() public readonly symbol: string;
@@ -60,11 +63,13 @@ export class TatumController {
     private verificationService: VerificationService;
     @Inject()
     private organizationService: OrganizationService;
+    @Inject()
+    private adminService: AdminService;
 
     @Get("/supported-currencies")
     @(Returns(200, SuccessArrayResult).Of(SupportedCurrenciesResultModel))
     public async getSupportedCurrencies(@Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
         const currencies = await this.tatumService.getSupportedTokens();
         return new SuccessArrayResult(currencies, SupportedCurrenciesResultModel);
     }
@@ -72,7 +77,7 @@ export class TatumController {
     @Get("/deposit-address")
     @(Returns(200, SuccessResult).Of(DepositAddressResultModel))
     public async getDepositAddress(@QueryParams() query: DepositAddressParams, @Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
         const admin = await this.userService.findUserByFirebaseId(context.get("user").id);
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
         const wallet = await this.walletService.findWalletByOrgId(admin.orgId!);
@@ -107,11 +112,8 @@ export class TatumController {
             );
         const token = await this.tatumService.isCurrencySupported({ symbol, network });
         if (!token) throw new Error(TOKEN_NOT_FOUND);
-        try {
-            await this.verificationService.verifyToken({ verificationToken });
-        } catch (error) {
-            throw new CustomError(VERIFICATION_TOKEN_EXPIRED);
-        }
+        if (!verifyAddress(address, symbol, network)) throw new Error(INVALID_ADDRESS);
+        await this.verificationService.verifyToken({ verificationToken });
         const userCurrency = await this.currencyService.findCurrencyByTokenAndWallet({
             tokenId: token.id,
             walletId: user.wallet?.id!,
@@ -121,8 +123,8 @@ export class TatumController {
         if (parseFloat(userAccountBalance.availableBalance) < amount)
             throw new CustomError(NOT_ENOUGH_BALANCE_IN_ACCOUNT);
         if ((await getTokenValueInUSD(symbol, amount)) >= WITHDRAW_LIMIT) throw new CustomError(GLOBAL_WITHDRAW_LIMIT);
-        const orgCurrency = await this.organizationService.getCurrencyForRaiinmaker(token);
-        if (this.tatumService.isCustodialWallet({ symbol, network }) && !orgCurrency.depositAddress)
+        const baseCurrency = await this.organizationService.getCurrencyForRaiinmaker(token);
+        if (this.tatumService.isCustodialWallet({ symbol, network }) && !baseCurrency.depositAddress)
             throw new CustomError(CUSTODIAL_ADDERSS_NOT_FOUND);
         await this.tatumService.withdrawFundsToBlockchain({
             senderAccountId: userCurrency.tatumId,
@@ -130,15 +132,63 @@ export class TatumController {
             senderNote: RAIINMAKER_WITHDRAW,
             address,
             amount: amount.toString(),
-            userCurrency,
-            orgCurrency,
+            currency: userCurrency,
+            baseCurrency,
             token,
-            custodialAddress: orgCurrency?.depositAddress || "",
+            custodialAddress: baseCurrency?.depositAddress || "",
         });
         await this.currencyService.updateBalance({
             currencyId: userCurrency.id,
             accountBalance: userCurrency.accountBalance! - amount,
             availableBalance: userCurrency.availableBalance! - amount,
+        });
+        return new SuccessResult({ ...body, message: "Withdraw completed cusscesfully" }, WithdrawResultModel);
+    }
+
+    @Post("/admin/withdraw")
+    @(Returns(200, SuccessResult).Of(WithdrawResultModel))
+    public async withdrawOrgFunds(@BodyParams() body: WithdrawBody, @Context() context: Context) {
+        await this.adminService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));
+        const admin = await this.userService.findUserByFirebaseId(context.get("user").id);
+        if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
+        const org = await this.organizationService.findOrgById(admin.orgId!, { wallet: true });
+        if (!org) throw new NotFound(ORG_NOT_FOUND);
+        let { symbol, network, address, amount, verificationToken } = body;
+        address = getWithdrawAddressForTatum(symbol, address);
+        if (symbol.toUpperCase() === COIIN)
+            throw new Error(
+                `${symbol} is not available to withdrawal until after the TGE, follow our social channels to learn more!`
+            );
+        const token = await this.tatumService.isCurrencySupported({ symbol, network });
+        if (!token) throw new Error(TOKEN_NOT_FOUND);
+        if (!verifyAddress(address, symbol, network)) throw new Error(INVALID_ADDRESS);
+        await this.verificationService.verifyToken({ verificationToken });
+        const currency = await this.currencyService.findCurrencyByTokenAndWallet({
+            tokenId: token.id,
+            walletId: org.wallet?.id!,
+        });
+        if (!currency) throw new CustomError(CURRENCY_NOT_FOUND);
+        const userAccountBalance = await this.tatumService.getAccountBalance(currency.tatumId);
+        if (parseFloat(userAccountBalance.availableBalance) < amount)
+            throw new CustomError(NOT_ENOUGH_BALANCE_IN_ACCOUNT);
+        const baseCurrency = await this.organizationService.getCurrencyForRaiinmaker(token);
+        if (this.tatumService.isCustodialWallet({ symbol, network }) && !baseCurrency.depositAddress)
+            throw new CustomError(CUSTODIAL_ADDERSS_NOT_FOUND);
+        await this.tatumService.withdrawFundsToBlockchain({
+            senderAccountId: currency.tatumId,
+            paymentId: `${USER_WITHDRAW}:${admin.id}`,
+            senderNote: RAIINMAKER_WITHDRAW,
+            address,
+            amount: amount.toString(),
+            currency,
+            baseCurrency,
+            token,
+            custodialAddress: baseCurrency?.depositAddress || "",
+        });
+        await this.currencyService.updateBalance({
+            currencyId: currency.id,
+            accountBalance: currency.accountBalance! - amount,
+            availableBalance: currency.availableBalance! - amount,
         });
         return new SuccessResult({ ...body, message: "Withdraw completed cusscesfully" }, WithdrawResultModel);
     }

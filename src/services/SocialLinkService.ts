@@ -87,4 +87,10 @@ export class SocialLinkService {
         });
         return socialLink;
     }
+
+    public async getFollowersAggregation(campaignId: string) {
+        const result: { followerCount: number }[] =
+            await readPrisma.$queryRaw`SELECT sum("followerCount") as "followerCount" from social_link where "userId" in (select "userId" from participant where "campaignId"=${campaignId})`;
+        return result;
+    }
 }

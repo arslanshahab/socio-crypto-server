@@ -19,6 +19,7 @@ interface JWTPayload {
     role: string;
     company?: string;
     ip?: string;
+    device?: string;
 }
 
 export interface SymbolNetworkParams {
@@ -591,8 +592,8 @@ export interface WithdrawPayload {
     senderNote: string;
     fee?: string;
     index?: number;
-    userCurrency: PrismaCurrency;
-    orgCurrency: PrismaCurrency;
+    currency: PrismaCurrency;
+    baseCurrency: PrismaCurrency;
     token: Token | PrismaToken;
     custodialAddress?: string;
 }
@@ -631,4 +632,20 @@ export type AggregatedCampaignMetricType = {
     shareCount: number;
     participationScore: number;
     name?: string;
+};
+
+export type ParticipantsRawQueryTypes = {
+    id: string;
+    campaignId: string;
+    userId: string;
+    profileId: string;
+    participationScore: string;
+    blacklist: boolean;
+    email: string;
+    username: string;
+    name: string;
+    auditStatus: string;
+    symbol: string;
+    campaignName: string;
+    algorithm: any;
 };
