@@ -1,7 +1,6 @@
 import { Controller, Inject } from "@tsed/di";
 import { Delete, Get, Post, Property, Required, Returns } from "@tsed/schema";
 import { SuccessArrayResult, SuccessResult } from "../../util/entities";
-import { UserService } from "../../services/UserService";
 import { BodyParams, Context } from "@tsed/common";
 import { OrganizationService } from "../../services/OrganizationService";
 import { ORG_NOT_FOUND } from "../../util/errors";
@@ -10,7 +9,8 @@ import { BadRequest, NotFound } from "@tsed/exceptions";
 import { BooleanResultModel, PaymentMethodsResultModel } from "../../models/RestModels";
 import { TransferService } from "../../services/TransferService";
 import { getTokenValueInUSD } from "../../util/exchangeRate";
-import { COIIN } from "../../util/constants";
+import { ADMIN, COIIN } from "../../util/constants";
+import { AdminService } from "../../services/AdminService";
 
 class PurchaseCoiinParams {
     @Required() public readonly amount: number;
@@ -29,18 +29,18 @@ class RemovePaymentMethodParams {
 @Controller("/stripe")
 export class StripeController {
     @Inject()
-    private userService: UserService;
-    @Inject()
     private organizationService: OrganizationService;
     @Inject()
     private transferService: TransferService;
+    @Inject()
+    private adminService: AdminService;
 
     @Get("/payment-methods")
     @(Returns(200, SuccessArrayResult).Of(PaymentMethodsResultModel))
     public async listPaymentMethods(@Context() context: Context) {
-        const { company } = await this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const { company } = await this.adminService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));
         if (!company) throw new NotFound("company not found for this user");
-        const org = await this.organizationService.findOrganizationByCompanyName(company);
+        const org = await this.organizationService.findOrganizationByName(company);
         if (!org) throw new NotFound(ORG_NOT_FOUND);
         if (!org.stripeId) throw new NotFound("missing stripe id for this organization");
         const paymentMethods = await StripeAPI.listPaymentMethods(org.stripeId);
@@ -55,9 +55,9 @@ export class StripeController {
     @Post("/purchase-coiin")
     @(Returns(200, SuccessResult).Of(StripeResultModel))
     public async purchaseCoiin(@BodyParams() body: PurchaseCoiinParams, @Context() context: Context) {
-        const { company } = await this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const { company } = await this.adminService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));
         if (!company) throw new NotFound("company not found for this user");
-        const org = await this.organizationService.findOrganizationByCompanyName(company, { wallet: true });
+        const org = await this.organizationService.findOrganizationByName(company, { wallet: true });
         if (!org) throw new NotFound(ORG_NOT_FOUND);
         const { amount, paymentMethodId } = body;
         const amountInDollar = await getTokenValueInUSD(COIIN, amount);
@@ -78,9 +78,9 @@ export class StripeController {
     @Post("/add-payment-method")
     @(Returns(200, SuccessResult).Of(StripeResultModel))
     public async addPaymentMethod(@Context() context: Context) {
-        const { company } = await this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const { company } = await this.adminService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));
         if (!company) throw new NotFound("company not found for this user");
-        let org = await this.organizationService.findOrganizationByCompanyName(company);
+        let org = await this.organizationService.findOrganizationByName(company);
         if (!org) throw new NotFound(ORG_NOT_FOUND);
         if (!org.stripeId) {
             const stripe = await StripeAPI.createCustomer();
@@ -93,9 +93,9 @@ export class StripeController {
     @Delete("/remove-payment-method")
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async removePaymentMethod(@BodyParams() body: RemovePaymentMethodParams, @Context() context: Context) {
-        const { company } = await this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        const { company } = await this.adminService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));
         if (!company) throw new NotFound("company not found for this user");
-        const org = await this.organizationService.findOrganizationByCompanyName(company);
+        const org = await this.organizationService.findOrganizationByName(company);
         if (!org) throw new NotFound(ORG_NOT_FOUND);
         if (!org.stripeId) throw new NotFound("missing stripe id for this organization");
         const { paymentMethodId } = body;

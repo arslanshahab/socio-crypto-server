@@ -1,10 +1,10 @@
 import { Injectable } from "@tsed/di";
 import { decrypt, encrypt } from "../util/crypto";
-import { BadRequest } from "@tsed/exceptions";
-import { EMAIL_NOT_VERIFIED, INCORRECT_CODE_OR_EMAIL, VERIFICATION_TOKEN_EXPIRED } from "../util/errors";
+import { Forbidden } from "@tsed/exceptions";
+import { EMAIL_NOT_VERIFIED, INCORRECT_CODE_OR_EMAIL, INVALID_VERIFICATION_TOKEN } from "../util/errors";
 import { addMinutes, isPast } from "date-fns";
 import { VerificationType } from "../types";
-import { generateRandomNonce } from "../util";
+import { generate6DigitCode } from "../util";
 import { prisma, readPrisma } from "../clients/prisma";
 
 @Injectable()
@@ -16,7 +16,9 @@ export class VerificationService {
     }
 
     public async findVerificationByToken(verificationToken: string) {
-        return readPrisma.verification.findFirst({ where: { id: decrypt(verificationToken), verified: true } });
+        return readPrisma.verification.findFirst({
+            where: { id: decrypt(verificationToken) || undefined, verified: true },
+        });
     }
 
     public isCodeExpired(expiry: Date) {
@@ -41,7 +43,7 @@ export class VerificationService {
     public async addExpiryTime(verificationId: string) {
         return await prisma.verification.update({
             where: { id: verificationId },
-            data: { expiry: addMinutes(new Date(), 60) },
+            data: { expiry: addMinutes(new Date(), 15) },
         });
     }
 
@@ -54,16 +56,16 @@ export class VerificationService {
 
     public async verifyToken(data: { verificationToken: string; email?: string }) {
         const verification = await this.findVerificationByToken(data.verificationToken);
-        if (!verification) throw new BadRequest(EMAIL_NOT_VERIFIED);
-        if (data.email && data.email.toLowerCase() !== verification.email) throw new Error(EMAIL_NOT_VERIFIED);
-        if (this.isCodeExpired(verification.expiry!)) throw new Error(VERIFICATION_TOKEN_EXPIRED);
+        if (!verification) throw new Forbidden(EMAIL_NOT_VERIFIED);
+        if (data.email && data.email.toLowerCase() !== verification.email) throw new Forbidden(EMAIL_NOT_VERIFIED);
+        if (this.isCodeExpired(verification.expiry!)) throw new Forbidden(INVALID_VERIFICATION_TOKEN);
         await this.expireToken(verification.id);
         return verification;
     }
 
     public async verifyCode(email: string, code: string) {
         const verification = await this.findVerificationByEmail(email);
-        if (!verification || code !== decrypt(verification.code)) throw new BadRequest(INCORRECT_CODE_OR_EMAIL);
+        if (!verification || code !== decrypt(verification.code)) throw new Forbidden(INCORRECT_CODE_OR_EMAIL);
         await this.addExpiryTime(verification.id);
         return await this.updateVerificationStatus(true, verification.id);
     }
@@ -75,7 +77,7 @@ export class VerificationService {
                 data: {
                     email: data.email.trim().toLowerCase(),
                     type: data.type,
-                    code: encrypt(generateRandomNonce()),
+                    code: encrypt(generate6DigitCode()),
                 },
             });
         }

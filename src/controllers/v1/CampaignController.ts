@@ -4,9 +4,17 @@ import { Controller, Inject } from "@tsed/di";
 import { Context, BodyParams, PathParams, QueryParams } from "@tsed/common";
 import { CampaignService } from "../../services/CampaignService";
 import { UserService } from "../../services/UserService";
-import { CampaignState, CampaignStatus, CAMPAIGN_REWARD, RAIINMAKER_ORG_NAME } from "../../util/constants";
+import {
+    ADMIN,
+    CampaignState,
+    CampaignStatus,
+    CAMPAIGN_REWARD,
+    MANAGER,
+    RAIINMAKER_ORG_NAME,
+} from "../../util/constants";
 import { calculateParticipantPayoutV2, calculateParticipantSocialScoreV2 } from "../helpers";
 import {
+    ACTION_NOT_PERMITTED,
     ADMIN_NOT_FOUND,
     CAMPAIGN_NAME_EXISTS,
     CAMPAIGN_NOT_FOUND,
@@ -34,7 +42,7 @@ import {
     CreateCampaignParams,
     UpdateCampaignParams,
 } from "../../models/RestModels";
-import { BadRequest, NotFound } from "@tsed/exceptions";
+import { BadRequest, Forbidden, NotFound } from "@tsed/exceptions";
 import { ParticipantService } from "../../services/ParticipantService";
 import { SocialPostService } from "../../services/SocialPostService";
 import { CampaignAuditStatus, PointValueTypes } from "../../types";
@@ -55,6 +63,7 @@ import { CampaignTemplateService } from "../../services/CampaignTemplateService"
 import { TatumService } from "../../services/TatumService";
 import { MarketDataService } from "../../services/MarketDataService";
 import { formatFloat } from "../../util";
+import { AdminService } from "../../services/AdminService";
 
 const validator = new Validator();
 
@@ -107,12 +116,19 @@ export class CampaignController {
     private tatumService: TatumService;
     @Inject()
     private marketDataService: MarketDataService;
+    @Inject()
+    private adminService: AdminService;
 
     @Get()
     @(Returns(200, SuccessResult).Of(Pagination).Nested(CampaignResultModel))
     public async list(@QueryParams() query: ListCampaignsVariablesModel, @Context() context: Context) {
+        const { orgId } = await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
         const user = await this.userService.findUserByContext(context.get("user"));
-        const [items, total] = await this.campaignService.findCampaignsByStatus(query, user || undefined);
+        const [items, total] = await this.campaignService.findCampaignsByStatus(
+            query,
+            user || undefined,
+            orgId || undefined
+        );
         const modelItems = await Promise.all(
             items.map(async (i) => {
                 const campaignTokenValueInUSD = await this.marketDataService.getTokenValueInUSD(
@@ -156,7 +172,7 @@ export class CampaignController {
     @Get("/campaign-metrics")
     @(Returns(200, SuccessResult).Of(CampaignMetricsResultModel))
     public async getCampaignMetrics(@QueryParams() query: CampaignIdModel, @Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
         const { campaignId } = query;
         const participant = await this.participantService.findParticipants(campaignId);
         const clickCount = participant.reduce((sum, item) => sum + parseInt(item.clickCount), 0);
@@ -185,8 +201,8 @@ export class CampaignController {
     @Post("/create-campaign")
     @(Returns(200, SuccessResult).Of(CreateCampaignResultModel))
     public async createCampaign(@BodyParams() body: CreateCampaignParams, @Context() context: Context) {
-        const { role, company } = this.userService.checkPermissions(
-            { hasRole: ["admin", "manager"] },
+        const { company } = await this.adminService.checkPermissions(
+            { hasRole: [ADMIN, MANAGER] },
             context.get("user")
         );
 
@@ -229,10 +245,8 @@ export class CampaignController {
             if (!raffle_prize) throw new BadRequest(RAFFLE_PRIZE_MISSING);
             validator.validateRafflePrizeSchema(raffle_prize);
         }
-        if (role === "admin" && !body.company) throw new NotFound(COMPANY_NOT_SPECIFIED);
-        const campaignCompany = role === "admin" ? body.company : company;
-        if (!campaignCompany) throw new NotFound(COMPANY_NOT_SPECIFIED);
-        const org = await this.organizationService.findOrganizationByCompanyName(company!);
+        if (!company) throw new NotFound(COMPANY_NOT_SPECIFIED);
+        const org = await this.organizationService.findOrganizationByName(company!);
         if (!org) throw new NotFound(ORG_NOT_FOUND);
         const wallet = await this.walletService.findWalletByOrgId(org.id);
         if (!wallet) throw new NotFound(WALLET_NOT_FOUND);
@@ -250,7 +264,7 @@ export class CampaignController {
             target,
             description,
             instructions,
-            campaignCompany,
+            company,
             symbol,
             algorithm,
             tagline,
@@ -315,10 +329,7 @@ export class CampaignController {
     @Post("/update-campaign")
     @(Returns(200, SuccessResult).Of(UpdateCampaignResultModel))
     public async updateCampaign(@BodyParams() body: UpdateCampaignParams, @Context() context: Context) {
-        const { role, company } = this.userService.checkPermissions(
-            { hasRole: ["admin", "manager"] },
-            context.get("user")
-        );
+        const { orgId } = await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
         let {
             id,
             name,
@@ -349,11 +360,9 @@ export class CampaignController {
             if (!raffle_prize) throw new BadRequest(RAFFLE_PRIZE_MISSING);
             validator.validateRafflePrizeSchema(raffle_prize);
         }
-        if (role === "admin" && !body.company) throw new NotFound(COMPANY_NOT_SPECIFIED);
-        const org = await this.organizationService.findOrganizationByCompanyName(company!);
-        if (!org) throw new NotFound(ORG_NOT_FOUND);
         const campaign: Campaign | null = await this.campaignService.findCampaignById(id);
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
+        if (campaign.orgId !== orgId) throw new Forbidden(ACTION_NOT_PERMITTED);
         let campaignImageSignedURL = "";
         const mediaUrls: { name: string | null; channel: string | null; signedUrl: string }[] = [];
         await this.campaignService.updateCampaign(
@@ -436,8 +445,7 @@ export class CampaignController {
     @(Returns(200, SuccessResult).Of(DeleteCampaignResultModel))
     public async deleteCampaign(@QueryParams() query: CampaignIdModel, @Context() context: Context) {
         const { campaignId } = query;
-        const { company } = this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
-
+        const { company } = await this.adminService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));
         const [socialPost] = await this.socialPostService.findSocialPostByCampaignId(campaignId);
         if (socialPost.length > 0) this.socialPostService.deleteSocialPost(campaignId);
         const payouts = await this.transferService.findTransferByCampaignId(campaignId);
@@ -470,7 +478,7 @@ export class CampaignController {
     @Post("/payout-campaign-rewards")
     @(Returns(200, SuccessResult).Of(UpdatedResultModel))
     public async payoutCampaignRewards(@QueryParams() query: PayoutCampaignRewardsParams, @Context() context: Context) {
-        const { company } = this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
+        const { company } = await this.adminService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));
         const { campaignId } = query;
         const campaign = await this.campaignService.findCampaignById(campaignId, undefined, company);
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
@@ -480,7 +488,10 @@ export class CampaignController {
     @Post("/generate-campaign-audit-report")
     @(Returns(200, SuccessResult).Of(GenerateCampaignAuditReportResultModel))
     public async generateCampaignAuditReport(@QueryParams() query: CampaignIdModel, @Context() context: Context) {
-        const { company } = this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
+        const { company } = await this.adminService.checkPermissions(
+            { hasRole: [ADMIN, MANAGER] },
+            context.get("user")
+        );
         let { campaignId } = query;
         const campaign = await this.campaignService.findCampaignById(campaignId, { participant: true }, company);
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
@@ -543,7 +554,7 @@ export class CampaignController {
     @Get("/dashboard-metrics/:campaignId")
     @(Returns(200, SuccessResult).Of(CampaignStatsResultModelArray))
     public async getDashboardMetrics(@PathParams() query: CampaignIdModel, @Context() context: Context) {
-        const admin = await this.userService.findUserByFirebaseId(context.get("user").firebaseId);
+        const admin = await this.userService.findUserByFirebaseId(context.get("user").id);
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
         const { campaignId } = query;
         let aggregatedMetrics;
@@ -560,7 +571,9 @@ export class CampaignController {
                 name: "All",
             };
             rawMetrics = await this.dailyParticipantMetricService.getOrgMetrics(admin.orgId!);
-            totalParticipants = await this.participantService.findParticipantsCount();
+            const campaigns = await this.campaignService.findCampaigns(admin.orgId!);
+            const campaignIds = campaigns.map((campaign) => campaign.id);
+            totalParticipants = await this.participantService.findParticipantsCount(undefined, campaignIds);
         }
         if (campaignId && campaignId != "-1") {
             [aggregatedMetrics] = await this.dailyParticipantMetricService.getAggregatedCampaignMetrics(campaignId);
@@ -587,8 +600,8 @@ export class CampaignController {
     @Get("/campaigns-lite")
     @(Returns(200, SuccessArrayResult).Of(CampaignResultModel))
     public async getCampaignsLite(@Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
-        const campaigns = await this.campaignService.findCampaigns();
+        const { orgId } = await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
+        const campaigns = await this.campaignService.findCampaigns(orgId);
         return new SuccessArrayResult(campaigns, CampaignResultModel);
     }
 
@@ -598,7 +611,7 @@ export class CampaignController {
         @QueryParams() query: AdminUpdateCampaignStatusParams,
         @Context() context: Context
     ) {
-        this.userService.checkPermissions({ restrictCompany: RAIINMAKER_ORG_NAME }, context.get("user"));
+        await this.adminService.checkPermissions({ restrictCompany: RAIINMAKER_ORG_NAME }, context.get("user"));
         const { status, campaignId } = query;
 
         const campaign = await this.campaignService.findCampaignById(campaignId, {
@@ -641,7 +654,7 @@ export class CampaignController {
     @Get("/payout/:campaignId")
     @(Returns(200, SuccessResult).Of(PaidOutCryptoResultModel))
     public async getPayout(@PathParams() path: CampaignIdModel, @Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));
         const { campaignId } = path;
         const transfers = await this.transferService.findTransferByCampaignIdAndAction(campaignId, CAMPAIGN_REWARD);
         const totalCrypto = transfers.reduce((acc, curr) => (acc += parseFloat(curr.amount)), 0);

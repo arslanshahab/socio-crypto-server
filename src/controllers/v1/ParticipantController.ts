@@ -322,7 +322,7 @@ export class ParticipantController {
         const participants = [];
         for (const participant of allParticipants) {
             const metrics = await this.dailyParticipantMetricService.getAccumulatedParticipantMetrics(participant.id);
-            const postCount = await this.socialPostService.getSocialPostCountByParticipantId(
+            const postCount = await this.socialPostService.getSocialPostCount(
                 participant.id,
                 campaignId
             );

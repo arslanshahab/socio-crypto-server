@@ -150,9 +150,9 @@ export class ParticipantService {
         });
     }
 
-    public async findParticipantsCount(campaignId?: string) {
+    public async findParticipantsCount(campaignId?: string, campaignIds?: string[]) {
         return prisma.participant.count({
-            where: campaignId ? { campaignId } : {},
+            where: campaignId ? { campaignId } : { campaignId: { in: campaignIds } },
         });
     }
 
@@ -204,5 +204,18 @@ export class ParticipantService {
         return prisma.participant.count({
             where: { userId },
         });
+    }
+
+    public async getMetricsByCampaign(campaignId: string) {
+        const result: { clickCount: number; viewCount: number; submissionCount: number }[] =
+            await readPrisma.$queryRaw`Select sum(cast("clickCount" as int)) as "clickCount", sum(cast("viewCount" as int)) as "viewCount",
+            sum(cast("submissionCount" as int)) as "submissionCount" from participant where "campaignId" = ${campaignId}`;
+        return result;
+    }
+
+    public async getAverageClicks(campaignId: string) {
+        const result: { clickCount: number }[] =
+            await readPrisma.$queryRaw`SELECT avg(cast("clickCount" as int)) as "clickCount" from participant where "campaignId"=${campaignId}`;
+        return result;
     }
 }
