@@ -51,12 +51,13 @@ export class SessionService {
     }
 
     public async initSession(user: User, deviceData?: { ip?: string; device?: string }) {
+        if (await this.ifSessionExist(user)) this.logoutUser(user);
         const token = this.createToken(user.email);
         const currentDate = new Date();
         await prisma.session.create({
             data: {
                 token,
-                expiry: addDays(currentDate, 1),
+                expiry: addDays(currentDate, 7),
                 userId: user.id,
                 lastLogin: currentDate,
                 ip: deviceData?.ip,
