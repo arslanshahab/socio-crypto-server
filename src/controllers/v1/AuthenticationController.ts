@@ -87,7 +87,7 @@ export class AuthenticationController {
         if (!user) throw new NotFound(USER_NOT_FOUND);
         const token = await this.sessionService.initSession(user, {
             ip: req?.socket?.remoteAddress,
-            device: req?.headers["user-agent"],
+            userAgent: req?.headers["user-agent"],
         });
         if (process.env.NODE_ENV === "production")
             await S3Client.uploadUserEmails(await this.userService.getAllEmails());
@@ -106,7 +106,7 @@ export class AuthenticationController {
         await this.userService.transferCoiinReward({ user, type: UserRewardType.LOGIN_REWARD });
         const token = await this.sessionService.initSession(user, {
             ip: req?.socket?.remoteAddress || "",
-            device: req?.headers["user-agent"] || "",
+            userAgent: req?.headers["user-agent"] || "",
         });
         return new SuccessResult({ token }, UserTokenReturnModel);
     }
