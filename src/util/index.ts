@@ -25,7 +25,7 @@ import { Factor } from "../models/Factor";
 import { CRYPTO_ICONS_MAP, CRYPTO_ICONS_BUCKET_URL, COIIN, SocialClientType } from "./constants";
 import { User as PrismaUser } from "@prisma/client";
 import { PlatformCache } from "@tsed/common";
-import DeviceDetector from "node-device-detector";
+// import DeviceDetector from "node-device-detector";
 
 // general helper functions start here
 export const getMinWithdrawableAmount = async (symbol: string) => {
@@ -459,12 +459,12 @@ export const getCampaignAuditKey = (campaignId: string, participantId?: string) 
 export const getAccountRecoveryAttemptKey = (accountId: string | undefined, username: string) =>
     `${accountId ? accountId.replace(/-/g, ":") + ":" : ""}${username.replace(/-/g, ":")}`;
 
-export const getUserDeviceInfo = (userAgent: string) => {
-    console.log(userAgent);
-    const detector = new DeviceDetector({
-        clientIndexes: true,
-        deviceIndexes: true,
-        deviceAliasCode: false,
-    });
-    return detector.detect(userAgent);
-};
+// export const getUserDeviceInfo = (userAgent: string) => {
+//     console.log(userAgent);
+//     const detector = new DeviceDetector({
+//         clientIndexes: true,
+//         deviceIndexes: true,
+//         deviceAliasCode: false,
+//     });
+//     return detector.detect(userAgent);
+// };
