@@ -7,7 +7,6 @@ import { Forbidden } from "@tsed/exceptions";
 import crypto from "crypto";
 import { Secrets } from "../util/secrets";
 import { generateRandomId } from "../util";
-
 @Injectable()
 export class SessionService {
     private createToken(email: string) {
@@ -50,8 +49,8 @@ export class SessionService {
         });
     }
 
-    public async initSession(user: User, deviceData?: { ip?: string; device?: string }) {
-        if (await this.ifSessionExist(user)) this.logoutUser(user);
+    public async initSession(user: User, deviceData?: { ip?: string; userAgent?: string }) {
+        if (await this.ifSessionExist(user)) await this.logoutUser(user);
         const token = this.createToken(user.email);
         const currentDate = new Date();
         await prisma.session.create({
@@ -61,7 +60,7 @@ export class SessionService {
                 userId: user.id,
                 lastLogin: currentDate,
                 ip: deviceData?.ip,
-                deviceInfo: deviceData?.device,
+                deviceInfo: deviceData?.userAgent,
             },
         });
         return token;
