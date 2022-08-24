@@ -4,12 +4,14 @@ import {
     CreateDateColumn,
     Entity,
     ManyToOne,
+    OneToOne,
     PrimaryGeneratedColumn,
     UpdateDateColumn,
 } from "typeorm";
 import { User } from "./User";
 import { Org } from "./Org";
 import { RAIINMAKER_ORG_NAME } from "../util/constants";
+import { VerificationApplication } from "./VerificationApplication";
 
 @Entity()
 export class Admin extends BaseEntity {
@@ -31,6 +33,9 @@ export class Admin extends BaseEntity {
 
     @ManyToOne((_type) => Org, (org) => org.admins)
     public org: Org;
+
+    @OneToOne((_type) => VerificationApplication, (verification) => verification.admin)
+    public identityVerification: VerificationApplication;
 
     @CreateDateColumn()
     public createdAt: Date;

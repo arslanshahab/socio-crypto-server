@@ -7,11 +7,13 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
     ManyToOne,
+    OneToOne,
 } from "typeorm";
 import { User } from "./User";
 import { FactorLink } from "./FactorLink";
 import { KycStatus } from "src/types";
 import { KycLevel } from "../util/constants";
+import { Admin } from "./Admin";
 
 @Entity()
 export class VerificationApplication extends BaseEntity {
@@ -35,6 +37,9 @@ export class VerificationApplication extends BaseEntity {
 
     @ManyToOne((_type) => User, (user) => user.identityVerification)
     public user: User;
+
+    @OneToOne((_type) => Admin, (admin) => admin.identityVerification)
+    public admin: Admin;
 
     @OneToMany((_type) => FactorLink, (factor) => factor.verification)
     public factors: FactorLink[];
