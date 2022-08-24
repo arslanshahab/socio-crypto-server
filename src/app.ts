@@ -89,6 +89,7 @@ export class Application {
                 "https://www.raiinmaker.com",
                 "https://seed-staging.raiinmaker.com",
                 "https://seed.raiinmaker.com",
+                "https://raiinmaker-mobile.web.app",
             ],
             methods: ["GET", "POST", "PUT"],
             exposedHeaders: ["x-auth-token"],

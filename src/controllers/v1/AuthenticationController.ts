@@ -11,7 +11,6 @@ import {
     INCORRECT_PASSWORD,
     INVALID_TOKEN,
     MISSING_PARAMS,
-    SESSION_ALREADY_EXISTS,
     USERNAME_EXISTS,
     USERNAME_NOT_EXISTS,
     USER_NOT_FOUND,
@@ -104,7 +103,6 @@ export class AuthenticationController {
         if (!user) throw new NotFound(EMAIL_NOT_EXISTS);
         if (!user.active) throw new Forbidden(ACCOUNT_RESTRICTED);
         if (user.password !== createPasswordHash({ email, password })) throw new Forbidden(INCORRECT_PASSWORD);
-        if (await this.sessionService.ifSessionExist(user)) throw new Forbidden(SESSION_ALREADY_EXISTS);
         await this.userService.transferCoiinReward({ user, type: UserRewardType.LOGIN_REWARD });
         const token = await this.sessionService.initSession(user, {
             ip: req?.socket?.remoteAddress || "",
