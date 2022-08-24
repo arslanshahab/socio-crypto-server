@@ -23,7 +23,7 @@ ingress:
 
 cron:
     frequency:
-        social: "0 */2 * * *" # At minute 0 every 2 hours
+        social: "0 */3 * * *" # At minute 0 every 3 hours
         daily: "0 0 * * *" # At minute 0 every day
         # coiinWatcher: "*/5 * * * *" # At every 5 minutes
         qualityScore: "0 */3 * * *" # At minute 0 every hour

@@ -1,6 +1,7 @@
 import { BodyParams, QueryParams, Request } from "@tsed/common";
+import { Request as ExpressRequest } from "express";
 import { Controller, Inject } from "@tsed/di";
-import { BadRequest, NotFound, Unauthorized } from "@tsed/exceptions";
+import { BadRequest, Forbidden, NotFound, Unauthorized } from "@tsed/exceptions";
 import { Enum, Post, Get, Property, Required, Returns, Put } from "@tsed/schema";
 import {
     ACCOUNT_RESTRICTED,
@@ -10,7 +11,6 @@ import {
     INCORRECT_PASSWORD,
     INVALID_TOKEN,
     MISSING_PARAMS,
-    SESSION_ALREADY_EXISTS,
     USERNAME_EXISTS,
     USERNAME_NOT_EXISTS,
     USER_NOT_FOUND,
@@ -36,6 +36,7 @@ import { UserRewardType, VerificationType } from "../../util/constants";
 import { SesClient } from "../../clients/ses";
 import { Firebase } from "../../clients/firebase";
 import { SessionService } from "../../services/SessionService";
+import { S3Client } from "../../clients/s3";
 
 export class StartVerificationParams {
     @Required() public readonly email: string;
@@ -75,36 +76,37 @@ export class AuthenticationController {
 
     @Post("/register-user")
     @(Returns(200, SuccessResult).Of(UserTokenReturnModel))
-    public async registerUser(@Request() req: Request, @BodyParams() body: RegisterUserParams) {
+    public async registerUser(@Request() req: ExpressRequest, @BodyParams() body: RegisterUserParams) {
         const { email, username, password, verificationToken, referralCode } = body;
         if (!email || !password || !username || !verificationToken) throw new BadRequest(MISSING_PARAMS);
-        if (await this.userService.findUserByEmail(email)) throw new BadRequest(EMAIL_EXISTS);
-        if (await this.profileService.findProfileByUsername(username)) throw new BadRequest(USERNAME_EXISTS);
+        if (await this.userService.findUserByEmail(email)) throw new Forbidden(EMAIL_EXISTS);
+        if (await this.profileService.findProfileByUsername(username)) throw new Forbidden(USERNAME_EXISTS);
         await this.verificationService.verifyToken({ verificationToken, email });
         const userId = await this.userService.initNewUser(email, username, password, referralCode);
-        const user = await this.userService.findUserByContext({ userId } as JWTPayload, ["wallet"]);
+        const user = await this.userService.findUserByContext({ userId } as JWTPayload, { wallet: true });
         if (!user) throw new NotFound(USER_NOT_FOUND);
         const token = await this.sessionService.initSession(user, {
-            ip: req.socket.remoteAddress,
-            device: req.headers["user-agent"],
+            ip: req?.socket?.remoteAddress,
+            device: req?.headers["user-agent"],
         });
+        if (process.env.NODE_ENV === "production")
+            await S3Client.uploadUserEmails(await this.userService.getAllEmails());
         return new SuccessResult({ token }, UserTokenReturnModel);
     }
 
     @Post("/user-login")
     @(Returns(200, SuccessResult).Of(UserTokenReturnModel))
-    public async loginUser(@Request() req: Request, @BodyParams() body: LoginParams) {
+    public async loginUser(@Request() req: ExpressRequest, @BodyParams() body: LoginParams) {
         const { email, password } = body;
         if (!email || !password) throw new BadRequest(MISSING_PARAMS);
         const user = await this.userService.findUserByEmail(email);
-        if (!user) throw new BadRequest(EMAIL_NOT_EXISTS);
-        if (!user.active) throw new BadRequest(ACCOUNT_RESTRICTED);
-        if (user.password !== createPasswordHash({ email, password })) throw new Error(INCORRECT_PASSWORD);
-        if (await this.sessionService.ifSessionExist(user)) throw new Error(SESSION_ALREADY_EXISTS);
+        if (!user) throw new NotFound(EMAIL_NOT_EXISTS);
+        if (!user.active) throw new Forbidden(ACCOUNT_RESTRICTED);
+        if (user.password !== createPasswordHash({ email, password })) throw new Forbidden(INCORRECT_PASSWORD);
         await this.userService.transferCoiinReward({ user, type: UserRewardType.LOGIN_REWARD });
         const token = await this.sessionService.initSession(user, {
-            ip: req.socket.remoteAddress,
-            device: req.headers["user-agent"],
+            ip: req?.socket?.remoteAddress || "",
+            device: req?.headers["user-agent"] || "",
         });
         return new SuccessResult({ token }, UserTokenReturnModel);
     }
@@ -113,7 +115,7 @@ export class AuthenticationController {
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async resetUserPassword(@BodyParams() body: ResetUserPasswordParams) {
         const { verificationToken, password } = body;
-        if (!verificationToken || !password) throw new NotFound(MISSING_PARAMS);
+        if (!verificationToken || !password) throw new BadRequest(MISSING_PARAMS);
         const verificationData = await this.verificationService.verifyToken({ verificationToken });
         const user = await this.userService.findUserByEmail(verificationData.email);
         if (!user) throw new NotFound(USER_NOT_FOUND);
@@ -125,12 +127,12 @@ export class AuthenticationController {
     @(Returns(200, SuccessResult).Of(RecoverUserAccountResultModel))
     public async recoverUserAccountStep1(@BodyParams() body: RecoverUserAccountStep1Parms) {
         const { username, code } = body;
-        if (!username || !code) throw new NotFound(MISSING_PARAMS);
+        if (!username || !code) throw new BadRequest(MISSING_PARAMS);
         const profile = await this.profileService.findProfileByUsername(username, {
             user: true,
         });
         if (!profile) throw new NotFound(USERNAME_NOT_EXISTS);
-        if (!(await this.profileService.isRecoveryCodeValid(username, code))) throw new BadRequest(INCORRECT_CODE);
+        if (!(await this.profileService.isRecoveryCodeValid(username, code))) throw new Forbidden(INCORRECT_CODE);
         if (!profile.user) throw new NotFound(USER_NOT_FOUND);
         if (!profile.user.email) return new SuccessResult({ userId: profile.user.id }, UserIdResultModel);
         else return new SuccessResult({ token: createSessionTokenV2(profile.user) }, UserTokenReturnModel);
@@ -164,12 +166,12 @@ export class AuthenticationController {
                 await Firebase.getUserByEmail(email);
                 adminFound = true;
             } catch (error) {}
-            if (type === "EMAIL" && adminFound) throw new Error(EMAIL_EXISTS);
+            if (type === "EMAIL" && adminFound) throw new BadRequest(EMAIL_EXISTS);
         }
         const verificationData = await this.verificationService.generateVerification({ email, type });
         await SesClient.emailAddressVerificationEmail(
             email,
-            this.verificationService.getDecryptedCode(verificationData.code)
+            this.verificationService.getDecryptedCode(verificationData.code)!
         );
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
@@ -228,7 +230,7 @@ export class AuthenticationController {
         const verificationData = await this.verificationService.generateVerification({ email, type });
         await SesClient.emailAddressVerificationEmail(
             email,
-            this.verificationService.getDecryptedCode(verificationData.code)
+            this.verificationService.getDecryptedCode(verificationData.code)!
         );
         return new SuccessResult({ success: true }, BooleanResultModel);
     }

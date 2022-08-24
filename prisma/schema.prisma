@@ -520,7 +520,6 @@ model User {
   twenty_four_hour_metric                      TwentyFourHourMetric[]
   verification_application                     VerificationApplication[]
   wallet                                       Wallet?
-  weekly_reward                                WeeklyReward[]            @relation("userToweekly_reward")
   xoxoday_order                                XoxodayOrder[]
 
   @@index([identityId], map: "IDX_dea97e26c765a4cdb575957a14")
@@ -594,7 +593,6 @@ model WeeklyReward {
   rewardType    String   @db.VarChar
   createdAt     DateTime @default(now()) @db.Timestamp(6)
   updatedAt     DateTime @default(now()) @updatedAt @db.Timestamp(6)
-  user          User?    @relation("userToweekly_reward", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ba2529b7af668bbc111475272b1")
 
   @@map("weekly_reward")
 }

@@ -33,7 +33,7 @@ import { CampaignMediaService } from "../../services/CampaignMediaService";
 import { downloadMedia, formatFloat } from "../../util";
 import { HourlyCampaignMetricsService } from "../../services/HourlyCampaignMetricsService";
 import { addMinutes } from "date-fns";
-import { BSC, COIIN, SocialClientType, SocialLinkType } from "../../util/constants";
+import { BSC, COIIN, SocialClientType, SocialLinkType, ADMIN, MANAGER } from "../../util/constants";
 import { TatumService } from "../../services/TatumService";
 import { DragonChainService } from "../../services/DragonChainService";
 import { AdminService } from "../../services/AdminService";
@@ -276,7 +276,7 @@ export class SocialController {
     @Get("/posts")
     @(Returns(200, SuccessResult).Of(Object))
     public async getCampaignPosts(@QueryParams() query: CampaignPostParams, @Context() context: Context) {
-        await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
         const { campaignId, skip = 0, take = 10 } = query;
         const socialPosts: string[] = [];
         const [posts, count] = await this.socialPostService.findSocialPostByCampaignId(campaignId, skip, take);
@@ -299,7 +299,7 @@ export class SocialController {
     @Get("/posts/:campaignId")
     @(Returns(200, SuccessResult).Of(SocialPostCountResultModel))
     public async getCampaignPostsByCampaignId(@PathParams() path: CampaignIdModel, @Context() context: Context) {
-        await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
         const { campaignId } = path;
         const socialPostsCount = await this.socialPostService.getSocialPostCount(campaignId);
         return new SuccessResult({ count: socialPostsCount }, SocialPostCountResultModel);
@@ -309,7 +309,7 @@ export class SocialController {
     @Get("/campaign-score/:campaignId")
     @(Returns(200, SuccessResult).Of(CampaignScoreResultModel))
     public async getCampaignScore(@PathParams() path: CampaignIdModel, @Context() context: Context) {
-        await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
         const { campaignId } = path;
         const campaign = await this.campaignService.findCampaignById(campaignId);
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);

@@ -1,6 +1,7 @@
 import AWS from "aws-sdk";
 import { getBase64FileExtension, deleteFactorFromKycData } from "../util";
 import { KycUser } from "../types";
+import { parse } from "json2csv";
 
 AWS.config.update({
     accessKeyId: "AKIAXVQVYPRMDO5IO3FE",
@@ -12,6 +13,7 @@ const {
     KYC_BUCKET_NAME = "rm-raiinmaker-kyc-staging",
     RM_SECRETS = "rm-secrets-staging",
     TATUM_WALLETS = "tatum-wallets-stage",
+    USER_EMAILS = "rm-user-emails",
 } = process.env;
 
 export class S3Client {
@@ -331,6 +333,16 @@ export class S3Client {
         } catch (_) {
             return null;
         }
+    }
+
+    public static async uploadUserEmails(list: { email: string }[]) {
+        const csvPayload = parse(list, { header: true, defaultValue: "-----" });
+        const params: AWS.S3.PutObjectRequest = {
+            Bucket: USER_EMAILS,
+            Key: "emails.csv",
+            Body: csvPayload,
+        };
+        await this.client.putObject(params).promise();
     }
 
     public static async generateOrgSignedURL(key: string) {

@@ -51,44 +51,58 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
     const adjustedRawShares = shares.minus(post.shares).toNumber();
     post.likes = likes.toString();
     post.shares = shares.toString();
-    await prisma.participant.update({
-        data: {
-            participationScore: newParticipationScore.toString(),
-        },
-        where: {
-            id_campaignId_userId: {
-                id: participant.id,
-                campaignId: participant.campaignId,
-                userId: participant.userId,
+    const promiseArray: Promise<any>[] = [];
+    promiseArray.push(
+        prisma.participant.update({
+            data: {
+                participationScore: newParticipationScore.toString(),
             },
-        },
-    });
-    await prisma.campaign.update({
-        data: {
-            totalParticipationScore: newTotalCampaignScore.toString(),
-        },
-        where: {
-            id: campaign.id || "",
-        },
-    });
-    await hourlyCampaignMetricService.upsertMetrics(campaign.id, campaign.org?.id!, "likes", adjustedRawLikes);
-    await hourlyCampaignMetricService.upsertMetrics(campaign.id, campaign.org?.id!, "shares", adjustedRawShares);
-    await dailyParticipantMetricService.upsertMetrics({
-        user,
-        campaign,
-        participant,
-        action: ParticipantAction.LIKES,
-        additiveParticipationScore: likesAdjustedScore,
-        actionCount: adjustedRawLikes,
-    });
-    await dailyParticipantMetricService.upsertMetrics({
-        user,
-        campaign,
-        participant,
-        action: ParticipantAction.SHARES,
-        additiveParticipationScore: sharesAdjustedScore,
-        actionCount: adjustedRawShares,
-    });
+            where: {
+                id_campaignId_userId: {
+                    id: participant.id,
+                    campaignId: participant.campaignId,
+                    userId: participant.userId,
+                },
+            },
+        })
+    );
+    promiseArray.push(
+        prisma.campaign.update({
+            data: {
+                totalParticipationScore: newTotalCampaignScore.toString(),
+            },
+            where: {
+                id: campaign.id || "",
+            },
+        })
+    );
+    promiseArray.push(
+        hourlyCampaignMetricService.upsertMetrics(campaign.id, campaign.org?.id!, "likes", adjustedRawLikes)
+    );
+    promiseArray.push(
+        hourlyCampaignMetricService.upsertMetrics(campaign.id, campaign.org?.id!, "shares", adjustedRawShares)
+    );
+    promiseArray.push(
+        dailyParticipantMetricService.upsertMetrics({
+            user,
+            campaign,
+            participant,
+            action: ParticipantAction.LIKES,
+            additiveParticipationScore: likesAdjustedScore,
+            actionCount: adjustedRawLikes,
+        })
+    );
+    promiseArray.push(
+        dailyParticipantMetricService.upsertMetrics({
+            user,
+            campaign,
+            participant,
+            action: ParticipantAction.SHARES,
+            additiveParticipationScore: sharesAdjustedScore,
+            actionCount: adjustedRawShares,
+        })
+    );
+    await Promise.all(promiseArray);
     return post;
 };
 
@@ -193,25 +207,25 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                             const prevLikes = parseFloat(post.likes);
                             const currLikes = parseFloat(updatedPost.likes);
                             const likeDiff = currLikes - prevLikes;
-                            if (prevLikes && currLikes && likeDiff) {
+                            if ((prevLikes || currLikes) && likeDiff) {
                                 dragonchainTransactionList.push({
                                     action: ParticipantAction.LIKES,
                                     socialType: SocialClientType.TWITTER,
                                     campaignId: post.campaignId,
                                     participantId: post.participantId,
-                                    payload: { likes: currLikes },
+                                    payload: { likes: likeDiff },
                                 });
                             }
                             const prevShares = parseFloat(post.shares);
                             const currShares = parseFloat(updatedPost.shares);
                             const shareDiff = currShares - prevShares;
-                            if (prevShares && currShares && shareDiff) {
+                            if ((prevShares || currShares) && shareDiff) {
                                 dragonchainTransactionList.push({
                                     action: ParticipantAction.SHARES,
                                     socialType: SocialClientType.TWITTER,
                                     campaignId: post.campaignId,
                                     participantId: post.participantId,
-                                    payload: { shares: currShares },
+                                    payload: { shares: shareDiff },
                                 });
                             }
                         }

@@ -24,11 +24,10 @@ import {
     TOKEN_NOT_FOUND,
     USER_CURRENCY_NOT_FOUND,
     USER_NOT_FOUND,
-    VERIFICATION_TOKEN_EXPIRED,
 } from "../../util/errors";
 import { VerificationApplicationService } from "../../services/VerificationApplicationService";
 import { getWithdrawAddressForTatum, verifyAddress } from "../../util/tatumHelper";
-import { COIIN, RAIINMAKER_WITHDRAW, WITHDRAW_LIMIT, USER_WITHDRAW } from "../../util/constants";
+import { COIIN, RAIINMAKER_WITHDRAW, WITHDRAW_LIMIT, USER_WITHDRAW, ADMIN, MANAGER } from "../../util/constants";
 import { VerificationService } from "../../services/VerificationService";
 import { getTokenValueInUSD } from "../../util/exchangeRate";
 import { OrganizationService } from "../../services/OrganizationService";
@@ -70,7 +69,7 @@ export class TatumController {
     @Get("/supported-currencies")
     @(Returns(200, SuccessArrayResult).Of(SupportedCurrenciesResultModel))
     public async getSupportedCurrencies(@Context() context: Context) {
-        await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
         const currencies = await this.tatumService.getSupportedTokens();
         return new SuccessArrayResult(currencies, SupportedCurrenciesResultModel);
     }
@@ -78,7 +77,7 @@ export class TatumController {
     @Get("/deposit-address")
     @(Returns(200, SuccessResult).Of(DepositAddressResultModel))
     public async getDepositAddress(@QueryParams() query: DepositAddressParams, @Context() context: Context) {
-        await this.adminService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
         const admin = await this.userService.findUserByFirebaseId(context.get("user").id);
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
         const wallet = await this.walletService.findWalletByOrgId(admin.orgId!);
@@ -114,11 +113,7 @@ export class TatumController {
         const token = await this.tatumService.isCurrencySupported({ symbol, network });
         if (!token) throw new Error(TOKEN_NOT_FOUND);
         if (!verifyAddress(address, symbol, network)) throw new Error(INVALID_ADDRESS);
-        try {
-            await this.verificationService.verifyToken({ verificationToken });
-        } catch (error) {
-            throw new CustomError(VERIFICATION_TOKEN_EXPIRED);
-        }
+        await this.verificationService.verifyToken({ verificationToken });
         const userCurrency = await this.currencyService.findCurrencyByTokenAndWallet({
             tokenId: token.id,
             walletId: user.wallet?.id!,
@@ -153,7 +148,7 @@ export class TatumController {
     @Post("/admin/withdraw")
     @(Returns(200, SuccessResult).Of(WithdrawResultModel))
     public async withdrawOrgFunds(@BodyParams() body: WithdrawBody, @Context() context: Context) {
-        await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));
         const admin = await this.userService.findUserByFirebaseId(context.get("user").id);
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
         const org = await this.organizationService.findOrgById(admin.orgId!, { wallet: true });
@@ -167,11 +162,7 @@ export class TatumController {
         const token = await this.tatumService.isCurrencySupported({ symbol, network });
         if (!token) throw new Error(TOKEN_NOT_FOUND);
         if (!verifyAddress(address, symbol, network)) throw new Error(INVALID_ADDRESS);
-        try {
-            await this.verificationService.verifyToken({ verificationToken });
-        } catch (error) {
-            throw new CustomError(VERIFICATION_TOKEN_EXPIRED);
-        }
+        await this.verificationService.verifyToken({ verificationToken });
         const currency = await this.currencyService.findCurrencyByTokenAndWallet({
             tokenId: token.id,
             walletId: org.wallet?.id!,

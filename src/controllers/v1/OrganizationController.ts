@@ -18,6 +18,7 @@ import { Firebase } from "../../clients/firebase";
 import { SesClient } from "../../clients/ses";
 import { WalletService } from "../../services/WalletService";
 import { VerificationService } from "../../services/VerificationService";
+import { ADMIN, MANAGER } from "../../util/constants";
 import { UserService } from "../../services/UserService";
 import { S3Client } from "../../clients/s3";
 
@@ -63,10 +64,7 @@ export class OrganizationController {
     @Get("/list-employees")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(OrgEmployeesResultModel))
     public async listEmployees(@Context() context: Context) {
-        const { orgId, company } = await this.adminService.checkPermissions(
-            { hasRole: ["admin"] },
-            context.get("user")
-        );
+        const { orgId, company } = await this.adminService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));
         const admins = await this.adminService.listAdminsByOrg(orgId!);
         const adminsDetails = await admins.map((admin) => {
             return {
@@ -84,7 +82,7 @@ export class OrganizationController {
     @Get("/org-details")
     @(Returns(200, SuccessResult).Of(OrgDetailsModel))
     public async getOrgDetails(@Context() context: Context) {
-        await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
         const organizations = await this.organizationService.orgDetails();
         const orgDetails = organizations.map((org) => {
             return {
@@ -101,14 +99,11 @@ export class OrganizationController {
     @Post("/new-user")
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async newUser(@BodyParams() body: NewUserParams, @Context() context: Context) {
-        const { company, orgId } = await this.adminService.checkPermissions(
-            { hasRole: ["admin"] },
-            context.get("user")
-        );
+        const { company, orgId } = await this.adminService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));
         const { email, name, role } = body;
         const password = Math.random().toString(16).substr(2, 15);
         const user = await Firebase.createNewUser(email, password);
-        const userRole = role === "admin" ? "admin" : "manager";
+        const userRole = role === ADMIN ? ADMIN : MANAGER;
         await Firebase.setCustomUserClaims(user.uid, company!, userRole, true);
         await this.adminService.createAdmin({ firebaseId: user.uid, orgId: orgId!, name });
         await SesClient.sendNewUserConfirmationEmail(company!, email, password);
@@ -119,7 +114,7 @@ export class OrganizationController {
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async deleteUser(@PathParams() path: DeleteUserParams, @Context() context: Context) {
         const { adminId } = path;
-        await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));
         const admin = await this.adminService.findAdminById(adminId);
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
         await Firebase.deleteUser(admin.firebaseId);
@@ -152,7 +147,7 @@ export class OrganizationController {
         if (foundOrg) throw new Error(ORGANIZATION_NAME_ALREADY_EXISTS);
         await this.verificationService.verifyToken({ verificationToken, email });
         const user = await Firebase.createNewUser(email, password);
-        await Firebase.setCustomUserClaims(user.uid, company, "admin", false);
+        await Firebase.setCustomUserClaims(user.uid, company, ADMIN, false);
         const org = await this.organizationService.createOrganization(company);
         await this.adminService.createAdmin({ firebaseId: user.uid, orgId: org.id, name });
         await this.walletService.createOrgWallet(org.id);
