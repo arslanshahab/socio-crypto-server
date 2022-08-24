@@ -1,4 +1,4 @@
-import { CampaignMedia, CampaignTemplate, Org, Prisma, User } from "@prisma/client";
+import { Campaign, CampaignMedia, CampaignTemplate, Org, Prisma, User } from "@prisma/client";
 import { Inject, Injectable } from "@tsed/di";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { CurrencyResultType, ListCampaignsVariablesV2, Tiers } from "../types";
@@ -290,12 +290,8 @@ export class CampaignService {
         return body;
     }
 
-    public async isCampaignOpen(campaignId: string) {
-        const campaign = await this.findCampaignById(campaignId);
-        if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
-        const now = new Date();
-        if (new Date(campaign.endDate).getTime() >= now.getTime()) return true;
-        return false;
+    public async isCampaignOpen(campaign: Campaign) {
+        return new Date(campaign.endDate).getTime() >= new Date().getTime();
     }
 
     public async findCampaigns(orgId?: string) {

@@ -90,6 +90,7 @@ export class Application {
                 "https://seed-staging.raiinmaker.com",
                 "https://seed.raiinmaker.com",
                 "https://raiinmaker-mobile.web.app",
+                "https://opensourcemoney.tv",
             ],
             methods: ["GET", "POST", "PUT"],
             exposedHeaders: ["x-auth-token"],

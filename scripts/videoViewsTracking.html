@@ -1,0 +1,34 @@
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+    const apiUrl = "https://server.api.raiinmaker.com/v1/participant/track-action";
+    const params = new Proxy(new URLSearchParams(window.location.search), {
+        get: (searchParams, prop) => searchParams.get(prop),
+    });
+    const participantId = params.participantId;
+    let player;
+    function onYouTubeIframeAPIReady() {
+        player = new YT.Player("raiinmaker-video-player", {
+            events: { onReady: onPlayerReady, onStateChange: onPlayerStateChange },
+        });
+    }
+
+    function onPlayerReady(event) {}
+
+    function onPlayerStateChange(event) {
+        if (event.data == YT.PlayerState.PLAYING) {
+            window
+                .fetch(apiUrl, {
+                    method: "POST",
+                    mode: "cors",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ participantId, action: "views" }),
+                })
+                .then(function (data) {
+                    console.log(data);
+                });
+            console.log("I AM TESTTING ----- ", participantId);
+        }
+    }
+</script>

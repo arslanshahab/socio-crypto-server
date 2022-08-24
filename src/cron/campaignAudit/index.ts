@@ -69,7 +69,7 @@ console.log("APP instance created.");
         }
     } catch (error) {
         console.log(error);
-        await SlackClient.sendNotification({ name: "Fix Transfers Cron", error: error });
+        await SlackClient.sendNotification({ name: "Campaign audit Cron", error: error });
         console.log("EXITING BECAUSE OF AN ERROR ----.");
         await connection.close();
         console.log("DATABASE CONNECTION CLOSED ----.");
