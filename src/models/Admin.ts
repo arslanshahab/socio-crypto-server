@@ -4,7 +4,7 @@ import {
     CreateDateColumn,
     Entity,
     ManyToOne,
-    OneToOne,
+    OneToMany,
     PrimaryGeneratedColumn,
     UpdateDateColumn,
 } from "typeorm";
@@ -34,8 +34,8 @@ export class Admin extends BaseEntity {
     @ManyToOne((_type) => Org, (org) => org.admins)
     public org: Org;
 
-    @OneToOne((_type) => VerificationApplication, (verification) => verification.admin)
-    public identityVerification: VerificationApplication;
+    @OneToMany((_type) => VerificationApplication, (verification) => verification.admin)
+    public identityVerification: VerificationApplication[];
 
     @CreateDateColumn()
     public createdAt: Date;
