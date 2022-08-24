@@ -2,12 +2,13 @@ import { Injectable } from "@tsed/di";
 import { S3Client } from "../clients/s3";
 import { generateFactorsFromKYC, getApplicationStatus, getKycStatusDetails } from "../util";
 import { AcuantClient } from "../clients/acuant";
-import { Profile, User, VerificationApplication } from "@prisma/client";
+import { Admin, Profile, User, VerificationApplication } from "@prisma/client";
 import { KycApplication, KycStatus } from "../types";
 import { KycLevel, KycStatus as KycStatusEnum } from "../util/constants";
 import { Firebase } from "../clients/firebase";
 import { Validator } from "../schemas";
 import { prisma, readPrisma } from "../clients/prisma";
+import { SesClient } from "../clients/ses";
 
 const validator = new Validator();
 
@@ -29,30 +30,38 @@ export class VerificationApplicationService {
         return app?.profile ? JSON.parse(app.profile) : {};
     }
 
+    public async getAdminProfileData(adminId: string): Promise<KycApplication> {
+        const app = await readPrisma.verificationApplication.findFirst({ where: { adminId } });
+        return app?.profile ? JSON.parse(app.profile) : {};
+    }
+
     public async upsert(data: {
         level: KycLevel;
         record?: VerificationApplication;
         appId: string;
         status: KycStatus;
-        userId: string;
+        userId?: string;
         reason: string;
         profile?: string;
+        adminId?: string;
     }) {
         return await prisma.verificationApplication.upsert({
-            where: { id: data.record?.id || data.userId },
+            where: { id: data.record?.id || data.userId || data.adminId },
             update: {
                 applicationId: data.appId,
                 status: data.status,
-                userId: data.userId,
+                userId: data.userId && data.userId,
                 reason: data.reason,
+                adminId: data.adminId && data.adminId,
             },
             create: {
                 applicationId: data.appId,
                 status: data.status,
-                userId: data.userId,
+                userId: data.userId && data.userId,
                 reason: data.reason,
                 level: data.level,
                 profile: data.profile,
+                adminId: data.adminId && data.adminId,
             },
         });
     }
@@ -74,6 +83,31 @@ export class VerificationApplicationService {
             const reason = getKycStatusDetails(kycApplication);
             if (status === KycStatusEnum.APPROVED) {
                 await S3Client.uploadAcuantKyc(userId, kycApplication);
+            }
+            await this.updateStatus(status, recordedApplication);
+            await this.updateReason(reason, recordedApplication.id);
+            return { kyc: recordedApplication };
+        }
+        return { kyc: recordedApplication };
+    }
+
+    public async findAdminKycApplication(adminId: string) {
+        const recordedApplication = await readPrisma.verificationApplication.findFirst({
+            where: { adminId },
+        });
+        if (!recordedApplication) return null;
+        let kycApplication;
+        if (recordedApplication.status === KycStatusEnum.APPROVED) {
+            return {
+                kyc: recordedApplication,
+            };
+        }
+        if (recordedApplication.status === KycStatusEnum.PENDING) {
+            kycApplication = await AcuantClient.getApplication(recordedApplication.applicationId);
+            const status = getApplicationStatus(kycApplication);
+            const reason = getKycStatusDetails(kycApplication);
+            if (status === KycStatusEnum.APPROVED) {
+                await S3Client.uploadAcuantKyc(adminId, kycApplication);
             }
             await this.updateStatus(status, recordedApplication);
             await this.updateReason(reason, recordedApplication.id);
@@ -155,6 +189,32 @@ export class VerificationApplicationService {
                 profile: level === KycLevel.LEVEL1 ? JSON.stringify(query) : undefined,
             });
             Firebase.sendKycVerificationUpdate(user?.profile?.deviceToken || "", status);
+        } else {
+            verificationApplication = currentKycApplication.kyc;
+        }
+        return {
+            kycId: verificationApplication?.applicationId,
+            status: verificationApplication?.status,
+        };
+    }
+
+    public async registerKycForAdmin(data: { admin: Admin; query: KycApplication }) {
+        const { admin, query } = data;
+        const currentKycApplication = await this.findAdminKycApplication(admin.id);
+        let verificationApplication;
+        if (!currentKycApplication || currentKycApplication.kyc.status === KycStatusEnum.REJECTED) {
+            validator.validateAdminKycArgs(query);
+            const newAcuantApplication = await AcuantClient.submitApplicationV2(query, KycLevel.LEVEL2);
+            const status = getApplicationStatus(newAcuantApplication);
+            verificationApplication = await this.upsert({
+                appId: newAcuantApplication.mtid,
+                status,
+                adminId: admin.id,
+                reason: getKycStatusDetails(newAcuantApplication),
+                record: currentKycApplication?.kyc,
+                level: KycLevel.LEVEL2,
+            });
+            SesClient.adminKycAlert(query.email!, status);
         } else {
             verificationApplication = currentKycApplication.kyc;
         }

@@ -164,4 +164,15 @@ export class SesClient {
             throw new Error(error.message);
         }
     }
+
+    public static async adminKycAlert(emailAddress: string, status: string) {
+        const title = `KYC Status`;
+        const text = `Your KYC status has been  ${status}`;
+        const template = SesClient.getTemplate(title, text, title, emailAddress);
+        try {
+            await SesClient.client.sendEmail(template).promise();
+        } catch (error) {
+            throw new Error(error.message);
+        }
+    }
 }
