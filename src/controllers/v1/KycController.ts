@@ -60,7 +60,7 @@ class AdminKycParams extends KycLevel2Params {
     @Required() public readonly gender: string;
     @Required() public readonly dob: string;
     @Required() public readonly phoneNumber: string;
-    @Required() public readonly ip: string;
+    @Nullable(String) public readonly ip: string;
 }
 
 @Controller("/kyc")
@@ -133,20 +133,6 @@ export class KycController {
         return new SuccessResult(result, KycResultModel);
     }
 
-    // For admin panel
-    @Post("/verify")
-    @(Returns(200, SuccessResult).Of(KycResultModel))
-    public async verifyAdmin(@BodyParams() body: AdminKycParams, @Context() context: Context) {
-        const admin = await this.userService.findUserByFirebaseId(context.get("user").id);
-        if (!admin) throw new BadRequest(USER_NOT_FOUND);
-        body = {
-            ...(await this.verificationApplicationService.getAdminProfileData(admin.id)),
-            ...body,
-        };
-        const result = await this.verificationApplicationService.registerKycForAdmin({ admin, query: body });
-        return new SuccessResult(result, KycResultModel);
-    }
-
     @Put("/update-kyc")
     @(Returns(200, SuccessResult).Of(KycResultModel))
     public async updateKyc(@BodyParams() query: KycUser, @Context() context: Context) {
@@ -181,5 +167,20 @@ export class KycController {
         }
         user.kycStatus = updatedStatus.kycStatus;
         return new SuccessResult(UserResultModel.build(user), UserResultModel);
+    }
+
+    // For admin panel
+    @Post("/verify")
+    @(Returns(200, SuccessResult).Of(KycResultModel))
+    public async verifyAdmin(@BodyParams() body: AdminKycParams, @Context() context: Context) {
+        const admin = await this.userService.findUserByFirebaseId(context.get("user").id);
+        if (!admin) throw new BadRequest(USER_NOT_FOUND);
+        body = {
+            ...(await this.verificationApplicationService.getAdminProfileData(admin.id)),
+            ...body,
+            ip: context.request.req.socket.remoteAddress || "",
+        };
+        const result = await this.verificationApplicationService.registerKycForAdmin({ admin, query: body });
+        return new SuccessResult(result, KycResultModel);
     }
 }

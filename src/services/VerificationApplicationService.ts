@@ -285,4 +285,10 @@ export class VerificationApplicationService {
         prisma.verificationApplication.delete({ where: { id: verificationApplicationId } });
         return generateFactorsFromKYC(kyc);
     }
+
+    public async findVerificationApplication(adminId?: string) {
+        return readPrisma.verificationApplication.findFirst({
+            where: adminId ? { adminId } : {},
+        });
+    }
 }

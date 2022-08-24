@@ -21,6 +21,7 @@ import { VerificationService } from "../../services/VerificationService";
 import { ADMIN, MANAGER } from "../../util/constants";
 import { UserService } from "../../services/UserService";
 import { S3Client } from "../../clients/s3";
+import { VerificationApplicationService } from "../../services/VerificationApplicationService";
 
 class NewUserParams {
     @Required() public readonly name: string;
@@ -60,6 +61,8 @@ export class OrganizationController {
     private verificationService: VerificationService;
     @Inject()
     private userService: UserService;
+    @Inject()
+    private verificationApplicationService: VerificationApplicationService;
 
     @Get("/list-employees")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(OrgEmployeesResultModel))
@@ -165,13 +168,15 @@ export class OrganizationController {
         );
         const admin = await this.userService.findUserByFirebaseId(context.get("user").uid);
         const org = await this.organizationService.findOrgById(orgId!);
-        const result = {
+        const verifyStatus = await this.verificationApplicationService.findVerificationApplication(admin?.id);
+        let result = {
             name: admin?.name,
             email: email,
             company: company,
             enabled: admin?.twoFactorEnabled,
             orgId,
             imagePath: org?.logo || "",
+            verifyStatus: verifyStatus?.status,
         };
         return new SuccessResult(result, AdminProfileResultModel);
     }
