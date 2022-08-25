@@ -38,18 +38,6 @@ export class Firebase {
         });
     }
 
-    private static async makeRequest(path: string, method: RequestData["method"], payload?: RequestData["payload"]) {
-        const url = `${Firebase.baseUrl}/${path}`;
-        const requestData: RequestData = {
-            method,
-            url,
-            payload,
-            query: { key: process.env.FIREBASE_API_KEY },
-        };
-        const response = await doFetch(requestData);
-        return response.data;
-    }
-
     public static async sendGenericNotification(tokens: string[], title: string, body: string) {
         if (tokens.length === 0) return;
         const tokenList = paginateList(tokens);
@@ -153,8 +141,18 @@ export class Firebase {
     }
 
     public static async loginUser(email: string, password: string): Promise<FirebaseUserLoginResponse> {
-        const endpoint = "/v1/accounts:signInWithPassword";
-        return await Firebase.makeRequest(endpoint, "POST", { email, password, returnSecureToken: true });
+        const url = `${Firebase.baseUrl}/v1/accounts:signInWithPassword`;
+        const requestData: RequestData = {
+            method: "POST",
+            url,
+            payload: {
+                email,
+                password,
+                returnSecureToken: true,
+            },
+            query: { key: process.env.FIREBASE_API_KEY },
+        };
+        return await doFetch(requestData);
     }
 
     public static async updateUserPassword(uid: string, password: string) {

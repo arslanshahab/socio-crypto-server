@@ -15,9 +15,9 @@ export class VerificationService {
         });
     }
 
-    public async findVerificationByToken(verificationToken: string) {
+    public async findVerificationById(id: string) {
         return readPrisma.verification.findFirst({
-            where: { id: decrypt(verificationToken) || undefined, verified: true },
+            where: { id, verified: true },
         });
     }
 
@@ -55,7 +55,9 @@ export class VerificationService {
     }
 
     public async verifyToken(data: { verificationToken: string; email?: string }) {
-        const verification = await this.findVerificationByToken(data.verificationToken);
+        const verificationId = decrypt(data.verificationToken);
+        if (!verificationId) throw new Forbidden(EMAIL_NOT_VERIFIED);
+        const verification = await this.findVerificationById(data.verificationToken);
         if (!verification) throw new Forbidden(EMAIL_NOT_VERIFIED);
         if (data.email && data.email.toLowerCase() !== verification.email) throw new Forbidden(EMAIL_NOT_VERIFIED);
         if (this.isCodeExpired(verification.expiry!)) throw new Forbidden(INVALID_VERIFICATION_TOKEN);
