@@ -84,9 +84,8 @@ export class SessionService {
 
     public async logoutUser(user: User) {
         const currentDate = new Date();
-        const session = await this.findSessionByUserId(user.id);
-        return await prisma.session.update({
-            where: { id: session?.id },
+        return await prisma.session.updateMany({
+            where: { userId: user.id, logout: false },
             data: {
                 logout: true,
                 logoutAt: currentDate,
