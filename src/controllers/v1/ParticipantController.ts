@@ -71,8 +71,8 @@ class UserStatisticsParams {
 }
 
 class ParticipantTrackingBodyParams {
-    @Property() public readonly participantId: string;
-    @Property() public readonly action: ParticipantAction;
+    @Required() public readonly participantId: string;
+    @Required() public readonly action: ParticipantAction;
 }
 
 const { RATE_LIMIT_MAX = "3" } = process.env;
