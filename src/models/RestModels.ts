@@ -893,3 +893,10 @@ export class CampaignScoreResultModel {
     @Property() public readonly viewsStandardDeviation: string;
     @Property() public readonly submissionsStandardDeviation: string;
 }
+
+export class AdminResultModel {
+    @Property() public readonly resetPass: boolean;
+    @Property() public readonly role: string;
+    @Property() public readonly company: string;
+    @Property() public readonly email: string;
+}
