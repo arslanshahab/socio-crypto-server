@@ -18,11 +18,9 @@ export class AdminService {
         });
     }
 
-    public async listAdminsByOrg(orgId: string) {
+    public async listAdminsByOrg(orgId: string, company?: string) {
         return await readPrisma.admin.findMany({
-            where: {
-                org: { id: orgId },
-            },
+            where: company ? { org: { id: orgId, name: company } } : { orgId },
         });
     }
 
