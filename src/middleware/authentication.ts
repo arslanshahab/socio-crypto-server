@@ -1,9 +1,12 @@
 import { Firebase } from "../clients/firebase";
 import { AuthenticationError } from "apollo-server-express";
 import express from "express";
-import { verifySessionToken } from "../util";
 import { ACCOUNT_RESTRICTED, FormattedError, NO_TOKEN_PROVIDED } from "../util/errors";
 import { User } from "../models/User";
+import { SessionService } from "../services/SessionService";
+import { JWTPayload } from "src/types";
+
+const sessionService = new SessionService();
 
 export const authenticateAdmin = async ({ req }: { req: express.Request }) => {
     try {
@@ -32,8 +35,8 @@ export const authenticateUser = async ({ req }: { req: express.Request }) => {
     try {
         const token = req.headers.authorization || "";
         if (!token) throw new Error(NO_TOKEN_PROVIDED);
-        const user = verifySessionToken(token);
-        const userData = await User.findUserByContext(user);
+        const user = await sessionService.verifySession(token);
+        const userData = await User.findUserByContext(user as JWTPayload);
         if (!userData?.active) throw new Error(ACCOUNT_RESTRICTED);
         return { user: { ...user, ip: req.socket.remoteAddress } };
     } catch (error) {
