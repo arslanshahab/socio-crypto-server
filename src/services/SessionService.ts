@@ -2,11 +2,15 @@ import { Injectable } from "@tsed/di";
 import { prisma } from "../clients/prisma";
 import { User, Prisma, Session } from "@prisma/client";
 import { isPast, addDays } from "date-fns";
-import { SESSION_EXPIRED, ACCOUNT_RESTRICTED, ACCOUNT_NOT_EXISTS_ANYMORE } from "../util/errors";
+import { SESSION_EXPIRED, ACCOUNT_RESTRICTED, ACCOUNT_NOT_EXISTS_ANYMORE, INVALID_TOKEN } from "../util/errors";
 import { Forbidden } from "@tsed/exceptions";
 import { decrypt, encrypt } from "../util/crypto";
 @Injectable()
 export class SessionService {
+    private createToken(id: string) {
+        return encrypt(id);
+    }
+
     public async findSessionByUserId(userId: string) {
         return await prisma.session.findFirst({
             where: {
@@ -21,17 +25,6 @@ export class SessionService {
         return prisma.session.findFirst({
             where: {
                 id,
-                logout: false,
-            },
-            include: include as T,
-            orderBy: { createdAt: "desc" },
-        });
-    }
-
-    public async findSessionByToken<T extends Prisma.SessionInclude | undefined>(token: string, include?: T) {
-        return prisma.session.findFirst({
-            where: {
-                token,
                 logout: false,
             },
             include: include as T,
@@ -56,7 +49,6 @@ export class SessionService {
         const currentDate = new Date();
         const session = await prisma.session.create({
             data: {
-                token: "",
                 expiry: addDays(currentDate, 7),
                 userId: user.id,
                 lastLogin: currentDate,
@@ -64,13 +56,13 @@ export class SessionService {
                 deviceInfo: deviceData?.userAgent,
             },
         });
-        return encrypt(session.id);
+        return this.createToken(JSON.stringify(session));
     }
 
     public async verifySession(token: string) {
-        const sessionId = decrypt(token);
-        if (!sessionId) throw new Forbidden(SESSION_EXPIRED);
-        const session = await this.findSessionById(sessionId, { user: true });
+        const currentSession = this.decryptToken(token);
+        if (!currentSession) throw new Forbidden(INVALID_TOKEN);
+        const session = await this.findSessionById(currentSession.id, { user: true });
         if (!session) throw new Forbidden(SESSION_EXPIRED);
         if (this.isExpired(session)) {
             await this.logoutUser(session?.user!);
@@ -102,5 +94,10 @@ export class SessionService {
 
     public isExpired(session: Session) {
         return isPast(session.expiry);
+    }
+
+    public decryptToken(token: string) {
+        const data = decrypt(token);
+        return data ? (JSON.parse(data) as Session) : undefined;
     }
 }
