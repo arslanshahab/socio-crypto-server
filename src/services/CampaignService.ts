@@ -35,7 +35,7 @@ export class CampaignService {
         const now = new Date();
 
         const where: Prisma.CampaignWhereInput = {
-            ...(params.state === "OPEN" ? { endDate: { gte: now } } : {}),
+            ...(params.state === "OPEN" ? { beginDate: { lte: now }, endDate: { gte: now } } : {}),
             ...(params.state === "CLOSED" ? { endDate: { lte: now } } : {}),
             status: params.status || "APPROVED",
             isGlobal: false,
@@ -291,7 +291,10 @@ export class CampaignService {
     }
 
     public async isCampaignOpen(campaign: Campaign) {
-        return new Date(campaign.endDate).getTime() >= new Date().getTime();
+        return (
+            new Date(campaign.beginDate).getTime() <= new Date().getTime() &&
+            new Date(campaign.endDate).getTime() >= new Date().getTime()
+        );
     }
 
     public async findCampaigns(orgId?: string) {
