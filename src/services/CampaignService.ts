@@ -291,7 +291,10 @@ export class CampaignService {
     }
 
     public async isCampaignOpen(campaign: Campaign) {
-        return new Date(campaign.endDate).getTime() >= new Date().getTime();
+        return (
+            new Date(campaign.beginDate).getTime() <= new Date().getTime() &&
+            new Date(campaign.endDate).getTime() >= new Date().getTime()
+        );
     }
 
     public async findCampaigns(orgId?: string) {
