@@ -642,7 +642,6 @@ model Transaction {
 
 model Session {
   id         String    @id(map: "PK_f55da76ac1c3ac420f444d2ff11") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  token      String    @db.VarChar
   ip         String?   @db.VarChar
   deviceInfo String?   @db.VarChar
   lastLogin  DateTime? @db.Timestamp(6)

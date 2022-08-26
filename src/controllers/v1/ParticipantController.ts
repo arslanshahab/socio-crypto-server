@@ -71,8 +71,8 @@ class UserStatisticsParams {
 }
 
 class ParticipantTrackingBodyParams {
-    @Property() public readonly participantId: string;
-    @Property() public readonly action: ParticipantAction;
+    @Required() public readonly participantId: string;
+    @Required() public readonly action: ParticipantAction;
 }
 
 const { RATE_LIMIT_MAX = "3" } = process.env;
@@ -401,7 +401,11 @@ export class ParticipantController {
     public async trackAction(@Request() req: ExpressRequest, @BodyParams() body: ParticipantTrackingBodyParams) {
         const { action, participantId } = body;
         const ipAddress = req.connection.remoteAddress || req.socket.remoteAddress;
-        const shouldRateLimit = await limit(`${ipAddress}-${participantId}-click`, Number(RATE_LIMIT_MAX), "minute");
+        const shouldRateLimit = await limit(
+            `${ipAddress}-${participantId}-${action}`,
+            Number(RATE_LIMIT_MAX),
+            "minute"
+        );
         if (!["views", "submissions"].includes(action)) throw new BadRequest(MISSING_PARAMS);
         const participant = await this.participantService.findParticipantById(participantId);
         if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
@@ -410,7 +414,7 @@ export class ParticipantController {
         const user = await this.userService.findUserById(participant.userId);
         if (!user) throw new NotFound(USER_NOT_FOUND);
         if (!this.campaignService.isCampaignOpen(campaign)) throw new NotFound(CAMPAIGN_CLOSED);
-        if (shouldRateLimit) {
+        if (!shouldRateLimit) {
             let qualityScore = await this.qualityScoreService.findByParticipantOrCreate(participant.id);
             let multiplier, newViewCount, newSubmissionCount;
             switch (action) {
