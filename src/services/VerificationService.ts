@@ -17,7 +17,7 @@ export class VerificationService {
 
     public async findVerificationById(id: string) {
         return readPrisma.verification.findFirst({
-            where: { id, verified: true },
+            where: { id: decrypt(id), verified: true },
         });
     }
 

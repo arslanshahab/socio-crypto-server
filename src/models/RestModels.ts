@@ -915,4 +915,5 @@ export class AdminResultModel {
     @Property() public readonly role: string;
     @Property() public readonly company: string;
     @Property() public readonly email: string;
+    @Property() public readonly twoFactorEnabled: boolean;
 }
