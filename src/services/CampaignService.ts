@@ -35,7 +35,7 @@ export class CampaignService {
         const now = new Date();
 
         const where: Prisma.CampaignWhereInput = {
-            ...(params.state === "OPEN" ? { endDate: { gte: now } } : {}),
+            ...(params.state === "OPEN" ? { beginDate: { lte: now }, endDate: { gte: now } } : {}),
             ...(params.state === "CLOSED" ? { endDate: { lte: now } } : {}),
             status: params.status || "APPROVED",
             isGlobal: false,
