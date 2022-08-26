@@ -179,6 +179,7 @@ export class DailyParticipantMetricService {
         let likeCount = record.likeCount;
         let shareCount = record.shareCount;
         let commentCount = record.commentCount;
+
         switch (action) {
             case "clicks":
                 clickCount = (
@@ -198,14 +199,12 @@ export class DailyParticipantMetricService {
                 ).toString();
                 break;
             case "likes":
-                likeCount = (
-                    record.likeCount ? new BN(record.likeCount).plus(new BN(actionCount)) : new BN(actionCount)
-                ).toString();
+                likeCount = new BN(actionCount).toString();
+                console.log("recordLikeCount*---", record.likeCount, "current likesCount*----", likeCount);
                 break;
             case "shares":
-                shareCount = (
-                    record.shareCount ? new BN(record.shareCount).plus(new BN(actionCount)) : new BN(actionCount)
-                ).toString();
+                shareCount = new BN(actionCount).toString();
+                console.log("recordShareCount*---", record.shareCount, "current shareCount*----", shareCount);
                 break;
             case "comments":
                 commentCount = (

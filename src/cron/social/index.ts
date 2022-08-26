@@ -11,7 +11,7 @@ import { DragonchainCampaignActionLedgerPayload, PointValueTypes } from "../../t
 import { QualityScoreService } from "../../services/QualityScoreService";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 import { ParticipantAction } from "../../util/constants";
-import { HourlyCampaignMetricsService } from "../../services/HourlyCampaignMetricsService";
+// import { HourlyCampaignMetricsService } from "../../services/HourlyCampaignMetricsService";
 import { DragonChainService } from "../../services/DragonChainService";
 import { Dragonchain } from "../../clients/dragonchain";
 import { SocialLinkService } from "../../services/SocialLinkService";
@@ -21,7 +21,7 @@ dotenv.config();
 const app = new Application();
 const qualityScoreService = new QualityScoreService();
 const dailyParticipantMetricService = new DailyParticipantMetricService();
-const hourlyCampaignMetricService = new HourlyCampaignMetricsService();
+// const hourlyCampaignMetricService = new HourlyCampaignMetricsService();
 const dragonChainService = new DragonChainService();
 const socialLinkService = new SocialLinkService();
 
@@ -41,14 +41,18 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
         .pointValues as Prisma.JsonObject as unknown as PointValueTypes;
     const likesAdjustedScore = likes.minus(post.likes).times(pointValues.likes).times(likesMultiplier);
     const sharesAdjustedScore = shares.minus(post.shares).times(pointValues.shares).times(sharesMultiplier);
+    console.log("likesAdjustedScore-----------------------------++", likesAdjustedScore.toNumber());
+    console.log("sharesAdjustedScore----------------------------++", sharesAdjustedScore.toNumber());
+
     const newTotalCampaignScore = new BN(campaign.totalParticipationScore).plus(
         likesAdjustedScore.plus(sharesAdjustedScore)
     );
     const newParticipationScore = new BN(participant.participationScore).plus(
         likesAdjustedScore.plus(sharesAdjustedScore)
     );
-    const adjustedRawLikes = likes.minus(post.likes).toNumber();
-    const adjustedRawShares = shares.minus(post.shares).toNumber();
+    // const adjustedRawLikes = likes.minus(post.likes).toNumber();
+    // const adjustedRawShares = shares.minus(post.shares).toNumber();
+    // console.log("current likes-----------", likes.toNumber(), "Social Post likes------", post.likes);
     post.likes = likes.toString();
     post.shares = shares.toString();
     const promiseArray: Promise<any>[] = [];
@@ -76,12 +80,12 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
             },
         })
     );
-    promiseArray.push(
-        hourlyCampaignMetricService.upsertMetrics(campaign.id, campaign.org?.id!, "likes", adjustedRawLikes)
-    );
-    promiseArray.push(
-        hourlyCampaignMetricService.upsertMetrics(campaign.id, campaign.org?.id!, "shares", adjustedRawShares)
-    );
+    // promiseArray.push(
+    //     hourlyCampaignMetricService.upsertMetrics(campaign.id, campaign.org?.id!, "likes", adjustedRawLikes)
+    // );
+    // promiseArray.push(
+    //     hourlyCampaignMetricService.upsertMetrics(campaign.id, campaign.org?.id!, "shares", adjustedRawShares)
+    // );
     promiseArray.push(
         dailyParticipantMetricService.upsertMetrics({
             user,
@@ -89,7 +93,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
             participant,
             action: ParticipantAction.LIKES,
             additiveParticipationScore: likesAdjustedScore,
-            actionCount: adjustedRawLikes,
+            actionCount: likes.toNumber(),
         })
     );
     promiseArray.push(
@@ -99,7 +103,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
             participant,
             action: ParticipantAction.SHARES,
             additiveParticipationScore: sharesAdjustedScore,
-            actionCount: adjustedRawShares,
+            actionCount: shares.toNumber(),
         })
     );
     await Promise.all(promiseArray);
@@ -125,12 +129,14 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
             const campaign = campaigns[campaignIndex];
             const take = 100;
             let skip = 0;
-            const totalPosts = await readPrisma.socialPost.count({ where: { campaignId: campaign.id } });
+            const totalPosts = await readPrisma.socialPost.count({
+                where: { campaignId: "c94af6fa-670b-4e2d-b278-757186067945" },
+            });
             console.log("TOTAL POSTS FOR CAMPAIGN ID: ", campaign.id, totalPosts);
             const loop = Math.ceil(totalPosts / take);
             for (let postPageIndex = 0; postPageIndex < loop; postPageIndex++) {
                 let posts = await readPrisma.socialPost.findMany({
-                    where: { campaignId: campaign.id },
+                    where: { campaignId: "c94af6fa-670b-4e2d-b278-757186067945" },
                     include: { campaign: true, user: true },
                     take,
                     skip,
@@ -171,19 +177,25 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                         const post = twitterPosts[twitterRespIndex];
                         if (twitterResp.status === "fulfilled" && twitterResp.value) {
                             // console.log("preparing and updating social score.");
-                            const responseJSON = JSON.parse(twitterResp.value);
+                            // const responseJSON = JSON.parse(twitterResp.value);
                             const updatedPost = await updatePostMetrics(
-                                new BN(responseJSON["favorite_count"]),
-                                new BN(responseJSON["retweet_count"]),
+                                // new BN(responseJSON["favorite_count"]),
+                                // new BN(responseJSON["retweet_count"]),
+                                new BN(5),
+                                new BN(1),
                                 post
                             );
                             console.log(
                                 "UPDATING POST: ",
                                 updatedPost.id,
+                                "prev post likes---",
                                 post.likes,
+                                "prev share likes---",
                                 post.shares,
                                 " :----: ",
+                                "current post likes---",
                                 updatedPost.likes,
+                                "current post share---",
                                 updatedPost.shares
                             );
                             prismaTransactions.push(
