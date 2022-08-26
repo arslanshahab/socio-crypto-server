@@ -1,10 +1,11 @@
-import { BodyParams, QueryParams, Request } from "@tsed/common";
+import { BodyParams, QueryParams, Request, Response } from "@tsed/common";
 import { Request as ExpressRequest } from "express";
 import { Controller, Inject } from "@tsed/di";
 import { BadRequest, Forbidden, NotFound, Unauthorized } from "@tsed/exceptions";
 import { Enum, Post, Get, Property, Required, Returns, Put } from "@tsed/schema";
 import {
     ACCOUNT_RESTRICTED,
+    ADMIN_NOT_FOUND,
     EMAIL_EXISTS,
     EMAIL_NOT_EXISTS,
     INCORRECT_CODE,
@@ -16,6 +17,7 @@ import {
     USER_NOT_FOUND,
 } from "../../util/errors";
 import {
+    AdminResultModel,
     BooleanResultModel,
     CompleteVerificationParams,
     CompleteVerificationResultModel,
@@ -63,6 +65,12 @@ class ForgetAdminPasswordParams {
     @Required() public readonly password: string;
     @Required() public readonly code: string;
 }
+
+class AdminLoginBody {
+    @Required() public readonly email: string;
+    @Required() public readonly password: string;
+}
+const isSecure = process.env.NODE_ENV === "production";
 @Controller("/auth")
 export class AuthenticationController {
     @Inject()
@@ -87,7 +95,7 @@ export class AuthenticationController {
         if (!user) throw new NotFound(USER_NOT_FOUND);
         const token = await this.sessionService.initSession(user, {
             ip: req?.socket?.remoteAddress,
-            device: req?.headers["user-agent"],
+            userAgent: req?.headers["user-agent"],
         });
         if (process.env.NODE_ENV === "production")
             await S3Client.uploadUserEmails(await this.userService.getAllEmails());
@@ -106,7 +114,7 @@ export class AuthenticationController {
         await this.userService.transferCoiinReward({ user, type: UserRewardType.LOGIN_REWARD });
         const token = await this.sessionService.initSession(user, {
             ip: req?.socket?.remoteAddress || "",
-            device: req?.headers["user-agent"] || "",
+            userAgent: req?.headers["user-agent"] || "",
         });
         return new SuccessResult({ token }, UserTokenReturnModel);
     }
@@ -233,5 +241,35 @@ export class AuthenticationController {
             this.verificationService.getDecryptedCode(verificationData.code)!
         );
         return new SuccessResult({ success: true }, BooleanResultModel);
+    }
+
+    @Post("/admin-login")
+    @(Returns(200, SuccessResult).Of(AdminResultModel))
+    public async adminLogin(@BodyParams() body: AdminLoginBody, @Response() res: Response) {
+        const { email, password } = body;
+        let sessionCookie;
+        const authToken = await Firebase.loginUser(email, password);
+        const decodedToken = await Firebase.verifyToken(authToken.idToken);
+        const user = await Firebase.getUserById(decodedToken.uid);
+        if (!user.customClaims) throw new Unauthorized(ADMIN_NOT_FOUND);
+        if (user.customClaims.tempPass === true)
+            return new SuccessResult({ resetPass: true, email: "", company: "", role: "" }, AdminResultModel);
+        const expiresIn = 60 * 60 * 24 * 5 * 1000;
+        if (new Date().getTime() / 1000 - decodedToken.auth_time < 5 * 60) {
+            sessionCookie = await Firebase.createSessionCookie(authToken.idToken, expiresIn);
+        } else {
+            throw new Unauthorized("Recent Signin required.");
+        }
+        const options = { maxAge: expiresIn, httpOnly: true, secure: isSecure };
+        res.cookie("session", sessionCookie, options);
+        return new SuccessResult(
+            {
+                resetPass: false,
+                email: user.email,
+                company: user.customClaims.company,
+                role: user.customClaims.role,
+            },
+            AdminResultModel
+        );
     }
 }

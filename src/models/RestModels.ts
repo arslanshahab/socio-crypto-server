@@ -909,3 +909,10 @@ export class UpdateBrandLogoResultModel {
     @Property() public readonly brand: string;
     @Property() public readonly signedOrgUrl: string;
 }
+
+export class AdminResultModel {
+    @Property() public readonly resetPass: boolean;
+    @Property() public readonly role: string;
+    @Property() public readonly company: string;
+    @Property() public readonly email: string;
+}

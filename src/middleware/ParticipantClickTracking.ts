@@ -82,6 +82,7 @@ export class ParticipantClickTracking {
                 campaignId: participant.campaignId,
             });
         }
-        return res.redirect(campaign.target.includes("https") ? campaign.target : `https://${campaign.target}`);
+        const modifiedTarget = `${campaign.target}?participantId=${participant.id}`;
+        return res.redirect(campaign.target.includes("https") ? modifiedTarget : `https://${modifiedTarget}`);
     }
 }

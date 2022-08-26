@@ -398,7 +398,7 @@ export class UserController {
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
         if (campaign.type === "raffle" && !email) throw new BadRequest(MISSING_PARAMS);
 
-        if (await !this.campaignService.isCampaignOpen(campaign.id)) throw new BadRequest(CAMPAIGN_CLOSED);
+        if (await !this.campaignService.isCampaignOpen(campaign)) throw new BadRequest(CAMPAIGN_CLOSED);
         if (await this.participantService.findParticipantByCampaignId(campaign.id, user.id))
             throw new BadRequest(ALREADY_PARTICIPATING);
         await this.tatumService.findOrCreateCurrency({ ...campaign?.currency?.token!, wallet: user.wallet! });

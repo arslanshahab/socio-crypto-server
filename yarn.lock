@@ -10884,6 +10884,13 @@ node-addon-api@^3.0.2:
   resolved "https://registry.npmjs.org/node-addon-api/-/node-addon-api-3.2.1.tgz"
   integrity sha512-mmcei9JghVNDYydghQmeDX8KoAm0FAiYyIcUt/N4nhyAipB17pllZQDOJD2fotxABnt4Mdz+dKTO7eftLg4d0A==
 
+node-device-detector@^2.0.6:
+  version "2.0.6"
+  resolved "https://registry.yarnpkg.com/node-device-detector/-/node-device-detector-2.0.6.tgz#2239c4e2d4cc132a2c1f8055097a2278c8c2b102"
+  integrity sha512-6prtxdnOIrpMXv1JXFKzy/QnXb35U9JEE6p9S1CEImkyfGAsgv5Ccbgl1XWmLdJjDwCkzEPWTzAYUYzTISOHGg==
+  dependencies:
+    js-yaml "^4.1.0"
+
 node-environment-flags@1.0.6:
   version "1.0.6"
   resolved "https://registry.npmjs.org/node-environment-flags/-/node-environment-flags-1.0.6.tgz"
