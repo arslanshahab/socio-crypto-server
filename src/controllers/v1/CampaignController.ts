@@ -1,5 +1,5 @@
 import { Campaign, CampaignMedia, Prisma } from "@prisma/client";
-import { Get, Property, Required, Enum, Returns, Post, Put, ArrayOf, string } from "@tsed/schema";
+import { Get, Property, Required, Enum, Returns, Post, ArrayOf, Put } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
 import { Context, BodyParams, PathParams, QueryParams } from "@tsed/common";
 import { CampaignService } from "../../services/CampaignService";
@@ -78,7 +78,7 @@ class ListCampaignsVariablesModel extends PaginatedVariablesModel {
 class PendingCampaignsParams {
     @Required() @Property(String) public readonly campaignId: string;
     @Required() @Property(String) public readonly status: CampaignStatus;
-    @Property() public readonly reason = string;
+    @Property(String) public readonly reason: string;
 }
 
 class PayoutCampaignRewardsParams {
@@ -129,7 +129,7 @@ export class CampaignController {
         const [items, total] = await this.campaignService.findCampaignsByStatus(
             query,
             user || undefined,
-            orgId || undefined
+            query.status !== CampaignStatus.PENDING ? orgId || undefined : undefined
         );
         const modelItems = await Promise.all(
             items.map(async (i) => {
@@ -319,7 +319,7 @@ export class CampaignController {
         }
         const deviceTokens = await User.getAllDeviceTokens("campaignCreate");
         if (deviceTokens.length > 0) await Firebase.sendCampaignCreatedNotifications(deviceTokens, campaign);
-        const raiinmakerAdmins = await this.adminService.listAdminsByOrg(orgId || "", RAIINMAKER_ORG_NAME);
+        const raiinmakerAdmins = await this.adminService.listAdminsByOrg(orgId!, RAIINMAKER_ORG_NAME);
         const brandName = await this.organizationService.findOrgById(campaign.orgId || "");
         if (campaign.id) {
             if (raiinmakerAdmins) {
@@ -625,22 +625,12 @@ export class CampaignController {
     @Put("/pending")
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async updatePendingCampaignStatus(@BodyParams() body: PendingCampaignsParams, @Context() context: Context) {
-        const { company } = await this.adminService.checkPermissions(
-            { restrictCompany: RAIINMAKER_ORG_NAME },
-            context.get("user")
-        );
+        await this.adminService.checkPermissions({ restrictCompany: RAIINMAKER_ORG_NAME }, context.get("user"));
         const { status, campaignId, reason } = body;
         const campaign = await this.campaignService.findCampaignById(campaignId, {
             org: true,
             currency: { include: { token: true } },
         });
-
-        let brandAdmins;
-        if (company !== RAIINMAKER_ORG_NAME) {
-            const brandId = campaign?.orgId;
-            brandAdmins = await this.adminService.listAdminsByOrg(brandId!);
-        }
-
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
         if (!campaign.org) throw new NotFound(CAMPAIGN_ORGANIZATION_MISSING);
         switch (status) {
@@ -673,7 +663,7 @@ export class CampaignController {
             campaign.status,
             campaign.tatumBlockageId!
         );
-
+        const brandAdmins = await this.adminService.listAdminsByOrg(campaign?.orgId!);
         if (brandAdmins) {
             for (const admin of brandAdmins) {
                 const { email } = await Firebase.getUserById(admin.firebaseId);
@@ -684,19 +674,6 @@ export class CampaignController {
                 });
             }
         }
-
-        // if (updatedCampaign.status === CampaignStatus.DENIED) {
-        //     if (brandAdmins) {
-        //         for (const admin of brandAdmins) {
-        //             const { email } = await Firebase.getUserById(admin.firebaseId);
-        //             SesClient.CampaignProcessEmailToAdmin({
-        //                 title: "Campaign Approval Status",
-        //                 text: `${campaign.name} has been rejected. Due to these reasons ${reason}`,
-        //                 emailAddress: email || "",
-        //             });
-        //         }
-        //     }
-        // }
         const deviceTokens = await User.getAllDeviceTokens("campaignCreate");
         if (deviceTokens.length > 0) await Firebase.sendCampaignCreatedNotifications(deviceTokens, campaign);
         return new SuccessResult({ message: `campaign has been ${updatedCampaign.status}` }, UpdatedResultModel);
