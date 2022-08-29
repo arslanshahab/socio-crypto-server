@@ -200,11 +200,26 @@ export class DailyParticipantMetricService {
                 break;
             case "likes":
                 likeCount = new BN(actionCount).toString();
-                console.log("recordLikeCount*---", record.likeCount, "current likesCount*----", likeCount);
+                // participationScore = new BN(record.participationScore).plus(additiveParticipationScore).toString();
+                console.log(
+                    "Additive Participantion Score // Likes $$----------------------------------------------------------??",
+                    "record participant score",
+                    record.participationScore.toString(),
+                    "Additive score",
+                    additiveParticipationScore.toString()
+                );
                 break;
             case "shares":
                 shareCount = new BN(actionCount).toString();
-                console.log("recordShareCount*---", record.shareCount, "current shareCount*----", shareCount);
+                // participationScore = new BN(record.participationScore).plus(additiveParticipationScore).toString();
+                console.log(
+                    "Additive Participantion Score // Share ^^----------------------------------------------------------??",
+                    "record participant score",
+                    record.participationScore.toString(),
+                    "Additive score",
+                    additiveParticipationScore.toString()
+                );
+
                 break;
             case "comments":
                 commentCount = (
@@ -212,11 +227,16 @@ export class DailyParticipantMetricService {
                 ).toString();
                 break;
         }
+
         participationScore = (
             record.participationScore
                 ? new BN(record.participationScore).plus(additiveParticipationScore)
                 : new BN(additiveParticipationScore)
         ).toString();
+        console.log(
+            "Additive Participantion Score----------------------------------------------------------??",
+            participationScore
+        );
         return await prisma.dailyParticipantMetric.update({
             where: {
                 id: record.id,

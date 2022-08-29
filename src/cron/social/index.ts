@@ -6,7 +6,11 @@ import { BN, calculateQualityTierMultiplier } from "../../util";
 import * as dotenv from "dotenv";
 import { SocialPost, Prisma, PrismaPromise } from "@prisma/client";
 import { prisma, readPrisma } from "../../clients/prisma";
-import { CampaignStatus, CampaignAuditStatus, SocialClientType } from "../../util/constants";
+import {
+    // CampaignStatus, CampaignAuditStatus,
+
+    SocialClientType,
+} from "../../util/constants";
 import { DragonchainCampaignActionLedgerPayload, PointValueTypes } from "../../types.d";
 import { QualityScoreService } from "../../services/QualityScoreService";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
@@ -39,10 +43,27 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
     const sharesMultiplier = calculateQualityTierMultiplier(new BN(qualityScore.shares));
     const pointValues = (campaign.algorithm as Prisma.JsonObject)
         .pointValues as Prisma.JsonObject as unknown as PointValueTypes;
-    const likesAdjustedScore = likes.minus(post.likes).times(pointValues.likes).times(likesMultiplier);
-    const sharesAdjustedScore = shares.minus(post.shares).times(pointValues.shares).times(sharesMultiplier);
+    console.log(
+        likes.toNumber(),
+        "Post likes--",
+        post.likes,
+        "post id----------------------, ",
+        post.id,
+        post.campaignId,
+        "likes and shares multipliers------------->>",
+        likesMultiplier.toNumber(),
+        sharesMultiplier.toNumber()
+    );
+    console.log("Points Values-----------------===", pointValues);
+
+    let likesAdjustedScore = likes.minus(post.likes).times(pointValues.likes).times(likesMultiplier);
+    let sharesAdjustedScore = shares.minus(post.shares).times(pointValues.shares).times(sharesMultiplier);
+    if (likes === new BN(0)) likesAdjustedScore = new BN(0);
+    if (shares === new BN(0)) sharesAdjustedScore = new BN(0);
     console.log("likesAdjustedScore-----------------------------++", likesAdjustedScore.toNumber());
     console.log("sharesAdjustedScore----------------------------++", sharesAdjustedScore.toNumber());
+    let totalParticipantScore = likesAdjustedScore.plus(sharesAdjustedScore);
+    console.log("social cron total participant score-----------------------------&&", totalParticipantScore.toNumber());
 
     const newTotalCampaignScore = new BN(campaign.totalParticipationScore).plus(
         likesAdjustedScore.plus(sharesAdjustedScore)
@@ -117,13 +138,14 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
     const connection = await app.connectDatabase();
     console.log("DATABASE CONNECTED.");
     try {
-        const campaigns = await readPrisma.campaign.findMany({
-            where: {
-                endDate: { gte: new Date() },
-                status: CampaignStatus.APPROVED,
-                auditStatus: CampaignAuditStatus.DEFAULT,
-            },
-        });
+        // const campaigns = await readPrisma.campaign.findMany({
+        //     where: {
+        //         endDate: { gte: new Date() },
+        //         status: CampaignStatus.APPROVED,
+        //         auditStatus: CampaignAuditStatus.DEFAULT,
+        //     },
+        // });
+        const campaigns = [{ id: "c94af6fa-670b-4e2d-b278-757186067945" }];
         console.log("TOTAL CAMPAIGNS: ", campaigns.length);
         for (let campaignIndex = 0; campaignIndex < campaigns.length; campaignIndex++) {
             const campaign = campaigns[campaignIndex];
@@ -181,8 +203,8 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                             const updatedPost = await updatePostMetrics(
                                 // new BN(responseJSON["favorite_count"]),
                                 // new BN(responseJSON["retweet_count"]),
-                                new BN(5),
-                                new BN(1),
+                                new BN(10),
+                                new BN(7),
                                 post
                             );
                             console.log(
