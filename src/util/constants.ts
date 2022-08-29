@@ -52,6 +52,7 @@ export const USER_WITHDRAW_FEE = "USER_WITHDRAW_FEE";
 export const RAIINMAKER_WITHDRAW = "RAIINMAKER_WITHDRAW";
 export const ADMIN = "admin";
 export const MANAGER = "manager";
+export const RATE_LIMIT_MAX = 3;
 
 export const CRYPTO_ICONS_BUCKET_URL = "https://rm-crypto-icons.s3.us-west-2.amazonaws.com";
 export const CRYPTO_ICONS_MAP: { [key: string]: string } = {

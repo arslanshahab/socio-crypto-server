@@ -14,9 +14,6 @@ export class Session extends BaseEntity {
     @PrimaryGeneratedColumn("uuid")
     public id: string;
 
-    @Column({ nullable: false, type: "varchar" })
-    public token: string;
-
     @Column({ nullable: true })
     public ip: string;
 

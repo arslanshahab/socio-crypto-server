@@ -165,7 +165,7 @@ export class SocialController {
         if (!allowedSocialLinks.includes(socialType)) throw new Error(`posting to ${socialType} is not allowed`);
         const participant = await this.participantService.findParticipantById(participantId, { campaign: true });
         if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
-        if (!(await this.campaignService.isCampaignOpen(participant.campaign.id))) throw new Error(CAMPAIGN_CLOSED);
+        if (!(await this.campaignService.isCampaignOpen(participant.campaign))) throw new Error(CAMPAIGN_CLOSED);
         const socialLink = await this.socialLinkService.findSocialLinkByUserAndType(
             user.id,
             socialType as SocialLinkType
