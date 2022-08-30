@@ -2,7 +2,7 @@ import { BodyParams, Context, PathParams, QueryParams } from "@tsed/common";
 import { Controller, Inject } from "@tsed/di";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { Get, Nullable, Post, Put, Required, Returns } from "@tsed/schema";
-import { KycLevel, RAIINMAKER_ORG_NAME } from "../../util/constants";
+import { ADMIN, KycLevel, MANAGER, RAIINMAKER_ORG_NAME } from "../../util/constants";
 import { UserService } from "../../services/UserService";
 import { SuccessResult } from "../../util/entities";
 import { KYC_LEVEL_1_NOT_APPROVED, KYC_NOT_FOUND, USER_NOT_FOUND } from "../../util/errors";
@@ -155,7 +155,7 @@ export class KycController {
     @Put("/update-kyc-status")
     @(Returns(200, SuccessResult).Of(UserResultModel))
     public async updateKycStatus(@QueryParams() query: KycStatusParms, @Context() context: Context) {
-        await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
         const { userId, status } = query;
         if (!["approve", "reject"].includes(status)) throw new BadRequest("Status must be either approve or reject");
         let user = await this.userService.findUserById(userId, userResultRelations);
