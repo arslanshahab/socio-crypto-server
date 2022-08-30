@@ -19,7 +19,6 @@ import { SesClient } from "../../clients/ses";
 import { WalletService } from "../../services/WalletService";
 import { VerificationService } from "../../services/VerificationService";
 import { ADMIN, MANAGER } from "../../util/constants";
-import { UserService } from "../../services/UserService";
 import { S3Client } from "../../clients/s3";
 import { VerificationApplicationService } from "../../services/VerificationApplicationService";
 
@@ -59,8 +58,6 @@ export class OrganizationController {
     private walletService: WalletService;
     @Inject()
     private verificationService: VerificationService;
-    @Inject()
-    private userService: UserService;
     @Inject()
     private verificationApplicationService: VerificationApplicationService;
 
@@ -166,7 +163,7 @@ export class OrganizationController {
             { hasRole: ["admin"] },
             context.get("user")
         );
-        const admin = await this.userService.findUserByFirebaseId(context.get("user").uid);
+        const admin = await this.adminService.findUserByFirebaseId(context.get("user").uid);
         const org = await this.organizationService.findOrgById(orgId!);
         const verifyStatus = await this.verificationApplicationService.findVerificationApplication(admin?.id);
         let result = {
@@ -186,7 +183,7 @@ export class OrganizationController {
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async twoFactorAuth(@BodyParams() body: TwoFactorAuthParms, @Context() context: Context) {
         await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        const admin = await this.userService.findUserByFirebaseId(context.get("user").uid);
+        const admin = await this.adminService.findUserByFirebaseId(context.get("user").uid);
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
         const { twoFactorEnabled } = body;
         const updatedAdmin = await this.adminService.updateAdminAuth(admin.id, twoFactorEnabled);
@@ -201,7 +198,7 @@ export class OrganizationController {
             { hasRole: ["admin"] },
             context.get("user")
         );
-        const admin = await this.userService.findUserByFirebaseId(context.get("user").uid);
+        const admin = await this.adminService.findUserByFirebaseId(context.get("user").uid);
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
         const { name, imagePath } = body;
         if (name) await this.adminService.updateAdmin(admin.id, name);
