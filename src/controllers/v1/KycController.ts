@@ -170,7 +170,7 @@ export class KycController {
     }
 
     // For admin panel
-    @Post("/verify")
+    @Post("/verify-admin")
     @(Returns(200, SuccessResult).Of(KycResultModel))
     public async verifyAdmin(@BodyParams() body: AdminKycParams, @Context() context: Context) {
         const admin = await this.userService.findUserByFirebaseId(context.get("user").id);
