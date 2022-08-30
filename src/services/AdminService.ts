@@ -3,6 +3,7 @@ import { AdminTypes, JWTPayload } from "../types";
 import { readPrisma, prisma } from "../clients/prisma";
 import { Forbidden } from "@tsed/exceptions";
 import { OrganizationService } from "./OrganizationService";
+import { Prisma } from "@prisma/client";
 
 @Injectable()
 export class AdminService {
@@ -87,5 +88,20 @@ export class AdminService {
             where: { id },
             data: { name },
         });
+    }
+
+    /**
+     * Retrieves an admin object by its firebase id
+     *
+     * @param firebaseId the firebaseId of the admin
+     * @param include additional relations to include with the admin query
+     * @returns the admin object, with the requested relations included
+     */
+    public async findUserByFirebaseId<T extends Prisma.AdminInclude | undefined>(firebaseId: string, include?: T) {
+        return prisma.admin.findFirst<{
+            where: Prisma.AdminWhereInput;
+            // this type allows adding additional relations to result tpe
+            include: T;
+        }>({ where: { firebaseId }, include: include as T });
     }
 }
