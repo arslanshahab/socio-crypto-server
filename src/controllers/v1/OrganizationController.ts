@@ -179,7 +179,7 @@ export class OrganizationController {
     }
 
     // For admin panel
-    @Put("/two-factor-auth")
+    @Put("/2fa")
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async twoFactorAuth(@BodyParams() body: TwoFactorAuthParms, @Context() context: Context) {
         await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
