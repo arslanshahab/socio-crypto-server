@@ -18,7 +18,7 @@ import { Firebase } from "../../clients/firebase";
 import { SesClient } from "../../clients/ses";
 import { WalletService } from "../../services/WalletService";
 import { VerificationService } from "../../services/VerificationService";
-import { ADMIN, MANAGER } from "../../util/constants";
+import { ADMIN, MANAGER, ORGANIZATION } from "../../util/constants";
 import { S3Client } from "../../clients/s3";
 import { VerificationApplicationService } from "../../services/VerificationApplicationService";
 
@@ -207,7 +207,7 @@ export class OrganizationController {
         let signedOrgUrl = "";
         if (org.logo !== imagePath) {
             await this.organizationService.updateOrganizationLogo(orgId!, imagePath);
-            signedOrgUrl = await S3Client.generateOrgSignedURL(`organization/${orgId}/${imagePath}`);
+            signedOrgUrl = await S3Client.generateOrgSignedURL(`${ORGANIZATION}/${orgId}/${imagePath}`);
         }
         return new SuccessResult({ orgId, brand: company, signedOrgUrl }, UpdateBrandLogoResultModel);
     }
