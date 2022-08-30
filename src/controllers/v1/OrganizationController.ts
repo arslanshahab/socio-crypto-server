@@ -160,7 +160,7 @@ export class OrganizationController {
     @(Returns(200, SuccessResult).Of(AdminProfileResultModel))
     public async getProfile(@Context() context: Context) {
         const { company, email, orgId } = await this.adminService.checkPermissions(
-            { hasRole: ["admin"] },
+            { hasRole: [ADMIN, MANAGER] },
             context.get("user")
         );
         const admin = await this.adminService.findUserByFirebaseId(context.get("user").uid);
@@ -182,7 +182,7 @@ export class OrganizationController {
     @Put("/2fa")
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async twoFactorAuth(@BodyParams() body: TwoFactorAuthParms, @Context() context: Context) {
-        await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
         const admin = await this.adminService.findUserByFirebaseId(context.get("user").uid);
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
         const { twoFactorEnabled } = body;
@@ -195,7 +195,7 @@ export class OrganizationController {
     @(Returns(200, SuccessResult).Of(UpdateBrandLogoResultModel))
     public async updateProfile(@BodyParams() body: BrandParams, @Context() context: Context) {
         const { orgId, company } = await this.adminService.checkPermissions(
-            { hasRole: ["admin"] },
+            { hasRole: [ADMIN, MANAGER] },
             context.get("user")
         );
         const admin = await this.adminService.findUserByFirebaseId(context.get("user").uid);
