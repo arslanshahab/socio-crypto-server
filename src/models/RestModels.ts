@@ -900,14 +900,16 @@ export class AdminProfileResultModel {
     @Property() public readonly company: string;
     @Property() public readonly enabled: boolean;
     @Property() public readonly orgId: string;
-    @Property() public readonly imagePath: string;
+    @Property() public readonly imageUrl: string;
     @Property() public readonly verifyStatus: string;
 }
 
 export class UpdateBrandLogoResultModel {
+    @Property() public readonly name: string;
     @Property() public readonly orgId: string;
     @Property() public readonly brand: string;
     @Property() public readonly signedOrgUrl: string;
+    @Property() public readonly imageUrl: string;
 }
 
 export class AdminResultModel {

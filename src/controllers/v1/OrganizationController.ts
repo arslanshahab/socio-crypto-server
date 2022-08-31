@@ -18,9 +18,10 @@ import { Firebase } from "../../clients/firebase";
 import { SesClient } from "../../clients/ses";
 import { WalletService } from "../../services/WalletService";
 import { VerificationService } from "../../services/VerificationService";
-import { ADMIN, MANAGER, ORGANIZATION } from "../../util/constants";
+import { ADMIN, MANAGER } from "../../util/constants";
 import { S3Client } from "../../clients/s3";
 import { VerificationApplicationService } from "../../services/VerificationApplicationService";
+import { generateOrgImageUrl } from "../../../src/util";
 
 class NewUserParams {
     @Required() public readonly name: string;
@@ -172,7 +173,7 @@ export class OrganizationController {
             company: company,
             enabled: admin?.twoFactorEnabled,
             orgId,
-            imagePath: org?.logo || "",
+            imageUrl: generateOrgImageUrl(org?.id || "", org?.logo || ""),
             verifyStatus: verifyStatus?.status,
         };
         return new SuccessResult(result, AdminProfileResultModel);
@@ -201,14 +202,21 @@ export class OrganizationController {
         const admin = await this.adminService.findUserByFirebaseId(context.get("user").uid);
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
         const { name, imagePath } = body;
-        if (name) await this.adminService.updateAdmin(admin.id, name);
+        let updatedAdmin;
+        if (name) updatedAdmin = await this.adminService.updateAdmin(admin.id, name);
+
         const org = await this.organizationService.findOrgById(orgId!);
         if (!org) throw new NotFound(ORG_NOT_FOUND);
         let signedOrgUrl = "";
-        if (org.logo !== imagePath) {
-            await this.organizationService.updateOrganizationLogo(orgId!, imagePath);
-            signedOrgUrl = await S3Client.generateOrgSignedURL(`${ORGANIZATION}/${orgId}/${imagePath}`);
+        let imageUrl = "";
+        if (imagePath && imagePath !== org.logo) {
+            const response = await this.organizationService.updateOrganizationLogo(orgId!, imagePath);
+            signedOrgUrl = await S3Client.generateOrgSignedURL(`${orgId}/${imagePath}`);
+            imageUrl = generateOrgImageUrl(response.id, response.logo || "");
         }
-        return new SuccessResult({ orgId, brand: company, signedOrgUrl }, UpdateBrandLogoResultModel);
+        return new SuccessResult(
+            { name: updatedAdmin?.name, orgId, brand: company, signedOrgUrl, imageUrl },
+            UpdateBrandLogoResultModel
+        );
     }
 }
