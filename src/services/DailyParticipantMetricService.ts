@@ -200,26 +200,10 @@ export class DailyParticipantMetricService {
                 break;
             case "likes":
                 likeCount = new BN(actionCount).toString();
-                // participationScore = new BN(record.participationScore).plus(additiveParticipationScore).toString();
-                console.log(
-                    "Additive Participantion Score // Likes $$----------------------------------------------------------??",
-                    "record participant score",
-                    record.participationScore.toString(),
-                    "Additive score",
-                    additiveParticipationScore.toString()
-                );
+                // participationScore = new BN(record.participationScore).plus(additiveParticipationScore).toString()
                 break;
             case "shares":
                 shareCount = new BN(actionCount).toString();
-                // participationScore = new BN(record.participationScore).plus(additiveParticipationScore).toString();
-                console.log(
-                    "Additive Participantion Score // Share ^^----------------------------------------------------------??",
-                    "record participant score",
-                    record.participationScore.toString(),
-                    "Additive score",
-                    additiveParticipationScore.toString()
-                );
-
                 break;
             case "comments":
                 commentCount = (

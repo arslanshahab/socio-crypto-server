@@ -43,37 +43,16 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
     const sharesMultiplier = calculateQualityTierMultiplier(new BN(qualityScore.shares));
     const pointValues = (campaign.algorithm as Prisma.JsonObject)
         .pointValues as Prisma.JsonObject as unknown as PointValueTypes;
-    console.log(
-        likes.toNumber(),
-        "Post likes--",
-        post.likes,
-        "post id----------------------, ",
-        post.id,
-        post.campaignId,
-        "likes and shares multipliers------------->>",
-        likesMultiplier.toNumber(),
-        sharesMultiplier.toNumber()
-    );
-    console.log("Points Values-----------------===", pointValues);
-
-    let likesAdjustedScore = likes.minus(post.likes).times(pointValues.likes).times(likesMultiplier);
-    let sharesAdjustedScore = shares.minus(post.shares).times(pointValues.shares).times(sharesMultiplier);
-    if (likes === new BN(0)) likesAdjustedScore = new BN(0);
-    if (shares === new BN(0)) sharesAdjustedScore = new BN(0);
-    console.log("likesAdjustedScore-----------------------------++", likesAdjustedScore.toNumber());
-    console.log("sharesAdjustedScore----------------------------++", sharesAdjustedScore.toNumber());
-    let totalParticipantScore = likesAdjustedScore.plus(sharesAdjustedScore);
-    console.log("social cron total participant score-----------------------------&&", totalParticipantScore.toNumber());
-
+    const likesAdjustedScore = likes.times(pointValues.likes).times(likesMultiplier);
+    const sharesAdjustedScore = shares.times(pointValues.shares).times(sharesMultiplier);
+    // const likesAdjustedScore = likes.minus(post.likes).times(pointValues.likes).times(likesMultiplier);
+    // const sharesAdjustedScore = shares.minus(post.shares).times(pointValues.shares).times(sharesMultiplier);
     const newTotalCampaignScore = new BN(campaign.totalParticipationScore).plus(
         likesAdjustedScore.plus(sharesAdjustedScore)
     );
     const newParticipationScore = new BN(participant.participationScore).plus(
         likesAdjustedScore.plus(sharesAdjustedScore)
     );
-    // const adjustedRawLikes = likes.minus(post.likes).toNumber();
-    // const adjustedRawShares = shares.minus(post.shares).toNumber();
-    // console.log("current likes-----------", likes.toNumber(), "Social Post likes------", post.likes);
     post.likes = likes.toString();
     post.shares = shares.toString();
     const promiseArray: Promise<any>[] = [];
@@ -145,20 +124,20 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
         //         auditStatus: CampaignAuditStatus.DEFAULT,
         //     },
         // });
-        const campaigns = [{ id: "c94af6fa-670b-4e2d-b278-757186067945" }];
+        const campaigns = [{ id: "5ba1a41c-11f1-45a5-b73a-a50d20c6a0d1" }];
         console.log("TOTAL CAMPAIGNS: ", campaigns.length);
         for (let campaignIndex = 0; campaignIndex < campaigns.length; campaignIndex++) {
             const campaign = campaigns[campaignIndex];
             const take = 100;
             let skip = 0;
             const totalPosts = await readPrisma.socialPost.count({
-                where: { campaignId: "c94af6fa-670b-4e2d-b278-757186067945" },
+                where: { campaignId: "5ba1a41c-11f1-45a5-b73a-a50d20c6a0d1" },
             });
             console.log("TOTAL POSTS FOR CAMPAIGN ID: ", campaign.id, totalPosts);
             const loop = Math.ceil(totalPosts / take);
             for (let postPageIndex = 0; postPageIndex < loop; postPageIndex++) {
                 let posts = await readPrisma.socialPost.findMany({
-                    where: { campaignId: "c94af6fa-670b-4e2d-b278-757186067945" },
+                    where: { campaignId: "5ba1a41c-11f1-45a5-b73a-a50d20c6a0d1" },
                     include: { campaign: true, user: true },
                     take,
                     skip,
@@ -204,20 +183,16 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                                 // new BN(responseJSON["favorite_count"]),
                                 // new BN(responseJSON["retweet_count"]),
                                 new BN(10),
-                                new BN(7),
+                                new BN(0),
                                 post
                             );
                             console.log(
                                 "UPDATING POST: ",
                                 updatedPost.id,
-                                "prev post likes---",
                                 post.likes,
-                                "prev share likes---",
                                 post.shares,
                                 " :----: ",
-                                "current post likes---",
                                 updatedPost.likes,
-                                "current post share---",
                                 updatedPost.shares
                             );
                             prismaTransactions.push(
