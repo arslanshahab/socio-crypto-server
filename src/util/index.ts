@@ -255,7 +255,7 @@ export const generateRandomId = (stringLength = 20) => {
 };
 
 export const generate6DigitCode = () => {
-    const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    const possible = "0123456789";
     const stringLength = 6;
     function pickRandom() {
         return possible[Math.floor(Math.random() * possible.length)];

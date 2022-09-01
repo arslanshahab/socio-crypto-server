@@ -19,7 +19,7 @@ import { WALLET_NOT_FOUND } from "../util/errors";
 import { differenceInHours, subDays } from "date-fns";
 import { TransferService } from "./TransferService";
 import { TatumService } from "./TatumService";
-import { createPasswordHash, generate6DigitCode, prepareCacheKey } from "../util";
+import { createPasswordHash, prepareCacheKey } from "../util";
 import { ProfileService } from "./ProfileService";
 import { NotificationService } from "./NotificationService";
 import { PlatformCache, UseCache } from "@tsed/common";
@@ -464,7 +464,7 @@ export class UserService {
     public async getUniquePromoCode() {
         let promoCode = null;
         while (!promoCode) {
-            promoCode = generate6DigitCode();
+            promoCode = await this.generatePromoCode();
             if (await prisma.user.findFirst({ where: { promoCode } })) {
                 promoCode = null;
             }
@@ -474,5 +474,14 @@ export class UserService {
 
     public async getAllEmails() {
         return await prisma.user.findMany({ select: { email: true } });
+    }
+
+    public async generatePromoCode() {
+        const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        const stringLength = 6;
+        function pickRandom() {
+            return possible[Math.floor(Math.random() * possible.length)];
+        }
+        return Array.apply(null, Array(stringLength)).map(pickRandom).join("");
     }
 }
