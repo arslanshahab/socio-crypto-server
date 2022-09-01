@@ -179,7 +179,6 @@ export class DailyParticipantMetricService {
         let likeCount = record.likeCount;
         let shareCount = record.shareCount;
         let commentCount = record.commentCount;
-
         switch (action) {
             case "clicks":
                 clickCount = (
@@ -210,7 +209,6 @@ export class DailyParticipantMetricService {
                 ).toString();
                 break;
         }
-
         participationScore = (
             record.participationScore
                 ? new BN(record.participationScore).plus(additiveParticipationScore)

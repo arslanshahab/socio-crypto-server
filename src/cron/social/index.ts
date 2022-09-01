@@ -123,9 +123,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
             const campaign = campaigns[campaignIndex];
             const take = 100;
             let skip = 0;
-            const totalPosts = await readPrisma.socialPost.count({
-                where: { campaignId: campaign.id },
-            });
+            const totalPosts = await readPrisma.socialPost.count({ where: { campaignId: campaign.id } });
             console.log("TOTAL POSTS FOR CAMPAIGN ID: ", campaign.id, totalPosts);
             const loop = Math.ceil(totalPosts / take);
             for (let postPageIndex = 0; postPageIndex < loop; postPageIndex++) {
