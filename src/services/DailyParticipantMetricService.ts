@@ -200,7 +200,6 @@ export class DailyParticipantMetricService {
                 break;
             case "likes":
                 likeCount = new BN(actionCount).toString();
-                // participationScore = new BN(record.participationScore).plus(additiveParticipationScore).toString()
                 break;
             case "shares":
                 shareCount = new BN(actionCount).toString();
@@ -217,10 +216,6 @@ export class DailyParticipantMetricService {
                 ? new BN(record.participationScore).plus(additiveParticipationScore)
                 : new BN(additiveParticipationScore)
         ).toString();
-        console.log(
-            "Additive Participantion Score----------------------------------------------------------??",
-            participationScore
-        );
         return await prisma.dailyParticipantMetric.update({
             where: {
                 id: record.id,

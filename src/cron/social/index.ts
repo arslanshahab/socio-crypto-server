@@ -6,11 +6,7 @@ import { BN, calculateQualityTierMultiplier } from "../../util";
 import * as dotenv from "dotenv";
 import { SocialPost, Prisma, PrismaPromise } from "@prisma/client";
 import { prisma, readPrisma } from "../../clients/prisma";
-import {
-    // CampaignStatus, CampaignAuditStatus,
-
-    SocialClientType,
-} from "../../util/constants";
+import { CampaignStatus, CampaignAuditStatus, SocialClientType } from "../../util/constants";
 import { DragonchainCampaignActionLedgerPayload, PointValueTypes } from "../../types.d";
 import { QualityScoreService } from "../../services/QualityScoreService";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
@@ -43,10 +39,8 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
     const sharesMultiplier = calculateQualityTierMultiplier(new BN(qualityScore.shares));
     const pointValues = (campaign.algorithm as Prisma.JsonObject)
         .pointValues as Prisma.JsonObject as unknown as PointValueTypes;
-    const likesAdjustedScore = likes.times(pointValues.likes).times(likesMultiplier);
-    const sharesAdjustedScore = shares.times(pointValues.shares).times(sharesMultiplier);
-    // const likesAdjustedScore = likes.minus(post.likes).times(pointValues.likes).times(likesMultiplier);
-    // const sharesAdjustedScore = shares.minus(post.shares).times(pointValues.shares).times(sharesMultiplier);
+    const likesAdjustedScore = likes.minus(post.likes).times(pointValues.likes).times(likesMultiplier);
+    const sharesAdjustedScore = shares.minus(post.shares).times(pointValues.shares).times(sharesMultiplier);
     const newTotalCampaignScore = new BN(campaign.totalParticipationScore).plus(
         likesAdjustedScore.plus(sharesAdjustedScore)
     );
@@ -86,26 +80,25 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
     // promiseArray.push(
     //     hourlyCampaignMetricService.upsertMetrics(campaign.id, campaign.org?.id!, "shares", adjustedRawShares)
     // );
-    promiseArray.push(
-        dailyParticipantMetricService.upsertMetrics({
-            user,
-            campaign,
-            participant,
-            action: ParticipantAction.LIKES,
-            additiveParticipationScore: likesAdjustedScore,
-            actionCount: likes.toNumber(),
-        })
-    );
-    promiseArray.push(
-        dailyParticipantMetricService.upsertMetrics({
-            user,
-            campaign,
-            participant,
-            action: ParticipantAction.SHARES,
-            additiveParticipationScore: sharesAdjustedScore,
-            actionCount: shares.toNumber(),
-        })
-    );
+
+    await dailyParticipantMetricService.upsertMetrics({
+        user,
+        campaign,
+        participant,
+        action: ParticipantAction.LIKES,
+        additiveParticipationScore: likesAdjustedScore,
+        actionCount: likes.toNumber(),
+    });
+
+    await dailyParticipantMetricService.upsertMetrics({
+        user,
+        campaign,
+        participant,
+        action: ParticipantAction.SHARES,
+        additiveParticipationScore: sharesAdjustedScore,
+        actionCount: shares.toNumber(),
+    });
+
     await Promise.all(promiseArray);
     return post;
 };
@@ -117,27 +110,27 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
     const connection = await app.connectDatabase();
     console.log("DATABASE CONNECTED.");
     try {
-        // const campaigns = await readPrisma.campaign.findMany({
-        //     where: {
-        //         endDate: { gte: new Date() },
-        //         status: CampaignStatus.APPROVED,
-        //         auditStatus: CampaignAuditStatus.DEFAULT,
-        //     },
-        // });
-        const campaigns = [{ id: "5ba1a41c-11f1-45a5-b73a-a50d20c6a0d1" }];
+        const campaigns = await readPrisma.campaign.findMany({
+            where: {
+                endDate: { gte: new Date() },
+                status: CampaignStatus.APPROVED,
+                auditStatus: CampaignAuditStatus.DEFAULT,
+            },
+        });
+
         console.log("TOTAL CAMPAIGNS: ", campaigns.length);
         for (let campaignIndex = 0; campaignIndex < campaigns.length; campaignIndex++) {
             const campaign = campaigns[campaignIndex];
             const take = 100;
             let skip = 0;
             const totalPosts = await readPrisma.socialPost.count({
-                where: { campaignId: "5ba1a41c-11f1-45a5-b73a-a50d20c6a0d1" },
+                where: { campaignId: campaign.id },
             });
             console.log("TOTAL POSTS FOR CAMPAIGN ID: ", campaign.id, totalPosts);
             const loop = Math.ceil(totalPosts / take);
             for (let postPageIndex = 0; postPageIndex < loop; postPageIndex++) {
                 let posts = await readPrisma.socialPost.findMany({
-                    where: { campaignId: "5ba1a41c-11f1-45a5-b73a-a50d20c6a0d1" },
+                    where: { campaignId: campaign.id },
                     include: { campaign: true, user: true },
                     take,
                     skip,
@@ -178,12 +171,10 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                         const post = twitterPosts[twitterRespIndex];
                         if (twitterResp.status === "fulfilled" && twitterResp.value) {
                             // console.log("preparing and updating social score.");
-                            // const responseJSON = JSON.parse(twitterResp.value);
+                            const responseJSON = JSON.parse(twitterResp.value);
                             const updatedPost = await updatePostMetrics(
-                                // new BN(responseJSON["favorite_count"]),
-                                // new BN(responseJSON["retweet_count"]),
-                                new BN(10),
-                                new BN(0),
+                                new BN(responseJSON["favorite_count"]),
+                                new BN(responseJSON["retweet_count"]),
                                 post
                             );
                             console.log(
