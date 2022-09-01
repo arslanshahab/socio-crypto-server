@@ -167,13 +167,17 @@ export class OrganizationController {
         const admin = await this.adminService.findUserByFirebaseId(context.get("user").uid);
         const org = await this.organizationService.findOrgById(orgId!);
         const verifyStatus = await this.verificationApplicationService.findVerificationApplication(admin?.id);
+        let imageUrl = "";
+        if (org?.logo) {
+            imageUrl = generateOrgImageUrl(org?.id || "", org?.logo || "");
+        }
         let result = {
             name: admin?.name,
             email: email,
             company: company,
             enabled: admin?.twoFactorEnabled,
             orgId,
-            imageUrl: generateOrgImageUrl(org?.id || "", org?.logo || ""),
+            imageUrl,
             verifyStatus: verifyStatus?.status,
         };
         return new SuccessResult(result, AdminProfileResultModel);
