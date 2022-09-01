@@ -98,7 +98,6 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
         additiveParticipationScore: sharesAdjustedScore,
         actionCount: shares.toNumber(),
     });
-
     await Promise.all(promiseArray);
     return post;
 };
