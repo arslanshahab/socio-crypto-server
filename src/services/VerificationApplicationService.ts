@@ -301,10 +301,8 @@ export class VerificationApplicationService {
 
     public async findKycUser(data: { userId?: string; adminId?: string }) {
         const { userId, adminId } = data;
-        return readPrisma.verificationApplication.findFirst({
-            where: {
-                OR: [{ userId }, { adminId }],
-            },
+        return await readPrisma.verificationApplication.findFirst({
+            where: userId ? { userId } : { adminId },
             include: { user: { include: { profile: true } } },
         });
     }

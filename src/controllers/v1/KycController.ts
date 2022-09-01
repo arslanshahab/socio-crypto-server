@@ -203,9 +203,9 @@ export class KycController {
         if (status === KycStatus.APPROVED) {
             await S3Client.uploadAcuantKyc(kycUser.id, kyc);
         }
-        await this.verificationApplicationService.updateKycStatus(kycUser.id, status);
+        await this.verificationApplicationService.updateStatus(status, verificationApplication);
         await this.verificationApplicationService.updateReason(getKycStatusDetails(kyc), kycUser.id);
-        await Firebase.sendKycVerificationUpdate(kycUser.user?.profile?.deviceToken || "", status);
+        if (kycUser.user) await Firebase.sendKycVerificationUpdate(kycUser.user?.profile?.deviceToken || "", status);
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 }

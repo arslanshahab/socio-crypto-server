@@ -35,7 +35,7 @@ import {
     trackCoiinTransactionForUser,
     getAccountDetails,
 } from "./controllers/tatum";
-import { kycWebhook } from "./controllers/kyc";
+// import { kycWebhook } from "./controllers/kyc";
 import { GraphQLRequestContext } from "../node_modules/apollo-server-types/dist/index.d";
 import * as Sentry from "@sentry/node";
 import * as Tracing from "@sentry/tracing";
@@ -218,7 +218,7 @@ export class Application {
         this.app.post("/v1/tatum/list-withdraws", getAllWithdrawls);
         this.app.post("/v1/tatum/transfer", transferBalance);
         this.app.get("/v1/xoxoday/filters", getXoxodayFilters);
-        this.app.post("/v1/kyc/webhook", kycWebhook);
+        // this.app.post("/v1/kyc/webhook", kycWebhook);
         // this.app.use(
         //     "/v1/dragonfactor/login",
         //     Dragonfactor.expressMiddleware({
