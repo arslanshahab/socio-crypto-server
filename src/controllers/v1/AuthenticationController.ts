@@ -39,6 +39,7 @@ import { SesClient } from "../../clients/ses";
 import { Firebase } from "../../clients/firebase";
 import { SessionService } from "../../services/SessionService";
 import { S3Client } from "../../clients/s3";
+import { AdminService } from "../../services/AdminService";
 
 export class StartVerificationParams {
     @Required() public readonly email: string;
@@ -81,6 +82,8 @@ export class AuthenticationController {
     private verificationService: VerificationService;
     @Inject()
     private sessionService: SessionService;
+    @Inject()
+    private adminService: AdminService;
 
     @Post("/register-user")
     @(Returns(200, SuccessResult).Of(UserTokenReturnModel))
@@ -263,7 +266,7 @@ export class AuthenticationController {
         } else {
             throw new Unauthorized("Recent Signin required.");
         }
-        const admin = await this.userService.findUserByFirebaseId(decodedToken.uid);
+        const admin = await this.adminService.findAdminByFirebaseId(decodedToken.uid);
         const options = { maxAge: expiresIn, httpOnly: true, secure: isSecure };
         res.cookie("session", sessionCookie, options);
         return new SuccessResult(

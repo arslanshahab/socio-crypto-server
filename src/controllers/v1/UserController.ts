@@ -515,7 +515,7 @@ export class UserController {
     @(Returns(200, SuccessResult).Of(UpdatedResultModel))
     public async transferUserCoiin(@BodyParams() body: TransferUserCoiinParams, @Context() context: Context) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        const admin = await this.userService.findUserByFirebaseId(context.get("user").id);
+        const admin = await this.adminService.findAdminByFirebaseId(context.get("user").id);
         const { coiin, userId, action } = body;
         const { ADD } = CoiinTransferAction;
         const token = await this.tokenService.findTokenBySymbol({ symbol: COIIN, network: BSC });
@@ -663,7 +663,7 @@ export class UserController {
         const { role, company } = await this.adminService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));
         const { firebaseId } = body;
         if (!firebaseId) throw new BadRequest(MISSING_PARAMS);
-        const admin = await this.adminService.findAdminByFirebaseId(firebaseId);
+        const admin = await this.adminService.findAdminByFirebaseId(context.get("user").id);
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
         try {
             if (role === MANAGER) {

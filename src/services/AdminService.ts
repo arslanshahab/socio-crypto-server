@@ -27,14 +27,6 @@ export class AdminService {
         });
     }
 
-    public async findAdminByFirebaseId(firebaseId: string) {
-        return await readPrisma.admin.findFirst({
-            where: {
-                firebaseId,
-            },
-        });
-    }
-
     public async createAdmin(data: AdminTypes) {
         return await prisma.admin.create({
             data: {
@@ -97,7 +89,7 @@ export class AdminService {
      * @param include additional relations to include with the admin query
      * @returns the admin object, with the requested relations included
      */
-    public async findUserByFirebaseId<T extends Prisma.AdminInclude | undefined>(firebaseId: string, include?: T) {
+    public async findAdminByFirebaseId<T extends Prisma.AdminInclude | undefined>(firebaseId: string, include?: T) {
         return prisma.admin.findFirst<{
             where: Prisma.AdminWhereInput;
             // this type allows adding additional relations to result tpe

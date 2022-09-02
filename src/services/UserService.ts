@@ -126,20 +126,6 @@ export class UserService {
     }
 
     /**
-     * Retrieves an admin object by its firebase id
-     *
-     * @param firebaseId the firebaseId of the admin
-     * @param include additional relations to include with the admin query
-     * @returns the admin object, with the requested relations included
-     */
-    public async findUserByFirebaseId<T extends Prisma.AdminInclude | undefined>(firebaseId: string, include?: T) {
-        return prisma.admin.findFirst<{
-            where: Prisma.AdminWhereInput;
-            // this type allows adding additional relations to result tpe
-            include: T;
-        }>({ where: { firebaseId }, include: include as T });
-    }
-    /**
      * Asserts that the user has the given permissions
      *
      * @param opts permissions to check for

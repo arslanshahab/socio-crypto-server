@@ -164,7 +164,7 @@ export class OrganizationController {
             { hasRole: [ADMIN, MANAGER] },
             context.get("user")
         );
-        const admin = await this.adminService.findUserByFirebaseId(context.get("user").uid);
+        const admin = await this.adminService.findAdminByFirebaseId(context.get("user").uid);
         const org = await this.organizationService.findOrgById(orgId!);
         const verifyStatus = await this.verificationApplicationService.findVerificationApplication(admin?.id);
         let imageUrl = "";
@@ -188,7 +188,7 @@ export class OrganizationController {
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async twoFactorAuth(@BodyParams() body: TwoFactorAuthParms, @Context() context: Context) {
         await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
-        const admin = await this.adminService.findUserByFirebaseId(context.get("user").uid);
+        const admin = await this.adminService.findAdminByFirebaseId(context.get("user").uid);
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
         const { twoFactorEnabled } = body;
         const updatedAdmin = await this.adminService.updateAdminAuth(admin.id, twoFactorEnabled);
@@ -203,7 +203,7 @@ export class OrganizationController {
             { hasRole: [ADMIN, MANAGER] },
             context.get("user")
         );
-        const admin = await this.adminService.findUserByFirebaseId(context.get("user").uid);
+        const admin = await this.adminService.findAdminByFirebaseId(context.get("user").uid);
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
         const { name, imagePath } = body;
         let updatedAdmin;

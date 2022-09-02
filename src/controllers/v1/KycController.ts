@@ -175,7 +175,7 @@ export class KycController {
     @Post("/verify-admin")
     @(Returns(200, SuccessResult).Of(KycResultModel))
     public async verifyAdmin(@BodyParams() body: AdminKycParams, @Context() context: Context) {
-        const admin = await this.userService.findUserByFirebaseId(context.get("user").id);
+        const admin = await this.adminService.findAdminByFirebaseId(context.get("user").id);
         if (!admin) throw new BadRequest(USER_NOT_FOUND);
         body = {
             ...(await this.verificationApplicationService.getAdminProfileData(admin.id)),
