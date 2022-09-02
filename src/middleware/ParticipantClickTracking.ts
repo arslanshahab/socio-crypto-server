@@ -7,7 +7,7 @@ import { calculateQualityTierMultiplier, BN } from "../util/index";
 import { Prisma } from "@prisma/client";
 import { PointValueTypes } from "../types.d";
 import { QualityScoreService } from "../services/QualityScoreService";
-import { HourlyCampaignMetricsService } from "../services/HourlyCampaignMetricsService";
+// import { HourlyCampaignMetricsService } from "../services/HourlyCampaignMetricsService";
 import { DailyParticipantMetricService } from "../services/DailyParticipantMetricService";
 import { DragonChainService } from "../services/DragonChainService";
 
@@ -22,8 +22,8 @@ export class ParticipantClickTracking {
     private dragonChainService: DragonChainService;
     @Inject()
     private qualityScoreService: QualityScoreService;
-    @Inject()
-    private hourlyCampaignMetricService: HourlyCampaignMetricsService;
+    // @Inject()
+    // private hourlyCampaignMetricService: HourlyCampaignMetricsService;
     @Inject()
     private dailyParticipantMetricService: DailyParticipantMetricService;
 
@@ -68,7 +68,7 @@ export class ParticipantClickTracking {
                 },
                 data: { participationScore: participationScore, clickCount },
             });
-            await this.hourlyCampaignMetricService.upsertMetrics(campaign.id, campaignOrg.id!, action);
+            // await this.hourlyCampaignMetricService.upsertMetrics(campaign.id, campaignOrg.id!, action);
             await this.dailyParticipantMetricService.upsertMetrics({
                 user,
                 campaign,
