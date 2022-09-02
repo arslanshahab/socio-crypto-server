@@ -178,7 +178,7 @@ export class OrganizationController {
             enabled: admin?.twoFactorEnabled,
             orgId,
             imageUrl,
-            verifyStatus: verifyStatus?.status,
+            verifyStatus: verifyStatus?.status || "",
         };
         return new SuccessResult(result, AdminProfileResultModel);
     }

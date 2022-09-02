@@ -175,4 +175,15 @@ export class SesClient {
             throw new Error(error.message);
         }
     }
+
+    public static async CampaignProcessEmailToAdmin(data: { title: string; text: string; emailAddress: string }) {
+        const title = data.title;
+        const text = data.text;
+        const template = SesClient.getTemplate(title, text, title, data.emailAddress);
+        try {
+            await SesClient.client.sendEmail(template).promise();
+        } catch (error) {
+            throw new Error(error.message);
+        }
+    }
 }
