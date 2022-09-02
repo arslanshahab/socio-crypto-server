@@ -50,21 +50,6 @@ class KycLevel2Params {
     @Required() public readonly backDocumentImage: string;
 }
 
-class AdminKycParams extends KycLevel2Params {
-    @Required() public readonly firstName: string;
-    @Nullable(String) public readonly middleName: string;
-    @Required() public readonly lastName: string;
-    @Required() public readonly email: string;
-    @Required() public readonly billingStreetAddress: string;
-    @Required() public readonly billingCity: string;
-    @Required() public readonly billingCountry: string;
-    @Required() public readonly zipCode: string;
-    @Required() public readonly gender: string;
-    @Required() public readonly dob: string;
-    @Required() public readonly phoneNumber: string;
-    @Nullable(String) public readonly ip: string;
-}
-
 @Controller("/kyc")
 export class KycController {
     @Inject()
@@ -174,7 +159,7 @@ export class KycController {
     // For admin panel
     @Post("/verify-admin")
     @(Returns(200, SuccessResult).Of(KycResultModel))
-    public async verifyAdmin(@BodyParams() body: AdminKycParams, @Context() context: Context) {
+    public async verifyAdmin(@BodyParams() body: KycLevel1Params & KycLevel2Params, @Context() context: Context) {
         const admin = await this.adminService.findAdminByFirebaseId(context.get("user").id);
         if (!admin) throw new BadRequest(USER_NOT_FOUND);
         body = {
