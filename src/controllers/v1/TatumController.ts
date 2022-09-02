@@ -148,7 +148,7 @@ export class TatumController {
     @(Returns(200, SuccessResult).Of(WithdrawResultModel))
     public async withdrawOrgFunds(@BodyParams() body: WithdrawBody, @Context() context: Context) {
         await this.adminService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));
-        const admin = await this.userService.findUserByFirebaseId(context.get("user").id);
+        const admin = await this.adminService.findAdminByFirebaseId(context.get("user").id);
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
         const org = await this.organizationService.findOrgById(admin.orgId!, { wallet: true });
         if (!org) throw new NotFound(ORG_NOT_FOUND);

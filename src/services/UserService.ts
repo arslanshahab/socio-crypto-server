@@ -19,7 +19,7 @@ import { WALLET_NOT_FOUND } from "../util/errors";
 import { differenceInHours, subDays } from "date-fns";
 import { TransferService } from "./TransferService";
 import { TatumService } from "./TatumService";
-import { createPasswordHash, generate6DigitCode, prepareCacheKey } from "../util";
+import { createPasswordHash, prepareCacheKey } from "../util";
 import { ProfileService } from "./ProfileService";
 import { NotificationService } from "./NotificationService";
 import { PlatformCache, UseCache } from "@tsed/common";
@@ -125,20 +125,6 @@ export class UserService {
         ]);
     }
 
-    /**
-     * Retrieves an admin object by its firebase id
-     *
-     * @param firebaseId the firebaseId of the admin
-     * @param include additional relations to include with the admin query
-     * @returns the admin object, with the requested relations included
-     */
-    public async findUserByFirebaseId<T extends Prisma.AdminInclude | undefined>(firebaseId: string, include?: T) {
-        return prisma.admin.findFirst<{
-            where: Prisma.AdminWhereInput;
-            // this type allows adding additional relations to result tpe
-            include: T;
-        }>({ where: { firebaseId }, include: include as T });
-    }
     /**
      * Asserts that the user has the given permissions
      *
@@ -464,7 +450,7 @@ export class UserService {
     public async getUniquePromoCode() {
         let promoCode = null;
         while (!promoCode) {
-            promoCode = generate6DigitCode();
+            promoCode = await this.generatePromoCode();
             if (await prisma.user.findFirst({ where: { promoCode } })) {
                 promoCode = null;
             }
@@ -474,5 +460,14 @@ export class UserService {
 
     public async getAllEmails() {
         return await prisma.user.findMany({ select: { email: true } });
+    }
+
+    public async generatePromoCode() {
+        const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        const stringLength = 6;
+        function pickRandom() {
+            return possible[Math.floor(Math.random() * possible.length)];
+        }
+        return Array.apply(null, Array(stringLength)).map(pickRandom).join("");
     }
 }

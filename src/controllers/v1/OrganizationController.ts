@@ -19,9 +19,9 @@ import { SesClient } from "../../clients/ses";
 import { WalletService } from "../../services/WalletService";
 import { VerificationService } from "../../services/VerificationService";
 import { ADMIN, MANAGER } from "../../util/constants";
-import { UserService } from "../../services/UserService";
 import { S3Client } from "../../clients/s3";
 import { VerificationApplicationService } from "../../services/VerificationApplicationService";
+import { generateOrgImageUrl } from "../../../src/util";
 
 class NewUserParams {
     @Required() public readonly name: string;
@@ -59,8 +59,6 @@ export class OrganizationController {
     private walletService: WalletService;
     @Inject()
     private verificationService: VerificationService;
-    @Inject()
-    private userService: UserService;
     @Inject()
     private verificationApplicationService: VerificationApplicationService;
 
@@ -163,30 +161,34 @@ export class OrganizationController {
     @(Returns(200, SuccessResult).Of(AdminProfileResultModel))
     public async getProfile(@Context() context: Context) {
         const { company, email, orgId } = await this.adminService.checkPermissions(
-            { hasRole: ["admin"] },
+            { hasRole: [ADMIN, MANAGER] },
             context.get("user")
         );
-        const admin = await this.userService.findUserByFirebaseId(context.get("user").uid);
+        const admin = await this.adminService.findAdminByFirebaseId(context.get("user").uid);
         const org = await this.organizationService.findOrgById(orgId!);
         const verifyStatus = await this.verificationApplicationService.findVerificationApplication(admin?.id);
+        let imageUrl = "";
+        if (org?.logo) {
+            imageUrl = generateOrgImageUrl(org?.id || "", org?.logo || "");
+        }
         let result = {
             name: admin?.name,
             email: email,
             company: company,
             enabled: admin?.twoFactorEnabled,
             orgId,
-            imagePath: org?.logo || "",
+            imageUrl,
             verifyStatus: verifyStatus?.status,
         };
         return new SuccessResult(result, AdminProfileResultModel);
     }
 
     // For admin panel
-    @Put("/two-factor-auth")
+    @Put("/2fa")
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async twoFactorAuth(@BodyParams() body: TwoFactorAuthParms, @Context() context: Context) {
-        await this.adminService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        const admin = await this.userService.findUserByFirebaseId(context.get("user").uid);
+        await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
+        const admin = await this.adminService.findAdminByFirebaseId(context.get("user").uid);
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
         const { twoFactorEnabled } = body;
         const updatedAdmin = await this.adminService.updateAdminAuth(admin.id, twoFactorEnabled);
@@ -198,20 +200,27 @@ export class OrganizationController {
     @(Returns(200, SuccessResult).Of(UpdateBrandLogoResultModel))
     public async updateProfile(@BodyParams() body: BrandParams, @Context() context: Context) {
         const { orgId, company } = await this.adminService.checkPermissions(
-            { hasRole: ["admin"] },
+            { hasRole: [ADMIN, MANAGER] },
             context.get("user")
         );
-        const admin = await this.userService.findUserByFirebaseId(context.get("user").uid);
+        const admin = await this.adminService.findAdminByFirebaseId(context.get("user").uid);
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
         const { name, imagePath } = body;
-        if (name) await this.adminService.updateAdmin(admin.id, name);
+        let updatedAdmin;
+        if (name) updatedAdmin = await this.adminService.updateAdmin(admin.id, name);
+
         const org = await this.organizationService.findOrgById(orgId!);
         if (!org) throw new NotFound(ORG_NOT_FOUND);
         let signedOrgUrl = "";
-        if (org.logo !== imagePath) {
-            await this.organizationService.updateOrganizationLogo(orgId!, imagePath);
-            signedOrgUrl = await S3Client.generateOrgSignedURL(`organization/${orgId}/${imagePath}`);
+        let imageUrl = "";
+        if (imagePath && imagePath !== org.logo) {
+            const response = await this.organizationService.updateOrganizationLogo(orgId!, imagePath);
+            signedOrgUrl = await S3Client.generateOrgSignedURL(`${orgId}/${imagePath}`);
+            imageUrl = generateOrgImageUrl(response.id, response.logo || "");
         }
-        return new SuccessResult({ orgId, brand: company, signedOrgUrl }, UpdateBrandLogoResultModel);
+        return new SuccessResult(
+            { name: updatedAdmin?.name, orgId, brand: company, signedOrgUrl, imageUrl },
+            UpdateBrandLogoResultModel
+        );
     }
 }

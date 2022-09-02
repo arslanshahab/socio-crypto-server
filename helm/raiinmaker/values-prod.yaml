@@ -42,6 +42,7 @@ data:
         SENTRY_DSN: "https://aedcc11778fe4bbdb489d4ad55eb08de@o1155640.ingest.sentry.io/6237600"
         PG_HOST_READER: "prod-database.cluster-ro-cuqkwt1n17k6.us-west-1.rds.amazonaws.com"
         SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/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"
+        ORG_BUCKET_NAME: "rm-org-production"
 
 postgresql:
     host: "prod-database.cluster-cuqkwt1n17k6.us-west-1.rds.amazonaws.com"

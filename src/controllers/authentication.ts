@@ -20,10 +20,8 @@ import {
     ACCOUNT_RESTRICTED,
 } from "../util/errors";
 import { UserRewardType } from "../util/constants";
-import { UserService } from "../services/UserService";
 
 const isSecure = process.env.NODE_ENV === "production";
-const userService = new UserService();
 export const adminLogin = asyncHandler(async (req: Request, res: Response) => {
     try {
         const { idToken } = req.body;
@@ -41,8 +39,7 @@ export const adminLogin = asyncHandler(async (req: Request, res: Response) => {
         }
         const options = { maxAge: expiresIn, httpOnly: true, secure: isSecure };
         res.cookie("session", sessionCookie, options);
-        const admin = await userService.findUserByFirebaseId(decodedToken.uid);
-        return res.status(200).json({ resetPass: false, twoFactorEnabled: admin?.twoFactorEnabled });
+        return res.status(200).json({ resetPass: false });
     } catch (error) {
         throw new Error("Something went wrong with your request. please try again!");
     }

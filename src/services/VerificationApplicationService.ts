@@ -291,4 +291,19 @@ export class VerificationApplicationService {
             where: adminId ? { adminId } : {},
         });
     }
+
+    public async findUserApplication(applicationId: string) {
+        return readPrisma.verificationApplication.findFirst({
+            where: { applicationId },
+            include: { user: true, admin: true },
+        });
+    }
+
+    public async findKycUser(data: { userId?: string; adminId?: string }) {
+        const { userId, adminId } = data;
+        return await readPrisma.verificationApplication.findFirst({
+            where: userId ? { userId } : { adminId },
+            include: { user: { include: { profile: true } } },
+        });
+    }
 }

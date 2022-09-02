@@ -27,6 +27,8 @@ import { User as PrismaUser } from "@prisma/client";
 import { PlatformCache } from "@tsed/common";
 // import DeviceDetector from "node-device-detector";
 
+const { ORG_BUCKET_URL = "https://rm-org-staging.s3.us-west-1.amazonaws.com" } = process.env;
+
 // general helper functions start here
 export const getMinWithdrawableAmount = async (symbol: string) => {
     symbol = symbol.toLowerCase();
@@ -253,7 +255,7 @@ export const generateRandomId = (stringLength = 20) => {
 };
 
 export const generate6DigitCode = () => {
-    const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    const possible = "0123456789";
     const stringLength = 6;
     function pickRandom() {
         return possible[Math.floor(Math.random() * possible.length)];
@@ -468,3 +470,7 @@ export const getAccountRecoveryAttemptKey = (accountId: string | undefined, user
 //     });
 //     return detector.detect(userAgent);
 // };
+
+export const generateOrgImageUrl = (orgId: string, imagePath: string) => {
+    return `${ORG_BUCKET_URL}/${orgId}/${imagePath}`;
+};
