@@ -21,7 +21,7 @@ import { VerificationService } from "../../services/VerificationService";
 import { ADMIN, MANAGER } from "../../util/constants";
 import { S3Client } from "../../clients/s3";
 import { VerificationApplicationService } from "../../services/VerificationApplicationService";
-import { generateOrgImageUrl } from "../../../src/util";
+import { generateOrgImageUrl } from "../../util";
 
 class NewUserParams {
     @Required() public readonly name: string;
