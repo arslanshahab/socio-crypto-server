@@ -894,9 +894,28 @@ export class CampaignScoreResultModel {
     @Property() public readonly submissionsStandardDeviation: string;
 }
 
+export class AdminProfileResultModel {
+    @Property() public readonly name: string;
+    @Property() public readonly email: string;
+    @Property() public readonly company: string;
+    @Property() public readonly enabled: boolean;
+    @Property() public readonly orgId: string;
+    @Property() public readonly imageUrl: string;
+    @Property() public readonly verifyStatus: string;
+}
+
+export class UpdateBrandLogoResultModel {
+    @Property() public readonly name: string;
+    @Property() public readonly orgId: string;
+    @Property() public readonly brand: string;
+    @Property() public readonly signedOrgUrl: string;
+    @Property() public readonly imageUrl: string;
+}
+
 export class AdminResultModel {
     @Property() public readonly resetPass: boolean;
     @Property() public readonly role: string;
     @Property() public readonly company: string;
     @Property() public readonly email: string;
+    @Property() public readonly twoFactorEnabled: boolean;
 }

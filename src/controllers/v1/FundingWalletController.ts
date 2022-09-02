@@ -1,7 +1,6 @@
 import { Controller, Inject } from "@tsed/di";
 import { Get, Returns } from "@tsed/schema";
 import { SuccessArrayResult } from "../../util/entities";
-import { UserService } from "../../services/UserService";
 import { Context } from "@tsed/common";
 import { OrganizationService } from "../../services/OrganizationService";
 import { NotFound } from "@tsed/exceptions";
@@ -12,11 +11,10 @@ import { TatumService } from "../../services/TatumService";
 import { formatFloat, getCryptoAssestImageUrl } from "../../util";
 import { AllCurrenciesResultModel, TransferResultModel } from "../../models/RestModels";
 import { TransferService } from "../../services/TransferService";
+import { AdminService } from "../../services/AdminService";
 
 @Controller("/funding-wallet")
 export class FundingWalletController {
-    @Inject()
-    private userService: UserService;
     @Inject()
     private organizationService: OrganizationService;
     @Inject()
@@ -27,11 +25,13 @@ export class FundingWalletController {
     private tatumService: TatumService;
     @Inject()
     private transferService: TransferService;
+    @Inject()
+    private adminService: AdminService;
 
     @Get()
     @(Returns(200, SuccessArrayResult).Of(AllCurrenciesResultModel))
     public async getFundingWallet(@Context() context: Context) {
-        const admin = await this.userService.findUserByFirebaseId(context.get("user").id);
+        const admin = await this.adminService.findAdminByFirebaseId(context.get("user").id);
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
         const org = await this.organizationService.findOrgById(admin.orgId!);
         if (!org) throw new NotFound(ORG_NOT_FOUND);
@@ -55,7 +55,7 @@ export class FundingWalletController {
     @Get("/transaction-history")
     @(Returns(200, SuccessArrayResult).Of(Object))
     public async transactionHistory(@Context() context: Context) {
-        const admin = await this.userService.findUserByFirebaseId(context.get("user").id);
+        const admin = await this.adminService.findAdminByFirebaseId(context.get("user").id);
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
         const org = await this.organizationService.findOrgById(admin.orgId!);
         if (!org) throw new NotFound(ORG_NOT_FOUND);

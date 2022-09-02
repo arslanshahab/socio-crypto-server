@@ -30,6 +30,9 @@ export class Org extends BaseEntity {
     @Column({ nullable: true })
     public stripeId: string;
 
+    @Column({ nullable: true })
+    public logo: string;
+
     @OneToMany((_type) => Campaign, (campaign) => campaign.org)
     public campaigns: Campaign[];
 

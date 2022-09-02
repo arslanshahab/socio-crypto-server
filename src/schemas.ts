@@ -206,6 +206,47 @@ const rafflePrizeSchema = {
     required: ["displayName"],
 };
 
+export const adminKycSchema = {
+    type: "object",
+    properties: {
+        firstName: { type: "string" },
+        middleName: { type: "string" },
+        lastName: { type: "string" },
+        email: { type: "string" },
+        ip: { type: "string" },
+        billingStreetAddress: { type: "string" },
+        billingCity: { type: "string" },
+        billingCountry: { type: "string" },
+        zipCode: { type: "string" },
+        gender: { type: "string" },
+        dob: { type: "string" },
+        phoneNumber: { type: "string" },
+        documentType: { type: "string" },
+        documentCountry: { type: "string" },
+        frontDocumentImage: { type: "string" },
+        faceImage: { type: "string" },
+        backDocumentImage: { type: "string" },
+    },
+    required: [
+        "firstName",
+        "lastName",
+        "billingStreetAddress",
+        "billingCity",
+        "billingCountry",
+        "gender",
+        "dob",
+        "phoneNumber",
+        "ip",
+        "zipCode",
+        "email",
+        "documentType",
+        "documentCountry",
+        "frontDocumentImage",
+        "backDocumentImage",
+        "faceImage",
+    ],
+};
+
 export class Validator {
     private ajv: Ajv;
     private validateAlgorithmCreatePayload: ValidateFunction;
@@ -215,6 +256,7 @@ export class Validator {
     private validateKycUserLevel2: ValidateFunction;
     private validateHourlyMetrics: ValidateFunction;
     private validateRafflePrizePayload: ValidateFunction;
+    private validateAdminKyc: ValidateFunction;
 
     public constructor() {
         this.ajv = new Ajv();
@@ -225,6 +267,7 @@ export class Validator {
         this.validateKycUserLevel2 = this.ajv.compile(kycUserLevel2);
         this.validateHourlyMetrics = this.ajv.compile(hourlyMetrics);
         this.validateRafflePrizePayload = this.ajv.compile(rafflePrizeSchema);
+        this.validateAdminKyc = this.ajv.compile(adminKycSchema);
     }
 
     public validateRafflePrizeSchema = (payload: object) => {
@@ -272,6 +315,12 @@ export class Validator {
     public validateHourlyMetricsArgs = (payload: object) => {
         if (!this.validateHourlyMetrics(payload)) {
             throw new Error(`Invalid metrics request ${JSON.stringify(this.validateHourlyMetrics.errors)}`);
+        }
+    };
+
+    public validateAdminKycArgs = (payload: object) => {
+        if (!this.validateAdminKyc(payload)) {
+            throw new Error(`Invalid kyc registration ${JSON.stringify(this.validateAdminKyc.errors)}`);
         }
     };
 }

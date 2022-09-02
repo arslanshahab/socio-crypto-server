@@ -554,7 +554,7 @@ export class CampaignController {
     @Get("/dashboard-metrics/:campaignId")
     @(Returns(200, SuccessResult).Of(CampaignStatsResultModelArray))
     public async getDashboardMetrics(@PathParams() query: CampaignIdModel, @Context() context: Context) {
-        const admin = await this.userService.findUserByFirebaseId(context.get("user").id);
+        const admin = await this.adminService.findAdminByFirebaseId(context.get("user").id);
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
         const { campaignId } = query;
         let aggregatedMetrics;
