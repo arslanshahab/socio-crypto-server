@@ -85,4 +85,8 @@ export class Dragonchain {
         if (!res.ok) throw new Error("Failed to ledger account recovery to the Dragonchain");
         return res.response.transaction_id;
     }
+
+    public static async getTransaction(transactionId: string) {
+        return await this.client.getTransaction({ transactionId });
+    }
 }
