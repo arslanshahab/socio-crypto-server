@@ -1,4 +1,4 @@
-import { createClient, DragonchainClient } from "dragonchain-sdk";
+import { createClient, DragonchainClient, L1DragonchainTransactionFull, Response } from "dragonchain-sdk";
 import { Secrets } from "../util/secrets";
 import { BigNumber } from "bignumber.js";
 import { transactionTypes } from "../util/constants";
@@ -84,5 +84,17 @@ export class Dragonchain {
         });
         if (!res.ok) throw new Error("Failed to ledger account recovery to the Dragonchain");
         return res.response.transaction_id;
+    }
+
+    public static async getTransaction(transactionId: string) {
+        return await this.client.getTransaction({ transactionId });
+    }
+
+    public static async getBulkTransaction(ids: string[]): Promise<Response<L1DragonchainTransactionFull>[]> {
+        const promiseArray: Promise<any>[] = [];
+        for (const id of ids) {
+            promiseArray.push(this.getTransaction(id));
+        }
+        return await Promise.all(promiseArray);
     }
 }

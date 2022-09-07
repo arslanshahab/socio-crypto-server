@@ -1,5 +1,5 @@
 import { Campaign, CampaignMedia, Prisma } from "@prisma/client";
-import { Get, Property, Required, Enum, Returns, Post, Put, ArrayOf } from "@tsed/schema";
+import { Get, Property, Required, Enum, Returns, Post, ArrayOf, Put } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
 import { Context, BodyParams, PathParams, QueryParams } from "@tsed/common";
 import { CampaignService } from "../../services/CampaignService";
@@ -64,6 +64,7 @@ import { TatumService } from "../../services/TatumService";
 import { MarketDataService } from "../../services/MarketDataService";
 import { formatFloat } from "../../util";
 import { AdminService } from "../../services/AdminService";
+import { SesClient } from "../../clients/ses";
 
 const validator = new Validator();
 
@@ -74,9 +75,10 @@ class ListCampaignsVariablesModel extends PaginatedVariablesModel {
     @Property(String) public readonly auditStatus: CampaignAuditStatus | undefined;
 }
 
-class AdminUpdateCampaignStatusParams {
+class PendingCampaignsParams {
     @Required() @Property(String) public readonly campaignId: string;
     @Required() @Property(String) public readonly status: CampaignStatus;
+    @Property(String) public readonly reason: string;
 }
 
 class PayoutCampaignRewardsParams {
@@ -127,7 +129,7 @@ export class CampaignController {
         const [items, total] = await this.campaignService.findCampaignsByStatus(
             query,
             user || undefined,
-            orgId || undefined
+            query.status !== CampaignStatus.PENDING ? orgId || undefined : undefined
         );
         const modelItems = await Promise.all(
             items.map(async (i) => {
@@ -201,7 +203,7 @@ export class CampaignController {
     @Post("/create-campaign")
     @(Returns(200, SuccessResult).Of(CreateCampaignResultModel))
     public async createCampaign(@BodyParams() body: CreateCampaignParams, @Context() context: Context) {
-        const { company } = await this.adminService.checkPermissions(
+        const { company, orgId } = await this.adminService.checkPermissions(
             { hasRole: [ADMIN, MANAGER] },
             context.get("user")
         );
@@ -317,6 +319,20 @@ export class CampaignController {
         }
         const deviceTokens = await User.getAllDeviceTokens("campaignCreate");
         if (deviceTokens.length > 0) await Firebase.sendCampaignCreatedNotifications(deviceTokens, campaign);
+        const raiinmakerAdmins = await this.adminService.listAdminsByOrg(orgId!, RAIINMAKER_ORG_NAME);
+        const brandName = await this.organizationService.findOrgById(campaign.orgId || "");
+        if (campaign.id) {
+            if (raiinmakerAdmins) {
+                for (const admin of raiinmakerAdmins) {
+                    const { email } = await Firebase.getUserById(admin.firebaseId);
+                    SesClient.CampaignProcessEmailToAdmin({
+                        title: `Campaign review message from ${brandName?.name}`,
+                        text: `Hi, please approved "${campaign.name}" campaign`,
+                        emailAddress: email || "",
+                    });
+                }
+            }
+        }
         const result = {
             campaignId: campaign.id,
             campaignImageSignedURL: campaignImageSignedURL,
@@ -554,7 +570,7 @@ export class CampaignController {
     @Get("/dashboard-metrics/:campaignId")
     @(Returns(200, SuccessResult).Of(CampaignStatsResultModelArray))
     public async getDashboardMetrics(@PathParams() query: CampaignIdModel, @Context() context: Context) {
-        const admin = await this.userService.findUserByFirebaseId(context.get("user").id);
+        const admin = await this.adminService.findAdminByFirebaseId(context.get("user").id);
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
         const { campaignId } = query;
         let aggregatedMetrics;
@@ -605,15 +621,12 @@ export class CampaignController {
         return new SuccessArrayResult(campaigns, CampaignResultModel);
     }
 
-    @Put("/admin-update-campaign-status")
+    // For admin panel
+    @Put("/pending")
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
-    public async adminUpdateCampaignStatus(
-        @QueryParams() query: AdminUpdateCampaignStatusParams,
-        @Context() context: Context
-    ) {
+    public async updatePendingCampaignStatus(@BodyParams() body: PendingCampaignsParams, @Context() context: Context) {
         await this.adminService.checkPermissions({ restrictCompany: RAIINMAKER_ORG_NAME }, context.get("user"));
-        const { status, campaignId } = query;
-
+        const { status, campaignId, reason } = body;
         const campaign = await this.campaignService.findCampaignById(campaignId, {
             org: true,
             currency: { include: { token: true } },
@@ -645,10 +658,25 @@ export class CampaignController {
                 campaign.status = CampaignStatus.DENIED;
                 break;
         }
-        await this.campaignService.adminUpdateCampaignStatus(campaign.id, campaign.status, campaign.tatumBlockageId!);
+        const updatedCampaign = await this.campaignService.adminUpdateCampaignStatus(
+            campaign.id,
+            campaign.status,
+            campaign.tatumBlockageId!
+        );
+        const brandAdmins = await this.adminService.listAdminsByOrg(campaign?.orgId!);
+        if (brandAdmins) {
+            for (const admin of brandAdmins) {
+                const { email } = await Firebase.getUserById(admin.firebaseId);
+                SesClient.CampaignProcessEmailToAdmin({
+                    title: "Campaign Approval Status",
+                    text: `${campaign.name} has been ${updatedCampaign.status}. ${reason}`,
+                    emailAddress: email || "",
+                });
+            }
+        }
         const deviceTokens = await User.getAllDeviceTokens("campaignCreate");
         if (deviceTokens.length > 0) await Firebase.sendCampaignCreatedNotifications(deviceTokens, campaign);
-        return new SuccessResult({ success: true }, BooleanResultModel);
+        return new SuccessResult({ message: `campaign has been ${updatedCampaign.status}` }, UpdatedResultModel);
     }
 
     @Get("/payout/:campaignId")

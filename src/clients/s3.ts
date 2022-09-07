@@ -14,6 +14,7 @@ const {
     RM_SECRETS = "rm-secrets-staging",
     TATUM_WALLETS = "tatum-wallets-stage",
     USER_EMAILS = "rm-user-emails",
+    ORG_BUCKET_NAME = "rm-org-staging",
 } = process.env;
 
 export class S3Client {
@@ -343,5 +344,13 @@ export class S3Client {
             Body: csvPayload,
         };
         await this.client.putObject(params).promise();
+    }
+
+    public static async generateOrgSignedURL(key: string) {
+        return S3Client.client.getSignedUrl("putObject", {
+            Bucket: ORG_BUCKET_NAME || "rm-org-staging",
+            Key: key,
+            Expires: 3600,
+        });
     }
 }

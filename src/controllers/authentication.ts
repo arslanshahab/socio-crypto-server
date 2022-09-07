@@ -22,7 +22,6 @@ import {
 import { UserRewardType } from "../util/constants";
 
 const isSecure = process.env.NODE_ENV === "production";
-
 export const adminLogin = asyncHandler(async (req: Request, res: Response) => {
     try {
         const { idToken } = req.body;

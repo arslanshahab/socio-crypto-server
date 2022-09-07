@@ -649,3 +649,9 @@ export type ParticipantsRawQueryTypes = {
     campaignName: string;
     algorithm: any;
 };
+
+export interface L1DragonchainTransactionAugmented {
+    dcId: string;
+    blockId: string;
+    timestamp: string;
+}

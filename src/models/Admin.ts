@@ -4,12 +4,14 @@ import {
     CreateDateColumn,
     Entity,
     ManyToOne,
+    OneToMany,
     PrimaryGeneratedColumn,
     UpdateDateColumn,
 } from "typeorm";
 import { User } from "./User";
 import { Org } from "./Org";
 import { RAIINMAKER_ORG_NAME } from "../util/constants";
+import { VerificationApplication } from "./VerificationApplication";
 
 @Entity()
 export class Admin extends BaseEntity {
@@ -22,11 +24,18 @@ export class Admin extends BaseEntity {
     @Column({ nullable: false, default: RAIINMAKER_ORG_NAME })
     public name: string;
 
+    //  2FA
+    @Column({ default: false })
+    public twoFactorEnabled: boolean;
+
     @ManyToOne((_type) => User, (user) => user.admins)
     public user: User;
 
     @ManyToOne((_type) => Org, (org) => org.admins)
     public org: Org;
+
+    @OneToMany((_type) => VerificationApplication, (verification) => verification.admin)
+    public identityVerification: VerificationApplication[];
 
     @CreateDateColumn()
     public createdAt: Date;

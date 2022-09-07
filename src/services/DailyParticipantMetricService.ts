@@ -198,14 +198,10 @@ export class DailyParticipantMetricService {
                 ).toString();
                 break;
             case "likes":
-                likeCount = (
-                    record.likeCount ? new BN(record.likeCount).plus(new BN(actionCount)) : new BN(actionCount)
-                ).toString();
+                likeCount = new BN(actionCount).toString();
                 break;
             case "shares":
-                shareCount = (
-                    record.shareCount ? new BN(record.shareCount).plus(new BN(actionCount)) : new BN(actionCount)
-                ).toString();
+                shareCount = new BN(actionCount).toString();
                 break;
             case "comments":
                 commentCount = (

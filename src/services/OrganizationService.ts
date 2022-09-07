@@ -53,4 +53,8 @@ export class OrganizationService {
     public async createOrganization(orgName: string) {
         return await prisma.org.create({ data: { name: orgName } });
     }
+
+    public async updateOrganizationLogo(orgId: string, logo: string) {
+        return await prisma.org.update({ where: { id: orgId }, data: { logo } });
+    }
 }

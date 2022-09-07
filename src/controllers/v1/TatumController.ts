@@ -5,6 +5,7 @@ import { SuccessArrayResult, SuccessResult } from "../../util/entities";
 import { UserService } from "../../services/UserService";
 import { TatumService } from "../../services/TatumService";
 import {
+    BooleanResultModel,
     DepositAddressResultModel,
     SupportedCurrenciesResultModel,
     WithdrawResultModel,
@@ -77,10 +78,8 @@ export class TatumController {
     @Get("/deposit-address")
     @(Returns(200, SuccessResult).Of(DepositAddressResultModel))
     public async getDepositAddress(@QueryParams() query: DepositAddressParams, @Context() context: Context) {
-        await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
-        const admin = await this.userService.findUserByFirebaseId(context.get("user").id);
-        if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
-        const wallet = await this.walletService.findWalletByOrgId(admin.orgId!);
+        const { orgId } = await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
+        const wallet = await this.walletService.findWalletByOrgId(orgId!);
         const { symbol, network } = query;
         const token = await this.tatumService.isCurrencySupported({ symbol, network });
         if (!token) throw new Error("Currency not supported");
@@ -149,7 +148,7 @@ export class TatumController {
     @(Returns(200, SuccessResult).Of(WithdrawResultModel))
     public async withdrawOrgFunds(@BodyParams() body: WithdrawBody, @Context() context: Context) {
         await this.adminService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));
-        const admin = await this.userService.findUserByFirebaseId(context.get("user").id);
+        const admin = await this.adminService.findAdminByFirebaseId(context.get("user").id);
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
         const org = await this.organizationService.findOrgById(admin.orgId!, { wallet: true });
         if (!org) throw new NotFound(ORG_NOT_FOUND);
@@ -191,5 +190,22 @@ export class TatumController {
             availableBalance: currency.availableBalance! - amount,
         });
         return new SuccessResult({ ...body, message: "Withdraw completed cusscesfully" }, WithdrawResultModel);
+    }
+
+    @Post("/transfer-coiins")
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
+    public async transferCoiin(
+        @BodyParams()
+        body: {
+            senderAccountId: string;
+            recipientAccountId: string;
+            amount: string;
+            recipientNote: string;
+        },
+        @Context() context: Context
+    ) {
+        await this.adminService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));
+        await this.tatumService.transferFunds(body);
+        return new SuccessResult({ success: true }, BooleanResultModel);
     }
 }

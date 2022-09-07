@@ -11,7 +11,7 @@ import { DragonchainCampaignActionLedgerPayload, PointValueTypes } from "../../t
 import { QualityScoreService } from "../../services/QualityScoreService";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 import { ParticipantAction } from "../../util/constants";
-import { HourlyCampaignMetricsService } from "../../services/HourlyCampaignMetricsService";
+// import { HourlyCampaignMetricsService } from "../../services/HourlyCampaignMetricsService";
 import { DragonChainService } from "../../services/DragonChainService";
 import { Dragonchain } from "../../clients/dragonchain";
 import { SocialLinkService } from "../../services/SocialLinkService";
@@ -21,7 +21,7 @@ dotenv.config();
 const app = new Application();
 const qualityScoreService = new QualityScoreService();
 const dailyParticipantMetricService = new DailyParticipantMetricService();
-const hourlyCampaignMetricService = new HourlyCampaignMetricsService();
+// const hourlyCampaignMetricService = new HourlyCampaignMetricsService();
 const dragonChainService = new DragonChainService();
 const socialLinkService = new SocialLinkService();
 
@@ -47,8 +47,6 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
     const newParticipationScore = new BN(participant.participationScore).plus(
         likesAdjustedScore.plus(sharesAdjustedScore)
     );
-    const adjustedRawLikes = likes.minus(post.likes).toNumber();
-    const adjustedRawShares = shares.minus(post.shares).toNumber();
     post.likes = likes.toString();
     post.shares = shares.toString();
     const promiseArray: Promise<any>[] = [];
@@ -76,32 +74,30 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
             },
         })
     );
-    promiseArray.push(
-        hourlyCampaignMetricService.upsertMetrics(campaign.id, campaign.org?.id!, "likes", adjustedRawLikes)
-    );
-    promiseArray.push(
-        hourlyCampaignMetricService.upsertMetrics(campaign.id, campaign.org?.id!, "shares", adjustedRawShares)
-    );
-    promiseArray.push(
-        dailyParticipantMetricService.upsertMetrics({
-            user,
-            campaign,
-            participant,
-            action: ParticipantAction.LIKES,
-            additiveParticipationScore: likesAdjustedScore,
-            actionCount: adjustedRawLikes,
-        })
-    );
-    promiseArray.push(
-        dailyParticipantMetricService.upsertMetrics({
-            user,
-            campaign,
-            participant,
-            action: ParticipantAction.SHARES,
-            additiveParticipationScore: sharesAdjustedScore,
-            actionCount: adjustedRawShares,
-        })
-    );
+    // promiseArray.push(
+    //     hourlyCampaignMetricService.upsertMetrics(campaign.id, campaign.org?.id!, "likes", adjustedRawLikes)
+    // );
+    // promiseArray.push(
+    //     hourlyCampaignMetricService.upsertMetrics(campaign.id, campaign.org?.id!, "shares", adjustedRawShares)
+    // );
+
+    await dailyParticipantMetricService.upsertMetrics({
+        user,
+        campaign,
+        participant,
+        action: ParticipantAction.LIKES,
+        additiveParticipationScore: likesAdjustedScore,
+        actionCount: likes.toNumber(),
+    });
+
+    await dailyParticipantMetricService.upsertMetrics({
+        user,
+        campaign,
+        participant,
+        action: ParticipantAction.SHARES,
+        additiveParticipationScore: sharesAdjustedScore,
+        actionCount: shares.toNumber(),
+    });
     await Promise.all(promiseArray);
     return post;
 };
@@ -120,6 +116,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                 auditStatus: CampaignAuditStatus.DEFAULT,
             },
         });
+
         console.log("TOTAL CAMPAIGNS: ", campaigns.length);
         for (let campaignIndex = 0; campaignIndex < campaigns.length; campaignIndex++) {
             const campaign = campaigns[campaignIndex];

@@ -39,6 +39,7 @@ import { SesClient } from "../../clients/ses";
 import { Firebase } from "../../clients/firebase";
 import { SessionService } from "../../services/SessionService";
 import { S3Client } from "../../clients/s3";
+import { AdminService } from "../../services/AdminService";
 
 export class StartVerificationParams {
     @Required() public readonly email: string;
@@ -81,6 +82,8 @@ export class AuthenticationController {
     private verificationService: VerificationService;
     @Inject()
     private sessionService: SessionService;
+    @Inject()
+    private adminService: AdminService;
 
     @Post("/register-user")
     @(Returns(200, SuccessResult).Of(UserTokenReturnModel))
@@ -253,13 +256,17 @@ export class AuthenticationController {
         const user = await Firebase.getUserById(decodedToken.uid);
         if (!user.customClaims) throw new Unauthorized(ADMIN_NOT_FOUND);
         if (user.customClaims.tempPass === true)
-            return new SuccessResult({ resetPass: true, email: "", company: "", role: "" }, AdminResultModel);
+            return new SuccessResult(
+                { resetPass: true, email: "", company: "", role: "", twoFactorEnabled: false },
+                AdminResultModel
+            );
         const expiresIn = 60 * 60 * 24 * 5 * 1000;
         if (new Date().getTime() / 1000 - decodedToken.auth_time < 5 * 60) {
             sessionCookie = await Firebase.createSessionCookie(authToken.idToken, expiresIn);
         } else {
             throw new Unauthorized("Recent Signin required.");
         }
+        const admin = await this.adminService.findAdminByFirebaseId(decodedToken.uid);
         const options = { maxAge: expiresIn, httpOnly: true, secure: isSecure };
         res.cookie("session", sessionCookie, options);
         return new SuccessResult(
@@ -268,6 +275,7 @@ export class AuthenticationController {
                 email: user.email,
                 company: user.customClaims.company,
                 role: user.customClaims.role,
+                twoFactorEnabled: admin?.twoFactorEnabled,
             },
             AdminResultModel
         );

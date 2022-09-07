@@ -4,7 +4,7 @@ import { FindCampaignById, ParticipantsRawQueryTypes } from "../types";
 import { encrypt } from "../util/crypto";
 import { serverBaseUrl } from "../config";
 import { TinyUrl } from "../clients/tinyUrl";
-import { HourlyCampaignMetricsService } from "./HourlyCampaignMetricsService";
+// import { HourlyCampaignMetricsService } from "./HourlyCampaignMetricsService";
 import { PlatformCache } from "@tsed/common";
 import { resetCacheKey } from "../util/index";
 import { CacheKeys, Sort } from "../util/constants";
@@ -12,8 +12,8 @@ import { prisma, readPrisma } from "../clients/prisma";
 
 @Injectable()
 export class ParticipantService {
-    @Inject()
-    private hourlyCampaignMetricsService: HourlyCampaignMetricsService;
+    // @Inject()
+    // private hourlyCampaignMetricsService: HourlyCampaignMetricsService;
     @Inject()
     private cache: PlatformCache;
 
@@ -122,7 +122,7 @@ export class ParticipantService {
         });
         const url = `${serverBaseUrl}/v1/referral/${participant.id}`;
         const link = await TinyUrl.shorten(url);
-        await this.hourlyCampaignMetricsService.upsertMetrics(campaign.id, campaign?.orgId!, "participate");
+        // await this.hourlyCampaignMetricsService.upsertMetrics(campaign.id, campaign?.orgId!, "participate");
         participant = await prisma.participant.update({
             where: {
                 id_campaignId_userId: {
