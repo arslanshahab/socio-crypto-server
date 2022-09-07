@@ -3,6 +3,7 @@ import { ArrayOf, CollectionOf, Nullable, Optional, Property, Required } from "@
 import { getCryptoAssestImageUrl } from "../util";
 import { KycLevel, SharingRewardType } from "../util/constants";
 import { KycStatus } from "../types";
+import { L1DragonchainTransactionAugmented } from "../types.d";
 
 export class CampaignMediaResultModel {
     @Property() public readonly id: string;
@@ -855,18 +856,13 @@ export class TransactionResultModel {
     @Property() public readonly chain: string;
     @Nullable(String) public readonly action: string | null;
     @Nullable(String) public readonly socialType: string | null;
-    // @Property() public readonly tag: string;
-    // @Nullable(String) public readonly campaignId: string | null;
-    // @Nullable(String) public readonly participantId: string | null;
-    // @Property() public readonly transactionType: string;
-    // @Property() public readonly createdAt: Date;
-    // @Property() public readonly updatedAt: Date;
+    @Property() public readonly dcId: string;
+    @Property() public readonly blockId: string;
+    @Property() public readonly timestamp: string;
 
-    public static build(transaction: Prisma.Transaction): TransactionResultModel {
+    public static build(transaction: Prisma.Transaction & L1DragonchainTransactionAugmented): TransactionResultModel {
         return {
             ...transaction,
-            chain: transaction.chain,
-            action: transaction.action,
         };
     }
 }

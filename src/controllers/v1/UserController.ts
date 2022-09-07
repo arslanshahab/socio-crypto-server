@@ -794,13 +794,13 @@ export class UserController {
     public async actionLogs(@QueryParams() query: PaginatedVariablesModel, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new NotFound(USER_NOT_FOUND);
-        const [results, total] = await this.transactionService.getPaginatedUserTransactions({
+        const { list, total } = await this.transactionService.getPaginatedUserTransactions({
             ...query,
             userId: user.id,
         });
         return new SuccessResult(
             new Pagination(
-                results.map((r) => TransactionResultModel.build(r)),
+                list.map((r) => TransactionResultModel.build(r)),
                 total,
                 TransactionResultModel
             ),
