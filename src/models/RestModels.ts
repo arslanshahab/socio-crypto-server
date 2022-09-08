@@ -915,3 +915,21 @@ export class AdminResultModel {
     @Property() public readonly email: string;
     @Property() public readonly twoFactorEnabled: boolean;
 }
+
+export class NftResultModel {
+    @Property() public readonly transactionType: string;
+    @Property() public readonly dcId: string;
+    @Property() public readonly txId: string;
+    @Property() public readonly tag: string;
+    @Property() public readonly timestamp: string;
+    @Property() public readonly blockId: string;
+    @Property() public readonly invoker: string;
+    @Property() public readonly nftId?: string;
+    @Property() public readonly file?: string;
+    @Property() public readonly mintTxId?: string;
+    @Property() public readonly userfields?: string;
+    @Property() public readonly name?: string;
+    @Property() public readonly type?: string;
+    @Property() public readonly owner?: string;
+    @Property() public readonly note?: string;
+}

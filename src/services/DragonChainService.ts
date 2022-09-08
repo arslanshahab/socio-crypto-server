@@ -2,10 +2,16 @@ import { Injectable } from "@tsed/di";
 import { getActionKey, getCampaignAuditKey, getAccountRecoveryAttemptKey, getSocialShareKey } from "../util/index";
 import { Dragonchain } from "../clients/dragonchain";
 import { TransactionType, ParticipantAction, SocialClientType, TransactionChainType } from "../util/constants";
-import { DragonchainCampaignActionLedgerPayload, DragonchainCampaignPayoutLedgerPayload } from "../types.d";
+import {
+    DragonchainCampaignActionLedgerPayload,
+    DragonchainCampaignPayoutLedgerPayload,
+    NftFileParams,
+    NftMintingParams,
+} from "../types.d";
 import { BulkTransactionPayload } from "dragonchain-sdk";
 import { Transaction, PrismaPromise } from "@prisma/client";
 import { prisma } from "../clients/prisma";
+import { L1DragonchainTransactionFull } from "dragonchain-sdk";
 
 @Injectable()
 export class DragonChainService {
@@ -202,5 +208,51 @@ export class DragonChainService {
             console.log(error);
             return null;
         }
+    }
+
+    public async getTransaction(transactionId: string): Promise<L1DragonchainTransactionFull> {
+        const res = await Dragonchain.client.getTransaction({ transactionId });
+        if (!res.ok) throw new Error("Failed to ledger account recovery to the Dragonchain");
+        return res.response;
+    }
+
+    public async getBulkTransaction(ids: string[]): Promise<L1DragonchainTransactionFull[]> {
+        const promiseArray: Promise<any>[] = [];
+        for (const id of ids) {
+            promiseArray.push(this.getTransaction(id));
+        }
+        return await Promise.all(promiseArray);
+    }
+
+    public async mintNFT(data: NftMintingParams) {
+        const { userId, name, type, nftId } = data;
+        const res = await Dragonchain.client.createTransaction({
+            transactionType: TransactionType.NFT_MINT,
+            tag: nftId,
+            payload: {
+                nftid: nftId,
+                name: name,
+                type: type,
+                owner: userId,
+                note: "NFT minted by Raiinmaker",
+            },
+        });
+        if (!res.ok) throw new Error("Failed to ledger account recovery to the Dragonchain");
+        return res.response.transaction_id;
+    }
+
+    public async attachFileToNFT(data: NftFileParams) {
+        const { nftId, mintTxId, file } = data;
+        const res = await Dragonchain.client.createTransaction({
+            transactionType: TransactionType.NFT_ADD_FILE,
+            tag: nftId,
+            payload: {
+                nftid: nftId,
+                file,
+                mintTxId,
+            },
+        });
+        if (!res.ok) throw new Error("Failed to ledger account recovery to the Dragonchain");
+        return res.response.transaction_id;
     }
 }

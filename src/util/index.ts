@@ -425,9 +425,8 @@ export const createSessionTokenV2 = (user: PrismaUser): string => {
     return jwt.sign(payload, Secrets.encryptionKey, { expiresIn: "7d", audience: serverBaseUrl });
 };
 
-export const verifySessionToken = (token: string): JWTPayload => {
-    return jwt.verify(token, Secrets.encryptionKey, { audience: serverBaseUrl }) as JWTPayload;
-};
+export const verifySessionToken = (token: string): JWTPayload =>
+    jwt.verify(token, Secrets.encryptionKey, { audience: serverBaseUrl }) as JWTPayload;
 // authentication helpers end here
 
 export const prepareCacheKey = (baseKey: string, args?: any) => {
@@ -471,6 +470,5 @@ export const getAccountRecoveryAttemptKey = (accountId: string | undefined, user
 //     return detector.detect(userAgent);
 // };
 
-export const generateOrgImageUrl = (orgId: string, imagePath: string) => {
-    return `${ORG_BUCKET_URL}/${orgId}/${imagePath}`;
-};
+export const generateOrgImageUrl = (orgId: string, imagePath: string) => `${ORG_BUCKET_URL}/${orgId}/${imagePath}`;
+export const generateRandomUuid = () => crypto.randomUUID();

@@ -1,12 +1,15 @@
-import { Injectable } from "@tsed/di";
+import { Inject, Injectable } from "@tsed/di";
 import { ParticipantAction, SocialClientType, TransactionChainType, TransactionType } from "../util/constants";
 import { prisma, readPrisma } from "../clients/prisma";
-import { Dragonchain } from "../clients/dragonchain";
 import { Transaction } from "@prisma/client";
 import { L1DragonchainTransactionAugmented } from "../types.d";
+import { DragonChainService } from "./DragonChainService";
 
 @Injectable()
 export class TransactionService {
+    @Inject()
+    private dragonChainService: DragonChainService;
+
     public async saveDragonchainTransaction(data: {
         txId: string;
         type: TransactionType;
@@ -39,14 +42,15 @@ export class TransactionService {
             }),
             readPrisma.transaction.count({ where: { participantId: { in: participationIds } } }),
         ]);
-        const transactionList = await Dragonchain.getBulkTransaction(results.map((item) => item.txId));
+        const transactionList = await this.dragonChainService.getBulkTransaction(results.map((item) => item.txId));
+        if (!transactionList) throw new Error("There was an error fetching from dragonchain");
         const list = results.map((item, index) => {
             const tx = transactionList[index];
             return {
                 ...item,
-                dcId: (tx.ok && tx.response.header.dc_id) || "",
-                blockId: (tx.ok && tx.response.header.block_id) || "",
-                timestamp: (tx.ok && tx.response.header.timestamp) || "",
+                dcId: (tx && tx.header.dc_id) || "",
+                blockId: (tx && tx.header.block_id) || "",
+                timestamp: (tx && tx.header.timestamp) || "",
             };
         });
         return { list, total };

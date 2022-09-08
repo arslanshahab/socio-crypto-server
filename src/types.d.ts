@@ -1,16 +1,10 @@
-import express, { Request } from "express";
+import express from "express";
 import { BigNumber } from "bignumber.js";
 import { Stripe } from "stripe";
-import { CampaignState, CampaignStatus, ParticipantAction, SocialClientType, TransactionType } from "./util/constants";
-import {
-    CampaignMedia,
-    CampaignTemplate,
-    Currency as PrismaCurrency,
-    RafflePrize,
-    Token as PrismaToken,
-    Wallet,
-} from "@prisma/client";
+import { CampaignState, CampaignStatus, NftName, NftType, ParticipantAction, SocialClientType } from "./util/constants";
+import { Currency as PrismaCurrency, Token as PrismaToken, Wallet } from "@prisma/client";
 import { Token } from "./models/Token";
+import { L1DragonchainTransactionFull } from "dragonchain-sdk";
 
 interface JWTPayload {
     email: string;
@@ -655,3 +649,28 @@ export interface L1DragonchainTransactionAugmented {
     blockId: string;
     timestamp: string;
 }
+
+export interface NftMintingParams {
+    userId: string;
+    name: NftName;
+    type: NftType;
+    nftId: string;
+}
+
+export interface NftFileParams {
+    nftId: string;
+    file: string;
+    mintTxId?: string;
+    userfields?: { [key: string]: string };
+}
+
+export type NftDataCombined = L1DragonchainTransactionFull["header"] & {
+    nftId?: string;
+    file?: string;
+    mintTxId?: string;
+    userfields?: { [key: string]: string };
+    name?: NftName;
+    type?: NftType;
+    owner?: string;
+    note?: string;
+};
