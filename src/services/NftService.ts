@@ -23,8 +23,7 @@ export class NftService {
         const localNftList = await readPrisma.nft.findMany({ where: { userId } });
         const augmentedList = [];
         for (const nft of localNftList) {
-            const data = await this.getNftTransactionsCombined(nft.transactions as Prisma.JsonObject);
-            augmentedList.push(data);
+            augmentedList.push(await this.getNftTransactionsCombined(nft.transactions as Prisma.JsonObject));
         }
         return augmentedList;
     }
