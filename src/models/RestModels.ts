@@ -1,7 +1,7 @@
 import Prisma, { CampaignMedia, CampaignTemplate, RafflePrize } from "@prisma/client";
-import { ArrayOf, CollectionOf, Nullable, Optional, Property, Required } from "@tsed/schema";
+import { ArrayOf, CollectionOf, Enum, Nullable, Optional, Property, Required } from "@tsed/schema";
 import { getCryptoAssestImageUrl } from "../util";
-import { KycLevel, SharingRewardType } from "../util/constants";
+import { KycLevel, SharingRewardType, SupportedNetwork } from "../util/constants";
 import { KycStatus } from "../types";
 import { L1DragonchainTransactionAugmented } from "../types.d";
 
@@ -924,6 +924,7 @@ export class NftResultModel {
     @Property() public readonly timestamp: string;
     @Property() public readonly blockId: string;
     @Property() public readonly invoker: string;
+    @Property() @Enum(SupportedNetwork) public readonly network: SupportedNetwork;
     @Property() public readonly nftId?: string;
     @Property() public readonly file?: string;
     @Property() public readonly mintTxId?: string;

@@ -668,6 +668,7 @@ model nft {
   nftId        String   @id(map: "PK_1156642d40093c2cf27efc405a5") @db.VarChar
   type         String   @db.VarChar
   name         String   @db.VarChar
+  network      String   @db.VarChar
   transactions Json?    @unique(map: "UQ_fbf824aa02944ec173092a028f1")
   createdAt    DateTime @default(now()) @db.Timestamp(6)
   updatedAt    DateTime @default(now()) @db.Timestamp(6)

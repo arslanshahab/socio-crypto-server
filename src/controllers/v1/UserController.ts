@@ -835,7 +835,7 @@ export class UserController {
 
     @Get("/nfts")
     @(Returns(200, SuccessArrayResult).Of(NftResultModel))
-    public async getUserNtfs(@Context() context: Context) {
+    public async userNtfs(@Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new Error(USER_NOT_FOUND);
         const list = await this.nftService.getUserNfts(user.id);

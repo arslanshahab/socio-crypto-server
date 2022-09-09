@@ -1,6 +1,6 @@
 import { BaseEntity, Column, CreateDateColumn, Entity, ManyToOne, UpdateDateColumn } from "typeorm";
 import { User } from "./User";
-import { NftName, NftType } from "../util/constants";
+import { NftName, NftType, SupportedNetwork } from "../util/constants";
 
 @Entity()
 export class Nft extends BaseEntity {
@@ -12,6 +12,9 @@ export class Nft extends BaseEntity {
 
     @Column({ nullable: false })
     public name: NftName;
+
+    @Column({ nullable: false })
+    public network: SupportedNetwork;
 
     @Column({ nullable: true, type: "jsonb", unique: true })
     public transactions: JSON;

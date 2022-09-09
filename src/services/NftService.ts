@@ -4,7 +4,7 @@ import { DragonChainService } from "./DragonChainService";
 import { prisma, readPrisma } from "../clients/prisma";
 import { Prisma } from "@prisma/client";
 import { NftResultModel } from "src/models/RestModels";
-import { NftName } from "../util/constants";
+import { NftName, SupportedNetwork } from "../util/constants";
 
 @Injectable()
 export class NftService {
@@ -23,7 +23,8 @@ export class NftService {
         const localNftList = await readPrisma.nft.findMany({ where: { userId } });
         const augmentedList = [];
         for (const nft of localNftList) {
-            augmentedList.push(await this.getNftTransactionsCombined(nft.transactions as Prisma.JsonObject));
+            const data = await this.getNftTransactionsCombined(nft.transactions as Prisma.JsonObject);
+            augmentedList.push({ ...data, network: nft.network });
         }
         return augmentedList;
     }
@@ -38,8 +39,10 @@ export class NftService {
         return data as NftResultModel;
     }
 
-    private async saveNft(data: NftMintingParams & NftFileParams & { mintTxId: string; fileTxId?: string }) {
-        const { userId, nftId, name, type, mintTxId, fileTxId } = data;
+    private async saveNft(
+        data: NftMintingParams & NftFileParams & { mintTxId: string; fileTxId?: string; network: SupportedNetwork }
+    ) {
+        const { userId, nftId, name, type, mintTxId, fileTxId, network } = data;
         return await prisma.nft.create({
             data: {
                 userId,
@@ -47,6 +50,7 @@ export class NftService {
                 name,
                 type,
                 transactions: { mintTxId, fileTxId },
+                network,
             },
         });
     }
@@ -55,6 +59,6 @@ export class NftService {
         const { userId, nftId, name, type, file, userfields } = data;
         const mintTxId = await this.dragonChainService.mintNFT({ userId, nftId, name, type });
         const fileTxId = await this.dragonChainService.attachFileToNFT({ nftId, file, mintTxId, userfields });
-        return await this.saveNft({ ...data, mintTxId, fileTxId });
+        return await this.saveNft({ ...data, mintTxId, fileTxId, network: SupportedNetwork.DRAGON_CHAIN });
     }
 }

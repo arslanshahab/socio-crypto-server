@@ -328,3 +328,10 @@ export enum NftType {
 export enum NftName {
     PROFILE_PICTURE = "PROFILE_PICTURE",
 }
+
+export enum SupportedNetwork {
+    BSC = "BSC",
+    ETH = "ETH",
+    DRAGON_CHAIN = "DRAGON_CHAIN",
+    SOLANA = "SOLANA",
+}
