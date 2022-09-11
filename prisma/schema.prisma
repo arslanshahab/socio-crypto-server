@@ -12,6 +12,7 @@ datasource db {
   url      = env("PG_URL")
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model Admin {
   id                       String                    @id(map: "PK_e032310bcef831fb83101899b10") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   firebaseId               String                    @db.VarChar
@@ -21,13 +22,15 @@ model Admin {
   createdAt                DateTime                  @default(now()) @db.Timestamp(6)
   updatedAt                DateTime                  @default(now()) @updatedAt @db.Timestamp(6)
   twoFactorEnabled         Boolean                   @default(false)
-  org                      Org?                      @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_6d94bbdb1be6d107f3d971fc808")
-  user                     User?                     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f8a889c4362d78f056960ca6dad")
+  org                      Org?                      @relation("adminToorg", fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_6d94bbdb1be6d107f3d971fc808")
+  user                     User?                     @relation("adminTouser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f8a889c4362d78f056960ca6dad")
   verification_application VerificationApplication[] @relation("adminToverification_application")
 
   @@map("admin")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model Campaign {
   beginDate                DateTime                 @db.Timestamptz(6)
   endDate                  DateTime                 @db.Timestamptz(6)
@@ -62,65 +65,69 @@ model Campaign {
   isGlobal                 Boolean                  @default(false)
   showUrl                  Boolean                  @default(true)
   currencyId               String?                  @db.Uuid
-  crypto_currency          CryptoCurrency?          @relation(fields: [cryptoId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_6c80d74e57757c61ae9b7255f79")
-  currency                 Currency?                @relation(fields: [currencyId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_94f38926b8f74ecd88ecf6ba8c8")
-  org                      Org?                     @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f1ade2ad37c88435b086c97cfc8")
-  campaign_media           CampaignMedia[]
-  campaign_template        CampaignTemplate[]
-  daily_participant_metric DailyParticipantMetric[]
-  escrow                   Escrow?
-  hourly_campaign_metric   HourlyCampaignMetric[]
-  participant              Participant[]
-  raffle_prize             RafflePrize?
-  social_post              SocialPost[]
-  transaction              Transaction[]            @relation("campaignToTransaction")
-  transfer                 Transfer[]
+  crypto_currency          CryptoCurrency?          @relation("campaignTocrypto_currency", fields: [cryptoId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_6c80d74e57757c61ae9b7255f79")
+  currency                 Currency?                @relation("campaignTocurrency", fields: [currencyId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_94f38926b8f74ecd88ecf6ba8c8")
+  org                      Org?                     @relation("campaignToorg", fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f1ade2ad37c88435b086c97cfc8")
+  daily_participant_metric DailyParticipantMetric[] @relation("campaignTodaily_participant_metric")
+  escrow                   Escrow?                  @relation("campaignToescrow")
+  hourly_campaign_metric   HourlyCampaignMetric[]   @relation("campaignTohourly_campaign_metric")
+  participant              Participant[]            @relation("campaignToparticipant")
+  raffle_prize             RafflePrize?             @relation("campaignToraffle_prize")
+  social_post              SocialPost[]             @relation("campaignTosocial_post")
+  transaction              Transaction[]            @relation("campaignTotransaction")
+  transfer                 Transfer[]               @relation("campaignTotransfer")
 
   @@index([status], map: "IDX_08135474cffdb8282c4ff37271")
   @@index([beginDate], map: "IDX_4293bebb45d5083b55b41ac95d")
   @@index([endDate], map: "IDX_a103498328a90babd98007c9a1")
   @@index([isGlobal], map: "IDX_f04c2ce9b8b29b7348134ad30a")
   @@map("campaign")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model CampaignMedia {
-  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  campaignId  String?   @db.Uuid
-  channel     String?   @db.VarChar
-  media       String?   @db.VarChar
-  mediaFormat String?   @db.VarChar
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  campaignId  String?  @db.Uuid
+  channel     String?  @db.VarChar
+  media       String?  @db.VarChar
+  mediaFormat String?  @db.VarChar
   isDefault   Boolean?
-  createdAt   DateTime  @default(now()) @db.Timestamp(6)
-  updatedAt   DateTime  @default(now()) @updatedAt @db.Timestamp(6)
-  campaign    Campaign? @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_b845045382e55918752955d23cb")
+  createdAt   DateTime @default(now()) @db.Timestamp(6)
+  updatedAt   DateTime @default(now()) @updatedAt @db.Timestamp(6)
 
   @@map("campaign_media")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model CampaignTemplate {
-  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  campaignId String?   @db.Uuid
-  channel    String?   @db.VarChar
-  post       String?   @db.VarChar
-  createdAt  DateTime  @default(now()) @db.Timestamp(6)
-  updatedAt  DateTime  @default(now()) @updatedAt @db.Timestamp(6)
-  campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_19b3f8a418cf4753d5df4291099")
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  campaignId String?  @db.Uuid
+  channel    String?  @db.VarChar
+  post       String?  @db.VarChar
+  createdAt  DateTime @default(now()) @db.Timestamp(6)
+  updatedAt  DateTime @default(now()) @updatedAt @db.Timestamp(6)
 
   @@map("campaign_template")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model CryptoCurrency {
   id                 String              @id(map: "PK_95addf5dd9597703119a61255bf") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   type               String              @unique(map: "UQ_11b2d6b4f14611301518cdec2e9") @db.VarChar
   contractAddress    String?             @unique(map: "UQ_6c11f6c7a2b89fce698221b2f50") @db.VarChar
   createdAt          DateTime            @default(now()) @db.Timestamp(6)
   updatedAt          DateTime            @default(now()) @updatedAt @db.Timestamp(6)
-  campaign           Campaign[]
-  crypto_transaction CryptoTransaction[]
+  campaign           Campaign[]          @relation("campaignTocrypto_currency")
+  crypto_transaction CryptoTransaction[] @relation("crypto_currencyTocrypto_transaction")
 
   @@map("crypto_currency")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model CryptoTransaction {
   id              String          @id(map: "PK_7107601dbf52f2f9d52d8890467") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   blockNumber     Int?
@@ -132,11 +139,13 @@ model CryptoTransaction {
   cryptoId        String?         @db.Uuid
   createdAt       DateTime        @default(now()) @db.Timestamp(6)
   updatedAt       DateTime        @default(now()) @updatedAt @db.Timestamp(6)
-  crypto_currency CryptoCurrency? @relation(fields: [cryptoId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ea1d711f8ac8362a89ae10d4ecd")
+  crypto_currency CryptoCurrency? @relation("crypto_currencyTocrypto_transaction", fields: [cryptoId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ea1d711f8ac8362a89ae10d4ecd")
 
   @@map("crypto_transaction")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model Currency {
   id               String     @id(map: "PK_3cda65c731a6264f0e444cc9b91") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tatumId          String     @db.VarChar
@@ -152,13 +161,15 @@ model Currency {
   tokenId          String?    @db.Uuid
   accountBalance   Float?     @default(0)
   availableBalance Float?     @default(0)
-  token            Token?     @relation(fields: [tokenId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_d1e8baad49c6c5514b6a0dcba26")
-  wallet           Wallet?    @relation(fields: [walletId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ea00856ad382361ea6545c3d23c")
-  campaign         Campaign[]
+  token            Token?     @relation("currencyTotoken", fields: [tokenId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_d1e8baad49c6c5514b6a0dcba26")
+  wallet           Wallet?    @relation("currencyTowallet", fields: [walletId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ea00856ad382361ea6545c3d23c")
+  campaign         Campaign[] @relation("campaignTocurrency")
 
   @@map("currency")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model CustodialAddress {
   id        String   @id(map: "PK_66a3eeadf9b81e7784b0240b7bb") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   chain     String   @db.VarChar
@@ -167,11 +178,13 @@ model CustodialAddress {
   createdAt DateTime @default(now()) @db.Timestamp(6)
   updatedAt DateTime @default(now()) @updatedAt @db.Timestamp(6)
   walletId  String?  @db.Uuid
-  wallet    Wallet?  @relation(fields: [walletId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_21fcc5a99d684c08f35cf493aa3")
+  wallet    Wallet?  @relation("custodial_addressTowallet", fields: [walletId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_21fcc5a99d684c08f35cf493aa3")
 
   @@map("custodial_address")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model DailyParticipantMetric {
   id                      String    @id(map: "PK_2941b85aab0073a60a1319ec3b4") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   clickCount              String    @default(dbgenerated("0")) @db.VarChar
@@ -187,12 +200,14 @@ model DailyParticipantMetric {
   updatedAt               DateTime  @default(now()) @updatedAt @db.Timestamp(6)
   userId                  String?   @db.Uuid
   campaignId              String?   @db.Uuid
-  campaign                Campaign? @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_339b0794c16489770996c4991ca")
-  user                    User?     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_82c4ef42af06b025fe03a6b7d34")
+  campaign                Campaign? @relation("campaignTodaily_participant_metric", fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_339b0794c16489770996c4991ca")
+  user                    User?     @relation("daily_participant_metricTouser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_82c4ef42af06b025fe03a6b7d34")
 
   @@map("daily_participant_metric")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model Escrow {
   id         String    @id(map: "PK_4aafc323d34fd7979460661ab4a") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   amount     String    @db.VarChar
@@ -200,12 +215,14 @@ model Escrow {
   walletId   String?   @db.Uuid
   createdAt  DateTime  @default(now()) @db.Timestamp(6)
   updatedAt  DateTime  @default(now()) @updatedAt @db.Timestamp(6)
-  campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_9a7c2a319665a11a340b523f591")
-  wallet     Wallet?   @relation(fields: [walletId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f980ed731d30053ac7e941c795c")
+  campaign   Campaign? @relation("campaignToescrow", fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_9a7c2a319665a11a340b523f591")
+  wallet     Wallet?   @relation("escrowTowallet", fields: [walletId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f980ed731d30053ac7e941c795c")
 
   @@map("escrow")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model ExternalAddress {
   id              String   @id(map: "PK_23160bcba1fe6e3e4fe67af66b3") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   ethereumAddress String   @unique(map: "UQ_f725434929b77da9f8e1aeb9c42") @db.VarChar
@@ -215,12 +232,14 @@ model ExternalAddress {
   updatedAt       DateTime @default(now()) @updatedAt @db.Timestamp(6)
   userId          String?  @db.Uuid
   walletId        String?  @db.Uuid
-  user            User?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f362b520f3de71dd59b128fea4e")
-  wallet          Wallet?  @relation(fields: [walletId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_11b6bf0a61503812833359e9d3d")
+  user            User?    @relation("external_addressTouser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f362b520f3de71dd59b128fea4e")
+  wallet          Wallet?  @relation("external_addressTowallet", fields: [walletId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_11b6bf0a61503812833359e9d3d")
 
   @@map("external_address")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model ExternalWallet {
   id              String   @id(map: "PK_116395b341d18fc5cb46d6de4f6") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   ethereumAddress String   @unique(map: "UQ_4493ccb3fc989cdb2e318a81afb") @db.VarChar
@@ -231,12 +250,14 @@ model ExternalWallet {
   updatedAt       DateTime @default(now()) @updatedAt @db.Timestamp(6)
   userId          String?  @db.Uuid
   orgId           String?  @db.Uuid
-  org             Org?     @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_9df582d498e093cd579740f5c4c")
-  user            User?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_a4f3bbd0da712db47bd85ce3c5e")
+  org             Org?     @relation("external_walletToorg", fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_9df582d498e093cd579740f5c4c")
+  user            User?    @relation("external_walletTouser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_a4f3bbd0da712db47bd85ce3c5e")
 
   @@map("external_wallet")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model FactorLink {
   factorId                              String   @id(map: "PK_7d5e671b16cf72db6b0f825e79f") @db.VarChar
   type                                  String   @db.VarChar
@@ -251,8 +272,10 @@ model FactorLink {
   user_factor_link_verificationIdTouser User?    @relation("factor_link_verificationIdTouser", fields: [verificationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_af734dc6c22a087728b5c63789e")
 
   @@map("factor_link")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model HourlyCampaignMetric {
   id               String    @id(map: "PK_34a4c0755a2c03c4659f5d0174f") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   postCount        String    @default(dbgenerated("0")) @db.VarChar
@@ -267,20 +290,24 @@ model HourlyCampaignMetric {
   updatedAt        DateTime  @default(now()) @updatedAt @db.Timestamp(6)
   campaignId       String?   @db.Uuid
   orgId            String?   @db.Uuid
-  campaign         Campaign? @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_0a14e4214cbadbbf5ab94dfeeb0")
-  org              Org?      @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_65dc03b9a87221a49c0584227ea")
+  campaign         Campaign? @relation("campaignTohourly_campaign_metric", fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_0a14e4214cbadbbf5ab94dfeeb0")
+  org              Org?      @relation("hourly_campaign_metricToorg", fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_65dc03b9a87221a49c0584227ea")
 
   @@map("hourly_campaign_metric")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model Migrations {
   id        Int    @id(map: "PK_8c82d7f526340ab734260ea46be") @default(autoincrement())
   timestamp BigInt
   name      String @db.VarChar
 
   @@map("migrations")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model NotificationSettings {
   id              String   @id(map: "PK_d131abd7996c475ef768d4559ba") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   kyc             Boolean  @default(true)
@@ -290,11 +317,13 @@ model NotificationSettings {
   createdAt       DateTime @default(now()) @db.Timestamp(6)
   updatedAt       DateTime @default(now()) @updatedAt @db.Timestamp(6)
   userId          String?  @unique(map: "REL_5a8ffc3b89343043c9440d631e") @db.Uuid
-  user            User?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_5a8ffc3b89343043c9440d631e2")
+  user            User?    @relation("notification_settingsTouser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_5a8ffc3b89343043c9440d631e2")
 
   @@map("notification_settings")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model Org {
   id                     String                 @id(map: "PK_703783130f152a752cadf7aa751") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name                   String                 @db.VarChar
@@ -302,16 +331,18 @@ model Org {
   updatedAt              DateTime               @default(now()) @updatedAt @db.Timestamp(6)
   stripeId               String?                @db.VarChar
   logo                   String?                @db.VarChar
-  admin                  Admin[]
-  campaign               Campaign[]
-  external_wallet        ExternalWallet[]
-  hourly_campaign_metric HourlyCampaignMetric[]
-  transfer               Transfer[]
-  wallet                 Wallet?
+  admin                  Admin[]                @relation("adminToorg")
+  campaign               Campaign[]             @relation("campaignToorg")
+  external_wallet        ExternalWallet[]       @relation("external_walletToorg")
+  hourly_campaign_metric HourlyCampaignMetric[] @relation("hourly_campaign_metricToorg")
+  transfer               Transfer[]             @relation("orgTotransfer")
+  wallet                 Wallet?                @relation("orgTowallet")
 
   @@map("org")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model Participant {
   id                 String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   clickCount         String   @default(dbgenerated("0")) @db.VarChar
@@ -325,13 +356,15 @@ model Participant {
   userId             String   @db.Uuid
   email              String?  @db.VarChar
   blacklist          Boolean  @default(false)
-  campaign           Campaign @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_1835802549e230f6cd88c6efef9")
-  user               User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_b915e97dea27ffd1e40c8003b3b")
+  campaign           Campaign @relation("campaignToparticipant", fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_1835802549e230f6cd88c6efef9")
+  user               User     @relation("participantTouser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_b915e97dea27ffd1e40c8003b3b")
 
   @@id([id, campaignId, userId], map: "PK_b22a56c2e60aa49dd92b7cd839b")
   @@map("participant")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model Profile {
   id             String    @id(map: "PK_3dd8bfc97e4a77c70971591bdcb") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   username       String    @unique(map: "UQ_d80b94dc62f7467403009d88062") @db.VarChar
@@ -350,11 +383,13 @@ model Profile {
   updatedAt      DateTime  @default(now()) @updatedAt @db.Timestamp(6)
   profilePicture String?   @db.VarChar
   deletedAt      DateTime? @db.Timestamp(6)
-  user           User?     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_a24972ebd73b106250713dcddd9")
+  user           User?     @relation("profileTouser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_a24972ebd73b106250713dcddd9")
 
   @@map("profile")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model QualityScore {
   id            String   @id(map: "PK_252e172dc3040a425daafa0ca16") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   clicks        String   @default(dbgenerated("0")) @db.VarChar
@@ -368,8 +403,10 @@ model QualityScore {
   updatedAt     DateTime @default(now()) @updatedAt @db.Timestamp(6)
 
   @@map("quality_score")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model QueryResultCache {
   id         Int     @id(map: "PK_6a98f758d8bfd010e7e10ffd3d3") @default(autoincrement())
   identifier String? @db.VarChar
@@ -379,8 +416,10 @@ model QueryResultCache {
   result     String
 
   @@map("query-result-cache")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model RafflePrize {
   id            String     @id(map: "PK_d209918db84713ab8aec65ccec7") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   displayName   String     @db.VarChar
@@ -389,12 +428,14 @@ model RafflePrize {
   updatedAt     DateTime   @default(now()) @updatedAt @db.Timestamp(6)
   createdAt     DateTime   @default(now()) @db.Timestamp(6)
   campaignId    String?    @unique(map: "REL_29f131f37d9cbb4814b2b6d306") @db.Uuid
-  campaign      Campaign?  @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_29f131f37d9cbb4814b2b6d3069")
-  transfer      Transfer[]
+  campaign      Campaign?  @relation("campaignToraffle_prize", fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_29f131f37d9cbb4814b2b6d3069")
+  transfer      Transfer[] @relation("raffle_prizeTotransfer")
 
   @@map("raffle_prize")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model SocialLink {
   id                 String   @id(map: "PK_51b2adcc50ae969ba051eacd714") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   type               String   @db.VarChar
@@ -409,11 +450,13 @@ model SocialLink {
   openId             String?  @db.VarChar
   accessTokenExpiry  String?  @db.VarChar
   refreshTokenExpiry String?  @db.VarChar
-  user               User?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_d8a1d8b8a8235632f9011346197")
+  user               User?    @relation("social_linkTouser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_d8a1d8b8a8235632f9011346197")
 
   @@map("social_link")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model SocialPost {
   id            String   @db.VarChar
   type          String   @default("twitter") @db.VarChar
@@ -425,13 +468,15 @@ model SocialPost {
   createdAt     DateTime @default(now()) @db.Timestamp(6)
   updatedAt     DateTime @default(now()) @updatedAt @db.Timestamp(6)
   userId        String   @db.Uuid
-  campaign      Campaign @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_3073fc6f7d48ae9dc23af5f00f6")
-  user          User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ac33a6e1367ede7117c1742d6a4")
+  campaign      Campaign @relation("campaignTosocial_post", fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_3073fc6f7d48ae9dc23af5f00f6")
+  user          User     @relation("social_postTouser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ac33a6e1367ede7117c1742d6a4")
 
   @@id([id, campaignId, userId], map: "PK_361a1688e628ebb9c56ecc9cacb")
   @@map("social_post")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model TatumWallet {
   id        String   @id(map: "PK_7ea26f9bf3a0f53ce5802ac46cf") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   currency  String   @db.VarChar
@@ -441,8 +486,10 @@ model TatumWallet {
   updatedAt DateTime @default(now()) @updatedAt @db.Timestamp(6)
 
   @@map("tatum_wallet")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model Token {
   id              String     @id(map: "PK_82fae97f905930df5d62a702fc9") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   symbol          String     @db.VarChar
@@ -451,11 +498,13 @@ model Token {
   enabled         Boolean    @default(true)
   createdAt       DateTime   @default(now()) @db.Timestamp(6)
   updatedAt       DateTime   @default(now()) @updatedAt @db.Timestamp(6)
-  currency        Currency[]
+  currency        Currency[] @relation("currencyTotoken")
 
   @@map("token")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model Transfer {
   id              String       @id(map: "PK_fd9ddbdd49a17afcbe014401295") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   amount          String       @db.VarChar
@@ -474,25 +523,29 @@ model Transfer {
   currency        String?      @db.VarChar
   stripeCardId    String?      @db.VarChar
   type            String?      @db.VarChar
-  campaign        Campaign?    @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_bbe21a18f940dab59ffd61671ef")
-  org             Org?         @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_69167255fc368a59063ebd8cf16")
-  raffle_prize    RafflePrize? @relation(fields: [rafflePrizeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f6c593d6013276bc80450c7638e")
-  wallet          Wallet?      @relation(fields: [walletId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_011b4b0e8490d5434857bd40efa")
+  campaign        Campaign?    @relation("campaignTotransfer", fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_bbe21a18f940dab59ffd61671ef")
+  org             Org?         @relation("orgTotransfer", fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_69167255fc368a59063ebd8cf16")
+  raffle_prize    RafflePrize? @relation("raffle_prizeTotransfer", fields: [rafflePrizeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f6c593d6013276bc80450c7638e")
+  wallet          Wallet?      @relation("transferTowallet", fields: [walletId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_011b4b0e8490d5434857bd40efa")
 
   @@map("transfer")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model TwentyFourHourMetric {
   id        String   @id(map: "PK_5f2e32ce3d19006f27953af0bb8") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   score     String   @default(dbgenerated("0")) @db.VarChar
   createdAt DateTime @default(now()) @db.Timestamp(6)
   userId    String?  @db.Uuid
   updatedAt DateTime @default(now()) @updatedAt @db.Timestamp(6)
-  user      User?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_e965aecf58d4a7ff9406ab777e1")
+  user      User?    @relation("twenty_four_hour_metricTouser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_e965aecf58d4a7ff9406ab777e1")
 
   @@map("twenty_four_hour_metric")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model User {
   active                                       Boolean                   @default(true)
   createdAt                                    DateTime                  @default(now()) @db.Timestamp(6)
@@ -506,27 +559,29 @@ model User {
   referralCode                                 String?                   @db.VarChar
   deletedAt                                    DateTime?                 @db.Timestamp(6)
   promoCode                                    String?                   @db.VarChar
-  admin                                        Admin[]
-  daily_participant_metric                     DailyParticipantMetric[]
-  external_address                             ExternalAddress[]
-  external_wallet                              ExternalWallet[]
+  admin                                        Admin[]                   @relation("adminTouser")
+  daily_participant_metric                     DailyParticipantMetric[]  @relation("daily_participant_metricTouser")
+  external_address                             ExternalAddress[]         @relation("external_addressTouser")
+  external_wallet                              ExternalWallet[]          @relation("external_walletTouser")
   factor_link_factor_link_userIdTouser         FactorLink[]              @relation("factor_link_userIdTouser")
   factor_link_factor_link_verificationIdTouser FactorLink[]              @relation("factor_link_verificationIdTouser")
-  notification_settings                        NotificationSettings?
-  participant                                  Participant[]
-  profile                                      Profile?
-  session                                      Session[]                 @relation("SessionTouser")
-  social_link                                  SocialLink[]
-  social_post                                  SocialPost[]
-  twenty_four_hour_metric                      TwentyFourHourMetric[]
-  verification_application                     VerificationApplication[]
-  wallet                                       Wallet?
-  xoxoday_order                                XoxodayOrder[]
+  notification_settings                        NotificationSettings?     @relation("notification_settingsTouser")
+  participant                                  Participant[]             @relation("participantTouser")
+  profile                                      Profile?                  @relation("profileTouser")
+  session                                      Session[]                 @relation("sessionTouser")
+  social_link                                  SocialLink[]              @relation("social_linkTouser")
+  social_post                                  SocialPost[]              @relation("social_postTouser")
+  twenty_four_hour_metric                      TwentyFourHourMetric[]    @relation("twenty_four_hour_metricTouser")
+  verification_application                     VerificationApplication[] @relation("userToverification_application")
+  wallet                                       Wallet?                   @relation("userTowallet")
+  xoxoday_order                                XoxodayOrder[]            @relation("userToxoxoday_order")
 
   @@index([identityId], map: "IDX_dea97e26c765a4cdb575957a14")
   @@map("user")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model Verification {
   id        String    @id(map: "PK_f7e3a90ca384e71d6e2e93bb340") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   email     String    @db.VarChar
@@ -538,8 +593,10 @@ model Verification {
   type      String?   @default("") @db.VarChar
 
   @@map("verification")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model VerificationApplication {
   applicationId String                              @db.VarChar
   status        String                              @db.VarChar
@@ -552,29 +609,33 @@ model VerificationApplication {
   profile       String?                             @db.VarChar
   adminId       String?                             @db.Uuid
   admin         Admin?                              @relation("adminToverification_application", fields: [adminId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_0f5953ed6d6b75ee724463f051d")
-  user          User?                               @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_79e9b3d653b00690eae5f235dad")
+  user          User?                               @relation("userToverification_application", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_79e9b3d653b00690eae5f235dad")
 
   @@map("verification_application")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model Wallet {
   id                String             @id(map: "PK_bec464dd8d54c39c54fd32e2334") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   createdAt         DateTime           @default(now()) @db.Timestamp(6)
   updatedAt         DateTime           @default(now()) @updatedAt @db.Timestamp(6)
   userId            String?            @unique(map: "UQ_35472b1fe48b6330cd349709564") @db.Uuid
   orgId             String?            @unique(map: "UQ_bf1e49e09b07f54d894eee24803") @db.Uuid
-  org               Org?               @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_bf1e49e09b07f54d894eee24803")
-  user              User?              @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_35472b1fe48b6330cd349709564")
-  currency          Currency[]
-  custodial_address CustodialAddress[]
-  escrow            Escrow[]
-  external_address  ExternalAddress[]
-  transfer          Transfer[]
-  wallet_currency   WalletCurrency[]
+  org               Org?               @relation("orgTowallet", fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_bf1e49e09b07f54d894eee24803")
+  user              User?              @relation("userTowallet", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_35472b1fe48b6330cd349709564")
+  currency          Currency[]         @relation("currencyTowallet")
+  custodial_address CustodialAddress[] @relation("custodial_addressTowallet")
+  escrow            Escrow[]           @relation("escrowTowallet")
+  external_address  ExternalAddress[]  @relation("external_addressTowallet")
+  transfer          Transfer[]         @relation("transferTowallet")
+  wallet_currency   WalletCurrency[]   @relation("walletTowallet_currency")
 
   @@map("wallet")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model WalletCurrency {
   id        String   @id(map: "PK_3a458d3da4096019c5cd630c22e") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   type      String   @default("Coiin") @db.VarChar
@@ -582,11 +643,13 @@ model WalletCurrency {
   walletId  String?  @db.Uuid
   createdAt DateTime @default(now()) @db.Timestamp(6)
   updatedAt DateTime @default(now()) @updatedAt @db.Timestamp(6)
-  wallet    Wallet?  @relation(fields: [walletId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_2c16fccf4e3ac04ec0e6f4f68d0")
+  wallet    Wallet?  @relation("walletTowallet_currency", fields: [walletId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_2c16fccf4e3ac04ec0e6f4f68d0")
 
   @@map("wallet_currency")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model WeeklyReward {
   id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId        String?  @db.Uuid
@@ -598,8 +661,10 @@ model WeeklyReward {
   updatedAt     DateTime @default(now()) @updatedAt @db.Timestamp(6)
 
   @@map("weekly_reward")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model XoxodayOrder {
   id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   xoxodayOrderId String   @db.VarChar
@@ -613,11 +678,13 @@ model XoxodayOrder {
   userId         String?  @db.Uuid
   createdAt      DateTime @default(now()) @db.Timestamp(6)
   updatedAt      DateTime @default(now()) @updatedAt @db.Timestamp(6)
-  user           User?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_e0883ce6ef869534d2013fc414b")
+  user           User?    @relation("userToxoxoday_order", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_e0883ce6ef869534d2013fc414b")
 
   @@map("xoxoday_order")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model MarketData {
   id        String   @id(map: "PK_f66c35bec52b05f6eae861225e6") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   symbol    String   @db.VarChar
@@ -626,8 +693,10 @@ model MarketData {
   updatedAt DateTime @default(now()) @db.Timestamp(6)
 
   @@map("market_data")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model Transaction {
   id              String    @id(map: "PK_89eadb93a89810556e1cbcd6ab9") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tag             String    @db.VarChar
@@ -640,11 +709,13 @@ model Transaction {
   createdAt       DateTime  @default(now()) @db.Timestamp(6)
   updatedAt       DateTime  @default(now()) @db.Timestamp(6)
   campaignId      String?   @db.Uuid
-  campaign        Campaign? @relation("campaignToTransaction", fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_3f3891eefaf8dcce48eae8c709f")
+  campaign        Campaign? @relation("campaignTotransaction", fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_3f3891eefaf8dcce48eae8c709f")
 
   @@map("transaction")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model Session {
   id         String    @id(map: "PK_f55da76ac1c3ac420f444d2ff11") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   ip         String?   @db.VarChar
@@ -656,9 +727,10 @@ model Session {
   createdAt  DateTime  @default(now()) @db.Timestamp(6)
   updatedAt  DateTime  @default(now()) @db.Timestamp(6)
   userId     String?   @db.Uuid
-  user       User?     @relation("SessionTouser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_3d2f174ef04fb312fdebd0ddc53")
+  user       User?     @relation("sessionTouser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_3d2f174ef04fb312fdebd0ddc53")
 
   @@map("session")
+  @@ignore
 }
 
 enum verification_application_level_enum {

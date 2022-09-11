@@ -1,4 +1,4 @@
-{
+{   
     "compilerOptions": {
         "target": "es2019",
         "outDir": "dist",
@@ -32,7 +32,8 @@
         },
         "lib": ["ES2020.Promise", "es2019", "DOM", "ES6", "DOM.Iterable", "ScriptHost"]
     },
-    "include": ["src/*", "src/**/*"],
-    "exclude": ["node_modules/**"],
-    "compileOnSave": false
+    "include": ["src/*", "src/**/*"  ],
+    "exclude": ["node_modules/**",  "test/unit/**/*.spec.ts"],
+    "compileOnSave": false,
+    
 }
