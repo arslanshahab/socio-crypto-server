@@ -1,4 +1,6 @@
 {   
+    
+    "ts-node": {"files": true},
     "compilerOptions": {
         "target": "es2019",
         "outDir": "dist",
@@ -30,10 +32,12 @@
             "models": ["models/*"],
             "clients": ["clients/*"]
         },
-        "lib": ["ES2020.Promise", "es2019", "DOM", "ES6", "DOM.Iterable", "ScriptHost"]
+        "lib": ["ES2020.Promise", "es2019", "DOM", "ES6", "DOM.Iterable", "ScriptHost"],
+        
     },
-    "include": ["src/*", "src/**/*"  ],
-    "exclude": ["node_modules/**",  "test/unit/**/*.spec.ts"],
+    "files": ["src/types.d.ts"],
+    "include": ["src/*", "src/**/*", "src/types", "test/unit/**/*.spec.ts",],
+    "exclude": ["node_modules/**",],
     "compileOnSave": false,
     
 }

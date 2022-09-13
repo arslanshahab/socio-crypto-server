@@ -8,6 +8,7 @@ import { UserAuthMiddleware } from "./middleware/UserAuthMiddleware";
 import "./services/PrismaService";
 import "./middleware/HttpExceptionFilter";
 import RedisClient from "cache-manager-redis-store";
+
 // import * as bodyParser from "body-parser";
 // import * as compress from "compression";
 // import * as cookieParser from "cookie-parser";

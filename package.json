@@ -17,8 +17,8 @@
         "test:integration:ci": "docker build . -f ./test.Dockerfile",
         "test:integration": "RATE_LIMIT_MAX=10000000000 PG_PASSWORD=password PG_HOST=127.0.0.1 PG_PORT=5432 PG_DATABASE=postgres PG_USER=postgres NODE_ENV=test mocha -r ts-node/register './test/integration/**/*.test.ts' --exit --timeout 20000",
         "test:unit:report": "NODE_ENV=test nyc --reporter=text mocha -r ts-node/register './test/unit/**/*.spec.ts' --grep '#unit' --exit",
-        "test:unit": "cross-env NODE_ENV=test mocha",
-        "test:coverage": "cross-env NODE_ENV=test nyc mocha",
+        "test:unit": "NODE_ENV=test mocha --exit",
+        "test:coverage": "NODE_ENV=test nyc mocha",
         "test:load:app": "$(npm bin)/artillery run test/load/app.yaml",
         "test:load:tracker": "$(npm bin)/artillery run test/load/actionTracker.yaml",
         "test:load:health": "$(npm bin)/artillery run test/load/health.yaml",
@@ -46,6 +46,7 @@
         "cron:marketData:run": "AWS_PROFILE=raiinmaker LOAD_ENV=true ts-node src/cron/marketData/index.ts",
         "cron:qualityScore:run": "AWS_PROFILE=raiinmaker LOAD_ENV=true ts-node src/cron/qualityScore/index.ts",
         "cron:scoreAggregate:run": "AWS_PROFILE=raiinmaker LOAD_ENV=true ts-node src/cron/scoreAggregate/index.ts"
+
     },
     "dependencies": {
         "@binance-chain/javascript-sdk": "^4.2.0",
