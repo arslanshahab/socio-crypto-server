@@ -48,6 +48,7 @@ import {
 } from "../util/constants";
 import { Campaign } from "./Campaign";
 import { trim } from "lodash";
+import { Nft } from "./Nft";
 
 @Entity()
 export class User extends BaseEntity {
@@ -128,6 +129,9 @@ export class User extends BaseEntity {
 
     @OneToMany((_type) => XoxodayOrder, (order) => order.user)
     public orders: XoxodayOrder[];
+
+    @OneToMany((_type) => Admin, (admin) => admin.user)
+    public nfts: Nft[];
 
     @BeforeInsert()
     @BeforeUpdate()

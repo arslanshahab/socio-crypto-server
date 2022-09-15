@@ -1,10 +1,12 @@
 import { Injectable } from "@tsed/di";
-import { Prisma, User } from "@prisma/client";
+import { Prisma, Profile, User } from "@prisma/client";
 import { sha256Hash } from "../util/crypto";
 import { UpdateProfileInterestsParams, RemoveInterestsParams } from "../models/RestModels";
 import { NotFound } from "@tsed/exceptions";
 import { PROFILE_NOT_FOUND } from "../util/errors";
 import { prisma, readPrisma } from "../clients/prisma";
+
+const { BUCKET_NAME = "rm-raiinmaker-staging" } = process.env;
 
 @Injectable()
 export class ProfileService {
@@ -102,9 +104,9 @@ export class ProfileService {
         });
     }
 
-    public async updateProfilePicture(userId: string, picture: string) {
+    public async updateProfilePicture(profile: Profile, picture: string) {
         return await prisma.profile.update({
-            where: { userId },
+            where: { id: profile.id },
             data: { profilePicture: picture },
         });
     }
@@ -115,5 +117,9 @@ export class ProfileService {
 
     public async ifEmailExist(email: string) {
         return Boolean(await readPrisma.profile.findFirst({ where: { email: email.toLowerCase() } }));
+    }
+
+    public getProfilePictureUrl(profile: Profile) {
+        return `${BUCKET_NAME}/profile/${profile.userId}/${profile.profilePicture}`;
     }
 }
