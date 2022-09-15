@@ -26,7 +26,7 @@ import {
     SocialPostResultModel,
 } from "../../models/RestModels";
 import { Prisma } from "@prisma/client";
-import { MediaType, PointValueTypes, SocialType } from "types";
+import { MediaType, PointValueTypes, SocialType } from "types.d.ts";
 import { SocialLinkService } from "../../services/SocialLinkService";
 import { CampaignService } from "../../services/CampaignService";
 import { CampaignMediaService } from "../../services/CampaignMediaService";

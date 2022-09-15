@@ -3,7 +3,7 @@ import { S3Client } from "../clients/s3";
 import { generateFactorsFromKYC, getApplicationStatus, getKycStatusDetails } from "../util";
 import { AcuantClient } from "../clients/acuant";
 import { Admin, Profile, User, VerificationApplication } from "@prisma/client";
-import { KycApplication, KycStatus } from "types";
+import { KycApplication, KycStatus } from "types.d.ts";
 import { KycLevel, KycStatus as KycStatusEnum } from "../util/constants";
 import { Firebase } from "../clients/firebase";
 import { Validator } from "../schemas";

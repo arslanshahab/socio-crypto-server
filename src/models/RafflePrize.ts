@@ -11,7 +11,7 @@ import {
 } from "typeorm";
 import { Campaign } from "./Campaign";
 import { Transfer } from "./Transfer";
-import { RafflePrizeStructure } from "types";
+import { RafflePrizeStructure } from "types.d.ts";
 
 @Entity()
 export class RafflePrize extends BaseEntity {

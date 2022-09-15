@@ -4,7 +4,7 @@ import {
     NewCampaignVariables,
     ListCampaignsVariables,
     ListCampaignsVariablesV2,
-} from "types";
+} from "types.d.ts";
 import { Campaign } from "../models/Campaign";
 import { Admin } from "../models/Admin";
 import { checkPermissions } from "../middleware/authentication";
@@ -28,7 +28,7 @@ import { CampaignMedia } from "../models/CampaignMedia";
 import { CampaignTemplate } from "../models/CampaignTemplate";
 import { addYears } from "date-fns";
 import { CampaignStatus, RAIINMAKER_ORG_NAME } from "../util/constants";
-import { JWTPayload } from "types";
+import { JWTPayload } from "types.d.ts";
 import {
     ERROR_CALCULATING_TIER,
     FormattedError,

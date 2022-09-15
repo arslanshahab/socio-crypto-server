@@ -12,7 +12,7 @@ import { CampaignMedia } from "../models/CampaignMedia";
 import { ApolloError } from "apollo-server-express";
 import { TikTokClient } from "../clients/tiktok";
 import { downloadMedia } from "../util";
-import { JWTPayload, SocialType } from "types";
+import { JWTPayload, SocialType } from "types.d.ts";
 import {
     CAMPAIGN_CLOSED,
     CAMPAIGN_NOT_FOUND,

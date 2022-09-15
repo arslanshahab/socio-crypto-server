@@ -1,6 +1,6 @@
 import fetch from "node-fetch";
 import querystring, { ParsedUrlQueryInput } from "querystring";
-import { GraphApiInputParameters } from "types";
+import { GraphApiInputParameters } from "types.d.ts";
 
 export class FacebookGraphApi {
     public static url = "https://graph.facebook.com";

@@ -1,7 +1,7 @@
 import { Campaign, CampaignMedia, CampaignTemplate, Org, Prisma, User } from "@prisma/client";
 import { Inject, Injectable } from "@tsed/di";
 import { BadRequest, NotFound } from "@tsed/exceptions";
-import { CurrencyResultType, ListCampaignsVariablesV2, Tiers } from "types";
+import { CurrencyResultType, ListCampaignsVariablesV2, Tiers } from "types.d.ts";
 import { CAMPAIGN_NOT_FOUND, CURRENCY_NOT_FOUND, ERROR_CALCULATING_TIER } from "../util/errors";
 import { calculateTier } from "../controllers/helpers";
 import { BN, prepareCacheKey } from "../util";

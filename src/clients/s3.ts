@@ -1,6 +1,6 @@
 import AWS from "aws-sdk";
 import { getBase64FileExtension, deleteFactorFromKycData } from "../util";
-import { KycUser } from "types";
+import { KycUser } from "types.d.ts";
 import { parse } from "json2csv";
 
 AWS.config.update({

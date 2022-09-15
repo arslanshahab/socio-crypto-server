@@ -1,7 +1,7 @@
 import { Secrets } from "../util/secrets";
 import { S3Client } from "./s3";
 import { doFetch, RequestData } from "../util/fetchRequest";
-import { XoxodayOrder } from "types";
+import { XoxodayOrder } from "types.d.ts";
 
 const { NODE_ENV = "development" } = process.env;
 export interface XoxodayAuthData {

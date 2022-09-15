@@ -2,7 +2,7 @@ import { Inject, Injectable } from "@tsed/di";
 import { ParticipantAction, SocialClientType, TransactionChainType, TransactionType } from "../util/constants";
 import { prisma, readPrisma } from "../clients/prisma";
 import { Transaction } from "@prisma/client";
-import { L1DragonchainTransactionAugmented } from "types";
+import { L1DragonchainTransactionAugmented } from "types.d.ts";
 import { DragonChainService } from "./DragonChainService";
 
 @Injectable()

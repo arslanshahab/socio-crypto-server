@@ -4,7 +4,7 @@ import { Campaign } from "../models/Campaign";
 import { Secrets } from "../util/secrets";
 import { paginateList } from "../util";
 import { RequestData, doFetch } from "../util/fetchRequest";
-import { KycStatus, TransferAction } from "types";
+import { KycStatus, TransferAction } from "types.d.ts";
 import {
     KYC_NOTIFICATION_TITLE,
     KYC_NOTIFICATION_BODY,

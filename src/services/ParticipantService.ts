@@ -1,6 +1,6 @@
 import { Campaign, Participant, Prisma } from "@prisma/client";
 import { Inject, Injectable } from "@tsed/di";
-import { FindCampaignById, ParticipantsRawQueryTypes } from "types";
+import { FindCampaignById, ParticipantsRawQueryTypes } from "types.d.ts";
 import { encrypt } from "../util/crypto";
 import { serverBaseUrl } from "../config";
 import { TinyUrl } from "../clients/tinyUrl";

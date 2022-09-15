@@ -1,7 +1,7 @@
 import { S3Client } from "../clients/s3";
 import { User } from "../models/User";
 import { checkPermissions } from "../middleware/authentication";
-import { KycUser } from "types";
+import { KycUser } from "types.d.ts";
 import { Firebase } from "../clients/firebase";
 import { Request, Response } from "express";
 import { VerificationApplication } from "../models/VerificationApplication";
@@ -15,9 +15,9 @@ import {
     getKycStatusDetails,
 } from "../util";
 import { RAIINMAKER_ORG_NAME } from "../util/constants";
-import { KycApplication } from "types";
+import { KycApplication } from "types.d.ts";
 import { FormattedError, KYC_NOT_FOUND, USER_NOT_FOUND, VERIFICATION_NOT_FOUND } from "../util/errors";
-import { JWTPayload } from "types";
+import { JWTPayload } from "types.d.ts";
 
 const validator = new Validator();
 

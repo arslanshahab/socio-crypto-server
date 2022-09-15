@@ -10,7 +10,7 @@ import {
 } from "typeorm";
 import { User } from "./User";
 import { FactorLink } from "./FactorLink";
-import { KycStatus } from "types";
+import { KycStatus } from "types.d.ts";
 import { KycLevel } from "../util/constants";
 import { Admin } from "./Admin";
 

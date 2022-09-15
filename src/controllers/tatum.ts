@@ -20,7 +20,7 @@ import {
     WITHDRAW_LIMIT,
 } from "../util/constants";
 import { Verification } from "../models/Verification";
-import { JWTPayload } from "types";
+import { JWTPayload } from "types.d.ts";
 import { createSubscriptionUrl, getWithdrawAddressForTatum } from "../util/tatumHelper";
 import { getTokenValueInUSD } from "../util/exchangeRate";
 import { errorMap, GLOBAL_WITHDRAW_LIMIT } from "../util/errors";

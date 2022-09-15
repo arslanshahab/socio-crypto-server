@@ -8,7 +8,7 @@ import { SuccessResult } from "../../util/entities";
 import { KYC_LEVEL_1_NOT_APPROVED, KYC_NOT_FOUND, USER_NOT_FOUND, VERIFICATION_NOT_FOUND } from "../../util/errors";
 import { Firebase } from "../../clients/firebase";
 import { VerificationApplicationService } from "../../services/VerificationApplicationService";
-import { KycUser } from "types";
+import { KycUser } from "types.d.ts";
 import { S3Client } from "../../clients/s3";
 import { BooleanResultModel, KycResultModel, UserResultModel } from "../../models/RestModels";
 import { AdminService } from "../../services/AdminService";

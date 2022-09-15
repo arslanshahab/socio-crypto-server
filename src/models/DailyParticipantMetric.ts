@@ -15,7 +15,7 @@ import { Campaign } from "./Campaign";
 import { BN } from "../util";
 import { Participant } from "./Participant";
 import { DateUtils } from "typeorm/util/DateUtils";
-import { AggregateDailyMetrics } from "types";
+import { AggregateDailyMetrics } from "types.d.ts";
 
 @Entity()
 export class DailyParticipantMetric extends BaseEntity {
