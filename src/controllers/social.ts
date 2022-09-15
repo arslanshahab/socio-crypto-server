@@ -156,7 +156,7 @@ export const postToSocial = async (
             postId = await client.post(participant, socialLink, text);
         }
         if (!postId) throw new Error(POST_ID_NOT_FOUND);
-        await HourlyCampaignMetric.upsert(campaign, campaign.org, "post");
+        await HourlyCampaignMetric.upsertData(campaign, campaign.org, "post");
         await participant.campaign.save();
         const socialPost = await SocialPost.newSocialPost(
             postId,

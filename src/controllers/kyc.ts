@@ -33,7 +33,7 @@ export const verifyKyc = async (parent: any, args: { userKyc: KycApplication }, 
             validator.validateKycRegistration(kycParams);
             const newAcuantApplication = await AcuantClient.submitApplication(kycParams);
             const status = getApplicationStatus(newAcuantApplication);
-            verificationApplication = await VerificationApplication.upsert({
+            verificationApplication = await VerificationApplication.upsertData({
                 appId: newAcuantApplication.mtid,
                 status,
                 user,

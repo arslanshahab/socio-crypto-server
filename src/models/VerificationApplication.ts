@@ -49,7 +49,7 @@ export class VerificationApplication extends BaseEntity {
     @UpdateDateColumn()
     public updatedAt: Date;
 
-    public static async upsert(data: {
+    public static async upsertData(data: {
         record?: VerificationApplication;
         appId: string;
         status: KycStatus;
