@@ -678,18 +678,6 @@ model Nft {
   @@map("nft")
 }
 
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
-model typeorm_metadata {
-  type     String  @db.VarChar
-  database String? @db.VarChar
-  schema   String? @db.VarChar
-  table    String? @db.VarChar
-  name     String? @db.VarChar
-  value    String?
-
-  @@ignore
-}
-
 enum verification_application_level_enum {
   LEVEL1
   LEVEL2
