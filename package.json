@@ -46,11 +46,10 @@
         "cron:marketData:run": "AWS_PROFILE=raiinmaker LOAD_ENV=true ts-node src/cron/marketData/index.ts",
         "cron:qualityScore:run": "AWS_PROFILE=raiinmaker LOAD_ENV=true ts-node src/cron/qualityScore/index.ts",
         "cron:scoreAggregate:run": "AWS_PROFILE=raiinmaker LOAD_ENV=true ts-node src/cron/scoreAggregate/index.ts"
-
     },
     "dependencies": {
         "@binance-chain/javascript-sdk": "^4.2.0",
-        "@prisma/client": "^3.11.0",
+        "@prisma/client": "3.11.0",
         "@sentry/node": "^6.18.0",
         "@sentry/tracing": "^6.18.0",
         "@tatumio/tatum": "^1.32.0",
@@ -103,7 +102,7 @@
         "node-fetch": "^2.6.0",
         "paypal-rest-sdk": "^1.8.1",
         "pg": "^8.0.3",
-        "prisma": "^3.11.0",
+        "prisma": "3.11.0",
         "redis": "^3.0.2",
         "secp256k1": "^4.0.2",
         "sodium-native": "^3.3.0",
