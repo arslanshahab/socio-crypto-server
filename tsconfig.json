@@ -29,12 +29,13 @@
         "paths": {
             "controllers": ["controllers/*"],
             "models": ["models/*"],
-            "clients": ["clients/*"]
+            "clients": ["clients/*"],
+            "*.ts": ["*"]
         },
         "lib": ["ES2020.Promise", "es2019", "DOM", "ES6", "DOM.Iterable", "ScriptHost"]
     },
     "files": ["types.d.ts"],
-    "include": ["src/*", "src/**/*", "types.d.ts", "test/unit/**/*.spec.ts"],
+    "include": ["src/*", "src/**/*", "types", "test/unit/**/*.spec.ts"],
     "exclude": ["node_modules/**"],
     "compileOnSave": false
 }
