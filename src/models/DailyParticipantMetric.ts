@@ -117,7 +117,7 @@ export class DailyParticipantMetric extends BaseEntity {
         return response;
     }
 
-    public static async upsert(
+    public static async upsertData(
         user: User,
         campaign: Campaign,
         participant: Participant,

@@ -1,6 +1,6 @@
 {
     "name": "raiinmaker-server",
-    "version": "3.5.18",
+    "version": "3.5.19",
     "main": "index.js",
     "repository": "git@github.com:dragonchain-inc/raiinmaker-server.git",
     "author": "Alex Benedetto <alex061994@gmail.com>",
@@ -153,7 +153,7 @@
         "sinon": "^9.0.2",
         "supertest": "^4.0.2",
         "ts-node-dev": "^2.0.0",
-        "typescript": "^4.6.2",
+        "typescript": "4.7.2",
         "unique-names-generator": "^4.3.1"
     },
     "prettier": {
