@@ -4,7 +4,7 @@ import { ILike } from "typeorm";
 import { Verification } from "../models/Verification";
 import { SesClient } from "../clients/ses";
 import { User } from "../models/User";
-import { JWTPayload, VerificationType } from "src/types";
+import { JWTPayload, VerificationType } from "types";
 import { createSessionToken, createPasswordHash, asyncHandler } from "../util";
 import { Profile } from "../models/Profile";
 import {

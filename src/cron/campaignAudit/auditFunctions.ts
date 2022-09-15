@@ -12,7 +12,7 @@ import {
 import { TatumClient, BatchTransferPayload } from "../../clients/tatumClient";
 import { Campaign, Prisma } from "@prisma/client";
 import { prisma, readPrisma } from "../../clients/prisma";
-import { Tiers, DragonchainCampaignPayoutLedgerPayload } from "../../types.d";
+import { Tiers, DragonchainCampaignPayoutLedgerPayload } from "types";
 import { DragonChainService } from "../../services/DragonChainService";
 
 const dragonChainService = new DragonChainService();

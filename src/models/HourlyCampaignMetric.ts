@@ -18,7 +18,7 @@ import {
     HourlyMetricsGroupedByDateQueryResult,
     DateTrunc,
     PlatformMetricsGroupedByDateParsed,
-} from "../types";
+} from "types";
 import { Validator } from "../schemas";
 import { DateUtils } from "typeorm/util/DateUtils";
 

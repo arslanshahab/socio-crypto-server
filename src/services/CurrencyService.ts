@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@tsed/di";
-import { LedgerAccountTypes } from "../types";
+import { LedgerAccountTypes } from "types";
 import { WalletService } from "./WalletService";
 import { Prisma } from "@prisma/client";
 import { prisma, readPrisma } from "../clients/prisma";

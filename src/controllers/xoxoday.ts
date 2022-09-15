@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { Xoxoday } from "../clients/xoxoday";
 import { generateRandomId, supportedCountries, asyncHandler, BN } from "../util";
-import { XoxodayOrder, XoxodayVoucher } from "src/types";
+import { XoxodayOrder, XoxodayVoucher } from "types";
 import { getCurrencyValueInUSD, getExchangeRateForCurrency, getTokenValueInUSD } from "../util/exchangeRate";
 import { User } from "../models/User";
 import { getSocialClient } from "./social";

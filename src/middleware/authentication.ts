@@ -4,7 +4,7 @@ import express from "express";
 import { ACCOUNT_RESTRICTED, FormattedError, NO_TOKEN_PROVIDED } from "../util/errors";
 import { User } from "../models/User";
 import { SessionService } from "../services/SessionService";
-import { JWTPayload } from "src/types";
+import { JWTPayload } from "types";
 
 const sessionService = new SessionService();
 

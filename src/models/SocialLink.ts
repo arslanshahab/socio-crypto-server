@@ -8,7 +8,7 @@ import {
     UpdateDateColumn,
 } from "typeorm";
 import { User } from "./User";
-import { SocialType, TiktokLinkCredentials, TwitterLinkCredentials } from "../types";
+import { SocialType, TiktokLinkCredentials, TwitterLinkCredentials } from "types";
 import { decrypt, encrypt } from "../util/crypto";
 import BigNumber from "bignumber.js";
 import { BN } from "../util";

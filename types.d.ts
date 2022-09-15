@@ -1,9 +1,16 @@
 import express from "express";
 import { BigNumber } from "bignumber.js";
 import { Stripe } from "stripe";
-import { CampaignState, CampaignStatus, NftName, NftType, ParticipantAction, SocialClientType } from "./util/constants";
+import {
+    CampaignState,
+    CampaignStatus,
+    NftName,
+    NftType,
+    ParticipantAction,
+    SocialClientType,
+} from "./src/util/constants";
 import { Currency as PrismaCurrency, Token as PrismaToken, Wallet } from "@prisma/client";
-import { Token } from "./models/Token";
+import { Token } from "./src/models/Token";
 import { L1DragonchainTransactionFull } from "dragonchain-sdk";
 
 interface JWTPayload {

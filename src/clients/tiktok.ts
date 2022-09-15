@@ -4,7 +4,7 @@ import fs from "fs";
 import { doFetch, RequestData } from "../util/fetchRequest";
 import { SocialLink } from "../models/SocialLink";
 import { Secrets } from "../util/secrets";
-import { TiktokLinkCredentials } from "../types";
+import { TiktokLinkCredentials } from "types";
 import path from "path";
 import { SocialLink as PrismaSocialLink } from "@prisma/client";
 

@@ -1,6 +1,6 @@
 import { Secrets } from "../util/secrets";
 import { RequestData, doFetch } from "../util/fetchRequest";
-import { KycApplication } from "../types.d";
+import { KycApplication } from "types";
 import { KycLevel } from "../util/constants";
 
 const acuantUrls: { [key: string]: string } = {

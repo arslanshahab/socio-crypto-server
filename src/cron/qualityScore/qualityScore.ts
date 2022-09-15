@@ -1,7 +1,7 @@
 import { EngagementRate } from "./EngagementRate";
 import { StandardDeviation } from "./StandardDeviation";
 import { BigNumber } from "bignumber.js";
-import { ParticipantEngagement } from "../../types";
+import { ParticipantEngagement } from "types";
 import { prisma, readPrisma } from "../../clients/prisma";
 // import { createObjectCsvWriter } from "csv-writer";
 import { calculateQualityTier } from "../../util/index";

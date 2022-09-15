@@ -2,7 +2,7 @@ import { Campaign, Prisma, User, Wallet, Currency, Token } from "@prisma/client"
 import { Inject, Injectable } from "@tsed/di";
 import { BadRequest, Forbidden, NotFound } from "@tsed/exceptions";
 import { isArray } from "lodash";
-import { JWTPayload } from "../types";
+import { JWTPayload } from "types";
 import {
     BSC,
     CacheKeys,

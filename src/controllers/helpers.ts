@@ -6,7 +6,7 @@ import {
     XoxodayVoucher,
     SocialPostVariablesType,
     PointValueTypes,
-} from "../types";
+} from "types";
 import { Participant } from "../models/Participant";
 import { Campaign } from "../models/Campaign";
 import { getConnection } from "typeorm";

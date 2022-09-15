@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@tsed/di";
-import { AdminTypes, JWTPayload } from "../types";
+import { AdminTypes, JWTPayload } from "types";
 import { readPrisma, prisma } from "../clients/prisma";
 import { Forbidden } from "@tsed/exceptions";
 import { OrganizationService } from "./OrganizationService";

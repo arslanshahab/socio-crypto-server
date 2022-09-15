@@ -16,7 +16,7 @@ import { Wallet } from "./Wallet";
 import { TatumClient } from "../clients/tatumClient";
 import { Currency } from "./Currency";
 import { CampaignStatus, RAIINMAKER_ORG_NAME } from "../util/constants";
-import { SymbolNetworkParams } from "../types.d";
+import { SymbolNetworkParams } from "types";
 import { Token } from "./Token";
 
 @Entity()

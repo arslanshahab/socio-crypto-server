@@ -1,5 +1,5 @@
 import { TatumClient } from "../clients/tatumClient";
-import { CustodialAddressChain } from "src/types";
+import { CustodialAddressChain } from "types";
 import {
     PrimaryGeneratedColumn,
     Entity,

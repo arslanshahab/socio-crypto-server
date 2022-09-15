@@ -32,7 +32,7 @@ import {
 import { TatumService } from "./TatumService";
 import { BN } from "../util";
 import { generateRandomId } from "../util/index";
-import { XoxodayOrder } from "src/types";
+import { XoxodayOrder } from "types";
 import { prisma, readPrisma } from "../clients/prisma";
 
 @Injectable()

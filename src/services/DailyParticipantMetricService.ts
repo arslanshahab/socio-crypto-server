@@ -5,7 +5,7 @@ import { BN } from "../util/index";
 import { BigNumber } from "bignumber.js";
 import { ParticipantAction } from "../util/constants";
 import { startOfDay } from "date-fns";
-import { AggregatedCampaignMetricType } from "../types";
+import { AggregatedCampaignMetricType } from "types";
 
 @Injectable()
 export class DailyParticipantMetricService {

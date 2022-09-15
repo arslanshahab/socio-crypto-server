@@ -38,7 +38,7 @@ import { CustodialAddress } from "../models/CustodialAddress";
 import { formatFloat } from "../util/index";
 import { BSC, CUSTODIAL_NETWORKS, ETH } from "../util/constants";
 import { Token } from "../models/Token";
-import { SymbolNetworkParams } from "../types.d";
+import { SymbolNetworkParams } from "types";
 import { sleep } from "../controllers/helpers";
 
 export interface WithdrawPayload {
