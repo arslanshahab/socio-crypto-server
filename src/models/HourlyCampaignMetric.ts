@@ -175,7 +175,7 @@ export class HourlyCampaignMetric extends BaseEntity {
         return response;
     }
 
-    public static async upsert(
+    public static async upsertData(
         campaign: Campaign,
         org: Org,
         action:

@@ -65,17 +65,33 @@ model Campaign {
   isGlobal                 Boolean                  @default(false)
   showUrl                  Boolean                  @default(true)
   currencyId               String?                  @db.Uuid
-  crypto_currency          CryptoCurrency?          @relation("campaignTocrypto_currency", fields: [cryptoId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_6c80d74e57757c61ae9b7255f79")
-  currency                 Currency?                @relation("campaignTocurrency", fields: [currencyId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_94f38926b8f74ecd88ecf6ba8c8")
-  org                      Org?                     @relation("campaignToorg", fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f1ade2ad37c88435b086c97cfc8")
-  daily_participant_metric DailyParticipantMetric[] @relation("campaignTodaily_participant_metric")
-  escrow                   Escrow?                  @relation("campaignToescrow")
-  hourly_campaign_metric   HourlyCampaignMetric[]   @relation("campaignTohourly_campaign_metric")
-  participant              Participant[]            @relation("campaignToparticipant")
-  raffle_prize             RafflePrize?             @relation("campaignToraffle_prize")
-  social_post              SocialPost[]             @relation("campaignTosocial_post")
-  transaction              Transaction[]            @relation("campaignTotransaction")
-  transfer                 Transfer[]               @relation("campaignTotransfer")
+  crypto_currency          CryptoCurrency?          @relation(fields: [cryptoId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_6c80d74e57757c61ae9b7255f79")
+  currency                 Currency?                @relation(fields: [currencyId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_94f38926b8f74ecd88ecf6ba8c8")
+  org                      Org?                     @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f1ade2ad37c88435b086c97cfc8")
+  campaign_media           CampaignMedia[]          @relation("campaignTocampaign_media")
+  campaign_template        CampaignTemplate[]       @relation("campaignTocampaign_template")
+  daily_participant_metric DailyParticipantMetric[]
+  escrow                   Escrow?                  @relation(fields: [escrowId], references: [id])
+  hourly_campaign_metric   HourlyCampaignMetric[]
+  participant              Participant[]
+  raffle_prize             RafflePrize?             @relation(fields: [rafflePrizeId], references: [id])
+  social_post              SocialPost[]
+  transaction              Transaction[]            @relation("campaignToTransaction")
+  transfer                 Transfer[]
+  escrowId                 String?                  @db.Uuid
+  rafflePrizeId            String?                  @db.Uuid
+  CryptoCurrency           CryptoCurrency?          @relation(fields: [cryptoCurrencyId], references: [id])
+  cryptoCurrencyId         String?                  @db.Uuid
+  Currency                 Currency?                @relation(fields: [currencyId], references: [id])
+  DailyParticipantMetric   DailyParticipantMetric[] @ignore
+  Escrow                   Escrow?                  @ignore
+  HourlyCampaignMetric     HourlyCampaignMetric[]   @ignore
+  Org                      Org?                     @relation(fields: [orgId], references: [id])
+  Participant              Participant[]            @ignore
+  RafflePrize              RafflePrize?             @ignore
+  SocialPost               SocialPost[]             @ignore
+  Transfer                 Transfer[]               @ignore
+  Transaction              Transaction[]            @ignore
 
   @@index([status], map: "IDX_08135474cffdb8282c4ff37271")
   @@index([beginDate], map: "IDX_4293bebb45d5083b55b41ac95d")
@@ -87,14 +103,15 @@ model Campaign {
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model CampaignMedia {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  campaignId  String?  @db.Uuid
-  channel     String?  @db.VarChar
-  media       String?  @db.VarChar
-  mediaFormat String?  @db.VarChar
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  campaignId  String?   @db.Uuid
+  channel     String?   @db.VarChar
+  media       String?   @db.VarChar
+  mediaFormat String?   @db.VarChar
   isDefault   Boolean?
-  createdAt   DateTime @default(now()) @db.Timestamp(6)
-  updatedAt   DateTime @default(now()) @updatedAt @db.Timestamp(6)
+  createdAt   DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt   DateTime  @default(now()) @updatedAt @db.Timestamp(6)
+  campaign    Campaign? @relation("campaignTocampaign_media", fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_b845045382e55918752955d23cb")
 
   @@map("campaign_media")
   @@ignore
@@ -102,12 +119,13 @@ model CampaignMedia {
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model CampaignTemplate {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  campaignId String?  @db.Uuid
-  channel    String?  @db.VarChar
-  post       String?  @db.VarChar
-  createdAt  DateTime @default(now()) @db.Timestamp(6)
-  updatedAt  DateTime @default(now()) @updatedAt @db.Timestamp(6)
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  campaignId String?   @db.Uuid
+  channel    String?   @db.VarChar
+  post       String?   @db.VarChar
+  createdAt  DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt  DateTime  @default(now()) @updatedAt @db.Timestamp(6)
+  campaign   Campaign? @relation("campaignTocampaign_template", fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_19b3f8a418cf4753d5df4291099")
 
   @@map("campaign_template")
   @@ignore
@@ -122,6 +140,7 @@ model CryptoCurrency {
   updatedAt          DateTime            @default(now()) @updatedAt @db.Timestamp(6)
   campaign           Campaign[]          @relation("campaignTocrypto_currency")
   crypto_transaction CryptoTransaction[] @relation("crypto_currencyTocrypto_transaction")
+  Campaign           Campaign[]          @ignore
 
   @@map("crypto_currency")
   @@ignore
@@ -164,6 +183,7 @@ model Currency {
   token            Token?     @relation("currencyTotoken", fields: [tokenId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_d1e8baad49c6c5514b6a0dcba26")
   wallet           Wallet?    @relation("currencyTowallet", fields: [walletId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ea00856ad382361ea6545c3d23c")
   campaign         Campaign[] @relation("campaignTocurrency")
+  Campaign         Campaign[] @ignore
 
   @@map("currency")
   @@ignore
@@ -202,6 +222,7 @@ model DailyParticipantMetric {
   campaignId              String?   @db.Uuid
   campaign                Campaign? @relation("campaignTodaily_participant_metric", fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_339b0794c16489770996c4991ca")
   user                    User?     @relation("daily_participant_metricTouser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_82c4ef42af06b025fe03a6b7d34")
+  Campaign                Campaign? @relation(fields: [campaignId], references: [id])
 
   @@map("daily_participant_metric")
   @@ignore
@@ -209,14 +230,15 @@ model DailyParticipantMetric {
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model Escrow {
-  id         String    @id(map: "PK_4aafc323d34fd7979460661ab4a") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  amount     String    @db.VarChar
-  campaignId String?   @unique(map: "REL_9a7c2a319665a11a340b523f59") @db.Uuid
-  walletId   String?   @db.Uuid
-  createdAt  DateTime  @default(now()) @db.Timestamp(6)
-  updatedAt  DateTime  @default(now()) @updatedAt @db.Timestamp(6)
-  campaign   Campaign? @relation("campaignToescrow", fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_9a7c2a319665a11a340b523f591")
-  wallet     Wallet?   @relation("escrowTowallet", fields: [walletId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f980ed731d30053ac7e941c795c")
+  id         String     @id(map: "PK_4aafc323d34fd7979460661ab4a") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  amount     String     @db.VarChar
+  campaignId String?    @unique(map: "REL_9a7c2a319665a11a340b523f59") @db.Uuid
+  walletId   String?    @db.Uuid
+  createdAt  DateTime   @default(now()) @db.Timestamp(6)
+  updatedAt  DateTime   @default(now()) @updatedAt @db.Timestamp(6)
+  campaign   Campaign?  @relation("campaignToescrow", fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_9a7c2a319665a11a340b523f591")
+  wallet     Wallet?    @relation("escrowTowallet", fields: [walletId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f980ed731d30053ac7e941c795c")
+  Campaign   Campaign[] @ignore
 
   @@map("escrow")
   @@ignore
@@ -292,6 +314,7 @@ model HourlyCampaignMetric {
   orgId            String?   @db.Uuid
   campaign         Campaign? @relation("campaignTohourly_campaign_metric", fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_0a14e4214cbadbbf5ab94dfeeb0")
   org              Org?      @relation("hourly_campaign_metricToorg", fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_65dc03b9a87221a49c0584227ea")
+  Campaign         Campaign? @relation(fields: [campaignId], references: [id])
 
   @@map("hourly_campaign_metric")
   @@ignore
@@ -318,6 +341,7 @@ model NotificationSettings {
   updatedAt       DateTime @default(now()) @updatedAt @db.Timestamp(6)
   userId          String?  @unique(map: "REL_5a8ffc3b89343043c9440d631e") @db.Uuid
   user            User?    @relation("notification_settingsTouser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_5a8ffc3b89343043c9440d631e2")
+  User            User[]   @ignore
 
   @@map("notification_settings")
   @@ignore
@@ -337,6 +361,7 @@ model Org {
   hourly_campaign_metric HourlyCampaignMetric[] @relation("hourly_campaign_metricToorg")
   transfer               Transfer[]             @relation("orgTotransfer")
   wallet                 Wallet?                @relation("orgTowallet")
+  Campaign               Campaign[]             @ignore
 
   @@map("org")
   @@ignore
@@ -358,6 +383,8 @@ model Participant {
   blacklist          Boolean  @default(false)
   campaign           Campaign @relation("campaignToparticipant", fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_1835802549e230f6cd88c6efef9")
   user               User     @relation("participantTouser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_b915e97dea27ffd1e40c8003b3b")
+  Campaign           Campaign @relation(fields: [campaignId], references: [id])
+  User               User     @relation(fields: [userId], references: [id])
 
   @@id([id, campaignId, userId], map: "PK_b22a56c2e60aa49dd92b7cd839b")
   @@map("participant")
@@ -384,6 +411,7 @@ model Profile {
   profilePicture String?   @db.VarChar
   deletedAt      DateTime? @db.Timestamp(6)
   user           User?     @relation("profileTouser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_a24972ebd73b106250713dcddd9")
+  User           User[]    @ignore
 
   @@map("profile")
   @@ignore
@@ -430,6 +458,7 @@ model RafflePrize {
   campaignId    String?    @unique(map: "REL_29f131f37d9cbb4814b2b6d306") @db.Uuid
   campaign      Campaign?  @relation("campaignToraffle_prize", fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_29f131f37d9cbb4814b2b6d3069")
   transfer      Transfer[] @relation("raffle_prizeTotransfer")
+  Campaign      Campaign[] @ignore
 
   @@map("raffle_prize")
   @@ignore
@@ -451,6 +480,7 @@ model SocialLink {
   accessTokenExpiry  String?  @db.VarChar
   refreshTokenExpiry String?  @db.VarChar
   user               User?    @relation("social_linkTouser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_d8a1d8b8a8235632f9011346197")
+  User               User?    @relation(fields: [userId], references: [id])
 
   @@map("social_link")
   @@ignore
@@ -470,6 +500,8 @@ model SocialPost {
   userId        String   @db.Uuid
   campaign      Campaign @relation("campaignTosocial_post", fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_3073fc6f7d48ae9dc23af5f00f6")
   user          User     @relation("social_postTouser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ac33a6e1367ede7117c1742d6a4")
+  Campaign      Campaign @relation(fields: [campaignId], references: [id])
+  User          User     @relation(fields: [userId], references: [id])
 
   @@id([id, campaignId, userId], map: "PK_361a1688e628ebb9c56ecc9cacb")
   @@map("social_post")
@@ -527,6 +559,7 @@ model Transfer {
   org             Org?         @relation("orgTotransfer", fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_69167255fc368a59063ebd8cf16")
   raffle_prize    RafflePrize? @relation("raffle_prizeTotransfer", fields: [rafflePrizeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f6c593d6013276bc80450c7638e")
   wallet          Wallet?      @relation("transferTowallet", fields: [walletId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_011b4b0e8490d5434857bd40efa")
+  Campaign        Campaign?    @relation(fields: [campaignId], references: [id])
 
   @@map("transfer")
   @@ignore
@@ -540,6 +573,7 @@ model TwentyFourHourMetric {
   userId    String?  @db.Uuid
   updatedAt DateTime @default(now()) @updatedAt @db.Timestamp(6)
   user      User?    @relation("twenty_four_hour_metricTouser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_e965aecf58d4a7ff9406ab777e1")
+  User      User?    @relation(fields: [userId], references: [id])
 
   @@map("twenty_four_hour_metric")
   @@ignore
@@ -565,16 +599,31 @@ model User {
   external_wallet                              ExternalWallet[]          @relation("external_walletTouser")
   factor_link_factor_link_userIdTouser         FactorLink[]              @relation("factor_link_userIdTouser")
   factor_link_factor_link_verificationIdTouser FactorLink[]              @relation("factor_link_verificationIdTouser")
-  notification_settings                        NotificationSettings?     @relation("notification_settingsTouser")
-  participant                                  Participant[]             @relation("participantTouser")
-  profile                                      Profile?                  @relation("profileTouser")
-  session                                      Session[]                 @relation("sessionTouser")
-  social_link                                  SocialLink[]              @relation("social_linkTouser")
-  social_post                                  SocialPost[]              @relation("social_postTouser")
-  twenty_four_hour_metric                      TwentyFourHourMetric[]    @relation("twenty_four_hour_metricTouser")
-  verification_application                     VerificationApplication[] @relation("userToverification_application")
-  wallet                                       Wallet?                   @relation("userTowallet")
-  xoxoday_order                                XoxodayOrder[]            @relation("userToxoxoday_order")
+  nft                                          Nft[]                     @relation("nftTouser")
+  notification_settings                        NotificationSettings?     @relation(fields: [notificationSettingsId], references: [id])
+  participant                                  Participant[]
+  profile                                      Profile?                  @relation(fields: [profileId], references: [id])
+  session                                      Session[]                 @relation("SessionTouser")
+  social_link                                  SocialLink[]
+  social_post                                  SocialPost[]
+  twenty_four_hour_metric                      TwentyFourHourMetric[]
+  verification_application                     VerificationApplication[]
+  wallet                                       Wallet?                   @relation(fields: [walletId], references: [id])
+  weekly_reward                                WeeklyReward[]            @relation("userToweekly_reward")
+  xoxoday_order                                XoxodayOrder[]
+  NotificationSettings                         NotificationSettings?     @ignore
+  Participant                                  Participant[]             @ignore
+  Profile                                      Profile?                  @ignore
+  SocialLink                                   SocialLink[]              @ignore
+  SocialPost                                   SocialPost[]              @ignore
+  TwentyFourHourMetric                         TwentyFourHourMetric[]    @ignore
+  notificationSettingsId                       String?                   @db.Uuid
+  profileId                                    String?                   @db.Uuid
+  walletId                                     String?                   @db.Uuid
+  VerificationApplication                      VerificationApplication[] @ignore
+  Wallet                                       Wallet?                   @ignore
+  XoxodayOrder                                 XoxodayOrder[]            @ignore
+  Session                                      Session[]                 @ignore
 
   @@index([identityId], map: "IDX_dea97e26c765a4cdb575957a14")
   @@map("user")
@@ -610,6 +659,7 @@ model VerificationApplication {
   adminId       String?                             @db.Uuid
   admin         Admin?                              @relation("adminToverification_application", fields: [adminId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_0f5953ed6d6b75ee724463f051d")
   user          User?                               @relation("userToverification_application", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_79e9b3d653b00690eae5f235dad")
+  User          User?                               @relation(fields: [userId], references: [id])
 
   @@map("verification_application")
   @@ignore
@@ -630,6 +680,7 @@ model Wallet {
   external_address  ExternalAddress[]  @relation("external_addressTowallet")
   transfer          Transfer[]         @relation("transferTowallet")
   wallet_currency   WalletCurrency[]   @relation("walletTowallet_currency")
+  User              User[]             @ignore
 
   @@map("wallet")
   @@ignore
@@ -659,6 +710,7 @@ model WeeklyReward {
   rewardType    String   @db.VarChar
   createdAt     DateTime @default(now()) @db.Timestamp(6)
   updatedAt     DateTime @default(now()) @updatedAt @db.Timestamp(6)
+  user          User?    @relation("userToweekly_reward", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ba2529b7af668bbc111475272b1")
 
   @@map("weekly_reward")
   @@ignore
@@ -679,6 +731,7 @@ model XoxodayOrder {
   createdAt      DateTime @default(now()) @db.Timestamp(6)
   updatedAt      DateTime @default(now()) @updatedAt @db.Timestamp(6)
   user           User?    @relation("userToxoxoday_order", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_e0883ce6ef869534d2013fc414b")
+  User           User?    @relation(fields: [userId], references: [id])
 
   @@map("xoxoday_order")
   @@ignore
@@ -710,6 +763,7 @@ model Transaction {
   updatedAt       DateTime  @default(now()) @db.Timestamp(6)
   campaignId      String?   @db.Uuid
   campaign        Campaign? @relation("campaignTotransaction", fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_3f3891eefaf8dcce48eae8c709f")
+  Campaign        Campaign? @relation(fields: [campaignId], references: [id])
 
   @@map("transaction")
   @@ignore
@@ -728,9 +782,24 @@ model Session {
   updatedAt  DateTime  @default(now()) @db.Timestamp(6)
   userId     String?   @db.Uuid
   user       User?     @relation("sessionTouser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_3d2f174ef04fb312fdebd0ddc53")
+  User       User?     @relation(fields: [userId], references: [id])
 
   @@map("session")
   @@ignore
+}
+
+model Nft {
+  nftId        String   @id(map: "PK_1156642d40093c2cf27efc405a5") @db.VarChar
+  type         String   @db.VarChar
+  name         String   @db.VarChar
+  network      String   @db.VarChar
+  transactions Json?    @unique(map: "UQ_fbf824aa02944ec173092a028f1")
+  createdAt    DateTime @default(now()) @db.Timestamp(6)
+  updatedAt    DateTime @default(now()) @db.Timestamp(6)
+  userId       String?  @db.Uuid
+  user         User?    @relation("nftTouser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_2d4535b902eed75d0deb2d515be")
+
+  @@map("nft")
 }
 
 enum verification_application_level_enum {
