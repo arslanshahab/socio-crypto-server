@@ -5,7 +5,7 @@ import { limit } from "../util/rateLimiter";
 import { prisma, readPrisma } from "../clients/prisma";
 import { calculateQualityTierMultiplier, BN } from "../util/index";
 import { Prisma } from "@prisma/client";
-import { PointValueTypes } from "../types.d";
+import { PointValueTypes } from "types.d.ts";
 import { QualityScoreService } from "../services/QualityScoreService";
 // import { HourlyCampaignMetricsService } from "../services/HourlyCampaignMetricsService";
 import { DailyParticipantMetricService } from "../services/DailyParticipantMetricService";

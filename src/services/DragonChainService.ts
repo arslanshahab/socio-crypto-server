@@ -7,7 +7,7 @@ import {
     DragonchainCampaignPayoutLedgerPayload,
     NftFileParams,
     NftMintingParams,
-} from "../types.d";
+} from "types.d.ts";
 import { BulkTransactionPayload } from "dragonchain-sdk";
 import { Transaction, PrismaPromise } from "@prisma/client";
 import { prisma } from "../clients/prisma";

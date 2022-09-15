@@ -7,7 +7,7 @@ import * as dotenv from "dotenv";
 import { SocialPost, Prisma, PrismaPromise } from "@prisma/client";
 import { prisma, readPrisma } from "../../clients/prisma";
 import { CampaignStatus, CampaignAuditStatus, SocialClientType } from "../../util/constants";
-import { DragonchainCampaignActionLedgerPayload, PointValueTypes } from "../../types.d";
+import { DragonchainCampaignActionLedgerPayload, PointValueTypes } from "types.d.ts";
 import { QualityScoreService } from "../../services/QualityScoreService";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 import { ParticipantAction } from "../../util/constants";

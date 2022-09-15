@@ -37,7 +37,7 @@ import {
 import { addDays, endOfISOWeek, startOfDay } from "date-fns";
 import { Transfer } from "../models/Transfer";
 import { BSC, COIIN, RAIINMAKER_ORG_NAME, TransferAction, UserRewardType } from "../util/constants";
-import { JWTPayload } from "src/types";
+import { JWTPayload } from "types.d.ts";
 import { SHARING_REWARD_AMOUNT } from "../util/constants";
 import { NotificationSettings } from "../models/NotificationSettings";
 import { getTokenValueInUSD } from "../util/exchangeRate";

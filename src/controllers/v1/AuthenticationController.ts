@@ -33,7 +33,7 @@ import { UserService } from "../../services/UserService";
 import { createPasswordHash, createSessionTokenV2 } from "../../util";
 import { ProfileService } from "../../services/ProfileService";
 import { VerificationService } from "../../services/VerificationService";
-import { JWTPayload } from "../../types";
+import { JWTPayload } from "types.d.ts";
 import { UserRewardType, VerificationType } from "../../util/constants";
 import { SesClient } from "../../clients/ses";
 import { Firebase } from "../../clients/firebase";
