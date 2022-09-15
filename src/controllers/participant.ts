@@ -88,8 +88,8 @@ export const trackAction = async (
     const pointValue = campaign.algorithm.pointValues[args.action].times(multiplier);
     campaign.totalParticipationScore = campaign.totalParticipationScore.plus(pointValue);
     participant.participationScore = participant.participationScore.plus(pointValue);
-    const hourlyMetric = await HourlyCampaignMetric.upsert(campaign, campaign.org, args.action, undefined, false);
-    const dailyMetric = await DailyParticipantMetric.upsert(
+    const hourlyMetric = await HourlyCampaignMetric.upsertData(campaign, campaign.org, args.action, undefined, false);
+    const dailyMetric = await DailyParticipantMetric.upsertData(
         participant.user,
         campaign,
         participant,
@@ -277,8 +277,8 @@ export const trackClickByLink = asyncHandler(async (req: Request, res: Response)
             await campaign.save();
             await participant.save();
             await qualityScore.save();
-            await HourlyCampaignMetric.upsert(campaign, campaign.org, action);
-            await DailyParticipantMetric.upsert(participant.user, campaign, participant, action, pointValue);
+            await HourlyCampaignMetric.upsertData(campaign, campaign.org, action);
+            await DailyParticipantMetric.upsertData(participant.user, campaign, participant, action, pointValue);
             await dragonchainService.ledgerCampaignAction({
                 action,
                 participantId: participant.id,

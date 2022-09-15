@@ -47,6 +47,7 @@ import {
     UserTransactionResultModel,
     WeeklyRewardsResultModel,
     ParticipateToCampaignModel,
+    NftResultModel,
 } from "../../models/RestModels";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 import {
@@ -73,6 +74,8 @@ import {
     TransferAction,
     UserRewardType,
     ADMIN_ROLES,
+    NftName,
+    NftType,
 } from "../../util/constants";
 import { SocialService } from "../../services/SocialService";
 import { CampaignService } from "../../services/CampaignService";
@@ -96,6 +99,8 @@ import { Parser } from "json2csv";
 import { DragonChainService } from "../../services/DragonChainService";
 import { TransactionService } from "../../services/TransactionService";
 import { SessionService } from "../../services/SessionService";
+import { generateRandomUuid } from "../../util/index";
+import { NftService } from "../../services/NftService";
 
 const userResultRelations = {
     profile: true,
@@ -220,6 +225,8 @@ export class UserController {
     private transactionService: TransactionService;
     @Inject()
     private sessionService: SessionService;
+    @Inject()
+    private nftService: NftService;
 
     @Get("/")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserResultModel))
@@ -761,11 +768,20 @@ export class UserController {
     @Post("/upload-profile-picture")
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async uploadProfilePicture(@BodyParams() body: UploadProfilePictureParams, @Context() context: Context) {
-        const user = await this.userService.findUserByContext(context.get("user"));
+        const user = await this.userService.findUserByContext(context.get("user"), { profile: true });
         if (!user) throw new NotFound(USER_NOT_FOUND);
+        if (!user.profile) throw new NotFound(PROFILE_NOT_FOUND);
         const { image } = body;
         const filename = await S3Client.uploadProfilePicture("profilePicture", user.id, image);
-        await this.profileService.updateProfilePicture(user.id, filename);
+        user.profile = await this.profileService.updateProfilePicture(user.profile, filename);
+        if (!(await this.nftService.findProfilePictureNftOfUser(user.id)))
+            await this.nftService.mintNFT({
+                userId: user.id,
+                name: NftName.PROFILE_PICTURE,
+                type: NftType.FILE,
+                nftId: generateRandomUuid(),
+                file: image,
+            });
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 
@@ -815,5 +831,14 @@ export class UserController {
         if (!user) throw new Error(USER_NOT_FOUND);
         await this.sessionService.logoutUser(user);
         return new SuccessResult({ success: true }, BooleanResultModel);
+    }
+
+    @Get("/nfts")
+    @(Returns(200, SuccessArrayResult).Of(NftResultModel))
+    public async userNtfs(@Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new Error(USER_NOT_FOUND);
+        const list = await this.nftService.getUserNfts(user.id);
+        return new SuccessArrayResult(list, NftResultModel);
     }
 }

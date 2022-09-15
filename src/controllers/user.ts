@@ -109,7 +109,7 @@ export const removeParticipation = async (parent: any, args: { campaignId: strin
         where: { user, campaign },
     });
     if (!participation) throw new Error(PARTICIPANT_NOT_FOUND);
-    await HourlyCampaignMetric.upsert(campaign, campaign.org, "removeParticipant");
+    await HourlyCampaignMetric.upsertData(campaign, campaign.org, "removeParticipant");
     await participation.remove();
     return user.asV1();
 };

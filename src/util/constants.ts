@@ -260,20 +260,29 @@ export enum SharingRewardType {
 }
 
 export const transactionTypes = [
-    "campaign",
-    "trackAction",
-    "campaignAudit",
-    "campaignPayout",
-    "accountRecovery",
-    "socialShare",
+    "CAMPAIGN",
+    "TRACK_ACTION",
+    "CAMPAIGN_AUDIT",
+    "CAMPAIGN_PAYOUT",
+    "ACCOUNT_RECOVERY",
+    "SOCIAL_SHARE",
+    "NFT_MINT",
+    "NFT_ADD_INFO",
+    "NFT_ADD_FILE",
+    "NFT_TRANSFER",
 ];
+
 export enum TransactionType {
-    CAMPAIGN = "campaign",
-    TRACK_ACTION = "trackAction",
-    CAMPAIGN_AUDIT = "campaignAudit",
-    CAMPAIGN_PAYOUT = "campaignPayout",
-    ACCOUNT_RECOVERY = "accountRecovery",
-    SOCIAL_SHARE = "socialShare",
+    CAMPAIGN = "CAMPAIGN",
+    TRACK_ACTION = "TRACK_ACTION",
+    CAMPAIGN_AUDIT = "CAMPAIGN_AUDIT",
+    CAMPAIGN_PAYOUT = "CAMPAIGN_PAYOUT",
+    ACCOUNT_RECOVERY = "ACCOUNT_RECOVERY",
+    SOCIAL_SHARE = "SOCIAL_SHARE",
+    NFT_MINT = "NFT_MINT",
+    NFT_ADD_INFO = "NFT_ADD_INFO",
+    NFT_ADD_FILE = "NFT_ADD_FILE",
+    NFT_TRANSFER = "NFT_TRANSFER",
 }
 
 export enum ParticipantAction {
@@ -307,4 +316,22 @@ export enum ADMIN_ROLES {
 export enum Sort {
     DESC = "desc",
     ASC = "asc",
+}
+
+export enum NftType {
+    ART = "ART",
+    MUSIC = "MUSIC",
+    FILE = "FILE",
+    PHYSICAL = "PHYSICAL",
+}
+
+export enum NftName {
+    PROFILE_PICTURE = "PROFILE_PICTURE",
+}
+
+export enum SupportedNetwork {
+    BSC = "BSC",
+    ETH = "ETH",
+    DRAGON_CHAIN = "DRAGON_CHAIN",
+    SOLANA = "SOLANA",
 }
