@@ -65,8 +65,8 @@ model Campaign {
   crypto_currency          CryptoCurrency?          @relation(fields: [cryptoId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_6c80d74e57757c61ae9b7255f79")
   currency                 Currency?                @relation(fields: [currencyId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_94f38926b8f74ecd88ecf6ba8c8")
   org                      Org?                     @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f1ade2ad37c88435b086c97cfc8")
-  campaign_media           CampaignMedia[]
-  campaign_template        CampaignTemplate[]
+  campaign_media           CampaignMedia[]          @relation("campaignTocampaign_media")
+  campaign_template        CampaignTemplate[]       @relation("campaignTocampaign_template")
   daily_participant_metric DailyParticipantMetric[]
   escrow                   Escrow?
   hourly_campaign_metric   HourlyCampaignMetric[]
@@ -92,7 +92,7 @@ model CampaignMedia {
   isDefault   Boolean?
   createdAt   DateTime  @default(now()) @db.Timestamp(6)
   updatedAt   DateTime  @default(now()) @updatedAt @db.Timestamp(6)
-  campaign    Campaign? @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_b845045382e55918752955d23cb")
+  campaign    Campaign? @relation("campaignTocampaign_media", fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_b845045382e55918752955d23cb")
 
   @@map("campaign_media")
 }
@@ -104,7 +104,7 @@ model CampaignTemplate {
   post       String?   @db.VarChar
   createdAt  DateTime  @default(now()) @db.Timestamp(6)
   updatedAt  DateTime  @default(now()) @updatedAt @db.Timestamp(6)
-  campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_19b3f8a418cf4753d5df4291099")
+  campaign   Campaign? @relation("campaignTocampaign_template", fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_19b3f8a418cf4753d5df4291099")
 
   @@map("campaign_template")
 }
@@ -512,6 +512,7 @@ model User {
   external_wallet                              ExternalWallet[]
   factor_link_factor_link_userIdTouser         FactorLink[]              @relation("factor_link_userIdTouser")
   factor_link_factor_link_verificationIdTouser FactorLink[]              @relation("factor_link_verificationIdTouser")
+  nft                                          Nft[]                     @relation("nftTouser")
   notification_settings                        NotificationSettings?
   participant                                  Participant[]
   profile                                      Profile?
@@ -521,6 +522,7 @@ model User {
   twenty_four_hour_metric                      TwentyFourHourMetric[]
   verification_application                     VerificationApplication[]
   wallet                                       Wallet?
+  weekly_reward                                WeeklyReward[]            @relation("userToweekly_reward")
   xoxoday_order                                XoxodayOrder[]
 
   @@index([identityId], map: "IDX_dea97e26c765a4cdb575957a14")
@@ -596,6 +598,7 @@ model WeeklyReward {
   rewardType    String   @db.VarChar
   createdAt     DateTime @default(now()) @db.Timestamp(6)
   updatedAt     DateTime @default(now()) @updatedAt @db.Timestamp(6)
+  user          User?    @relation("userToweekly_reward", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ba2529b7af668bbc111475272b1")
 
   @@map("weekly_reward")
 }
@@ -659,6 +662,20 @@ model Session {
   user       User?     @relation("SessionTouser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_3d2f174ef04fb312fdebd0ddc53")
 
   @@map("session")
+}
+
+model Nft {
+  nftId        String   @id(map: "PK_1156642d40093c2cf27efc405a5") @db.VarChar
+  type         String   @db.VarChar
+  name         String   @db.VarChar
+  network      String   @db.VarChar
+  transactions Json?    @unique(map: "UQ_fbf824aa02944ec173092a028f1")
+  createdAt    DateTime @default(now()) @db.Timestamp(6)
+  updatedAt    DateTime @default(now()) @db.Timestamp(6)
+  userId       String?  @db.Uuid
+  user         User?    @relation("nftTouser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_2d4535b902eed75d0deb2d515be")
+
+  @@map("nft")
 }
 
 enum verification_application_level_enum {
