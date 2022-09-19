@@ -448,6 +448,13 @@ export class CampaignController {
                     await this.campaignMediaservice.updateNewCampaignMedia(receivedMedia, campaign.id);
                 }
             }
+            const medias = await this.campaignMediaservice.findCampaignMediaByCampaignId(campaign.id);
+            for (let index = 0; index < medias.length; index++) {
+                const media = medias[index];
+                if (!campaignMedia.find((item) => item.id === media.id)) {
+                    await this.campaignMediaservice.deleteCampaignMedia(media.id);
+                }
+            }
         }
         const result = {
             campaignId: campaign.id,
@@ -480,9 +487,9 @@ export class CampaignController {
         const hourlyMetrics = await this.hourlyCampaignMetricsService.findCampaignHourlyMetricsByCampaignId(campaignId);
         if (hourlyMetrics.length > 0) this.hourlyCampaignMetricsService.deleteCampaignHourlyMetrics(campaignId);
         const campaignTemplate = await this.campaignTemplateService.findCampaignTemplateByCampaignId(campaignId);
-        if (campaignTemplate.length > 0) this.campaignTemplateService.deleteCampaignTemplate(campaignId);
+        if (campaignTemplate.length > 0) this.campaignTemplateService.deleteCampaignTemplates(campaignId);
         const campaignMedia = await this.campaignMediaservice.findCampaignMediaByCampaignId(campaignId);
-        if (campaignMedia.length > 0) this.campaignMediaservice.deleteCampaignMedia(campaignId);
+        if (campaignMedia.length > 0) this.campaignMediaservice.deleteCampaignMedias(campaignId);
         const campaign = await this.campaignService.findCampaignById(campaignId, undefined, company);
         if (campaign) this.campaignService.deleteCampaign(campaignId);
         const result = {

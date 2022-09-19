@@ -10,7 +10,7 @@ export class CampaignMediaService {
         });
     }
 
-    public async deleteCampaignMedia(campaignId: string) {
+    public async deleteCampaignMedias(campaignId: string) {
         return await prisma.campaignMedia.deleteMany({
             where: { campaignId },
         });
@@ -49,6 +49,12 @@ export class CampaignMediaService {
                 isDefault: campaignMedia.isDefault,
                 updatedAt: new Date(),
             },
+        });
+    }
+
+    public async deleteCampaignMedia(mediaId: string) {
+        return await prisma.campaignMedia.delete({
+            where: { id: mediaId },
         });
     }
 }

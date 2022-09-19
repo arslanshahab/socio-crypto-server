@@ -9,6 +9,12 @@ export class CampaignTemplateService {
             where: { campaignId },
         });
     }
+    public async deleteCampaignTemplates(campaignId: string) {
+        return await prisma.campaignTemplate.deleteMany({
+            where: { campaignId },
+        });
+    }
+
     public async deleteCampaignTemplate(templateId: string) {
         return await prisma.campaignTemplate.delete({
             where: { id: templateId },
