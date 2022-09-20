@@ -1,12 +1,12 @@
 import { Controller, Inject } from "@tsed/di";
-import { Delete, Get, Post, Property, Required, Returns } from "@tsed/schema";
+import { Get, Post, Property, Required, Returns } from "@tsed/schema";
 import { SuccessArrayResult, SuccessResult } from "../../util/entities";
 import { BodyParams, Context } from "@tsed/common";
 import { OrganizationService } from "../../services/OrganizationService";
 import { ORG_NOT_FOUND } from "../../util/errors";
 import { StripeAPI } from "../../clients/stripe";
 import { BadRequest, NotFound } from "@tsed/exceptions";
-import { BooleanResultModel, PaymentMethodsResultModel } from "../../models/RestModels";
+import { BooleanResultModel, PaymentMethodsResultModel, PurchaseCoiinResultModel } from "../../models/RestModels";
 import { TransferService } from "../../services/TransferService";
 import { getTokenValueInUSD } from "../../util/exchangeRate";
 import { ADMIN, COIIN } from "../../util/constants";
@@ -15,7 +15,6 @@ import { AdminService } from "../../services/AdminService";
 class PurchaseCoiinParams {
     @Required() public readonly amount: number;
     @Required() public readonly paymentMethodId: string;
-    @Property() public readonly campaignId: string;
 }
 
 class StripeResultModel {
@@ -53,7 +52,7 @@ export class StripeController {
     }
 
     @Post("/purchase-coiin")
-    @(Returns(200, SuccessResult).Of(StripeResultModel))
+    @(Returns(200, SuccessResult).Of(PurchaseCoiinResultModel))
     public async purchaseCoiin(@BodyParams() body: PurchaseCoiinParams, @Context() context: Context) {
         const { company } = await this.adminService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));
         if (!company) throw new NotFound("company not found for this user");
@@ -67,12 +66,14 @@ export class StripeController {
             amountInDollar.toString(),
             org.stripeId!
         );
-        return await StripeAPI.chargePaymentMethod(
+
+        const result = await StripeAPI.chargePaymentMethod(
             amountInDollar.toString(),
             org.stripeId!,
             paymentMethodId,
             transfer.id
         );
+        return new SuccessResult(result, PurchaseCoiinResultModel);
     }
 
     @Post("/add-payment-method")
@@ -90,7 +91,7 @@ export class StripeController {
         return new SuccessResult({ clientSecret: intent.client_secret }, StripeResultModel);
     }
 
-    @Delete("/remove-payment-method")
+    @Post("/remove-payment-method")
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async removePaymentMethod(@BodyParams() body: RemovePaymentMethodParams, @Context() context: Context) {
         const { company } = await this.adminService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));

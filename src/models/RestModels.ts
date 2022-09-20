@@ -934,3 +934,9 @@ export class NftResultModel {
     @Property() public readonly owner?: string;
     @Property() public readonly note?: string;
 }
+
+export class PurchaseCoiinResultModel {
+    id: string;
+    clientSecret: string;
+    amount: number;
+}

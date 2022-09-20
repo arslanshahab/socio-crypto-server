@@ -49,7 +49,11 @@ export class StripeAPI {
                     stage: NODE_ENV,
                 },
             });
-            return paymentIntent.client_secret;
+            return {
+                id: paymentIntent.id,
+                clientSecret: paymentIntent.client_secret,
+                amount: paymentIntent.amount,
+            };
         } catch (err) {
             console.log("Error code is: ", err.code);
             if (err.raw.payment_intent && err.raw.payment_intent.id) {
