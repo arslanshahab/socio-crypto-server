@@ -427,6 +427,7 @@ export class CampaignController {
             }
         }
         if (campaignMedia) {
+            const medias = await this.campaignMediaservice.findCampaignMediaByCampaignId(campaign.id);
             for (let i = 0; i < campaignMedia.length; i++) {
                 const receivedMedia = campaignMedia[i];
                 if (!receivedMedia.id) {
@@ -438,7 +439,6 @@ export class CampaignController {
                     await this.campaignMediaservice.updateNewCampaignMedia(receivedMedia, campaign.id);
                 }
             }
-            const medias = await this.campaignMediaservice.findCampaignMediaByCampaignId(campaign.id);
             const filterMedia = medias.filter((x) => !campaignMedia.map((y) => y.id).includes(x.id));
             if (filterMedia) {
                 await this.campaignMediaservice.deleteCampaignMedia(filterMedia.map((x) => x.id));
