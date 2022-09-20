@@ -429,17 +429,7 @@ export class CampaignController {
         if (campaignMedia) {
             for (let i = 0; i < campaignMedia.length; i++) {
                 const receivedMedia = campaignMedia[i];
-                if (receivedMedia.id) {
-                    const foundMedia = await this.campaignMediaservice.findCampaignMediaById(receivedMedia.id);
-                    if (foundMedia && foundMedia.media !== receivedMedia.media) {
-                        await this.campaignMediaservice.updateCampaignMedia(receivedMedia);
-                        const urlObject = { name: receivedMedia.media, channel: receivedMedia.channel, signedUrl: "" };
-                        urlObject.signedUrl = await S3Client.generateCampaignSignedURL(
-                            `campaign/${campaign.id}/${receivedMedia.media}`
-                        );
-                        mediaUrls.push(urlObject);
-                    }
-                } else {
+                if (!receivedMedia.id) {
                     const urlObject = { name: receivedMedia.media, channel: receivedMedia.channel, signedUrl: "" };
                     urlObject.signedUrl = await S3Client.generateCampaignSignedURL(
                         `campaign/${campaign.id}/${receivedMedia.media}`
@@ -449,11 +439,9 @@ export class CampaignController {
                 }
             }
             const medias = await this.campaignMediaservice.findCampaignMediaByCampaignId(campaign.id);
-            for (let index = 0; index < medias.length; index++) {
-                const media = medias[index];
-                if (!campaignMedia.find((item) => item.id === media.id)) {
-                    await this.campaignMediaservice.deleteCampaignMedia(media.id);
-                }
+            const filterMedia = medias.filter((x) => !campaignMedia.map((y) => y.id).includes(x.id));
+            if (filterMedia) {
+                await this.campaignMediaservice.deleteCampaignMedia(filterMedia.map((x) => x.id));
             }
         }
         const result = {
