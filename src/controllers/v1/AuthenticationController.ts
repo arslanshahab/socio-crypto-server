@@ -165,6 +165,7 @@ export class AuthenticationController {
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async startVerification(@BodyParams() body: StartVerificationParams) {
         const { email, type, admin } = body;
+
         if (!email || !type) throw new BadRequest(MISSING_PARAMS);
         if (!admin) {
             const userWithEmail = await this.userService.updatedUserEmail(email);
