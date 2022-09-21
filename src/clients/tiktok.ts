@@ -142,4 +142,6 @@ export class TikTokClient {
     public static getPost = async (socialLink: PrismaSocialLink, id: string, cached = true) => {
         return "There is no post found on tiktok";
     };
+
+    public static getUsernameV2 = async () => {};
 }

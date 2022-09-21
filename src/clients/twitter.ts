@@ -219,11 +219,11 @@ export class TwitterClient {
         }
     };
 
-    public static getUsernameV2 = async (socialLink: PrismaSocialLink) => {
+    public static getUsernameV2 = async (data: { apiKey: string; apiSecret: string }) => {
         try {
             const client = TwitterClient.getClient({
-                apiKey: decrypt(socialLink.apiKey || "") || "",
-                apiSecret: decrypt(socialLink.apiSecret || "") || "",
+                apiKey: data.apiKey || "",
+                apiSecret: data.apiSecret || "",
             });
             const response = await client.get("/account/verify_credentials", { include_entities: false });
             const username = response["screen_name"];
@@ -232,7 +232,6 @@ export class TwitterClient {
             if (isArray(error)) {
                 const [data] = error;
                 if (data?.code === 89) {
-                    await prisma.socialLink.delete({ where: { id: socialLink.id } });
                     throw new FormattedError(new Error(TWITTER_LINK_EXPIRED));
                 }
                 throw new Error(data?.message || "");
@@ -293,6 +292,9 @@ export class TwitterClient {
                 const cachedResponse = await getRedis().get(cacheKey);
                 if (cachedResponse) return cachedResponse;
             }
+            console.log("apikey----------------------", socialLink.apiKey);
+            console.log("apiSecret----------------------", socialLink.apiSecret);
+
             const client = TwitterClient.getClient({
                 apiKey: socialLink.apiKey || "",
                 apiSecret: socialLink.apiSecret || "",
