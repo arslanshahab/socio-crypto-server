@@ -405,6 +405,7 @@ export class CampaignController {
             campaignImageSignedURL = await S3Client.generateCampaignSignedURL(`campaign/${campaign.id}/${imagePath}`);
         }
         if (campaignTemplates) {
+            const templates = await this.campaignTemplateService.findCampaignTemplateByCampaignId(campaign.id);
             for (let i = 0; i < campaignTemplates.length; i++) {
                 const receivedTemplate = campaignTemplates[i];
                 if (receivedTemplate.id) {
@@ -418,7 +419,6 @@ export class CampaignController {
                     await this.campaignTemplateService.updateNewCampaignTemplate(receivedTemplate, campaign.id);
                 }
             }
-            const templates = await this.campaignTemplateService.findCampaignTemplateByCampaignId(campaign.id);
             for (let index = 0; index < templates.length; index++) {
                 const template = templates[index];
                 if (!campaignTemplates.find((item) => item.id === template.id)) {
