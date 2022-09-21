@@ -5,8 +5,11 @@ import { SocialClientType } from "../../src/util/constants";
 import { decrypt } from "../../src/util/crypto";
 import { Secrets } from "../../src/util/secrets";
 import { connectDatabase } from "../helpers";
+import * as dotenv from "dotenv";
 
-async () => {
+dotenv.config();
+
+(async () => {
     try {
         console.log("Preparing to update username in social link table.");
         await Secrets.initialize();
@@ -24,7 +27,8 @@ async () => {
             await prisma.socialLink.update({ where: { id: socialLink.id }, data: { username } });
         }
         await connection.close();
+        process.exit(0);
     } catch (error) {
         console.log("ERROR:?", error);
     }
-};
+})();
