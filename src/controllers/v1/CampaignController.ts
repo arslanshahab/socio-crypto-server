@@ -407,7 +407,7 @@ export class CampaignController {
         if (campaignTemplates) {
             const templates = await this.campaignTemplateService.findCampaignTemplateByCampaignId(campaign.id);
             for (const template of campaignTemplates) {
-                await this.campaignTemplateService.upsertTemplates(template, campaign);
+                await this.campaignTemplateService.upsertTemplate(template, campaign);
             }
             for (let index = 0; index < templates.length; index++) {
                 const template = templates[index];

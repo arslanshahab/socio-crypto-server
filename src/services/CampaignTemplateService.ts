@@ -27,7 +27,7 @@ export class CampaignTemplateService {
         });
     }
 
-    public async upsertTemplates(campaignTemplate: CampaignTemplate, campaign: Campaign) {
+    public async upsertTemplate(campaignTemplate: CampaignTemplate, campaign: Campaign) {
         return await prisma.campaignTemplate.upsert({
             where: { id: campaignTemplate.id || campaign.id },
             update: {
