@@ -1,5 +1,5 @@
 import { Injectable } from "@tsed/di";
-import { CampaignTemplate } from "@prisma/client";
+import { Campaign, CampaignTemplate } from "@prisma/client";
 import { prisma, readPrisma } from "../clients/prisma";
 
 @Injectable()
@@ -21,30 +21,23 @@ export class CampaignTemplateService {
         });
     }
 
-    public async updateCampaignTemplate(campaignTemplates: CampaignTemplate) {
-        return await prisma.campaignTemplate.update({
-            where: { id: campaignTemplates.id },
-            data: {
-                post: campaignTemplates.post,
-                updatedAt: new Date(),
-            },
-        });
-    }
-
-    public async updateNewCampaignTemplate(campaignTemplate: CampaignTemplate, campaignId: string) {
-        return await prisma.campaignTemplate.create({
-            data: {
-                channel: campaignTemplate.channel,
-                post: campaignTemplate.post,
-                campaignId,
-                updatedAt: new Date(),
-            },
-        });
-    }
-
     public async findCampaignTemplateById(campaignTemplateId: string) {
         return readPrisma.campaignTemplate.findFirst({
             where: { id: campaignTemplateId },
+        });
+    }
+
+    public async upsertTemplates(campaignTemplate: CampaignTemplate, campaign: Campaign) {
+        return await prisma.campaignTemplate.upsert({
+            where: { id: campaignTemplate.id || campaign.id },
+            update: {
+                post: campaignTemplate.post,
+            },
+            create: {
+                channel: campaignTemplate.channel,
+                post: campaignTemplate.post,
+                campaignId: campaign.id,
+            },
         });
     }
 }

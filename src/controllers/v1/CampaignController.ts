@@ -103,7 +103,7 @@ export class CampaignController {
     @Inject()
     private dailyParticipantMetricService: DailyParticipantMetricService;
     @Inject()
-    private campaignMediaservice: CampaignMediaService;
+    private campaignMediaService: CampaignMediaService;
     @Inject()
     private hourlyCampaignMetricsService: HourlyCampaignMetricsService;
     @Inject()
@@ -406,18 +406,8 @@ export class CampaignController {
         }
         if (campaignTemplates) {
             const templates = await this.campaignTemplateService.findCampaignTemplateByCampaignId(campaign.id);
-            for (let i = 0; i < campaignTemplates.length; i++) {
-                const receivedTemplate = campaignTemplates[i];
-                if (receivedTemplate.id) {
-                    const foundTemplate = await this.campaignTemplateService.findCampaignTemplateById(
-                        receivedTemplate.id
-                    );
-                    if (foundTemplate) {
-                        await this.campaignTemplateService.updateCampaignTemplate(receivedTemplate);
-                    }
-                } else {
-                    await this.campaignTemplateService.updateNewCampaignTemplate(receivedTemplate, campaign.id);
-                }
+            for (const template of campaignTemplates) {
+                await this.campaignTemplateService.upsertTemplates(template, campaign);
             }
             for (let index = 0; index < templates.length; index++) {
                 const template = templates[index];
@@ -427,7 +417,7 @@ export class CampaignController {
             }
         }
         if (campaignMedia) {
-            const medias = await this.campaignMediaservice.findCampaignMediaByCampaignId(campaign.id);
+            const medias = await this.campaignMediaService.findCampaignMediaByCampaignId(campaign.id);
             for (let i = 0; i < campaignMedia.length; i++) {
                 const receivedMedia = campaignMedia[i];
                 if (!receivedMedia.id) {
@@ -436,12 +426,12 @@ export class CampaignController {
                         `campaign/${campaign.id}/${receivedMedia.media}`
                     );
                     mediaUrls.push(urlObject);
-                    await this.campaignMediaservice.updateNewCampaignMedia(receivedMedia, campaign.id);
+                    await this.campaignMediaService.createCampaignMedia(receivedMedia, campaign.id);
                 }
             }
             const filterMedia = medias.filter((x) => !campaignMedia.map((y) => y.id).includes(x.id));
             if (filterMedia) {
-                await this.campaignMediaservice.deleteCampaignMedia(filterMedia.map((x) => x.id));
+                await this.campaignMediaService.deleteCampaignMedia(filterMedia.map((x) => x.id));
             }
         }
         const result = {
@@ -476,8 +466,8 @@ export class CampaignController {
         if (hourlyMetrics.length > 0) this.hourlyCampaignMetricsService.deleteCampaignHourlyMetrics(campaignId);
         const campaignTemplate = await this.campaignTemplateService.findCampaignTemplateByCampaignId(campaignId);
         if (campaignTemplate.length > 0) this.campaignTemplateService.deleteCampaignTemplates(campaignId);
-        const campaignMedia = await this.campaignMediaservice.findCampaignMediaByCampaignId(campaignId);
-        if (campaignMedia.length > 0) this.campaignMediaservice.deleteCampaignMedias(campaignId);
+        const campaignMedia = await this.campaignMediaService.findCampaignMediaByCampaignId(campaignId);
+        if (campaignMedia.length > 0) this.campaignMediaService.deleteCampaignMedias(campaignId);
         const campaign = await this.campaignService.findCampaignById(campaignId, undefined, company);
         if (campaign) this.campaignService.deleteCampaign(campaignId);
         const result = {

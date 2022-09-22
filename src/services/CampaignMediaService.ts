@@ -24,7 +24,7 @@ export class CampaignMediaService {
         });
     }
 
-    public async updateNewCampaignMedia(campaignMedia: CampaignMedia, campaignId: string) {
+    public async createCampaignMedia(campaignMedia: CampaignMedia, campaignId: string) {
         return await prisma.campaignMedia.create({
             data: {
                 channel: campaignMedia.channel,
