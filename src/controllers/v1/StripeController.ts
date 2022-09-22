@@ -1,16 +1,31 @@
 import { Controller, Inject } from "@tsed/di";
 import { Get, Post, Property, Required, Returns } from "@tsed/schema";
 import { SuccessArrayResult, SuccessResult } from "../../util/entities";
-import { BodyParams, Context } from "@tsed/common";
+import { BodyParams, Context, Req, Res } from "@tsed/common";
 import { OrganizationService } from "../../services/OrganizationService";
-import { ORG_NOT_FOUND } from "../../util/errors";
+import { ORG_NOT_FOUND, TRANSFER_NOT_FOUND, WALLET_NOT_FOUND } from "../../util/errors";
 import { StripeAPI } from "../../clients/stripe";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { BooleanResultModel, PaymentMethodsResultModel, PurchaseCoiinResultModel } from "../../models/RestModels";
 import { TransferService } from "../../services/TransferService";
 import { getTokenValueInUSD } from "../../util/exchangeRate";
-import { ADMIN, COIIN } from "../../util/constants";
+import {
+    ADMIN,
+    BSC,
+    COIIN,
+    RAIINMAKER_ORG_NAME,
+    TransferAction,
+    TransferStatus,
+    TransferType,
+} from "../../util/constants";
 import { AdminService } from "../../services/AdminService";
+import { Secrets } from "../../util/secrets";
+import { PaymentIntent } from "../../types";
+import { TatumService } from "../../services/TatumService";
+import { CurrencyService } from "../../services/CurrencyService";
+import { TokenService } from "../../services/TokenService";
+import { WalletService } from "../../services/WalletService";
+import { readPrisma } from "src/clients/prisma";
 
 class PurchaseCoiinParams {
     @Required() public readonly amount: number;
@@ -25,7 +40,7 @@ class RemovePaymentMethodParams {
     @Property() public readonly paymentMethodId: string;
 }
 
-@Controller("/stripe")
+@Controller("/")
 export class StripeController {
     @Inject()
     private organizationService: OrganizationService;
@@ -33,8 +48,16 @@ export class StripeController {
     private transferService: TransferService;
     @Inject()
     private adminService: AdminService;
+    @Inject()
+    private tatumService: TatumService;
+    @Inject()
+    private currencyService: CurrencyService;
+    @Inject()
+    private tokenService: TokenService;
+    @Inject()
+    private walletService: WalletService;
 
-    @Get("/payment-methods")
+    @Get("/stripe/payment-methods")
     @(Returns(200, SuccessArrayResult).Of(PaymentMethodsResultModel))
     public async listPaymentMethods(@Context() context: Context) {
         const { company } = await this.adminService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));
@@ -51,7 +74,7 @@ export class StripeController {
         return new SuccessArrayResult(result, PaymentMethodsResultModel);
     }
 
-    @Post("/purchase-coiin")
+    @Post("/stripe/purchase-coiin")
     @(Returns(200, SuccessResult).Of(PurchaseCoiinResultModel))
     public async purchaseCoiin(@BodyParams() body: PurchaseCoiinParams, @Context() context: Context) {
         const { company } = await this.adminService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));
@@ -73,10 +96,12 @@ export class StripeController {
             paymentMethodId,
             transfer.id
         );
-        return new SuccessResult(result, PurchaseCoiinResultModel);
+        const confirmPayment = await StripeAPI.confirmPayment(result?.id!);
+        if (confirmPayment.status === "succeeded") return new SuccessResult(result, PurchaseCoiinResultModel);
+        else return new SuccessResult({ success: false }, BooleanResultModel);
     }
 
-    @Post("/add-payment-method")
+    @Post("/stripe/add-payment-method")
     @(Returns(200, SuccessResult).Of(StripeResultModel))
     public async addPaymentMethod(@Context() context: Context) {
         const { company } = await this.adminService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));
@@ -91,7 +116,7 @@ export class StripeController {
         return new SuccessResult({ clientSecret: intent.client_secret }, StripeResultModel);
     }
 
-    @Post("/remove-payment-method")
+    @Post("/stripe/remove-payment-method")
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async removePaymentMethod(@BodyParams() body: RemovePaymentMethodParams, @Context() context: Context) {
         const { company } = await this.adminService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));
@@ -104,5 +129,77 @@ export class StripeController {
         if (customer !== org.stripeId) throw new BadRequest("card not registered");
         await StripeAPI.removePaymentMethod(paymentMethodId);
         return new SuccessResult({ success: true }, BooleanResultModel);
+    }
+
+    @Post("/stripe/confirm_payment")
+    @(Returns(200, SuccessResult).Of(Object))
+    public async confirmStripePayment(@BodyParams() body: { paymentMethodId: string }) {
+        const response = await StripeAPI.confirmPayment(body.paymentMethodId);
+        console.log("Response-----------------------/", response);
+    }
+
+    @Post("/payments")
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
+    public async stripeWebhook(@Req() req: Req, @Res() res: Res) {
+        const sig = req.headers["stripe-signature"];
+        let event;
+        let transfer;
+        if (!sig) throw new Error("missing signature");
+        event = await StripeAPI.constructWebhookEvent(req.body, sig, Secrets.stripeWebhookSecret);
+        const paymentIntent = event.data.object as PaymentIntent;
+        // if (paymentIntent.metadata.stage !== process.env.NODE_ENV) return res.status(200).json({ received: true });
+        switch (event.type) {
+            case "payment_intent.succeeded":
+                transfer = await this.transferService.findTransferById(paymentIntent.metadata.transferId);
+                if (!transfer) throw new Error(TRANSFER_NOT_FOUND);
+                const amountInCoiins = paymentIntent.amount / parseFloat(process.env.COIIN_VALUE || "0.2");
+                const token = await this.tokenService.findTokenBySymbol({ symbol: COIIN, network: BSC });
+                const userCurrency = await this.currencyService.findCurrencyByTokenAndWallet({
+                    tokenId: token?.id!,
+                    walletId: transfer.walletId!,
+                });
+                const availableBalance = await this.tatumService.getAccountBalance(userCurrency?.tatumId!);
+                if (!availableBalance) {
+                    await this.transferService.newReward({
+                        action: TransferAction.TRANSFER,
+                        amount: amountInCoiins.toString(),
+                        status: TransferStatus.PENDING,
+                        symbol: COIIN,
+                        type: TransferType.CREDIT,
+                        walletId: transfer.walletId!,
+                    });
+                }
+                const org = await readPrisma.org.findFirst({ where: { name: RAIINMAKER_ORG_NAME } });
+                if (!org) throw new NotFound(ORG_NOT_FOUND);
+                const orgWallet = await this.walletService.findWalletByOrgId(org?.id);
+                if (!orgWallet) throw new NotFound(WALLET_NOT_FOUND + " for organization");
+                const orgCurrency = await this.currencyService.findCurrencyByTokenAndWallet({
+                    tokenId: token?.id!,
+                    walletId: orgWallet.id,
+                });
+                await this.tatumService.transferFunds({
+                    senderAccountId: orgCurrency?.tatumId!,
+                    recipientAccountId: userCurrency?.tatumId!,
+                    amount: amountInCoiins.toString(),
+                    recipientNote: "Transfer credit card coiin",
+                });
+                await this.transferService.newReward({
+                    action: TransferAction.TRANSFER,
+                    amount: amountInCoiins.toString(),
+                    status: TransferStatus.SUCCEEDED,
+                    symbol: COIIN,
+                    type: TransferType.CREDIT,
+                    walletId: transfer.walletId!,
+                });
+                break;
+            case "payment_intent.payment_failed":
+                transfer = await this.transferService.findTransferById(paymentIntent.metadata.transferId);
+                if (!transfer) throw new Error(TRANSFER_NOT_FOUND);
+                await this.transferService.updateTransferStatus(transfer.id, TransferStatus.FAILED);
+                break;
+            default:
+                console.log(`Unhandled event type ${event.type}`);
+        }
+        return res.status(200).json({ received: true });
     }
 }

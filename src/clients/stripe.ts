@@ -80,4 +80,8 @@ export class StripeAPI {
     public static async removePaymentMethod(paymentMethodId: string) {
         return StripeAPI.client.paymentMethods.detach(paymentMethodId);
     }
+
+    public static async confirmPayment(paymentIntentId: string) {
+        return StripeAPI.client.paymentIntents.retrieve(paymentIntentId);
+    }
 }

@@ -297,4 +297,12 @@ export class TransferService {
         action = 'REGISTRATION_REWARD' OR action = 'PARTICIPATION_REWARD' OR action = 'SHARING_REWARD' OR action = 'CAMPAIGN_REWARD' OR action = 'NETWORK_REWARD'`;
         return result;
     }
+
+    public async findTransferById(id: string) {
+        return readPrisma.transfer.findFirst({ where: { id } });
+    }
+
+    public async updateTransferStatus(id: string, status: string) {
+        return await prisma.transfer.update({ where: { id }, data: { status } });
+    }
 }
