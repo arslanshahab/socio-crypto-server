@@ -25,7 +25,6 @@ import { TatumService } from "../../services/TatumService";
 import { CurrencyService } from "../../services/CurrencyService";
 import { TokenService } from "../../services/TokenService";
 import { WalletService } from "../../services/WalletService";
-import { readPrisma } from "src/clients/prisma";
 
 class PurchaseCoiinParams {
     @Required() public readonly amount: number;
@@ -169,7 +168,7 @@ export class StripeController {
                         walletId: transfer.walletId!,
                     });
                 }
-                const org = await readPrisma.org.findFirst({ where: { name: RAIINMAKER_ORG_NAME } });
+                const org = await this.organizationService.findOrganizationByName(RAIINMAKER_ORG_NAME);
                 if (!org) throw new NotFound(ORG_NOT_FOUND);
                 const orgWallet = await this.walletService.findWalletByOrgId(org?.id);
                 if (!orgWallet) throw new NotFound(WALLET_NOT_FOUND + " for organization");
