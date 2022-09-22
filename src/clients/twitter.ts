@@ -292,9 +292,6 @@ export class TwitterClient {
                 const cachedResponse = await getRedis().get(cacheKey);
                 if (cachedResponse) return cachedResponse;
             }
-            console.log("apikey----------------------", socialLink.apiKey);
-            console.log("apiSecret----------------------", socialLink.apiSecret);
-
             const client = TwitterClient.getClient({
                 apiKey: socialLink.apiKey || "",
                 apiSecret: socialLink.apiSecret || "",
