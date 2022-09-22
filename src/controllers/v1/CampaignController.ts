@@ -404,36 +404,32 @@ export class CampaignController {
         if (imagePath && campaign.imagePath !== imagePath) {
             campaignImageSignedURL = await S3Client.generateCampaignSignedURL(`campaign/${campaign.id}/${imagePath}`);
         }
-        if (campaignTemplates) {
-            const templates = await this.campaignTemplateService.findCampaignTemplateByCampaignId(campaign.id);
-            for (const template of campaignTemplates) {
-                await this.campaignTemplateService.upsertTemplate(template, campaign);
-            }
-            for (let index = 0; index < templates.length; index++) {
-                const template = templates[index];
-                if (!campaignTemplates.find((item) => item.id === template.id)) {
-                    await this.campaignTemplateService.deleteCampaignTemplate(template.id);
-                }
+        const templates = await this.campaignTemplateService.findCampaignTemplateByCampaignId(campaign.id);
+        for (const template of campaignTemplates) {
+            await this.campaignTemplateService.upsertTemplate(template, campaign);
+        }
+        for (let index = 0; index < templates.length; index++) {
+            const template = templates[index];
+            if (!campaignTemplates.find((item) => item.id === template.id)) {
+                await this.campaignTemplateService.deleteCampaignTemplate(template.id);
             }
         }
-        if (campaignMedia) {
-            const medias = await this.campaignMediaService.findCampaignMediaByCampaignId(campaign.id);
-            for (let i = 0; i < campaignMedia.length; i++) {
-                const receivedMedia = campaignMedia[i];
-                if (!receivedMedia.id) {
-                    const urlObject = { name: receivedMedia.media, channel: receivedMedia.channel, signedUrl: "" };
-                    urlObject.signedUrl = await S3Client.generateCampaignSignedURL(
-                        `campaign/${campaign.id}/${receivedMedia.media}`
-                    );
-                    mediaUrls.push(urlObject);
-                    await this.campaignMediaService.createCampaignMedia(receivedMedia, campaign.id);
-                }
+        const medias = await this.campaignMediaService.findCampaignMediaByCampaignId(campaign.id);
+        for (let i = 0; i < campaignMedia.length; i++) {
+            const receivedMedia = campaignMedia[i];
+            if (!receivedMedia.id) {
+                const urlObject = { name: receivedMedia.media, channel: receivedMedia.channel, signedUrl: "" };
+                urlObject.signedUrl = await S3Client.generateCampaignSignedURL(
+                    `campaign/${campaign.id}/${receivedMedia.media}`
+                );
+                mediaUrls.push(urlObject);
+                await this.campaignMediaService.createCampaignMedia(receivedMedia, campaign.id);
             }
-            const campaignMediaIds = campaignMedia.map((y) => y.id);
-            const removedMedias = medias.filter((x) => !campaignMediaIds.includes(x.id));
-            if (removedMedias.length) {
-                await this.campaignMediaService.deleteCampaignMedia(removedMedias.map((x) => x.id));
-            }
+        }
+        const campaignMediaIds = campaignMedia.map((y) => y.id);
+        const removedMedias = medias.filter((x) => !campaignMediaIds.includes(x.id));
+        if (removedMedias.length) {
+            await this.campaignMediaService.deleteCampaignMedia(removedMedias.map((x) => x.id));
         }
         const result = {
             campaignId: campaign.id,

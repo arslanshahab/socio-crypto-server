@@ -809,8 +809,8 @@ export class CreateCampaignParams {
     @Property() public readonly keywords: string[];
     @Property() public readonly type: string;
     @Property() public readonly raffle_prize: RafflePrize;
-    @Property() public readonly campaignMedia: CampaignMedia[];
-    @Property() public readonly campaignTemplates: CampaignTemplate[];
+    @Required() public readonly campaignMedia: CampaignMedia[];
+    @Required() public readonly campaignTemplates: CampaignTemplate[];
     @Property() public readonly isGlobal: boolean;
     @Required() public readonly showUrl: boolean;
 }
@@ -839,8 +839,8 @@ export class UpdateCampaignParams {
     @Property() public readonly keywords: string[];
     @Property() public readonly type: string;
     @Property() public readonly raffle_prize: RafflePrize;
-    @Property() public readonly campaignMedia: CampaignMedia[];
-    @Property() public readonly campaignTemplates: CampaignTemplate[];
+    @Required() public readonly campaignMedia: CampaignMedia[];
+    @Required() public readonly campaignTemplates: CampaignTemplate[];
 }
 
 export class VerifySessionResultModel {
