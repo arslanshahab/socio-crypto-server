@@ -255,6 +255,12 @@ export class UserService {
                             country: true,
                         },
                     },
+                    social_link: {
+                        select: {
+                            id: true,
+                            username: true,
+                        },
+                    },
                 },
                 skip,
                 take,

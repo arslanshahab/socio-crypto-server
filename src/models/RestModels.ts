@@ -422,6 +422,7 @@ export class UserWalletResultModel {
 
 export class UserRecordResultModel extends UserResultModel {
     @CollectionOf(SocialPostResultModel) public readonly social_post: SocialPostResultModel[];
+    @Property() public readonly social_link: Prisma.SocialLink[];
 }
 
 export class BalanceResultModel {
