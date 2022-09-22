@@ -429,9 +429,10 @@ export class CampaignController {
                     await this.campaignMediaService.createCampaignMedia(receivedMedia, campaign.id);
                 }
             }
-            const filterMedia = medias.filter((x) => !campaignMedia.map((y) => y.id).includes(x.id));
-            if (filterMedia) {
-                await this.campaignMediaService.deleteCampaignMedia(filterMedia.map((x) => x.id));
+            const campaignMediaIds = campaignMedia.map((y) => y.id);
+            const removedMedias = medias.filter((x) => !campaignMediaIds.includes(x.id));
+            if (removedMedias.length) {
+                await this.campaignMediaService.deleteCampaignMedia(removedMedias.map((x) => x.id));
             }
         }
         const result = {
