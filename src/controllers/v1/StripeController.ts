@@ -6,7 +6,12 @@ import { OrganizationService } from "../../services/OrganizationService";
 import { ORG_NOT_FOUND, TRANSFER_NOT_FOUND, WALLET_NOT_FOUND } from "../../util/errors";
 import { StripeAPI } from "../../clients/stripe";
 import { BadRequest, NotFound } from "@tsed/exceptions";
-import { BooleanResultModel, PaymentMethodsResultModel, PurchaseCoiinResultModel } from "../../models/RestModels";
+import {
+    BooleanResultModel,
+    PaymentMethodsResultModel,
+    PurchaseCoiinResultModel,
+    UpdatedResultModel,
+} from "../../models/RestModels";
 import { TransferService } from "../../services/TransferService";
 import { getTokenValueInUSD } from "../../util/exchangeRate";
 import {
@@ -88,16 +93,18 @@ export class StripeController {
             amountInDollar.toString(),
             org.stripeId!
         );
-
         const result = await StripeAPI.chargePaymentMethod(
-            amountInDollar.toString(),
+            (amountInDollar * 100).toString(),
             org.stripeId!,
             paymentMethodId,
             transfer.id
         );
-        const confirmPayment = await StripeAPI.confirmPayment(result?.id!);
-        if (confirmPayment.status === "succeeded") return new SuccessResult(result, PurchaseCoiinResultModel);
-        else return new SuccessResult({ success: false }, BooleanResultModel);
+        let confirmPayment;
+        if (result?.id) {
+            confirmPayment = await StripeAPI.confirmPayment(result.id);
+        }
+        if (confirmPayment?.status === "succeeded") return new SuccessResult(result, PurchaseCoiinResultModel);
+        else return new SuccessResult({ message: "Stripe payment failed!" }, UpdatedResultModel);
     }
 
     @Post("/stripe/add-payment-method")
@@ -157,8 +164,31 @@ export class StripeController {
                     tokenId: token?.id!,
                     walletId: transfer.walletId!,
                 });
-                const availableBalance = await this.tatumService.getAccountBalance(userCurrency?.tatumId!);
-                if (!availableBalance) {
+                const org = await this.organizationService.findOrganizationByName(RAIINMAKER_ORG_NAME);
+                if (!org) throw new NotFound(ORG_NOT_FOUND);
+                const orgWallet = await this.walletService.findWalletByOrgId(org?.id);
+                if (!orgWallet) throw new NotFound(WALLET_NOT_FOUND + " for organization");
+                const orgCurrency = await this.currencyService.findCurrencyByTokenAndWallet({
+                    tokenId: token?.id!,
+                    walletId: orgWallet.id,
+                });
+                const { availableBalance } = await this.tatumService.getAccountBalance(orgCurrency?.tatumId!);
+                if (parseFloat(availableBalance) > amountInCoiins) {
+                    await this.tatumService.transferFunds({
+                        senderAccountId: orgCurrency?.tatumId!,
+                        recipientAccountId: userCurrency?.tatumId!,
+                        amount: amountInCoiins.toString(),
+                        recipientNote: "Transfer credit card coiin",
+                    });
+                    await this.transferService.newReward({
+                        action: TransferAction.TRANSFER,
+                        amount: amountInCoiins.toString(),
+                        status: TransferStatus.SUCCEEDED,
+                        symbol: COIIN,
+                        type: TransferType.CREDIT,
+                        walletId: transfer.walletId!,
+                    });
+                } else {
                     await this.transferService.newReward({
                         action: TransferAction.TRANSFER,
                         amount: amountInCoiins.toString(),
@@ -168,28 +198,6 @@ export class StripeController {
                         walletId: transfer.walletId!,
                     });
                 }
-                const org = await this.organizationService.findOrganizationByName(RAIINMAKER_ORG_NAME);
-                if (!org) throw new NotFound(ORG_NOT_FOUND);
-                const orgWallet = await this.walletService.findWalletByOrgId(org?.id);
-                if (!orgWallet) throw new NotFound(WALLET_NOT_FOUND + " for organization");
-                const orgCurrency = await this.currencyService.findCurrencyByTokenAndWallet({
-                    tokenId: token?.id!,
-                    walletId: orgWallet.id,
-                });
-                await this.tatumService.transferFunds({
-                    senderAccountId: orgCurrency?.tatumId!,
-                    recipientAccountId: userCurrency?.tatumId!,
-                    amount: amountInCoiins.toString(),
-                    recipientNote: "Transfer credit card coiin",
-                });
-                await this.transferService.newReward({
-                    action: TransferAction.TRANSFER,
-                    amount: amountInCoiins.toString(),
-                    status: TransferStatus.SUCCEEDED,
-                    symbol: COIIN,
-                    type: TransferType.CREDIT,
-                    walletId: transfer.walletId!,
-                });
                 break;
             case "payment_intent.payment_failed":
                 transfer = await this.transferService.findTransferById(paymentIntent.metadata.transferId);
