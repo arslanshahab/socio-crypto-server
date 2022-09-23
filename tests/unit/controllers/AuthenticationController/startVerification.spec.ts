@@ -1,5 +1,5 @@
 import { PlatformTest } from "@tsed/common";
-import { startVerificationRoute } from "../../../test_helper";
+import { handleBaseAssertions, startVerificationRoute } from "../../../test_helper";
 import { StartVerificationParams } from "../../../../src/controllers/v1/AuthenticationController";
 import { User } from "../../../../src/models/User";
 import { UserService } from "../../../../src/services/UserService";
@@ -18,6 +18,8 @@ import { Firebase } from "../../../../src/clients/firebase";
 
 describe("start verification", () => {
     let request: any;
+    let userService: UserService;
+    let verificationService: VerificationService;
 
     beforeAll(async () => {
         await PlatformTest.bootstrap(RestServer, {
@@ -40,10 +42,16 @@ describe("start verification", () => {
 
     beforeAll(() => {
         request = SuperTest(PlatformTest.callback());
+        userService = PlatformTest.get<UserService>(UserService);
+        verificationService = PlatformTest.get<VerificationService>(VerificationService);
     });
 
     beforeEach(() => {
         jest.clearAllMocks();
+    });
+
+    afterAll(async () => {
+        await PlatformTest.reset();
     });
 
     it("should throw BadRequest on missing params", async () => {
@@ -56,6 +64,7 @@ describe("start verification", () => {
             .set("Accept", "application/json")
             .send(JSON.stringify(body));
         expect(res.statusCode).toEqual(400);
+        handleBaseAssertions(res, 400, null);
     });
 
     it("should throw BadRequest EMAIL_EXIST", async () => {
@@ -65,8 +74,7 @@ describe("start verification", () => {
             admin: false,
         };
         const testUser: User = new User();
-        const userService = PlatformTest.get<UserService>(UserService);
-        const spy = jest.spyOn(userService, "updatedUserEmail").mockResolvedValue(testUser);
+        const updatedUserEmailSpy = jest.spyOn(userService, "updatedUserEmail").mockResolvedValue(testUser);
 
         const res = await request
             .post(startVerificationRoute)
@@ -74,9 +82,7 @@ describe("start verification", () => {
             .set("content-type", "application/json")
             .send(body);
 
-        expect(res.statusCode).toEqual(400);
-        expect(res.body.message.toString()).toContain(EMAIL_EXISTS);
-        expect(spy).toHaveBeenCalled();
+        handleBaseAssertions(res, 400, EMAIL_EXISTS, updatedUserEmailSpy);
     });
 
     it("should throw EMAIL_NOT_EXISTS on type PASSWORD", async () => {
@@ -85,8 +91,8 @@ describe("start verification", () => {
             type: VerificationType.PASSWORD,
             admin: false,
         };
-        const userService = PlatformTest.get<UserService>(UserService);
-        const spy = jest.spyOn(userService, "updatedUserEmail").mockResolvedValue(null);
+
+        const updatedUserEmailSpy = jest.spyOn(userService, "updatedUserEmail").mockResolvedValue(null);
 
         const res = await request
             .post(startVerificationRoute)
@@ -94,9 +100,7 @@ describe("start verification", () => {
             .set("content-type", "application/json")
             .send(body);
 
-        expect(res.statusCode).toEqual(400);
-        expect(res.body.message).toContain(EMAIL_NOT_EXISTS);
-        expect(spy).toHaveBeenCalled();
+        handleBaseAssertions(res, 400, EMAIL_NOT_EXISTS, updatedUserEmailSpy);
     });
 
     it("should throw EMAIL_NOT_EXISTS on type WITHDRAW", async () => {
@@ -105,8 +109,8 @@ describe("start verification", () => {
             type: VerificationType.WITHDRAW,
             admin: false,
         };
-        const userService = PlatformTest.get<UserService>(UserService);
-        const spy = jest.spyOn(userService, "updatedUserEmail").mockResolvedValue(null);
+
+        const updatedUserEmailSpy = jest.spyOn(userService, "updatedUserEmail").mockResolvedValue(null);
 
         const res = await request
             .post(startVerificationRoute)
@@ -114,9 +118,7 @@ describe("start verification", () => {
             .set("content-type", "application/json")
             .send(body);
 
-        expect(res.statusCode).toEqual(400);
-        expect(res.body.message).toContain(EMAIL_NOT_EXISTS);
-        expect(spy).toHaveBeenCalled();
+        handleBaseAssertions(res, 400, EMAIL_NOT_EXISTS, updatedUserEmailSpy);
     });
 
     // it("should throw EMAIL_EXISTS on admin found", async () => {
@@ -148,15 +150,13 @@ describe("start verification", () => {
             admin: false,
         };
 
-        const userService = PlatformTest.get<UserService>(UserService);
-        const userServiceSpy = jest.spyOn(userService, "updatedUserEmail").mockResolvedValue(null);
+        const updatedUserEmailSpy = jest.spyOn(userService, "updatedUserEmail").mockResolvedValue(null);
 
-        const verificationService = PlatformTest.get<VerificationService>(VerificationService);
         const generateVerificationSpy = jest
             .spyOn(verificationService, "generateVerification")
             .mockResolvedValue(verification);
         const getDecryptedCodeSyp = jest.spyOn(verificationService, "getDecryptedCode").mockReturnValue("testing");
-        const sesClienSpy = jest
+        const emailAddressVerificationEmailSpy = jest
             .spyOn(SesClient, "emailAddressVerificationEmail")
             .mockImplementation(async (emailAddress, otp) => {
                 return true;
@@ -168,12 +168,16 @@ describe("start verification", () => {
             .set("content-type", "application/json")
             .send(JSON.stringify(body));
 
-        expect(generateVerificationSpy).toHaveBeenCalled();
-        expect(getDecryptedCodeSyp).toHaveBeenCalled();
-        expect(userServiceSpy).toHaveBeenCalled();
-        expect(sesClienSpy).toHaveBeenCalled();
-        expect(res.statusCode).toEqual(200);
-        expect(res.body.success).toEqual;
+        expect(res.body.success).toEqual(true);
+        handleBaseAssertions(
+            res,
+            200,
+            null,
+            generateVerificationSpy,
+            getDecryptedCodeSyp,
+            updatedUserEmailSpy,
+            emailAddressVerificationEmailSpy
+        );
     });
 
     it("should successfully start verification for a admin", async () => {
@@ -185,13 +189,13 @@ describe("start verification", () => {
             admin: true,
         };
 
-        const firebaseSpy = jest.spyOn(Firebase, "getUserByEmail");
-        const verificationService = PlatformTest.get<VerificationService>(VerificationService);
+        const getUserByEmailSpy = jest.spyOn(Firebase, "getUserByEmail");
+
         const generateVerificationSpy = jest
             .spyOn(verificationService, "generateVerification")
             .mockResolvedValue(verification);
-        const getDecryptedCodeSyp = jest.spyOn(verificationService, "getDecryptedCode").mockReturnValue("testing");
-        const sesClienSpy = jest
+        const getDecryptedCodeSpy = jest.spyOn(verificationService, "getDecryptedCode").mockReturnValue("testing");
+        const emailAddressVerificationEmailSpy = jest
             .spyOn(SesClient, "emailAddressVerificationEmail")
             .mockImplementation(async (emailAddress, otp) => {
                 return true;
@@ -202,12 +206,16 @@ describe("start verification", () => {
             .type("/json")
             .set("content-type", "application/json")
             .send(JSON.stringify(body));
-        expect(generateVerificationSpy).toHaveBeenCalled();
-        expect(getDecryptedCodeSyp).toHaveBeenCalled();
 
-        expect(sesClienSpy).toHaveBeenCalled();
-        expect(firebaseSpy).toHaveBeenCalled();
-        expect(res.statusCode).toEqual(200);
-        expect(res.body.success).toEqual;
+        expect(res.body.success).toEqual(true);
+        handleBaseAssertions(
+            res,
+            200,
+            null,
+            generateVerificationSpy,
+            getDecryptedCodeSpy,
+            getUserByEmailSpy,
+            emailAddressVerificationEmailSpy
+        );
     });
 });

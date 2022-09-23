@@ -270,3 +270,17 @@ export const dashboardCampaignMetricsIdRoute = " /v1/campaign/dashboard-metrics/
 export const campaignsLiteRoute = "/v1/campaign/campaigns-lite";
 export const campaignPending = "/v1/campaign/pending";
 export const campaignPayoutId = "/v1/campaign/payout/:campaignId ";
+
+export function handleBaseAssertions(
+    res: any,
+    statusCode: number,
+    message: string | undefined | null,
+    ...args: jest.SpyInstance[]
+) {
+    expect(res.status).toEqual(statusCode);
+    if (message) expect(res.body.message).toContain(message);
+
+    args.forEach((spy) => {
+        expect(spy).toHaveBeenCalled();
+    });
+}
