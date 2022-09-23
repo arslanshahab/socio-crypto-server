@@ -137,13 +137,6 @@ export class StripeController {
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 
-    @Post("/stripe/confirm_payment")
-    @(Returns(200, SuccessResult).Of(Object))
-    public async confirmStripePayment(@BodyParams() body: { paymentMethodId: string }) {
-        const response = await StripeAPI.confirmPayment(body.paymentMethodId);
-        console.log("Response-----------------------/", response);
-    }
-
     @Post("/payments")
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async stripeWebhook(@Req() req: Req, @Res() res: Res) {
@@ -153,7 +146,6 @@ export class StripeController {
         if (!sig) throw new Error("missing signature");
         event = await StripeAPI.constructWebhookEvent(req.body, sig, Secrets.stripeWebhookSecret);
         const paymentIntent = event.data.object as PaymentIntent;
-        // if (paymentIntent.metadata.stage !== process.env.NODE_ENV) return res.status(200).json({ received: true });
         switch (event.type) {
             case "payment_intent.succeeded":
                 transfer = await this.transferService.findTransferById(paymentIntent.metadata.transferId);
