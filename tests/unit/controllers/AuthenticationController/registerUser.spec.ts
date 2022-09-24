@@ -16,6 +16,7 @@ import { EMAIL_EXISTS, USERNAME_EXISTS, USER_NOT_FOUND } from "../../../../src/u
 import { Profile } from "@prisma/client";
 import { Verification } from "../../../../src/models/Verification";
 import { S3Client } from "../../../../src/clients/s3";
+import { RegisterUserParams } from "../../../../src/models/RestModels";
 
 const setEnv = () => {
     process.env.NODE_ENV = "production";
@@ -160,11 +161,12 @@ describe(" register user", () => {
     });
 
     it("should successfully register a user", async () => {
-        const body = {
+        const body: RegisterUserParams = {
             email: "me@raiinmaker.com",
-            username: "testUsername",
             password: "testPassword",
+            username: "testUsername",
             verificationToken: "token",
+            referralCode: "code",
         };
         const findUserByEmailSpy = jest.spyOn(userService, "findUserByEmail").mockResolvedValue(null);
         const findProfileByUsernameSpy = jest.spyOn(profileService, "findProfileByUsername").mockResolvedValue(null);
