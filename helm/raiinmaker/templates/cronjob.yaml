@@ -760,7 +760,7 @@ spec:
               secret:
                 secretName: tiktok
 ---
-apiVersion: batch/v
+apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: market-data
