@@ -42,6 +42,4 @@ phases:
             - aws eks --region us-west-1 update-kubeconfig --name $AWS_CLUSTER_NAME
 
             - if [ "$STAGE" = "production" ]; then VALUES="./helm/raiinmaker/values-prod.yaml"; else VALUES="./helm/raiinmaker/values.yaml"; fi
-            - helm delete --purge raiinmaker-api
-            - helm install raiinmaker-api --namespace $NAMESPACE -f $VALUES ./helm/raiinmaker --set image.tag=$TAG
             - helm upgrade --install raiinmaker-api --namespace $NAMESPACE -f $VALUES ./helm/raiinmaker --set image.tag=$TAG
