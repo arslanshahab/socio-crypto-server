@@ -1,0 +1,30 @@
+# This workflow will do a clean installation of node dependencies, , build the source code and run tests 
+
+name: CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [14.x, 16.x, 18.x]
+
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use any of the versions of node specified in matrix. 
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+    - run: yarn
+    - run: yarn build
+    # running unit test
+    - run: yarn test:unit
