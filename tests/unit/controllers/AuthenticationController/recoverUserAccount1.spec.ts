@@ -10,7 +10,7 @@ import { User, Profile } from "@prisma/client";
 import { ProfileService } from "../../../../src/services/ProfileService";
 import * as v2 from "../../../../src/util/index";
 
-describe("recover use account step1", () => {
+describe("recover user account step1", () => {
     let request: any;
 
     let profileService: ProfileService;
