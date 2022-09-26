@@ -365,7 +365,7 @@ export class ParticipantController {
                 shareScore: metrics.shareCount * pointValues.shares,
                 totalLikes: metrics.likeCount || 0,
                 totalShares: metrics.shareCount || 0,
-                participationScore: metrics.participationScore || 0,
+                participationScore: participant.participationScore || 0,
                 blacklist: participant.blacklist,
             });
         }
