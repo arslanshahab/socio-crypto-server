@@ -91,7 +91,7 @@ export class StripeController {
             org.wallet?.id!,
             org.id,
             amountInDollar.toString(),
-            org.stripeId!
+            org.stripeId || ""
         );
         const result = await StripeAPI.chargePaymentMethod(
             (amountInDollar * 100).toString(),
@@ -149,8 +149,9 @@ export class StripeController {
         switch (event.type) {
             case "payment_intent.succeeded":
                 transfer = await this.transferService.findTransferById(paymentIntent.metadata.transferId);
+                const amountInDollar = paymentIntent.amount / 100;
                 if (!transfer) throw new Error(TRANSFER_NOT_FOUND);
-                const amountInCoiins = paymentIntent.amount / parseFloat(process.env.COIIN_VALUE || "0.2");
+                const amountInCoiins = amountInDollar / parseFloat(process.env.COIIN_VALUE || "0.2");
                 const token = await this.tokenService.findTokenBySymbol({ symbol: COIIN, network: BSC });
                 const userCurrency = await this.currencyService.findCurrencyByTokenAndWallet({
                     tokenId: token?.id!,
@@ -177,7 +178,7 @@ export class StripeController {
                         amount: amountInCoiins.toString(),
                         status: TransferStatus.SUCCEEDED,
                         symbol: COIIN,
-                        type: TransferType.CREDIT,
+                        type: TransferType.DEBIT,
                         walletId: transfer.walletId!,
                     });
                 } else {
