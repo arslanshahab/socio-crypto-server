@@ -88,7 +88,7 @@ export class StripeController {
         if (!org) throw new NotFound(ORG_NOT_FOUND);
         const { amount, paymentMethodId } = body;
         const amountInDollar = await getTokenValueInUSD(COIIN, amount);
-        const transfer = await this.transferService.newPendingUsdDeposit(
+        const transfer = await this.transferService.usdDeposit(
             org.wallet?.id!,
             org.id,
             amountInDollar.toString(),
@@ -165,6 +165,7 @@ export class StripeController {
                 transfer = await this.transferService.findTransferById(paymentIntent.metadata.transferId);
                 const amountInDollar = paymentIntent.amount / 100;
                 if (!transfer) throw new Error(TRANSFER_NOT_FOUND);
+                await this.transferService.updateTransferStatus(transfer.id, TransferStatus.SUCCEEDED);
                 const amountInCoiins = amountInDollar / parseFloat(process.env.COIIN_VALUE || "0.2");
                 const token = await this.tokenService.findTokenBySymbol({ symbol: COIIN, network: BSC });
                 const userCurrency = await this.currencyService.findCurrencyByTokenAndWallet({

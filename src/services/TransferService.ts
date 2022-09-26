@@ -206,7 +206,7 @@ export class TransferService {
         return credit - debit;
     }
 
-    public async newPendingUsdDeposit(
+    public async usdDeposit(
         walletId: string,
         orgId: string,
         amount: string,
@@ -219,7 +219,7 @@ export class TransferService {
                 orgId,
                 amount,
                 status: TransferStatusEnum.PENDING,
-                currency: USD.toLowerCase(),
+                currency: USD,
                 action: TransferActionEnum.DEPOSIT,
                 stripeCardId: stripeCardId && stripeCardId,
                 paypalAddress: paypalAddress && paypalAddress,
