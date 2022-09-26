@@ -22,6 +22,7 @@ import {
     TransferAction,
     TransferStatus,
     TransferType,
+    USD,
 } from "../../util/constants";
 import { AdminService } from "../../services/AdminService";
 import { Secrets } from "../../util/secrets";
@@ -100,8 +101,21 @@ export class StripeController {
             transfer.id
         );
         let confirmPayment;
+        const raiinmakerOrg = await this.organizationService.findOrganizationByName(RAIINMAKER_ORG_NAME, {
+            wallet: true,
+        });
+        if (!raiinmakerOrg) throw new NotFound("RAIINMAKER " + ORG_NOT_FOUND);
+        if (!raiinmakerOrg.wallet) throw new NotFound("RAIINMAKER ORG " + WALLET_NOT_FOUND);
         if (result?.id) {
             confirmPayment = await StripeAPI.confirmPayment(result.id);
+            await this.transferService.newReward({
+                action: TransferAction.TRANSFER,
+                amount: amountInDollar.toString(),
+                status: TransferStatus.SUCCEEDED,
+                symbol: USD,
+                type: TransferType.DEBIT,
+                walletId: raiinmakerOrg.wallet.id,
+            });
         }
         if (confirmPayment?.status === "succeeded") return new SuccessResult(result, PurchaseCoiinResultModel);
         else return new SuccessResult({ message: "Stripe payment failed!" }, UpdatedResultModel);
@@ -181,14 +195,30 @@ export class StripeController {
                         type: TransferType.DEBIT,
                         walletId: transfer.walletId!,
                     });
+                    await this.transferService.newReward({
+                        action: TransferAction.TRANSFER,
+                        amount: amountInCoiins.toString(),
+                        status: TransferStatus.SUCCEEDED,
+                        symbol: COIIN,
+                        type: TransferType.CREDIT,
+                        walletId: orgWallet.id,
+                    });
                 } else {
                     await this.transferService.newReward({
                         action: TransferAction.TRANSFER,
                         amount: amountInCoiins.toString(),
                         status: TransferStatus.PENDING,
                         symbol: COIIN,
-                        type: TransferType.CREDIT,
+                        type: TransferType.DEBIT,
                         walletId: transfer.walletId!,
+                    });
+                    await this.transferService.newReward({
+                        action: TransferAction.TRANSFER,
+                        amount: amountInCoiins.toString(),
+                        status: TransferStatus.PENDING,
+                        symbol: COIIN,
+                        type: TransferType.CREDIT,
+                        walletId: orgWallet.id,
                     });
                 }
                 break;
