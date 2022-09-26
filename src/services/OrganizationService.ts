@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@tsed/di";
-import { SymbolNetworkParams } from "../types";
+import { SymbolNetworkParams } from "types.d.ts";
 import { RAIINMAKER_ORG_NAME } from "../util/constants";
 import { NotFound } from "@tsed/exceptions";
 import { TatumService } from "./TatumService";

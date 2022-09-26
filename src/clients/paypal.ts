@@ -1,5 +1,5 @@
 import fetch from "node-fetch";
-import { PaypalPayout } from "../types";
+import { PaypalPayout } from "types.d.ts";
 import { v4 as uuidv4 } from "uuid";
 import { promisify } from "util";
 import { S3Client } from "./s3";

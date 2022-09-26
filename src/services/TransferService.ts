@@ -1,7 +1,7 @@
 import { Campaign, Prisma } from "@prisma/client";
 import { Inject, Injectable } from "@tsed/di";
 import { endOfISOWeek, startOfDay, startOfISOWeek, startOfWeek, subDays } from "date-fns";
-import { TransferAction, TransferStatus } from "../types";
+import { TransferAction, TransferStatus } from "types.d.ts";
 import { WalletService } from "./WalletService";
 import { NotFound } from "@tsed/exceptions";
 import { WALLET_NOT_FOUND } from "../util/errors";
