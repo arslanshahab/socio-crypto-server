@@ -25,7 +25,7 @@ import {
 } from "../../util/constants";
 import { AdminService } from "../../services/AdminService";
 import { Secrets } from "../../util/secrets";
-import { PaymentIntent } from "../../types";
+import { PaymentIntent } from "../../../types";
 import { TatumService } from "../../services/TatumService";
 import { CurrencyService } from "../../services/CurrencyService";
 import { TokenService } from "../../services/TokenService";
