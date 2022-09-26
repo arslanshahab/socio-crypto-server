@@ -5,7 +5,7 @@ import { BN } from "../util/index";
 import { BigNumber } from "bignumber.js";
 import { ParticipantAction } from "../util/constants";
 import { startOfDay } from "date-fns";
-import { AggregatedCampaignMetricType } from "../types";
+import { AggregatedCampaignMetricType } from "types.d.ts";
 
 @Injectable()
 export class DailyParticipantMetricService {
@@ -198,10 +198,14 @@ export class DailyParticipantMetricService {
                 ).toString();
                 break;
             case "likes":
-                likeCount = new BN(actionCount).toString();
+                likeCount = (
+                    record.likeCount ? new BN(record.likeCount).plus(new BN(actionCount)) : new BN(actionCount)
+                ).toString();
                 break;
             case "shares":
-                shareCount = new BN(actionCount).toString();
+                shareCount = (
+                    record.shareCount ? new BN(record.shareCount).plus(new BN(actionCount)) : new BN(actionCount)
+                ).toString();
                 break;
             case "comments":
                 commentCount = (

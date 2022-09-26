@@ -1,684 +1,684 @@
 generator client {
-  provider = "prisma-client-js"
+    provider = "prisma-client-js"
 }
 
 generator tsed {
-  provider = "tsed-prisma"
-  output   = "../node_modules/.prisma/client/entities"
+    provider = "tsed-prisma"
+    output   = "../node_modules/.prisma/client/entities"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("PG_URL")
+    provider = "postgresql"
+    url      = env("PG_URL")
 }
 
 model Admin {
-  id                       String                    @id(map: "PK_e032310bcef831fb83101899b10") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  firebaseId               String                    @db.VarChar
-  userId                   String?                   @db.Uuid
-  orgId                    String?                   @db.Uuid
-  name                     String                    @default("raiinmaker") @db.VarChar
-  createdAt                DateTime                  @default(now()) @db.Timestamp(6)
-  updatedAt                DateTime                  @default(now()) @updatedAt @db.Timestamp(6)
-  twoFactorEnabled         Boolean                   @default(false)
-  org                      Org?                      @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_6d94bbdb1be6d107f3d971fc808")
-  user                     User?                     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f8a889c4362d78f056960ca6dad")
-  verification_application VerificationApplication[] @relation("adminToverification_application")
+    id                       String                    @id(map: "PK_e032310bcef831fb83101899b10") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    firebaseId               String                    @db.VarChar
+    userId                   String?                   @db.Uuid
+    orgId                    String?                   @db.Uuid
+    name                     String                    @default("raiinmaker") @db.VarChar
+    createdAt                DateTime                  @default(now()) @db.Timestamp(6)
+    updatedAt                DateTime                  @default(now()) @updatedAt @db.Timestamp(6)
+    twoFactorEnabled         Boolean                   @default(false)
+    org                      Org?                      @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_6d94bbdb1be6d107f3d971fc808")
+    user                     User?                     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f8a889c4362d78f056960ca6dad")
+    verification_application VerificationApplication[] @relation("adminToverification_application")
 
-  @@map("admin")
+    @@map("admin")
 }
 
 model Campaign {
-  beginDate                DateTime                 @db.Timestamptz(6)
-  endDate                  DateTime                 @db.Timestamptz(6)
-  coiinTotal               String                   @db.VarChar
-  target                   String                   @db.VarChar
-  description              String?                  @default("") @db.VarChar
-  name                     String                   @db.VarChar
-  id                       String                   @id(map: "PK_0ce34d26e7f2eb316a3a592cdc4") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  company                  String                   @default("raiinmaker") @db.VarChar
-  totalParticipationScore  String                   @default(dbgenerated("0")) @db.VarChar
-  algorithm                Json
-  audited                  Boolean                  @default(false)
-  targetVideo              String?                  @db.VarChar
-  imagePath                String?                  @db.VarChar
-  tagline                  String?                  @db.VarChar
-  suggestedPosts           String                   @default("[]")
-  suggestedTags            String                   @default("[]")
-  createdAt                DateTime                 @default(now()) @db.Timestamp(6)
-  updatedAt                DateTime                 @default(now()) @updatedAt @db.Timestamp(6)
-  requirements             Json?
-  orgId                    String?                  @db.Uuid
-  type                     String?
-  status                   String                   @default("DEFAULT") @db.VarChar
-  cryptoId                 String?                  @db.Uuid
-  keywords                 String                   @default("[]")
-  campaignType             String?                  @db.VarChar
-  socialMediaType          String                   @default("[]")
-  instructions             String?                  @default("") @db.VarChar
-  symbol                   String                   @db.VarChar
-  tatumBlockageId          String?                  @db.VarChar
-  auditStatus              String                   @default("DEFAULT") @db.VarChar
-  isGlobal                 Boolean                  @default(false)
-  showUrl                  Boolean                  @default(true)
-  currencyId               String?                  @db.Uuid
-  crypto_currency          CryptoCurrency?          @relation(fields: [cryptoId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_6c80d74e57757c61ae9b7255f79")
-  currency                 Currency?                @relation(fields: [currencyId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_94f38926b8f74ecd88ecf6ba8c8")
-  org                      Org?                     @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f1ade2ad37c88435b086c97cfc8")
-  campaign_media           CampaignMedia[]          @relation("campaignTocampaign_media")
-  campaign_template        CampaignTemplate[]       @relation("campaignTocampaign_template")
-  daily_participant_metric DailyParticipantMetric[]
-  escrow                   Escrow?
-  hourly_campaign_metric   HourlyCampaignMetric[]
-  participant              Participant[]
-  raffle_prize             RafflePrize?
-  social_post              SocialPost[]
-  transaction              Transaction[]            @relation("campaignToTransaction")
-  transfer                 Transfer[]
+    beginDate                DateTime                 @db.Timestamptz(6)
+    endDate                  DateTime                 @db.Timestamptz(6)
+    coiinTotal               String                   @db.VarChar
+    target                   String                   @db.VarChar
+    description              String?                  @default("") @db.VarChar
+    name                     String                   @db.VarChar
+    id                       String                   @id(map: "PK_0ce34d26e7f2eb316a3a592cdc4") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    company                  String                   @default("raiinmaker") @db.VarChar
+    totalParticipationScore  String                   @default(dbgenerated("0")) @db.VarChar
+    algorithm                Json
+    audited                  Boolean                  @default(false)
+    targetVideo              String?                  @db.VarChar
+    imagePath                String?                  @db.VarChar
+    tagline                  String?                  @db.VarChar
+    suggestedPosts           String                   @default("[]")
+    suggestedTags            String                   @default("[]")
+    createdAt                DateTime                 @default(now()) @db.Timestamp(6)
+    updatedAt                DateTime                 @default(now()) @updatedAt @db.Timestamp(6)
+    requirements             Json?
+    orgId                    String?                  @db.Uuid
+    type                     String?
+    status                   String                   @default("DEFAULT") @db.VarChar
+    cryptoId                 String?                  @db.Uuid
+    keywords                 String                   @default("[]")
+    campaignType             String?                  @db.VarChar
+    socialMediaType          String                   @default("[]")
+    instructions             String?                  @default("") @db.VarChar
+    symbol                   String                   @db.VarChar
+    tatumBlockageId          String?                  @db.VarChar
+    auditStatus              String                   @default("DEFAULT") @db.VarChar
+    isGlobal                 Boolean                  @default(false)
+    showUrl                  Boolean                  @default(true)
+    currencyId               String?                  @db.Uuid
+    crypto_currency          CryptoCurrency?          @relation(fields: [cryptoId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_6c80d74e57757c61ae9b7255f79")
+    currency                 Currency?                @relation(fields: [currencyId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_94f38926b8f74ecd88ecf6ba8c8")
+    org                      Org?                     @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f1ade2ad37c88435b086c97cfc8")
+    campaign_media           CampaignMedia[]          @relation("campaignTocampaign_media")
+    campaign_template        CampaignTemplate[]       @relation("campaignTocampaign_template")
+    daily_participant_metric DailyParticipantMetric[]
+    escrow                   Escrow?
+    hourly_campaign_metric   HourlyCampaignMetric[]
+    participant              Participant[]
+    raffle_prize             RafflePrize?
+    social_post              SocialPost[]
+    transaction              Transaction[]            @relation("campaignToTransaction")
+    transfer                 Transfer[]
 
-  @@index([status], map: "IDX_08135474cffdb8282c4ff37271")
-  @@index([beginDate], map: "IDX_4293bebb45d5083b55b41ac95d")
-  @@index([endDate], map: "IDX_a103498328a90babd98007c9a1")
-  @@index([isGlobal], map: "IDX_f04c2ce9b8b29b7348134ad30a")
-  @@map("campaign")
+    @@index([status], map: "IDX_08135474cffdb8282c4ff37271")
+    @@index([beginDate], map: "IDX_4293bebb45d5083b55b41ac95d")
+    @@index([endDate], map: "IDX_a103498328a90babd98007c9a1")
+    @@index([isGlobal], map: "IDX_f04c2ce9b8b29b7348134ad30a")
+    @@map("campaign")
 }
 
 model CampaignMedia {
-  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  campaignId  String?   @db.Uuid
-  channel     String?   @db.VarChar
-  media       String?   @db.VarChar
-  mediaFormat String?   @db.VarChar
-  isDefault   Boolean?
-  createdAt   DateTime  @default(now()) @db.Timestamp(6)
-  updatedAt   DateTime  @default(now()) @updatedAt @db.Timestamp(6)
-  campaign    Campaign? @relation("campaignTocampaign_media", fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_b845045382e55918752955d23cb")
+    id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    campaignId  String?   @db.Uuid
+    channel     String?   @db.VarChar
+    media       String?   @db.VarChar
+    mediaFormat String?   @db.VarChar
+    isDefault   Boolean?
+    createdAt   DateTime  @default(now()) @db.Timestamp(6)
+    updatedAt   DateTime  @default(now()) @updatedAt @db.Timestamp(6)
+    campaign    Campaign? @relation("campaignTocampaign_media", fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_b845045382e55918752955d23cb")
 
-  @@map("campaign_media")
+    @@map("campaign_media")
 }
 
 model CampaignTemplate {
-  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  campaignId String?   @db.Uuid
-  channel    String?   @db.VarChar
-  post       String?   @db.VarChar
-  createdAt  DateTime  @default(now()) @db.Timestamp(6)
-  updatedAt  DateTime  @default(now()) @updatedAt @db.Timestamp(6)
-  campaign   Campaign? @relation("campaignTocampaign_template", fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_19b3f8a418cf4753d5df4291099")
+    id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    campaignId String?   @db.Uuid
+    channel    String?   @db.VarChar
+    post       String?   @db.VarChar
+    createdAt  DateTime  @default(now()) @db.Timestamp(6)
+    updatedAt  DateTime  @default(now()) @updatedAt @db.Timestamp(6)
+    campaign   Campaign? @relation("campaignTocampaign_template", fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_19b3f8a418cf4753d5df4291099")
 
-  @@map("campaign_template")
+    @@map("campaign_template")
 }
 
 model CryptoCurrency {
-  id                 String              @id(map: "PK_95addf5dd9597703119a61255bf") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  type               String              @unique(map: "UQ_11b2d6b4f14611301518cdec2e9") @db.VarChar
-  contractAddress    String?             @unique(map: "UQ_6c11f6c7a2b89fce698221b2f50") @db.VarChar
-  createdAt          DateTime            @default(now()) @db.Timestamp(6)
-  updatedAt          DateTime            @default(now()) @updatedAt @db.Timestamp(6)
-  campaign           Campaign[]
-  crypto_transaction CryptoTransaction[]
+    id                 String              @id(map: "PK_95addf5dd9597703119a61255bf") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    type               String              @unique(map: "UQ_11b2d6b4f14611301518cdec2e9") @db.VarChar
+    contractAddress    String?             @unique(map: "UQ_6c11f6c7a2b89fce698221b2f50") @db.VarChar
+    createdAt          DateTime            @default(now()) @db.Timestamp(6)
+    updatedAt          DateTime            @default(now()) @updatedAt @db.Timestamp(6)
+    campaign           Campaign[]
+    crypto_transaction CryptoTransaction[]
 
-  @@map("crypto_currency")
+    @@map("crypto_currency")
 }
 
 model CryptoTransaction {
-  id              String          @id(map: "PK_7107601dbf52f2f9d52d8890467") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  blockNumber     Int?
-  from            String?         @db.VarChar
-  to              String?         @db.VarChar
-  hash            String?         @db.VarChar
-  type            String?         @db.VarChar
-  convertedValue  String?         @db.VarChar
-  cryptoId        String?         @db.Uuid
-  createdAt       DateTime        @default(now()) @db.Timestamp(6)
-  updatedAt       DateTime        @default(now()) @updatedAt @db.Timestamp(6)
-  crypto_currency CryptoCurrency? @relation(fields: [cryptoId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ea1d711f8ac8362a89ae10d4ecd")
+    id              String          @id(map: "PK_7107601dbf52f2f9d52d8890467") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    blockNumber     Int?
+    from            String?         @db.VarChar
+    to              String?         @db.VarChar
+    hash            String?         @db.VarChar
+    type            String?         @db.VarChar
+    convertedValue  String?         @db.VarChar
+    cryptoId        String?         @db.Uuid
+    createdAt       DateTime        @default(now()) @db.Timestamp(6)
+    updatedAt       DateTime        @default(now()) @updatedAt @db.Timestamp(6)
+    crypto_currency CryptoCurrency? @relation(fields: [cryptoId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ea1d711f8ac8362a89ae10d4ecd")
 
-  @@map("crypto_transaction")
+    @@map("crypto_transaction")
 }
 
 model Currency {
-  id               String     @id(map: "PK_3cda65c731a6264f0e444cc9b91") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tatumId          String     @db.VarChar
-  symbol           String     @db.VarChar
-  depositAddress   String?    @db.VarChar
-  memo             String?    @db.VarChar
-  message          String?    @db.VarChar
-  destinationTag   Int?
-  createdAt        DateTime   @default(now()) @db.Timestamp(6)
-  updatedAt        DateTime   @default(now()) @updatedAt @db.Timestamp(6)
-  walletId         String?    @db.Uuid
-  derivationKey    Int?
-  tokenId          String?    @db.Uuid
-  accountBalance   Float?     @default(0)
-  availableBalance Float?     @default(0)
-  token            Token?     @relation(fields: [tokenId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_d1e8baad49c6c5514b6a0dcba26")
-  wallet           Wallet?    @relation(fields: [walletId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ea00856ad382361ea6545c3d23c")
-  campaign         Campaign[]
+    id               String     @id(map: "PK_3cda65c731a6264f0e444cc9b91") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    tatumId          String     @db.VarChar
+    symbol           String     @db.VarChar
+    depositAddress   String?    @db.VarChar
+    memo             String?    @db.VarChar
+    message          String?    @db.VarChar
+    destinationTag   Int?
+    createdAt        DateTime   @default(now()) @db.Timestamp(6)
+    updatedAt        DateTime   @default(now()) @updatedAt @db.Timestamp(6)
+    walletId         String?    @db.Uuid
+    derivationKey    Int?
+    tokenId          String?    @db.Uuid
+    accountBalance   Float?     @default(0)
+    availableBalance Float?     @default(0)
+    token            Token?     @relation(fields: [tokenId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_d1e8baad49c6c5514b6a0dcba26")
+    wallet           Wallet?    @relation(fields: [walletId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ea00856ad382361ea6545c3d23c")
+    campaign         Campaign[]
 
-  @@map("currency")
+    @@map("currency")
 }
 
 model CustodialAddress {
-  id        String   @id(map: "PK_66a3eeadf9b81e7784b0240b7bb") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  chain     String   @db.VarChar
-  available Boolean  @default(true)
-  address   String   @db.VarChar
-  createdAt DateTime @default(now()) @db.Timestamp(6)
-  updatedAt DateTime @default(now()) @updatedAt @db.Timestamp(6)
-  walletId  String?  @db.Uuid
-  wallet    Wallet?  @relation(fields: [walletId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_21fcc5a99d684c08f35cf493aa3")
+    id        String   @id(map: "PK_66a3eeadf9b81e7784b0240b7bb") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    chain     String   @db.VarChar
+    available Boolean  @default(true)
+    address   String   @db.VarChar
+    createdAt DateTime @default(now()) @db.Timestamp(6)
+    updatedAt DateTime @default(now()) @updatedAt @db.Timestamp(6)
+    walletId  String?  @db.Uuid
+    wallet    Wallet?  @relation(fields: [walletId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_21fcc5a99d684c08f35cf493aa3")
 
-  @@map("custodial_address")
+    @@map("custodial_address")
 }
 
 model DailyParticipantMetric {
-  id                      String    @id(map: "PK_2941b85aab0073a60a1319ec3b4") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  clickCount              String    @default(dbgenerated("0")) @db.VarChar
-  viewCount               String    @default(dbgenerated("0")) @db.VarChar
-  submissionCount         String    @default(dbgenerated("0")) @db.VarChar
-  likeCount               String    @default(dbgenerated("0")) @db.VarChar
-  shareCount              String    @default(dbgenerated("0")) @db.VarChar
-  commentCount            String    @default(dbgenerated("0")) @db.VarChar
-  participationScore      String    @default(dbgenerated("0")) @db.VarChar
-  totalParticipationScore String    @default(dbgenerated("0")) @db.VarChar
-  participantId           String    @db.VarChar
-  createdAt               DateTime  @default(now()) @db.Timestamp(6)
-  updatedAt               DateTime  @default(now()) @updatedAt @db.Timestamp(6)
-  userId                  String?   @db.Uuid
-  campaignId              String?   @db.Uuid
-  campaign                Campaign? @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_339b0794c16489770996c4991ca")
-  user                    User?     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_82c4ef42af06b025fe03a6b7d34")
+    id                      String    @id(map: "PK_2941b85aab0073a60a1319ec3b4") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    clickCount              String    @default(dbgenerated("0")) @db.VarChar
+    viewCount               String    @default(dbgenerated("0")) @db.VarChar
+    submissionCount         String    @default(dbgenerated("0")) @db.VarChar
+    likeCount               String    @default(dbgenerated("0")) @db.VarChar
+    shareCount              String    @default(dbgenerated("0")) @db.VarChar
+    commentCount            String    @default(dbgenerated("0")) @db.VarChar
+    participationScore      String    @default(dbgenerated("0")) @db.VarChar
+    totalParticipationScore String    @default(dbgenerated("0")) @db.VarChar
+    participantId           String    @db.VarChar
+    createdAt               DateTime  @default(now()) @db.Timestamp(6)
+    updatedAt               DateTime  @default(now()) @updatedAt @db.Timestamp(6)
+    userId                  String?   @db.Uuid
+    campaignId              String?   @db.Uuid
+    campaign                Campaign? @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_339b0794c16489770996c4991ca")
+    user                    User?     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_82c4ef42af06b025fe03a6b7d34")
 
-  @@map("daily_participant_metric")
+    @@map("daily_participant_metric")
 }
 
 model Escrow {
-  id         String    @id(map: "PK_4aafc323d34fd7979460661ab4a") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  amount     String    @db.VarChar
-  campaignId String?   @unique(map: "REL_9a7c2a319665a11a340b523f59") @db.Uuid
-  walletId   String?   @db.Uuid
-  createdAt  DateTime  @default(now()) @db.Timestamp(6)
-  updatedAt  DateTime  @default(now()) @updatedAt @db.Timestamp(6)
-  campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_9a7c2a319665a11a340b523f591")
-  wallet     Wallet?   @relation(fields: [walletId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f980ed731d30053ac7e941c795c")
+    id         String    @id(map: "PK_4aafc323d34fd7979460661ab4a") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    amount     String    @db.VarChar
+    campaignId String?   @unique(map: "REL_9a7c2a319665a11a340b523f59") @db.Uuid
+    walletId   String?   @db.Uuid
+    createdAt  DateTime  @default(now()) @db.Timestamp(6)
+    updatedAt  DateTime  @default(now()) @updatedAt @db.Timestamp(6)
+    campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_9a7c2a319665a11a340b523f591")
+    wallet     Wallet?   @relation(fields: [walletId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f980ed731d30053ac7e941c795c")
 
-  @@map("escrow")
+    @@map("escrow")
 }
 
 model ExternalAddress {
-  id              String   @id(map: "PK_23160bcba1fe6e3e4fe67af66b3") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  ethereumAddress String   @unique(map: "UQ_f725434929b77da9f8e1aeb9c42") @db.VarChar
-  claimed         Boolean  @default(false)
-  claimMessage    String   @db.VarChar
-  createdAt       DateTime @default(now()) @db.Timestamp(6)
-  updatedAt       DateTime @default(now()) @updatedAt @db.Timestamp(6)
-  userId          String?  @db.Uuid
-  walletId        String?  @db.Uuid
-  user            User?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f362b520f3de71dd59b128fea4e")
-  wallet          Wallet?  @relation(fields: [walletId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_11b6bf0a61503812833359e9d3d")
+    id              String   @id(map: "PK_23160bcba1fe6e3e4fe67af66b3") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    ethereumAddress String   @unique(map: "UQ_f725434929b77da9f8e1aeb9c42") @db.VarChar
+    claimed         Boolean  @default(false)
+    claimMessage    String   @db.VarChar
+    createdAt       DateTime @default(now()) @db.Timestamp(6)
+    updatedAt       DateTime @default(now()) @updatedAt @db.Timestamp(6)
+    userId          String?  @db.Uuid
+    walletId        String?  @db.Uuid
+    user            User?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f362b520f3de71dd59b128fea4e")
+    wallet          Wallet?  @relation(fields: [walletId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_11b6bf0a61503812833359e9d3d")
 
-  @@map("external_address")
+    @@map("external_address")
 }
 
 model ExternalWallet {
-  id              String   @id(map: "PK_116395b341d18fc5cb46d6de4f6") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  ethereumAddress String   @unique(map: "UQ_4493ccb3fc989cdb2e318a81afb") @db.VarChar
-  claimed         Boolean  @default(false)
-  claimMessage    String   @db.VarChar
-  balance         String   @default(dbgenerated("0")) @db.VarChar
-  createdAt       DateTime @default(now()) @db.Timestamp(6)
-  updatedAt       DateTime @default(now()) @updatedAt @db.Timestamp(6)
-  userId          String?  @db.Uuid
-  orgId           String?  @db.Uuid
-  org             Org?     @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_9df582d498e093cd579740f5c4c")
-  user            User?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_a4f3bbd0da712db47bd85ce3c5e")
+    id              String   @id(map: "PK_116395b341d18fc5cb46d6de4f6") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    ethereumAddress String   @unique(map: "UQ_4493ccb3fc989cdb2e318a81afb") @db.VarChar
+    claimed         Boolean  @default(false)
+    claimMessage    String   @db.VarChar
+    balance         String   @default(dbgenerated("0")) @db.VarChar
+    createdAt       DateTime @default(now()) @db.Timestamp(6)
+    updatedAt       DateTime @default(now()) @updatedAt @db.Timestamp(6)
+    userId          String?  @db.Uuid
+    orgId           String?  @db.Uuid
+    org             Org?     @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_9df582d498e093cd579740f5c4c")
+    user            User?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_a4f3bbd0da712db47bd85ce3c5e")
 
-  @@map("external_wallet")
+    @@map("external_wallet")
 }
 
 model FactorLink {
-  factorId                              String   @id(map: "PK_7d5e671b16cf72db6b0f825e79f") @db.VarChar
-  type                                  String   @db.VarChar
-  providerId                            String   @db.VarChar
-  identityId                            String   @db.VarChar
-  createdAt                             DateTime @default(now()) @db.Timestamp(6)
-  updatedAt                             DateTime @default(now()) @updatedAt @db.Timestamp(6)
-  userId                                String?  @db.Uuid
-  name                                  String?  @db.VarChar
-  verificationId                        String?  @db.Uuid
-  user_factor_link_userIdTouser         User?    @relation("factor_link_userIdTouser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_99411cf70077d94b6330dba9ece")
-  user_factor_link_verificationIdTouser User?    @relation("factor_link_verificationIdTouser", fields: [verificationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_af734dc6c22a087728b5c63789e")
+    factorId                              String   @id(map: "PK_7d5e671b16cf72db6b0f825e79f") @db.VarChar
+    type                                  String   @db.VarChar
+    providerId                            String   @db.VarChar
+    identityId                            String   @db.VarChar
+    createdAt                             DateTime @default(now()) @db.Timestamp(6)
+    updatedAt                             DateTime @default(now()) @updatedAt @db.Timestamp(6)
+    userId                                String?  @db.Uuid
+    name                                  String?  @db.VarChar
+    verificationId                        String?  @db.Uuid
+    user_factor_link_userIdTouser         User?    @relation("factor_link_userIdTouser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_99411cf70077d94b6330dba9ece")
+    user_factor_link_verificationIdTouser User?    @relation("factor_link_verificationIdTouser", fields: [verificationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_af734dc6c22a087728b5c63789e")
 
-  @@map("factor_link")
+    @@map("factor_link")
 }
 
 model HourlyCampaignMetric {
-  id               String    @id(map: "PK_34a4c0755a2c03c4659f5d0174f") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  postCount        String    @default(dbgenerated("0")) @db.VarChar
-  participantCount String    @default(dbgenerated("0")) @db.VarChar
-  clickCount       String    @default(dbgenerated("0")) @db.VarChar
-  viewCount        String    @default(dbgenerated("0")) @db.VarChar
-  submissionCount  String    @default(dbgenerated("0")) @db.VarChar
-  likeCount        String    @default(dbgenerated("0")) @db.VarChar
-  shareCount       String    @default(dbgenerated("0")) @db.VarChar
-  commentCount     String    @default(dbgenerated("0")) @db.VarChar
-  createdAt        DateTime  @default(now()) @db.Timestamp(6)
-  updatedAt        DateTime  @default(now()) @updatedAt @db.Timestamp(6)
-  campaignId       String?   @db.Uuid
-  orgId            String?   @db.Uuid
-  campaign         Campaign? @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_0a14e4214cbadbbf5ab94dfeeb0")
-  org              Org?      @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_65dc03b9a87221a49c0584227ea")
+    id               String    @id(map: "PK_34a4c0755a2c03c4659f5d0174f") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    postCount        String    @default(dbgenerated("0")) @db.VarChar
+    participantCount String    @default(dbgenerated("0")) @db.VarChar
+    clickCount       String    @default(dbgenerated("0")) @db.VarChar
+    viewCount        String    @default(dbgenerated("0")) @db.VarChar
+    submissionCount  String    @default(dbgenerated("0")) @db.VarChar
+    likeCount        String    @default(dbgenerated("0")) @db.VarChar
+    shareCount       String    @default(dbgenerated("0")) @db.VarChar
+    commentCount     String    @default(dbgenerated("0")) @db.VarChar
+    createdAt        DateTime  @default(now()) @db.Timestamp(6)
+    updatedAt        DateTime  @default(now()) @updatedAt @db.Timestamp(6)
+    campaignId       String?   @db.Uuid
+    orgId            String?   @db.Uuid
+    campaign         Campaign? @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_0a14e4214cbadbbf5ab94dfeeb0")
+    org              Org?      @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_65dc03b9a87221a49c0584227ea")
 
-  @@map("hourly_campaign_metric")
+    @@map("hourly_campaign_metric")
 }
 
 model Migrations {
-  id        Int    @id(map: "PK_8c82d7f526340ab734260ea46be") @default(autoincrement())
-  timestamp BigInt
-  name      String @db.VarChar
+    id        Int    @id(map: "PK_8c82d7f526340ab734260ea46be") @default(autoincrement())
+    timestamp BigInt
+    name      String @db.VarChar
 
-  @@map("migrations")
+    @@map("migrations")
 }
 
 model NotificationSettings {
-  id              String   @id(map: "PK_d131abd7996c475ef768d4559ba") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  kyc             Boolean  @default(true)
-  withdraw        Boolean  @default(true)
-  campaignCreate  Boolean  @default(true)
-  campaignUpdates Boolean  @default(true)
-  createdAt       DateTime @default(now()) @db.Timestamp(6)
-  updatedAt       DateTime @default(now()) @updatedAt @db.Timestamp(6)
-  userId          String?  @unique(map: "REL_5a8ffc3b89343043c9440d631e") @db.Uuid
-  user            User?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_5a8ffc3b89343043c9440d631e2")
+    id              String   @id(map: "PK_d131abd7996c475ef768d4559ba") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    kyc             Boolean  @default(true)
+    withdraw        Boolean  @default(true)
+    campaignCreate  Boolean  @default(true)
+    campaignUpdates Boolean  @default(true)
+    createdAt       DateTime @default(now()) @db.Timestamp(6)
+    updatedAt       DateTime @default(now()) @updatedAt @db.Timestamp(6)
+    userId          String?  @unique(map: "REL_5a8ffc3b89343043c9440d631e") @db.Uuid
+    user            User?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_5a8ffc3b89343043c9440d631e2")
 
-  @@map("notification_settings")
+    @@map("notification_settings")
 }
 
 model Org {
-  id                     String                 @id(map: "PK_703783130f152a752cadf7aa751") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name                   String                 @db.VarChar
-  createdAt              DateTime               @default(now()) @db.Timestamp(6)
-  updatedAt              DateTime               @default(now()) @updatedAt @db.Timestamp(6)
-  stripeId               String?                @db.VarChar
-  logo                   String?                @db.VarChar
-  admin                  Admin[]
-  campaign               Campaign[]
-  external_wallet        ExternalWallet[]
-  hourly_campaign_metric HourlyCampaignMetric[]
-  transfer               Transfer[]
-  wallet                 Wallet?
+    id                     String                 @id(map: "PK_703783130f152a752cadf7aa751") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    name                   String                 @db.VarChar
+    createdAt              DateTime               @default(now()) @db.Timestamp(6)
+    updatedAt              DateTime               @default(now()) @updatedAt @db.Timestamp(6)
+    stripeId               String?                @db.VarChar
+    logo                   String?                @db.VarChar
+    admin                  Admin[]
+    campaign               Campaign[]
+    external_wallet        ExternalWallet[]
+    hourly_campaign_metric HourlyCampaignMetric[]
+    transfer               Transfer[]
+    wallet                 Wallet?
 
-  @@map("org")
+    @@map("org")
 }
 
 model Participant {
-  id                 String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  clickCount         String   @default(dbgenerated("0")) @db.VarChar
-  campaignId         String   @db.Uuid
-  viewCount          String   @default(dbgenerated("0")) @db.VarChar
-  submissionCount    String   @default(dbgenerated("0")) @db.VarChar
-  participationScore String   @default(dbgenerated("0")) @db.VarChar
-  link               String?  @db.VarChar
-  createdAt          DateTime @default(now()) @db.Timestamp(6)
-  updatedAt          DateTime @default(now()) @updatedAt @db.Timestamp(6)
-  userId             String   @db.Uuid
-  email              String?  @db.VarChar
-  blacklist          Boolean  @default(false)
-  campaign           Campaign @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_1835802549e230f6cd88c6efef9")
-  user               User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_b915e97dea27ffd1e40c8003b3b")
+    id                 String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    clickCount         String   @default(dbgenerated("0")) @db.VarChar
+    campaignId         String   @db.Uuid
+    viewCount          String   @default(dbgenerated("0")) @db.VarChar
+    submissionCount    String   @default(dbgenerated("0")) @db.VarChar
+    participationScore String   @default(dbgenerated("0")) @db.VarChar
+    link               String?  @db.VarChar
+    createdAt          DateTime @default(now()) @db.Timestamp(6)
+    updatedAt          DateTime @default(now()) @updatedAt @db.Timestamp(6)
+    userId             String   @db.Uuid
+    email              String?  @db.VarChar
+    blacklist          Boolean  @default(false)
+    campaign           Campaign @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_1835802549e230f6cd88c6efef9")
+    user               User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_b915e97dea27ffd1e40c8003b3b")
 
-  @@id([id, campaignId, userId], map: "PK_b22a56c2e60aa49dd92b7cd839b")
-  @@map("participant")
+    @@id([id, campaignId, userId], map: "PK_b22a56c2e60aa49dd92b7cd839b")
+    @@map("participant")
 }
 
 model Profile {
-  id             String    @id(map: "PK_3dd8bfc97e4a77c70971591bdcb") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  username       String    @unique(map: "UQ_d80b94dc62f7467403009d88062") @db.VarChar
-  recoveryCode   String?   @db.VarChar
-  deviceToken    String?   @db.VarChar
-  email          String?   @db.VarChar
-  ageRange       String?
-  city           String?
-  state          String?
-  interests      String    @default("[]")
-  values         String    @default("[]")
-  platforms      String    @default("[]")
-  userId         String?   @unique(map: "REL_a24972ebd73b106250713dcddd") @db.Uuid
-  country        String?
-  createdAt      DateTime  @default(now()) @db.Timestamp(6)
-  updatedAt      DateTime  @default(now()) @updatedAt @db.Timestamp(6)
-  profilePicture String?   @db.VarChar
-  deletedAt      DateTime? @db.Timestamp(6)
-  user           User?     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_a24972ebd73b106250713dcddd9")
+    id             String    @id(map: "PK_3dd8bfc97e4a77c70971591bdcb") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    username       String    @unique(map: "UQ_d80b94dc62f7467403009d88062") @db.VarChar
+    recoveryCode   String?   @db.VarChar
+    deviceToken    String?   @db.VarChar
+    email          String?   @db.VarChar
+    ageRange       String?
+    city           String?
+    state          String?
+    interests      String    @default("[]")
+    values         String    @default("[]")
+    platforms      String    @default("[]")
+    userId         String?   @unique(map: "REL_a24972ebd73b106250713dcddd") @db.Uuid
+    country        String?
+    createdAt      DateTime  @default(now()) @db.Timestamp(6)
+    updatedAt      DateTime  @default(now()) @updatedAt @db.Timestamp(6)
+    profilePicture String?   @db.VarChar
+    deletedAt      DateTime? @db.Timestamp(6)
+    user           User?     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_a24972ebd73b106250713dcddd9")
 
-  @@map("profile")
+    @@map("profile")
 }
 
 model QualityScore {
-  id            String   @id(map: "PK_252e172dc3040a425daafa0ca16") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  clicks        String   @default(dbgenerated("0")) @db.VarChar
-  views         String   @default(dbgenerated("0")) @db.VarChar
-  submissions   String   @default(dbgenerated("0")) @db.VarChar
-  likes         String   @default(dbgenerated("0")) @db.VarChar
-  shares        String   @default(dbgenerated("0")) @db.VarChar
-  comments      String   @default(dbgenerated("0")) @db.VarChar
-  participantId String   @db.VarChar
-  createdAt     DateTime @default(now()) @db.Timestamp(6)
-  updatedAt     DateTime @default(now()) @updatedAt @db.Timestamp(6)
+    id            String   @id(map: "PK_252e172dc3040a425daafa0ca16") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    clicks        String   @default(dbgenerated("0")) @db.VarChar
+    views         String   @default(dbgenerated("0")) @db.VarChar
+    submissions   String   @default(dbgenerated("0")) @db.VarChar
+    likes         String   @default(dbgenerated("0")) @db.VarChar
+    shares        String   @default(dbgenerated("0")) @db.VarChar
+    comments      String   @default(dbgenerated("0")) @db.VarChar
+    participantId String   @db.VarChar
+    createdAt     DateTime @default(now()) @db.Timestamp(6)
+    updatedAt     DateTime @default(now()) @updatedAt @db.Timestamp(6)
 
-  @@map("quality_score")
+    @@map("quality_score")
 }
 
 model QueryResultCache {
-  id         Int     @id(map: "PK_6a98f758d8bfd010e7e10ffd3d3") @default(autoincrement())
-  identifier String? @db.VarChar
-  time       BigInt
-  duration   Int
-  query      String
-  result     String
+    id         Int     @id(map: "PK_6a98f758d8bfd010e7e10ffd3d3") @default(autoincrement())
+    identifier String? @db.VarChar
+    time       BigInt
+    duration   Int
+    query      String
+    result     String
 
-  @@map("query-result-cache")
+    @@map("query-result-cache")
 }
 
 model RafflePrize {
-  id            String     @id(map: "PK_d209918db84713ab8aec65ccec7") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  displayName   String     @db.VarChar
-  image         Boolean?
-  affiliateLink String?    @db.VarChar
-  updatedAt     DateTime   @default(now()) @updatedAt @db.Timestamp(6)
-  createdAt     DateTime   @default(now()) @db.Timestamp(6)
-  campaignId    String?    @unique(map: "REL_29f131f37d9cbb4814b2b6d306") @db.Uuid
-  campaign      Campaign?  @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_29f131f37d9cbb4814b2b6d3069")
-  transfer      Transfer[]
+    id            String     @id(map: "PK_d209918db84713ab8aec65ccec7") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    displayName   String     @db.VarChar
+    image         Boolean?
+    affiliateLink String?    @db.VarChar
+    updatedAt     DateTime   @default(now()) @updatedAt @db.Timestamp(6)
+    createdAt     DateTime   @default(now()) @db.Timestamp(6)
+    campaignId    String?    @unique(map: "REL_29f131f37d9cbb4814b2b6d306") @db.Uuid
+    campaign      Campaign?  @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_29f131f37d9cbb4814b2b6d3069")
+    transfer      Transfer[]
 
-  @@map("raffle_prize")
+    @@map("raffle_prize")
 }
 
 model SocialLink {
-  id                 String   @id(map: "PK_51b2adcc50ae969ba051eacd714") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  type               String   @db.VarChar
-  apiKey             String?  @db.VarChar
-  apiSecret          String?  @db.VarChar
-  createdAt          DateTime @default(now()) @db.Timestamp(6)
-  updatedAt          DateTime @default(now()) @updatedAt @db.Timestamp(6)
-  userId             String?  @db.Uuid
-  followerCount      Int?
-  accessToken        String?  @db.VarChar
-  refreshToken       String?  @db.VarChar
-  openId             String?  @db.VarChar
-  accessTokenExpiry  String?  @db.VarChar
-  refreshTokenExpiry String?  @db.VarChar
-  user               User?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_d8a1d8b8a8235632f9011346197")
+    id                 String   @id(map: "PK_51b2adcc50ae969ba051eacd714") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    type               String   @db.VarChar
+    apiKey             String?  @db.VarChar
+    apiSecret          String?  @db.VarChar
+    createdAt          DateTime @default(now()) @db.Timestamp(6)
+    updatedAt          DateTime @default(now()) @updatedAt @db.Timestamp(6)
+    userId             String?  @db.Uuid
+    followerCount      Int?
+    accessToken        String?  @db.VarChar
+    refreshToken       String?  @db.VarChar
+    openId             String?  @db.VarChar
+    accessTokenExpiry  String?  @db.VarChar
+    refreshTokenExpiry String?  @db.VarChar
+    user               User?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_d8a1d8b8a8235632f9011346197")
 
-  @@map("social_link")
+    @@map("social_link")
 }
 
 model SocialPost {
-  id            String   @db.VarChar
-  type          String   @default("twitter") @db.VarChar
-  likes         String   @default(dbgenerated("0")) @db.VarChar
-  shares        String   @default(dbgenerated("0")) @db.VarChar
-  comments      String   @default(dbgenerated("0")) @db.VarChar
-  participantId String   @db.VarChar
-  campaignId    String   @db.Uuid
-  createdAt     DateTime @default(now()) @db.Timestamp(6)
-  updatedAt     DateTime @default(now()) @updatedAt @db.Timestamp(6)
-  userId        String   @db.Uuid
-  campaign      Campaign @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_3073fc6f7d48ae9dc23af5f00f6")
-  user          User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ac33a6e1367ede7117c1742d6a4")
+    id            String   @db.VarChar
+    type          String   @default("twitter") @db.VarChar
+    likes         String   @default(dbgenerated("0")) @db.VarChar
+    shares        String   @default(dbgenerated("0")) @db.VarChar
+    comments      String   @default(dbgenerated("0")) @db.VarChar
+    participantId String   @db.VarChar
+    campaignId    String   @db.Uuid
+    createdAt     DateTime @default(now()) @db.Timestamp(6)
+    updatedAt     DateTime @default(now()) @updatedAt @db.Timestamp(6)
+    userId        String   @db.Uuid
+    campaign      Campaign @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_3073fc6f7d48ae9dc23af5f00f6")
+    user          User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ac33a6e1367ede7117c1742d6a4")
 
-  @@id([id, campaignId, userId], map: "PK_361a1688e628ebb9c56ecc9cacb")
-  @@map("social_post")
+    @@id([id, campaignId, userId], map: "PK_361a1688e628ebb9c56ecc9cacb")
+    @@map("social_post")
 }
 
 model TatumWallet {
-  id        String   @id(map: "PK_7ea26f9bf3a0f53ce5802ac46cf") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  currency  String   @db.VarChar
-  xpub      String   @db.VarChar
-  address   String   @db.VarChar
-  createdAt DateTime @default(now()) @db.Timestamp(6)
-  updatedAt DateTime @default(now()) @updatedAt @db.Timestamp(6)
+    id        String   @id(map: "PK_7ea26f9bf3a0f53ce5802ac46cf") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    currency  String   @db.VarChar
+    xpub      String   @db.VarChar
+    address   String   @db.VarChar
+    createdAt DateTime @default(now()) @db.Timestamp(6)
+    updatedAt DateTime @default(now()) @updatedAt @db.Timestamp(6)
 
-  @@map("tatum_wallet")
+    @@map("tatum_wallet")
 }
 
 model Token {
-  id              String     @id(map: "PK_82fae97f905930df5d62a702fc9") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  symbol          String     @db.VarChar
-  network         String     @db.VarChar
-  contractAddress String?    @db.VarChar
-  enabled         Boolean    @default(true)
-  createdAt       DateTime   @default(now()) @db.Timestamp(6)
-  updatedAt       DateTime   @default(now()) @updatedAt @db.Timestamp(6)
-  currency        Currency[]
+    id              String     @id(map: "PK_82fae97f905930df5d62a702fc9") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    symbol          String     @db.VarChar
+    network         String     @db.VarChar
+    contractAddress String?    @db.VarChar
+    enabled         Boolean    @default(true)
+    createdAt       DateTime   @default(now()) @db.Timestamp(6)
+    updatedAt       DateTime   @default(now()) @updatedAt @db.Timestamp(6)
+    currency        Currency[]
 
-  @@map("token")
+    @@map("token")
 }
 
 model Transfer {
-  id              String       @id(map: "PK_fd9ddbdd49a17afcbe014401295") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  amount          String       @db.VarChar
-  action          String       @db.VarChar
-  status          String?      @db.VarChar
-  createdAt       DateTime     @default(now()) @db.Timestamp(6)
-  updatedAt       DateTime     @default(now()) @updatedAt @db.Timestamp(6)
-  walletId        String?      @db.Uuid
-  campaignId      String?      @db.Uuid
-  usdAmount       String?      @db.VarChar
-  ethAddress      String?      @db.VarChar
-  transactionHash String?      @db.VarChar
-  orgId           String?      @db.Uuid
-  paypalAddress   String?      @db.VarChar
-  rafflePrizeId   String?      @db.Uuid
-  currency        String?      @db.VarChar
-  stripeCardId    String?      @db.VarChar
-  type            String?      @db.VarChar
-  campaign        Campaign?    @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_bbe21a18f940dab59ffd61671ef")
-  org             Org?         @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_69167255fc368a59063ebd8cf16")
-  raffle_prize    RafflePrize? @relation(fields: [rafflePrizeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f6c593d6013276bc80450c7638e")
-  wallet          Wallet?      @relation(fields: [walletId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_011b4b0e8490d5434857bd40efa")
+    id              String       @id(map: "PK_fd9ddbdd49a17afcbe014401295") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    amount          String       @db.VarChar
+    action          String       @db.VarChar
+    status          String?      @db.VarChar
+    createdAt       DateTime     @default(now()) @db.Timestamp(6)
+    updatedAt       DateTime     @default(now()) @updatedAt @db.Timestamp(6)
+    walletId        String?      @db.Uuid
+    campaignId      String?      @db.Uuid
+    usdAmount       String?      @db.VarChar
+    ethAddress      String?      @db.VarChar
+    transactionHash String?      @db.VarChar
+    orgId           String?      @db.Uuid
+    paypalAddress   String?      @db.VarChar
+    rafflePrizeId   String?      @db.Uuid
+    currency        String?      @db.VarChar
+    stripeCardId    String?      @db.VarChar
+    type            String?      @db.VarChar
+    campaign        Campaign?    @relation(fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_bbe21a18f940dab59ffd61671ef")
+    org             Org?         @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_69167255fc368a59063ebd8cf16")
+    raffle_prize    RafflePrize? @relation(fields: [rafflePrizeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f6c593d6013276bc80450c7638e")
+    wallet          Wallet?      @relation(fields: [walletId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_011b4b0e8490d5434857bd40efa")
 
-  @@map("transfer")
+    @@map("transfer")
 }
 
 model TwentyFourHourMetric {
-  id        String   @id(map: "PK_5f2e32ce3d19006f27953af0bb8") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  score     String   @default(dbgenerated("0")) @db.VarChar
-  createdAt DateTime @default(now()) @db.Timestamp(6)
-  userId    String?  @db.Uuid
-  updatedAt DateTime @default(now()) @updatedAt @db.Timestamp(6)
-  user      User?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_e965aecf58d4a7ff9406ab777e1")
+    id        String   @id(map: "PK_5f2e32ce3d19006f27953af0bb8") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    score     String   @default(dbgenerated("0")) @db.VarChar
+    createdAt DateTime @default(now()) @db.Timestamp(6)
+    userId    String?  @db.Uuid
+    updatedAt DateTime @default(now()) @updatedAt @db.Timestamp(6)
+    user      User?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_e965aecf58d4a7ff9406ab777e1")
 
-  @@map("twenty_four_hour_metric")
+    @@map("twenty_four_hour_metric")
 }
 
 model User {
-  active                                       Boolean                   @default(true)
-  createdAt                                    DateTime                  @default(now()) @db.Timestamp(6)
-  updatedAt                                    DateTime                  @default(now()) @updatedAt @db.Timestamp(6)
-  identityId                                   String?                   @db.VarChar
-  id                                           String                    @id(map: "PK_cace4a159ff9f2512dd42373760") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  kycStatus                                    String?                   @default("") @db.VarChar
-  lastLogin                                    DateTime?                 @db.Timestamp(6)
-  email                                        String                    @db.VarChar
-  password                                     String                    @db.VarChar
-  referralCode                                 String?                   @db.VarChar
-  deletedAt                                    DateTime?                 @db.Timestamp(6)
-  promoCode                                    String?                   @db.VarChar
-  admin                                        Admin[]
-  daily_participant_metric                     DailyParticipantMetric[]
-  external_address                             ExternalAddress[]
-  external_wallet                              ExternalWallet[]
-  factor_link_factor_link_userIdTouser         FactorLink[]              @relation("factor_link_userIdTouser")
-  factor_link_factor_link_verificationIdTouser FactorLink[]              @relation("factor_link_verificationIdTouser")
-  nft                                          Nft[]                     @relation("nftTouser")
-  notification_settings                        NotificationSettings?
-  participant                                  Participant[]
-  profile                                      Profile?
-  session                                      Session[]                 @relation("SessionTouser")
-  social_link                                  SocialLink[]
-  social_post                                  SocialPost[]
-  twenty_four_hour_metric                      TwentyFourHourMetric[]
-  verification_application                     VerificationApplication[]
-  wallet                                       Wallet?
-  weekly_reward                                WeeklyReward[]            @relation("userToweekly_reward")
-  xoxoday_order                                XoxodayOrder[]
+    active                                       Boolean                   @default(true)
+    createdAt                                    DateTime                  @default(now()) @db.Timestamp(6)
+    updatedAt                                    DateTime                  @default(now()) @updatedAt @db.Timestamp(6)
+    identityId                                   String?                   @db.VarChar
+    id                                           String                    @id(map: "PK_cace4a159ff9f2512dd42373760") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    kycStatus                                    String?                   @default("") @db.VarChar
+    lastLogin                                    DateTime?                 @db.Timestamp(6)
+    email                                        String                    @db.VarChar
+    password                                     String                    @db.VarChar
+    referralCode                                 String?                   @db.VarChar
+    deletedAt                                    DateTime?                 @db.Timestamp(6)
+    promoCode                                    String?                   @db.VarChar
+    admin                                        Admin[]
+    daily_participant_metric                     DailyParticipantMetric[]
+    external_address                             ExternalAddress[]
+    external_wallet                              ExternalWallet[]
+    factor_link_factor_link_userIdTouser         FactorLink[]              @relation("factor_link_userIdTouser")
+    factor_link_factor_link_verificationIdTouser FactorLink[]              @relation("factor_link_verificationIdTouser")
+    nft                                          Nft[]                     @relation("nftTouser")
+    notification_settings                        NotificationSettings?
+    participant                                  Participant[]
+    profile                                      Profile?
+    session                                      Session[]                 @relation("SessionTouser")
+    social_link                                  SocialLink[]
+    social_post                                  SocialPost[]
+    twenty_four_hour_metric                      TwentyFourHourMetric[]
+    verification_application                     VerificationApplication[]
+    wallet                                       Wallet?
+    weekly_reward                                WeeklyReward[]            @relation("userToweekly_reward")
+    xoxoday_order                                XoxodayOrder[]
 
-  @@index([identityId], map: "IDX_dea97e26c765a4cdb575957a14")
-  @@map("user")
+    @@index([identityId], map: "IDX_dea97e26c765a4cdb575957a14")
+    @@map("user")
 }
 
 model Verification {
-  id        String    @id(map: "PK_f7e3a90ca384e71d6e2e93bb340") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email     String    @db.VarChar
-  verified  Boolean   @default(false)
-  createdAt DateTime  @default(now()) @db.Timestamp(6)
-  updatedAt DateTime  @default(now()) @updatedAt @db.Timestamp(6)
-  code      String    @db.VarChar
-  expiry    DateTime? @db.Timestamp(6)
-  type      String?   @default("") @db.VarChar
+    id        String    @id(map: "PK_f7e3a90ca384e71d6e2e93bb340") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    email     String    @db.VarChar
+    verified  Boolean   @default(false)
+    createdAt DateTime  @default(now()) @db.Timestamp(6)
+    updatedAt DateTime  @default(now()) @updatedAt @db.Timestamp(6)
+    code      String    @db.VarChar
+    expiry    DateTime? @db.Timestamp(6)
+    type      String?   @default("") @db.VarChar
 
-  @@map("verification")
+    @@map("verification")
 }
 
 model VerificationApplication {
-  applicationId String                              @db.VarChar
-  status        String                              @db.VarChar
-  userId        String?                             @db.Uuid
-  createdAt     DateTime                            @default(now()) @db.Timestamp(6)
-  updatedAt     DateTime                            @default(now()) @updatedAt @db.Timestamp(6)
-  reason        String?                             @db.VarChar
-  id            String                              @id(map: "PK_9a21866200edef5f625c56bcdf9") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  level         verification_application_level_enum @default(LEVEL1)
-  profile       String?                             @db.VarChar
-  adminId       String?                             @db.Uuid
-  admin         Admin?                              @relation("adminToverification_application", fields: [adminId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_0f5953ed6d6b75ee724463f051d")
-  user          User?                               @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_79e9b3d653b00690eae5f235dad")
+    applicationId String                              @db.VarChar
+    status        String                              @db.VarChar
+    userId        String?                             @db.Uuid
+    createdAt     DateTime                            @default(now()) @db.Timestamp(6)
+    updatedAt     DateTime                            @default(now()) @updatedAt @db.Timestamp(6)
+    reason        String?                             @db.VarChar
+    id            String                              @id(map: "PK_9a21866200edef5f625c56bcdf9") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    level         verification_application_level_enum @default(LEVEL1)
+    profile       String?                             @db.VarChar
+    adminId       String?                             @db.Uuid
+    admin         Admin?                              @relation("adminToverification_application", fields: [adminId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_0f5953ed6d6b75ee724463f051d")
+    user          User?                               @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_79e9b3d653b00690eae5f235dad")
 
-  @@map("verification_application")
+    @@map("verification_application")
 }
 
 model Wallet {
-  id                String             @id(map: "PK_bec464dd8d54c39c54fd32e2334") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  createdAt         DateTime           @default(now()) @db.Timestamp(6)
-  updatedAt         DateTime           @default(now()) @updatedAt @db.Timestamp(6)
-  userId            String?            @unique(map: "UQ_35472b1fe48b6330cd349709564") @db.Uuid
-  orgId             String?            @unique(map: "UQ_bf1e49e09b07f54d894eee24803") @db.Uuid
-  org               Org?               @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_bf1e49e09b07f54d894eee24803")
-  user              User?              @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_35472b1fe48b6330cd349709564")
-  currency          Currency[]
-  custodial_address CustodialAddress[]
-  escrow            Escrow[]
-  external_address  ExternalAddress[]
-  transfer          Transfer[]
-  wallet_currency   WalletCurrency[]
+    id                String             @id(map: "PK_bec464dd8d54c39c54fd32e2334") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    createdAt         DateTime           @default(now()) @db.Timestamp(6)
+    updatedAt         DateTime           @default(now()) @updatedAt @db.Timestamp(6)
+    userId            String?            @unique(map: "UQ_35472b1fe48b6330cd349709564") @db.Uuid
+    orgId             String?            @unique(map: "UQ_bf1e49e09b07f54d894eee24803") @db.Uuid
+    org               Org?               @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_bf1e49e09b07f54d894eee24803")
+    user              User?              @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_35472b1fe48b6330cd349709564")
+    currency          Currency[]
+    custodial_address CustodialAddress[]
+    escrow            Escrow[]
+    external_address  ExternalAddress[]
+    transfer          Transfer[]
+    wallet_currency   WalletCurrency[]
 
-  @@map("wallet")
+    @@map("wallet")
 }
 
 model WalletCurrency {
-  id        String   @id(map: "PK_3a458d3da4096019c5cd630c22e") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  type      String   @default("Coiin") @db.VarChar
-  balance   String   @default(dbgenerated("0")) @db.VarChar
-  walletId  String?  @db.Uuid
-  createdAt DateTime @default(now()) @db.Timestamp(6)
-  updatedAt DateTime @default(now()) @updatedAt @db.Timestamp(6)
-  wallet    Wallet?  @relation(fields: [walletId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_2c16fccf4e3ac04ec0e6f4f68d0")
+    id        String   @id(map: "PK_3a458d3da4096019c5cd630c22e") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    type      String   @default("Coiin") @db.VarChar
+    balance   String   @default(dbgenerated("0")) @db.VarChar
+    walletId  String?  @db.Uuid
+    createdAt DateTime @default(now()) @db.Timestamp(6)
+    updatedAt DateTime @default(now()) @updatedAt @db.Timestamp(6)
+    wallet    Wallet?  @relation(fields: [walletId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_2c16fccf4e3ac04ec0e6f4f68d0")
 
-  @@map("wallet_currency")
+    @@map("wallet_currency")
 }
 
 model WeeklyReward {
-  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId        String?  @db.Uuid
-  participantId String?  @db.Uuid
-  coiinAmount   String   @db.VarChar
-  week          String   @db.VarChar
-  rewardType    String   @db.VarChar
-  createdAt     DateTime @default(now()) @db.Timestamp(6)
-  updatedAt     DateTime @default(now()) @updatedAt @db.Timestamp(6)
-  user          User?    @relation("userToweekly_reward", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ba2529b7af668bbc111475272b1")
+    id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    userId        String?  @db.Uuid
+    participantId String?  @db.Uuid
+    coiinAmount   String   @db.VarChar
+    week          String   @db.VarChar
+    rewardType    String   @db.VarChar
+    createdAt     DateTime @default(now()) @db.Timestamp(6)
+    updatedAt     DateTime @default(now()) @updatedAt @db.Timestamp(6)
+    user          User?    @relation("userToweekly_reward", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ba2529b7af668bbc111475272b1")
 
-  @@map("weekly_reward")
+    @@map("weekly_reward")
 }
 
 model XoxodayOrder {
-  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  xoxodayOrderId String   @db.VarChar
-  orderTotal     String   @db.VarChar
-  currencyCode   String   @db.VarChar
-  coiinPrice     String   @db.VarChar
-  poNumber       String   @db.VarChar
-  productId      String   @db.VarChar
-  quantity       Int
-  denomination   Int
-  userId         String?  @db.Uuid
-  createdAt      DateTime @default(now()) @db.Timestamp(6)
-  updatedAt      DateTime @default(now()) @updatedAt @db.Timestamp(6)
-  user           User?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_e0883ce6ef869534d2013fc414b")
+    id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    xoxodayOrderId String   @db.VarChar
+    orderTotal     String   @db.VarChar
+    currencyCode   String   @db.VarChar
+    coiinPrice     String   @db.VarChar
+    poNumber       String   @db.VarChar
+    productId      String   @db.VarChar
+    quantity       Int
+    denomination   Int
+    userId         String?  @db.Uuid
+    createdAt      DateTime @default(now()) @db.Timestamp(6)
+    updatedAt      DateTime @default(now()) @updatedAt @db.Timestamp(6)
+    user           User?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_e0883ce6ef869534d2013fc414b")
 
-  @@map("xoxoday_order")
+    @@map("xoxoday_order")
 }
 
 model MarketData {
-  id        String   @id(map: "PK_f66c35bec52b05f6eae861225e6") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  symbol    String   @db.VarChar
-  price     Float    @default(0)
-  createdAt DateTime @default(now()) @db.Timestamp(6)
-  updatedAt DateTime @default(now()) @db.Timestamp(6)
+    id        String   @id(map: "PK_f66c35bec52b05f6eae861225e6") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    symbol    String   @db.VarChar
+    price     Float    @default(0)
+    createdAt DateTime @default(now()) @db.Timestamp(6)
+    updatedAt DateTime @default(now()) @db.Timestamp(6)
 
-  @@map("market_data")
+    @@map("market_data")
 }
 
 model Transaction {
-  id              String    @id(map: "PK_89eadb93a89810556e1cbcd6ab9") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tag             String    @db.VarChar
-  txId            String    @db.VarChar
-  chain           String    @db.VarChar
-  action          String?   @db.VarChar
-  socialType      String?   @db.VarChar
-  transactionType String    @db.VarChar
-  participantId   String?   @db.VarChar
-  createdAt       DateTime  @default(now()) @db.Timestamp(6)
-  updatedAt       DateTime  @default(now()) @db.Timestamp(6)
-  campaignId      String?   @db.Uuid
-  campaign        Campaign? @relation("campaignToTransaction", fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_3f3891eefaf8dcce48eae8c709f")
+    id              String    @id(map: "PK_89eadb93a89810556e1cbcd6ab9") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    tag             String    @db.VarChar
+    txId            String    @db.VarChar
+    chain           String    @db.VarChar
+    action          String?   @db.VarChar
+    socialType      String?   @db.VarChar
+    transactionType String    @db.VarChar
+    participantId   String?   @db.VarChar
+    createdAt       DateTime  @default(now()) @db.Timestamp(6)
+    updatedAt       DateTime  @default(now()) @db.Timestamp(6)
+    campaignId      String?   @db.Uuid
+    campaign        Campaign? @relation("campaignToTransaction", fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_3f3891eefaf8dcce48eae8c709f")
 
-  @@map("transaction")
+    @@map("transaction")
 }
 
 model Session {
-  id         String    @id(map: "PK_f55da76ac1c3ac420f444d2ff11") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  ip         String?   @db.VarChar
-  deviceInfo String?   @db.VarChar
-  lastLogin  DateTime? @db.Timestamp(6)
-  logout     Boolean?  @default(false)
-  logoutAt   DateTime? @db.Timestamp(6)
-  expiry     DateTime  @db.Timestamp(6)
-  createdAt  DateTime  @default(now()) @db.Timestamp(6)
-  updatedAt  DateTime  @default(now()) @db.Timestamp(6)
-  userId     String?   @db.Uuid
-  user       User?     @relation("SessionTouser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_3d2f174ef04fb312fdebd0ddc53")
+    id         String    @id(map: "PK_f55da76ac1c3ac420f444d2ff11") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+    ip         String?   @db.VarChar
+    deviceInfo String?   @db.VarChar
+    lastLogin  DateTime? @db.Timestamp(6)
+    logout     Boolean?  @default(false)
+    logoutAt   DateTime? @db.Timestamp(6)
+    expiry     DateTime  @db.Timestamp(6)
+    createdAt  DateTime  @default(now()) @db.Timestamp(6)
+    updatedAt  DateTime  @default(now()) @db.Timestamp(6)
+    userId     String?   @db.Uuid
+    user       User?     @relation("SessionTouser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_3d2f174ef04fb312fdebd0ddc53")
 
-  @@map("session")
+    @@map("session")
 }
 
 model Nft {
-  nftId        String   @id(map: "PK_1156642d40093c2cf27efc405a5") @db.VarChar
-  type         String   @db.VarChar
-  name         String   @db.VarChar
-  network      String   @db.VarChar
-  transactions Json?    @unique(map: "UQ_fbf824aa02944ec173092a028f1")
-  createdAt    DateTime @default(now()) @db.Timestamp(6)
-  updatedAt    DateTime @default(now()) @db.Timestamp(6)
-  userId       String?  @db.Uuid
-  user         User?    @relation("nftTouser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_2d4535b902eed75d0deb2d515be")
+    nftId        String   @id(map: "PK_1156642d40093c2cf27efc405a5") @db.VarChar
+    type         String   @db.VarChar
+    name         String   @db.VarChar
+    network      String   @db.VarChar
+    transactions Json?    @unique(map: "UQ_fbf824aa02944ec173092a028f1")
+    createdAt    DateTime @default(now()) @db.Timestamp(6)
+    updatedAt    DateTime @default(now()) @db.Timestamp(6)
+    userId       String?  @db.Uuid
+    user         User?    @relation("nftTouser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_2d4535b902eed75d0deb2d515be")
 
-  @@map("nft")
+    @@map("nft")
 }
 
 enum verification_application_level_enum {
-  LEVEL1
-  LEVEL2
+    LEVEL1
+    LEVEL2
 }

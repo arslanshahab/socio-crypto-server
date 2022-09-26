@@ -11,7 +11,7 @@ import { decrypt, encrypt } from "../util/crypto";
 import { generate6DigitCode } from "../util";
 import { EMAIL_NOT_VERIFIED, INCORRECT_CODE_OR_EMAIL, INVALID_VERIFICATION_TOKEN } from "../util/errors";
 import { addMinutes, isPast } from "date-fns";
-import { VerificationType } from "src/types";
+import { VerificationType } from "types.d.ts";
 @Entity()
 export class Verification extends BaseEntity {
     @PrimaryGeneratedColumn("uuid")

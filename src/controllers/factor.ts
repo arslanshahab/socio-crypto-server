@@ -2,7 +2,7 @@ import { Response } from "express";
 import jwt from "jsonwebtoken";
 // import * as Dragonfactor from "@myfii-dev/dragonfactor-auth";
 import { asyncHandler, extractFactor, generateRandomNumber, createFactorsFromKycData, BN } from "../util";
-import { AuthRequest, FactorGeneration } from "../types";
+import { AuthRequest, FactorGeneration } from "types.d.ts";
 import { FactorLink } from "../models/FactorLink";
 import { Secrets } from "../util/secrets";
 import { User } from "../models/User";
@@ -15,7 +15,7 @@ import { S3Client } from "../clients/s3";
 import { Profile } from "../models/Profile";
 import { NotificationSettings } from "../models/NotificationSettings";
 import { WalletCurrency } from "../models/WalletCurrency";
-import { JWTPayload } from "src/types";
+import { JWTPayload } from "types.d.ts";
 // import { RAIINMAKER_ORG_NAME } from "../util/constants";
 
 // export const registerFactorLink = async (

@@ -1,5 +1,5 @@
 {{- if .Values.ingress.enabled -}}
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: raiinmaker-ingress
@@ -17,10 +17,14 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
   rules:
-    - http:
+    - host: {{ .Values.ingress.host }}
+      http:
         paths:
-          - path: /*
-            backend:
-              serviceName: {{ include "raiinmaker.fullname" . }}
-              servicePort: 8080
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: {{ include "raiinmaker.fullname" . }}
+              port:
+                number: 8080
 {{- end }}

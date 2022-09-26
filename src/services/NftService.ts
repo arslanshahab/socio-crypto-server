@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@tsed/di";
-import { NftFileParams, NftMintingParams } from "../types.d";
+import { NftFileParams, NftMintingParams } from "types.d.ts";
 import { DragonChainService } from "./DragonChainService";
 import { prisma, readPrisma } from "../clients/prisma";
 import { Prisma } from "@prisma/client";

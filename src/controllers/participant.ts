@@ -19,9 +19,9 @@ import {
 import { HourlyCampaignMetric } from "../models/HourlyCampaignMetric";
 import { QualityScore } from "../models/QualityScore";
 import { limit } from "../util/rateLimiter";
-import { JWTPayload } from "src/types";
+import { JWTPayload } from "types.d.ts";
 import { getTokenValueInUSD } from "../util/exchangeRate";
-import { GetCampaignsParticipantsVariables } from "../types.d";
+import { GetCampaignsParticipantsVariables } from "types.d.ts";
 import {
     FormattedError,
     CAMPAIGN_CLOSED,

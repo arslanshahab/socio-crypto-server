@@ -1,4 +1,5 @@
 {
+    "ts-node": { "files": true },
     "compilerOptions": {
         "target": "es2019",
         "outDir": "dist",
@@ -23,16 +24,18 @@
         "allowUnreachableCode": false,
         "resolveJsonModule": true,
         "allowJs": false,
-        "types": ["node", "mocha"],
+        "types": ["node", "jest"],
         "baseUrl": "./",
         "paths": {
             "controllers": ["controllers/*"],
             "models": ["models/*"],
-            "clients": ["clients/*"]
+            "clients": ["clients/*"],
+            "*.ts": ["*"]
         },
         "lib": ["ES2020.Promise", "es2019", "DOM", "ES6", "DOM.Iterable", "ScriptHost"]
     },
-    "include": ["src/*", "src/**/*"],
+    "files": ["types.d.ts"],
+    "include": ["src/*", "src/**/*", "types", "pactum", "tests/unit/controllers/**/*.spec.ts"],
     "exclude": ["node_modules/**"],
     "compileOnSave": false
 }

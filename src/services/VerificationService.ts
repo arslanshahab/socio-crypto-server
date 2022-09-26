@@ -3,7 +3,7 @@ import { decrypt, encrypt } from "../util/crypto";
 import { Forbidden } from "@tsed/exceptions";
 import { EMAIL_NOT_VERIFIED, INCORRECT_CODE_OR_EMAIL, INVALID_VERIFICATION_TOKEN } from "../util/errors";
 import { addMinutes, isPast } from "date-fns";
-import { VerificationType } from "../types";
+import { VerificationType } from "types.d.ts";
 import { generate6DigitCode } from "../util";
 import { prisma, readPrisma } from "../clients/prisma";
 

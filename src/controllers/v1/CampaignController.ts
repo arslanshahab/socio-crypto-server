@@ -45,7 +45,7 @@ import {
 import { BadRequest, Forbidden, NotFound } from "@tsed/exceptions";
 import { ParticipantService } from "../../services/ParticipantService";
 import { SocialPostService } from "../../services/SocialPostService";
-import { CampaignAuditStatus, PointValueTypes } from "../../types";
+import { CampaignAuditStatus, PointValueTypes } from "types.d.ts";
 import { addYears } from "date-fns";
 import { Validator } from "../../schemas";
 import { OrganizationService } from "../../services/OrganizationService";

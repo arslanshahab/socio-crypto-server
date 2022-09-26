@@ -36,7 +36,7 @@ import { getTokenValueInUSD } from "../../util/exchangeRate";
 import { Campaign, Participant, Prisma } from "@prisma/client";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { getSocialClient } from "../helpers";
-import { PointValueTypes, Tiers } from "../../types";
+import { PointValueTypes, Tiers } from "types.d.ts";
 import { SocialLinkService } from "../../services/SocialLinkService";
 import { MarketDataService } from "../../services/MarketDataService";
 import { ParticipantAction, SocialLinkType, Sort } from "../../util/constants";
@@ -365,7 +365,7 @@ export class ParticipantController {
                 shareScore: metrics.shareCount * pointValues.shares,
                 totalLikes: metrics.likeCount || 0,
                 totalShares: metrics.shareCount || 0,
-                participationScore: metrics.participationScore || 0,
+                participationScore: participant.participationScore || 0,
                 blacklist: participant.blacklist,
             });
         }

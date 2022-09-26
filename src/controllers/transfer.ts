@@ -1,6 +1,6 @@
 import { User } from "../models/User";
 import { Transfer } from "../models/Transfer";
-import { TransferAction } from "src/types";
+import { TransferAction } from "types.d.ts";
 import { ILike } from "typeorm";
 import { USER_NOT_FOUND } from "../util/errors";
 

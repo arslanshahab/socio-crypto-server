@@ -7,7 +7,7 @@ import * as dotenv from "dotenv";
 import { SocialPost, Prisma, PrismaPromise } from "@prisma/client";
 import { prisma, readPrisma } from "../../clients/prisma";
 import { CampaignStatus, CampaignAuditStatus, SocialClientType } from "../../util/constants";
-import { DragonchainCampaignActionLedgerPayload, PointValueTypes } from "../../types.d";
+import { DragonchainCampaignActionLedgerPayload, PointValueTypes } from "types.d.ts";
 import { QualityScoreService } from "../../services/QualityScoreService";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 import { ParticipantAction } from "../../util/constants";
@@ -47,6 +47,8 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
     const newParticipationScore = new BN(participant.participationScore).plus(
         likesAdjustedScore.plus(sharesAdjustedScore)
     );
+    const adjustedRawLikes = likes.minus(post.likes).toNumber();
+    const adjustedRawShares = shares.minus(post.shares).toNumber();
     post.likes = likes.toString();
     post.shares = shares.toString();
     const promiseArray: Promise<any>[] = [];
@@ -87,7 +89,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
         participant,
         action: ParticipantAction.LIKES,
         additiveParticipationScore: likesAdjustedScore,
-        actionCount: likes.toNumber(),
+        actionCount: adjustedRawLikes,
     });
 
     await dailyParticipantMetricService.upsertMetrics({
@@ -96,7 +98,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
         participant,
         action: ParticipantAction.SHARES,
         additiveParticipationScore: sharesAdjustedScore,
-        actionCount: shares.toNumber(),
+        actionCount: adjustedRawShares,
     });
     await Promise.all(promiseArray);
     return post;

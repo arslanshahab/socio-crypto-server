@@ -12,7 +12,7 @@ import {
 } from "typeorm";
 import { DateUtils } from "typeorm/util/DateUtils";
 import { Participant } from "./Participant";
-import { AlgorithmSpecs, CampaignAuditStatus, CampaignRequirementSpecs, ListCampaignsVariablesV2 } from "../types";
+import { AlgorithmSpecs, CampaignAuditStatus, CampaignRequirementSpecs, ListCampaignsVariablesV2 } from "types.d.ts";
 import { SocialPost } from "./SocialPost";
 import { Transfer } from "./Transfer";
 import { StringifiedArrayTransformer, BigNumberEntityTransformer, AlgorithmTransformer } from "../util/transformers";
