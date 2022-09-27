@@ -176,7 +176,7 @@ describe(" register user", () => {
         const initSessionSpy = jest.spyOn(sessionService, "initSession").mockResolvedValue("token");
         const uploadUserEmailsSpy = jest.spyOn(S3Client, "uploadUserEmails");
 
-        const res = await request.post(registerUserRoute).send(JSON.stringify(body));
+        const res = await request.post(registerUserRoute).send(body);
 
         handleBaseAssertions(
             res,

@@ -21,6 +21,7 @@ module.exports = {
   
     // The test environment that will be used for testing
     testEnvironment: "node",
+    setupFilesAfterEnv: ['./jest.setup.redis-mock.js'],
   
     // The glob patterns Jest uses to detect test files
     // testMatch: ["__tests__/unit/**/*.[jt]s?(x)", "**/src/**/?(*.)+(spec|test).[tj]s?(x)", ],

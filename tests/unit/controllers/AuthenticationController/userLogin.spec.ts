@@ -19,34 +19,24 @@ describe("user Login", () => {
     let request: any;
     let userService: UserService;
     let sessionService: SessionService;
-    const inactiveUser: User = {
-        email: "email@raiinmaker.com",
-        password: "password",
-        referralCode: "code",
-        active: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        identityId: "identityId",
-        id: "id",
-        kycStatus: "kycStatus",
-        lastLogin: new Date(),
-        deletedAt: new Date(),
-        promoCode: "code",
+
+    const user = (isActive: boolean) => {
+        return {
+            email: "email@raiinmaker.com",
+            password: "password",
+            referralCode: "code",
+            active: isActive ? true : false,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            identityId: "identityId",
+            id: "id",
+            kycStatus: "kycStatus",
+            lastLogin: new Date(),
+            deletedAt: new Date(),
+            promoCode: "code",
+        };
     };
-    const activeUser: User = {
-        email: "email@raiinmaker.com",
-        password: "password",
-        referralCode: "code",
-        active: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        identityId: "identityId",
-        id: "id",
-        kycStatus: "kycStatus",
-        lastLogin: new Date(),
-        deletedAt: new Date(),
-        promoCode: "code",
-    };
+
     beforeAll(async () => {
         await PlatformTest.bootstrap(RestServer, {
             mount: {
@@ -105,7 +95,7 @@ describe("user Login", () => {
             email: "me@raiinmaker.com",
             password: "password",
         };
-        const findUserByEmailSpy = jest.spyOn(userService, "findUserByEmail").mockResolvedValue(inactiveUser);
+        const findUserByEmailSpy = jest.spyOn(userService, "findUserByEmail").mockResolvedValue(user(false));
         const res = await request.post(userLoginRoute).send(body);
         console.log(res.body);
 
@@ -117,7 +107,7 @@ describe("user Login", () => {
             email: "me@raiinmaker.com",
             password: "password",
         };
-        const findUserByEmailSpy = jest.spyOn(userService, "findUserByEmail").mockResolvedValue(activeUser);
+        const findUserByEmailSpy = jest.spyOn(userService, "findUserByEmail").mockResolvedValue(user(true));
         const createPasswordHashSpy = jest
             .spyOn(util, "createPasswordHash")
             .mockImplementation((data: { email: string; password: string }) => "wrong_password");
@@ -130,7 +120,7 @@ describe("user Login", () => {
             email: "me@raiinmaker.com",
             password: "password",
         };
-        const findUserByEmailSpy = jest.spyOn(userService, "findUserByEmail").mockResolvedValue(activeUser);
+        const findUserByEmailSpy = jest.spyOn(userService, "findUserByEmail").mockResolvedValue(user(true));
         const createPasswordHashSpy = jest
             .spyOn(util, "createPasswordHash")
             .mockImplementation((data: { email: string; password: string }) => "password");
