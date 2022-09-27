@@ -1,10 +1,10 @@
-import { Firebase } from "../clients/firebase";
 import { AuthenticationError } from "apollo-server-express";
 import express from "express";
 import { ACCOUNT_RESTRICTED, FormattedError, NO_TOKEN_PROVIDED } from "../util/errors";
 import { User } from "../models/User";
 import { SessionService } from "../services/SessionService";
 import { JWTPayload } from "types.d.ts";
+import { AdminFirebase } from "../clients/adminFirebase";
 
 const sessionService = new SessionService();
 
@@ -12,9 +12,9 @@ export const authenticateAdmin = async ({ req }: { req: express.Request }) => {
     try {
         const token = req.cookies.session || "";
         if (!token) throw new AuthenticationError("No token provided or session not initialized");
-        const decodedToken = await Firebase.verifySessionCookie(token);
+        const decodedToken = await AdminFirebase.verifySessionCookie(token);
         if (!decodedToken) throw new AuthenticationError("invalid token");
-        const firebaseUser = await Firebase.getUserById(decodedToken.uid);
+        const firebaseUser = await AdminFirebase.getUserById(decodedToken.uid);
         const user = {
             id: decodedToken.uid,
             method: "firebase",

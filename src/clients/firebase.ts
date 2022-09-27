@@ -3,7 +3,7 @@ import * as admin from "firebase-admin";
 import { Campaign } from "../models/Campaign";
 import { Secrets } from "../util/secrets";
 import { paginateList } from "../util";
-import { RequestData, doFetch } from "../util/fetchRequest";
+// import { RequestData, doFetch } from "../util/fetchRequest";
 import { KycStatus, TransferAction } from "types.d.ts";
 import {
     KYC_NOTIFICATION_TITLE,
@@ -13,22 +13,22 @@ import {
 } from "../util/constants";
 import { Campaign as PrismaCampaign } from "@prisma/client";
 
-interface FirebaseUserLoginResponse {
-    kind: string;
-    localId: string;
-    email: string;
-    displayName: string;
-    idToken: string;
-    registered: boolean;
-    refreshToken: string;
-    expiresIn: string;
-}
+// interface FirebaseUserLoginResponse {
+//     kind: string;
+//     localId: string;
+//     email: string;
+//     displayName: string;
+//     idToken: string;
+//     registered: boolean;
+//     refreshToken: string;
+//     expiresIn: string;
+// }
 
 export class Firebase {
     public static adminClient: admin.app.App;
     public static baseUrl = "https://identitytoolkit.googleapis.com";
 
-    public static initialize() {
+    public static initializeApp() {
         Firebase.adminClient = admin.initializeApp({
             credential: admin.credential.cert({
                 projectId: Secrets.firebaseProjectId,
@@ -107,65 +107,65 @@ export class Firebase {
         }
     }
 
-    public static async setCustomUserClaims(
-        uid: string,
-        orgName: string,
-        role: "manager" | "admin",
-        tempPass: boolean
-    ) {
-        return Firebase.adminClient.auth().setCustomUserClaims(uid, { company: orgName, role, tempPass });
-    }
+    // public static async setCustomUserClaims(
+    //     uid: string,
+    //     orgName: string,
+    //     role: "manager" | "admin",
+    //     tempPass: boolean
+    // ) {
+    //     return Firebase.adminClient.auth().setCustomUserClaims(uid, { company: orgName, role, tempPass });
+    // }
 
-    public static async deleteUser(uid: string) {
-        return Firebase.adminClient.auth().deleteUser(uid);
-    }
+    // public static async deleteUser(uid: string) {
+    //     return Firebase.adminClient.auth().deleteUser(uid);
+    // }
 
-    public static async createSessionCookie(token: string, expiresIn: number) {
-        return Firebase.adminClient.auth().createSessionCookie(token, { expiresIn });
-    }
+    // public static async createSessionCookie(token: string, expiresIn: number) {
+    //     return Firebase.adminClient.auth().createSessionCookie(token, { expiresIn });
+    // }
 
-    public static async verifySessionCookie(cookie: string) {
-        return Firebase.adminClient.auth().verifySessionCookie(cookie, true);
-    }
+    // public static async verifySessionCookie(cookie: string) {
+    //     return Firebase.adminClient.auth().verifySessionCookie(cookie, true);
+    // }
 
-    public static async verifyToken(token: string) {
-        return Firebase.adminClient.auth().verifyIdToken(token, true);
-    }
+    // public static async verifyToken(token: string) {
+    //     return Firebase.adminClient.auth().verifyIdToken(token, true);
+    // }
 
-    public static async revokeRefreshToken(token: string) {
-        return Firebase.adminClient.auth().revokeRefreshTokens(token);
-    }
+    // public static async revokeRefreshToken(token: string) {
+    //     return Firebase.adminClient.auth().revokeRefreshTokens(token);
+    // }
 
-    public static async createNewUser(email: string, password: string) {
-        return Firebase.adminClient.auth().createUser({ email, password });
-    }
+    // public static async createNewUser(email: string, password: string) {
+    //     return Firebase.adminClient.auth().createUser({ email, password });
+    // }
 
-    public static async loginUser(email: string, password: string): Promise<FirebaseUserLoginResponse> {
-        const url = `${Firebase.baseUrl}/v1/accounts:signInWithPassword`;
-        const requestData: RequestData = {
-            method: "POST",
-            url,
-            payload: {
-                email,
-                password,
-                returnSecureToken: true,
-            },
-            query: { key: process.env.FIREBASE_API_KEY },
-        };
-        return await doFetch(requestData);
-    }
+    // public static async loginUser(email: string, password: string): Promise<FirebaseUserLoginResponse> {
+    //     const url = `${Firebase.baseUrl}/v1/accounts:signInWithPassword`;
+    //     const requestData: RequestData = {
+    //         method: "POST",
+    //         url,
+    //         payload: {
+    //             email,
+    //             password,
+    //             returnSecureToken: true,
+    //         },
+    //         query: { key: process.env.FIREBASE_API_KEY },
+    //     };
+    //     return await doFetch(requestData);
+    // }
 
-    public static async updateUserPassword(uid: string, password: string) {
-        return Firebase.adminClient.auth().updateUser(uid, { password });
-    }
+    // public static async updateUserPassword(uid: string, password: string) {
+    //     return Firebase.adminClient.auth().updateUser(uid, { password });
+    // }
 
-    public static async getUserByEmail(email: string) {
-        return Firebase.adminClient.auth().getUserByEmail(email);
-    }
+    // public static async getUserByEmail(email: string) {
+    //     return Firebase.adminClient.auth().getUserByEmail(email);
+    // }
 
-    public static async getUserById(id: string) {
-        return Firebase.adminClient.auth().getUser(id);
-    }
+    // public static async getUserById(id: string) {
+    //     return Firebase.adminClient.auth().getUser(id);
+    // }
 
     public static async sendDailyParticipationUpdate(
         token: string,

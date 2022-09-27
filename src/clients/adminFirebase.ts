@@ -18,13 +18,16 @@ export class AdminFirebase {
     public static baseUrl = "https://identitytoolkit.googleapis.com";
 
     public static initialize() {
-        AdminFirebase.adminClient = admin.initializeApp({
-            credential: admin.credential.cert({
-                projectId: Secrets.firebaseAdminProjectId,
-                clientEmail: Secrets.firebaseAdminClientEmail,
-                privateKey: Secrets.firebaseAdminPrivateKey,
-            }),
-        });
+        AdminFirebase.adminClient = admin.initializeApp(
+            {
+                credential: admin.credential.cert({
+                    projectId: Secrets.firebaseAdminProjectId,
+                    clientEmail: Secrets.firebaseAdminClientEmail,
+                    privateKey: Secrets.firebaseAdminPrivateKey,
+                }),
+            },
+            "AdminFirebase"
+        );
     }
 
     public static async setCustomUserClaims(

@@ -53,6 +53,7 @@ import { WalletService } from "../../services/WalletService";
 import { S3Client } from "../../clients/s3";
 import { User } from "../../models/User";
 import { Firebase } from "../../clients/firebase";
+import { AdminFirebase } from "../../clients/adminFirebase";
 import { RafflePrizeService } from "../../services/RafflePrizeService";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 import { CampaignMediaService } from "../../services/CampaignMediaService";
@@ -324,7 +325,7 @@ export class CampaignController {
         if (campaign.id) {
             if (raiinmakerAdmins) {
                 for (const admin of raiinmakerAdmins) {
-                    const { email } = await Firebase.getUserById(admin.firebaseId);
+                    const { email } = await AdminFirebase.getUserById(admin.firebaseId);
                     SesClient.CampaignProcessEmailToAdmin({
                         title: `Campaign review message from ${brandName?.name}`,
                         text: `Hi, please approved "${campaign.name}" campaign`,
@@ -648,7 +649,7 @@ export class CampaignController {
         const brandAdmins = await this.adminService.listAdminsByOrg(campaign?.orgId!);
         if (brandAdmins) {
             for (const admin of brandAdmins) {
-                const { email } = await Firebase.getUserById(admin.firebaseId);
+                const { email } = await AdminFirebase.getUserById(admin.firebaseId);
                 SesClient.CampaignProcessEmailToAdmin({
                     title: "Campaign Approval Status",
                     text: `${campaign.name} has been ${updatedCampaign.status}. ${reason}`,

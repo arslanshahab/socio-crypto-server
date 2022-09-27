@@ -1,4 +1,4 @@
-import { Firebase } from "../clients/firebase";
+import { AdminFirebase } from "../clients/adminFirebase";
 import { Request, Response } from "express";
 import { ILike } from "typeorm";
 import { Verification } from "../models/Verification";
@@ -26,14 +26,14 @@ export const adminLogin = asyncHandler(async (req: Request, res: Response) => {
     try {
         const { idToken } = req.body;
         let sessionCookie;
-        const decodedToken = await Firebase.verifyToken(idToken);
-        const user = await Firebase.getUserById(decodedToken.uid);
+        const decodedToken = await AdminFirebase.verifyToken(idToken);
+        const user = await AdminFirebase.getUserById(decodedToken.uid);
         if (!user.customClaims) return res.status(401).json({ code: "UNAUTHORIZED", message: "unauthorized" });
         if (user.customClaims.tempPass === true) return res.status(200).json({ resetPass: true });
         const expiresIn = 60 * 60 * 24 * 5 * 1000;
         // Only process if the user just signed in in the last 5 minutes.
         if (new Date().getTime() / 1000 - decodedToken.auth_time < 5 * 60) {
-            sessionCookie = await Firebase.createSessionCookie(idToken, expiresIn);
+            sessionCookie = await AdminFirebase.createSessionCookie(idToken, expiresIn);
         } else {
             res.status(401).send("Recent sign in required!");
         }
@@ -49,8 +49,8 @@ export const adminLogout = asyncHandler(async (req: Request, res: Response) => {
     try {
         const sessionCookie = req.cookies.session || "";
         res.clearCookie("session");
-        const decodedToken = await Firebase.verifySessionCookie(sessionCookie);
-        await Firebase.revokeRefreshToken(decodedToken.sub);
+        const decodedToken = await AdminFirebase.verifySessionCookie(sessionCookie);
+        await AdminFirebase.revokeRefreshToken(decodedToken.sub);
         return res.status(200).json({ success: true });
     } catch (error) {
         throw new Error("Something went wrong with your request. please try again!");
@@ -72,12 +72,12 @@ export const getUserRole = async (parent: any, args: any, context: { user: any }
 export const updateUserPassword = asyncHandler(async (req: Request, res: Response) => {
     try {
         const { idToken, password } = req.body;
-        const decodedToken = await Firebase.verifyToken(idToken);
+        const decodedToken = await AdminFirebase.verifyToken(idToken);
         if (!decodedToken) return res.status(401).json({ code: "UNAUTHORIZED", message: "unauthorized" });
-        const user = await Firebase.getUserById(decodedToken.uid);
+        const user = await AdminFirebase.getUserById(decodedToken.uid);
         if (!user.customClaims) return res.status(401).json({ code: "UNAUTHORIZED", message: "unauthorized" });
-        await Firebase.updateUserPassword(user.uid, password);
-        await Firebase.setCustomUserClaims(user.uid, user.customClaims.company, user.customClaims.role, false);
+        await AdminFirebase.updateUserPassword(user.uid, password);
+        await AdminFirebase.setCustomUserClaims(user.uid, user.customClaims.company, user.customClaims.role, false);
         return res.status(200).json({ success: true });
     } catch (error) {
         throw new Error("Something went wrong.");

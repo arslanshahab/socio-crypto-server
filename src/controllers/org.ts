@@ -1,4 +1,3 @@
-import { Firebase } from "../clients/firebase";
 import { Admin } from "../models/Admin";
 import { Org } from "../models/Org";
 import { checkPermissions } from "../middleware/authentication";
@@ -8,6 +7,7 @@ import { FormattedError, INVALID_USER_COMPANY, ORG_NOT_FOUND } from "../util/err
 import { WalletCurrency } from "../models/WalletCurrency";
 import { Wallet } from "../models/Wallet";
 import { RAIINMAKER_ORG_NAME } from "../util/constants";
+import { AdminFirebase } from "../clients/adminFirebase";
 
 export const newOrg = async (
     parent: any,
@@ -19,8 +19,8 @@ export const newOrg = async (
         const { orgName, email, name } = args;
         const orgNameToLower = orgName.toLowerCase();
         const password = Math.random().toString(16).substr(2, 15);
-        const user = await Firebase.createNewUser(email, password);
-        await Firebase.setCustomUserClaims(user.uid, orgNameToLower, "admin", true);
+        const user = await AdminFirebase.createNewUser(email, password);
+        await AdminFirebase.setCustomUserClaims(user.uid, orgNameToLower, "admin", true);
         const org = Org.newOrg(orgNameToLower);
         await org.save();
         const admin = new Admin();
@@ -81,9 +81,9 @@ export const newUser = async (
     try {
         const org = await Org.findOne({ where: { name: company } });
         if (!org) throw new Error(ORG_NOT_FOUND);
-        const user = await Firebase.createNewUser(email, password);
+        const user = await AdminFirebase.createNewUser(email, password);
         const userRole = role === "admin" ? "admin" : "manager";
-        await Firebase.setCustomUserClaims(user.uid, company, userRole, true);
+        await AdminFirebase.setCustomUserClaims(user.uid, company, userRole, true);
         const admin = new Admin();
         admin.firebaseId = user.uid;
         admin.org = org;

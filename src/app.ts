@@ -9,7 +9,7 @@ import { Secrets } from "./util/secrets";
 import { authenticateAdmin, authenticateUser } from "./middleware/authentication";
 import { Dragonchain } from "./clients/dragonchain";
 import { Firebase } from "./clients/firebase";
-// import { AdminFirebase } from "./clients/adminFirebase";
+import { AdminFirebase } from "./clients/adminFirebase";
 // import * as FactorController from "./controllers/factor";
 // import * as Dragonfactor from "@myfii-dev/dragonfactor-auth";
 // import { paypalWebhook } from "./controllers/withdraw";
@@ -42,6 +42,7 @@ import * as Sentry from "@sentry/node";
 import * as Tracing from "@sentry/tracing";
 import { FormattedError } from "./util/errors";
 import { RestServer } from "./RestServer";
+// import admin from "firebase-admin";
 
 const { NODE_ENV = "development" } = process.env;
 
@@ -61,8 +62,8 @@ export class Application {
     public async initializeServer() {
         this.databaseConnection = await this.connectDatabase();
         await Secrets.initialize();
-        await Firebase.initialize();
-        // await AdminFirebase.initialize();
+        await Firebase.initializeApp();
+        await AdminFirebase.initialize();
         await Dragonchain.initialize();
         StripeAPI.initialize();
         this.app = express();
