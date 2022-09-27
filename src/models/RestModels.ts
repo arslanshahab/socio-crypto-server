@@ -764,6 +764,7 @@ class CampaignParticipantsResultModel {
     @Property() public readonly totalShares: number;
     @Property() public readonly participationScore: number;
     @Property() public readonly blacklist: boolean;
+    @Nullable(String) public readonly twitterUsername: string | null;
 }
 
 export class CampaignDetailsResultModel {
