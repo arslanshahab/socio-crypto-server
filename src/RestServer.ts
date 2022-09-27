@@ -8,7 +8,12 @@ import { UserAuthMiddleware } from "./middleware/UserAuthMiddleware";
 import "./services/PrismaService";
 import "./middleware/HttpExceptionFilter";
 import RedisClient from "cache-manager-redis-store";
-// import * as bodyParser from "body-parser";
+
+// Test only
+// needed for PlatformTest to identify platform ie. Express
+import "@tsed/platform-express";
+
+import * as bodyParser from "body-parser";
 // import * as compress from "compression";
 // import * as cookieParser from "cookie-parser";
 // import * as methodOverride from "method-override";
@@ -51,15 +56,17 @@ export class RestServer {
         this.server.timeout = 1000000;
         this.server.keepAliveTimeout = 90000;
 
+        this.app.use(bodyParser.json());
+        this.app.use(
+            bodyParser.urlencoded({
+                extended: true,
+            })
+        );
         this.app.use(UserAuthMiddleware);
         this.app.use("/v1/referral/:participantId", ParticipantClickTracking);
         // Add middlewares here only when all of your legacy routes are migrated to Ts.ED
         //   .use(cookieParser())
         //   .use(compress({}))
         //   .use(methodOverride())
-        //   .use(bodyParser.json())
-        //   .use(bodyParser.urlencoded({
-        //     extended: true
-        //   }));
     }
 }

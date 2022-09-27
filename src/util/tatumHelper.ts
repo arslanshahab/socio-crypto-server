@@ -6,7 +6,7 @@ import { Transfer } from "../models/Transfer";
 import { formatFloat } from "./index";
 import { getExchangeRateForCrypto } from "./exchangeRate";
 import { serverBaseUrl } from "../config";
-import { SymbolNetworkParams, WithdrawFeeData } from "../types.d";
+import { SymbolNetworkParams, WithdrawFeeData } from "types.d.ts";
 import {
     BSC,
     NETWORK_TO_NATIVE_TOKEN,

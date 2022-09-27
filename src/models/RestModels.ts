@@ -2,8 +2,8 @@ import Prisma, { CampaignMedia, CampaignTemplate, RafflePrize } from "@prisma/cl
 import { ArrayOf, CollectionOf, Enum, Nullable, Optional, Property, Required } from "@tsed/schema";
 import { getCryptoAssestImageUrl } from "../util";
 import { KycLevel, SharingRewardType, SupportedNetwork } from "../util/constants";
-import { KycStatus } from "../types";
-import { L1DragonchainTransactionAugmented } from "../types.d";
+import { KycStatus } from "types.d.ts";
+import { L1DragonchainTransactionAugmented } from "types.d.ts";
 
 export class CampaignMediaResultModel {
     @Property() public readonly id: string;

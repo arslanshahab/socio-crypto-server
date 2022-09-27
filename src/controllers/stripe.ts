@@ -4,7 +4,7 @@ import { asyncHandler, BN, USD_PER_COIIN } from "../util";
 import { Request, Response } from "express";
 import { Secrets } from "../util/secrets";
 import { Transfer } from "../models/Transfer";
-import { PaymentIntent } from "../types";
+import { PaymentIntent } from "types.d.ts";
 import { performCurrencyAction, updateOrgCampaignsStatusOnDeposit } from "./helpers";
 import { TransferStatus } from "../util/constants";
 

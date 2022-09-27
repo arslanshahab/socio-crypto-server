@@ -10,7 +10,7 @@ import {
     SupportedCountryType,
     KycUser,
     FactorGeneration,
-} from "src/types";
+} from "types.d.ts";
 import { VerificationApplication } from "../models/VerificationApplication";
 import { S3Client } from "../clients/s3";
 import { User } from "../models/User";

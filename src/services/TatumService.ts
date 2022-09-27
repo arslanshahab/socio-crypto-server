@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@tsed/di";
-import { CustodialAddressPayload, SymbolNetworkParams, WalletKeys, WithdrawFeeData, WithdrawPayload } from "../types";
+import { CustodialAddressPayload, SymbolNetworkParams, WalletKeys, WithdrawFeeData, WithdrawPayload } from "types.d.ts";
 import { RequestData } from "../util/fetchRequest";
 import { Secrets } from "../util/secrets";
 import { BadRequest, NotFound } from "@tsed/exceptions";

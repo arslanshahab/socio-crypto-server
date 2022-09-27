@@ -1,5 +1,5 @@
 import { Injectable } from "@tsed/di";
-import { SymbolNetworkParams } from "../types";
+import { SymbolNetworkParams } from "types.d.ts";
 import { readPrisma } from "../clients/prisma";
 
 @Injectable()

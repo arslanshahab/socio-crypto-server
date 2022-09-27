@@ -5,7 +5,7 @@ import { getRedis } from "./redis";
 import { extractVideoData, chunkVideo, sleep } from "../controllers/helpers";
 import { Participant } from "../models/Participant";
 import { SocialLink } from "../models/SocialLink";
-import { MediaType, TwitterLinkCredentials } from "../types";
+import { MediaType, TwitterLinkCredentials } from "types.d.ts";
 import { TWITTER_LINK_EXPIRED, FormattedError } from "../util/errors";
 import { isArray } from "lodash";
 import { decrypt } from "../util/crypto";
