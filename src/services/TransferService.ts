@@ -206,23 +206,27 @@ export class TransferService {
         return credit - debit;
     }
 
-    public async newPendingUsdDeposit(
-        walletId: string,
-        orgId: string,
-        amount: string,
-        stripeCardId?: string,
-        paypalAddress?: string
-    ) {
+    public async usdDeposit(data: {
+        walletId: string;
+        orgId: string;
+        amount: string;
+        type: TransferType;
+        status: TransferStatus;
+        stripeCardId?: string;
+        paypalAddress?: string;
+    }) {
+        const { amount, walletId, orgId, status, type, stripeCardId, paypalAddress } = data;
         return await prisma.transfer.create({
             data: {
                 walletId,
                 orgId,
                 amount,
-                status: TransferStatusEnum.PENDING,
-                currency: USD.toLowerCase(),
-                action: TransferActionEnum.DEPOSIT,
+                status,
+                currency: USD,
+                action: TransferActionEnum.COIIN_PURCHASE,
                 stripeCardId: stripeCardId && stripeCardId,
                 paypalAddress: paypalAddress && paypalAddress,
+                type: type,
             },
         });
     }
@@ -296,5 +300,13 @@ export class TransferService {
             await readPrisma.$queryRaw`SELECT COALESCE(SUM(CAST(amount as float)),0) as amount FROM transfer WHERE action = 'LOGIN_REWARD' OR 
         action = 'REGISTRATION_REWARD' OR action = 'PARTICIPATION_REWARD' OR action = 'SHARING_REWARD' OR action = 'CAMPAIGN_REWARD' OR action = 'NETWORK_REWARD'`;
         return result;
+    }
+
+    public async findTransferById(id: string) {
+        return readPrisma.transfer.findFirst({ where: { id } });
+    }
+
+    public async updateTransferStatus(id: string, status: string) {
+        return await prisma.transfer.update({ where: { id }, data: { status } });
     }
 }

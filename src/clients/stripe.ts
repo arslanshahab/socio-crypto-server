@@ -49,7 +49,11 @@ export class StripeAPI {
                     stage: NODE_ENV,
                 },
             });
-            return paymentIntent.client_secret;
+            return {
+                id: paymentIntent.id,
+                clientSecret: paymentIntent.client_secret,
+                amount: paymentIntent.amount,
+            };
         } catch (err) {
             console.log("Error code is: ", err.code);
             if (err.raw.payment_intent && err.raw.payment_intent.id) {
@@ -75,5 +79,9 @@ export class StripeAPI {
 
     public static async removePaymentMethod(paymentMethodId: string) {
         return StripeAPI.client.paymentMethods.detach(paymentMethodId);
+    }
+
+    public static async confirmPayment(paymentIntentId: string) {
+        return StripeAPI.client.paymentIntents.retrieve(paymentIntentId);
     }
 }
