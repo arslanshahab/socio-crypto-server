@@ -167,23 +167,23 @@ export class StripeController {
                 await this.transferService.updateTransferStatus(transfer.id, TransferStatus.SUCCEEDED);
                 const amountInCoiins = amountInDollar / parseFloat(process.env.COIIN_VALUE || "0.2");
                 const token = await this.tokenService.findTokenBySymbol({ symbol: COIIN, network: BSC });
-                const userCurrency = await this.currencyService.findCurrencyByTokenAndWallet({
+                const orgCurrency = await this.currencyService.findCurrencyByTokenAndWallet({
                     tokenId: token?.id!,
                     walletId: transfer.walletId!,
                 });
-                const org = await this.organizationService.findOrganizationByName(RAIINMAKER_ORG_NAME);
-                if (!org) throw new NotFound(ORG_NOT_FOUND);
-                const orgWallet = await this.walletService.findWalletByOrgId(org?.id);
-                if (!orgWallet) throw new NotFound(WALLET_NOT_FOUND + " for organization");
-                const orgCurrency = await this.currencyService.findCurrencyByTokenAndWallet({
+                const raiinmaker = await this.organizationService.findOrganizationByName(RAIINMAKER_ORG_NAME);
+                if (!raiinmaker) throw new NotFound(ORG_NOT_FOUND);
+                const raiinmakerWallet = await this.walletService.findWalletByOrgId(raiinmaker?.id);
+                if (!raiinmakerWallet) throw new NotFound(WALLET_NOT_FOUND + " for organization");
+                const raiinmakerCurrency = await this.currencyService.findCurrencyByTokenAndWallet({
                     tokenId: token?.id!,
-                    walletId: orgWallet.id,
+                    walletId: raiinmakerWallet.id,
                 });
-                const { availableBalance } = await this.tatumService.getAccountBalance(orgCurrency?.tatumId!);
+                const { availableBalance } = await this.tatumService.getAccountBalance(raiinmakerCurrency?.tatumId!);
                 if (parseFloat(availableBalance) > amountInCoiins) {
                     await this.tatumService.transferFunds({
-                        senderAccountId: orgCurrency?.tatumId!,
-                        recipientAccountId: userCurrency?.tatumId!,
+                        senderAccountId: raiinmakerCurrency?.tatumId!,
+                        recipientAccountId: orgCurrency?.tatumId!,
                         amount: amountInCoiins.toString(),
                         recipientNote: "Transfer credit card coiin",
                     });
@@ -201,7 +201,7 @@ export class StripeController {
                         status: TransferStatus.SUCCEEDED,
                         symbol: COIIN,
                         type: TransferType.DEBIT,
-                        walletId: orgWallet.id,
+                        walletId: raiinmakerWallet.id,
                     });
                 } else {
                     await this.transferService.newReward({
@@ -218,7 +218,7 @@ export class StripeController {
                         status: TransferStatus.PENDING,
                         symbol: COIIN,
                         type: TransferType.DEBIT,
-                        walletId: orgWallet.id,
+                        walletId: raiinmakerWallet.id,
                     });
                 }
                 break;
