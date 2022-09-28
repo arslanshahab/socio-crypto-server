@@ -471,9 +471,9 @@ export class UserService {
         return Array.apply(null, Array(stringLength)).map(pickRandom).join("");
     }
 
-    public async getLastHourUsers() {
+    public async getLastHourEmails() {
         let d = new Date();
         const lastHour = d.setHours(d.getHours() - 1);
-        return readPrisma.user.findMany({ where: { createdAt: { gte: new Date(lastHour) } } });
+        return readPrisma.user.findMany({ where: { createdAt: { gte: new Date(lastHour) } }, select: { email: true } });
     }
 }
