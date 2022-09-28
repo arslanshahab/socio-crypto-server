@@ -46,6 +46,9 @@ export class SocialLink extends BaseEntity {
     @Column({ nullable: true })
     public followerCount: number;
 
+    @Column({ nullable: true })
+    public username: string;
+
     @ManyToOne((_type) => User, (user) => user.socialLinks)
     public user: User;
 

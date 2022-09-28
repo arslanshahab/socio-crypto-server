@@ -39,7 +39,7 @@ import { getSocialClient } from "../helpers";
 import { PointValueTypes, Tiers } from "types.d.ts";
 import { SocialLinkService } from "../../services/SocialLinkService";
 import { MarketDataService } from "../../services/MarketDataService";
-import { ParticipantAction, SocialLinkType, Sort } from "../../util/constants";
+import { ParticipantAction, SocialClientType, SocialLinkType, Sort } from "../../util/constants";
 import { SocialPostService } from "../../services/SocialPostService";
 import { limit } from "../../util/rateLimiter";
 import { QualityScoreService } from "../../services/QualityScoreService";
@@ -353,7 +353,10 @@ export class ParticipantController {
             const metrics = await this.dailyParticipantMetricService.getAccumulatedParticipantMetrics(participant.id);
             const postCount = await this.socialPostService.getSocialPostCount(participant.id, campaignId);
             const pointValues = (participant.algorithm as Prisma.JsonObject).pointValues as unknown as PointValueTypes;
-
+            const socialLink = await this.socialLinkService.findSocialLinkByUserAndType(
+                participant.userId,
+                SocialClientType.TWITTER
+            );
             participants.push({
                 id: participant.id,
                 userId: participant.userId,
@@ -367,6 +370,7 @@ export class ParticipantController {
                 totalShares: metrics.shareCount || 0,
                 participationScore: participant.participationScore || 0,
                 blacklist: participant.blacklist,
+                twitterUsername: socialLink.username,
             });
         }
         const count = await this.participantService.findParticipantCountByCampaignId(campaignId, filter);
