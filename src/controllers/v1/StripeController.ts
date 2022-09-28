@@ -188,36 +188,36 @@ export class StripeController {
                         recipientNote: "Transfer credit card coiin",
                     });
                     await this.transferService.newReward({
-                        action: TransferAction.TRANSFER,
-                        amount: amountInCoiins.toString(),
-                        status: TransferStatus.SUCCEEDED,
-                        symbol: COIIN,
-                        type: TransferType.DEBIT,
-                        walletId: transfer.walletId!,
-                    });
-                    await this.transferService.newReward({
-                        action: TransferAction.TRANSFER,
+                        action: TransferAction.COIIN_PURCHASE,
                         amount: amountInCoiins.toString(),
                         status: TransferStatus.SUCCEEDED,
                         symbol: COIIN,
                         type: TransferType.CREDIT,
+                        walletId: transfer.walletId!,
+                    });
+                    await this.transferService.newReward({
+                        action: TransferAction.COIIN_PURCHASE,
+                        amount: amountInCoiins.toString(),
+                        status: TransferStatus.SUCCEEDED,
+                        symbol: COIIN,
+                        type: TransferType.DEBIT,
                         walletId: orgWallet.id,
                     });
                 } else {
                     await this.transferService.newReward({
-                        action: TransferAction.TRANSFER,
-                        amount: amountInCoiins.toString(),
-                        status: TransferStatus.PENDING,
-                        symbol: COIIN,
-                        type: TransferType.DEBIT,
-                        walletId: transfer.walletId!,
-                    });
-                    await this.transferService.newReward({
-                        action: TransferAction.TRANSFER,
+                        action: TransferAction.COIIN_PURCHASE,
                         amount: amountInCoiins.toString(),
                         status: TransferStatus.PENDING,
                         symbol: COIIN,
                         type: TransferType.CREDIT,
+                        walletId: transfer.walletId!,
+                    });
+                    await this.transferService.newReward({
+                        action: TransferAction.COIIN_PURCHASE,
+                        amount: amountInCoiins.toString(),
+                        status: TransferStatus.PENDING,
+                        symbol: COIIN,
+                        type: TransferType.DEBIT,
                         walletId: orgWallet.id,
                     });
                 }

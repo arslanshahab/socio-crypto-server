@@ -363,7 +363,8 @@ export type TransferAction =
     | "SHARING_REWARD"
     | "CAMPAIGN_REWARD"
     | "NETWORK_REWARD"
-    | "XOXODAY_REDEMPTION";
+    | "XOXODAY_REDEMPTION"
+    | "COIIN_PURCHASE";
 
 export type CampaignAuditStatus = "DEFAULT" | "AUDITED" | "PENDING";
 export type KycStatus = "APPROVED" | "PENDING" | "REJECTED" | "";
