@@ -22,7 +22,6 @@ import {
     TransferAction,
     TransferStatus,
     TransferType,
-    USD,
 } from "../../util/constants";
 import { AdminService } from "../../services/AdminService";
 import { Secrets } from "../../util/secrets";
@@ -88,12 +87,13 @@ export class StripeController {
         if (!org) throw new NotFound(ORG_NOT_FOUND);
         const { amount, paymentMethodId } = body;
         const amountInDollar = await getTokenValueInUSD(COIIN, amount);
-        const transfer = await this.transferService.usdDeposit(
-            org.wallet?.id!,
-            org.id,
-            amountInDollar.toString(),
-            org.stripeId || ""
-        );
+        const transfer = await this.transferService.usdDeposit({
+            walletId: org.wallet?.id!,
+            orgId: org.id,
+            type: TransferType.DEBIT,
+            amount: amountInDollar.toString(),
+            stripeCardId: org.stripeId || "",
+        });
         const result = await StripeAPI.chargePaymentMethod(
             (amountInDollar * 100).toString(),
             org.stripeId!,
@@ -108,13 +108,12 @@ export class StripeController {
         if (!raiinmakerOrg.wallet) throw new NotFound("RAIINMAKER ORG " + WALLET_NOT_FOUND);
         if (result?.id) {
             confirmPayment = await StripeAPI.confirmPayment(result.id);
-            await this.transferService.newReward({
-                action: TransferAction.TRANSFER,
-                amount: amountInDollar.toString(),
-                status: TransferStatus.SUCCEEDED,
-                symbol: USD,
-                type: TransferType.DEBIT,
+            await this.transferService.usdDeposit({
                 walletId: raiinmakerOrg.wallet.id,
+                orgId: raiinmakerOrg.id,
+                type: TransferType.CREDIT,
+                amount: amountInDollar.toString(),
+                stripeCardId: raiinmakerOrg.stripeId || "",
             });
         }
         if (confirmPayment?.status === "succeeded") return new SuccessResult(result, PurchaseCoiinResultModel);

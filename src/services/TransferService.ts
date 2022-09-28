@@ -206,13 +206,15 @@ export class TransferService {
         return credit - debit;
     }
 
-    public async usdDeposit(
-        walletId: string,
-        orgId: string,
-        amount: string,
-        stripeCardId?: string,
-        paypalAddress?: string
-    ) {
+    public async usdDeposit(data: {
+        walletId: string;
+        orgId: string;
+        amount: string;
+        type: TransferType;
+        stripeCardId?: string;
+        paypalAddress?: string;
+    }) {
+        const { amount, walletId, orgId, type, stripeCardId, paypalAddress } = data;
         return await prisma.transfer.create({
             data: {
                 walletId,
@@ -220,9 +222,10 @@ export class TransferService {
                 amount,
                 status: TransferStatusEnum.PENDING,
                 currency: USD,
-                action: TransferActionEnum.DEPOSIT,
+                action: TransferActionEnum.COIIN_PURCHASE,
                 stripeCardId: stripeCardId && stripeCardId,
                 paypalAddress: paypalAddress && paypalAddress,
+                type: type,
             },
         });
     }

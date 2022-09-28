@@ -208,10 +208,4 @@ export class TatumController {
         await this.tatumService.transferFunds(body);
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
-
-    @Get("/account-balance")
-    @(Returns(200, SuccessResult).Of(Object))
-    public async getAccountBalance(@BodyParams() body: { tatumId: string }) {
-        return new SuccessResult(await this.tatumService.getAccountBalance(body.tatumId), Object);
-    }
 }
