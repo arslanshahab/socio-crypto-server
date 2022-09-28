@@ -476,4 +476,10 @@ export class UserService {
         }
         return Array.apply(null, Array(stringLength)).map(pickRandom).join("");
     }
+
+    public async getLastHourEmails() {
+        let d = new Date();
+        const lastHour = d.setHours(d.getHours() - 1);
+        return prisma.user.findMany({ where: { createdAt: { gte: new Date(lastHour) } }, select: { email: true } });
+    }
 }
