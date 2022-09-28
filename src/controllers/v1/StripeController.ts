@@ -180,6 +180,7 @@ export class StripeController {
                     walletId: raiinmakerWallet.id,
                 });
                 const { availableBalance } = await this.tatumService.getAccountBalance(raiinmakerCurrency?.tatumId!);
+                let coiinTransferStatus = TransferStatus.PENDING;
                 if (parseFloat(availableBalance) > amountInCoiins) {
                     await this.tatumService.transferFunds({
                         senderAccountId: raiinmakerCurrency?.tatumId!,
@@ -187,40 +188,26 @@ export class StripeController {
                         amount: amountInCoiins.toString(),
                         recipientNote: "Transfer credit card coiin",
                     });
-                    await this.transferService.newReward({
-                        action: TransferAction.COIIN_PURCHASE,
-                        amount: amountInCoiins.toString(),
-                        status: TransferStatus.SUCCEEDED,
-                        symbol: COIIN,
-                        type: TransferType.CREDIT,
-                        walletId: transfer.walletId!,
-                    });
-                    await this.transferService.newReward({
-                        action: TransferAction.COIIN_PURCHASE,
-                        amount: amountInCoiins.toString(),
-                        status: TransferStatus.SUCCEEDED,
-                        symbol: COIIN,
-                        type: TransferType.DEBIT,
-                        walletId: raiinmakerWallet.id,
-                    });
-                } else {
-                    await this.transferService.newReward({
-                        action: TransferAction.COIIN_PURCHASE,
-                        amount: amountInCoiins.toString(),
-                        status: TransferStatus.PENDING,
-                        symbol: COIIN,
-                        type: TransferType.CREDIT,
-                        walletId: transfer.walletId!,
-                    });
-                    await this.transferService.newReward({
-                        action: TransferAction.COIIN_PURCHASE,
-                        amount: amountInCoiins.toString(),
-                        status: TransferStatus.PENDING,
-                        symbol: COIIN,
-                        type: TransferType.DEBIT,
-                        walletId: raiinmakerWallet.id,
-                    });
+                    coiinTransferStatus = TransferStatus.SUCCEEDED;
                 }
+
+                // If the coiinTransferStatus is pending, it will be handle the fix-transfers cron
+                await this.transferService.newReward({
+                    action: TransferAction.COIIN_PURCHASE,
+                    amount: amountInCoiins.toString(),
+                    status: coiinTransferStatus,
+                    symbol: COIIN,
+                    type: TransferType.CREDIT,
+                    walletId: transfer.walletId!,
+                });
+                await this.transferService.newReward({
+                    action: TransferAction.COIIN_PURCHASE,
+                    amount: amountInCoiins.toString(),
+                    status: coiinTransferStatus,
+                    symbol: COIIN,
+                    type: TransferType.DEBIT,
+                    walletId: raiinmakerWallet.id,
+                });
                 break;
             case "payment_intent.payment_failed":
                 transfer = await this.transferService.findTransferById(paymentIntent.metadata.transferId);
