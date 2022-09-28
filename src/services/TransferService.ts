@@ -211,16 +211,17 @@ export class TransferService {
         orgId: string;
         amount: string;
         type: TransferType;
+        status: TransferStatus;
         stripeCardId?: string;
         paypalAddress?: string;
     }) {
-        const { amount, walletId, orgId, type, stripeCardId, paypalAddress } = data;
+        const { amount, walletId, orgId, status, type, stripeCardId, paypalAddress } = data;
         return await prisma.transfer.create({
             data: {
                 walletId,
                 orgId,
                 amount,
-                status: TransferStatusEnum.PENDING,
+                status,
                 currency: USD,
                 action: TransferActionEnum.COIIN_PURCHASE,
                 stripeCardId: stripeCardId && stripeCardId,

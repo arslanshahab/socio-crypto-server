@@ -91,6 +91,7 @@ export class StripeController {
             walletId: org.wallet?.id!,
             orgId: org.id,
             type: TransferType.DEBIT,
+            status: TransferStatus.PENDING,
             amount: amountInDollar.toString(),
             stripeCardId: org.stripeId || "",
         });
@@ -180,6 +181,7 @@ export class StripeController {
                     walletId: raiinmakerWallet.id,
                     orgId: raiinmaker.id,
                     type: TransferType.CREDIT,
+                    status: TransferStatus.SUCCEEDED,
                     amount: amountInDollar.toString(),
                     stripeCardId: raiinmaker.stripeId || "",
                 });
