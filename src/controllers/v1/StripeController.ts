@@ -100,12 +100,6 @@ export class StripeController {
             paymentMethodId,
             transfer.id
         );
-
-        const raiinmakerOrg = await this.organizationService.findOrganizationByName(RAIINMAKER_ORG_NAME, {
-            wallet: true,
-        });
-        if (!raiinmakerOrg) throw new NotFound("RAIINMAKER " + ORG_NOT_FOUND);
-        if (!raiinmakerOrg.wallet) throw new NotFound("RAIINMAKER ORG " + WALLET_NOT_FOUND);
         const confirmPayment = await StripeAPI.confirmPayment(result?.id || "");
         if (confirmPayment?.status === "succeeded") return new SuccessResult(result, PurchaseCoiinResultModel);
         else return new SuccessResult({ message: "Stripe payment failed!" }, UpdatedResultModel);
