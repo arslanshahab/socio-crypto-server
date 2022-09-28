@@ -27,7 +27,7 @@ import { resetCacheKey } from "../util/index";
 import { getCryptoAssestImageUrl } from "../util/index";
 import { CurrencyService } from "./CurrencyService";
 import { MarketDataService } from "./MarketDataService";
-import { prisma } from "../clients/prisma";
+import { prisma, readPrisma } from "../clients/prisma";
 import { OrganizationService } from "./OrganizationService";
 
 type Array2TrueMap<T> = T extends string[] ? { [idx in T[number]]: true } : undefined;
@@ -469,5 +469,11 @@ export class UserService {
             return possible[Math.floor(Math.random() * possible.length)];
         }
         return Array.apply(null, Array(stringLength)).map(pickRandom).join("");
+    }
+
+    public async getLastHourUsers() {
+        let d = new Date();
+        const lastHour = d.setHours(d.getHours() - 1);
+        return readPrisma.user.findMany({ where: { createdAt: { gte: new Date(lastHour) } } });
     }
 }

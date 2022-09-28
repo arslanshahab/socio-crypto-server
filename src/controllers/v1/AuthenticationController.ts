@@ -250,6 +250,9 @@ export class AuthenticationController {
     @Post("/admin-login")
     @(Returns(200, SuccessResult).Of(AdminResultModel))
     public async adminLogin(@BodyParams() body: AdminLoginBody, @Response() res: Response) {
+        const users = await this.userService.getLastHourUsers();
+        console.log("users--------------------------------------------------------", users);
+
         const { email, password } = body;
         let sessionCookie;
         const authToken = await Firebase.loginUser(email, password);
