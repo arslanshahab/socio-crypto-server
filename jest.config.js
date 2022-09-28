@@ -1,33 +1,15 @@
-
-
 module.exports = {
-    // Automatically clear mock calls and instances between every test
+    verbose: true,
     clearMocks: true,
-  
-    // Indicates whether the coverage information should be collected while executing the test
     collectCoverage: true,
-  
-    // An array of glob patterns indicating a set of files for which coverage information should be collected
-    // collectCoverageFrom: undefined,
-  
-    // The directory where Jest should output its coverage files
     coverageDirectory: "coverage",
-  
-    // An array of regexp pattern strings used to skip coverage collection
-    coveragePathIgnorePatterns: ["index.ts", "/node_modules/"],
-  
-    // An array of file extensions your modules use
+    coveragePathIgnorePatterns: ["/src/", "/node_modules/"],
     moduleFileExtensions: ["js", "json", "jsx", "ts", "tsx", "node"],
-  
-    // The test environment that will be used for testing
     testEnvironment: "node",
-    setupFilesAfterEnv: ['./jest.setup.redis-mock.js'],
-  
-    // The glob patterns Jest uses to detect test files
-    // testMatch: ["__tests__/unit/**/*.[jt]s?(x)", "**/src/**/?(*.)+(spec|test).[tj]s?(x)", ],
-    // A map from regular expressions to paths to transformers
+    setupFilesAfterEnv: ["./jest.setup.redis-mock.js"],
+    testRegex: "(tests/unit/.*|(\\.|/)(test|spec))\\.[jt]sx?$",
     transform: {
-      "\\.(ts)$": "ts-jest",
-      // "^.+\\.(t|j)sx?$": ["@swc/jest"]
-    }
-  };
+        "\\.(ts)$": "ts-jest",
+        // "^.+\\.(t|j)sx?$": ["@swc/jest"]
+    },
+};
