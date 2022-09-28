@@ -28,7 +28,7 @@
         "prisma:pull": "prisma db pull && yarn prisma:generate",
         "prisma:generate": "prisma generate",
         "migration:run": "yarn typeorm:cli migration:run",
-        "migration:run:clean": "yarn clean && yarn build && yarn typeorm:cli migration:run",
+        "migration:run:clean": "yarn clean && yarn build && yarn typeorm:cli migration:run && yarn prisma:pull",
         "migration:revert": "yarn typeorm:cli migration:revert",
         "migration:generate": "yarn clean && yarn build && yarn typeorm:cli migration:generate",
         "metrics:generate": "NODE_ENV=script ts-node scripts/metrics/index.ts",
