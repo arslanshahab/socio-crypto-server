@@ -100,22 +100,13 @@ export class StripeController {
             paymentMethodId,
             transfer.id
         );
-        let confirmPayment;
+
         const raiinmakerOrg = await this.organizationService.findOrganizationByName(RAIINMAKER_ORG_NAME, {
             wallet: true,
         });
         if (!raiinmakerOrg) throw new NotFound("RAIINMAKER " + ORG_NOT_FOUND);
         if (!raiinmakerOrg.wallet) throw new NotFound("RAIINMAKER ORG " + WALLET_NOT_FOUND);
-        if (result?.id) {
-            confirmPayment = await StripeAPI.confirmPayment(result.id);
-            await this.transferService.usdDeposit({
-                walletId: raiinmakerOrg.wallet.id,
-                orgId: raiinmakerOrg.id,
-                type: TransferType.CREDIT,
-                amount: amountInDollar.toString(),
-                stripeCardId: raiinmakerOrg.stripeId || "",
-            });
-        }
+        const confirmPayment = await StripeAPI.confirmPayment(result?.id || "");
         if (confirmPayment?.status === "succeeded") return new SuccessResult(result, PurchaseCoiinResultModel);
         else return new SuccessResult({ message: "Stripe payment failed!" }, UpdatedResultModel);
     }
@@ -190,7 +181,14 @@ export class StripeController {
                     });
                     coiinTransferStatus = TransferStatus.SUCCEEDED;
                 }
-
+                // Transfer usd in raiinmaker account
+                await this.transferService.usdDeposit({
+                    walletId: raiinmakerWallet.id,
+                    orgId: raiinmaker.id,
+                    type: TransferType.CREDIT,
+                    amount: amountInDollar.toString(),
+                    stripeCardId: raiinmaker.stripeId || "",
+                });
                 // If the coiinTransferStatus is pending, it will be handle the fix-transfers cron
                 await this.transferService.newReward({
                     action: TransferAction.COIIN_PURCHASE,
