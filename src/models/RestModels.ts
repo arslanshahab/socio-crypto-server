@@ -422,6 +422,7 @@ export class UserWalletResultModel {
 
 export class UserRecordResultModel extends UserResultModel {
     @CollectionOf(SocialPostResultModel) public readonly social_post: SocialPostResultModel[];
+    @Property() public readonly social_link: Prisma.SocialLink[];
 }
 
 export class BalanceResultModel {
@@ -763,6 +764,7 @@ class CampaignParticipantsResultModel {
     @Property() public readonly totalShares: number;
     @Property() public readonly participationScore: number;
     @Property() public readonly blacklist: boolean;
+    @Nullable(String) public readonly twitterUsername: string | null;
 }
 
 export class CampaignDetailsResultModel {
@@ -933,4 +935,10 @@ export class NftResultModel {
     @Property() public readonly type?: string;
     @Property() public readonly owner?: string;
     @Property() public readonly note?: string;
+}
+
+export class PurchaseCoiinResultModel {
+    id: string;
+    clientSecret: string;
+    amount: number;
 }
