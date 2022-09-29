@@ -3,7 +3,7 @@ import { getManager } from "typeorm";
 import { RedisStore, getGraphQLRateLimiter } from "graphql-rate-limit";
 import { Campaign } from "../models/Campaign";
 import { User } from "../models/User";
-// import { Dragonchain } from "../clients/dragonchain";
+import { Dragonchain } from "../clients/dragonchain";
 import { Participant } from "../models/Participant";
 import { SocialPost } from "../models/SocialPost";
 import { getTweetById } from "../controllers/social";
@@ -19,9 +19,9 @@ import {
 import { HourlyCampaignMetric } from "../models/HourlyCampaignMetric";
 import { QualityScore } from "../models/QualityScore";
 import { limit } from "../util/rateLimiter";
-import { JWTPayload } from "src/types";
+import { JWTPayload } from "types.d.ts";
 import { getTokenValueInUSD } from "../util/exchangeRate";
-import { GetCampaignsParticipantsVariables } from "../types.d";
+import { GetCampaignsParticipantsVariables } from "types.d.ts";
 import {
     FormattedError,
     CAMPAIGN_CLOSED,
@@ -30,6 +30,8 @@ import {
     PARTICIPANT_NOT_FOUND,
     USER_NOT_FOUND,
 } from "../util/errors";
+import { DragonChainService } from "../services/DragonChainService";
+import { ParticipantAction } from "../util/constants";
 
 const { RATE_LIMIT_MAX = "3", RATE_LIMIT_WINDOW = "1m" } = process.env;
 
@@ -86,8 +88,8 @@ export const trackAction = async (
     const pointValue = campaign.algorithm.pointValues[args.action].times(multiplier);
     campaign.totalParticipationScore = campaign.totalParticipationScore.plus(pointValue);
     participant.participationScore = participant.participationScore.plus(pointValue);
-    const hourlyMetric = await HourlyCampaignMetric.upsert(campaign, campaign.org, args.action, undefined, false);
-    const dailyMetric = await DailyParticipantMetric.upsert(
+    const hourlyMetric = await HourlyCampaignMetric.upsertData(campaign, campaign.org, args.action, undefined, false);
+    const dailyMetric = await DailyParticipantMetric.upsertData(
         participant.user,
         campaign,
         participant,
@@ -97,7 +99,7 @@ export const trackAction = async (
         false
     );
     await getManager().save([campaign, participant, hourlyMetric, dailyMetric, qualityScore]);
-    // await Dragonchain.ledgerCampaignAction(args.action, participant.id, participant.campaign.id);
+    await Dragonchain.ledgerCampaignAction(args.action, participant.id, participant.campaign.id);
     return participant.asV1();
 };
 
@@ -246,7 +248,7 @@ export const getAccumulatedUserMetrics = async (parent: any, args: any, context:
 export const trackClickByLink = asyncHandler(async (req: Request, res: Response) => {
     try {
         const { participantId } = req.params;
-        const action = "clicks";
+        const action = ParticipantAction.CLICKS;
         const ipAddress = req.connection.remoteAddress || req.socket.remoteAddress;
         const shouldRateLimit = await limit(`${ipAddress}-${participantId}-click`, Number(RATE_LIMIT_MAX), "minute");
         if (!participantId)
@@ -264,6 +266,7 @@ export const trackClickByLink = asyncHandler(async (req: Request, res: Response)
         const campaign = await Campaign.findOne({ where: { id: participant.campaign.id }, relations: ["org"] });
         if (!campaign) return res.status(404).json({ code: "NOT_FOUND", message: "campaign not found" });
         if (!shouldRateLimit) {
+            const dragonchainService = new DragonChainService();
             let qualityScore = await QualityScore.findOne({ where: { participantId: participant.id } });
             if (!qualityScore) qualityScore = QualityScore.newQualityScore(participant.id);
             const multiplier = calculateQualityTierMultiplier(qualityScore.clicks);
@@ -274,9 +277,13 @@ export const trackClickByLink = asyncHandler(async (req: Request, res: Response)
             await campaign.save();
             await participant.save();
             await qualityScore.save();
-            await HourlyCampaignMetric.upsert(campaign, campaign.org, action);
-            await DailyParticipantMetric.upsert(participant.user, campaign, participant, action, pointValue);
-            // await Dragonchain.ledgerCampaignAction(action, participant.id, participant.campaign.id);
+            await HourlyCampaignMetric.upsertData(campaign, campaign.org, action);
+            await DailyParticipantMetric.upsertData(participant.user, campaign, participant, action, pointValue);
+            await dragonchainService.ledgerCampaignAction({
+                action,
+                participantId: participant.id,
+                campaignId: participant.campaign.id,
+            });
         }
         return res.redirect(campaign.target.includes("https") ? campaign.target : `https://${campaign.target}`);
     } catch (error) {

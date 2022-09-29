@@ -8,10 +8,10 @@ import {
     BeforeInsert,
 } from "typeorm";
 import { decrypt, encrypt } from "../util/crypto";
-import { generateRandomNonce } from "../util";
-import { EMAIL_NOT_VERIFIED, INCORRECT_CODE_OR_EMAIL, VERIFICATION_TOKEN_EXPIRED } from "../util/errors";
+import { generate6DigitCode } from "../util";
+import { EMAIL_NOT_VERIFIED, INCORRECT_CODE_OR_EMAIL, INVALID_VERIFICATION_TOKEN } from "../util/errors";
 import { addMinutes, isPast } from "date-fns";
-import { VerificationType } from "src/types";
+import { VerificationType } from "types.d.ts";
 @Entity()
 export class Verification extends BaseEntity {
     @PrimaryGeneratedColumn("uuid")
@@ -76,7 +76,7 @@ export class Verification extends BaseEntity {
             verification = new Verification();
             verification.email = data.email;
             verification.type = data.type;
-            verification.code = encrypt(generateRandomNonce());
+            verification.code = encrypt(generate6DigitCode());
             return await verification.save();
         }
         return verification;
@@ -97,7 +97,7 @@ export class Verification extends BaseEntity {
         });
         if (!verification) throw new Error(EMAIL_NOT_VERIFIED);
         if (data.email && data.email.toLowerCase() !== verification.email) throw new Error(EMAIL_NOT_VERIFIED);
-        if (verification.isCodeExpired()) throw new Error(VERIFICATION_TOKEN_EXPIRED);
+        if (verification.isCodeExpired()) throw new Error(INVALID_VERIFICATION_TOKEN);
         await verification.expireToken();
         return verification;
     };

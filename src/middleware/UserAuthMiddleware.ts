@@ -1,10 +1,8 @@
 import { Context, Middleware, Req } from "@tsed/common";
-import { Forbidden, InternalServerError } from "@tsed/exceptions";
-import { verifySessionToken } from "../util";
+import { Forbidden } from "@tsed/exceptions";
 import { getActiveAdmin } from "../controllers/helpers";
-import { UserService } from "../services/UserService";
 import { Inject } from "@tsed/di";
-import { ACCOUNT_RESTRICTED } from "../util/errors";
+import { SessionService } from "../services/SessionService";
 
 /**
  * Authenticates users based on the Authorization header
@@ -12,32 +10,31 @@ import { ACCOUNT_RESTRICTED } from "../util/errors";
 @Middleware()
 export class UserAuthMiddleware {
     @Inject()
-    private userService: UserService;
+    private sessionService: SessionService;
 
     public async use(@Req() req: Req, @Context() ctx: Context) {
-        // ADMIN authorization
-        // check if the cookie has session value
+        const isPublicRoute =
+            ctx.request.url.startsWith("/v1/docs") ||
+            ctx.request.url.startsWith("/v1/auth") ||
+            ctx.request.url.startsWith("/v1/referral") ||
+            ctx.request.url.startsWith("/v1/participant/track-action") ||
+            ctx.request.url.startsWith("/v1/organization/register");
+
         const adminToken = req.headers.cookie?.split("session=")[1];
-        if (adminToken) {
+
+        if (adminToken && !isPublicRoute) {
             const admin = await getActiveAdmin(adminToken);
             ctx.set("user", admin);
             return;
         }
 
-        if (ctx.has("user") || ctx.request.url.startsWith("/v1/docs/") || ctx.request.url.startsWith("/v1/auth/")) {
+        if (ctx.has("user") || isPublicRoute) {
             return;
         }
 
-        // USER authorization
         const token = ctx.request.req.headers.authorization;
         if (!token) throw new Forbidden("Access token is missing.");
-        try {
-            const user = verifySessionToken(token);
-            const userData = await this.userService.findUserByContext(user);
-            if (!userData?.active) throw new Forbidden(ACCOUNT_RESTRICTED);
-            ctx.set("user", user);
-        } catch (error) {
-            throw new InternalServerError(error);
-        }
+        const data = await this.sessionService.verifySession(token);
+        ctx.set("user", data);
     }
 }

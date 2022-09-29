@@ -39,8 +39,8 @@ export class SesClient {
                     Data: subject,
                 },
             },
-            ReturnPath: "support@raiinmaker.com",
-            Source: "support@raiinmaker.com",
+            ReturnPath: "no-response@raiinmaker.com",
+            Source: "no-response@raiinmaker.com",
         };
     }
 
@@ -73,9 +73,9 @@ export class SesClient {
         }
     }
 
-    public static async sendNewOrgConfirmationEmail(orgName: string, email: string, tempPassword: string) {
+    public static async sendNewOrgCreationEmail(orgName: string, email: string) {
         const title = `Your brand ${orgName} has been created on Raiinmaker`;
-        const text = `Please login with email: ${email} and temporary password ${tempPassword}. Please change password upon initial login\n`;
+        const text = `Please login with email and password you added\n`;
         const template = SesClient.getTemplate(title, text, "New Brand Account on Raiinmaker!", email);
         try {
             const data = await SesClient.client.sendEmail(template).promise();
@@ -160,6 +160,28 @@ export class SesClient {
         try {
             await SesClient.client.sendEmail(template).promise();
             return true;
+        } catch (error) {
+            throw new Error(error.message);
+        }
+    }
+
+    public static async adminKycAlert(emailAddress: string, status: string) {
+        const title = `KYC Status`;
+        const text = `Your KYC status has been  ${status}`;
+        const template = SesClient.getTemplate(title, text, title, emailAddress);
+        try {
+            await SesClient.client.sendEmail(template).promise();
+        } catch (error) {
+            throw new Error(error.message);
+        }
+    }
+
+    public static async CampaignProcessEmailToAdmin(data: { title: string; text: string; emailAddress: string }) {
+        const title = data.title;
+        const text = data.text;
+        const template = SesClient.getTemplate(title, text, title, data.emailAddress);
+        try {
+            await SesClient.client.sendEmail(template).promise();
         } catch (error) {
             throw new Error(error.message);
         }

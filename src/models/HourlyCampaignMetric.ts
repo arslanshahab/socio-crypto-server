@@ -18,7 +18,7 @@ import {
     HourlyMetricsGroupedByDateQueryResult,
     DateTrunc,
     PlatformMetricsGroupedByDateParsed,
-} from "../types";
+} from "types.d.ts";
 import { Validator } from "../schemas";
 import { DateUtils } from "typeorm/util/DateUtils";
 
@@ -175,7 +175,7 @@ export class HourlyCampaignMetric extends BaseEntity {
         return response;
     }
 
-    public static async upsert(
+    public static async upsertData(
         campaign: Campaign,
         org: Org,
         action:

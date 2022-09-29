@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@tsed/di";
-import { SymbolNetworkParams } from "../types";
+import { SymbolNetworkParams } from "types.d.ts";
 import { RAIINMAKER_ORG_NAME } from "../util/constants";
 import { NotFound } from "@tsed/exceptions";
 import { TatumService } from "./TatumService";
@@ -14,30 +14,23 @@ export class OrganizationService {
     @Inject()
     private currencyService: CurrencyService;
 
-    public async findOrganizationByCompanyName<T extends Prisma.OrgInclude | undefined>(
-        companyName: string,
-        include?: T
-    ) {
+    public async findOrganizationByName<T extends Prisma.OrgInclude | undefined>(companyName: string, include?: T) {
         return readPrisma.org.findFirst({
             where: {
-                name: companyName,
+                name: companyName.toLowerCase(),
             },
             include: include as T,
         });
     }
 
     public async getCurrencyForRaiinmaker(data: SymbolNetworkParams) {
-        const raiinmakerOrg = await this.findOrganizationByCompanyName(RAIINMAKER_ORG_NAME, { wallet: true });
+        const raiinmakerOrg = await this.findOrganizationByName(RAIINMAKER_ORG_NAME, { wallet: true });
         if (!raiinmakerOrg) throw new NotFound(`Org not found for ${RAIINMAKER_ORG_NAME}.`);
         return await this.tatumService.findOrCreateCurrency({ ...data, wallet: raiinmakerOrg.wallet! });
     }
 
-    public async findOrgByAdminId(adminId: string) {
-        return readPrisma.org.findFirst({
-            where: {
-                id: adminId,
-            },
-        });
+    public async findOrgById<T extends Prisma.OrgInclude | undefined>(id: string, include?: T) {
+        return readPrisma.org.findFirst({ where: { id }, include: include as T });
     }
 
     public async orgDetails() {
@@ -55,5 +48,13 @@ export class OrganizationService {
 
     public async initStripeId(orgId: string, stripeId: string) {
         return await prisma.org.update({ where: { id: orgId }, data: { stripeId } });
+    }
+
+    public async createOrganization(orgName: string) {
+        return await prisma.org.create({ data: { name: orgName } });
+    }
+
+    public async updateOrganizationLogo(orgId: string, logo: string) {
+        return await prisma.org.update({ where: { id: orgId }, data: { logo } });
     }
 }

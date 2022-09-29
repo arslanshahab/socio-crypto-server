@@ -14,7 +14,7 @@ export class MarketDataService {
         let marketData = await this.cache.get(cacheKey);
         if (marketData) return JSON.parse(marketData as string);
         marketData = await readPrisma.marketData.findFirst({
-            where: { symbol: { contains: symbol, mode: "insensitive" } },
+            where: { symbol },
         });
         this.cache.set(cacheKey, JSON.stringify(marketData), { ttl: 900 });
         return marketData as MarketData;
@@ -26,6 +26,8 @@ export class MarketDataService {
     }
 
     public async getTokenValueInUSD(token: string, amount: number) {
+        const price = await this.getExchangeRateForCrypto(token);
+        console.log(token, amount, price.toString());
         return (await this.getExchangeRateForCrypto(token)) * amount;
     }
 

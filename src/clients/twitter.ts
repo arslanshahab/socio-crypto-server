@@ -5,7 +5,7 @@ import { getRedis } from "./redis";
 import { extractVideoData, chunkVideo, sleep } from "../controllers/helpers";
 import { Participant } from "../models/Participant";
 import { SocialLink } from "../models/SocialLink";
-import { MediaType, TwitterLinkCredentials } from "../types";
+import { MediaType, TwitterLinkCredentials } from "types.d.ts";
 import { TWITTER_LINK_EXPIRED, FormattedError } from "../util/errors";
 import { isArray } from "lodash";
 import { decrypt } from "../util/crypto";
@@ -219,11 +219,11 @@ export class TwitterClient {
         }
     };
 
-    public static getUsernameV2 = async (socialLink: PrismaSocialLink) => {
+    public static getUsernameV2 = async (data: { apiKey: string; apiSecret: string }) => {
         try {
             const client = TwitterClient.getClient({
-                apiKey: decrypt(socialLink.apiKey || "") || "",
-                apiSecret: decrypt(socialLink.apiSecret || "") || "",
+                apiKey: data.apiKey || "",
+                apiSecret: data.apiSecret || "",
             });
             const response = await client.get("/account/verify_credentials", { include_entities: false });
             const username = response["screen_name"];
@@ -232,7 +232,6 @@ export class TwitterClient {
             if (isArray(error)) {
                 const [data] = error;
                 if (data?.code === 89) {
-                    await prisma.socialLink.delete({ where: { id: socialLink.id } });
                     throw new FormattedError(new Error(TWITTER_LINK_EXPIRED));
                 }
                 throw new Error(data?.message || "");
@@ -294,8 +293,8 @@ export class TwitterClient {
                 if (cachedResponse) return cachedResponse;
             }
             const client = TwitterClient.getClient({
-                apiKey: decrypt(socialLink.apiKey || "") || "",
-                apiSecret: decrypt(socialLink.apiSecret || "") || "",
+                apiKey: socialLink.apiKey || "",
+                apiSecret: socialLink.apiSecret || "",
             });
             const twitterResponse = await client.get("/statuses/show", { id });
             await getRedis().set(cacheKey, JSON.stringify(twitterResponse), "EX", 3600); // cache for 15 minutes

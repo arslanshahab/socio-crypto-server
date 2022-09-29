@@ -1,11 +1,18 @@
-import { Get, Property, Put, Required, Returns } from "@tsed/schema";
+import { Enum, Get, Post, Property, Put, Required, Returns } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
-import { Context, PathParams, QueryParams } from "@tsed/common";
+import { BodyParams, Context, PathParams, QueryParams, Request } from "@tsed/common";
+import { Request as ExpressRequest } from "express";
 import { ParticipantModel } from ".prisma/client/entities";
 import { ParticipantService } from "../../services/ParticipantService";
 import { UserService } from "../../services/UserService";
 import { Pagination, SuccessArrayResult, SuccessResult } from "../../util/entities";
-import { CAMPAIGN_NOT_FOUND, PARTICIPANT_NOT_FOUND, USER_NOT_FOUND } from "../../util/errors";
+import {
+    CAMPAIGN_CLOSED,
+    CAMPAIGN_NOT_FOUND,
+    MISSING_PARAMS,
+    PARTICIPANT_NOT_FOUND,
+    USER_NOT_FOUND,
+} from "../../util/errors";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 import { formatUTCDateForComparision, getDatesBetweenDates } from "../helpers";
 import {
@@ -24,17 +31,22 @@ import {
 } from "../../models/RestModels";
 import { CampaignService } from "../../services/CampaignService";
 import { calculateParticipantPayout, calculateTier } from "../helpers";
-import { BN, formatFloat, getCryptoAssestImageUrl } from "../../util";
+import { BN, calculateQualityTierMultiplier, formatFloat, getCryptoAssestImageUrl } from "../../util";
 import { getTokenValueInUSD } from "../../util/exchangeRate";
 import { Campaign, Participant, Prisma } from "@prisma/client";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { getSocialClient } from "../helpers";
-import { PointValueTypes, Tiers } from "../../types";
+import { PointValueTypes, Tiers } from "types.d.ts";
 import { SocialLinkService } from "../../services/SocialLinkService";
 import { MarketDataService } from "../../services/MarketDataService";
-import { SocialLinkType } from "../../util/constants";
-import { TwitterClient } from "../../clients/twitter";
+import { ParticipantAction, SocialClientType, SocialLinkType, Sort } from "../../util/constants";
 import { SocialPostService } from "../../services/SocialPostService";
+import { limit } from "../../util/rateLimiter";
+import { QualityScoreService } from "../../services/QualityScoreService";
+import { HourlyCampaignMetricsService } from "../../services/HourlyCampaignMetricsService";
+import { OrganizationService } from "../../services/OrganizationService";
+import { DragonChainService } from "../../services/DragonChainService";
+import { prisma } from "../../clients/prisma";
 
 class CampaignParticipantsParams {
     @Property() public readonly campaignId: string;
@@ -51,11 +63,19 @@ class CampaignAllParticipantsParams {
     @Required() public readonly skip: number;
     @Required() public readonly take: number;
     @Property() public readonly filter: string;
+    @Property() @Enum(Sort) public readonly sort: Sort;
 }
 
 class UserStatisticsParams {
     @Required() public readonly userId: string;
 }
+
+class ParticipantTrackingBodyParams {
+    @Required() public readonly participantId: string;
+    @Required() public readonly action: ParticipantAction;
+}
+
+const { RATE_LIMIT_MAX = "3" } = process.env;
 
 @Controller("/participant")
 export class ParticipantController {
@@ -64,6 +84,8 @@ export class ParticipantController {
     @Inject()
     private dailyParticipantMetricService: DailyParticipantMetricService;
     @Inject()
+    hourlyCampaignMetricService: HourlyCampaignMetricsService;
+    @Inject()
     private campaignService: CampaignService;
     @Inject()
     private userService: UserService;
@@ -71,7 +93,14 @@ export class ParticipantController {
     private socialLinkService: SocialLinkService;
     @Inject()
     private marketDataService: MarketDataService;
-    @Inject() socialPostService: SocialPostService;
+    @Inject()
+    socialPostService: SocialPostService;
+    @Inject()
+    qualityScoreService: QualityScoreService;
+    @Inject()
+    organizationService: OrganizationService;
+    @Inject()
+    private dragonChainService: DragonChainService;
 
     @Get()
     @(Returns(200, SuccessResult).Of(ParticipantResultModelV2))
@@ -311,51 +340,40 @@ export class ParticipantController {
     @(Returns(200, SuccessArrayResult).Of(CampaignDetailsResultModel))
     public async getParticipants(@QueryParams() query: CampaignAllParticipantsParams, @Context() context: Context) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        const { campaignId, skip, take, filter } = query;
-        const [items, count] = await this.participantService.findParticipantsByCampaignId({
-            campaignId: campaignId,
-            skip: skip,
-            take: take,
-            filter: filter,
-        });
+        const { campaignId, skip, take, filter, sort = Sort.DESC } = query;
+        const allParticipants = await this.participantService.findParticipantsByCampaignId(
+            campaignId,
+            skip,
+            take,
+            filter,
+            sort
+        );
         const participants = [];
-        for (const participant of items) {
-            const link = await this.socialLinkService.findSocialLinkByUserAndType(
-                participant.userId,
-                SocialLinkType.TWITTER
-            );
-            let twitterUsername = "";
-            try {
-                if (link) twitterUsername = await TwitterClient.getUsernameV2(link);
-            } catch (error) {
-                console.log("error fetching twitter username ---- ", error);
-            }
+        for (const participant of allParticipants) {
             const metrics = await this.dailyParticipantMetricService.getAccumulatedParticipantMetrics(participant.id);
-            const postCount = await this.socialPostService.getSocialPostCountByParticipantId(
-                participant.id,
-                campaignId
+            const postCount = await this.socialPostService.getSocialPostCount(participant.id, campaignId);
+            const pointValues = (participant.algorithm as Prisma.JsonObject).pointValues as unknown as PointValueTypes;
+            const socialLink = await this.socialLinkService.findSocialLinkByUserAndType(
+                participant.userId,
+                SocialClientType.TWITTER
             );
-            const pointValues = (participant.campaign.algorithm as Prisma.JsonObject)
-                .pointValues as unknown as PointValueTypes;
-
             participants.push({
                 id: participant.id,
                 userId: participant.userId,
-                username: participant.user.profile?.username || "",
-                email: participant.user.email,
-                createdAt: participant.createdAt,
-                lastLogin: participant.user.lastLogin,
-                campaignName: participant.campaign.name,
-                twitterUsername: twitterUsername,
+                username: participant.username || "",
+                email: participant.email,
+                campaignName: participant.campaignName,
                 selfPostCount: postCount,
                 likeScore: metrics.likeCount * pointValues.likes,
                 shareScore: metrics.shareCount * pointValues.shares,
                 totalLikes: metrics.likeCount || 0,
                 totalShares: metrics.shareCount || 0,
-                participationScore: metrics.participationScore || 0,
+                participationScore: participant.participationScore || 0,
                 blacklist: participant.blacklist,
+                twitterUsername: socialLink.username,
             });
         }
+        const count = await this.participantService.findParticipantCountByCampaignId(campaignId, filter);
         return new SuccessResult({ participants, count }, CampaignDetailsResultModel);
     }
 
@@ -381,5 +399,71 @@ export class ParticipantController {
             }
         }
         return new SuccessArrayResult(statistics, UserStatisticsResultModel);
+    }
+
+    @Post("/track-action")
+    public async trackAction(@Request() req: ExpressRequest, @BodyParams() body: ParticipantTrackingBodyParams) {
+        const { action, participantId } = body;
+        const ipAddress = req.connection.remoteAddress || req.socket.remoteAddress;
+        const shouldRateLimit = await limit(
+            `${ipAddress}-${participantId}-${action}`,
+            Number(RATE_LIMIT_MAX),
+            "minute"
+        );
+        if (!["views", "submissions"].includes(action)) throw new BadRequest(MISSING_PARAMS);
+        const participant = await this.participantService.findParticipantById(participantId);
+        if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
+        const campaign = await this.campaignService.findCampaignById(participant.campaignId);
+        if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
+        const user = await this.userService.findUserById(participant.userId);
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        if (!this.campaignService.isCampaignOpen(campaign)) throw new NotFound(CAMPAIGN_CLOSED);
+        if (!shouldRateLimit) {
+            let qualityScore = await this.qualityScoreService.findByParticipantOrCreate(participant.id);
+            let multiplier, newViewCount, newSubmissionCount;
+            switch (action) {
+                case "views":
+                    newViewCount = new BN(participant.viewCount).plus(new BN(1)).toString();
+                    multiplier = calculateQualityTierMultiplier(new BN(qualityScore.views));
+                    break;
+                case "submissions":
+                    newSubmissionCount = new BN(participant.submissionCount).plus(new BN(1)).toString();
+                    multiplier = calculateQualityTierMultiplier(new BN(qualityScore.submissions));
+                    break;
+                default:
+                    throw new Error("Action not supported");
+            }
+            const campaignPointValues = (campaign.algorithm as Prisma.JsonObject)
+                .pointValues as unknown as PointValueTypes;
+            const pointValue = new BN(campaignPointValues[action]).times(multiplier);
+            const newTotalParticipationScore = new BN(campaign.totalParticipationScore).plus(pointValue).toString();
+            const newParticipationScore = new BN(participant.participationScore).plus(pointValue).toString();
+            await prisma.campaign.update({
+                where: { id: campaign.id },
+                data: { totalParticipationScore: newTotalParticipationScore },
+            });
+            await prisma.participant.update({
+                where: { id_campaignId_userId: { id: participant.id, userId: user.id, campaignId: campaign.id } },
+                data: {
+                    participationScore: newParticipationScore,
+                    viewCount: newViewCount || "0",
+                    submissionCount: newSubmissionCount || "0",
+                },
+            });
+            await this.hourlyCampaignMetricService.upsertMetrics(campaign.id, campaign.orgId!, action);
+            await this.dailyParticipantMetricService.upsertMetrics({
+                user,
+                campaign,
+                participant,
+                action,
+                additiveParticipationScore: pointValue,
+            });
+            await this.dragonChainService.ledgerCampaignAction({
+                action,
+                participantId: participant.id,
+                campaignId: campaign.id,
+            });
+        }
+        return participant.id;
     }
 }

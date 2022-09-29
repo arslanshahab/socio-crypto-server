@@ -1,12 +1,20 @@
 import { Campaign, CampaignMedia, Prisma } from "@prisma/client";
-import { Get, Property, Required, Enum, Returns, Post, Put, ArrayOf } from "@tsed/schema";
+import { Get, Property, Required, Enum, Returns, Post, ArrayOf, Put } from "@tsed/schema";
 import { Controller, Inject } from "@tsed/di";
 import { Context, BodyParams, PathParams, QueryParams } from "@tsed/common";
 import { CampaignService } from "../../services/CampaignService";
 import { UserService } from "../../services/UserService";
-import { CampaignState, CampaignStatus, CAMPAIGN_REWARD, RAIINMAKER_ORG_NAME } from "../../util/constants";
+import {
+    ADMIN,
+    CampaignState,
+    CampaignStatus,
+    CAMPAIGN_REWARD,
+    MANAGER,
+    RAIINMAKER_ORG_NAME,
+} from "../../util/constants";
 import { calculateParticipantPayoutV2, calculateParticipantSocialScoreV2 } from "../helpers";
 import {
+    ACTION_NOT_PERMITTED,
     ADMIN_NOT_FOUND,
     CAMPAIGN_NAME_EXISTS,
     CAMPAIGN_NOT_FOUND,
@@ -31,11 +39,13 @@ import {
     CampaignStatsResultModelArray,
     BooleanResultModel,
     PaidOutCryptoResultModel,
+    CreateCampaignParams,
+    UpdateCampaignParams,
 } from "../../models/RestModels";
-import { BadRequest, NotFound } from "@tsed/exceptions";
+import { BadRequest, Forbidden, NotFound } from "@tsed/exceptions";
 import { ParticipantService } from "../../services/ParticipantService";
 import { SocialPostService } from "../../services/SocialPostService";
-import { CampaignAuditStatus, CampaignCreateTypes, PointValueTypes } from "../../types";
+import { CampaignAuditStatus, PointValueTypes } from "types.d.ts";
 import { addYears } from "date-fns";
 import { Validator } from "../../schemas";
 import { OrganizationService } from "../../services/OrganizationService";
@@ -53,6 +63,8 @@ import { CampaignTemplateService } from "../../services/CampaignTemplateService"
 import { TatumService } from "../../services/TatumService";
 import { MarketDataService } from "../../services/MarketDataService";
 import { formatFloat } from "../../util";
+import { AdminService } from "../../services/AdminService";
+import { SesClient } from "../../clients/ses";
 
 const validator = new Validator();
 
@@ -63,9 +75,10 @@ class ListCampaignsVariablesModel extends PaginatedVariablesModel {
     @Property(String) public readonly auditStatus: CampaignAuditStatus | undefined;
 }
 
-class AdminUpdateCampaignStatusParams {
+class PendingCampaignsParams {
     @Required() @Property(String) public readonly campaignId: string;
     @Required() @Property(String) public readonly status: CampaignStatus;
+    @Property(String) public readonly reason: string;
 }
 
 class PayoutCampaignRewardsParams {
@@ -90,7 +103,7 @@ export class CampaignController {
     @Inject()
     private dailyParticipantMetricService: DailyParticipantMetricService;
     @Inject()
-    private campaignMediaservice: CampaignMediaService;
+    private campaignMediaService: CampaignMediaService;
     @Inject()
     private hourlyCampaignMetricsService: HourlyCampaignMetricsService;
     @Inject()
@@ -105,12 +118,19 @@ export class CampaignController {
     private tatumService: TatumService;
     @Inject()
     private marketDataService: MarketDataService;
+    @Inject()
+    private adminService: AdminService;
 
     @Get()
     @(Returns(200, SuccessResult).Of(Pagination).Nested(CampaignResultModel))
     public async list(@QueryParams() query: ListCampaignsVariablesModel, @Context() context: Context) {
+        const { orgId } = await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
         const user = await this.userService.findUserByContext(context.get("user"));
-        const [items, total] = await this.campaignService.findCampaignsByStatus(query, user || undefined);
+        const [items, total] = await this.campaignService.findCampaignsByStatus(
+            query,
+            user || undefined,
+            query.status !== CampaignStatus.PENDING ? orgId || undefined : undefined
+        );
         const modelItems = await Promise.all(
             items.map(async (i) => {
                 const campaignTokenValueInUSD = await this.marketDataService.getTokenValueInUSD(
@@ -154,7 +174,7 @@ export class CampaignController {
     @Get("/campaign-metrics")
     @(Returns(200, SuccessResult).Of(CampaignMetricsResultModel))
     public async getCampaignMetrics(@QueryParams() query: CampaignIdModel, @Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
         const { campaignId } = query;
         const participant = await this.participantService.findParticipants(campaignId);
         const clickCount = participant.reduce((sum, item) => sum + parseInt(item.clickCount), 0);
@@ -182,9 +202,9 @@ export class CampaignController {
 
     @Post("/create-campaign")
     @(Returns(200, SuccessResult).Of(CreateCampaignResultModel))
-    public async createCampaign(@BodyParams() body: CampaignCreateTypes, @Context() context: Context) {
-        const { role, company } = this.userService.checkPermissions(
-            { hasRole: ["admin", "manager"] },
+    public async createCampaign(@BodyParams() body: CreateCampaignParams, @Context() context: Context) {
+        const { company, orgId } = await this.adminService.checkPermissions(
+            { hasRole: [ADMIN, MANAGER] },
             context.get("user")
         );
 
@@ -221,16 +241,14 @@ export class CampaignController {
                 throw new BadRequest("Global campaign already exists");
             endDate = addYears(new Date(endDate), 100);
         }
-        validator.validateAlgorithmCreateSchema(algorithm);
+        validator.validateAlgorithmCreateSchema(JSON.parse(algorithm));
         if (!!requirements) validator.validateCampaignRequirementsSchema(requirements);
         if (type === "raffle") {
             if (!raffle_prize) throw new BadRequest(RAFFLE_PRIZE_MISSING);
             validator.validateRafflePrizeSchema(raffle_prize);
         }
-        if (role === "admin" && !body.company) throw new NotFound(COMPANY_NOT_SPECIFIED);
-        const campaignCompany = role === "admin" ? body.company : company;
-        if (!campaignCompany) throw new NotFound(COMPANY_NOT_SPECIFIED);
-        const org = await this.organizationService.findOrganizationByCompanyName(company!);
+        if (!company) throw new NotFound(COMPANY_NOT_SPECIFIED);
+        const org = await this.organizationService.findOrganizationByName(company!);
         if (!org) throw new NotFound(ORG_NOT_FOUND);
         const wallet = await this.walletService.findWalletByOrgId(org.id);
         if (!wallet) throw new NotFound(WALLET_NOT_FOUND);
@@ -248,7 +266,7 @@ export class CampaignController {
             target,
             description,
             instructions,
-            campaignCompany,
+            company,
             symbol,
             algorithm,
             tagline,
@@ -301,6 +319,20 @@ export class CampaignController {
         }
         const deviceTokens = await User.getAllDeviceTokens("campaignCreate");
         if (deviceTokens.length > 0) await Firebase.sendCampaignCreatedNotifications(deviceTokens, campaign);
+        const raiinmakerAdmins = await this.adminService.listAdminsByOrg(orgId!, RAIINMAKER_ORG_NAME);
+        const brandName = await this.organizationService.findOrgById(campaign.orgId || "");
+        if (campaign.id) {
+            if (raiinmakerAdmins) {
+                for (const admin of raiinmakerAdmins) {
+                    const { email } = await Firebase.getUserById(admin.firebaseId);
+                    SesClient.CampaignProcessEmailToAdmin({
+                        title: `Campaign review message from ${brandName?.name}`,
+                        text: `Hi, please approved "${campaign.name}" campaign`,
+                        emailAddress: email || "",
+                    });
+                }
+            }
+        }
         const result = {
             campaignId: campaign.id,
             campaignImageSignedURL: campaignImageSignedURL,
@@ -312,11 +344,8 @@ export class CampaignController {
 
     @Post("/update-campaign")
     @(Returns(200, SuccessResult).Of(UpdateCampaignResultModel))
-    public async updateCampaign(@BodyParams() body: CampaignCreateTypes, @Context() context: Context) {
-        const { role, company } = this.userService.checkPermissions(
-            { hasRole: ["admin", "manager"] },
-            context.get("user")
-        );
+    public async updateCampaign(@BodyParams() body: UpdateCampaignParams, @Context() context: Context) {
+        const { orgId } = await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
         let {
             id,
             name,
@@ -341,62 +370,17 @@ export class CampaignController {
             campaignTemplates,
             showUrl,
         } = body;
-        validator.validateAlgorithmCreateSchema(algorithm);
+        validator.validateAlgorithmCreateSchema(JSON.parse(algorithm));
         if (!!requirements) validator.validateCampaignRequirementsSchema(requirements);
         if (type === "raffle") {
             if (!raffle_prize) throw new BadRequest(RAFFLE_PRIZE_MISSING);
             validator.validateRafflePrizeSchema(raffle_prize);
         }
-        if (role === "admin" && !body.company) throw new NotFound(COMPANY_NOT_SPECIFIED);
-        if (!company) throw new NotFound(COMPANY_NOT_SPECIFIED);
-        const org = await this.organizationService.findOrganizationByCompanyName(company);
-        if (!org) throw new NotFound(ORG_NOT_FOUND);
         const campaign: Campaign | null = await this.campaignService.findCampaignById(id);
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
+        if (campaign.orgId !== orgId) throw new Forbidden(ACTION_NOT_PERMITTED);
         let campaignImageSignedURL = "";
         const mediaUrls: { name: string | null; channel: string | null; signedUrl: string }[] = [];
-        if (imagePath && campaign.imagePath !== imagePath) {
-            imagePath;
-            campaignImageSignedURL = await S3Client.generateCampaignSignedURL(`campaign/${campaign.id}/${imagePath}`);
-        }
-        if (campaignTemplates) {
-            for (let i = 0; i < campaignTemplates.length; i++) {
-                const receivedTemplate = campaignTemplates[i];
-                if (receivedTemplate.id) {
-                    const foundTemplate = await this.campaignTemplateService.findCampaignTemplateById(
-                        receivedTemplate.id
-                    );
-                    if (foundTemplate) {
-                        await this.campaignTemplateService.updateCampaignTemplate(receivedTemplate);
-                    }
-                } else {
-                    await this.campaignTemplateService.updateNewCampaignTemplate(receivedTemplate, campaign.id);
-                }
-            }
-        }
-        if (campaignMedia) {
-            for (let i = 0; i < campaignMedia.length; i++) {
-                const receivedMedia = campaignMedia[i];
-                if (receivedMedia.id) {
-                    const foundMedia = await this.campaignMediaservice.findCampaignMediaById(receivedMedia.id);
-                    if (foundMedia && foundMedia.media !== receivedMedia.media) {
-                        await this.campaignMediaservice.updateCampaignMedia(receivedMedia);
-                        const urlObject = { name: receivedMedia.media, channel: receivedMedia.channel, signedUrl: "" };
-                        urlObject.signedUrl = await S3Client.generateCampaignSignedURL(
-                            `campaign/${campaign.id}/${receivedMedia.media}`
-                        );
-                        mediaUrls.push(urlObject);
-                    }
-                } else {
-                    const urlObject = { name: receivedMedia.media, channel: receivedMedia.channel, signedUrl: "" };
-                    urlObject.signedUrl = await S3Client.generateCampaignSignedURL(
-                        `campaign/${campaign.id}/${receivedMedia.media}`
-                    );
-                    mediaUrls.push(urlObject);
-                    await this.campaignMediaservice.updateNewCampaignMedia(receivedMedia, campaign.id);
-                }
-            }
-        }
         await this.campaignService.updateCampaign(
             id,
             name,
@@ -417,6 +401,36 @@ export class CampaignController {
             socialMediaType,
             showUrl
         );
+        if (imagePath && campaign.imagePath !== imagePath) {
+            campaignImageSignedURL = await S3Client.generateCampaignSignedURL(`campaign/${campaign.id}/${imagePath}`);
+        }
+        const templates = await this.campaignTemplateService.findCampaignTemplateByCampaignId(campaign.id);
+        for (const template of campaignTemplates) {
+            await this.campaignTemplateService.upsertTemplate(template, campaign);
+        }
+        for (let index = 0; index < templates.length; index++) {
+            const template = templates[index];
+            if (!campaignTemplates.find((item) => item.id === template.id)) {
+                await this.campaignTemplateService.deleteCampaignTemplate(template.id);
+            }
+        }
+        const medias = await this.campaignMediaService.findCampaignMediaByCampaignId(campaign.id);
+        for (let i = 0; i < campaignMedia.length; i++) {
+            const receivedMedia = campaignMedia[i];
+            if (!receivedMedia.id) {
+                const urlObject = { name: receivedMedia.media, channel: receivedMedia.channel, signedUrl: "" };
+                urlObject.signedUrl = await S3Client.generateCampaignSignedURL(
+                    `campaign/${campaign.id}/${receivedMedia.media}`
+                );
+                mediaUrls.push(urlObject);
+                await this.campaignMediaService.createCampaignMedia(receivedMedia, campaign.id);
+            }
+        }
+        const campaignMediaIds = campaignMedia.map((y) => y.id);
+        const removedMedias = medias.filter((x) => !campaignMediaIds.includes(x.id));
+        if (removedMedias.length) {
+            await this.campaignMediaService.deleteCampaignMedia(removedMedias.map((x) => x.id));
+        }
         const result = {
             campaignId: campaign.id,
             campaignImageSignedURL,
@@ -429,8 +443,7 @@ export class CampaignController {
     @(Returns(200, SuccessResult).Of(DeleteCampaignResultModel))
     public async deleteCampaign(@QueryParams() query: CampaignIdModel, @Context() context: Context) {
         const { campaignId } = query;
-        const { company } = this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
-
+        const { company } = await this.adminService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));
         const [socialPost] = await this.socialPostService.findSocialPostByCampaignId(campaignId);
         if (socialPost.length > 0) this.socialPostService.deleteSocialPost(campaignId);
         const payouts = await this.transferService.findTransferByCampaignId(campaignId);
@@ -449,9 +462,9 @@ export class CampaignController {
         const hourlyMetrics = await this.hourlyCampaignMetricsService.findCampaignHourlyMetricsByCampaignId(campaignId);
         if (hourlyMetrics.length > 0) this.hourlyCampaignMetricsService.deleteCampaignHourlyMetrics(campaignId);
         const campaignTemplate = await this.campaignTemplateService.findCampaignTemplateByCampaignId(campaignId);
-        if (campaignTemplate.length > 0) this.campaignTemplateService.deleteCampaignTemplate(campaignId);
-        const campaignMedia = await this.campaignMediaservice.findCampaignMediaByCampaignId(campaignId);
-        if (campaignMedia.length > 0) this.campaignMediaservice.deleteCampaignMedia(campaignId);
+        if (campaignTemplate.length > 0) this.campaignTemplateService.deleteCampaignTemplates(campaignId);
+        const campaignMedia = await this.campaignMediaService.findCampaignMediaByCampaignId(campaignId);
+        if (campaignMedia.length > 0) this.campaignMediaService.deleteCampaignMedias(campaignId);
         const campaign = await this.campaignService.findCampaignById(campaignId, undefined, company);
         if (campaign) this.campaignService.deleteCampaign(campaignId);
         const result = {
@@ -463,7 +476,7 @@ export class CampaignController {
     @Post("/payout-campaign-rewards")
     @(Returns(200, SuccessResult).Of(UpdatedResultModel))
     public async payoutCampaignRewards(@QueryParams() query: PayoutCampaignRewardsParams, @Context() context: Context) {
-        const { company } = this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
+        const { company } = await this.adminService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));
         const { campaignId } = query;
         const campaign = await this.campaignService.findCampaignById(campaignId, undefined, company);
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
@@ -473,7 +486,10 @@ export class CampaignController {
     @Post("/generate-campaign-audit-report")
     @(Returns(200, SuccessResult).Of(GenerateCampaignAuditReportResultModel))
     public async generateCampaignAuditReport(@QueryParams() query: CampaignIdModel, @Context() context: Context) {
-        const { company } = this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
+        const { company } = await this.adminService.checkPermissions(
+            { hasRole: [ADMIN, MANAGER] },
+            context.get("user")
+        );
         let { campaignId } = query;
         const campaign = await this.campaignService.findCampaignById(campaignId, { participant: true }, company);
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
@@ -532,128 +548,67 @@ export class CampaignController {
         return new SuccessResult(report, GenerateCampaignAuditReportResultModel);
     }
 
+    // For admin panel
     @Get("/dashboard-metrics/:campaignId")
     @(Returns(200, SuccessResult).Of(CampaignStatsResultModelArray))
     public async getDashboardMetrics(@PathParams() query: CampaignIdModel, @Context() context: Context) {
-        const admin = await this.userService.findUserByFirebaseId(context.get("user").firebaseId);
+        const admin = await this.adminService.findAdminByFirebaseId(context.get("user").id);
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
         const { campaignId } = query;
-        let campaignMetrics;
-        let aggregatedCampaignMetrics;
+        let aggregatedMetrics;
+        let rawMetrics;
         let totalParticipants;
-        let calculateCampaignMetrics = [];
         if (campaignId === "-1") {
-            aggregatedCampaignMetrics = await this.dailyParticipantMetricService.getAggregatedOrgMetrics();
-            aggregatedCampaignMetrics = aggregatedCampaignMetrics.reduce(
-                (acc, curr) => {
-                    acc.clickCount += parseInt(curr.clickCount);
-                    acc.viewCount += parseInt(curr.viewCount);
-                    acc.shareCount += parseInt(curr.shareCount);
-                    acc.participationScore += parseInt(curr.participationScore);
-                    return acc;
-                },
-                {
-                    clickCount: 0,
-                    viewCount: 0,
-                    shareCount: 0,
-                    participationScore: 0,
-                }
-            );
-            aggregatedCampaignMetrics = { ...aggregatedCampaignMetrics, campaignName: "All" };
-            const campaigns = await this.campaignService.findCampaignsByOrgId(admin.orgId!);
-            for (let i = 0; i < campaigns.length; i++) {
-                const campaignId = campaigns[i].id;
-                campaignMetrics = await this.dailyParticipantMetricService.getOrgMetrics(campaignId);
-                campaignMetrics = campaignMetrics.reduce(
-                    (acc, curr) => {
-                        acc.clickCount += parseInt(curr.clickCount);
-                        acc.viewCount += parseInt(curr.viewCount);
-                        acc.shareCount += parseInt(curr.shareCount);
-                        acc.participationScore += parseInt(curr.participationScore);
-                        return acc;
-                    },
-                    {
-                        clickCount: 0,
-                        viewCount: 0,
-                        shareCount: 0,
-                        participationScore: 0,
-                    }
-                );
-                calculateCampaignMetrics.push(campaignMetrics);
+            [aggregatedMetrics] = await this.dailyParticipantMetricService.getAggregatedOrgMetrics(admin.orgId!);
+            if (!aggregatedMetrics) {
+                aggregatedMetrics = { clickCount: 0, viewCount: 0, shareCount: 0, participationScore: 0 };
             }
-
-            totalParticipants = await this.participantService.findParticipantsCount();
-        }
-        if (campaignId !== "-1") {
-            const participantMetrics = await this.dailyParticipantMetricService.getAggregatedOrgMetrics(campaignId);
-            aggregatedCampaignMetrics = participantMetrics.reduce(
-                (acc, curr) => {
-                    acc.clickCount += parseInt(curr.clickCount);
-                    acc.viewCount += parseInt(curr.viewCount);
-                    acc.shareCount += parseInt(curr.shareCount);
-                    acc.participationScore += parseInt(curr.participationScore);
-                    return acc;
-                },
-                {
-                    clickCount: 0,
-                    viewCount: 0,
-                    shareCount: 0,
-                    participationScore: 0,
-                }
-            );
-            const campaignName = await this.campaignService.findCampaignById(campaignId);
-            aggregatedCampaignMetrics = {
-                ...aggregatedCampaignMetrics,
-                campaignName: campaignName?.name,
+            aggregatedMetrics = {
+                ...aggregatedMetrics,
+                participationScore: Math.round(aggregatedMetrics.participationScore),
+                name: "All",
             };
-            campaignMetrics = await this.dailyParticipantMetricService.getOrgMetrics(campaignId);
-            campaignMetrics = campaignMetrics.reduce(
-                (acc, curr) => {
-                    acc.clickCount += parseInt(curr.clickCount);
-                    acc.viewCount += parseInt(curr.viewCount);
-                    acc.shareCount += parseInt(curr.shareCount);
-                    acc.participationScore += parseInt(curr.participationScore);
-                    return acc;
-                },
-                {
-                    clickCount: 0,
-                    viewCount: 0,
-                    shareCount: 0,
-                    participationScore: 0,
-                }
-            );
-            calculateCampaignMetrics.push(campaignMetrics);
+            rawMetrics = await this.dailyParticipantMetricService.getOrgMetrics(admin.orgId!);
+            const campaigns = await this.campaignService.findCampaigns(admin.orgId!);
+            const campaignIds = campaigns.map((campaign) => campaign.id);
+            totalParticipants = await this.participantService.findParticipantsCount(undefined, campaignIds);
+        }
+        if (campaignId && campaignId != "-1") {
+            [aggregatedMetrics] = await this.dailyParticipantMetricService.getAggregatedCampaignMetrics(campaignId);
+            aggregatedMetrics = {
+                ...aggregatedMetrics,
+                participationScore: Math.round(aggregatedMetrics.participationScore),
+                name: aggregatedMetrics.name,
+            };
+            rawMetrics = await this.dailyParticipantMetricService.getCampaignMetrics(campaignId);
             totalParticipants = await this.participantService.findParticipantsCount(campaignId);
         }
-        const aggregaredMetrics = {
-            clickCount: aggregatedCampaignMetrics?.clickCount || 0,
-            viewCount: aggregatedCampaignMetrics?.viewCount || 0,
-            shareCount: aggregatedCampaignMetrics?.shareCount || 0,
-            participationScore: aggregatedCampaignMetrics?.participationScore || 0,
+        aggregatedMetrics = {
+            clickCount: aggregatedMetrics?.clickCount || 0,
+            viewCount: aggregatedMetrics?.viewCount || 0,
+            shareCount: aggregatedMetrics?.shareCount || 0,
+            participationScore: aggregatedMetrics?.participationScore || 0,
             totalParticipants: totalParticipants || 0,
-            campaignName: aggregatedCampaignMetrics?.campaignName || "",
+            campaignName: aggregatedMetrics?.name || "",
         };
-        const metrics = { aggregaredMetrics, calculateCampaignMetrics };
+        const metrics = { aggregatedMetrics, rawMetrics };
         return new SuccessResult(metrics, CampaignStatsResultModelArray);
     }
 
     @Get("/campaigns-lite")
     @(Returns(200, SuccessArrayResult).Of(CampaignResultModel))
     public async getCampaignsLite(@Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
-        const campaigns = await this.campaignService.findCampaigns();
+        const { orgId } = await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
+        const campaigns = await this.campaignService.findCampaigns(orgId);
         return new SuccessArrayResult(campaigns, CampaignResultModel);
     }
 
-    @Put("/admin-update-campaign-status")
+    // For admin panel
+    @Put("/pending")
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
-    public async adminUpdateCampaignStatus(
-        @QueryParams() query: AdminUpdateCampaignStatusParams,
-        @Context() context: Context
-    ) {
-        this.userService.checkPermissions({ restrictCompany: RAIINMAKER_ORG_NAME }, context.get("user"));
-        const { status, campaignId } = query;
-
+    public async updatePendingCampaignStatus(@BodyParams() body: PendingCampaignsParams, @Context() context: Context) {
+        await this.adminService.checkPermissions({ restrictCompany: RAIINMAKER_ORG_NAME }, context.get("user"));
+        const { status, campaignId, reason } = body;
         const campaign = await this.campaignService.findCampaignById(campaignId, {
             org: true,
             currency: { include: { token: true } },
@@ -685,16 +640,31 @@ export class CampaignController {
                 campaign.status = CampaignStatus.DENIED;
                 break;
         }
-        await this.campaignService.adminUpdateCampaignStatus(campaign.id, campaign.status, campaign.tatumBlockageId!);
+        const updatedCampaign = await this.campaignService.adminUpdateCampaignStatus(
+            campaign.id,
+            campaign.status,
+            campaign.tatumBlockageId!
+        );
+        const brandAdmins = await this.adminService.listAdminsByOrg(campaign?.orgId!);
+        if (brandAdmins) {
+            for (const admin of brandAdmins) {
+                const { email } = await Firebase.getUserById(admin.firebaseId);
+                SesClient.CampaignProcessEmailToAdmin({
+                    title: "Campaign Approval Status",
+                    text: `${campaign.name} has been ${updatedCampaign.status}. ${reason}`,
+                    emailAddress: email || "",
+                });
+            }
+        }
         const deviceTokens = await User.getAllDeviceTokens("campaignCreate");
         if (deviceTokens.length > 0) await Firebase.sendCampaignCreatedNotifications(deviceTokens, campaign);
-        return new SuccessResult({ success: true }, BooleanResultModel);
+        return new SuccessResult({ message: `campaign has been ${updatedCampaign.status}` }, UpdatedResultModel);
     }
 
     @Get("/payout/:campaignId")
     @(Returns(200, SuccessResult).Of(PaidOutCryptoResultModel))
     public async getPayout(@PathParams() path: CampaignIdModel, @Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));
         const { campaignId } = path;
         const transfers = await this.transferService.findTransferByCampaignIdAndAction(campaignId, CAMPAIGN_REWARD);
         const totalCrypto = transfers.reduce((acc, curr) => (acc += parseFloat(curr.amount)), 0);

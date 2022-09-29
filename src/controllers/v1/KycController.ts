@@ -2,15 +2,18 @@ import { BodyParams, Context, PathParams, QueryParams } from "@tsed/common";
 import { Controller, Inject } from "@tsed/di";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { Get, Nullable, Post, Put, Required, Returns } from "@tsed/schema";
-import { KycLevel, RAIINMAKER_ORG_NAME } from "../../util/constants";
+import { ADMIN, KycLevel, KycStatus, MANAGER, RAIINMAKER_ORG_NAME } from "../../util/constants";
 import { UserService } from "../../services/UserService";
 import { SuccessResult } from "../../util/entities";
-import { KYC_LEVEL_1_NOT_APPROVED, KYC_NOT_FOUND, USER_NOT_FOUND } from "../../util/errors";
+import { KYC_LEVEL_1_NOT_APPROVED, KYC_NOT_FOUND, USER_NOT_FOUND, VERIFICATION_NOT_FOUND } from "../../util/errors";
 import { Firebase } from "../../clients/firebase";
 import { VerificationApplicationService } from "../../services/VerificationApplicationService";
-import { KycUser } from "../../types";
+import { KycUser } from "types.d.ts";
 import { S3Client } from "../../clients/s3";
-import { KycResultModel, UserResultModel } from "../../models/RestModels";
+import { BooleanResultModel, KycResultModel, UserResultModel } from "../../models/RestModels";
+import { AdminService } from "../../services/AdminService";
+import { AcuantApplication } from "../../clients/acuant";
+import { getApplicationStatus, getKycStatusDetails } from "../../util";
 
 const userResultRelations = {
     profile: true,
@@ -53,6 +56,8 @@ export class KycController {
     private userService: UserService;
     @Inject()
     private verificationApplicationService: VerificationApplicationService;
+    @Inject()
+    private adminService: AdminService;
 
     @Get()
     @(Returns(200, SuccessResult).Of(KycResultModel))
@@ -84,7 +89,7 @@ export class KycController {
     @Get("/admin/:userId")
     @(Returns(200, SuccessResult).Of(Object))
     public async getAdmin(@PathParams("userId") userId: string, @Context() context: Context) {
-        this.userService.checkPermissions({ restrictCompany: RAIINMAKER_ORG_NAME }, context.get("user"));
+        await this.adminService.checkPermissions({ restrictCompany: RAIINMAKER_ORG_NAME }, context.get("user"));
         const user = await this.userService.findUserById(userId);
         if (!user) throw new NotFound(USER_NOT_FOUND);
         return new SuccessResult(await this.verificationApplicationService.getRawApplication(user.id), Object);
@@ -137,7 +142,7 @@ export class KycController {
     @Put("/update-kyc-status")
     @(Returns(200, SuccessResult).Of(UserResultModel))
     public async updateKycStatus(@QueryParams() query: KycStatusParms, @Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
         const { userId, status } = query;
         if (!["approve", "reject"].includes(status)) throw new BadRequest("Status must be either approve or reject");
         let user = await this.userService.findUserById(userId, userResultRelations);
@@ -149,5 +154,43 @@ export class KycController {
         }
         user.kycStatus = updatedStatus.kycStatus;
         return new SuccessResult(UserResultModel.build(user), UserResultModel);
+    }
+
+    // For admin panel
+    @Post("/verify-admin")
+    @(Returns(200, SuccessResult).Of(KycResultModel))
+    public async verifyAdmin(@BodyParams() body: KycLevel1Params & KycLevel2Params, @Context() context: Context) {
+        const admin = await this.adminService.findAdminByFirebaseId(context.get("user").id);
+        if (!admin) throw new BadRequest(USER_NOT_FOUND);
+        body = {
+            ...(await this.verificationApplicationService.getAdminProfileData(admin.id)),
+            ...body,
+            ip: context.request.req.socket.remoteAddress || "",
+        };
+        const result = await this.verificationApplicationService.registerKycForAdmin({ admin, query: body });
+        return new SuccessResult(result, KycResultModel);
+    }
+
+    @Post("/webhook")
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
+    public async kycWebhook(@BodyParams() body: AcuantApplication) {
+        const kyc = body;
+        const status = getApplicationStatus(kyc);
+        const verificationApplication = await this.verificationApplicationService.findUserApplication(kyc.mtid);
+        if (!verificationApplication?.userId && !verificationApplication?.adminId)
+            throw new NotFound(VERIFICATION_NOT_FOUND);
+        const kycUser = await this.verificationApplicationService.findKycUser({
+            userId: verificationApplication.userId || "",
+            adminId: verificationApplication.adminId || "",
+        });
+        if (!kycUser) throw new NotFound(USER_NOT_FOUND);
+        if (status === KycStatus.PENDING) return new SuccessResult({ success: false }, BooleanResultModel);
+        if (status === KycStatus.APPROVED) {
+            await S3Client.uploadAcuantKyc(kycUser.id, kyc);
+        }
+        await this.verificationApplicationService.updateStatus(status, verificationApplication);
+        await this.verificationApplicationService.updateReason(getKycStatusDetails(kyc), kycUser.id);
+        if (kycUser.user) await Firebase.sendKycVerificationUpdate(kycUser.user?.profile?.deviceToken || "", status);
+        return new SuccessResult({ success: true }, BooleanResultModel);
     }
 }

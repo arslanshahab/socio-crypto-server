@@ -13,6 +13,7 @@ import { WalletCurrency } from "../models/WalletCurrency";
 import { getTokenPriceInUsd } from "../clients/ethereum";
 import { performCoiinTransfer } from "./ethWithdraw";
 import { v4 as uuidv4 } from "uuid";
+import { TransferStatus } from "../util/constants";
 
 export const start = async (
     parent: any,
@@ -86,7 +87,7 @@ export const update = async (
         );
         if (args.status === "approve" && walletCurrency.balance.minus(transfer.amount).lt(0)) {
             const user = transfer.wallet.user;
-            transfer.status = "REJECTED";
+            transfer.status = TransferStatus.REJECTED;
             if (user.notificationSettings.withdraw) {
                 if (!rejected[user.id])
                     rejected[user.id] = { deviceToken: user.profile.deviceToken, total: new BN(transfer.amount) };
@@ -96,7 +97,7 @@ export const update = async (
             switch (args.status) {
                 case "approve":
                     const user = transfer.wallet.user;
-                    transfer.status = "APPROVED";
+                    transfer.status = TransferStatus.APPROVED;
                     let kycData;
                     if (!userGroups[user.id]) {
                         try {
@@ -154,7 +155,7 @@ export const update = async (
                     );
                     break;
                 case "reject":
-                    transfer.status = "REJECTED";
+                    transfer.status = TransferStatus.REJECTED;
                     if (!rejected[transfer.wallet.user.id])
                         rejected[transfer.wallet.user.id] = {
                             total: new BN(transfer.amount),

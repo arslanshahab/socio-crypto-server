@@ -1,7 +1,7 @@
 import { Campaign, Prisma } from "@prisma/client";
 import { Inject, Injectable } from "@tsed/di";
 import { endOfISOWeek, startOfDay, startOfISOWeek, startOfWeek, subDays } from "date-fns";
-import { TransferAction, TransferStatus } from "../types";
+import { TransferAction, TransferStatus } from "types.d.ts";
 import { WalletService } from "./WalletService";
 import { NotFound } from "@tsed/exceptions";
 import { WALLET_NOT_FOUND } from "../util/errors";
@@ -114,37 +114,23 @@ export class TransferService {
         });
     }
 
-    public async findUserTransactions(userId: string) {
+    public async findUserTransactions(userId: string, skip?: number, take?: number) {
         const wallet = await this.walletService.findWalletByUserId(userId);
         if (!wallet) throw new NotFound(WALLET_NOT_FOUND);
-        return readPrisma.transfer.findMany({
-            where: { walletId: wallet.id },
-        });
-    }
-
-    public async getCoiinRecord() {
         return readPrisma.$transaction([
             readPrisma.transfer.findMany({
-                where: { OR: [{ action: "WITHDRAW" }, { action: "XOXODAY_REDEMPTION" }] },
+                where: { walletId: wallet.id },
+                skip: skip && skip,
+                take: take && take,
+                orderBy: { createdAt: "desc" },
             }),
-            readPrisma.transfer.findMany({
-                where: {
-                    OR: [
-                        { action: "LOGIN_REWARD" },
-                        { action: "REGISTRATION_REWARD" },
-                        { action: "PARTICIPATION_REWARD" },
-                        { action: "SHARING_REWARD" },
-                        { action: "CAMPAIGN_REWARD" },
-                        { action: "NETWORK_REWARD" },
-                    ],
-                },
-            }),
+            readPrisma.transfer.count({ where: { walletId: wallet.id } }),
         ]);
     }
 
-    public async getWithdrawalsByStatus(status: TransferStatus) {
+    public async getWithdrawalsByStatus(status: TransferStatus, orgId?: string) {
         return readPrisma.transfer.findMany({
-            where: { status, action: "withdraw" },
+            where: { status, action: "withdraw", orgId: orgId ? { equals: orgId } : null },
             include: {
                 wallet: {
                     include: {
@@ -220,32 +206,37 @@ export class TransferService {
         return credit - debit;
     }
 
-    public async newPendingUsdDeposit(
-        walletId: string,
-        orgId: string,
-        amount: string,
-        stripeCardId?: string,
-        paypalAddress?: string
-    ) {
+    public async usdDeposit(data: {
+        walletId: string;
+        orgId: string;
+        amount: string;
+        type: TransferType;
+        status: TransferStatus;
+        stripeCardId?: string;
+        paypalAddress?: string;
+    }) {
+        const { amount, walletId, orgId, status, type, stripeCardId, paypalAddress } = data;
         return await prisma.transfer.create({
             data: {
                 walletId,
                 orgId,
                 amount,
-                status: TransferStatusEnum.PENDING,
-                currency: USD.toLowerCase(),
-                action: TransferActionEnum.DEPOSIT,
+                status,
+                currency: USD,
+                action: TransferActionEnum.COIIN_PURCHASE,
                 stripeCardId: stripeCardId && stripeCardId,
                 paypalAddress: paypalAddress && paypalAddress,
+                type: type,
             },
         });
     }
 
-    public async getAuditedWithdrawals() {
+    public async getAuditedWithdrawals(orgId?: string) {
         return readPrisma.transfer.findMany({
             where: {
                 action: TransferActionEnum.WITHDRAW.toLowerCase(),
                 OR: [{ status: TransferStatusEnum.APPROVED }, { status: TransferStatusEnum.REJECTED }],
+                orgId: orgId && orgId,
             },
             include: {
                 wallet: { include: { user: { include: { profile: true } } } },
@@ -296,5 +287,26 @@ export class TransferService {
 
     public async findTransferByCampaignIdAndAction(campaignId: string, action: TransferAction) {
         return readPrisma.transfer.findMany({ where: { campaignId, action } });
+    }
+
+    public async getRedeemedAmount() {
+        const result: { amount: number }[] =
+            await readPrisma.$queryRaw`SELECT COALESCE(SUM(CAST(amount as float)),0) as amount FROM transfer WHERE action = 'WITHDRAW' OR action = 'XOXODAY_REDEMPTION'`;
+        return result;
+    }
+
+    public async getDistributedAmount() {
+        const result: { amount: number }[] =
+            await readPrisma.$queryRaw`SELECT COALESCE(SUM(CAST(amount as float)),0) as amount FROM transfer WHERE action = 'LOGIN_REWARD' OR 
+        action = 'REGISTRATION_REWARD' OR action = 'PARTICIPATION_REWARD' OR action = 'SHARING_REWARD' OR action = 'CAMPAIGN_REWARD' OR action = 'NETWORK_REWARD'`;
+        return result;
+    }
+
+    public async findTransferById(id: string) {
+        return readPrisma.transfer.findFirst({ where: { id } });
+    }
+
+    public async updateTransferStatus(id: string, status: string) {
+        return await prisma.transfer.update({ where: { id }, data: { status } });
     }
 }

@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@tsed/di";
-import { CustodialAddressPayload, SymbolNetworkParams, WalletKeys, WithdrawFeeData, WithdrawPayload } from "../types";
+import { CustodialAddressPayload, SymbolNetworkParams, WalletKeys, WithdrawFeeData, WithdrawPayload } from "types.d.ts";
 import { RequestData } from "../util/fetchRequest";
 import { Secrets } from "../util/secrets";
 import { BadRequest, NotFound } from "@tsed/exceptions";
@@ -22,6 +22,7 @@ import {
     sendXrpOffchainTransaction,
     storeTransaction,
     Currency as TatumCurrency,
+    removeDepositAddress,
 } from "@tatumio/tatum";
 import {
     CUSTODIAL_NETWORKS,
@@ -125,15 +126,20 @@ export class TatumService {
     }
 
     // Create ledger account
-    public async createLedgerAccount(data: { symbol: string; network: string; isCustodial: boolean }) {
+    public async createLedgerAccount(data: {
+        symbol: string;
+        network: string;
+        isCustodial: boolean;
+        isOrgWallet: boolean;
+    }) {
         try {
             process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
-            let { symbol, isCustodial } = data;
+            let { symbol, isCustodial, isOrgWallet } = data;
             const wallet = await this.getWallet({ symbol: data.symbol, network: data.network });
             symbol = getCurrencyForTatum(data);
             return await createAccount({
                 currency: symbol,
-                ...(!isCustodial && { xpub: wallet?.xpub || wallet?.address }),
+                ...(!isCustodial && isOrgWallet && { xpub: wallet?.xpub || wallet?.address }),
             });
         } catch (error) {
             console.log(error?.response?.data || error.message);
@@ -235,12 +241,13 @@ export class TatumService {
         const foundWallet = await this.walletService.findWalletById(data.wallet.id);
         if (!foundWallet) throw new NotFound("Wallet not found");
         const isCustodial = this.isCustodialWallet(data);
+        const isOrgWallet = Boolean(await this.walletService.ifWalletBelongsToOrg(foundWallet.id));
         let ledgerAccount = await this.currenyService.findLedgerAccount(data.wallet.id, token.id);
         let newDepositAddress;
         if (!ledgerAccount) {
-            const newLedgerAccount = await this.createLedgerAccount({ ...data, isCustodial });
-            if (isCustodial) {
-                if (await this.walletService.ifWalletBelongsToOrg(foundWallet.id)) {
+            const newLedgerAccount = await this.createLedgerAccount({ ...data, isCustodial, isOrgWallet });
+            if (isOrgWallet) {
+                if (isCustodial) {
                     const availableAddress = await this.getAvailableAddress(data);
                     if (!availableAddress) throw new NotFound("No custodial address available.");
                     await this.assignAddressToAccount({
@@ -248,9 +255,9 @@ export class TatumService {
                         address: availableAddress.address,
                     });
                     newDepositAddress = availableAddress;
+                } else {
+                    newDepositAddress = await this.generateDepositAddress(newLedgerAccount.id);
                 }
-            } else {
-                newDepositAddress = await this.generateDepositAddress(newLedgerAccount.id);
             }
             ledgerAccount = await this.currenyService.addNewAccount({
                 ...newLedgerAccount,
@@ -369,7 +376,30 @@ export class TatumService {
             };
             return await doFetch(requestData);
         } catch (error) {
-            console.log(error?.response?.data || error.message);
+            throw new Error(error?.response?.data?.message || error.message);
+        }
+    }
+
+    public async sendBNBTokenOffchainTransaction(data: WithdrawPayload & WalletKeys) {
+        try {
+            const endpoint = `${this.baseUrl}/offchain/bnb/transfer`;
+            const requestData: RequestData = {
+                method: "POST",
+                url: endpoint,
+                payload: {
+                    senderAccountId: data.senderAccountId,
+                    amount: data.amount,
+                    address: data.address,
+                    fee: data.fee,
+                    fromAddress: data.walletAddress,
+                    privateKey: data.privateKey,
+                    paymentId: data.paymentId,
+                    senderNote: data.senderNote,
+                },
+                headers: { "x-api-key": Secrets.tatumApiKey },
+            };
+            return await doFetch(requestData);
+        } catch (error) {
             throw new Error(error?.response?.data?.message || error.message);
         }
     }
@@ -377,7 +407,7 @@ export class TatumService {
     public async sendOffchainTransactionFromCustodial(data: WithdrawPayload & WalletKeys): Promise<{ txId: string }> {
         try {
             const ledgerTX = await offchainStoreWithdrawal({
-                senderAccountId: data.userCurrency.tatumId,
+                senderAccountId: data.currency.tatumId,
                 address: data.address,
                 amount: data.amount,
                 fee: data.fee,
@@ -411,7 +441,7 @@ export class TatumService {
             const body = {
                 ...payload,
                 amount: withdrawAbleAmount,
-                ...(payload.userCurrency.derivationKey && { index: payload.userCurrency.derivationKey }),
+                ...(payload.currency.derivationKey && { index: payload.currency.derivationKey }),
                 fee,
             };
             const callWithdrawMethod = async () => {
@@ -431,7 +461,7 @@ export class TatumService {
                     case "TRON":
                         return await sendTronOffchainTransaction(false, body as any);
                     case "BNB":
-                        return await this.sendTokenOffchainTransaction(body);
+                        return await this.sendBNBTokenOffchainTransaction(body);
                     case "ETH":
                         return await this.sendOffchainTransactionFromCustodial(body);
                     case "BSC":
@@ -451,7 +481,7 @@ export class TatumService {
                 network: data.token.network,
                 amount: withdrawAbleAmount,
                 action: TransferAction.WITHDRAW,
-                walletId: data.userCurrency.walletId!,
+                walletId: data.currency.walletId!,
                 tatumId: data.address,
                 status: TransferStatus.SUCCEEDED,
                 type: TransferType.DEBIT,
@@ -460,8 +490,8 @@ export class TatumService {
             if (this.isSubCustodialToken(data.token)) {
                 try {
                     const transferData = await this.transferFunds({
-                        senderAccountId: data.userCurrency.tatumId,
-                        recipientAccountId: data.orgCurrency.tatumId,
+                        senderAccountId: data.currency.tatumId,
+                        recipientAccountId: data.baseCurrency.tatumId,
                         amount: fee,
                         recipientNote: USER_WITHDRAW_FEE,
                     });
@@ -471,8 +501,8 @@ export class TatumService {
                         network: data.token.network,
                         amount: data.amount,
                         action: TransferAction.FEE,
-                        walletId: data.orgCurrency.walletId!,
-                        tatumId: data.orgCurrency.tatumId,
+                        walletId: data.baseCurrency.walletId!,
+                        tatumId: data.baseCurrency.tatumId,
                         status: TransferStatus.SUCCEEDED,
                         type: TransferType.CREDIT,
                     });
@@ -592,6 +622,16 @@ export class TatumService {
                 return await this.estimateCustodialWithdrawFee(data);
             default:
                 throw new Error("There was an error calculating withdraw fee.");
+        }
+    }
+
+    public async removeAddressFromAccount(data: { accountId: string; address: string }) {
+        try {
+            process.env["TATUM_API_KEY"] = Secrets.tatumApiKey;
+            return await removeDepositAddress(data.accountId, data.address);
+        } catch (error) {
+            console.log(error?.response?.data || error.message);
+            throw new Error(error?.response?.data?.message || error.message);
         }
     }
 }

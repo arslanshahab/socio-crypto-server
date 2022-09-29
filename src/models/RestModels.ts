@@ -1,8 +1,9 @@
-import Prisma from "@prisma/client";
-import { ArrayOf, CollectionOf, Nullable, Optional, Property, Required } from "@tsed/schema";
+import Prisma, { CampaignMedia, CampaignTemplate, RafflePrize } from "@prisma/client";
+import { ArrayOf, CollectionOf, Enum, Nullable, Optional, Property, Required } from "@tsed/schema";
 import { getCryptoAssestImageUrl } from "../util";
-import { KycLevel, SharingRewardType } from "../util/constants";
-import { KycStatus } from "src/types";
+import { KycLevel, SharingRewardType, SupportedNetwork } from "../util/constants";
+import { KycStatus } from "types.d.ts";
+import { L1DragonchainTransactionAugmented } from "types.d.ts";
 
 export class CampaignMediaResultModel {
     @Property() public readonly id: string;
@@ -190,6 +191,7 @@ export class TransferResultModel {
     @Nullable(String) public readonly ethAddress: string | null;
     @Nullable(String) public readonly paypalAddress: string | null;
     @Nullable(String) public readonly currency: string | null;
+    @Nullable(String) public readonly transactionHash: string | null;
 
     @Property() public symbolImageUrl?: string;
 
@@ -420,6 +422,7 @@ export class UserWalletResultModel {
 
 export class UserRecordResultModel extends UserResultModel {
     @CollectionOf(SocialPostResultModel) public readonly social_post: SocialPostResultModel[];
+    @Property() public readonly social_link: Prisma.SocialLink[];
 }
 
 export class BalanceResultModel {
@@ -527,8 +530,8 @@ export class CampaignStatsResultModel {
 }
 
 export class CampaignStatsResultModelArray {
-    @Property() public readonly aggregaredMetrics: AggregaredMetrics;
-    @Property() public readonly calculateCampaignMetrics: CampaignStatsResultModel[];
+    @Property() public readonly aggregatedMetrics: AggregaredMetrics;
+    @Property() public readonly rawMetrics: CampaignStatsResultModel[];
 }
 
 export class OrgEmployeesResultModel {
@@ -753,10 +756,7 @@ class CampaignParticipantsResultModel {
     @Property() public readonly userId: string;
     @Property() public readonly username: string;
     @Property() public readonly email: string;
-    @Property() public readonly createdAt: Date;
-    @Property() public readonly lastLogin: Date | null;
     @Property() public readonly campaignName: string;
-    @Property() public readonly twitterUsername: string;
     @Property() public readonly selfPostCount: number;
     @Property() public readonly likeScore: number;
     @Property() public readonly shareScore: number;
@@ -764,6 +764,7 @@ class CampaignParticipantsResultModel {
     @Property() public readonly totalShares: number;
     @Property() public readonly participationScore: number;
     @Property() public readonly blacklist: boolean;
+    @Nullable(String) public readonly twitterUsername: string | null;
 }
 
 export class CampaignDetailsResultModel {
@@ -785,6 +786,161 @@ export class UserStatisticsResultModel {
     @Property() public readonly participationScore: number;
     @Property() public readonly campaignName: string;
     @Property() public readonly participationDate: Date;
+}
+
+export class CreateCampaignParams {
+    @Required() public readonly name: string;
+    @Required() public readonly coiinTotal: string;
+    @Required() public readonly target: string;
+    @Property() public readonly targetVideo: string;
+    @Required() public readonly beginDate: Date;
+    @Required() public readonly endDate: Date;
+    @Property() public readonly description: string;
+    @Property() public readonly instructions: string;
+    @Required() public readonly symbol: string;
+    @Required() public readonly network: string;
+    @Property() public readonly company: string;
+    @Required() public readonly algorithm: string;
+    @Property() public readonly requirements: JSON;
+    @Required() public readonly imagePath: string;
+    @Property() public readonly campaignType: string;
+    @Property() public readonly socialMediaType: string[];
+    @Property() public readonly tagline: string;
+    @Property() public readonly suggestedPosts: string[];
+    @Property() public readonly suggestedTags: string[];
+    @Property() public readonly keywords: string[];
+    @Property() public readonly type: string;
+    @Property() public readonly raffle_prize: RafflePrize;
+    @Required() public readonly campaignMedia: CampaignMedia[];
+    @Required() public readonly campaignTemplates: CampaignTemplate[];
+    @Property() public readonly isGlobal: boolean;
+    @Required() public readonly showUrl: boolean;
+}
+
+export class UpdateCampaignParams {
+    @Property() public readonly id: string;
+    @Required() public readonly name: string;
+    @Required() public readonly coiinTotal: string;
+    @Required() public readonly target: string;
+    @Property() public readonly targetVideo: string;
+    @Required() public readonly beginDate: Date;
+    @Required() public readonly endDate: Date;
+    @Property() public readonly description: string;
+    @Property() public readonly instructions: string;
+    @Property() public readonly isGlobal: boolean;
+    @Required() public readonly showUrl: boolean;
+    @Property() public readonly company: string;
+    @Required() public readonly algorithm: string;
+    @Property() public readonly requirements: JSON;
+    @Property() public readonly imagePath: string;
+    @Property() public readonly campaignType: string;
+    @Property() public readonly socialMediaType: string[];
+    @Property() public readonly tagline: string;
+    @Property() public readonly suggestedPosts: string[];
+    @Property() public readonly suggestedTags: string[];
+    @Property() public readonly keywords: string[];
+    @Property() public readonly type: string;
+    @Property() public readonly raffle_prize: RafflePrize;
+    @Required() public readonly campaignMedia: CampaignMedia[];
+    @Required() public readonly campaignTemplates: CampaignTemplate[];
+}
+
+export class VerifySessionResultModel {
+    @Property() public readonly role: string;
+    @Property() public readonly company: string;
+    @Property() public readonly email: string;
+    @Nullable(Boolean) public readonly tempPass: boolean | null;
+}
+
+export class TransactionResultModel {
+    @Property() public readonly id: string;
+    @Property() public readonly txId: string;
+    @Property() public readonly chain: string;
+    @Nullable(String) public readonly action: string | null;
+    @Nullable(String) public readonly socialType: string | null;
+    @Property() public readonly dcId: string;
+    @Property() public readonly blockId: string;
+    @Property() public readonly timestamp: string;
+
+    public static build(transaction: Prisma.Transaction & L1DragonchainTransactionAugmented): TransactionResultModel {
+        return {
+            ...transaction,
+        };
+    }
+}
+
+export class SocialPostCountResultModel {
+    @Property() public readonly count: number;
+}
+
+export class EngagementRateResultModel {
+    @Property() public readonly likeRate: string;
+    @Property() public readonly commentRate: string;
+    @Property() public readonly shareRate: string;
+    @Property() public readonly viewRate: string;
+    @Property() public readonly submissionRate: string;
+    @Property() public readonly clickRate: string;
+}
+export class CampaignScoreResultModel {
+    @Property() public readonly averageClicks: string;
+    @Property() public readonly engagementRates: EngagementRateResultModel;
+    @Property() public readonly likeStandardDeviation: string;
+    @Property() public readonly commentStandardDeviation: string;
+    @Property() public readonly sharesStandardDeviation: string;
+    @Property() public readonly clicksStandardDeviation: string;
+    @Property() public readonly viewsStandardDeviation: string;
+    @Property() public readonly submissionsStandardDeviation: string;
+}
+
+export class AdminProfileResultModel {
+    @Property() public readonly name: string;
+    @Property() public readonly email: string;
+    @Property() public readonly company: string;
+    @Property() public readonly enabled: boolean;
+    @Property() public readonly orgId: string;
+    @Property() public readonly imageUrl: string;
+    @Property() public readonly verifyStatus: string;
+}
+
+export class UpdateBrandLogoResultModel {
+    @Property() public readonly name: string;
+    @Property() public readonly orgId: string;
+    @Property() public readonly brand: string;
+    @Property() public readonly signedOrgUrl: string;
+    @Property() public readonly imageUrl: string;
+}
+
+export class AdminResultModel {
+    @Property() public readonly resetPass: boolean;
+    @Property() public readonly role: string;
+    @Property() public readonly company: string;
+    @Property() public readonly email: string;
+    @Property() public readonly twoFactorEnabled: boolean;
+}
+
+export class NftResultModel {
+    @Property() public readonly transactionType: string;
+    @Property() public readonly dcId: string;
+    @Property() public readonly txId: string;
+    @Property() public readonly tag: string;
+    @Property() public readonly timestamp: string;
+    @Property() public readonly blockId: string;
+    @Property() public readonly invoker: string;
+    @Property() @Enum(SupportedNetwork) public readonly network: SupportedNetwork;
+    @Property() public readonly nftId?: string;
+    @Property() public readonly file?: string;
+    @Property() public readonly mintTxId?: string;
+    @Property() public readonly userfields?: string;
+    @Property() public readonly name?: string;
+    @Property() public readonly type?: string;
+    @Property() public readonly owner?: string;
+    @Property() public readonly note?: string;
+}
+
+export class PurchaseCoiinResultModel {
+    id: string;
+    clientSecret: string;
+    amount: number;
 }
 
 export class TransactionFeeResultModel {

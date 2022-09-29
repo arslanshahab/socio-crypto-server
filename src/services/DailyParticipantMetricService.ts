@@ -1,6 +1,11 @@
 import { Injectable } from "@tsed/di";
-import { Campaign, User, Participant } from "@prisma/client";
+import { Campaign, User, Participant, DailyParticipantMetric } from "@prisma/client";
 import { prisma, readPrisma } from "../clients/prisma";
+import { BN } from "../util/index";
+import { BigNumber } from "bignumber.js";
+import { ParticipantAction } from "../util/constants";
+import { startOfDay } from "date-fns";
+import { AggregatedCampaignMetricType } from "types.d.ts";
 
 @Injectable()
 export class DailyParticipantMetricService {
@@ -116,30 +121,6 @@ export class DailyParticipantMetricService {
         });
     }
 
-    public async getAggregatedOrgMetrics(campaignId?: string) {
-        return readPrisma.dailyParticipantMetric.findMany({
-            where: campaignId ? { campaignId } : {},
-            select: {
-                clickCount: true,
-                viewCount: true,
-                shareCount: true,
-                participationScore: true,
-            },
-        });
-    }
-
-    public async getOrgMetrics(campaignId?: string) {
-        return readPrisma.dailyParticipantMetric.findMany({
-            where: campaignId ? { campaignId } : {},
-            select: {
-                clickCount: true,
-                viewCount: true,
-                shareCount: true,
-                participationScore: true,
-            },
-        });
-    }
-
     public async getAccumulatedParticipantMetrics(participantId: string) {
         const participants = await readPrisma.dailyParticipantMetric.findMany({ where: { participantId } });
         const { clickCount, likeCount, shareCount, viewCount, submissionCount, commentCount, participationScore } =
@@ -165,5 +146,125 @@ export class DailyParticipantMetricService {
                 }
             );
         return { clickCount, likeCount, shareCount, viewCount, submissionCount, commentCount, participationScore };
+    }
+
+    public async upsertMetrics(data: {
+        user: User;
+        campaign: Campaign;
+        participant: Participant;
+        action: ParticipantAction;
+        additiveParticipationScore: BigNumber;
+        actionCount?: number;
+    }): Promise<DailyParticipantMetric> {
+        const { user, campaign, participant, action, additiveParticipationScore, actionCount = 1 } = data;
+
+        if (!["clicks", "views", "submissions", "likes", "shares", "comments"].includes(action))
+            throw new Error("action not supported");
+        let record = await readPrisma.dailyParticipantMetric.findFirst({
+            where: {
+                participantId: participant.id,
+                createdAt: { gte: startOfDay(new Date()) },
+            },
+        });
+        if (!record) {
+            record = await prisma.dailyParticipantMetric.create({
+                data: { participantId: participant.id, userId: user.id, campaignId: campaign.id },
+            });
+        }
+        let totalParticipationScore = participant.participationScore;
+        let participationScore = participant.participationScore;
+        let clickCount = record.clickCount;
+        let viewCount = record.viewCount;
+        let submissionCount = record.submissionCount;
+        let likeCount = record.likeCount;
+        let shareCount = record.shareCount;
+        let commentCount = record.commentCount;
+        switch (action) {
+            case "clicks":
+                clickCount = (
+                    record.clickCount ? new BN(record.clickCount).plus(new BN(actionCount)) : new BN(actionCount)
+                ).toString();
+                break;
+            case "views":
+                viewCount = (
+                    record.viewCount ? new BN(record.viewCount).plus(new BN(actionCount)) : new BN(actionCount)
+                ).toString();
+                break;
+            case "submissions":
+                submissionCount = (
+                    record.submissionCount
+                        ? new BN(record.submissionCount).plus(new BN(actionCount))
+                        : new BN(actionCount)
+                ).toString();
+                break;
+            case "likes":
+                likeCount = (
+                    record.likeCount ? new BN(record.likeCount).plus(new BN(actionCount)) : new BN(actionCount)
+                ).toString();
+                break;
+            case "shares":
+                shareCount = (
+                    record.shareCount ? new BN(record.shareCount).plus(new BN(actionCount)) : new BN(actionCount)
+                ).toString();
+                break;
+            case "comments":
+                commentCount = (
+                    record.commentCount ? new BN(record.commentCount).plus(new BN(actionCount)) : new BN(actionCount)
+                ).toString();
+                break;
+        }
+        participationScore = (
+            record.participationScore
+                ? new BN(record.participationScore).plus(additiveParticipationScore)
+                : new BN(additiveParticipationScore)
+        ).toString();
+        return await prisma.dailyParticipantMetric.update({
+            where: {
+                id: record.id,
+            },
+            data: {
+                totalParticipationScore: totalParticipationScore,
+                participationScore,
+                clickCount,
+                shareCount,
+                viewCount,
+                likeCount,
+                commentCount,
+                submissionCount,
+            },
+        });
+    }
+    public async getAggregatedOrgMetrics(orgId: string) {
+        const result: AggregatedCampaignMetricType[] =
+            await prisma.$queryRaw`SELECT sum(cast(d."clickCount" as int)) as "clickCount", sum(cast(d."viewCount" as int))
+         as "viewCount", sum(cast(d."shareCount" as int)) as "shareCount", sum(cast(d."participationScore" as float)) as "participationScore" 
+         FROM daily_participant_metric as d inner join campaign as c on d."campaignId"=c.id inner join org as o on c."orgId"=o.id where
+        o.id=${orgId} group by o.id`;
+        return result;
+    }
+
+    public async getOrgMetrics(orgId: string) {
+        const result: AggregatedCampaignMetricType[] =
+            await prisma.$queryRaw`SELECT sum(cast(d."clickCount" as int)) as "clickCount", sum(cast(d."viewCount" as int))
+         as "viewCount", sum(cast(d."shareCount" as int)) as "shareCount", sum(cast(d."participationScore" as float)) as "participationScore" 
+         FROM daily_participant_metric as d inner join campaign as c on d."campaignId"=c.id inner join org as o on c."orgId"=o.id where
+        o.id=${orgId} group by c.id`;
+        return result;
+    }
+
+    public async getAggregatedCampaignMetrics(campaignId: string) {
+        const result: AggregatedCampaignMetricType[] =
+            await prisma.$queryRaw`SELECT c.name, COALESCE(sum(cast(d."clickCount" as int)),0) as "clickCount", COALESCE(sum(cast(d."viewCount" as int)),0) as "viewCount", 
+            COALESCE(sum(cast(d."shareCount" as int)),0) as "shareCount", COALESCE(sum(cast(d."participationScore" as float)),0) as "participationScore" FROM
+            daily_participant_metric as d right join campaign as c on d."campaignId"=c.id where c.id=${campaignId} group by c.id;`;
+        return result;
+    }
+
+    public async getCampaignMetrics(campaignId: string) {
+        const result: AggregatedCampaignMetricType[] =
+            await prisma.$queryRaw`SELECT  sum(cast(d."clickCount" as int)) as "clickCount", sum(cast(d."viewCount" as int))
+         as "viewCount", sum(cast(d."shareCount" as int)) as "shareCount", sum(cast(d."participationScore" as float)) as "participationScore" 
+         FROM daily_participant_metric as d where d."campaignId"=${campaignId} group by d.id`;
+        return result;
     }
 }

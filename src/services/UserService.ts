@@ -2,8 +2,16 @@ import { Campaign, Prisma, User, Wallet, Currency, Token } from "@prisma/client"
 import { Inject, Injectable } from "@tsed/di";
 import { BadRequest, Forbidden, NotFound } from "@tsed/exceptions";
 import { isArray } from "lodash";
-import { JWTPayload, RewardType } from "../types";
-import { BSC, CacheKeys, COIIN, REWARD_AMOUNTS, SHARING_REWARD_LIMIT_PER_DAY, TransferType } from "../util/constants";
+import { JWTPayload } from "types.d.ts";
+import {
+    BSC,
+    CacheKeys,
+    COIIN,
+    REWARD_AMOUNTS,
+    SHARING_REWARD_LIMIT_PER_DAY,
+    TransferType,
+    UserRewardType,
+} from "../util/constants";
 import { TatumClient } from "../clients/tatumClient";
 import { createSubscriptionUrl } from "../util/tatumHelper";
 import { WalletService } from "./WalletService";
@@ -11,7 +19,7 @@ import { WALLET_NOT_FOUND } from "../util/errors";
 import { differenceInHours, subDays } from "date-fns";
 import { TransferService } from "./TransferService";
 import { TatumService } from "./TatumService";
-import { createPasswordHash, generatePromoCode, prepareCacheKey } from "../util";
+import { createPasswordHash, prepareCacheKey } from "../util";
 import { ProfileService } from "./ProfileService";
 import { NotificationService } from "./NotificationService";
 import { PlatformCache, UseCache } from "@tsed/common";
@@ -117,20 +125,6 @@ export class UserService {
         ]);
     }
 
-    /**
-     * Retrieves an admin object by its firebase id
-     *
-     * @param firebaseId the firebaseId of the admin
-     * @param include additional relations to include with the admin query
-     * @returns the admin object, with the requested relations included
-     */
-    public async findUserByFirebaseId<T extends Prisma.AdminInclude | undefined>(firebaseId: string, include?: T) {
-        return prisma.admin.findFirst<{
-            where: Prisma.AdminWhereInput;
-            // this type allows adding additional relations to result tpe
-            include: T;
-        }>({ where: { firebaseId }, include: include as T });
-    }
     /**
      * Asserts that the user has the given permissions
      *
@@ -261,6 +255,12 @@ export class UserService {
                             country: true,
                         },
                     },
+                    social_link: {
+                        select: {
+                            id: true,
+                            username: true,
+                        },
+                    },
                 },
                 skip,
                 take,
@@ -291,7 +291,7 @@ export class UserService {
         });
     }
 
-    public async transferCoiinReward(data: { user: User; type: RewardType; campaign?: Campaign }) {
+    public async transferCoiinReward(data: { user: User; type: UserRewardType; campaign?: Campaign }) {
         const { user, type, campaign } = data;
         const wallet = await this.walletService.findWalletByUserId(user.id);
         if (!wallet) throw new NotFound(WALLET_NOT_FOUND);
@@ -301,6 +301,13 @@ export class UserService {
         if (type === "LOGIN_REWARD" || type === "PARTICIPATION_REWARD")
             thisWeeksReward = await this.transferService.getRewardForThisWeek(wallet.id, type);
         const amount = REWARD_AMOUNTS[type] || 0;
+        if (
+            type === "SHARING_REWARD" &&
+            (await this.transferService.getLast24HourRedemption(wallet.id, "SHARING_REWARD")) >=
+                SHARING_REWARD_LIMIT_PER_DAY
+        ) {
+            throw new BadRequest("Limit reached for sharing reward");
+        }
         if (
             (type === "LOGIN_REWARD" && accountAgeInHours > 24 && !thisWeeksReward) ||
             (type === "PARTICIPATION_REWARD" && !thisWeeksReward) ||
@@ -357,19 +364,12 @@ export class UserService {
     }
 
     public async initNewUser(email: string, username: string, password: string, referralCode?: string | null) {
-        let promoCode = null;
-        while (!promoCode) {
-            promoCode = generatePromoCode();
-            if (await prisma.user.findFirst({ where: { promoCode } })) {
-                promoCode = null;
-            }
-        }
         const user = await prisma.user.create({
             data: {
                 email: email.trim().toLowerCase(),
                 password: createPasswordHash({ email, password }),
                 ...(referralCode && { referralCode }),
-                promoCode,
+                promoCode: await this.getUniquePromoCode(),
             },
         });
 
@@ -451,5 +451,35 @@ export class UserService {
             amount: amount.toString(),
             recipientNote: "USER-BALANCE-UPDATES",
         });
+    }
+
+    public async getUniquePromoCode() {
+        let promoCode = null;
+        while (!promoCode) {
+            promoCode = await this.generatePromoCode();
+            if (await prisma.user.findFirst({ where: { promoCode } })) {
+                promoCode = null;
+            }
+        }
+        return promoCode;
+    }
+
+    public async getAllEmails() {
+        return await prisma.user.findMany({ select: { email: true } });
+    }
+
+    public async generatePromoCode() {
+        const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        const stringLength = 6;
+        function pickRandom() {
+            return possible[Math.floor(Math.random() * possible.length)];
+        }
+        return Array.apply(null, Array(stringLength)).map(pickRandom).join("");
+    }
+
+    public async getLastHourEmails() {
+        let d = new Date();
+        const lastHour = d.setHours(d.getHours() - 1);
+        return prisma.user.findMany({ where: { createdAt: { gte: new Date(lastHour) } }, select: { email: true } });
     }
 }

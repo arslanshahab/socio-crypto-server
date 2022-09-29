@@ -42,21 +42,11 @@ export class Participant extends BaseEntity {
 
     @Column({ default: false })
     public blacklist: boolean;
-    
-    @ManyToOne(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => User,
-        (user) => user.campaigns,
-        { primary: true, eager: true }
-    )
+
+    @ManyToOne((_type) => User, (user) => user.campaigns, { primary: true, eager: true })
     public user: User;
 
-    @ManyToOne(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => Campaign,
-        (campaign) => campaign.participants,
-        { primary: true, eager: true }
-    )
+    @ManyToOne((_type) => Campaign, (campaign) => campaign.participants, { primary: true, eager: true })
     public campaign: Campaign;
 
     @CreateDateColumn()
@@ -113,7 +103,7 @@ export class Participant extends BaseEntity {
         await participant.save();
         const url = `${serverBaseUrl}/v1/referral/${participant.id}`;
         participant.link = await TinyUrl.shorten(url);
-        await HourlyCampaignMetric.upsert(campaign, campaign.org, "participate");
+        await HourlyCampaignMetric.upsertData(campaign, campaign.org, "participate");
         return await participant.save();
     }
 }

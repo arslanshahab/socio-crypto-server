@@ -5,6 +5,8 @@ import { payoutCryptoCampaignRewards } from "./auditFunctions";
 import { Firebase } from "../../clients/firebase";
 import { CampaignAuditStatus, CampaignStatus } from "../../util/constants";
 import { readPrisma } from "../../clients/prisma";
+import { Dragonchain } from "../../clients/dragonchain";
+import { SlackClient } from "../../clients/slack";
 
 dotenv.config();
 const app = new Application();
@@ -14,6 +16,7 @@ console.log("APP instance created.");
     console.log("Starting campaign audit.");
     await Secrets.initialize();
     await Firebase.initialize();
+    await Dragonchain.initialize();
     const connection = await app.connectDatabase();
     console.log("Secrets and connection initialized.");
     const now = new Date();
@@ -66,8 +69,10 @@ console.log("APP instance created.");
         }
     } catch (error) {
         console.log(error);
+        await SlackClient.sendNotification({ name: "Campaign audit Cron", error: error });
+        console.log("EXITING BECAUSE OF AN ERROR ----.");
         await connection.close();
-        console.log("DATABASE CONNECTION CLOSED WITH ERROR ----.");
+        console.log("DATABASE CONNECTION CLOSED ----.");
         process.exit(0);
     }
     console.log("COMPLETED CRON TASKS ----.");

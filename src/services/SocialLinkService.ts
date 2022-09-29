@@ -1,12 +1,12 @@
 import { Injectable } from "@tsed/di";
 import { User, SocialLink } from "@prisma/client";
 import { encrypt, decrypt } from "../util/crypto";
-import { SocialLinkType } from "../util/constants";
+import { SocialClientType, SocialLinkType } from "../util/constants";
 import { prisma, readPrisma } from "../clients/prisma";
 
 @Injectable()
 export class SocialLinkService {
-    public async findSocialLinkByUserAndType(userId: string, type: SocialLinkType) {
+    public async findSocialLinkByUserAndType(userId: string, type: SocialLinkType | string) {
         const socialLink = await readPrisma.socialLink.findFirst({
             where: {
                 userId,
@@ -17,15 +17,15 @@ export class SocialLinkService {
             ...socialLink,
             ...(socialLink?.apiKey &&
                 socialLink.apiSecret && {
-                    apiKey: decrypt(socialLink?.apiKey!),
-                    apiSecret: decrypt(socialLink?.apiSecret!),
+                    apiKey: decrypt(socialLink?.apiKey),
+                    apiSecret: decrypt(socialLink?.apiSecret),
                 }),
         } as SocialLink;
     }
 
-    public async addTwitterLink(user: User, apiKey: string, apiSecret: string) {
+    public async addTwitterLink(user: User, apiKey: string, apiSecret: string, username: string) {
         const socialLink = await readPrisma.socialLink.findFirst({
-            where: { userId: user.id, type: "twitter" },
+            where: { userId: user.id, type: SocialClientType.TWITTER },
         });
         if (socialLink) {
             return await prisma.socialLink.update({
@@ -33,15 +33,17 @@ export class SocialLinkService {
                 data: {
                     apiKey: encrypt(apiKey),
                     apiSecret: encrypt(apiSecret),
+                    username,
                 },
             });
         } else {
             return await prisma.socialLink.create({
                 data: {
                     userId: user.id,
-                    type: "twitter",
+                    type: SocialClientType.TWITTER,
                     apiKey: encrypt(apiKey),
                     apiSecret: encrypt(apiSecret),
+                    username,
                 },
             });
         }
@@ -86,5 +88,11 @@ export class SocialLinkService {
             },
         });
         return socialLink;
+    }
+
+    public async getFollowersAggregation(campaignId: string) {
+        const result: { followerCount: number }[] =
+            await readPrisma.$queryRaw`SELECT sum("followerCount") as "followerCount" from social_link where "userId" in (select "userId" from participant where "campaignId"=${campaignId})`;
+        return result;
     }
 }

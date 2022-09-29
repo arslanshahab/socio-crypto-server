@@ -4,7 +4,7 @@ import fs from "fs";
 import { doFetch, RequestData } from "../util/fetchRequest";
 import { SocialLink } from "../models/SocialLink";
 import { Secrets } from "../util/secrets";
-import { TiktokLinkCredentials } from "../types";
+import { TiktokLinkCredentials } from "types.d.ts";
 import path from "path";
 import { SocialLink as PrismaSocialLink } from "@prisma/client";
 
@@ -142,4 +142,6 @@ export class TikTokClient {
     public static getPost = async (socialLink: PrismaSocialLink, id: string, cached = true) => {
         return "There is no post found on tiktok";
     };
+
+    public static getUsernameV2 = async () => {};
 }

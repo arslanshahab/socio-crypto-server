@@ -8,7 +8,7 @@ import {
     UpdateDateColumn,
 } from "typeorm";
 import { User } from "./User";
-import { SocialType, TiktokLinkCredentials, TwitterLinkCredentials } from "../types";
+import { SocialType, TiktokLinkCredentials, TwitterLinkCredentials } from "types.d.ts";
 import { decrypt, encrypt } from "../util/crypto";
 import BigNumber from "bignumber.js";
 import { BN } from "../util";
@@ -45,6 +45,9 @@ export class SocialLink extends BaseEntity {
 
     @Column({ nullable: true })
     public followerCount: number;
+
+    @Column({ nullable: true })
+    public username: string;
 
     @ManyToOne((_type) => User, (user) => user.socialLinks)
     public user: User;

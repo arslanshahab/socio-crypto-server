@@ -10,8 +10,9 @@ import {
 } from "typeorm";
 import { User } from "./User";
 import { FactorLink } from "./FactorLink";
-import { KycStatus } from "src/types";
+import { KycStatus } from "types.d.ts";
 import { KycLevel } from "../util/constants";
+import { Admin } from "./Admin";
 
 @Entity()
 export class VerificationApplication extends BaseEntity {
@@ -36,6 +37,9 @@ export class VerificationApplication extends BaseEntity {
     @ManyToOne((_type) => User, (user) => user.identityVerification)
     public user: User;
 
+    @ManyToOne((_type) => Admin, (admin) => admin.identityVerification)
+    public admin: Admin;
+
     @OneToMany((_type) => FactorLink, (factor) => factor.verification)
     public factors: FactorLink[];
 
@@ -45,7 +49,7 @@ export class VerificationApplication extends BaseEntity {
     @UpdateDateColumn()
     public updatedAt: Date;
 
-    public static async upsert(data: {
+    public static async upsertData(data: {
         record?: VerificationApplication;
         appId: string;
         status: KycStatus;

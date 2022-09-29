@@ -33,7 +33,7 @@ export const newOrg = async (
         const walletCurrency = WalletCurrency.newWalletCurrency("coiin", wallet);
         await walletCurrency.save();
         await wallet.save();
-        await SesClient.sendNewOrgConfirmationEmail(orgName, email, password);
+        await SesClient.sendNewOrgCreationEmail(orgName, email);
         return org;
     } catch (error) {
         throw new FormattedError(error);

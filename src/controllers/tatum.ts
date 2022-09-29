@@ -9,9 +9,18 @@ import { Currency } from "../models/Currency";
 import { Transfer } from "../models/Transfer";
 import { ApolloError } from "apollo-server-express";
 import { Org } from "../models/Org";
-import { BSC, COIIN, RAIINMAKER_WITHDRAW, USER_WITHDRAW, WITHDRAW_LIMIT } from "../util/constants";
+import {
+    BSC,
+    COIIN,
+    RAIINMAKER_WITHDRAW,
+    TransferAction,
+    TransferStatus,
+    TransferType,
+    USER_WITHDRAW,
+    WITHDRAW_LIMIT,
+} from "../util/constants";
 import { Verification } from "../models/Verification";
-import { JWTPayload } from "src/types";
+import { JWTPayload } from "types.d.ts";
 import { createSubscriptionUrl, getWithdrawAddressForTatum } from "../util/tatumHelper";
 import { getTokenValueInUSD } from "../util/exchangeRate";
 import { errorMap, GLOBAL_WITHDRAW_LIMIT } from "../util/errors";
@@ -294,11 +303,11 @@ export const withdrawFunds = async (
             symbol: token.symbol,
             network: token.network,
             amount: new BN(amount),
-            action: "WITHDRAW",
+            action: TransferAction.WITHDRAW,
             wallet: user.wallet,
             tatumId: address,
-            status: "SUCCEEDED",
-            type: "DEBIT",
+            status: TransferStatus.SUCCEEDED,
+            type: TransferType.DEBIT,
         });
         await newTransfer.save();
         userCurrency.accountBalance = userCurrency.accountBalance - amount;
@@ -339,11 +348,11 @@ export const trackCoiinTransactionForUser = asyncHandler(async (req: Request, re
             symbol: userCurrency.token.symbol,
             network: userCurrency.token.network,
             amount: new BN(amount),
-            action: "DEPOSIT",
+            action: TransferAction.DEPOSIT,
             wallet: user.wallet,
             tatumId: userCurrency.tatumId,
-            status: "SUCCEEDED",
-            type: "CREDIT",
+            status: TransferStatus.SUCCEEDED,
+            type: TransferType.CREDIT,
         });
         await newTransfer.save();
         await Firebase.sendUserTransactionUpdate(user.profile.deviceToken, "DEPOSIT");

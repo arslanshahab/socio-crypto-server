@@ -1,13 +1,8 @@
-import { createClient, DragonchainClient } from "dragonchain-sdk";
+import { createClient, DragonchainClient, L1DragonchainTransactionFull, Response } from "dragonchain-sdk";
 import { Secrets } from "../util/secrets";
 import { BigNumber } from "bignumber.js";
-
-const transactionTypes = ["campaign", "trackAction", "campaignAudit", "accountRecovery"];
-const getActionKey = (action: string, participantId: string) => `${participantId.replace(/-/g, ":")}-${action}`;
-const getCampaignAuditKey = (campaignId: string) => campaignId.replace(/-/g, ":");
-
-const getAccountRecoveryAttemptKey = (accountId: string | undefined, username: string) =>
-    `${accountId ? accountId.replace(/-/g, ":") + ":" : ""}${username.replace(/-/g, ":")}`;
+import { transactionTypes } from "../util/constants";
+import { getActionKey, getCampaignAuditKey, getAccountRecoveryAttemptKey } from "../util/index";
 
 export class Dragonchain {
     public static client: DragonchainClient;
@@ -89,5 +84,17 @@ export class Dragonchain {
         });
         if (!res.ok) throw new Error("Failed to ledger account recovery to the Dragonchain");
         return res.response.transaction_id;
+    }
+
+    public static async getTransaction(transactionId: string) {
+        return await this.client.getTransaction({ transactionId });
+    }
+
+    public static async getBulkTransaction(ids: string[]): Promise<Response<L1DragonchainTransactionFull>[]> {
+        const promiseArray: Promise<any>[] = [];
+        for (const id of ids) {
+            promiseArray.push(this.getTransaction(id));
+        }
+        return await Promise.all(promiseArray);
     }
 }

@@ -7,17 +7,16 @@ import { PlatformBuilder } from "@tsed/common";
 import logger from "./util/logger";
 import { Secrets } from "./util/secrets";
 import { authenticateAdmin, authenticateUser } from "./middleware/authentication";
-// import { Dragonchain } from "./clients/dragonchain";
+import { Dragonchain } from "./clients/dragonchain";
 import { Firebase } from "./clients/firebase";
 // import * as FactorController from "./controllers/factor";
 // import * as Dragonfactor from "@myfii-dev/dragonfactor-auth";
 // import { paypalWebhook } from "./controllers/withdraw";
 import { adminResolvers, publicResolvers, resolvers } from "./graphql/resolvers";
 import { adminLogin, adminLogout, updateUserPassword } from "./controllers/authentication";
-import { trackClickByLink } from "./controllers/participant";
 import cookieParser from "cookie-parser";
 import { StripeAPI } from "./clients/stripe";
-import { stripeWebhook } from "./controllers/stripe";
+// import { stripeWebhook } from "./controllers/stripe";
 import { ApolloServer } from "apollo-server-express";
 import { typeDefs } from "./graphql/schema";
 import { ApolloServerPlugin } from "apollo-server-plugin-base";
@@ -36,7 +35,7 @@ import {
     trackCoiinTransactionForUser,
     getAccountDetails,
 } from "./controllers/tatum";
-import { kycWebhook } from "./controllers/kyc";
+// import { kycWebhook } from "./controllers/kyc";
 import { GraphQLRequestContext } from "../node_modules/apollo-server-types/dist/index.d";
 import * as Sentry from "@sentry/node";
 import * as Tracing from "@sentry/tracing";
@@ -62,7 +61,7 @@ export class Application {
         this.databaseConnection = await this.connectDatabase();
         await Secrets.initialize();
         await Firebase.initialize();
-        // await Dragonchain.initialize();
+        await Dragonchain.initialize();
         StripeAPI.initialize();
         this.app = express();
         Sentry.init({
@@ -90,6 +89,9 @@ export class Application {
                 "https://www.raiinmaker.com",
                 "https://seed-staging.raiinmaker.com",
                 "https://seed.raiinmaker.com",
+                "https://raiinmaker-mobile.web.app",
+                "https://app.raiinmaker.com",
+                "https://opensourcemoney.tv",
             ],
             methods: ["GET", "POST", "PUT"],
             exposedHeaders: ["x-auth-token"],
@@ -102,7 +104,7 @@ export class Application {
         this.app.use(Sentry.Handlers.tracingHandler());
         this.app.use(cookieParser());
         this.app.use(cors(corsSettings));
-        this.app.post("/v1/payments", bodyParser.raw({ type: "application/json" }), stripeWebhook);
+        // this.app.post("/v1/payments", bodyParser.raw({ type: "application/json" }), stripeWebhook);
         this.app.use(bodyParser.json({ limit: "550mb" }));
         this.app.use(bodyParser.urlencoded({ extended: true }));
         this.app.set("port", process.env.PORT || 8080);
@@ -217,7 +219,7 @@ export class Application {
         this.app.post("/v1/tatum/list-withdraws", getAllWithdrawls);
         this.app.post("/v1/tatum/transfer", transferBalance);
         this.app.get("/v1/xoxoday/filters", getXoxodayFilters);
-        this.app.post("/v1/kyc/webhook", kycWebhook);
+        // this.app.post("/v1/kyc/webhook", kycWebhook);
         // this.app.use(
         //     "/v1/dragonfactor/login",
         //     Dragonfactor.expressMiddleware({
@@ -235,7 +237,6 @@ export class Application {
         //     }),
         //     FactorController.recover
         // );
-        this.app.use("/v1/referral/:participantId", trackClickByLink);
         this.app.use("/v1/tatum/subscription/:userId/:accountId", trackCoiinTransactionForUser);
 
         this.platform = await PlatformExpress.bootstrap(RestServer, {

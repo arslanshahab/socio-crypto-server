@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { Xoxoday } from "../clients/xoxoday";
 import { generateRandomId, supportedCountries, asyncHandler, BN } from "../util";
-import { XoxodayOrder, XoxodayVoucher } from "src/types";
+import { XoxodayOrder, XoxodayVoucher } from "types.d.ts";
 import { getCurrencyValueInUSD, getExchangeRateForCurrency, getTokenValueInUSD } from "../util/exchangeRate";
 import { User } from "../models/User";
 import { getSocialClient } from "./social";
@@ -24,6 +24,9 @@ import {
     WEEK_LIMIT_USD_ONE_MONTH_OLD_ACCOUNT,
     WEEK_LIMIT_USD_TWO_MONTH_OLD_ACCOUNT,
     WEEK_LIMIT_USD_THREE_MONTH_OLD_ACCOUNT,
+    TransferAction,
+    TransferStatus,
+    TransferType,
 } from "../util/constants";
 import { differenceInMonths } from "date-fns";
 
@@ -102,11 +105,11 @@ export const placeOrder = async (parent: any, args: { cart: Array<any>; email: s
         XoxodayOrderModel.saveOrderList(await prepareOrderEntities(cart, orderStatusList), user);
         await Transfer.newReward({
             wallet: user.wallet,
-            symbol: "COIIN",
+            symbol: COIIN,
             amount: new BN(totalCoiinSpent),
-            action: "XOXODAY_REDEMPTION",
-            status: "SUCCEEDED",
-            type: "DEBIT",
+            action: TransferAction.XOXODAY_REDEMPTION,
+            status: TransferStatus.SUCCEEDED,
+            type: TransferType.DEBIT,
         });
         return true;
     } catch (error) {
@@ -133,7 +136,7 @@ export const redemptionRequirements = async (parent: any, args: {}, context: { u
     try {
         const user = await User.findUserByContext(context.user, ["campaigns", "socialLinks"]);
         if (!user) throw new Error(USER_NOT_FOUND);
-        const recentOrder = await Transfer.getLast24HourRedemption(user.wallet, "XOXODAY_REDEMPTION");
+        const recentOrder = await Transfer.getLast24HourRedemption(user.wallet, TransferAction.XOXODAY_REDEMPTION);
         const twitterAccount = user.socialLinks.find((item) => item.type === "twitter");
         const socialClient = getSocialClient("twitter");
         const twitterFollowers = twitterAccount
@@ -198,7 +201,10 @@ const ifUserCanRedeem = async (user: User, totalCoiinSpent: number) => {
     if (twitterFollowers < 20) throw new Error("You need to have atleast 20 followers on twitter before you redeem!");
     if (!user.campaigns.length) throw new Error("You need to participate in atleast one campaign in order to redeem!");
     const accountAgeInMonths = differenceInMonths(new Date(), user.createdAt) || 1;
-    const coiinRedeemedInCurrentWeek = await Transfer.getCurrentWeekRedemption(user.wallet, "XOXODAY_REDEMPTION");
+    const coiinRedeemedInCurrentWeek = await Transfer.getCurrentWeekRedemption(
+        user.wallet,
+        TransferAction.XOXODAY_REDEMPTION
+    );
     const usdRedeemedCurrentWeek = await getTokenValueInUSD(COIIN, coiinRedeemedInCurrentWeek + totalCoiinSpent);
     if (accountAgeInMonths <= 1) {
         if (usdRedeemedCurrentWeek > WEEK_LIMIT_USD_ONE_MONTH_OLD_ACCOUNT)
@@ -221,7 +227,7 @@ const ifUserCanRedeem = async (user: User, totalCoiinSpent: number) => {
                 `You can only redeem $${WEEK_LIMIT_USD_FOUR_MONTH_OLD_ACCOUNT} worth of vouchers within a week.`
             );
     }
-    if (Boolean(await Transfer.getLast24HourRedemption(user.wallet, "XOXODAY_REDEMPTION")))
+    if (Boolean(await Transfer.getLast24HourRedemption(user.wallet, TransferAction.XOXODAY_REDEMPTION)))
         throw new Error("You can only redeem once in 24 hours!");
     const userCurrency = await TatumClient.findOrCreateCurrency({
         symbol: COIIN,

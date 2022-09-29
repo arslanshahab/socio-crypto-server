@@ -9,7 +9,7 @@ import { Wallet } from "../src/models/Wallet";
 import { Profile } from "../src/models/Profile";
 import { User } from "../src/models/User";
 import BigNumber from "bignumber.js";
-import { AlgorithmSpecs, Tiers } from "../src/types";
+import { AlgorithmSpecs, Tiers } from "../types";
 import { SocialPost } from "../src/models/SocialPost";
 import { v4 as uuidv4 } from "uuid";
 import { Participant } from "../src/models/Participant";

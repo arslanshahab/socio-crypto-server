@@ -10,7 +10,7 @@ export class CampaignMediaService {
         });
     }
 
-    public async deleteCampaignMedia(campaignId: string) {
+    public async deleteCampaignMedias(campaignId: string) {
         return await prisma.campaignMedia.deleteMany({
             where: { campaignId },
         });
@@ -24,7 +24,7 @@ export class CampaignMediaService {
         });
     }
 
-    public async updateNewCampaignMedia(campaignMedia: CampaignMedia, campaignId: string) {
+    public async createCampaignMedia(campaignMedia: CampaignMedia, campaignId: string) {
         return await prisma.campaignMedia.create({
             data: {
                 channel: campaignMedia.channel,
@@ -49,6 +49,12 @@ export class CampaignMediaService {
                 isDefault: campaignMedia.isDefault,
                 updatedAt: new Date(),
             },
+        });
+    }
+
+    public async deleteCampaignMedia(mediaId: string[]) {
+        return await prisma.campaignMedia.deleteMany({
+            where: { id: { in: mediaId } },
         });
     }
 }

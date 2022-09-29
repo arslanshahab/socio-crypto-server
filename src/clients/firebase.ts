@@ -4,7 +4,7 @@ import { Campaign } from "../models/Campaign";
 import { Secrets } from "../util/secrets";
 import { paginateList } from "../util";
 import { RequestData, doFetch } from "../util/fetchRequest";
-import { KycStatus, TransferAction } from "src/types";
+import { KycStatus, TransferAction } from "types.d.ts";
 import {
     KYC_NOTIFICATION_TITLE,
     KYC_NOTIFICATION_BODY,
@@ -36,18 +36,6 @@ export class Firebase {
                 privateKey: Secrets.firebasePrivateKey,
             }),
         });
-    }
-
-    private static async makeRequest(path: string, method: RequestData["method"], payload?: RequestData["payload"]) {
-        const url = `${Firebase.baseUrl}/${path}`;
-        const requestData: RequestData = {
-            method,
-            url,
-            payload,
-            query: { key: process.env.FIREBASE_API_KEY },
-        };
-        const response = await doFetch(requestData);
-        return response.data;
     }
 
     public static async sendGenericNotification(tokens: string[], title: string, body: string) {
@@ -128,6 +116,10 @@ export class Firebase {
         return Firebase.adminClient.auth().setCustomUserClaims(uid, { company: orgName, role, tempPass });
     }
 
+    public static async deleteUser(uid: string) {
+        return Firebase.adminClient.auth().deleteUser(uid);
+    }
+
     public static async createSessionCookie(token: string, expiresIn: number) {
         return Firebase.adminClient.auth().createSessionCookie(token, { expiresIn });
     }
@@ -149,8 +141,18 @@ export class Firebase {
     }
 
     public static async loginUser(email: string, password: string): Promise<FirebaseUserLoginResponse> {
-        const endpoint = "/v1/accounts:signInWithPassword";
-        return await Firebase.makeRequest(endpoint, "POST", { email, password, returnSecureToken: true });
+        const url = `${Firebase.baseUrl}/v1/accounts:signInWithPassword`;
+        const requestData: RequestData = {
+            method: "POST",
+            url,
+            payload: {
+                email,
+                password,
+                returnSecureToken: true,
+            },
+            query: { key: process.env.FIREBASE_API_KEY },
+        };
+        return await doFetch(requestData);
     }
 
     public static async updateUserPassword(uid: string, password: string) {

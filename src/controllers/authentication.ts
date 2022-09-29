@@ -4,7 +4,7 @@ import { ILike } from "typeorm";
 import { Verification } from "../models/Verification";
 import { SesClient } from "../clients/ses";
 import { User } from "../models/User";
-import { JWTPayload, VerificationType } from "src/types";
+import { JWTPayload, VerificationType } from "types.d.ts";
 import { createSessionToken, createPasswordHash, asyncHandler } from "../util";
 import { Profile } from "../models/Profile";
 import {
@@ -19,9 +19,9 @@ import {
     USER_NOT_FOUND,
     ACCOUNT_RESTRICTED,
 } from "../util/errors";
+import { UserRewardType } from "../util/constants";
 
 const isSecure = process.env.NODE_ENV === "production";
-
 export const adminLogin = asyncHandler(async (req: Request, res: Response) => {
     try {
         const { idToken } = req.body;
@@ -112,7 +112,7 @@ export const loginUser = async (parent: any, args: { email: string; password: st
         if (!user.active) throw new Error(ACCOUNT_RESTRICTED);
         if (user.password !== createPasswordHash({ email, password })) throw new Error(INCORRECT_PASSWORD);
         await user.updateLastLogin();
-        await user.transferCoiinReward({ type: "LOGIN_REWARD" });
+        await user.transferCoiinReward({ type: UserRewardType.LOGIN_REWARD });
         return { token: createSessionToken(user) };
     } catch (error) {
         return new FormattedError(error);

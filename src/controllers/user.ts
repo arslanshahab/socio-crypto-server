@@ -36,8 +36,8 @@ import {
 } from "../util/errors";
 import { addDays, endOfISOWeek, startOfDay } from "date-fns";
 import { Transfer } from "../models/Transfer";
-import { BSC, COIIN, RAIINMAKER_ORG_NAME } from "../util/constants";
-import { JWTPayload } from "src/types";
+import { BSC, COIIN, RAIINMAKER_ORG_NAME, TransferAction, UserRewardType } from "../util/constants";
+import { JWTPayload } from "types.d.ts";
 import { SHARING_REWARD_AMOUNT } from "../util/constants";
 import { NotificationSettings } from "../models/NotificationSettings";
 import { getTokenValueInUSD } from "../util/exchangeRate";
@@ -61,7 +61,7 @@ export const participate = async (
         if (await Participant.findOne({ where: { campaign, user } })) throw new Error(ALREADY_PARTICIPATING);
         await TatumClient.findOrCreateCurrency({ ...campaign.currency.token, walletId: user.wallet.id });
         const participant = await Participant.createNewParticipant(user, campaign, args.email);
-        if (!campaign.isGlobal) await user.transferCoiinReward({ type: "PARTICIPATION_REWARD", campaign });
+        if (!campaign.isGlobal) await user.transferCoiinReward({ type: UserRewardType.PARTICIPATION_REWARD, campaign });
         return await participant.asV2();
     } catch (error) {
         throw new FormattedError(error);
@@ -109,7 +109,7 @@ export const removeParticipation = async (parent: any, args: { campaignId: strin
         where: { user, campaign },
     });
     if (!participation) throw new Error(PARTICIPANT_NOT_FOUND);
-    await HourlyCampaignMetric.upsert(campaign, campaign.org, "removeParticipant");
+    await HourlyCampaignMetric.upsertData(campaign, campaign.org, "removeParticipant");
     await participation.remove();
     return user.asV1();
 };
@@ -468,8 +468,11 @@ export const getWeeklyRewardEstimation = async (parent: any, args: any, context:
     try {
         const user = await User.findUserByContext(context.user, ["wallet"]);
         if (!user) throw new Error(USER_NOT_FOUND);
-        const loginReward = await Transfer.getRewardForThisWeek(user.wallet, "LOGIN_REWARD");
-        const participationReward = await Transfer.getRewardForThisWeek(user.wallet, "PARTICIPATION_REWARD");
+        const loginReward = await Transfer.getRewardForThisWeek(user.wallet, TransferAction.LOGIN_REWARD);
+        const participationReward = await Transfer.getRewardForThisWeek(
+            user.wallet,
+            TransferAction.PARTICIPATION_REWARD
+        );
         const nextReward = startOfDay(addDays(endOfISOWeek(user.lastLogin), 1));
         const coiinEarnedToday = await Transfer.getCoinnEarnedToday(user.wallet);
         return {
@@ -525,7 +528,7 @@ export const rewardUserForSharing = async (
             campaign = participant.campaign;
         }
         if (!participant) throw new Error(PARTICIPANT_NOT_FOUND);
-        await user.transferCoiinReward({ campaign, type: "SHARING_REWARD" });
+        await user.transferCoiinReward({ campaign, type: UserRewardType.SHARING_REWARD });
         return { success: true };
     } catch (error) {
         throw new FormattedError(error);

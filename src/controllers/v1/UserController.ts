@@ -47,6 +47,7 @@ import {
     UserTransactionResultModel,
     WeeklyRewardsResultModel,
     ParticipateToCampaignModel,
+    NftResultModel,
 } from "../../models/RestModels";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 import {
@@ -57,16 +58,24 @@ import {
     UserWalletResultModel,
     TransferResultModel,
     UpdatedResultModel,
+    TransactionResultModel,
 } from "../../models/RestModels";
 import { NotificationService } from "../../services/NotificationService";
 import { TransferService } from "../../services/TransferService";
 import {
+    ADMIN,
+    MANAGER,
     BSC,
     COIIN,
     CoiinTransferAction,
     SharingRewardType,
     SHARING_REWARD_AMOUNT,
+    SocialClientType,
     TransferAction,
+    UserRewardType,
+    ADMIN_ROLES,
+    NftName,
+    NftType,
 } from "../../util/constants";
 import { SocialService } from "../../services/SocialService";
 import { CampaignService } from "../../services/CampaignService";
@@ -87,6 +96,11 @@ import { decrypt } from "../../util/crypto";
 import { S3Client } from "../../clients/s3";
 import { VerificationApplicationService } from "../../services/VerificationApplicationService";
 import { Parser } from "json2csv";
+import { DragonChainService } from "../../services/DragonChainService";
+import { TransactionService } from "../../services/TransactionService";
+import { SessionService } from "../../services/SessionService";
+import { generateRandomUuid } from "../../util/index";
+import { NftService } from "../../services/NftService";
 
 const userResultRelations = {
     profile: true,
@@ -118,6 +132,7 @@ class TransferUserCoiinParams {
 class RewardUserForSharingParams {
     @Property() public readonly participantId: string;
     @Required() public readonly isGlobal: boolean;
+    @Property() public readonly socialType: SocialClientType;
 }
 
 class UpdateUserPasswordParams {
@@ -132,7 +147,7 @@ class UpdateUserNameParams {
 class PromotePermissionsParams {
     @Required() public readonly firebaseId: string;
     @Property() public readonly company: string;
-    @Property() public readonly role: "admin" | "manager";
+    @Property() public readonly role: ADMIN_ROLES;
 }
 
 class SetRecoveryCodeParams {
@@ -163,6 +178,11 @@ class UserIdParam {
 class UserStatusParams {
     @Required() public readonly id: string;
     @Required() public readonly activeStatus: boolean;
+}
+
+class UserTransactionHistoryParam extends UserIdParam {
+    @Property() public readonly skip: number;
+    @Property() public readonly take: number;
 }
 
 @Controller("/user")
@@ -199,11 +219,19 @@ export class UserController {
     private verificationService: VerificationService;
     @Inject()
     private verificationApplicationService: VerificationApplicationService;
+    @Inject()
+    private dragonChainService: DragonChainService;
+    @Inject()
+    private transactionService: TransactionService;
+    @Inject()
+    private sessionService: SessionService;
+    @Inject()
+    private nftService: NftService;
 
     @Get("/")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserResultModel))
     public async list(@QueryParams() query: PaginatedVariablesModel, @Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
         const { skip = 0, take = 10 } = query;
         const [results, total] = await this.userService.findUsers({ skip, take }, userResultRelations);
 
@@ -377,13 +405,13 @@ export class UserController {
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
         if (campaign.type === "raffle" && !email) throw new BadRequest(MISSING_PARAMS);
 
-        if (await !this.campaignService.isCampaignOpen(campaign.id)) throw new BadRequest(CAMPAIGN_CLOSED);
+        if (await !this.campaignService.isCampaignOpen(campaign)) throw new BadRequest(CAMPAIGN_CLOSED);
         if (await this.participantService.findParticipantByCampaignId(campaign.id, user.id))
             throw new BadRequest(ALREADY_PARTICIPATING);
         await this.tatumService.findOrCreateCurrency({ ...campaign?.currency?.token!, wallet: user.wallet! });
         const participant = await this.participantService.createNewParticipant(user.id, campaign, email);
         if (!campaign.isGlobal)
-            await this.userService.transferCoiinReward({ user, type: "PARTICIPATION_REWARD", campaign });
+            await this.userService.transferCoiinReward({ user, type: UserRewardType.PARTICIPATION_REWARD, campaign });
         return new SuccessResult(
             ParticipateToCampaignModel.build({
                 ...participant,
@@ -410,29 +438,34 @@ export class UserController {
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 
-    @Get("/user-transactions-history/:userId")
+    // For admin panel
+    @Get("/user-transactions-history")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserTransactionResultModel))
-    public async getUserTransactionHistory(@PathParams() path: UserIdParam, @Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        const { userId } = path;
-        const transaction = await this.transferService.findUserTransactions(userId);
-        return new SuccessResult(
-            new Pagination(transaction, transaction.length, UserTransactionResultModel),
-            Pagination
-        );
+    public async getUserTransactionHistory(
+        @QueryParams() query: UserTransactionHistoryParam,
+        @Context() context: Context
+    ) {
+        this.userService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));
+        const { userId, skip, take } = query;
+        const [transaction, total] = await this.transferService.findUserTransactions(userId, skip, take);
+        return new SuccessResult(new Pagination(transaction, total, UserTransactionResultModel), Pagination);
     }
 
+    // For admin panel
     @Get("/user-stats")
     @(Returns(200, SuccessResult).Of(DashboardStatsResultModel))
     public async getDashboardStats(@Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
         const [totalUsers, lastWeekUsers, bannedUsers] = await this.userService.getUserCount();
-        const [redeemTransactions, distributedTransactions] = await this.transferService.getCoiinRecord();
-        let redeemedTotalAmount = redeemTransactions.reduce((acc, cur) => acc + parseFloat(cur.amount), 0);
-        let distributedTotalAmount = distributedTransactions.reduce((acc, cur) => acc + parseFloat(cur.amount), 0);
-        redeemedTotalAmount = parseFloat(redeemedTotalAmount.toFixed(2));
-        distributedTotalAmount = parseFloat(distributedTotalAmount.toFixed(2));
-        const result = { totalUsers, lastWeekUsers, bannedUsers, distributedTotalAmount, redeemedTotalAmount };
+        const [redeemedTotalAmount] = await this.transferService.getRedeemedAmount();
+        const [distributedTotalAmount] = await this.transferService.getDistributedAmount();
+        const result = {
+            totalUsers,
+            lastWeekUsers,
+            bannedUsers,
+            distributedTotalAmount: parseFloat(distributedTotalAmount.amount.toFixed(2)),
+            redeemedTotalAmount: parseFloat(redeemedTotalAmount.amount.toFixed(2)),
+        };
         return new SuccessResult(result, DashboardStatsResultModel);
     }
 
@@ -460,7 +493,7 @@ export class UserController {
     @Put("/reset-user-password/:userId")
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async resetUserPassword(@PathParams() path: UserIdParam, @Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));
         const { userId } = path;
         const user = await this.userService.findUserById(userId);
         if (!user) throw new NotFound(USER_NOT_FOUND);
@@ -479,7 +512,7 @@ export class UserController {
     @Get("/single-user/:userId")
     @(Returns(200, SuccessResult).Of(SingleUserResultModel))
     public async getUserById(@PathParams() path: UserIdParam, @Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin", "manager"] }, context.get("user"));
+        await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
         const user = await this.userService.findUserById(path.userId, ["profile", "social_post"]);
         if (!user) throw new NotFound(USER_NOT_FOUND);
         return new SuccessResult({ ...user, profile: ProfileResultModel.build(user?.profile!) }, SingleUserResultModel);
@@ -489,7 +522,7 @@ export class UserController {
     @(Returns(200, SuccessResult).Of(UpdatedResultModel))
     public async transferUserCoiin(@BodyParams() body: TransferUserCoiinParams, @Context() context: Context) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        const admin = await this.userService.findUserByFirebaseId(context.get("user").firebaseId);
+        const admin = await this.adminService.findAdminByFirebaseId(context.get("user").id);
         const { coiin, userId, action } = body;
         const { ADD } = CoiinTransferAction;
         const token = await this.tokenService.findTokenBySymbol({ symbol: COIIN, network: BSC });
@@ -574,7 +607,7 @@ export class UserController {
     public async rewardUserForSharing(@BodyParams() body: RewardUserForSharingParams, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new NotFound(USER_NOT_FOUND);
-        const { participantId, isGlobal } = body;
+        const { participantId, isGlobal, socialType } = body;
         const wallet = await this.walletService.findWalletByUserId(user.id);
         if (!wallet) throw new NotFound(WALLET_NOT_FOUND);
         let participant;
@@ -596,9 +629,10 @@ export class UserController {
         if (!participant) throw new NotFound(PARTICIPANT_NOT_FOUND);
         await this.userService.transferCoiinReward({
             user: user,
-            type: "SHARING_REWARD",
+            type: UserRewardType.SHARING_REWARD,
             campaign: campaign,
         });
+        await this.dragonChainService.ledgerSocialShare({ socialType, participantId, campaignId: campaign.id });
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 
@@ -633,17 +667,14 @@ export class UserController {
     @Put("/promote-permissions")
     @(Returns(200, SuccessResult).Of(UpdatedResultModel))
     public async promotePermissions(@BodyParams() body: PromotePermissionsParams, @Context() context: Context) {
-        const { role, company } = this.userService.checkPermissions(
-            { hasRole: ["admin", "manager"] },
-            context.get("user")
-        );
+        const { role, company } = await this.adminService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));
         const { firebaseId } = body;
         if (!firebaseId) throw new BadRequest(MISSING_PARAMS);
-        const admin = await this.adminService.findAdminByFirebaseId(firebaseId);
+        const admin = await this.adminService.findAdminByFirebaseId(context.get("user").id);
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
         try {
-            if (role === "manager") {
-                await Firebase.adminClient.auth().setCustomUserClaims(admin.firebaseId, { role: "manager", company });
+            if (role === MANAGER) {
+                await Firebase.adminClient.auth().setCustomUserClaims(admin.firebaseId, { role: MANAGER, company });
             } else {
                 if (!body.role) throw new BadRequest(MISSING_PARAMS);
                 await Firebase.adminClient.auth().setCustomUserClaims(admin.firebaseId, {
@@ -737,27 +768,77 @@ export class UserController {
     @Post("/upload-profile-picture")
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async uploadProfilePicture(@BodyParams() body: UploadProfilePictureParams, @Context() context: Context) {
-        const user = await this.userService.findUserByContext(context.get("user"));
+        const user = await this.userService.findUserByContext(context.get("user"), { profile: true });
         if (!user) throw new NotFound(USER_NOT_FOUND);
+        if (!user.profile) throw new NotFound(PROFILE_NOT_FOUND);
         const { image } = body;
         const filename = await S3Client.uploadProfilePicture("profilePicture", user.id, image);
-        await this.profileService.updateProfilePicture(user.id, filename);
+        user.profile = await this.profileService.updateProfilePicture(user.profile, filename);
+        if (!(await this.nftService.findProfilePictureNftOfUser(user.id)))
+            await this.nftService.mintNFT({
+                userId: user.id,
+                name: NftName.PROFILE_PICTURE,
+                type: NftType.FILE,
+                nftId: generateRandomUuid(),
+                file: image,
+            });
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 
+    // For admin panel
     @Get("/record")
     @Returns(200, SuccessResult)
     public async downloadUsersRecord(@Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        const [results] = await this.userService.findUsers();
+        await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
+        const [results] = await this.userService.findUsers(undefined, { profile: true });
         const users = results.map((x) => ({
             id: x.id,
             email: x.email,
+            userName: x.profile?.username,
+            promoCode: x.promoCode,
+            referralCode: x.referralCode,
             active: x.active,
             createdAt: x.createdAt,
             lastLogin: x.lastLogin,
         }));
         const parser = new Parser();
         return parser.parse(users);
+    }
+
+    @Get("/action-logs")
+    @(Returns(200, SuccessResult).Of(Pagination).Nested(TransactionResultModel))
+    public async actionLogs(@QueryParams() query: PaginatedVariablesModel, @Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        const { list, total } = await this.transactionService.getPaginatedUserTransactions({
+            ...query,
+            userId: user.id,
+        });
+        return new SuccessResult(
+            new Pagination(
+                list.map((r) => TransactionResultModel.build(r)),
+                total,
+                TransactionResultModel
+            ),
+            Pagination
+        );
+    }
+
+    @Post("/logout")
+    @(Returns(200, SuccessResult).Of(BooleanResultModel))
+    public async logoutUser(@Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new Error(USER_NOT_FOUND);
+        await this.sessionService.logoutUser(user);
+        return new SuccessResult({ success: true }, BooleanResultModel);
+    }
+
+    @Get("/nfts")
+    @(Returns(200, SuccessArrayResult).Of(NftResultModel))
+    public async userNtfs(@Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new Error(USER_NOT_FOUND);
+        const list = await this.nftService.getUserNfts(user.id);
+        return new SuccessArrayResult(list, NftResultModel);
     }
 }

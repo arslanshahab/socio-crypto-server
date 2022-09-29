@@ -1,14 +1,14 @@
-import { CampaignMedia, CampaignTemplate, Org, Prisma, User } from "@prisma/client";
+import { Campaign, CampaignMedia, CampaignTemplate, Org, Prisma, User } from "@prisma/client";
 import { Inject, Injectable } from "@tsed/di";
 import { BadRequest, NotFound } from "@tsed/exceptions";
-import { CurrencyResultType, ListCampaignsVariablesV2, Tiers } from "../types";
+import { CurrencyResultType, ListCampaignsVariablesV2, Tiers } from "types.d.ts";
 import { CAMPAIGN_NOT_FOUND, CURRENCY_NOT_FOUND, ERROR_CALCULATING_TIER } from "../util/errors";
 import { calculateTier } from "../controllers/helpers";
 import { BN, prepareCacheKey } from "../util";
 import { CurrentCampaignTierModel } from "../models/RestModels";
 import { TatumService } from "./TatumService";
 import { PlatformCache, UseCache } from "@tsed/common";
-import { CacheKeys, CAMPAIGN_CREATION_AMOUNT } from "../util/constants";
+import { CacheKeys, CampaignStatus, CAMPAIGN_CREATION_AMOUNT } from "../util/constants";
 import { resetCacheKey } from "../util/index";
 import { prisma } from "../clients/prisma";
 
@@ -31,15 +31,16 @@ export class CampaignService {
         refreshThreshold: 300,
         key: (args: any[]) => prepareCacheKey(CacheKeys.CAMPAIGN_BY_STATUS_SERVICE, args),
     })
-    public async findCampaignsByStatus(params: ListCampaignsVariablesV2, user?: User) {
+    public async findCampaignsByStatus(params: ListCampaignsVariablesV2, user?: User, orgId?: string) {
         const now = new Date();
 
         const where: Prisma.CampaignWhereInput = {
-            ...(params.state === "OPEN" ? { endDate: { gte: now } } : {}),
+            ...(params.state === "OPEN" ? { beginDate: { lte: now }, endDate: { gte: now } } : {}),
             ...(params.state === "CLOSED" ? { endDate: { lte: now } } : {}),
             status: params.status || "APPROVED",
             isGlobal: false,
             auditStatus: params.auditStatus,
+            orgId: orgId && orgId,
         };
 
         return prisma.$transaction([
@@ -137,7 +138,7 @@ export class CampaignService {
         instructions: string,
         campaignCompany: string,
         symbol: string,
-        algorithm: object,
+        algorithm: string,
         tagline: string,
         requirements: object,
         suggestedPosts: string[],
@@ -163,27 +164,28 @@ export class CampaignService {
                 endDate: new Date(endDate),
                 coiinTotal: coiinTotal.toString(),
                 target: target,
-                description: description,
-                instructions,
+                description: description && description,
+                instructions: instructions && instructions,
                 company: campaignCompany,
                 symbol: symbol,
-                algorithm: algorithm,
-                tagline,
-                requirements,
-                suggestedPosts: suggestedPosts.toString(),
-                suggestedTags: suggestedTags.toString(),
-                keywords: keywords.toString(),
+                algorithm: JSON.parse(algorithm),
+                tagline: tagline && tagline,
+                requirements: requirements && requirements,
+                suggestedPosts: suggestedPosts && JSON.stringify(suggestedPosts),
+                suggestedTags: suggestedTags && JSON.stringify(suggestedTags),
+                keywords: keywords && JSON.stringify(keywords),
                 type,
                 imagePath,
                 campaignType,
-                socialMediaType: socialMediaType.toString(),
+                socialMediaType: JSON.stringify(socialMediaType),
                 isGlobal,
                 showUrl,
-                targetVideo,
+                targetVideo: targetVideo && targetVideo,
                 orgId: org.id,
                 currencyId: currency?.id,
                 createdAt: new Date(),
                 updatedAt: new Date(),
+                status: CampaignStatus.PENDING,
                 campaign_media: {
                     create: campaignMedia,
                 },
@@ -203,7 +205,7 @@ export class CampaignService {
         target: string,
         description: string,
         instructions: string,
-        algorithm: object,
+        algorithm: string,
         targetVideo: string,
         imagePath: string,
         tagline: string,
@@ -219,22 +221,22 @@ export class CampaignService {
         return await prisma.campaign.update({
             where: { id },
             data: {
-                name,
-                beginDate,
-                endDate,
-                target,
-                description,
-                instructions,
-                algorithm,
-                targetVideo,
-                imagePath,
-                tagline,
-                requirements,
-                suggestedPosts: suggestedPosts.toString(),
-                suggestedTags: suggestedTags.toString(),
-                keywords: keywords.toString(),
-                campaignType,
-                socialMediaType: socialMediaType.toString(),
+                name: name && name,
+                beginDate: beginDate && beginDate,
+                endDate: endDate && endDate,
+                target: target && target,
+                description: description && description,
+                instructions: instructions && instructions,
+                algorithm: algorithm && JSON.parse(algorithm),
+                targetVideo: targetVideo && targetVideo,
+                imagePath: imagePath && imagePath,
+                tagline: tagline && tagline,
+                requirements: requirements && requirements,
+                suggestedPosts: suggestedPosts && JSON.stringify(suggestedPosts),
+                suggestedTags: suggestedTags && JSON.stringify(suggestedTags),
+                keywords: keywords && JSON.stringify(keywords),
+                campaignType: campaignType && campaignType,
+                socialMediaType: socialMediaType && JSON.stringify(socialMediaType),
                 showUrl,
                 updatedAt: new Date(),
             },
@@ -288,16 +290,16 @@ export class CampaignService {
         return body;
     }
 
-    public async isCampaignOpen(campaignId: string) {
-        const campaign = await this.findCampaignById(campaignId);
-        if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
-        const now = new Date();
-        if (new Date(campaign.endDate).getTime() >= now.getTime()) return true;
-        return false;
+    public async isCampaignOpen(campaign: Campaign) {
+        return (
+            new Date(campaign.beginDate).getTime() <= new Date().getTime() &&
+            new Date(campaign.endDate).getTime() >= new Date().getTime()
+        );
     }
 
-    public async findCampaigns() {
+    public async findCampaigns(orgId?: string) {
         return await prisma.campaign.findMany({
+            where: { orgId: orgId && orgId },
             select: { id: true, name: true },
         });
     }

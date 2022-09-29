@@ -15,7 +15,7 @@ import { Campaign } from "./Campaign";
 import { BN } from "../util";
 import { Participant } from "./Participant";
 import { DateUtils } from "typeorm/util/DateUtils";
-import { AggregateDailyMetrics } from "../types";
+import { AggregateDailyMetrics } from "types.d.ts";
 
 @Entity()
 export class DailyParticipantMetric extends BaseEntity {
@@ -95,18 +95,10 @@ export class DailyParticipantMetric extends BaseEntity {
     @UpdateDateColumn()
     public updatedAt: Date;
 
-    @ManyToOne(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => User,
-        (user) => user.dailyMetrics
-    )
+    @ManyToOne((_type) => User, (user) => user.dailyMetrics)
     public user: User;
 
-    @ManyToOne(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        (_type) => Campaign,
-        (campaign) => campaign.dailyMetrics
-    )
+    @ManyToOne((_type) => Campaign, (campaign) => campaign.dailyMetrics)
     public campaign: Campaign;
 
     public asV1() {
@@ -125,7 +117,7 @@ export class DailyParticipantMetric extends BaseEntity {
         return response;
     }
 
-    public static async upsert(
+    public static async upsertData(
         user: User,
         campaign: Campaign,
         participant: Participant,

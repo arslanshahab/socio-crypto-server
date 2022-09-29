@@ -10,7 +10,7 @@ import {
     SupportedCountryType,
     KycUser,
     FactorGeneration,
-} from "src/types";
+} from "types.d.ts";
 import { VerificationApplication } from "../models/VerificationApplication";
 import { S3Client } from "../clients/s3";
 import { User } from "../models/User";
@@ -22,9 +22,12 @@ import { serverBaseUrl } from "../config";
 import { Request, Response, NextFunction } from "express";
 import { BigNumber } from "bignumber.js";
 import { Factor } from "../models/Factor";
-import { CRYPTO_ICONS_MAP, CRYPTO_ICONS_BUCKET_URL, COIIN } from "./constants";
+import { CRYPTO_ICONS_MAP, CRYPTO_ICONS_BUCKET_URL, COIIN, SocialClientType } from "./constants";
 import { User as PrismaUser } from "@prisma/client";
 import { PlatformCache } from "@tsed/common";
+// import DeviceDetector from "node-device-detector";
+
+const { ORG_BUCKET_URL = "https://rm-org-staging.s3.us-west-1.amazonaws.com" } = process.env;
 
 // general helper functions start here
 export const getMinWithdrawableAmount = async (symbol: string) => {
@@ -243,17 +246,16 @@ export const getDecimal = (str: string) => {
     return [str.slice(0, pos), str.slice(pos)].join(".");
 };
 
-export const generateRandomId = () => {
+export const generateRandomId = (stringLength = 20) => {
     const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    const stringLength = 20;
     function pickRandom() {
         return possible[Math.floor(Math.random() * possible.length)];
     }
     return Array.apply(null, Array(stringLength)).map(pickRandom).join("");
 };
 
-export const generatePromoCode = () => {
-    const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+export const generate6DigitCode = () => {
+    const possible = "0123456789";
     const stringLength = 6;
     function pickRandom() {
         return possible[Math.floor(Math.random() * possible.length)];
@@ -423,9 +425,8 @@ export const createSessionTokenV2 = (user: PrismaUser): string => {
     return jwt.sign(payload, Secrets.encryptionKey, { expiresIn: "7d", audience: serverBaseUrl });
 };
 
-export const verifySessionToken = (token: string): JWTPayload => {
-    return jwt.verify(token, Secrets.encryptionKey, { audience: serverBaseUrl }) as JWTPayload;
-};
+export const verifySessionToken = (token: string): JWTPayload =>
+    jwt.verify(token, Secrets.encryptionKey, { audience: serverBaseUrl }) as JWTPayload;
 // authentication helpers end here
 
 export const prepareCacheKey = (baseKey: string, args?: any) => {
@@ -449,3 +450,25 @@ export const resetCacheKey = async (baseKey: string, cacheInstance: PlatformCach
         }
     }
 };
+
+export const getActionKey = (action: string, participantId: string) => `${participantId.replace(/-/g, ":")}-${action}`;
+export const getSocialShareKey = (socialType: SocialClientType, participantId: string) =>
+    `${participantId.replace(/-/g, ":")}-${socialType}`;
+export const getCampaignAuditKey = (campaignId: string, participantId?: string) =>
+    `${campaignId.replace(/-/g, ":")}-${participantId ? participantId.replace(/-/g, ":") : ""}`;
+
+export const getAccountRecoveryAttemptKey = (accountId: string | undefined, username: string) =>
+    `${accountId ? accountId.replace(/-/g, ":") + ":" : ""}${username.replace(/-/g, ":")}`;
+
+// export const getUserDeviceInfo = (userAgent: string) => {
+//     console.log(userAgent);
+//     const detector = new DeviceDetector({
+//         clientIndexes: true,
+//         deviceIndexes: true,
+//         deviceAliasCode: false,
+//     });
+//     return detector.detect(userAgent);
+// };
+
+export const generateOrgImageUrl = (orgId: string, imagePath: string) => `${ORG_BUCKET_URL}/${orgId}/${imagePath}`;
+export const generateRandomUuid = () => crypto.randomUUID();
