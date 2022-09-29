@@ -10,9 +10,6 @@ export interface RequestData {
 }
 
 export const doFetch = async (requestData: RequestData) => {
-    console.log("url---------------------------", requestData.url);
-    console.log("headers---------------------------", requestData.headers);
-
     try {
         let options: AxiosRequestConfig = {
             url: requestData.query ? `${requestData.url}?${new URLSearchParams(requestData.query)}` : requestData.url,

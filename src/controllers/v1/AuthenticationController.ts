@@ -39,14 +39,8 @@ import { SesClient } from "../../clients/ses";
 import { Firebase } from "../../clients/firebase";
 import { SessionService } from "../../services/SessionService";
 import { AdminService } from "../../services/AdminService";
-// import { doFetch, RequestData } from "../../util/fetchRequest";
-// import sha256 from "crypto-js/sha256";
-// import hmacSHA512 from "crypto-js/hmac-sha512";
-// import Base64 from "crypto-js/enc-base64";
-// const qs = require("qs");
-// import * as crypto from "crypto-js";
-// const crypto = require("crypto");
-// import crypto from "crypto";
+import { doFetch, RequestData } from "../../util/fetchRequest";
+import crypto from "crypto";
 
 export class StartVerificationParams {
     @Required() public readonly email: string;
@@ -287,22 +281,23 @@ export class AuthenticationController {
         );
     }
 
-    // @Get("/binance")
-    // @(Returns(200, SuccessResult).Of(Object))
-    // public async getAll() {
-    //     const timestamp = Date.now();
-    //     const query_string = "timestamp=1578963600000";
-    //     const apiSecret = "NhqPtmdSJYdKjVHjA7PZj4Mge3R5YNiP1e3UZjInClVN65XAbvqqM6A7H5fATj0j";
-    //     function signature(query_string: string) {
-    //         return crypto.createHmac("sha256", apiSecret).update(query_string).digest("hex");
-    //     }
-    //     console.log(signature(query_string));
-    //     const requestData: RequestData = {
-    //         method: "GET",
-    //         headers: { "X-MBX-APIKEY": "fY93QHW3r9pNNInGaPbvrf4eBWigjwZRrGyS96pDK5aCDmqATQ4eaiZN0sXnwoLm" },
-    //         url: `https://api.binance.com/sapi/v1/capital/config/getall?timestamp=${timestamp}&signature=${signature}`,
-    //     };
-    //     const list = await doFetch(requestData);
-    //     console.log("list--------------------------------------", list);
-    // }
+    @Get("/binance")
+    @(Returns(200, SuccessResult).Of(Object))
+    public async getAll() {
+        const timestamp = Date.now();
+        const query_string = `${timestamp}`;
+        const apiSecret = "UaJPKpSjgrHgw36eSulMcmeYCWyykN1aQbigUaQRmDZJN32UGbshCPItZnwe1YFR";
+
+        function signature(query_string: string) {
+            return crypto.createHmac("sha256", apiSecret).update(query_string).digest("hex");
+        }
+        const sign = signature(query_string);
+        const requestData: RequestData = {
+            method: "GET",
+            headers: { "X-MBX-APIKEY": "FuM8BoQqKBEn5ugJxqE5oJ4pDcMbt961RmKQK0jWH8okPihLIO56bGSWP6yzudkV" },
+            url: `https://api1.binance.com/sapi/v1/capital/config/getall?timestamp=${timestamp}&signature=${sign}`,
+        };
+        const list = await doFetch(requestData);
+        console.log("list--------------------------------------", list);
+    }
 }
