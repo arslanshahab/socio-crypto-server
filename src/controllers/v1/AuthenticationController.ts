@@ -39,8 +39,6 @@ import { SesClient } from "../../clients/ses";
 import { Firebase } from "../../clients/firebase";
 import { SessionService } from "../../services/SessionService";
 import { AdminService } from "../../services/AdminService";
-import { doFetch, RequestData } from "../../util/fetchRequest";
-import crypto from "crypto";
 
 export class StartVerificationParams {
     @Required() public readonly email: string;
@@ -279,25 +277,5 @@ export class AuthenticationController {
             },
             AdminResultModel
         );
-    }
-
-    @Get("/binance")
-    @(Returns(200, SuccessResult).Of(Object))
-    public async getAll() {
-        const timestamp = Date.now();
-        const query_string = `${timestamp}`;
-        const apiSecret = "UaJPKpSjgrHgw36eSulMcmeYCWyykN1aQbigUaQRmDZJN32UGbshCPItZnwe1YFR";
-
-        function signature(query_string: string) {
-            return crypto.createHmac("sha256", apiSecret).update(query_string).digest("hex");
-        }
-        const sign = signature(query_string);
-        const requestData: RequestData = {
-            method: "GET",
-            headers: { "X-MBX-APIKEY": "FuM8BoQqKBEn5ugJxqE5oJ4pDcMbt961RmKQK0jWH8okPihLIO56bGSWP6yzudkV" },
-            url: `https://api1.binance.com/sapi/v1/capital/config/getall?timestamp=${timestamp}&signature=${sign}`,
-        };
-        const list = await doFetch(requestData);
-        console.log("list--------------------------------------", list);
     }
 }
