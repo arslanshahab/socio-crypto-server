@@ -409,6 +409,7 @@ model SocialLink {
     openId             String?  @db.VarChar
     accessTokenExpiry  String?  @db.VarChar
     refreshTokenExpiry String?  @db.VarChar
+    username           String?  @db.VarChar
     user               User?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_d8a1d8b8a8235632f9011346197")
 
     @@map("social_link")
