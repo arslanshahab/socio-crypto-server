@@ -78,6 +78,13 @@ const tokenService = new TokenService();
                 where: { id: marketSymbol.id },
                 data: { networkFee: data.withdrawFee ? data.withdrawFee : "0" },
             });
+        } else {
+            await prisma.marketData.create({
+                data: {
+                    symbol: data.coin.toUpperCase(),
+                    networkFee: data.withdrawFee,
+                },
+            });
         }
     }
     console.log("COMPLETED CRON TASKS ----.");
