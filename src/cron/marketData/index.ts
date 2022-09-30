@@ -62,9 +62,9 @@ const tokenService = new TokenService();
     const withdrawFee: BinanceNetworlList[] = networkList.map((x: BinanceNetworlList) => ({
         coin: x.coin,
         network: x.network,
-        fee: x.withdrawFee,
+        withdrawFee: x.withdrawFee,
     }));
-    const filterData: BinanceNetworlList[] = [];
+    const filterData = [];
     for (const token of tokens) {
         const result = withdrawFee.find((x) => x.coin == token.symbol && x.network == token.network);
         if (result) filterData.push(result);
@@ -76,7 +76,8 @@ const tokenService = new TokenService();
         if (marketSymbol?.id) {
             await prisma.marketData.update({
                 where: { id: marketSymbol.id },
-                data: {},
+                // in the place of price write networkFee
+                data: { price: parseFloat(data.withdrawFee) },
             });
         }
     }

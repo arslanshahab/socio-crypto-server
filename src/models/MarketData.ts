@@ -12,7 +12,7 @@ export class MarketData extends BaseEntity {
     public price: number;
 
     @Column({ nullable: true, default: 0 })
-    public networkfee: number;
+    public networkFee: number;
 
     @CreateDateColumn()
     public createdAt: Date;
