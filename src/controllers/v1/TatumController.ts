@@ -224,6 +224,9 @@ export class TatumController {
         if (!user) throw new NotFound(USER_NOT_FOUND);
         let { symbol } = body;
         const marketData = await this.marketDataService.findMarketData(symbol.toUpperCase());
-        return new SuccessResult({ withdrawFee: marketData.networkFee }, TransactionFeeResultModel);
+        return new SuccessResult(
+            { symbol: marketData.symbol, withdrawFee: marketData.networkFee },
+            TransactionFeeResultModel
+        );
     }
 }
