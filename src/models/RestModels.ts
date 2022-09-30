@@ -944,5 +944,5 @@ export class PurchaseCoiinResultModel {
 }
 
 export class TransactionFeeResultModel {
-    @Property() public readonly fee: number;
+    @Property() public readonly withdrawFee: number;
 }

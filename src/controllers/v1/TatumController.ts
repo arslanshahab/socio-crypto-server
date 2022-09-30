@@ -50,6 +50,10 @@ class WithdrawBody {
     @Required() public readonly verificationToken: string;
 }
 
+class NetworkFeeBody {
+    @Required() public readonly symbol: string;
+}
+
 @Controller("/tatum")
 export class TatumController {
     @Inject()
@@ -215,11 +219,11 @@ export class TatumController {
 
     @Get("/transaction-fee")
     @(Returns(200, SuccessResult).Of(TransactionFeeResultModel))
-    public async getTransactionFee(@BodyParams() body: WithdrawBody, @Context() context: Context) {
+    public async getTransactionFee(@BodyParams() body: NetworkFeeBody, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"), { wallet: true });
         if (!user) throw new NotFound(USER_NOT_FOUND);
         let { symbol } = body;
-        const marketData = await this.marketDataService.findMarketData(symbol);
-        console.log("marketData---------", marketData.networkFee);
+        const marketData = await this.marketDataService.findMarketData(symbol.toUpperCase());
+        return new SuccessResult({ withdrawFee: marketData.networkFee }, TransactionFeeResultModel);
     }
 }

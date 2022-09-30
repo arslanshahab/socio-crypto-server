@@ -11,8 +11,8 @@ export class MarketData extends BaseEntity {
     @Column({ nullable: false, default: 0, type: "float8" })
     public price: number;
 
-    @Column({ nullable: true, default: 0 })
-    public networkFee: number;
+    @Column()
+    public networkFee: string;
 
     @CreateDateColumn()
     public createdAt: Date;

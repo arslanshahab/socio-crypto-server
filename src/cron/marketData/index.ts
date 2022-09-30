@@ -76,12 +76,10 @@ const tokenService = new TokenService();
         if (marketSymbol?.id) {
             await prisma.marketData.update({
                 where: { id: marketSymbol.id },
-                // in the place of price write networkFee
-                data: { price: parseFloat(data.withdrawFee) },
+                data: { networkFee: data.withdrawFee ? data.withdrawFee : "0" },
             });
         }
     }
-
     console.log("COMPLETED CRON TASKS ----.");
     await connection.close();
     console.log("DATABASE CONNECTION CLOSED ----.");
