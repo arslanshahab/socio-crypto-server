@@ -20,4 +20,5 @@ export class FacebookClient {
     }
 
     public static getPost = async (socialLink: SocialLink, id: string, cached = true) => {};
+    public static getUsernameV2 = async () => {};
 }

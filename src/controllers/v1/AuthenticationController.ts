@@ -38,7 +38,6 @@ import { UserRewardType, VerificationType } from "../../util/constants";
 import { SesClient } from "../../clients/ses";
 import { Firebase } from "../../clients/firebase";
 import { SessionService } from "../../services/SessionService";
-import { S3Client } from "../../clients/s3";
 import { AdminService } from "../../services/AdminService";
 
 export class StartVerificationParams {
@@ -100,8 +99,6 @@ export class AuthenticationController {
             ip: req?.socket?.remoteAddress,
             userAgent: req?.headers["user-agent"],
         });
-        if (process.env.NODE_ENV === "production")
-            await S3Client.uploadUserEmails(await this.userService.getAllEmails());
         return new SuccessResult({ token }, UserTokenReturnModel);
     }
 

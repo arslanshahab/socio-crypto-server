@@ -1,7 +1,7 @@
 import { Injectable } from "@tsed/di";
 import { User, SocialLink } from "@prisma/client";
 import { encrypt, decrypt } from "../util/crypto";
-import { SocialLinkType } from "../util/constants";
+import { SocialClientType, SocialLinkType } from "../util/constants";
 import { prisma, readPrisma } from "../clients/prisma";
 
 @Injectable()
@@ -23,9 +23,9 @@ export class SocialLinkService {
         } as SocialLink;
     }
 
-    public async addTwitterLink(user: User, apiKey: string, apiSecret: string) {
+    public async addTwitterLink(user: User, apiKey: string, apiSecret: string, username: string) {
         const socialLink = await readPrisma.socialLink.findFirst({
-            where: { userId: user.id, type: "twitter" },
+            where: { userId: user.id, type: SocialClientType.TWITTER },
         });
         if (socialLink) {
             return await prisma.socialLink.update({
@@ -33,15 +33,17 @@ export class SocialLinkService {
                 data: {
                     apiKey: encrypt(apiKey),
                     apiSecret: encrypt(apiSecret),
+                    username,
                 },
             });
         } else {
             return await prisma.socialLink.create({
                 data: {
                     userId: user.id,
-                    type: "twitter",
+                    type: SocialClientType.TWITTER,
                     apiKey: encrypt(apiKey),
                     apiSecret: encrypt(apiSecret),
+                    username,
                 },
             });
         }

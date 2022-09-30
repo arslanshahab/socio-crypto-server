@@ -255,6 +255,12 @@ export class UserService {
                             country: true,
                         },
                     },
+                    social_link: {
+                        select: {
+                            id: true,
+                            username: true,
+                        },
+                    },
                 },
                 skip,
                 take,
@@ -469,5 +475,11 @@ export class UserService {
             return possible[Math.floor(Math.random() * possible.length)];
         }
         return Array.apply(null, Array(stringLength)).map(pickRandom).join("");
+    }
+
+    public async getLastHourEmails() {
+        let d = new Date();
+        const lastHour = d.setHours(d.getHours() - 1);
+        return prisma.user.findMany({ where: { createdAt: { gte: new Date(lastHour) } }, select: { email: true } });
     }
 }
