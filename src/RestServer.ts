@@ -2,6 +2,7 @@ import Http from "http";
 import { Configuration } from "@tsed/di";
 import "@tsed/ajv";
 import "@tsed/swagger";
+import "@tsed/platform-express";
 import { Inject } from "@tsed/di";
 import { PlatformApplication } from "@tsed/common";
 import { UserAuthMiddleware } from "./middleware/UserAuthMiddleware";

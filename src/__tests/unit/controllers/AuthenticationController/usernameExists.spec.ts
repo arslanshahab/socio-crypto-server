@@ -1,12 +1,12 @@
 import { PlatformTest } from "@tsed/common";
 import { handleBaseAssertions, usernameExistsRoute } from "../../../test_helper";
 
-import { RestServer } from "../../../../src/RestServer";
-import * as authControllers from "../../../../src/controllers/v1/AuthenticationController";
+import { RestServer } from "../../../../RestServer";
+import * as authControllers from "../../../../controllers/v1/AuthenticationController";
 import * as bodyParser from "body-parser";
 
 import SuperTest from "supertest";
-import { ProfileService } from "../../../../src/services/ProfileService";
+import { ProfileService } from "../../../../services/ProfileService";
 import { Profile } from "@prisma/client";
 
 describe("Username exists", () => {

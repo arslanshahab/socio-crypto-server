@@ -1,14 +1,14 @@
 import { PlatformTest } from "@tsed/common";
 import { handleBaseAssertions, completeVerificationRoute } from "../../../test_helper";
 
-import { RestServer } from "../../../../src/RestServer";
-import * as authControllers from "../../../../src/controllers/v1/AuthenticationController";
+import { RestServer } from "../../../../RestServer";
+import * as authControllers from "../../../../controllers/v1/AuthenticationController";
 import * as bodyParser from "body-parser";
 
 import SuperTest from "supertest";
 
-import { VerificationService } from "../../../../src/services/VerificationService";
-import { Verification } from "../../../../src/models/Verification";
+import { VerificationService } from "../../../../services/VerificationService";
+import { Verification } from "../../../../models/Verification";
 
 describe("Complete Verification", () => {
     let request: any;

@@ -1,13 +1,13 @@
 import { PlatformTest } from "@tsed/common";
-import { RestServer } from "../../../../src/RestServer";
-import * as authControllers from "../../../../src/controllers/v1/AuthenticationController";
+import { RestServer } from "../../../../RestServer";
+import * as authControllers from "../../../../controllers/v1/AuthenticationController";
 import * as bodyParser from "body-parser";
 import SuperTest from "supertest";
 import { resetPasswordRoute, handleBaseAssertions } from "../../../test_helper";
-import { VerificationService } from "../../../../src/services/VerificationService";
-import { UserService } from "../../../../src/services/UserService";
-import { Verification } from "../../../../src/models/Verification";
-import { USER_NOT_FOUND } from "../../../../src/util/errors";
+import { VerificationService } from "../../../../services/VerificationService";
+import { UserService } from "../../../../services/UserService";
+import { Verification } from "../../../../models/Verification";
+import { USER_NOT_FOUND } from "../../../../util/errors";
 import { User } from "@prisma/client";
 
 describe("reset password", () => {
