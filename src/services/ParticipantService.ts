@@ -181,7 +181,7 @@ export class ParticipantService {
     ) {
         const order = sort === "asc" ? Prisma.SortOrder.asc : Prisma.SortOrder.desc;
         const result: ParticipantsRawQueryTypes[] = await readPrisma.$queryRawUnsafe(
-            `select p.id, u.id as "userId", c.id as "campaignId", p."participationScore", p.blacklist, u.email, pf.id as "profileId", pf.username,
+            `select p.id, u.id as "userId", c.id as "campaignId", p."participationScore", p."clickCount", p."viewCount", p."submissionCount", p."link", p.blacklist, p."createdAt", p."updatedAt", u.email, pf.id as "profileId", pf.username,
         c.name as "campaignName", c."auditStatus" as "auditStatus", c.symbol as symbol, c.algorithm as "algorithm" from participant as p full join campaign as c on p."campaignId"=c.id full join public.user 
         as u on p."userId"=u.id full join profile as pf on u.id=pf."userId" where p."campaignId"=$1 AND (u.email ilike $2 
         OR pf.username ilike $2) order by p."participationScore"::numeric ${order}
