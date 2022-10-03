@@ -1,5 +1,7 @@
 {
-    "ts-node": { "files": true },
+    "ts-node": {
+        "files": true
+    },
     "compilerOptions": {
         "target": "es2019",
         "outDir": "dist",

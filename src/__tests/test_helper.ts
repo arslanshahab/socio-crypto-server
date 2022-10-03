@@ -122,13 +122,17 @@ export const xoxodayOrderRoute = "/v1/xoxoday/order";
 
 export function handleBaseAssertions(
     res: any,
-    statusCode: number,
+    statusCode: number | undefined | null,
     message: string | undefined | null,
+
     ...args: jest.SpyInstance[]
 ) {
-    expect(res.status).toEqual(statusCode);
-    if (message) expect(res.body.message).toContain(message);
+    // [res.body.status] is only defined when response is not successful - !200
+    if (res.body.status) expect(res.body.status).toEqual(statusCode);
+    // otherwise
+    else if ((res.status as Object).toString().startsWith("2")) expect(res.body.success).toBe(true);
 
+    if (message) expect(res.body.message).toContain(message);
     args.forEach((spy) => {
         expect(spy).toHaveBeenCalled();
     });

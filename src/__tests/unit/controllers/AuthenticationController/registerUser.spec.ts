@@ -15,7 +15,6 @@ import * as bodyParser from "body-parser";
 import { EMAIL_EXISTS, USERNAME_EXISTS, USER_NOT_FOUND } from "../../../../util/errors";
 import { Profile } from "@prisma/client";
 import { Verification } from "../../../../models/Verification";
-import { S3Client } from "../../../../clients/s3";
 import { RegisterUserParams } from "../../../../models/RestModels";
 
 const setEnv = () => {
@@ -174,7 +173,6 @@ describe(" register user", () => {
         const initNewUserSpy = jest.spyOn(userService, "initNewUser").mockResolvedValue("useId");
         const findUserByContextSpy = jest.spyOn(userService, "findUserByContext").mockResolvedValue(new User());
         const initSessionSpy = jest.spyOn(sessionService, "initSession").mockResolvedValue("token");
-        const uploadUserEmailsSpy = jest.spyOn(S3Client, "uploadUserEmails");
 
         const res = await request.post(registerUserRoute).send(body);
 
@@ -187,8 +185,7 @@ describe(" register user", () => {
             verifyTokenSpy,
             initNewUserSpy,
             findUserByContextSpy,
-            initSessionSpy,
-            uploadUserEmailsSpy
+            initSessionSpy
         );
     });
 });
