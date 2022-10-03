@@ -383,10 +383,12 @@ export class ParticipantController {
                 participationScore: participant.participationScore || 0,
                 blacklist: participant.blacklist,
                 twitterUsername: socialLink.username,
-                participantShare: participantShare.toString(),
-                participantShareUSD: await getTokenValueInUSD(
-                    campaign.currency?.token?.symbol || "",
-                    parseFloat(participantShare.toString() || "0")
+                participantShare: formatFloat(participantShare.toString()),
+                participantShareUSD: formatFloat(
+                    await getTokenValueInUSD(
+                        campaign.currency?.token?.symbol || "",
+                        parseFloat(participantShare.toString() || "0")
+                    )
                 ),
             });
         }

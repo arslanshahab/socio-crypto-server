@@ -766,7 +766,7 @@ class CampaignParticipantsResultModel {
     @Property() public readonly blacklist: boolean;
     @Nullable(String) public readonly twitterUsername: string | null;
     @Property() public readonly participantShare: string;
-    @Property() public readonly participantShareUSD: number;
+    @Property() public readonly participantShareUSD: string;
 }
 
 export class CampaignDetailsResultModel {
