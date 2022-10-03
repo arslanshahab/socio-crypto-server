@@ -1,22 +1,22 @@
 import { PlatformTest } from "@tsed/common";
 import SuperTest from "supertest";
-import { RestServer } from "../../../../src/RestServer";
+import { RestServer } from "../../../../RestServer";
 
 import { handleBaseAssertions, registerUserRoute } from "../../../test_helper";
 
-import * as authControllers from "../../../../src/controllers/v1/AuthenticationController";
+import * as authControllers from "../../../../controllers/v1/AuthenticationController";
 
-import { UserService } from "../../../../src/services/UserService";
-import { ProfileService } from "../../../../src/services/ProfileService";
-import { VerificationService } from "../../../../src/services/VerificationService";
-import { SessionService } from "../../../../src/services/SessionService";
-import { User } from "../../../../src/models/User";
+import { UserService } from "../../../../services/UserService";
+import { ProfileService } from "../../../../services/ProfileService";
+import { VerificationService } from "../../../../services/VerificationService";
+import { SessionService } from "../../../../services/SessionService";
+import { User } from "../../../../models/User";
 import * as bodyParser from "body-parser";
-import { EMAIL_EXISTS, USERNAME_EXISTS, USER_NOT_FOUND } from "../../../../src/util/errors";
+import { EMAIL_EXISTS, USERNAME_EXISTS, USER_NOT_FOUND } from "../../../../util/errors";
 import { Profile } from "@prisma/client";
-import { Verification } from "../../../../src/models/Verification";
-import { S3Client } from "../../../../src/clients/s3";
-import { RegisterUserParams } from "../../../../src/models/RestModels";
+import { Verification } from "../../../../models/Verification";
+import { S3Client } from "../../../../clients/s3";
+import { RegisterUserParams } from "../../../../models/RestModels";
 
 const setEnv = () => {
     process.env.NODE_ENV = "production";
