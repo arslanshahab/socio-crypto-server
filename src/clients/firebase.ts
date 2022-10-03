@@ -13,7 +13,7 @@ import {
 } from "../util/constants";
 import { Campaign as PrismaCampaign } from "@prisma/client";
 
-interface FirebaseUserLoginResponse {
+export interface FirebaseUserLoginResponse {
     kind: string;
     localId: string;
     email: string;

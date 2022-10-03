@@ -1,19 +1,19 @@
 import { PlatformTest } from "@tsed/common";
 import { handleBaseAssertions, userLoginRoute } from "../../../test_helper";
-import { UserService } from "../../../../src/services/UserService";
+import { UserService } from "../../../../services/UserService";
 
-import { RestServer } from "../../../../src/RestServer";
-import * as authControllers from "../../../../src/controllers/v1/AuthenticationController";
+import { RestServer } from "../../../../RestServer";
+import * as authControllers from "../../../../controllers/v1/AuthenticationController";
 import * as bodyParser from "body-parser";
 
 import SuperTest from "supertest";
-import { ACCOUNT_RESTRICTED, EMAIL_NOT_EXISTS, INCORRECT_PASSWORD } from "../../../../src/util/errors";
+import { ACCOUNT_RESTRICTED, EMAIL_NOT_EXISTS, INCORRECT_PASSWORD } from "../../../../util/errors";
 
 import { User, Campaign } from "@prisma/client";
-import * as util from "../../../../src/util/index";
-import { SessionService } from "../../../../src/services/SessionService";
+import * as util from "../../../../util/index";
+import { SessionService } from "../../../../services/SessionService";
 
-import { UserRewardType } from "../../../../src/util/constants";
+import { UserRewardType } from "../../../../util/constants";
 
 describe("user Login", () => {
     let request: any;
