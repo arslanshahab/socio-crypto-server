@@ -1,6 +1,6 @@
 {
     "name": "raiinmaker-server",
-    "version": "3.5.26",
+    "version": "3.5.27",
     "main": "index.js",
     "repository": "git@github.com:dragonchain-inc/raiinmaker-server.git",
     "author": "Alex Benedetto <alex061994@gmail.com>",
@@ -112,7 +112,7 @@
         "sodium-native": "^3.3.0",
         "stripe": "^8.128.0",
         "twitter": "^1.7.1",
-        "typeorm": "0.2.45",
+        "typeorm": "^0.2.45",
         "uuid": "^3.3.3",
         "web3": "^1.3.0",
         "winston": "^3.2.1"
