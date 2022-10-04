@@ -64,25 +64,25 @@ const tokenService = new TokenService();
         network: x.network,
         withdrawFee: x.withdrawFee,
     }));
-    const filterData = [];
+    const networkRecord = [];
     for (const token of tokens) {
         const result = withdrawFee.find((x) => x.coin == token.symbol && x.network == token.network);
-        if (result) filterData.push(result);
+        if (result) networkRecord.push(result);
     }
-    for (const data of filterData) {
+    for (const network of networkRecord) {
         const marketSymbol = await readPrisma.marketData.findFirst({
-            where: { symbol: data.coin.toUpperCase() },
+            where: { symbol: network.coin.toUpperCase() },
         });
         if (marketSymbol?.id) {
             await prisma.marketData.update({
                 where: { id: marketSymbol.id },
-                data: { networkFee: data.withdrawFee ? data.withdrawFee : "0" },
+                data: { networkFee: network.withdrawFee ? network.withdrawFee : "0" },
             });
         } else {
             await prisma.marketData.create({
                 data: {
-                    symbol: data.coin.toUpperCase(),
-                    networkFee: data.withdrawFee,
+                    symbol: network.coin.toUpperCase(),
+                    networkFee: network.withdrawFee,
                 },
             });
         }
