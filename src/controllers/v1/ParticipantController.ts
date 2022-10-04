@@ -352,6 +352,13 @@ export class ParticipantController {
             filter,
             sort
         );
+        const { currentTotal } = calculateTier(
+            new BN(campaign.totalParticipationScore),
+            (campaign.algorithm as Prisma.JsonObject).tiers as Prisma.JsonObject as unknown as Tiers
+        );
+        let totalRewardAmount = new BN(currentTotal);
+        const campaignFee = totalRewardAmount.multipliedBy(FEE_RATE);
+        totalRewardAmount = totalRewardAmount.minus(campaignFee);
         const participants = [];
         for (const participant of allParticipants) {
             const metrics = await this.dailyParticipantMetricService.getAccumulatedParticipantMetrics(participant.id);
@@ -361,13 +368,6 @@ export class ParticipantController {
                 participant.userId,
                 SocialClientType.TWITTER
             );
-            const { currentTotal } = calculateTier(
-                new BN(campaign.totalParticipationScore),
-                (campaign.algorithm as Prisma.JsonObject).tiers as Prisma.JsonObject as unknown as Tiers
-            );
-            let totalRewardAmount = new BN(currentTotal);
-            const campaignFee = totalRewardAmount.multipliedBy(FEE_RATE);
-            totalRewardAmount = totalRewardAmount.minus(campaignFee);
             const participantShare = await calculateParticipantPayout(totalRewardAmount, campaign, participant);
             participants.push({
                 id: participant.id,
