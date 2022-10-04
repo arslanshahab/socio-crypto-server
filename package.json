@@ -85,7 +85,6 @@
         "compression": "^1.7.4",
         "cookie-parser": "^1.4.5",
         "cors": "^2.8.5",
-        "crypto-js": "^4.1.1",
         "cryptoicons-cdn": "^0.1.30",
         "date-fns": "^2.23.0",
         "dragonchain-sdk": "^4.3.3",
