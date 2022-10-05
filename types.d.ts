@@ -688,3 +688,41 @@ export type NftDataCombined = L1DragonchainTransactionFull["header"] & {
     owner?: string;
     note?: string;
 };
+
+export type BinanceNetworlList = {
+    network: string;
+    coin: string;
+    withdrawIntegerMultiple: number;
+    isDefault: boolean;
+    depositEnable: boolean;
+    withdrawEnable: boolean;
+    withdrawIsTag: boolean;
+    busy: boolean;
+    depositDesc: string;
+    depositMsgCategoryDesc: string;
+    withdrawDesc: string;
+    withdrawMsgCategoryDesc: string;
+    specialTips: string;
+    specialWithdrawTips: string;
+    insertTime: number;
+    updateTime: number;
+    name: string;
+    withdrawFee: string;
+    withdrawMin: string;
+    withdrawMax: string;
+    withdrawInternalMin: string;
+    withdrawHideEnable: boolean;
+};
+
+export type BinanceCoiinsApiTypes = {
+    coin: string;
+    depositAllEnable: boolean;
+    withdrawAllEnable: boolean;
+    depositHideAll: string | null;
+    withdrawHideAll: string | null;
+    name: string;
+    free: string | null;
+    isLegalMoney: boolean;
+    trading: boolean;
+    networkList: BinanceNetworlList[];
+};

@@ -8,6 +8,7 @@ import {
     BooleanResultModel,
     DepositAddressResultModel,
     SupportedCurrenciesResultModel,
+    TransactionFeeResultModel,
     WithdrawResultModel,
 } from "../../models/RestModels";
 import { NotFound } from "@tsed/exceptions";
@@ -34,6 +35,7 @@ import { getTokenValueInUSD } from "../../util/exchangeRate";
 import { OrganizationService } from "../../services/OrganizationService";
 import { CurrencyService } from "../../services/CurrencyService";
 import { AdminService } from "../../services/AdminService";
+import { MarketDataService } from "../../services/MarketDataService";
 
 class DepositAddressParams {
     @Required() public readonly symbol: string;
@@ -46,6 +48,11 @@ class WithdrawBody {
     @Required() public readonly address: string;
     @Required() public readonly amount: number;
     @Required() public readonly verificationToken: string;
+}
+
+class NetworkFeeBody {
+    @Required() public readonly symbol: string;
+    @Required() public readonly network: string;
 }
 
 @Controller("/tatum")
@@ -66,6 +73,8 @@ export class TatumController {
     private organizationService: OrganizationService;
     @Inject()
     private adminService: AdminService;
+    @Inject()
+    private marketDataService: MarketDataService;
 
     @Get("/supported-currencies")
     @(Returns(200, SuccessArrayResult).Of(SupportedCurrenciesResultModel))
@@ -207,5 +216,19 @@ export class TatumController {
         await this.adminService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));
         await this.tatumService.transferFunds(body);
         return new SuccessResult({ success: true }, BooleanResultModel);
+    }
+
+    @Get("/transaction-fee")
+    @(Returns(200, SuccessResult).Of(TransactionFeeResultModel))
+    public async getTransactionFee(@BodyParams() body: NetworkFeeBody, @Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"), { wallet: true });
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        let { symbol, network } = body;
+        const marketData = await this.marketDataService.getNetworkFee({ symbol, network });
+        if (!marketData) throw new NotFound(`Network fee not found for ${symbol} and ${network}`);
+        return new SuccessResult(
+            { symbol: marketData.symbol, network: marketData.networkFee, withdrawFee: marketData.networkFee },
+            TransactionFeeResultModel
+        );
     }
 }

@@ -2,7 +2,7 @@ import { PlatformTest } from "@tsed/common";
 import { RestServer } from "../../../../RestServer";
 import * as authControllers from "../../../../controllers/v1/AuthenticationController";
 import * as bodyParser from "body-parser";
-import { Firebase } from "../../.././../clients/firebase";
+import { FirebaseAdmin } from "../../.././../clients/firebaseAdmin";
 
 import { handleBaseAssertions, updateAdminPasswordRoute } from "../../../test_helper";
 
@@ -82,8 +82,8 @@ describe("Update admin password", () => {
 
     it("should throw unauthorised", async () => {
         const body = { idToken: "token", password: "password" };
-        const verifyTokenSpy = jest.spyOn(Firebase, "verifyToken").mockResolvedValue(decodedToken);
-        const getUserByIdSpy = jest.spyOn(Firebase, "getUserById").mockResolvedValue(firebaseUser(false));
+        const verifyTokenSpy = jest.spyOn(FirebaseAdmin, "verifyToken").mockResolvedValue(decodedToken);
+        const getUserByIdSpy = jest.spyOn(FirebaseAdmin, "getUserById").mockResolvedValue(firebaseUser(false));
 
         const res = await request.put(updateAdminPasswordRoute).send(body);
         console.log(res.body);
@@ -94,10 +94,10 @@ describe("Update admin password", () => {
 
     it("should successfully update admin password", async () => {
         const body = { idToken: "token", password: "password" };
-        const verifyTokenSpy = jest.spyOn(Firebase, "verifyToken").mockResolvedValue(decodedToken);
-        const getUserByIdSpy = jest.spyOn(Firebase, "getUserById").mockResolvedValue(firebaseUser(true));
-        jest.spyOn(Firebase, "updateUserPassword").mockResolvedValue(firebaseUser(true));
-        jest.spyOn(Firebase, "setCustomUserClaims").mockImplementation(
+        const verifyTokenSpy = jest.spyOn(FirebaseAdmin, "verifyToken").mockResolvedValue(decodedToken);
+        const getUserByIdSpy = jest.spyOn(FirebaseAdmin, "getUserById").mockResolvedValue(firebaseUser(true));
+        jest.spyOn(FirebaseAdmin, "updateUserPassword").mockResolvedValue(firebaseUser(true));
+        jest.spyOn(FirebaseAdmin, "setCustomUserClaims").mockImplementation(
             async (uid: string, orgName: string, role: "manager" | "admin", tempPass: boolean) => {}
         );
         const res = await request.put(updateAdminPasswordRoute).send(body);

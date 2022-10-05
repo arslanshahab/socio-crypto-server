@@ -2,7 +2,7 @@ import * as admin from "firebase-admin";
 import { Secrets } from "../util/secrets";
 import { RequestData, doFetch } from "../util/fetchRequest";
 
-interface FirebaseUserLoginResponse {
+export interface FirebaseUserLoginResponse {
     kind: string;
     localId: string;
     email: string;

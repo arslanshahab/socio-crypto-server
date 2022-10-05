@@ -945,3 +945,9 @@ export class PurchaseCoiinResultModel {
     clientSecret: string;
     amount: number;
 }
+
+export class TransactionFeeResultModel {
+    @Property() public readonly symbol: string;
+    @Property() public readonly network: string;
+    @Property() public readonly withdrawFee: string;
+}

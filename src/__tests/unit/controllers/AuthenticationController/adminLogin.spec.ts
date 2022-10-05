@@ -3,7 +3,7 @@ import { RestServer } from "../../../../RestServer";
 import { AuthenticationController } from "../../../../controllers/v1/AuthenticationController";
 import * as bodyParser from "body-parser";
 import SuperTest from "supertest";
-import { Firebase, FirebaseUserLoginResponse } from "../../../../clients/firebase";
+import { FirebaseAdmin, FirebaseUserLoginResponse } from "../../../../clients/firebaseAdmin";
 
 import { adminLoginRoute, handleBaseAssertions } from "../../../test_helper";
 import { ADMIN_NOT_FOUND } from "../../../../util/errors";
@@ -112,9 +112,9 @@ describe("Admin login", () => {
 
     it("should throw ADMIN_NOT_FOUND ", async () => {
         const body = { email: "me@raiinmaker.com", password: "password" };
-        const loginUserSpy = jest.spyOn(Firebase, "loginUser").mockResolvedValue(firebaseUserLoginResponse);
-        const verifyTokenSpy = jest.spyOn(Firebase, "verifyToken").mockResolvedValue(decodedToken(false));
-        const getUserByIdSpy = jest.spyOn(Firebase, "getUserById").mockResolvedValue(firebaseUser(false, false));
+        const loginUserSpy = jest.spyOn(FirebaseAdmin, "loginUser").mockResolvedValue(firebaseUserLoginResponse);
+        const verifyTokenSpy = jest.spyOn(FirebaseAdmin, "verifyToken").mockResolvedValue(decodedToken(false));
+        const getUserByIdSpy = jest.spyOn(FirebaseAdmin, "getUserById").mockResolvedValue(firebaseUser(false, false));
 
         const res = await request.post(adminLoginRoute).send(body);
 
@@ -123,9 +123,9 @@ describe("Admin login", () => {
 
     it("should login amdin when tempPass is true", async () => {
         const body = { email: "me@raiinmaker.com", password: "password" };
-        const loginUserSpy = jest.spyOn(Firebase, "loginUser").mockResolvedValue(firebaseUserLoginResponse);
-        const verifyTokenSpy = jest.spyOn(Firebase, "verifyToken").mockResolvedValue(decodedToken(false));
-        const getUserByIdSpy = jest.spyOn(Firebase, "getUserById").mockResolvedValue(firebaseUser(true, true));
+        const loginUserSpy = jest.spyOn(FirebaseAdmin, "loginUser").mockResolvedValue(firebaseUserLoginResponse);
+        const verifyTokenSpy = jest.spyOn(FirebaseAdmin, "verifyToken").mockResolvedValue(decodedToken(false));
+        const getUserByIdSpy = jest.spyOn(FirebaseAdmin, "getUserById").mockResolvedValue(firebaseUser(true, true));
 
         const res = await request.post(adminLoginRoute).send(body);
         console.log(res.body);
@@ -135,9 +135,9 @@ describe("Admin login", () => {
 
     it("should throw Unauthorised on expired session", async () => {
         const body = { email: "me@raiinmaker.com", password: "password" };
-        const loginUserSpy = jest.spyOn(Firebase, "loginUser").mockResolvedValue(firebaseUserLoginResponse);
-        const verifyTokenSpy = jest.spyOn(Firebase, "verifyToken").mockResolvedValue(decodedToken(true));
-        const getUserByIdSpy = jest.spyOn(Firebase, "getUserById").mockResolvedValue(firebaseUser(true, false));
+        const loginUserSpy = jest.spyOn(FirebaseAdmin, "loginUser").mockResolvedValue(firebaseUserLoginResponse);
+        const verifyTokenSpy = jest.spyOn(FirebaseAdmin, "verifyToken").mockResolvedValue(decodedToken(true));
+        const getUserByIdSpy = jest.spyOn(FirebaseAdmin, "getUserById").mockResolvedValue(firebaseUser(true, false));
 
         const res = await request.post(adminLoginRoute).send(body);
         console.log(res.body);
@@ -147,10 +147,10 @@ describe("Admin login", () => {
 
     it("should successfully login admin", async () => {
         const body = { email: "me@raiinmaker.com", password: "password" };
-        const loginUserSpy = jest.spyOn(Firebase, "loginUser").mockResolvedValue(firebaseUserLoginResponse);
-        const verifyTokenSpy = jest.spyOn(Firebase, "verifyToken").mockResolvedValue(decodedToken(false));
-        const getUserByIdSpy = jest.spyOn(Firebase, "getUserById").mockResolvedValue(firebaseUser(true, false));
-        const createSessionCokieSpy = jest.spyOn(Firebase, "createSessionCookie").mockResolvedValue("session");
+        const loginUserSpy = jest.spyOn(FirebaseAdmin, "loginUser").mockResolvedValue(firebaseUserLoginResponse);
+        const verifyTokenSpy = jest.spyOn(FirebaseAdmin, "verifyToken").mockResolvedValue(decodedToken(false));
+        const getUserByIdSpy = jest.spyOn(FirebaseAdmin, "getUserById").mockResolvedValue(firebaseUser(true, false));
+        const createSessionCokieSpy = jest.spyOn(FirebaseAdmin, "createSessionCookie").mockResolvedValue("session");
         const findAdminByFirebaseIdSpy = jest.spyOn(adminService, "findAdminByFirebaseId").mockResolvedValue(admin);
         const res = await request.post(adminLoginRoute).send(body);
         console.log(res.body);

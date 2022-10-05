@@ -4,10 +4,13 @@ import * as dotenv from "dotenv";
 import { doFetch, RequestData } from "../../util/fetchRequest";
 import { prisma, readPrisma } from "../../clients/prisma";
 import { SlackClient } from "../../clients/slack";
+import { BinanceCoiinsApiTypes, BinanceNetworlList } from "types.ts";
+import { TokenService } from "../../services/TokenService";
 
 dotenv.config();
 const app = new Application();
 console.log("APP instance created.");
+const tokenService = new TokenService();
 
 (async () => {
     console.log("Updating market data.");
@@ -46,6 +49,45 @@ console.log("APP instance created.");
         await connection.close();
         console.log("DATABASE CONNECTION CLOSED ----.");
         process.exit(0);
+    }
+
+    // Network withdraw fee
+    console.log("NETWORK FEE START----.");
+    const tokens = await tokenService.getEnabledTokens();
+    const requestData: RequestData = {
+        method: "GET",
+        url: `https://www.binance.com/bapi/capital/v1/public/capital/getNetworkCoinAll`,
+    };
+    const { data } = await doFetch(requestData);
+    const networkList = data.flatMap((x: BinanceCoiinsApiTypes) => x.networkList);
+    const withdrawFee: BinanceNetworlList[] = networkList.map((x: BinanceNetworlList) => ({
+        coin: x.coin,
+        network: x.network,
+        withdrawFee: x.withdrawFee,
+    }));
+    const networkRecord = [];
+    for (const token of tokens) {
+        const result = withdrawFee.find((x) => x.coin == token.symbol && x.network == token.network);
+        if (result) networkRecord.push(result);
+    }
+    for (const network of networkRecord) {
+        const marketSymbol = await readPrisma.marketData.findFirst({
+            where: { symbol: network.coin.toUpperCase(), network: network.network.toUpperCase() },
+        });
+        if (marketSymbol?.id) {
+            await prisma.marketData.update({
+                where: { id: marketSymbol.id },
+                data: { networkFee: network.withdrawFee },
+            });
+        } else {
+            await prisma.marketData.create({
+                data: {
+                    symbol: network.coin.toUpperCase(),
+                    network: network.network.toUpperCase(),
+                    networkFee: network.withdrawFee,
+                },
+            });
+        }
     }
     console.log("COMPLETED CRON TASKS ----.");
     await connection.close();

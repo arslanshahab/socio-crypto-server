@@ -39,4 +39,9 @@ export class MarketDataService {
                 : await this.getExchangeRateForCrypto(symbol);
         return (1 / marketRate) * minLimit;
     }
+
+    public async getNetworkFee(data: { symbol: string; network: string }) {
+        const { symbol, network } = data;
+        return readPrisma.marketData.findFirst({ where: { symbol, network } });
+    }
 }
