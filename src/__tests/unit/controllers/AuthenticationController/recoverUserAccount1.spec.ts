@@ -1,14 +1,14 @@
 import { PlatformTest } from "@tsed/common";
-import { RestServer } from "../../../../src/RestServer";
-import * as authControllers from "../../../../src/controllers/v1/AuthenticationController";
+import { RestServer } from "../../../../RestServer";
+import * as authControllers from "../../../../controllers/v1/AuthenticationController";
 import * as bodyParser from "body-parser";
 import SuperTest from "supertest";
 import { handleBaseAssertions, recoverUserAccountStep1Route } from "../../../test_helper";
 
-import { USERNAME_NOT_EXISTS, INCORRECT_CODE, USER_NOT_FOUND } from "../../../../src/util/errors";
+import { USERNAME_NOT_EXISTS, INCORRECT_CODE, USER_NOT_FOUND } from "../../../../util/errors";
 import { User, Profile } from "@prisma/client";
-import { ProfileService } from "../../../../src/services/ProfileService";
-import * as v2 from "../../../../src/util/index";
+import { ProfileService } from "../../../../services/ProfileService";
+import * as v2 from "../../../../util/index";
 
 describe("recover user account step1", () => {
     let request: any;

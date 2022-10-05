@@ -1,20 +1,20 @@
 import { PlatformTest } from "@tsed/common";
 import { handleBaseAssertions, startVerificationRoute } from "../../../test_helper";
-import { StartVerificationParams } from "../../../../src/controllers/v1/AuthenticationController";
-import { User } from "../../../../src/models/User";
-import { UserService } from "../../../../src/services/UserService";
-import { VerificationType } from "../../../../src/util/constants";
+import { StartVerificationParams } from "../../../../controllers/v1/AuthenticationController";
+import { User } from "../../../../models/User";
+import { UserService } from "../../../../services/UserService";
+import { VerificationType } from "../../../../util/constants";
 
-import { RestServer } from "../../../../src/RestServer";
-import * as authControllers from "../../../../src/controllers/v1/AuthenticationController";
+import { RestServer } from "../../../../RestServer";
+import * as authControllers from "../../../../controllers/v1/AuthenticationController";
 import * as bodyParser from "body-parser";
 
 import SuperTest from "supertest";
-import { EMAIL_EXISTS, EMAIL_NOT_EXISTS } from "../../../../src/util/errors";
-import { Verification } from "../../../../src/models/Verification";
-import { VerificationService } from "../../../../src/services/VerificationService";
-import { SesClient } from "../../../../src/clients/ses";
-import { FirebaseAdmin } from "../../../../src/clients/firebaseAdmin";
+import { EMAIL_EXISTS, EMAIL_NOT_EXISTS } from "../../../../util/errors";
+import { Verification } from "../../../../models/Verification";
+import { VerificationService } from "../../../../services/VerificationService";
+import { SesClient } from "../../../../clients/ses";
+import { FirebaseAdmin } from "../../../../clients/firebaseAdmin";
 
 describe("start verification", () => {
     let request: any;
