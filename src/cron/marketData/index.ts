@@ -4,7 +4,7 @@ import * as dotenv from "dotenv";
 import { doFetch, RequestData } from "../../util/fetchRequest";
 import { prisma, readPrisma } from "../../clients/prisma";
 import { SlackClient } from "../../clients/slack";
-import { BinanceCoiinsApiTypes, BinanceNetworlList } from "types.ts";
+import { BinanceCoiinsApiTypes, BinanceNetworkList } from "types.ts";
 import { TokenService } from "../../services/TokenService";
 
 dotenv.config();
@@ -60,7 +60,7 @@ const tokenService = new TokenService();
     };
     const { data } = await doFetch(requestData);
     const networkList = data.flatMap((x: BinanceCoiinsApiTypes) => x.networkList);
-    const withdrawFee: BinanceNetworlList[] = networkList.map((x: BinanceNetworlList) => ({
+    const withdrawFee: BinanceNetworkList[] = networkList.map((x: BinanceNetworkList) => ({
         coin: x.coin,
         network: x.network,
         withdrawFee: x.withdrawFee,
