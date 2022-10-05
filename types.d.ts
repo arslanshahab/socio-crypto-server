@@ -689,7 +689,7 @@ export type NftDataCombined = L1DragonchainTransactionFull["header"] & {
     note?: string;
 };
 
-export type BinanceNetworlList = {
+export type BinanceNetworkList = {
     network: string;
     coin: string;
     withdrawIntegerMultiple: number;
@@ -724,5 +724,5 @@ export type BinanceCoiinsApiTypes = {
     free: string | null;
     isLegalMoney: boolean;
     trading: boolean;
-    networkList: BinanceNetworlList[];
+    networkList: BinanceNetworkList[];
 };
