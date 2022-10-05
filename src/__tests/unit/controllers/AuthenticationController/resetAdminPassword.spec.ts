@@ -10,7 +10,7 @@ import { VerificationService } from "../../../../services/VerificationService";
 import * as bodyParser from "body-parser";
 
 import { Verification } from "../../../../models/Verification";
-import { Firebase } from "../../../../clients/firebase";
+import { FirebaseAdmin } from "../../../../clients/firebaseAdmin";
 
 import Supertest from "supertest";
 import { auth } from "firebase-admin";
@@ -74,8 +74,8 @@ describe(" register user", () => {
         const verifyCodeSpy = jest
             .spyOn(verificationService, "verifyCode")
             .mockImplementation(async (email, code) => new Verification());
-        const getUserByEmailSpy = jest.spyOn(Firebase, "getUserByEmail").mockResolvedValue(firebaseUser);
-        const udpateUserPasswordSpy = jest.spyOn(Firebase, "updateUserPassword").mockResolvedValue(firebaseUser);
+        const getUserByEmailSpy = jest.spyOn(FirebaseAdmin, "getUserByEmail").mockResolvedValue(firebaseUser);
+        const udpateUserPasswordSpy = jest.spyOn(FirebaseAdmin, "updateUserPassword").mockResolvedValue(firebaseUser);
         const res = await request.put(resetAdminPasswordRoute).send(body);
         console.log(res.body);
 

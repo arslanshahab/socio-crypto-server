@@ -8,6 +8,9 @@ export class MarketData extends BaseEntity {
     @Column({ nullable: false })
     public symbol: string;
 
+    @Column()
+    public network: string;
+
     @Column({ nullable: false, default: 0, type: "float8" })
     public price: number;
 
