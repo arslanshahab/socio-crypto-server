@@ -24,7 +24,7 @@ import { JWTPayload } from "types.d.ts";
 import { createSubscriptionUrl, getWithdrawAddressForTatum } from "../util/tatumHelper";
 import { getTokenValueInUSD } from "../util/exchangeRate";
 import { errorMap, GLOBAL_WITHDRAW_LIMIT } from "../util/errors";
-import { Firebase } from "../clients/firebase";
+import { FirebaseMobile } from "../clients/firebaseMobile";
 import { CustodialAddress } from "../models/CustodialAddress";
 
 export const initWallet = asyncHandler(async (req: Request, res: Response) => {
@@ -355,7 +355,7 @@ export const trackCoiinTransactionForUser = asyncHandler(async (req: Request, re
             type: TransferType.CREDIT,
         });
         await newTransfer.save();
-        await Firebase.sendUserTransactionUpdate(user.profile.deviceToken, "DEPOSIT");
+        await FirebaseMobile.sendUserTransactionUpdate(user.profile.deviceToken, "DEPOSIT");
         res.status(200).json({ success: true });
     } catch (error) {
         res.status(200).json(error.message);

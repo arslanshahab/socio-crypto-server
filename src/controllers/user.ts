@@ -1,7 +1,7 @@
 import { Campaign } from "../models/Campaign";
 import { Participant } from "../models/Participant";
 import { checkPermissions } from "../middleware/authentication";
-import { Firebase } from "../clients/firebase";
+import { FirebaseMobile } from "../clients/firebaseMobile";
 import { User } from "../models/User";
 import { S3Client } from "../clients/s3";
 import { decrypt, sha256Hash } from "../util/crypto";
@@ -86,10 +86,10 @@ export const promotePermissions = async (
     const user = await User.findOne({ where });
     if (!user) throw new Error(USER_NOT_FOUND);
     if (role === "manager") {
-        await Firebase.adminClient.auth().setCustomUserClaims(user.id, { role: "manager", company });
+        await FirebaseMobile.adminClient.auth().setCustomUserClaims(user.id, { role: "manager", company });
     } else {
         if (!args.role) throw new Error(MISSING_PARAMS);
-        await Firebase.adminClient.auth().setCustomUserClaims(user.id, {
+        await FirebaseMobile.adminClient.auth().setCustomUserClaims(user.id, {
             role: args.role,
             company: args.company || company,
         });
@@ -341,7 +341,7 @@ export const sendUserMessages = async (
         },
         []
     );
-    await Firebase.sendGenericNotification(tokens, title, message);
+    await FirebaseMobile.sendGenericNotification(tokens, title, message);
     return true;
 };
 

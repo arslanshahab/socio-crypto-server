@@ -1,7 +1,7 @@
 import { Secrets } from "../../util/secrets";
 import { Application } from "../../app";
 import * as dotenv from "dotenv";
-import { Firebase } from "../../clients/firebase";
+import { FirebaseMobile } from "../../clients/firebaseMobile";
 import { COIIN, BSC, RAIINMAKER_ORG_NAME, COIIN_ALERT_TRIGGER_LIMIT, TransferStatus } from "../../util/constants";
 import { SesClient } from "../../clients/ses";
 import { BatchTransferPayload, TatumClient } from "../../clients/tatumClient";
@@ -187,7 +187,7 @@ const updateTatumBalances = async () => {
 (async () => {
     console.log("Starting auto coiin transfer.");
     await Secrets.initialize();
-    await Firebase.initialize();
+    await FirebaseMobile.initialize();
     const connection = await app.connectDatabase();
     console.log("Secrets and connection initialized.");
     try {
