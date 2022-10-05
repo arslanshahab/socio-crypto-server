@@ -52,6 +52,7 @@ class WithdrawBody {
 
 class NetworkFeeBody {
     @Required() public readonly symbol: string;
+    @Required() public readonly network: string;
 }
 
 @Controller("/tatum")
@@ -222,8 +223,9 @@ export class TatumController {
     public async getTransactionFee(@BodyParams() body: NetworkFeeBody, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"), { wallet: true });
         if (!user) throw new NotFound(USER_NOT_FOUND);
-        let { symbol } = body;
-        const marketData = await this.marketDataService.findMarketData(symbol.toUpperCase());
+        let { symbol, network } = body;
+        const marketData = await this.marketDataService.getNetworkFee({ symbol, network });
+        if (!marketData) throw new NotFound(`Network fee not found for ${symbol} and ${network}`);
         return new SuccessResult(
             { symbol: marketData.symbol, withdrawFee: marketData.networkFee },
             TransactionFeeResultModel

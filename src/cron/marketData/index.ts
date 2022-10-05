@@ -76,7 +76,7 @@ const tokenService = new TokenService();
         if (marketSymbol?.id) {
             await prisma.marketData.update({
                 where: { id: marketSymbol.id },
-                data: { networkFee: network.withdrawFee ? network.withdrawFee : "0" },
+                data: { networkFee: network.withdrawFee },
             });
         } else {
             await prisma.marketData.create({
