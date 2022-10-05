@@ -24,12 +24,12 @@ import { Campaign as PrismaCampaign } from "@prisma/client";
 //     expiresIn: string;
 // }
 
-export class Firebase {
+export class FirebaseMobile {
     public static adminClient: admin.app.App;
     public static baseUrl = "https://identitytoolkit.googleapis.com";
 
-    public static initializeApp() {
-        Firebase.adminClient = admin.initializeApp({
+    public static initialize() {
+        FirebaseMobile.adminClient = admin.initializeApp({
             credential: admin.credential.cert({
                 projectId: Secrets.firebaseProjectId,
                 clientEmail: Secrets.firebaseClientEmail,
@@ -68,7 +68,7 @@ export class Firebase {
                 },
                 tokens: currentTokens,
             };
-            await Firebase.adminClient.messaging().sendMulticast(message);
+            await FirebaseMobile.adminClient.messaging().sendMulticast(message);
         }
     }
 
@@ -103,7 +103,7 @@ export class Firebase {
                 },
                 tokens: currentSet,
             };
-            await Firebase.adminClient.messaging().sendMulticast(message);
+            await FirebaseMobile.adminClient.messaging().sendMulticast(message);
         }
     }
 
@@ -200,7 +200,7 @@ export class Firebase {
             data: { title, body, redirection: JSON.stringify({ to: "harvest" }) },
             token,
         };
-        await Firebase.adminClient.messaging().send(message);
+        await FirebaseMobile.adminClient.messaging().send(message);
     }
 
     public static async sendCampaignCreatedNotifications(tokens: string[], campaign: Campaign | PrismaCampaign) {
@@ -239,7 +239,7 @@ export class Firebase {
                 },
                 tokens: currentSet,
             };
-            await Firebase.adminClient.messaging().sendMulticast(message);
+            await FirebaseMobile.adminClient.messaging().sendMulticast(message);
         }
     }
 
@@ -267,7 +267,7 @@ export class Firebase {
             data: { title, body, redirection: JSON.stringify({ to: "harvest" }) },
             token,
         };
-        await Firebase.adminClient.messaging().send(message);
+        await FirebaseMobile.adminClient.messaging().send(message);
     }
 
     public static async sendUserTransactionUpdate(token: string, status: TransferAction) {
@@ -294,7 +294,7 @@ export class Firebase {
             data: { title, body, redirection: JSON.stringify({ to: "harvest" }) },
             token,
         };
-        await Firebase.adminClient.messaging().send(message);
+        await FirebaseMobile.adminClient.messaging().send(message);
     }
 
     public static async sendKycApprovalNotification(token: string) {
@@ -321,7 +321,7 @@ export class Firebase {
             data: { title, body, redirection: JSON.stringify({ to: "harvest" }) },
             token,
         };
-        await Firebase.adminClient.messaging().send(message);
+        await FirebaseMobile.adminClient.messaging().send(message);
     }
 
     public static async sendKycRejectionNotification(token: string) {
@@ -348,7 +348,7 @@ export class Firebase {
             data: { title, body, redirection: JSON.stringify({ to: "settings" }) },
             token,
         };
-        await Firebase.adminClient.messaging().send(message);
+        await FirebaseMobile.adminClient.messaging().send(message);
     }
 
     public static async sendWithdrawalApprovalNotification(token: string, amount: BigInt, symbol: String = "COIIN") {
@@ -375,7 +375,7 @@ export class Firebase {
             data: { title, body, redirection: JSON.stringify({ to: "rewards" }) },
             token,
         };
-        await Firebase.adminClient.messaging().send(message);
+        await FirebaseMobile.adminClient.messaging().send(message);
     }
 
     public static async sendWithdrawalRejectionNotification(token: string, amount: BigInt, symbol: string = "COIIN") {
@@ -402,6 +402,6 @@ export class Firebase {
             data: { title, body, redirection: JSON.stringify({ to: "settings" }) },
             token,
         };
-        await Firebase.adminClient.messaging().send(message);
+        await FirebaseMobile.adminClient.messaging().send(message);
     }
 }

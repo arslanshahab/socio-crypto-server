@@ -1,4 +1,4 @@
-import { Firebase } from "../../clients/firebase";
+import { FirebaseMobile } from "../../clients/firebaseMobile";
 import { BN } from "../../util";
 import * as campaignController from "../../controllers/campaign";
 import { prisma, readPrisma } from "../../clients/prisma";
@@ -89,7 +89,7 @@ export const main = async () => {
                                     campaignToken?.symbol || "",
                                     parseFloat(campaign.coiinTotal)
                                 );
-                                return await Firebase.sendDailyParticipationUpdate(
+                                return await FirebaseMobile.sendDailyParticipationUpdate(
                                     user?.profile?.deviceToken || "",
                                     campaign.name,
                                     percentageOfParticipation.times(currentTotal).times(tokenPrice).times(10), // value in coiin
@@ -98,7 +98,7 @@ export const main = async () => {
                                     totalParticipants
                                 );
                             } else {
-                                await Firebase.sendDailyParticipationUpdate(
+                                await FirebaseMobile.sendDailyParticipationUpdate(
                                     user?.profile?.deviceToken || "",
                                     campaign.name,
                                     percentageOfParticipation.times(currentTotal),

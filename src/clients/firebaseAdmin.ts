@@ -13,12 +13,12 @@ interface FirebaseUserLoginResponse {
     expiresIn: string;
 }
 
-export class AdminFirebase {
+export class FirebaseAdmin {
     public static adminClient: admin.app.App;
     public static baseUrl = "https://identitytoolkit.googleapis.com";
 
     public static initialize() {
-        AdminFirebase.adminClient = admin.initializeApp(
+        FirebaseAdmin.adminClient = admin.initializeApp(
             {
                 credential: admin.credential.cert({
                     projectId: Secrets.firebaseAdminProjectId,
@@ -36,35 +36,35 @@ export class AdminFirebase {
         role: "manager" | "admin",
         tempPass: boolean
     ) {
-        return AdminFirebase.adminClient.auth().setCustomUserClaims(uid, { company: orgName, role, tempPass });
+        return FirebaseAdmin.adminClient.auth().setCustomUserClaims(uid, { company: orgName, role, tempPass });
     }
 
     public static async deleteUser(uid: string) {
-        return AdminFirebase.adminClient.auth().deleteUser(uid);
+        return FirebaseAdmin.adminClient.auth().deleteUser(uid);
     }
 
     public static async createSessionCookie(token: string, expiresIn: number) {
-        return AdminFirebase.adminClient.auth().createSessionCookie(token, { expiresIn });
+        return FirebaseAdmin.adminClient.auth().createSessionCookie(token, { expiresIn });
     }
 
     public static async verifySessionCookie(cookie: string) {
-        return AdminFirebase.adminClient.auth().verifySessionCookie(cookie, true);
+        return FirebaseAdmin.adminClient.auth().verifySessionCookie(cookie, true);
     }
 
     public static async verifyToken(token: string) {
-        return AdminFirebase.adminClient.auth().verifyIdToken(token, true);
+        return FirebaseAdmin.adminClient.auth().verifyIdToken(token, true);
     }
 
     public static async revokeRefreshToken(token: string) {
-        return AdminFirebase.adminClient.auth().revokeRefreshTokens(token);
+        return FirebaseAdmin.adminClient.auth().revokeRefreshTokens(token);
     }
 
     public static async createNewUser(email: string, password: string) {
-        return AdminFirebase.adminClient.auth().createUser({ email, password });
+        return FirebaseAdmin.adminClient.auth().createUser({ email, password });
     }
 
     public static async loginUser(email: string, password: string): Promise<FirebaseUserLoginResponse> {
-        const url = `${AdminFirebase.baseUrl}/v1/accounts:signInWithPassword`;
+        const url = `${FirebaseAdmin.baseUrl}/v1/accounts:signInWithPassword`;
         const requestData: RequestData = {
             method: "POST",
             url,
@@ -79,22 +79,22 @@ export class AdminFirebase {
     }
 
     public static async updateUserPassword(uid: string, password: string) {
-        return AdminFirebase.adminClient.auth().updateUser(uid, { password });
+        return FirebaseAdmin.adminClient.auth().updateUser(uid, { password });
     }
 
     public static async getUserByEmail(email: string) {
-        return AdminFirebase.adminClient.auth().getUserByEmail(email);
+        return FirebaseAdmin.adminClient.auth().getUserByEmail(email);
     }
 
     public static async getUserById(id: string) {
-        return AdminFirebase.adminClient.auth().getUser(id);
+        return FirebaseAdmin.adminClient.auth().getUser(id);
     }
 
     public static async listUsers() {
-        return AdminFirebase.adminClient.auth().listUsers();
+        return FirebaseAdmin.adminClient.auth().listUsers();
     }
 
     public static async deleteUsers(ids: string[]) {
-        return AdminFirebase.adminClient.auth().deleteUsers(ids);
+        return FirebaseAdmin.adminClient.auth().deleteUsers(ids);
     }
 }

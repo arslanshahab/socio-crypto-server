@@ -4,7 +4,7 @@ import { ACCOUNT_RESTRICTED, FormattedError, NO_TOKEN_PROVIDED } from "../util/e
 import { User } from "../models/User";
 import { SessionService } from "../services/SessionService";
 import { JWTPayload } from "types.d.ts";
-import { AdminFirebase } from "../clients/adminFirebase";
+import { FirebaseAdmin } from "../clients/firebaseAdmin";
 
 const sessionService = new SessionService();
 
@@ -12,9 +12,9 @@ export const authenticateAdmin = async ({ req }: { req: express.Request }) => {
     try {
         const token = req.cookies.session || "";
         if (!token) throw new AuthenticationError("No token provided or session not initialized");
-        const decodedToken = await AdminFirebase.verifySessionCookie(token);
+        const decodedToken = await FirebaseAdmin.verifySessionCookie(token);
         if (!decodedToken) throw new AuthenticationError("invalid token");
-        const firebaseUser = await AdminFirebase.getUserById(decodedToken.uid);
+        const firebaseUser = await FirebaseAdmin.getUserById(decodedToken.uid);
         const user = {
             id: decodedToken.uid,
             method: "firebase",

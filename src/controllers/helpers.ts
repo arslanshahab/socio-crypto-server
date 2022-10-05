@@ -41,7 +41,7 @@ import { Currency, Token, User, Wallet as PrismaWallet } from "@prisma/client";
 import { SocialPostService } from "../services/SocialPostService";
 import { SocialLinkService } from "../services/SocialLinkService";
 import { ParticipantService } from "../services/ParticipantService";
-import { AdminFirebase } from "../clients/adminFirebase";
+import { FirebaseAdmin } from "../clients/firebaseAdmin";
 
 const socialPostService = new SocialPostService();
 const socialLinkService = new SocialLinkService();
@@ -437,9 +437,9 @@ export const getSocialClient = (type: string) => {
 };
 
 export const getActiveAdmin = async (token: string) => {
-    const decodedToken = await AdminFirebase.verifySessionCookie(token);
+    const decodedToken = await FirebaseAdmin.verifySessionCookie(token);
     if (!decodedToken) throw new Forbidden(INVALID_TOKEN);
-    const firebaseUser = await AdminFirebase.getUserById(decodedToken.uid);
+    const firebaseUser = await FirebaseAdmin.getUserById(decodedToken.uid);
     if (!firebaseUser) throw new NotFound(ADMIN_NOT_FOUND);
     const admin = {
         id: decodedToken.uid,

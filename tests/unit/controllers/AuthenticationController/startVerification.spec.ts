@@ -14,7 +14,7 @@ import { EMAIL_EXISTS, EMAIL_NOT_EXISTS } from "../../../../src/util/errors";
 import { Verification } from "../../../../src/models/Verification";
 import { VerificationService } from "../../../../src/services/VerificationService";
 import { SesClient } from "../../../../src/clients/ses";
-import { Firebase } from "../../../../src/clients/firebase";
+import { FirebaseAdmin } from "../../../../src/clients/firebaseAdmin";
 
 describe("start verification", () => {
     let request: any;
@@ -189,7 +189,7 @@ describe("start verification", () => {
             admin: true,
         };
 
-        const getUserByEmailSpy = jest.spyOn(Firebase, "getUserByEmail");
+        const getUserByEmailSpy = jest.spyOn(FirebaseAdmin, "getUserByEmail");
 
         const generateVerificationSpy = jest
             .spyOn(verificationService, "generateVerification")

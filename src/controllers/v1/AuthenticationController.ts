@@ -36,7 +36,7 @@ import { VerificationService } from "../../services/VerificationService";
 import { JWTPayload } from "types.d.ts";
 import { UserRewardType, VerificationType } from "../../util/constants";
 import { SesClient } from "../../clients/ses";
-import { AdminFirebase } from "../../clients/adminFirebase";
+import { FirebaseAdmin } from "../../clients/firebaseAdmin";
 import { SessionService } from "../../services/SessionService";
 import { AdminService } from "../../services/AdminService";
 
@@ -172,7 +172,7 @@ export class AuthenticationController {
         } else {
             let adminFound = false;
             try {
-                await AdminFirebase.getUserByEmail(email);
+                await FirebaseAdmin.getUserByEmail(email);
                 adminFound = true;
             } catch (error) {}
             if (type === "EMAIL" && adminFound) throw new BadRequest(EMAIL_EXISTS);
@@ -209,12 +209,12 @@ export class AuthenticationController {
     @(Returns(200, SuccessResult).Of(BooleanResultModel))
     public async updateAdminPassword(@BodyParams() body: UpdateAdminPasswordParams) {
         const { idToken, password } = body;
-        const decodedToken = await AdminFirebase.verifyToken(idToken);
+        const decodedToken = await FirebaseAdmin.verifyToken(idToken);
         if (!decodedToken) return new Unauthorized(INVALID_TOKEN);
-        const user = await AdminFirebase.getUserById(decodedToken.uid);
+        const user = await FirebaseAdmin.getUserById(decodedToken.uid);
         if (!user.customClaims) return new Unauthorized("Unauthorized!");
-        await AdminFirebase.updateUserPassword(user.uid, password);
-        await AdminFirebase.setCustomUserClaims(user.uid, user.customClaims.company, user.customClaims.role, false);
+        await FirebaseAdmin.updateUserPassword(user.uid, password);
+        await FirebaseAdmin.setCustomUserClaims(user.uid, user.customClaims.company, user.customClaims.role, false);
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 
@@ -224,9 +224,9 @@ export class AuthenticationController {
     public async forgetAdminPassword(@BodyParams() body: ForgetAdminPasswordParams) {
         const { email, password, code } = body;
         await this.verificationService.verifyCode(email, code);
-        const user = await AdminFirebase.getUserByEmail(email);
+        const user = await FirebaseAdmin.getUserByEmail(email);
         if (!user) throw new NotFound(USER_NOT_FOUND);
-        await AdminFirebase.updateUserPassword(user.uid, password);
+        await FirebaseAdmin.updateUserPassword(user.uid, password);
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 
@@ -249,9 +249,9 @@ export class AuthenticationController {
     public async adminLogin(@BodyParams() body: AdminLoginBody, @Response() res: Response) {
         const { email, password } = body;
         let sessionCookie;
-        const authToken = await AdminFirebase.loginUser(email, password);
-        const decodedToken = await AdminFirebase.verifyToken(authToken.idToken);
-        const user = await AdminFirebase.getUserById(decodedToken.uid);
+        const authToken = await FirebaseAdmin.loginUser(email, password);
+        const decodedToken = await FirebaseAdmin.verifyToken(authToken.idToken);
+        const user = await FirebaseAdmin.getUserById(decodedToken.uid);
         if (!user.customClaims) throw new Unauthorized(ADMIN_NOT_FOUND);
         if (user.customClaims.tempPass === true)
             return new SuccessResult(
@@ -260,7 +260,7 @@ export class AuthenticationController {
             );
         const expiresIn = 60 * 60 * 24 * 5 * 1000;
         if (new Date().getTime() / 1000 - decodedToken.auth_time < 5 * 60) {
-            sessionCookie = await AdminFirebase.createSessionCookie(authToken.idToken, expiresIn);
+            sessionCookie = await FirebaseAdmin.createSessionCookie(authToken.idToken, expiresIn);
         } else {
             throw new Unauthorized("Recent Signin required.");
         }
