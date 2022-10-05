@@ -628,7 +628,7 @@ model MarketData {
   price      Float    @default(0)
   createdAt  DateTime @default(now()) @db.Timestamp(6)
   updatedAt  DateTime @default(now()) @db.Timestamp(6)
-  network    String   @db.VarChar
+  network    String?  @db.VarChar
   networkFee String?  @db.VarChar
 
   @@map("market_data")

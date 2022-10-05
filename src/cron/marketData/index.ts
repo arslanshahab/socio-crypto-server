@@ -71,7 +71,7 @@ const tokenService = new TokenService();
     }
     for (const network of networkRecord) {
         const marketSymbol = await readPrisma.marketData.findFirst({
-            where: { symbol: network.coin.toUpperCase() },
+            where: { symbol: network.coin.toUpperCase(), network: network.network.toUpperCase() },
         });
         if (marketSymbol?.id) {
             await prisma.marketData.update({
@@ -82,6 +82,7 @@ const tokenService = new TokenService();
             await prisma.marketData.create({
                 data: {
                     symbol: network.coin.toUpperCase(),
+                    network: network.network.toUpperCase(),
                     networkFee: network.withdrawFee,
                 },
             });
