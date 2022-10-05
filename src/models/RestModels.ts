@@ -947,6 +947,7 @@ export class PurchaseCoiinResultModel {
 }
 
 export class TransactionFeeResultModel {
-    @Property() public readonly withdrawFee: string;
     @Property() public readonly symbol: string;
+    @Property() public readonly network: string;
+    @Property() public readonly withdrawFee: string;
 }

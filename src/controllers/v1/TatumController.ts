@@ -227,7 +227,7 @@ export class TatumController {
         const marketData = await this.marketDataService.getNetworkFee({ symbol, network });
         if (!marketData) throw new NotFound(`Network fee not found for ${symbol} and ${network}`);
         return new SuccessResult(
-            { symbol: marketData.symbol, withdrawFee: marketData.networkFee },
+            { symbol: marketData.symbol, network: marketData.networkFee, withdrawFee: marketData.networkFee },
             TransactionFeeResultModel
         );
     }

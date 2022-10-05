@@ -52,6 +52,7 @@ const tokenService = new TokenService();
     }
 
     // Network withdraw fee
+    console.log("NETWORK FEE START----.");
     const tokens = await tokenService.getEnabledTokens();
     const requestData: RequestData = {
         method: "GET",
