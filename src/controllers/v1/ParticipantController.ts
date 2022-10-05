@@ -39,7 +39,7 @@ import { getSocialClient } from "../helpers";
 import { PointValueTypes, Tiers } from "types.d.ts";
 import { SocialLinkService } from "../../services/SocialLinkService";
 import { MarketDataService } from "../../services/MarketDataService";
-import { ParticipantAction, SocialClientType, SocialLinkType, Sort } from "../../util/constants";
+import { FEE_RATE, ParticipantAction, SocialClientType, SocialLinkType, Sort } from "../../util/constants";
 import { SocialPostService } from "../../services/SocialPostService";
 import { limit } from "../../util/rateLimiter";
 import { QualityScoreService } from "../../services/QualityScoreService";
@@ -341,6 +341,10 @@ export class ParticipantController {
     public async getParticipants(@QueryParams() query: CampaignAllParticipantsParams, @Context() context: Context) {
         this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
         const { campaignId, skip, take, filter, sort = Sort.DESC } = query;
+        const campaign = await this.campaignService.findCampaignById(campaignId, {
+            currency: { include: { token: true } },
+        });
+        if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
         const allParticipants = await this.participantService.findParticipantsByCampaignId(
             campaignId,
             skip,
@@ -348,6 +352,13 @@ export class ParticipantController {
             filter,
             sort
         );
+        const { currentTotal } = calculateTier(
+            new BN(campaign.totalParticipationScore),
+            (campaign.algorithm as Prisma.JsonObject).tiers as Prisma.JsonObject as unknown as Tiers
+        );
+        let totalRewardAmount = new BN(currentTotal);
+        const campaignFee = totalRewardAmount.multipliedBy(FEE_RATE);
+        totalRewardAmount = totalRewardAmount.minus(campaignFee);
         const participants = [];
         for (const participant of allParticipants) {
             const metrics = await this.dailyParticipantMetricService.getAccumulatedParticipantMetrics(participant.id);
@@ -357,6 +368,7 @@ export class ParticipantController {
                 participant.userId,
                 SocialClientType.TWITTER
             );
+            const participantShare = await calculateParticipantPayout(totalRewardAmount, campaign, participant);
             participants.push({
                 id: participant.id,
                 userId: participant.userId,
@@ -371,10 +383,17 @@ export class ParticipantController {
                 participationScore: participant.participationScore || 0,
                 blacklist: participant.blacklist,
                 twitterUsername: socialLink.username,
+                participantShare: formatFloat(participantShare.toString()),
+                participantShareUSD: formatFloat(
+                    await getTokenValueInUSD(
+                        campaign.currency?.token?.symbol || "",
+                        parseFloat(participantShare.toString() || "0")
+                    )
+                ),
             });
         }
         const count = await this.participantService.findParticipantCountByCampaignId(campaignId, filter);
-        return new SuccessResult({ participants, count }, CampaignDetailsResultModel);
+        return new SuccessResult({ participants, count, campaignSymbol: campaign.symbol }, CampaignDetailsResultModel);
     }
 
     // For admin-panel

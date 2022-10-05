@@ -13,7 +13,7 @@ import { S3Client } from "../clients/s3";
 import { In, ILike } from "typeorm";
 import { User } from "../models/User";
 import { SocialPost } from "../models/SocialPost";
-import { Firebase } from "../clients/firebase";
+import { FirebaseMobile } from "../clients/firebaseMobile";
 import { calculateParticipantPayout, calculateParticipantSocialScore, calculateTier } from "./helpers";
 import { Transfer } from "../models/Transfer";
 import { BN } from "../util";
@@ -199,7 +199,7 @@ export const createNewCampaign = async (parent: any, args: NewCampaignVariables,
             });
         }
         const deviceTokens = await User.getAllDeviceTokens("campaignCreate");
-        if (deviceTokens.length > 0) await Firebase.sendCampaignCreatedNotifications(deviceTokens, campaign);
+        if (deviceTokens.length > 0) await FirebaseMobile.sendCampaignCreatedNotifications(deviceTokens, campaign);
         return {
             campaignId: campaign.id,
             campaignImageSignedURL: campaignImageSignedURL,
@@ -369,7 +369,7 @@ export const adminUpdateCampaignStatus = async (
         }
         await campaign.save();
         const deviceTokens = await User.getAllDeviceTokens("campaignCreate");
-        if (deviceTokens.length > 0) await Firebase.sendCampaignCreatedNotifications(deviceTokens, campaign);
+        if (deviceTokens.length > 0) await FirebaseMobile.sendCampaignCreatedNotifications(deviceTokens, campaign);
         return true;
     } catch (error) {
         throw new FormattedError(error);

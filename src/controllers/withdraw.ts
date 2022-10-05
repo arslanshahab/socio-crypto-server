@@ -8,7 +8,7 @@ import { performCurrencyAction } from "./helpers";
 import { BN } from "../util";
 // import { Paypal } from "../clients/paypal";
 // import { Response, Request } from "express";
-import { Firebase } from "../clients/firebase";
+import { FirebaseMobile } from "../clients/firebaseMobile";
 import { WalletCurrency } from "../models/WalletCurrency";
 import { getTokenPriceInUsd } from "../clients/ethereum";
 import { performCoiinTransfer } from "./ethWithdraw";
@@ -182,7 +182,7 @@ export const update = async (
             );
         }
         if (group.deviceToken)
-            await Firebase.sendWithdrawalApprovalNotification(
+            await FirebaseMobile.sendWithdrawalApprovalNotification(
                 group.deviceToken,
                 group.totalRedeemedAmount,
                 group.symbol
@@ -190,7 +190,7 @@ export const update = async (
     }
     for (const userId in rejected) {
         if (rejected[userId].deviceToken)
-            await Firebase.sendWithdrawalRejectionNotification(
+            await FirebaseMobile.sendWithdrawalRejectionNotification(
                 rejected[userId].deviceToken,
                 rejected[userId].total,
                 rejected[userId].symbol

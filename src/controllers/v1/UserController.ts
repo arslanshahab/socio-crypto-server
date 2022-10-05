@@ -90,7 +90,7 @@ import { addDays, endOfISOWeek, startOfDay } from "date-fns";
 import { ProfileService } from "../../services/ProfileService";
 import { createPasswordHash } from "../../util";
 import { AdminService } from "../../services/AdminService";
-import { Firebase } from "../../clients/firebase";
+import { FirebaseMobile } from "../../clients/firebaseMobile";
 import { VerificationService } from "../../services/VerificationService";
 import { decrypt } from "../../util/crypto";
 import { S3Client } from "../../clients/s3";
@@ -674,10 +674,12 @@ export class UserController {
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
         try {
             if (role === MANAGER) {
-                await Firebase.adminClient.auth().setCustomUserClaims(admin.firebaseId, { role: MANAGER, company });
+                await FirebaseMobile.adminClient
+                    .auth()
+                    .setCustomUserClaims(admin.firebaseId, { role: MANAGER, company });
             } else {
                 if (!body.role) throw new BadRequest(MISSING_PARAMS);
-                await Firebase.adminClient.auth().setCustomUserClaims(admin.firebaseId, {
+                await FirebaseMobile.adminClient.auth().setCustomUserClaims(admin.firebaseId, {
                     role: body.role,
                     company: body.company || company,
                 });

@@ -2,7 +2,7 @@ import { Secrets } from "../../util/secrets";
 import { Application } from "../../app";
 import * as dotenv from "dotenv";
 import { payoutCryptoCampaignRewards } from "./auditFunctions";
-import { Firebase } from "../../clients/firebase";
+import { FirebaseMobile } from "../../clients/firebaseMobile";
 import { CampaignAuditStatus, CampaignStatus } from "../../util/constants";
 import { readPrisma } from "../../clients/prisma";
 import { Dragonchain } from "../../clients/dragonchain";
@@ -15,7 +15,7 @@ console.log("APP instance created.");
 (async () => {
     console.log("Starting campaign audit.");
     await Secrets.initialize();
-    await Firebase.initialize();
+    await FirebaseMobile.initialize();
     await Dragonchain.initialize();
     const connection = await app.connectDatabase();
     console.log("Secrets and connection initialized.");
@@ -64,7 +64,7 @@ console.log("APP instance created.");
             }
             try {
                 if (deviceIds?.length)
-                    await Firebase.sendCampaignCompleteNotifications(Object.values(deviceIds), campaign.name);
+                    await FirebaseMobile.sendCampaignCompleteNotifications(Object.values(deviceIds), campaign.name);
             } catch (error) {}
         }
     } catch (error) {

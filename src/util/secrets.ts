@@ -33,6 +33,9 @@ export class Secrets {
     public static tiktokClientKey: string;
     public static tiktokClientSecret: string;
     public static sentryDSN: string;
+    public static firebaseAdminProjectId: string;
+    public static firebaseAdminPrivateKey: string;
+    public static firebaseAdminClientEmail: string;
 
     public static async initialize() {
         Secrets.firebaseProjectId =
@@ -103,5 +106,15 @@ export class Secrets {
         Secrets.tiktokClientSecret =
             process.env.TIKTOK_CLIENT_SECRET || (await readFilePromise("/var/secrets/tiktok/clientSecret", "utf8"));
         Secrets.sentryDSN = process.env.SENTRY_DSN || (await readFilePromise("/var/secrets/sentry/dsn", "utf8"));
+        Secrets.firebaseAdminProjectId =
+            process.env.FIREBASE_ADMIN_PROJECT_ID ||
+            (await readFilePromise("/var/secrets/firebase-credentials/firebaseAdminProjectId", "utf8"));
+        Secrets.firebaseAdminPrivateKey = (
+            process.env.FIREBASE_ADMIN_PRIVATE_KEY ||
+            (await readFilePromise("/var/secrets/firebase-credentials/firebaseAdminPrivateKey", "utf8"))
+        ).replace(/\\n/g, "\n");
+        Secrets.firebaseAdminClientEmail =
+            process.env.FIREBASE_ADMIN_CLIENT_EMAIL ||
+            (await readFilePromise("/var/secrets/firebase-credentials/firebaseAdminClientEmail", "utf8"));
     }
 }

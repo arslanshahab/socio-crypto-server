@@ -642,6 +642,10 @@ export type ParticipantsRawQueryTypes = {
     userId: string;
     profileId: string;
     participationScore: string;
+    clickCount: string;
+    viewCount: string;
+    submissionCount: string;
+    link: string;
     blacklist: boolean;
     email: string;
     username: string;
@@ -650,6 +654,8 @@ export type ParticipantsRawQueryTypes = {
     symbol: string;
     campaignName: string;
     algorithm: any;
+    createdAt: Date;
+    updatedAt: Date;
 };
 
 export interface L1DragonchainTransactionAugmented {

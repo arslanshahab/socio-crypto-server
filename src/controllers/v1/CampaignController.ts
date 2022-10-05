@@ -52,7 +52,8 @@ import { OrganizationService } from "../../services/OrganizationService";
 import { WalletService } from "../../services/WalletService";
 import { S3Client } from "../../clients/s3";
 import { User } from "../../models/User";
-import { Firebase } from "../../clients/firebase";
+import { FirebaseMobile } from "../../clients/firebaseMobile";
+import { FirebaseAdmin } from "../../clients/firebaseAdmin";
 import { RafflePrizeService } from "../../services/RafflePrizeService";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 import { CampaignMediaService } from "../../services/CampaignMediaService";
@@ -318,13 +319,13 @@ export class CampaignController {
             });
         }
         const deviceTokens = await User.getAllDeviceTokens("campaignCreate");
-        if (deviceTokens.length > 0) await Firebase.sendCampaignCreatedNotifications(deviceTokens, campaign);
+        if (deviceTokens.length > 0) await FirebaseMobile.sendCampaignCreatedNotifications(deviceTokens, campaign);
         const raiinmakerAdmins = await this.adminService.listAdminsByOrg(orgId!, RAIINMAKER_ORG_NAME);
         const brandName = await this.organizationService.findOrgById(campaign.orgId || "");
         if (campaign.id) {
             if (raiinmakerAdmins) {
                 for (const admin of raiinmakerAdmins) {
-                    const { email } = await Firebase.getUserById(admin.firebaseId);
+                    const { email } = await FirebaseAdmin.getUserById(admin.firebaseId);
                     SesClient.CampaignProcessEmailToAdmin({
                         title: `Campaign review message from ${brandName?.name}`,
                         text: `Hi, please approved "${campaign.name}" campaign`,
@@ -648,7 +649,7 @@ export class CampaignController {
         const brandAdmins = await this.adminService.listAdminsByOrg(campaign?.orgId!);
         if (brandAdmins) {
             for (const admin of brandAdmins) {
-                const { email } = await Firebase.getUserById(admin.firebaseId);
+                const { email } = await FirebaseAdmin.getUserById(admin.firebaseId);
                 SesClient.CampaignProcessEmailToAdmin({
                     title: "Campaign Approval Status",
                     text: `${campaign.name} has been ${updatedCampaign.status}. ${reason}`,
@@ -657,7 +658,7 @@ export class CampaignController {
             }
         }
         const deviceTokens = await User.getAllDeviceTokens("campaignCreate");
-        if (deviceTokens.length > 0) await Firebase.sendCampaignCreatedNotifications(deviceTokens, campaign);
+        if (deviceTokens.length > 0) await FirebaseMobile.sendCampaignCreatedNotifications(deviceTokens, campaign);
         return new SuccessResult({ message: `campaign has been ${updatedCampaign.status}` }, UpdatedResultModel);
     }
 

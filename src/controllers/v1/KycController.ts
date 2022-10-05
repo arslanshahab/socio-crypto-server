@@ -6,7 +6,7 @@ import { ADMIN, KycLevel, KycStatus, MANAGER, RAIINMAKER_ORG_NAME } from "../../
 import { UserService } from "../../services/UserService";
 import { SuccessResult } from "../../util/entities";
 import { KYC_LEVEL_1_NOT_APPROVED, KYC_NOT_FOUND, USER_NOT_FOUND, VERIFICATION_NOT_FOUND } from "../../util/errors";
-import { Firebase } from "../../clients/firebase";
+import { FirebaseMobile } from "../../clients/firebaseMobile";
 import { VerificationApplicationService } from "../../services/VerificationApplicationService";
 import { KycUser } from "types.d.ts";
 import { S3Client } from "../../clients/s3";
@@ -149,8 +149,8 @@ export class KycController {
         if (!user) throw new NotFound(USER_NOT_FOUND);
         const updatedStatus = await this.verificationApplicationService.updateKycStatus(user.id, status);
         if (user.notification_settings?.kyc) {
-            if (status === "APPROVED") await Firebase.sendKycApprovalNotification(user.profile?.deviceToken!);
-            else await Firebase.sendKycRejectionNotification(user.profile?.deviceToken!);
+            if (status === "APPROVED") await FirebaseMobile.sendKycApprovalNotification(user.profile?.deviceToken!);
+            else await FirebaseMobile.sendKycRejectionNotification(user.profile?.deviceToken!);
         }
         user.kycStatus = updatedStatus.kycStatus;
         return new SuccessResult(UserResultModel.build(user), UserResultModel);
@@ -190,7 +190,8 @@ export class KycController {
         }
         await this.verificationApplicationService.updateStatus(status, verificationApplication);
         await this.verificationApplicationService.updateReason(getKycStatusDetails(kyc), kycUser.id);
-        if (kycUser.user) await Firebase.sendKycVerificationUpdate(kycUser.user?.profile?.deviceToken || "", status);
+        if (kycUser.user)
+            await FirebaseMobile.sendKycVerificationUpdate(kycUser.user?.profile?.deviceToken || "", status);
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 }

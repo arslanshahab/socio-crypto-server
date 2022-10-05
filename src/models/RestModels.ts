@@ -762,14 +762,17 @@ class CampaignParticipantsResultModel {
     @Property() public readonly shareScore: number;
     @Property() public readonly totalLikes: number;
     @Property() public readonly totalShares: number;
-    @Property() public readonly participationScore: number;
+    @Property() public readonly participationScore: string | number;
     @Property() public readonly blacklist: boolean;
     @Nullable(String) public readonly twitterUsername: string | null;
+    @Property() public readonly participantShare: string;
+    @Property() public readonly participantShareUSD: string;
 }
 
 export class CampaignDetailsResultModel {
     @Property() public readonly participants: CampaignParticipantsResultModel[];
     @Property() public readonly count: number;
+    @Property() public readonly campaignSymbol: string;
 }
 
 export class PaidOutCryptoResultModel {

@@ -5,7 +5,7 @@ import { AcuantClient } from "../clients/acuant";
 import { Admin, Profile, User, VerificationApplication } from "@prisma/client";
 import { KycApplication, KycStatus } from "types.d.ts";
 import { KycLevel, KycStatus as KycStatusEnum } from "../util/constants";
-import { Firebase } from "../clients/firebase";
+import { FirebaseMobile } from "../clients/firebaseMobile";
 import { Validator } from "../schemas";
 import { prisma, readPrisma } from "../clients/prisma";
 import { SesClient } from "../clients/ses";
@@ -188,7 +188,7 @@ export class VerificationApplicationService {
                 record: currentKycApplication?.kyc,
                 profile: level === KycLevel.LEVEL1 ? JSON.stringify(query) : undefined,
             });
-            Firebase.sendKycVerificationUpdate(user?.profile?.deviceToken || "", status);
+            FirebaseMobile.sendKycVerificationUpdate(user?.profile?.deviceToken || "", status);
         } else {
             verificationApplication = currentKycApplication.kyc;
         }

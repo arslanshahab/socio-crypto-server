@@ -2,7 +2,7 @@ import { S3Client } from "../clients/s3";
 import { User } from "../models/User";
 import { checkPermissions } from "../middleware/authentication";
 import { KycUser } from "types.d.ts";
-import { Firebase } from "../clients/firebase";
+import { FirebaseMobile } from "../clients/firebaseMobile";
 import { Request, Response } from "express";
 import { VerificationApplication } from "../models/VerificationApplication";
 import { Validator } from "../schemas";
@@ -40,7 +40,7 @@ export const verifyKyc = async (parent: any, args: { userKyc: KycApplication }, 
                 reason: getKycStatusDetails(newAcuantApplication),
                 record: currentKycApplication?.kyc,
             });
-            Firebase.sendKycVerificationUpdate(user?.profile?.deviceToken || "", status);
+            FirebaseMobile.sendKycVerificationUpdate(user?.profile?.deviceToken || "", status);
         } else {
             verificationApplication = currentKycApplication.kyc;
             factors = currentKycApplication.factors;
@@ -86,7 +86,7 @@ export const kycWebhook = asyncHandler(async (req: Request, res: Response) => {
     }
     await verificationApplication.updateStatus(status);
     await verificationApplication.updateReason(getKycStatusDetails(kyc));
-    await Firebase.sendKycVerificationUpdate(user?.profile?.deviceToken || "", status);
+    await FirebaseMobile.sendKycVerificationUpdate(user?.profile?.deviceToken || "", status);
     res.json({ success: true });
 });
 
@@ -146,8 +146,8 @@ export const updateKycStatus = async (
     if (!user) throw new Error(USER_NOT_FOUND);
     await user.save();
     if (user.notificationSettings.kyc) {
-        if (args.status === "APPROVED") await Firebase.sendKycApprovalNotification(user.profile.deviceToken);
-        else await Firebase.sendKycRejectionNotification(user.profile.deviceToken);
+        if (args.status === "APPROVED") await FirebaseMobile.sendKycApprovalNotification(user.profile.deviceToken);
+        else await FirebaseMobile.sendKycRejectionNotification(user.profile.deviceToken);
     }
     return user.asV1();
 };
