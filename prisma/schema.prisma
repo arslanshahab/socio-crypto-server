@@ -626,9 +626,10 @@ model MarketData {
   id         String   @id(map: "PK_f66c35bec52b05f6eae861225e6") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   symbol     String   @db.VarChar
   price      Float    @default(0)
-  networkFee String?  @db.VarChar()
   createdAt  DateTime @default(now()) @db.Timestamp(6)
   updatedAt  DateTime @default(now()) @db.Timestamp(6)
+  network    String   @db.VarChar
+  networkFee String?  @db.VarChar
 
   @@map("market_data")
 }
