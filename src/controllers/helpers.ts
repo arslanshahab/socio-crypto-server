@@ -34,7 +34,6 @@ import { TwitterClient } from "../clients/twitter";
 import { TikTokClient } from "../clients/tiktok";
 import { FacebookClient } from "../clients/facebook";
 import { Campaign as PrismaCampaign, Participant as PrismaParticipant } from "@prisma/client";
-import { Firebase } from "../clients/firebase";
 import { Forbidden, NotFound } from "@tsed/exceptions";
 import { TatumClient } from "../clients/tatumClient";
 import { BalanceResultModel } from "../models/RestModels";
@@ -42,6 +41,7 @@ import { Currency, Token, User, Wallet as PrismaWallet } from "@prisma/client";
 import { SocialPostService } from "../services/SocialPostService";
 import { SocialLinkService } from "../services/SocialLinkService";
 import { ParticipantService } from "../services/ParticipantService";
+import { FirebaseAdmin } from "../clients/firebaseAdmin";
 
 const socialPostService = new SocialPostService();
 const socialLinkService = new SocialLinkService();
@@ -437,9 +437,9 @@ export const getSocialClient = (type: string) => {
 };
 
 export const getActiveAdmin = async (token: string) => {
-    const decodedToken = await Firebase.verifySessionCookie(token);
+    const decodedToken = await FirebaseAdmin.verifySessionCookie(token);
     if (!decodedToken) throw new Forbidden(INVALID_TOKEN);
-    const firebaseUser = await Firebase.getUserById(decodedToken.uid);
+    const firebaseUser = await FirebaseAdmin.getUserById(decodedToken.uid);
     if (!firebaseUser) throw new NotFound(ADMIN_NOT_FOUND);
     const admin = {
         id: decodedToken.uid,

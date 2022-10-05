@@ -1,5 +1,5 @@
 import { Application } from "../../app";
-import { Firebase } from "../../clients/firebase";
+import { FirebaseMobile } from "../../clients/firebaseMobile";
 import { Secrets } from "../../util/secrets";
 import logger from "../../util/logger";
 import * as cron from "./scoreAggregate";
@@ -11,7 +11,7 @@ const app = new Application();
     // create connections
     logger.info("Starting 24 hour cron");
     await Secrets.initialize();
-    await Firebase.initialize();
+    await FirebaseMobile.initialize();
     const connection = await app.connectDatabase();
     try {
         await cron.main();
