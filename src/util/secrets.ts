@@ -108,13 +108,13 @@ export class Secrets {
         Secrets.sentryDSN = process.env.SENTRY_DSN || (await readFilePromise("/var/secrets/sentry/dsn", "utf8"));
         Secrets.firebaseAdminProjectId =
             process.env.FIREBASE_ADMIN_PROJECT_ID ||
-            (await readFilePromise("/var/secrets/firebase-credentials/firebaseAdminProjectId", "utf8"));
+            (await readFilePromise("/var/secrets/firebase-admin-creds/firebaseAdminProjectId", "utf8"));
         Secrets.firebaseAdminPrivateKey = (
             process.env.FIREBASE_ADMIN_PRIVATE_KEY ||
-            (await readFilePromise("/var/secrets/firebase-credentials/firebaseAdminPrivateKey", "utf8"))
+            (await readFilePromise("/var/secrets/firebase-admin-creds/firebaseAdminPrivateKey", "utf8"))
         ).replace(/\\n/g, "\n");
         Secrets.firebaseAdminClientEmail =
             process.env.FIREBASE_ADMIN_CLIENT_EMAIL ||
-            (await readFilePromise("/var/secrets/firebase-credentials/firebaseAdminClientEmail", "utf8"));
+            (await readFilePromise("/var/secrets/firebase-admin-creds/firebaseAdminClientEmail", "utf8"));
     }
 }
