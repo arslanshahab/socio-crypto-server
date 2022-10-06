@@ -112,6 +112,9 @@ spec:
             - name: tiktok
               mountPath: "/var/secrets/tiktok"
               readOnly: true
+            - name: firebase-admin-creds
+              mountPath: "/var/secrets/firebase-admin-creds"
+              readOnly: true
           resources:
             {{- toYaml .Values.server.resources | nindent 12 }}
       volumes:
@@ -157,6 +160,9 @@ spec:
         - name: tiktok
           secret:
             secretName: tiktok
+        - name: firebase-admin-creds
+          secret:
+            secretName: firebase-admin-creds
 ---
 apiVersion: apps/v1
 kind: Deployment
