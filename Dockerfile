@@ -1,6 +1,9 @@
 FROM node:16.17.0 AS base
 WORKDIR /app
 
+RUN ["apt-get", "update"]
+RUN ["apt-get", "-y", "install", "vim"]
+
 FROM base AS builder
 ARG NPM_TOKEN
 COPY .npmrc .
