@@ -306,4 +306,8 @@ export class VerificationApplicationService {
             include: { user: { include: { profile: true } } },
         });
     }
+
+    public async findVerificationApplicationByAdminId(adminId: string) {
+        return readPrisma.verificationApplication.findFirst({ where: { adminId } });
+    }
 }
