@@ -1,4 +1,4 @@
-apiVersion: v1
+apiVersion: v2
 kind: ConfigMap
 metadata:
   name: "{{ include "raiinmaker.fullname" . }}-server-env"
@@ -20,7 +20,7 @@ data:
   REDIS_PORT: "6379"
   REDIS_HOST: "{{ include "raiinmaker.fullname" . }}-redis"
 ---
-apiVersion: v1
+apiVersion: v2
 kind: ConfigMap
 metadata:
   name: {{ include "raiinmaker.fullname" . }}-redis
