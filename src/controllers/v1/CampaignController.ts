@@ -9,6 +9,7 @@ import {
     CampaignState,
     CampaignStatus,
     CAMPAIGN_REWARD,
+    KycStatus,
     MANAGER,
     RAIINMAKER_ORG_NAME,
 } from "../../util/constants";
@@ -20,6 +21,7 @@ import {
     CAMPAIGN_NOT_FOUND,
     CAMPAIGN_ORGANIZATION_MISSING,
     COMPANY_NOT_SPECIFIED,
+    KYC_NOT_FOUND,
     ORG_NOT_FOUND,
     RAFFLE_PRIZE_MISSING,
     WALLET_NOT_FOUND,
@@ -66,6 +68,7 @@ import { MarketDataService } from "../../services/MarketDataService";
 import { formatFloat } from "../../util";
 import { AdminService } from "../../services/AdminService";
 import { SesClient } from "../../clients/ses";
+import { VerificationApplicationService } from "../../services/VerificationApplicationService";
 
 const validator = new Validator();
 
@@ -121,6 +124,8 @@ export class CampaignController {
     private marketDataService: MarketDataService;
     @Inject()
     private adminService: AdminService;
+    @Inject()
+    private verificationApplicationService: VerificationApplicationService;
 
     @Get()
     @(Returns(200, SuccessResult).Of(Pagination).Nested(CampaignResultModel))
@@ -208,7 +213,13 @@ export class CampaignController {
             { hasRole: [ADMIN, MANAGER] },
             context.get("user")
         );
-
+        const admin = await this.adminService.findAdminByFirebaseId(context.get("user").id);
+        if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
+        const verificationApplication = await this.verificationApplicationService.findVerificationApplicationByAdminId(
+            admin.id
+        );
+        if (verificationApplication?.status !== KycStatus.APPROVED && company !== RAIINMAKER_ORG_NAME)
+            throw new BadRequest(KYC_NOT_FOUND);
         let {
             name,
             beginDate,
@@ -346,7 +357,17 @@ export class CampaignController {
     @Post("/update-campaign")
     @(Returns(200, SuccessResult).Of(UpdateCampaignResultModel))
     public async updateCampaign(@BodyParams() body: UpdateCampaignParams, @Context() context: Context) {
-        const { orgId } = await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
+        const { orgId, company } = await this.adminService.checkPermissions(
+            { hasRole: [ADMIN, MANAGER] },
+            context.get("user")
+        );
+        const admin = await this.adminService.findAdminByFirebaseId(context.get("user").id);
+        if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
+        const verificationApplication = await this.verificationApplicationService.findVerificationApplicationByAdminId(
+            admin.id
+        );
+        if (verificationApplication?.status !== KycStatus.APPROVED && company !== RAIINMAKER_ORG_NAME)
+            throw new BadRequest(KYC_NOT_FOUND);
         let {
             id,
             name,
