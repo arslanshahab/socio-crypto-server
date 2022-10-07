@@ -74,8 +74,8 @@ import {
     TransferAction,
     UserRewardType,
     ADMIN_ROLES,
-    NftName,
-    NftType,
+    // NftName,
+    // NftType,
 } from "../../util/constants";
 import { SocialService } from "../../services/SocialService";
 import { CampaignService } from "../../services/CampaignService";
@@ -99,7 +99,7 @@ import { Parser } from "json2csv";
 import { DragonChainService } from "../../services/DragonChainService";
 import { TransactionService } from "../../services/TransactionService";
 import { SessionService } from "../../services/SessionService";
-import { generateRandomUuid } from "../../util/index";
+// import { generateRandomUuid } from "../../util/index";
 import { NftService } from "../../services/NftService";
 
 const userResultRelations = {
@@ -776,14 +776,14 @@ export class UserController {
         const { image } = body;
         const filename = await S3Client.uploadProfilePicture("profilePicture", user.id, image);
         user.profile = await this.profileService.updateProfilePicture(user.profile, filename);
-        if (!(await this.nftService.findProfilePictureNftOfUser(user.id)))
-            await this.nftService.mintNFT({
-                userId: user.id,
-                name: NftName.PROFILE_PICTURE,
-                type: NftType.FILE,
-                nftId: generateRandomUuid(),
-                file: image,
-            });
+        // if (!(await this.nftService.findProfilePictureNftOfUser(user.id)))
+        //     await this.nftService.mintNFT({
+        //         userId: user.id,
+        //         name: NftName.PROFILE_PICTURE,
+        //         type: NftType.FILE,
+        //         nftId: generateRandomUuid(),
+        //         file: image,
+        //     });
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 
