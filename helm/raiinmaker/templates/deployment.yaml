@@ -1,4 +1,4 @@
-apiVersion: apps/v1
+apiVersion: apps/v2
 kind: Deployment
 metadata:
   name: {{ include "raiinmaker.fullname" . }}-server
@@ -164,7 +164,7 @@ spec:
           secret:
             secretName: firebase-admin-creds
 ---
-apiVersion: apps/v1
+apiVersion: apps/v2
 kind: Deployment
 metadata:
   name: {{ include "raiinmaker.fullname" . }}-redis

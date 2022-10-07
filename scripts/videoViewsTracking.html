@@ -5,9 +5,10 @@
         get: (searchParams, prop) => searchParams.get(prop),
     });
     const participantId = params.participantId;
+    const videoPlayerID = "raiinmaker-video-player";
     let player;
     function onYouTubeIframeAPIReady() {
-        player = new YT.Player("raiinmaker-video-player", {
+        player = new YT.Player(videoPlayerID, {
             events: { onReady: onPlayerReady, onStateChange: onPlayerStateChange },
         });
     }
