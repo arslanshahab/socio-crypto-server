@@ -1,4 +1,4 @@
-apiVersion: v2
+apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "raiinmaker.fullname" . }}
@@ -24,7 +24,7 @@ spec:
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/component: webserver
 ---
-apiVersion: v2
+apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "raiinmaker.fullname" . }}-redis
