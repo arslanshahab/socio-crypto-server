@@ -1,4 +1,4 @@
-apiVersion: batch/v1
+apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
   name: social-metrics
@@ -123,7 +123,7 @@ spec:
               secret:
                 secretName: tiktok
 ---
-apiVersion: batch/v1
+apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
   name: daily-participation-metrics
@@ -248,7 +248,7 @@ spec:
               secret:
                 secretName: tiktok
 ---
-# apiVersion: batch/v2beta1
+# apiVersion: batch/v1beta1
 # kind: CronJob
 # metadata:
 #   name: coiin-watcher
@@ -376,7 +376,7 @@ spec:
 #               secret:
 #                 secretName: tiktok
 # ---
-apiVersion: batch/v1
+apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
   name: quality-score
@@ -504,7 +504,7 @@ spec:
               secret:
                 secretName: tiktok
 ---
-apiVersion: batch/v1
+apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
   name: campaign-audit
@@ -632,7 +632,7 @@ spec:
               secret:
                 secretName: tiktok
 ---
-apiVersion: batch/v1
+apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
   name: fix-transfer-and-update-balance
@@ -760,7 +760,7 @@ spec:
               secret:
                 secretName: tiktok
 ---
-apiVersion: batch/v1
+apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
   name: market-data
