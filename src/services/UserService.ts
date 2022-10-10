@@ -387,7 +387,7 @@ export class UserService {
     }
 
     public async updatedUserEmail(email: string) {
-        const user = this.findUserByEmail(email);
+        const user = await this.findUserByEmail(email);
         if (!user) {
             const profile = await this.profileService.findProfileByEmail(email);
             if (profile) {
