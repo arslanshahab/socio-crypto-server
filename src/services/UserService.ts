@@ -356,7 +356,7 @@ export class UserService {
     }
 
     public async findUserByEmail(email: string) {
-        return await prisma.user.findFirst({ where: { email: email.toLowerCase() } });
+        return await prisma.user.findFirst({ where: { email: email.toLowerCase(), deletedAt: null } });
     }
 
     public async updateLastLogin(userId: string) {
@@ -428,7 +428,7 @@ export class UserService {
     }
 
     public async ifEmailExist(email: string) {
-        return Boolean(await prisma.user.findFirst({ where: { email: email.toLowerCase() } }));
+        return Boolean(await prisma.user.findFirst({ where: { email: email.toLowerCase(), deletedAt: null } }));
     }
 
     public async updateCoiinBalance(user: User, operation: "ADD" | "SUBTRACT", amount: number): Promise<any> {
@@ -457,7 +457,7 @@ export class UserService {
         let promoCode = null;
         while (!promoCode) {
             promoCode = await this.generatePromoCode();
-            if (await prisma.user.findFirst({ where: { promoCode } })) {
+            if (await prisma.user.findFirst({ where: { promoCode, deletedAt: null } })) {
                 promoCode = null;
             }
         }
@@ -465,7 +465,7 @@ export class UserService {
     }
 
     public async getAllEmails() {
-        return await prisma.user.findMany({ select: { email: true } });
+        return await prisma.user.findMany({ where: { deletedAt: null }, select: { email: true } });
     }
 
     public async generatePromoCode() {
@@ -480,6 +480,9 @@ export class UserService {
     public async getLastHourEmails() {
         let d = new Date();
         const lastHour = d.setHours(d.getHours() - 1);
-        return prisma.user.findMany({ where: { createdAt: { gte: new Date(lastHour) } }, select: { email: true } });
+        return prisma.user.findMany({
+            where: { createdAt: { gte: new Date(lastHour) }, deletedAt: null },
+            select: { email: true },
+        });
     }
 }
