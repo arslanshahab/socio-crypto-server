@@ -45,7 +45,7 @@ export class CustomError extends Error {
     }
 }
 
-export const SESSION_EXPIRED = "SESION_EXPIRED";
+export const SESSION_EXPIRED = "SESSION_EXPIRED";
 export const INVALID_TOKEN = "INVALID_TOKEN";
 export const SOMETHING_WENT_WRONG = "SOMETHING_WENT_WRONG";
 export const MISSING_PARAMS = "MISSING_PARAMS";
@@ -123,7 +123,7 @@ export const errorMap: { [key: string]: string } = {
     USERNAME_NOT_EXISTS: "Provided username doesn't exist in our records.",
     INCORRECT_CODE: "Provided code is not correct.",
     USERNAME_EXISTS: "A user has already registered with this username.",
-    SESION_EXPIRED: "Session expired, please login again.",
+    SESSION_EXPIRED: "Session expired, please login again.",
     INVALID_TOKEN: "Provided token is not valid",
     INCORRECT_CODE_OR_EMAIL: "Invalid code or verification not initialized",
     SAME_OLD_AND_NEW_PASSWORD: "Current pass and old password cannot be same, please set a different password",
