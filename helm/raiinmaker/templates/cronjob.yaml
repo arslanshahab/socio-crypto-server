@@ -71,6 +71,9 @@ spec:
                 - name: tiktok
                   mountPath: "/var/secrets/tiktok"
                   readOnly: true
+                - name: firebase-admin-creds
+                  mountPath: "/var/secrets/firebase-admin-creds"
+                  readOnly: true
               resources:
                 requests:
                   memory: "500Mi"
@@ -122,6 +125,9 @@ spec:
             - name: tiktok
               secret:
                 secretName: tiktok
+            - name: firebase-admin-creds
+              secret:
+                secretName: firebase-admin-creds
 ---
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -196,6 +202,9 @@ spec:
                 - name: tiktok
                   mountPath: "/var/secrets/tiktok"
                   readOnly: true
+                - name: firebase-admin-creds
+                  mountPath: "/var/secrets/firebase-admin-creds"
+                  readOnly: true
               resources:
                 requests:
                   memory: "500Mi"
@@ -247,6 +256,9 @@ spec:
             - name: tiktok
               secret:
                 secretName: tiktok
+            - name: firebase-admin-creds
+              secret:
+                secretName: firebase-admin-creds
 ---
 # apiVersion: batch/v1beta1
 # kind: CronJob
@@ -375,6 +387,7 @@ spec:
 #             - name: tiktok
 #               secret:
 #                 secretName: tiktok
+
 # ---
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -452,6 +465,9 @@ spec:
                 - name: tiktok
                   mountPath: "/var/secrets/tiktok"
                   readOnly: true
+                - name: firebase-admin-creds
+                  mountPath: "/var/secrets/firebase-admin-creds"
+                  readOnly: true
               resources:
                 requests:
                   memory: "500Mi"
@@ -503,6 +519,9 @@ spec:
             - name: tiktok
               secret:
                 secretName: tiktok
+            - name: firebase-admin-creds
+              secret:
+                secretName: firebase-admin-creds
 ---
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -580,6 +599,9 @@ spec:
                 - name: tiktok
                   mountPath: "/var/secrets/tiktok"
                   readOnly: true
+                - name: firebase-admin-creds
+                  mountPath: "/var/secrets/firebase-admin-creds"
+                  readOnly: true
               resources:
                 requests:
                   memory: "400Mi"
@@ -631,6 +653,9 @@ spec:
             - name: tiktok
               secret:
                 secretName: tiktok
+            - name: firebase-admin-creds
+              secret:
+                secretName: firebase-admin-creds
 ---
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -708,6 +733,9 @@ spec:
                 - name: tiktok
                   mountPath: "/var/secrets/tiktok"
                   readOnly: true
+                - name: firebase-admin-creds
+                  mountPath: "/var/secrets/firebase-admin-creds"
+                  readOnly: true
               resources:
                 requests:
                   memory: "500Mi"
@@ -759,6 +787,9 @@ spec:
             - name: tiktok
               secret:
                 secretName: tiktok
+            - name: firebase-admin-creds
+              secret:
+                secretName: firebase-admin-creds
 ---
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -836,6 +867,9 @@ spec:
                 - name: tiktok
                   mountPath: "/var/secrets/tiktok"
                   readOnly: true
+                - name: firebase-admin-creds
+                  mountPath: "/var/secrets/firebase-admin-creds"
+                  readOnly: true
               resources:
                 requests:
                   memory: "250Mi"
@@ -887,6 +921,9 @@ spec:
             - name: tiktok
               secret:
                 secretName: tiktok
+            - name: firebase-admin-creds
+              secret:
+                secretName: firebase-admin-creds
 ---
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -964,6 +1001,9 @@ spec:
                 - name: tiktok
                   mountPath: "/var/secrets/tiktok"
                   readOnly: true
+                - name: firebase-admin-creds
+                  mountPath: "/var/secrets/firebase-admin-creds"
+                  readOnly: true
               resources:
                 requests:
                   memory: "125Mi"
@@ -1015,3 +1055,6 @@ spec:
             - name: tiktok
               secret:
                 secretName: tiktok
+            - name: firebase-admin-creds
+              secret:
+                secretName: firebase-admin-creds
