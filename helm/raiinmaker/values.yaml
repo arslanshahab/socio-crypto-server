@@ -33,7 +33,7 @@ cron:
         userEmail: "0 * * * *" # At every hour
 
 # up server replica count
-replicaCount: 2
+replicaCount: 1
 server:
     resources:
         limits:
