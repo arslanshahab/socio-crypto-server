@@ -220,10 +220,10 @@ export class TatumController {
 
     @Get("/transaction-fee")
     @(Returns(200, SuccessResult).Of(TransactionFeeResultModel))
-    public async getTransactionFee(@BodyParams() body: NetworkFeeBody, @Context() context: Context) {
+    public async getTransactionFee(@QueryParams() query: NetworkFeeBody, @Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"), { wallet: true });
         if (!user) throw new NotFound(USER_NOT_FOUND);
-        let { symbol, network } = body;
+        let { symbol, network } = query;
         const marketData = await this.marketDataService.getNetworkFee({ symbol, network });
         if (!marketData) throw new NotFound(`Network fee not found for ${symbol} and ${network}`);
         return new SuccessResult(
