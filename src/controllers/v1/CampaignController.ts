@@ -337,11 +337,13 @@ export class CampaignController {
             if (raiinmakerAdmins) {
                 for (const admin of raiinmakerAdmins) {
                     const { email } = await FirebaseAdmin.getUserById(admin.firebaseId);
-                    SesClient.CampaignProcessEmailToAdmin({
-                        title: `Campaign review message from ${brandName?.name}`,
-                        text: `Hi, please approved "${campaign.name}" campaign`,
-                        emailAddress: email || "",
-                    });
+                    if (email) {
+                        SesClient.CampaignProcessEmailToAdmin({
+                            title: `Campaign review message from ${brandName?.name}`,
+                            text: `Hi, please approved "${campaign.name}" campaign`,
+                            emailAddress: email || "",
+                        });
+                    }
                 }
             }
         }
@@ -671,11 +673,13 @@ export class CampaignController {
         if (brandAdmins) {
             for (const admin of brandAdmins) {
                 const { email } = await FirebaseAdmin.getUserById(admin.firebaseId);
-                SesClient.CampaignProcessEmailToAdmin({
-                    title: "Campaign Approval Status",
-                    text: `${campaign.name} has been ${updatedCampaign.status}. ${reason}`,
-                    emailAddress: email || "",
-                });
+                if (email) {
+                    SesClient.CampaignProcessEmailToAdmin({
+                        title: "Campaign Approval Status",
+                        text: `${campaign.name} has been ${updatedCampaign.status}. ${reason}`,
+                        emailAddress: email || "",
+                    });
+                }
             }
         }
         const deviceTokens = await User.getAllDeviceTokens("campaignCreate");
