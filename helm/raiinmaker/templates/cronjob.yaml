@@ -898,7 +898,7 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
-  schedule: "{{ .Values.cron.frequency.marketData }}"
+  schedule: "{{ .Values.cron.frequency.userEmails }}"
   jobTemplate:
     spec:
       template:
