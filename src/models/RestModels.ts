@@ -440,6 +440,7 @@ export class UpdatedResultModel {
 export class CampaignIdModel {
     @Required() public readonly campaignId: string;
 }
+
 export class ParticipantQueryParams {
     @Required() public readonly id: string;
 }

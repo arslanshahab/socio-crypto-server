@@ -243,12 +243,15 @@ export class DailyParticipantMetricService {
         return result;
     }
 
-    public async getOrgMetrics(orgId: string) {
+    public async getOrgMetrics(data: { orgId: string; startDate: Date; endDate: Date }) {
+        const { orgId, startDate, endDate } = data;
+        console.log("startdate--------and endDate-------", orgId, startDate, endDate);
+
         const result: AggregatedCampaignMetricType[] =
             await prisma.$queryRaw`SELECT sum(cast(d."clickCount" as int)) as "clickCount", sum(cast(d."viewCount" as int))
          as "viewCount", sum(cast(d."shareCount" as int)) as "shareCount", sum(cast(d."participationScore" as float)) as "participationScore" 
          FROM daily_participant_metric as d inner join campaign as c on d."campaignId"=c.id inner join org as o on c."orgId"=o.id where
-        o.id=${orgId} group by c.id`;
+        o.id=${orgId} and c."createdAt" between '2022-10-07 10:39:58.212' and '2022-10-11 10:50:11.878' group by c.id `;
         return result;
     }
 

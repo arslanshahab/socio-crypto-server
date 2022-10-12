@@ -90,6 +90,12 @@ class PayoutCampaignRewardsParams {
     @ArrayOf(String) public readonly rejected: string[] | undefined;
 }
 
+class DashboardMetricsParams {
+    @Required() public readonly campaignId: string;
+    @Property() public readonly startDate: string;
+    @Property() public readonly endDate: string;
+}
+
 @Controller("/campaign")
 export class CampaignController {
     @Inject()
@@ -571,12 +577,12 @@ export class CampaignController {
     }
 
     // For admin panel
-    @Get("/dashboard-metrics/:campaignId")
+    @Get("/dashboard-metrics")
     @(Returns(200, SuccessResult).Of(CampaignStatsResultModelArray))
-    public async getDashboardMetrics(@PathParams() query: CampaignIdModel, @Context() context: Context) {
+    public async getDashboardMetrics(@QueryParams() query: DashboardMetricsParams, @Context() context: Context) {
         const admin = await this.adminService.findAdminByFirebaseId(context.get("user").id);
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
-        const { campaignId } = query;
+        const { campaignId, startDate, endDate } = query;
         let aggregatedMetrics;
         let rawMetrics;
         let totalParticipants;
@@ -590,7 +596,13 @@ export class CampaignController {
                 participationScore: Math.round(aggregatedMetrics.participationScore),
                 name: "All",
             };
-            rawMetrics = await this.dailyParticipantMetricService.getOrgMetrics(admin.orgId!);
+            rawMetrics = await this.dailyParticipantMetricService.getOrgMetrics({
+                orgId: admin.orgId!,
+                startDate: new Date(startDate),
+                endDate: new Date(endDate),
+            });
+            console.log("Raw Metrics------", rawMetrics);
+
             const campaigns = await this.campaignService.findCampaigns(admin.orgId!);
             const campaignIds = campaigns.map((campaign) => campaign.id);
             totalParticipants = await this.participantService.findParticipantsCount(undefined, campaignIds);
