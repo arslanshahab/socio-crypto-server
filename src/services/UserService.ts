@@ -321,7 +321,7 @@ export class UserService {
                 action: type,
                 status: "PENDING",
                 symbol: COIIN,
-                amount: String(amount),
+                amount: amount.toFixed(0),
                 type: TransferType.CREDIT,
                 campaign,
             });
