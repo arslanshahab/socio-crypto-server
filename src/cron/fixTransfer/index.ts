@@ -51,7 +51,7 @@ export const fixFailedCoiinTransfers = async (raiinmakerCoiinCurrency: Currency)
                     });
                     batchTransfer.transaction.push({
                         recipientAccountId: userCurrency.tatumId,
-                        amount: transfer.amount.toString(),
+                        amount: parseFloat(transfer.amount).toString(),
                     });
                     console.log(
                         "TRANSFER FIX PREPARED: ",
