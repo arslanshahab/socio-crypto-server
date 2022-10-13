@@ -638,7 +638,7 @@ export class CampaignController {
         if (!campaign) throw new NotFound(CAMPAIGN_NOT_FOUND);
         if (!campaign.org) throw new NotFound(CAMPAIGN_ORGANIZATION_MISSING);
         switch (status) {
-            case "APPROVED":
+            case CampaignStatus.APPROVED:
                 if (campaign.type === "raffle") {
                     campaign.status = CampaignStatus.APPROVED;
                     break;
@@ -657,8 +657,10 @@ export class CampaignController {
                     campaign.tatumBlockageId = blockageId;
                 }
                 break;
-
-            case "DENIED":
+            case CampaignStatus.DENIED:
+                campaign.status = CampaignStatus.DENIED;
+                break;
+            default:
                 campaign.status = CampaignStatus.DENIED;
                 break;
         }
@@ -667,19 +669,21 @@ export class CampaignController {
             campaign.status,
             campaign.tatumBlockageId!
         );
-        const brandAdmins = await this.adminService.listAdminsByOrg(campaign?.orgId!);
-        if (brandAdmins) {
-            for (const admin of brandAdmins) {
-                const { email } = await FirebaseAdmin.getUserById(admin.firebaseId);
-                SesClient.CampaignProcessEmailToAdmin({
-                    title: "Campaign Approval Status",
-                    text: `${campaign.name} has been ${updatedCampaign.status}. ${reason}`,
-                    emailAddress: email || "",
-                });
+        try {
+            const brandAdmins = await this.adminService.listAdminsByOrg(campaign?.orgId!);
+            if (brandAdmins) {
+                for (const admin of brandAdmins) {
+                    const { email } = await FirebaseAdmin.getUserById(admin.firebaseId);
+                    SesClient.CampaignProcessEmailToAdmin({
+                        title: "Campaign Approval Status",
+                        text: `${campaign.name} has been ${updatedCampaign.status}. ${reason}`,
+                        emailAddress: email || "",
+                    });
+                }
             }
-        }
-        const deviceTokens = await User.getAllDeviceTokens("campaignCreate");
-        if (deviceTokens.length > 0) await FirebaseMobile.sendCampaignCreatedNotifications(deviceTokens, campaign);
+            const deviceTokens = await User.getAllDeviceTokens("campaignCreate");
+            if (deviceTokens.length > 0) await FirebaseMobile.sendCampaignCreatedNotifications(deviceTokens, campaign);
+        } catch (error) {}
         return new SuccessResult({ message: `campaign has been ${updatedCampaign.status}` }, UpdatedResultModel);
     }
 
