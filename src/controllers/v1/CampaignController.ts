@@ -72,7 +72,7 @@ import { VerificationApplicationService } from "../../services/VerificationAppli
 
 const validator = new Validator();
 
-class ListCampaignsVariablesModel extends PaginatedVariablesModel {
+export class ListCampaignsVariablesModel extends PaginatedVariablesModel {
     @Required() @Enum(CampaignState) public readonly state: CampaignState;
     @Property() @Enum(CampaignStatus, "ALL") public readonly status: CampaignStatus | "ALL" | undefined;
     @Property(Boolean) public readonly userRelated: boolean | undefined;

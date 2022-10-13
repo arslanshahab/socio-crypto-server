@@ -1,6 +1,7 @@
 import { PlatformTest } from "@tsed/common";
 import { RestServer } from "../../../../RestServer";
 import { AuthenticationController } from "../../../../controllers/v1/AuthenticationController";
+// import { ListCampaignsVariablesModel } from "../../../../controllers/v1/CampaignController";
 import * as bodyParser from "body-parser";
 import SuperTest from "supertest";
 
@@ -20,8 +21,10 @@ import {
 } from "@prisma/client";
 import { CampaignService } from "../../../../services/CampaignService";
 import { MarketDataService } from "../../../../services/MarketDataService";
-import { ListCampaignsVariables } from "types.ts";
-import { UserAuthMiddleware } from "../../../../middleware/UserAuthMiddleware";
+
+// import { UserAuthMiddleware } from "../../../../middleware/UserAuthMiddleware";
+import { SessionService } from "../../../../services/SessionService";
+// import { CampaignState, CampaignAuditStatus } from "../../../../util/constants";
 
 describe("Admin login", () => {
     let request: SuperTest.SuperTest<SuperTest.Test>;
@@ -29,7 +32,8 @@ describe("Admin login", () => {
     let campaignService: CampaignService;
     let marketDataService: MarketDataService;
     let userService: UserService;
-    let userAuthMiddleware: UserAuthMiddleware;
+    // let userAuthMiddleware: UserAuthMiddleware;
+    let sessionService: SessionService;
 
     const activeUser: User = {
         email: "email@raiinmaker.com",
@@ -158,10 +162,11 @@ describe("Admin login", () => {
         campaignService = PlatformTest.get<CampaignService>(CampaignService);
         userService = PlatformTest.get<UserService>(UserService);
         marketDataService = PlatformTest.get<MarketDataService>(MarketDataService);
-        userAuthMiddleware = PlatformTest.get(UserAuthMiddleware);
+        // userAuthMiddleware = PlatformTest.get(UserAuthMiddleware);
+        sessionService = PlatformTest.get<SessionService>(SessionService);
 
-        jest.spyOn(userAuthMiddleware, "use").mockImplementation(async (req, ctx) => {
-            return;
+        jest.spyOn(sessionService, "verifySession").mockImplementation(async (token) => {
+            return { userId: "user" };
         });
     });
 
@@ -174,15 +179,14 @@ describe("Admin login", () => {
     });
 
     it("should get all campaigns", async () => {
-        const campaignVariables: ListCampaignsVariables = {
-            approved: true,
-            open: true,
-            pendingAudit: true,
-            scoped: true,
-            skip: 3,
-            sort: true,
-            take: 3,
-        };
+        // const campaignVariables = {
+        //     state: CampaignState.ALL,
+        //     status: "ALL",
+        //     userRelated: true,
+        //     auditStatus: CampaignAuditStatus.AUDITED,
+        //     skip: 3,
+        //     take: 2,
+        // };
 
         const checkPermissionsSpy = jest.spyOn(adminService, "checkPermissions").mockResolvedValue({});
         const findUserByContextSpy = jest.spyOn(userService, "findUserByContext").mockResolvedValue(activeUser);
@@ -191,7 +195,15 @@ describe("Admin login", () => {
             .mockResolvedValue(campaign);
         const getTokenValueInUSDSpy = jest.spyOn(marketDataService, "getTokenValueInUSD").mockResolvedValue(3);
 
-        const res = await request.get(campaignRoute).query(campaignVariables);
+        const res = await request.get(campaignRoute).set("Authorization", "token").query({
+            skip: 3,
+            take: 2,
+            state: "ALL",
+            status: "ALL",
+            // userRelated: true,
+            // auditStatus: "AUDITED",
+        });
+        console.log(res.body);
 
         handleBaseAssertions(
             res,
