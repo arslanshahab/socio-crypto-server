@@ -582,12 +582,20 @@ export class CampaignController {
     public async getDashboardMetrics(@QueryParams() query: DashboardMetricsParams, @Context() context: Context) {
         const admin = await this.adminService.findAdminByFirebaseId(context.get("user").id);
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
-        const { campaignId, startDate, endDate } = query;
+        let { campaignId, startDate, endDate } = query;
         let aggregatedMetrics;
         let rawMetrics;
         let totalParticipants;
+
         if (campaignId === "-1") {
-            [aggregatedMetrics] = await this.dailyParticipantMetricService.getAggregatedOrgMetrics(admin.orgId!);
+            const campaign = await this.campaignService.getLastCampaign();
+            if (!startDate && campaign) startDate = campaign.createdAt.toString();
+            if (!endDate) endDate = new Date().toString();
+            [aggregatedMetrics] = await this.dailyParticipantMetricService.getAggregatedOrgMetrics({
+                orgId: admin.orgId!,
+                startDate: new Date(startDate),
+                endDate: new Date(endDate),
+            });
             if (!aggregatedMetrics) {
                 aggregatedMetrics = { clickCount: 0, viewCount: 0, shareCount: 0, participationScore: 0 };
             }
@@ -601,20 +609,29 @@ export class CampaignController {
                 startDate: new Date(startDate),
                 endDate: new Date(endDate),
             });
-            console.log("Raw Metrics------", rawMetrics);
-
             const campaigns = await this.campaignService.findCampaigns(admin.orgId!);
             const campaignIds = campaigns.map((campaign) => campaign.id);
             totalParticipants = await this.participantService.findParticipantsCount(undefined, campaignIds);
         }
         if (campaignId && campaignId != "-1") {
-            [aggregatedMetrics] = await this.dailyParticipantMetricService.getAggregatedCampaignMetrics(campaignId);
+            const campaign = await this.campaignService.findCampaignById(campaignId);
+            if (!startDate && campaign) startDate = campaign.createdAt.toString();
+            if (!endDate) endDate = new Date().toString();
+            [aggregatedMetrics] = await this.dailyParticipantMetricService.getAggregatedCampaignMetrics({
+                campaignId,
+                startDate: new Date(startDate),
+                endDate: new Date(endDate),
+            });
             aggregatedMetrics = {
                 ...aggregatedMetrics,
                 participationScore: Math.round(aggregatedMetrics.participationScore),
                 name: aggregatedMetrics.name,
             };
-            rawMetrics = await this.dailyParticipantMetricService.getCampaignMetrics(campaignId);
+            rawMetrics = await this.dailyParticipantMetricService.getCampaignMetrics({
+                campaignId,
+                startDate: new Date(startDate),
+                endDate: new Date(endDate),
+            });
             totalParticipants = await this.participantService.findParticipantsCount(campaignId);
         }
         aggregatedMetrics = {

@@ -234,40 +234,41 @@ export class DailyParticipantMetricService {
             },
         });
     }
-    public async getAggregatedOrgMetrics(orgId: string) {
+    public async getAggregatedOrgMetrics(params: { orgId: string; startDate: Date; endDate: Date }) {
+        const { orgId, startDate, endDate } = params;
         const result: AggregatedCampaignMetricType[] =
             await prisma.$queryRaw`SELECT sum(cast(d."clickCount" as int)) as "clickCount", sum(cast(d."viewCount" as int))
          as "viewCount", sum(cast(d."shareCount" as int)) as "shareCount", sum(cast(d."participationScore" as float)) as "participationScore" 
          FROM daily_participant_metric as d inner join campaign as c on d."campaignId"=c.id inner join org as o on c."orgId"=o.id where
-        o.id=${orgId} group by o.id`;
+        o.id=${orgId} and  c."createdAt" >= ${startDate} and c."createdAt" < ${endDate} group by o.id`;
         return result;
     }
 
-    public async getOrgMetrics(data: { orgId: string; startDate: Date; endDate: Date }) {
-        const { orgId, startDate, endDate } = data;
-        console.log("startdate--------and endDate-------", orgId, startDate, endDate);
-
+    public async getOrgMetrics(params: { orgId: string; startDate: Date; endDate: Date }) {
+        const { orgId, startDate, endDate } = params;
         const result: AggregatedCampaignMetricType[] =
             await prisma.$queryRaw`SELECT sum(cast(d."clickCount" as int)) as "clickCount", sum(cast(d."viewCount" as int))
-         as "viewCount", sum(cast(d."shareCount" as int)) as "shareCount", sum(cast(d."participationScore" as float)) as "participationScore" 
-         FROM daily_participant_metric as d inner join campaign as c on d."campaignId"=c.id inner join org as o on c."orgId"=o.id where
-        o.id=${orgId} and c."createdAt" between '2022-10-07 10:39:58.212' and '2022-10-11 10:50:11.878' group by c.id `;
+            as "viewCount", sum(cast(d."shareCount" as int)) as "shareCount", sum(cast(d."participationScore" as float)) as "participationScore" 
+            FROM daily_participant_metric as d inner join campaign as c on d."campaignId"=c.id inner join org as o on c."orgId"=o.id where
+          o.id=${orgId} and c."createdAt" >= ${startDate} and c."createdAt" < ${endDate} group by c.id;`;
         return result;
     }
 
-    public async getAggregatedCampaignMetrics(campaignId: string) {
+    public async getAggregatedCampaignMetrics(params: { campaignId: string; startDate: Date; endDate: Date }) {
+        const { campaignId, startDate, endDate } = params;
         const result: AggregatedCampaignMetricType[] =
             await prisma.$queryRaw`SELECT c.name, COALESCE(sum(cast(d."clickCount" as int)),0) as "clickCount", COALESCE(sum(cast(d."viewCount" as int)),0) as "viewCount", 
             COALESCE(sum(cast(d."shareCount" as int)),0) as "shareCount", COALESCE(sum(cast(d."participationScore" as float)),0) as "participationScore" FROM
-            daily_participant_metric as d right join campaign as c on d."campaignId"=c.id where c.id=${campaignId} group by c.id;`;
+            daily_participant_metric as d right join campaign as c on d."campaignId"=c.id where c.id=${campaignId} and c."createdAt" >= ${startDate} and c."createdAt" < ${endDate} group by c.id;`;
         return result;
     }
 
-    public async getCampaignMetrics(campaignId: string) {
+    public async getCampaignMetrics(params: { campaignId: string; startDate: Date; endDate: Date }) {
+        const { campaignId, startDate, endDate } = params;
         const result: AggregatedCampaignMetricType[] =
             await prisma.$queryRaw`SELECT  sum(cast(d."clickCount" as int)) as "clickCount", sum(cast(d."viewCount" as int))
          as "viewCount", sum(cast(d."shareCount" as int)) as "shareCount", sum(cast(d."participationScore" as float)) as "participationScore" 
-         FROM daily_participant_metric as d where d."campaignId"=${campaignId} group by d.id`;
+         FROM daily_participant_metric as d where d."campaignId"=${campaignId} and d."createdAt" >= ${startDate} and d."createdAt" < ${endDate} group by d.id`;
         return result;
     }
 }

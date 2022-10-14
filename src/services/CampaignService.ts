@@ -10,7 +10,7 @@ import { TatumService } from "./TatumService";
 import { PlatformCache, UseCache } from "@tsed/common";
 import { CacheKeys, CampaignStatus, CAMPAIGN_CREATION_AMOUNT } from "../util/constants";
 import { resetCacheKey } from "../util/index";
-import { prisma } from "../clients/prisma";
+import { prisma, readPrisma } from "../clients/prisma";
 
 @Injectable()
 export class CampaignService {
@@ -325,5 +325,9 @@ export class CampaignService {
                 tatumBlockageId,
             },
         });
+    }
+
+    public async getLastCampaign() {
+        return await readPrisma.campaign.findFirst({ orderBy: { createdAt: "asc" }, take: 1 });
     }
 }
