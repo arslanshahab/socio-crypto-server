@@ -48,7 +48,7 @@ import { BadRequest, Forbidden, NotFound } from "@tsed/exceptions";
 import { ParticipantService } from "../../services/ParticipantService";
 import { SocialPostService } from "../../services/SocialPostService";
 import { CampaignAuditStatus, PointValueTypes } from "types.d.ts";
-import { addYears } from "date-fns";
+import { addYears, subMonths } from "date-fns";
 import { Validator } from "../../schemas";
 import { OrganizationService } from "../../services/OrganizationService";
 import { WalletService } from "../../services/WalletService";
@@ -94,6 +94,7 @@ class DashboardMetricsParams {
     @Required() public readonly campaignId: string;
     @Property() public readonly startDate: string;
     @Property() public readonly endDate: string;
+    @Property() public readonly month: number;
 }
 
 @Controller("/campaign")
@@ -582,14 +583,15 @@ export class CampaignController {
     public async getDashboardMetrics(@QueryParams() query: DashboardMetricsParams, @Context() context: Context) {
         const admin = await this.adminService.findAdminByFirebaseId(context.get("user").id);
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
-        let { campaignId, startDate, endDate } = query;
+        let { campaignId, startDate, endDate, month } = query;
         let aggregatedMetrics;
         let rawMetrics;
         let totalParticipants;
 
+        const filterByMonth = subMonths(new Date(), month);
         if (campaignId === "-1") {
             const campaign = await this.campaignService.getLastCampaign();
-            if (!startDate && campaign) startDate = campaign.createdAt.toString();
+            if (!startDate && campaign) startDate = month ? filterByMonth.toString() : campaign.createdAt.toString();
             if (!endDate) endDate = new Date().toString();
             [aggregatedMetrics] = await this.dailyParticipantMetricService.getAggregatedOrgMetrics({
                 orgId: admin.orgId!,
@@ -615,7 +617,7 @@ export class CampaignController {
         }
         if (campaignId && campaignId != "-1") {
             const campaign = await this.campaignService.findCampaignById(campaignId);
-            if (!startDate && campaign) startDate = campaign.createdAt.toString();
+            if (!startDate && campaign) startDate = month ? filterByMonth.toString() : campaign.createdAt.toString();
             if (!endDate) endDate = new Date().toString();
             [aggregatedMetrics] = await this.dailyParticipantMetricService.getAggregatedCampaignMetrics({
                 campaignId,
