@@ -1,4 +1,4 @@
-import { Campaign, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { Inject, Injectable } from "@tsed/di";
 import { endOfISOWeek, startOfDay, startOfISOWeek, startOfWeek, subDays } from "date-fns";
 import { TransferAction, TransferStatus } from "types.d.ts";
@@ -99,7 +99,7 @@ export class TransferService {
         action: TransferAction;
         status: TransferStatus;
         type: TransferType;
-        campaign?: Campaign;
+        campaignId?: string;
     }) {
         return await prisma.transfer.create({
             data: {
@@ -109,7 +109,7 @@ export class TransferService {
                 currency: data.symbol,
                 walletId: data.walletId,
                 type: data.type,
-                campaignId: data.campaign ? data.campaign.id : null,
+                campaignId: data.campaignId ? data.campaignId : null,
             },
         });
     }

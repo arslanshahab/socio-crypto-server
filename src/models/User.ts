@@ -42,13 +42,15 @@ import {
     REWARD_AMOUNTS,
     SHARING_REWARD_LIMIT_PER_DAY,
     TransferAction,
-    TransferStatus,
     TransferType,
     UserRewardType,
 } from "../util/constants";
 import { Campaign } from "./Campaign";
 import { trim } from "lodash";
 import { Nft } from "./Nft";
+import { TransferService } from "../services/TransferService";
+
+const transferService = new TransferService();
 
 @Entity()
 export class User extends BaseEntity {
@@ -280,14 +282,14 @@ export class User extends BaseEntity {
                 (await Transfer.getLast24HourRedemption(user.wallet, TransferAction.SHARING_REWARD)) <
                     SHARING_REWARD_LIMIT_PER_DAY)
         ) {
-            await Transfer.newReward({
-                wallet,
-                action: TransferAction[type],
-                status: TransferStatus.PENDING,
+            await transferService.newReward({
+                walletId: wallet.id,
+                action: type,
+                status: "PENDING",
                 symbol: COIIN,
-                amount: new BN(amount),
+                amount: String(amount),
                 type: TransferType.CREDIT,
-                campaign,
+                campaignId: campaign?.id,
             });
         }
     };
