@@ -287,7 +287,7 @@ export class User extends BaseEntity {
                 action: type,
                 status: "PENDING",
                 symbol: COIIN,
-                amount: String(amount),
+                amount: amount.toString(),
                 type: TransferType.CREDIT,
                 campaignId: campaign?.id,
             });
