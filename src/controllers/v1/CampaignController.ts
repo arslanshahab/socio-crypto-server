@@ -85,7 +85,7 @@ class PendingCampaignsParams {
     @Property(String) public readonly reason: string;
 }
 
-class PayoutCampaignRewardsParams {
+export class PayoutCampaignRewardsParams {
     @Required() public readonly campaignId: string;
     @ArrayOf(String) public readonly rejected: string[] | undefined;
 }

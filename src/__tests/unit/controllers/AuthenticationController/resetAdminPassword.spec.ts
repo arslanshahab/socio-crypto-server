@@ -19,7 +19,7 @@ const setEnv = () => {
     process.env.NODE_ENV = "production";
 };
 
-describe(" register user", () => {
+describe(" register admin password", () => {
     let request: Supertest.SuperTest<SuperTest.Test>;
 
     let verificationService: VerificationService;

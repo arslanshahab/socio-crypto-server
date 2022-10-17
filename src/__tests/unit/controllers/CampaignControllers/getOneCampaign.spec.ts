@@ -18,7 +18,7 @@ import { SessionService } from "../../../../services/SessionService";
 import { CAMPAIGN_NOT_FOUND } from "../../../../util/errors";
 import { CampaignResultModel } from "../../../../models/RestModels";
 
-describe("Admin login", () => {
+describe("Campaign", () => {
     let request: SuperTest.SuperTest<SuperTest.Test>;
     let campaignService: CampaignService;
     let marketDataService: MarketDataService;

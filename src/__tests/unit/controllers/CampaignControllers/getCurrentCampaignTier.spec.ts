@@ -11,7 +11,7 @@ import { CampaignIdModel, CurrentCampaignTierModel } from "../../../../models/Re
 
 import { CampaignService } from "../../../../services/CampaignService";
 
-describe("Admin login", () => {
+describe("Current Campaign Tier", () => {
     let request: SuperTest.SuperTest<SuperTest.Test>;
     let sessionService: SessionService;
 

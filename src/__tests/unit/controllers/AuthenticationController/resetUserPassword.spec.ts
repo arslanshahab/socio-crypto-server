@@ -10,7 +10,7 @@ import { Verification } from "../../../../models/Verification";
 import { USER_NOT_FOUND } from "../../../../util/errors";
 import { User } from "@prisma/client";
 
-describe("reset password", () => {
+describe("reset user password", () => {
     let request: any;
     let verificationService: VerificationService;
     let userService: UserService;

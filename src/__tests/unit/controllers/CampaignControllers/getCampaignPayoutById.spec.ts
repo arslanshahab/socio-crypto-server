@@ -4,21 +4,19 @@ import { AuthenticationController } from "../../../../controllers/v1/Authenticat
 import * as bodyParser from "body-parser";
 import SuperTest from "supertest";
 
-import { handleBaseAssertions, campaignMetricsRoute } from "../../../test_helper";
+import { campaignPayoutIdRoute, handleBaseAssertions } from "../../../test_helper";
 import { SessionService } from "../../../../services/SessionService";
 
 import { CampaignIdModel } from "../../../../models/RestModels";
+
 import { AdminService } from "../../../../services/AdminService";
+import { TransferService } from "../../../../services/TransferService";
 
-import { ParticipantService } from "../../../../services/ParticipantService";
-import { SocialPostService } from "../../../../services/SocialPostService";
-
-describe("Campaign Metrics", () => {
+describe("Campaign Payout", () => {
     let request: SuperTest.SuperTest<SuperTest.Test>;
     let sessionService: SessionService;
     let adminService: AdminService;
-    let participantService: ParticipantService;
-    let socialPostService: SocialPostService;
+    let transferService: TransferService;
 
     beforeAll(async () => {
         await PlatformTest.bootstrap(RestServer, {
@@ -42,10 +40,9 @@ describe("Campaign Metrics", () => {
 
     beforeAll(async () => {
         request = SuperTest(PlatformTest.callback());
-        adminService = PlatformTest.get<AdminService>(AdminService);
         sessionService = PlatformTest.get<SessionService>(SessionService);
-        participantService = PlatformTest.get<ParticipantService>(ParticipantService);
-        socialPostService = PlatformTest.get<SocialPostService>(SocialPostService);
+        adminService = PlatformTest.get<AdminService>(AdminService);
+        transferService = PlatformTest.get<TransferService>(TransferService);
 
         jest.spyOn(sessionService, "verifySession").mockImplementation(async (token) => {
             return { userId: "user" };
@@ -60,19 +57,19 @@ describe("Campaign Metrics", () => {
         await PlatformTest.reset();
     });
 
-    it("should get campaign metrics", async () => {
+    it("should get campaign payout with id", async () => {
         const query: CampaignIdModel = {
             campaignId: "id",
         };
-
         const checkPermissionsSpy = jest.spyOn(adminService, "checkPermissions").mockResolvedValue({});
-        const findParticipantSpy = jest.spyOn(participantService, "findParticipants").mockResolvedValue([]);
-        const findSocialPostMetricsByIdSpy = jest
-            .spyOn(socialPostService, "findSocialPostMetricsById")
+        const findTransferByCampaignIdAndActionSpy = jest
+            .spyOn(transferService, "findTransferByCampaignIdAndAction")
             .mockResolvedValue([]);
+        const res = await request
+            .get(campaignPayoutIdRoute + "1234")
+            .set("Authorization", "token")
+            .query(query);
 
-        const res = await request.get(campaignMetricsRoute).set("Authorization", "token").query(query);
-
-        handleBaseAssertions(res, 200, null, checkPermissionsSpy, findParticipantSpy, findSocialPostMetricsByIdSpy);
+        handleBaseAssertions(res, 200, null, checkPermissionsSpy, findTransferByCampaignIdAndActionSpy);
     });
 });
