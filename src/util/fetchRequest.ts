@@ -25,7 +25,10 @@ export const doFetch = async (requestData: RequestData) => {
         if (error?.response?.data) {
             console.log("Error Data ---- ", error?.response?.data || "");
             throw new Error(
-                error?.response?.data?.message || error?.response?.data?.error_message || error?.response?.data?.error
+                error?.response?.data?.message ||
+                    error?.response?.data?.error_message ||
+                    error?.response?.data?.error ||
+                    JSON.stringify(error.response.data)
             );
         } else {
             console.log("Error ---- ", error);
