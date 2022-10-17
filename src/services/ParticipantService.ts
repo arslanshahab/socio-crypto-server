@@ -9,6 +9,7 @@ import { PlatformCache } from "@tsed/common";
 import { resetCacheKey } from "../util/index";
 import { CacheKeys, Sort } from "../util/constants";
 import { prisma, readPrisma } from "../clients/prisma";
+import { subWeeks } from "date-fns";
 
 @Injectable()
 export class ParticipantService {
@@ -218,4 +219,26 @@ export class ParticipantService {
             await readPrisma.$queryRaw`SELECT avg(cast("clickCount" as int)) as "clickCount" from participant where "campaignId"=${campaignId}`;
         return result;
     }
+
+    public async getLastWeekParticipants(campaignId?: string, campaignIds?: string[]) {
+        const lastWeek = subWeeks(new Date(), 1);
+        return await readPrisma.participant.count({
+            where: campaignId
+                ? { campaignId, createdAt: { lte: lastWeek } }
+                : { campaignId: { in: campaignIds }, createdAt: { gte: lastWeek } },
+        });
+    }
+
+    // public async getLastWeekParticipants(campaignId?: string, campaignIds?: string[]) {
+    //     let totalParticipants;
+    //     let beforeLastWeekParticipants;
+    //     if (campaignId) {
+    //         totalParticipants = await this.findParticipantsCount(campaignId);
+    //         beforeLastWeekParticipants = await this.getBeforeLastWeekParticipants(campaignId);
+    //     } else {
+    //         totalParticipants = await this.findParticipantsCount(undefined, campaignIds);
+    //         beforeLastWeekParticipants = await this.getBeforeLastWeekParticipants(undefined, campaignIds);
+    //     }
+    //     return totalParticipants - beforeLastWeekParticipants;
+    // }
 }

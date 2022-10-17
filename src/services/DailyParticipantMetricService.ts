@@ -234,6 +234,7 @@ export class DailyParticipantMetricService {
             },
         });
     }
+
     public async getAggregatedOrgMetrics(params: { orgId: string; startDate: Date; endDate: Date }) {
         const { orgId, startDate, endDate } = params;
         const result: AggregatedCampaignMetricType[] =

@@ -587,7 +587,7 @@ export class CampaignController {
         let aggregatedMetrics;
         let rawMetrics;
         let totalParticipants;
-
+        let lastWeekParticipants;
         const filterByMonth = subMonths(new Date(), month);
         if (campaignId === "-1") {
             const campaign = await this.campaignService.getLastCampaign();
@@ -614,6 +614,7 @@ export class CampaignController {
             const campaigns = await this.campaignService.findCampaigns(admin.orgId!);
             const campaignIds = campaigns.map((campaign) => campaign.id);
             totalParticipants = await this.participantService.findParticipantsCount(undefined, campaignIds);
+            lastWeekParticipants = await this.participantService.getLastWeekParticipants(undefined, campaignIds);
         }
         if (campaignId && campaignId != "-1") {
             const campaign = await this.campaignService.findCampaignById(campaignId);
@@ -635,6 +636,7 @@ export class CampaignController {
                 endDate: new Date(endDate),
             });
             totalParticipants = await this.participantService.findParticipantsCount(campaignId);
+            lastWeekParticipants = await this.participantService.getLastWeekParticipants(campaignId);
         }
         aggregatedMetrics = {
             clickCount: aggregatedMetrics?.clickCount || 0,
@@ -642,6 +644,7 @@ export class CampaignController {
             shareCount: aggregatedMetrics?.shareCount || 0,
             participationScore: aggregatedMetrics?.participationScore || 0,
             totalParticipants: totalParticipants || 0,
+            lastWeekParticipants: lastWeekParticipants || 0,
             campaignName: aggregatedMetrics?.name || "",
         };
         const metrics = { aggregatedMetrics, rawMetrics };
@@ -727,4 +730,17 @@ export class CampaignController {
         const totalCrypto = transfers.reduce((acc, curr) => (acc += parseFloat(curr.amount)), 0);
         return new SuccessResult({ totalCrypto: formatFloat(totalCrypto) }, PaidOutCryptoResultModel);
     }
+
+    // @Get("/campaign-tiers")
+    // @(Returns(200, SuccessResult).Of(Object))
+    // public async getCampaignEngagement(@PathParams() path: CampaignIdModel, @Context() context: Context) {
+    //     const { orgId } = await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
+    //     const { campaignId } = path;
+    //     if (campaignId === "-1") {
+    //         const campaigns = await this.campaignService.findCampaignsByOrgId(orgId || "");
+    //         const campaignIds = campaigns.map((x) => x.id);
+    //         const participants = await this.participantService.findParticipantsCount(undefined, campaignIds);
+    //         console.log("participants counts---------------", participants);
+    //     }
+    // }
 }
