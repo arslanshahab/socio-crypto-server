@@ -1,7 +1,6 @@
 import { PlatformTest } from "@tsed/common";
 import { RestServer } from "../../../../RestServer";
 import { AuthenticationController } from "../../../../controllers/v1/AuthenticationController";
-// import { ListCampaignsVariablesModel } from "../../../../controllers/v1/CampaignController";
 import * as bodyParser from "body-parser";
 import SuperTest from "supertest";
 
@@ -21,8 +20,6 @@ import {
 } from "@prisma/client";
 import { CampaignService } from "../../../../services/CampaignService";
 import { MarketDataService } from "../../../../services/MarketDataService";
-
-// import { UserAuthMiddleware } from "../../../../middleware/UserAuthMiddleware";
 import { SessionService } from "../../../../services/SessionService";
 import { CampaignState, CampaignAuditStatus } from "../../../../util/constants";
 import { CampaignResultModel } from "../../../../models/RestModels";
@@ -33,7 +30,6 @@ describe("Campaigns", () => {
     let campaignService: CampaignService;
     let marketDataService: MarketDataService;
     let userService: UserService;
-    // let userAuthMiddleware: UserAuthMiddleware;
     let sessionService: SessionService;
 
     const activeUser: User = {
@@ -192,7 +188,6 @@ describe("Campaigns", () => {
         campaignService = PlatformTest.get<CampaignService>(CampaignService);
         userService = PlatformTest.get<UserService>(UserService);
         marketDataService = PlatformTest.get<MarketDataService>(MarketDataService);
-        // userAuthMiddleware = PlatformTest.get(UserAuthMiddleware);
         sessionService = PlatformTest.get<SessionService>(SessionService);
 
         jest.spyOn(sessionService, "verifySession").mockImplementation(async (token) => {
