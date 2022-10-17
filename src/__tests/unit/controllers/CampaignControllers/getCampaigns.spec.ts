@@ -8,7 +8,7 @@ import SuperTest from "supertest";
 import { handleBaseAssertions, campaignRoute } from "../../../test_helper";
 
 import { AdminService } from "../../../../services/AdminService";
-import { UserService } from "../../../..//services/UserService";
+import { UserService } from "../../../../services/UserService";
 import {
     Campaign,
     CampaignMedia,
@@ -24,9 +24,10 @@ import { MarketDataService } from "../../../../services/MarketDataService";
 
 // import { UserAuthMiddleware } from "../../../../middleware/UserAuthMiddleware";
 import { SessionService } from "../../../../services/SessionService";
-// import { CampaignState, CampaignAuditStatus } from "../../../../util/constants";
+import { CampaignState, CampaignAuditStatus } from "../../../../util/constants";
+import { CampaignResultModel } from "../../../../models/RestModels";
 
-describe("Admin login", () => {
+describe("Campaigns", () => {
     let request: SuperTest.SuperTest<SuperTest.Test>;
     let adminService: AdminService;
     let campaignService: CampaignService;
@@ -64,7 +65,7 @@ describe("Admin login", () => {
             {
                 beginDate: new Date(),
                 endDate: new Date(),
-                coiinTotal: "total",
+                coiinTotal: "200",
                 target: "target",
                 description: "description",
                 name: "name",
@@ -133,8 +134,37 @@ describe("Admin login", () => {
                 campaign_template: [],
             },
         ],
-        4,
+        1,
     ];
+
+    const campaignResultModel: CampaignResultModel = {
+        id: "id",
+        name: "name",
+        beginDate: new Date(),
+        endDate: new Date(),
+        coiinTotal: "200",
+        status: "status",
+        isGlobal: true,
+        showUrl: true,
+        target: "target",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        description: "description",
+        instructions: "instructions",
+        company: "raiinmaker",
+        algorithm: "algorithm",
+        audited: true,
+        targetVideo: "video",
+        imagePath: "path",
+        campaign_media: [],
+        campaign_template: [],
+        campaignType: "coiin",
+        tagline: "tagline",
+        cryptoId: "id",
+        requirements: [],
+        type: "type",
+        totalParticipationScore: "score",
+    };
 
     beforeAll(async () => {
         await PlatformTest.bootstrap(RestServer, {
@@ -179,14 +209,14 @@ describe("Admin login", () => {
     });
 
     it("should get all campaigns", async () => {
-        // const campaignVariables = {
-        //     state: CampaignState.ALL,
-        //     status: "ALL",
-        //     userRelated: true,
-        //     auditStatus: CampaignAuditStatus.AUDITED,
-        //     skip: 3,
-        //     take: 2,
-        // };
+        const query = {
+            state: CampaignState.ALL,
+            status: "ALL",
+            userRelated: true,
+            auditStatus: CampaignAuditStatus.AUDITED,
+            skip: 3,
+            take: 2,
+        };
 
         const checkPermissionsSpy = jest.spyOn(adminService, "checkPermissions").mockResolvedValue({});
         const findUserByContextSpy = jest.spyOn(userService, "findUserByContext").mockResolvedValue(activeUser);
@@ -194,15 +224,8 @@ describe("Admin login", () => {
             .spyOn(campaignService, "findCampaignsByStatus")
             .mockResolvedValue(campaign);
         const getTokenValueInUSDSpy = jest.spyOn(marketDataService, "getTokenValueInUSD").mockResolvedValue(3);
-
-        const res = await request.get(campaignRoute).set("Authorization", "token").query({
-            skip: 3,
-            take: 2,
-            state: "ALL",
-            status: "ALL",
-            // userRelated: true,
-            // auditStatus: "AUDITED",
-        });
+        const buildSpy = jest.spyOn(CampaignResultModel, "build").mockResolvedValue(campaignResultModel);
+        const res = await request.get(campaignRoute).set("Authorization", "token").query(query);
         console.log(res.body);
 
         handleBaseAssertions(
@@ -212,7 +235,8 @@ describe("Admin login", () => {
             checkPermissionsSpy,
             findUserByContextSpy,
             findCampaignByStatusSpy,
-            getTokenValueInUSDSpy
+            getTokenValueInUSDSpy,
+            buildSpy
         );
     });
 });
