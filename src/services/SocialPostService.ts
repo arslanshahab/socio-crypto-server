@@ -1,4 +1,6 @@
+import { Prisma } from "@prisma/client";
 import { Injectable } from "@tsed/di";
+import { SocialPostCountReturnTypes } from "types.ts";
 import { prisma, readPrisma } from "../clients/prisma";
 
 @Injectable()
@@ -64,6 +66,23 @@ export class SocialPostService {
             await prisma.$queryRaw`SELECT COALESCE(sum(cast(s."likes" as int)),0) as "likes", 
                 COALESCE(sum(cast(s."shares" as int)),0) as "shares", COALESCE(sum(cast(s."comments" as int)),0) as "comments" FROM
                 social_post as s left join campaign as c on s."campaignId"=c.id where c.id=${campaignId} group by c.id;`;
+        return result;
+    }
+
+    public async getSoialPostCount(campaignId?: string, campaignIds?: string[]) {
+        // let filterd = campaignId ? `='${campaignId}'` : `in${campaignIds}`;
+        let result: SocialPostCountReturnTypes[] = [];
+        if (campaignId) {
+            result =
+                await prisma.$queryRaw`SELECT s.type, COALESCE(sum(cast(s."likes" as int)),0) as "likes", COALESCE(sum(cast(s."shares" as int)),0) as "shares",
+            COALESCE(sum(cast(s."comments" as int)),0) as "comments" FROM social_post as s left join campaign as c on s."campaignId"=c.id
+            where s."campaignId"=${campaignId} group by s.type;`;
+        } else if (campaignIds) {
+            result =
+                await prisma.$queryRaw`SELECT s.type, COALESCE(sum(cast(s."likes" as int)),0) as "likes", COALESCE(sum(cast(s."shares" as int)),0) as "shares",
+        COALESCE(sum(cast(s."comments" as int)),0) as "comments" FROM social_post as s left join campaign as c on s."campaignId"=c.id
+        where s."campaignId" in(${Prisma.join(campaignIds)}) group by s.type;`;
+        }
         return result;
     }
 }

@@ -727,3 +727,10 @@ export type BinanceCoiinsApiTypes = {
     trading: boolean;
     networkList: BinanceNetworkList[];
 };
+
+export type SocialPostCountReturnTypes = {
+    type: string;
+    likes: number;
+    shares: number;
+    comments: number;
+};

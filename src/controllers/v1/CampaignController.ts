@@ -47,7 +47,7 @@ import {
 import { BadRequest, Forbidden, NotFound } from "@tsed/exceptions";
 import { ParticipantService } from "../../services/ParticipantService";
 import { SocialPostService } from "../../services/SocialPostService";
-import { CampaignAuditStatus, PointValueTypes } from "types.d.ts";
+import { CampaignAuditStatus, PointValueTypes, SocialPostCountReturnTypes } from "types.d.ts";
 import { addYears, subMonths } from "date-fns";
 import { Validator } from "../../schemas";
 import { OrganizationService } from "../../services/OrganizationService";
@@ -588,6 +588,7 @@ export class CampaignController {
         let rawMetrics;
         let totalParticipants;
         let lastWeekParticipants;
+        let socialPost: SocialPostCountReturnTypes[] = [];
         const filterByMonth = subMonths(new Date(), month);
         if (campaignId === "-1") {
             const campaign = await this.campaignService.getLastCampaign();
@@ -621,6 +622,22 @@ export class CampaignController {
             const campaignIds = campaigns.map((campaign) => campaign.id);
             totalParticipants = await this.participantService.findParticipantsCount(undefined, campaignIds);
             lastWeekParticipants = await this.participantService.getLastWeekParticipants(undefined, campaignIds);
+            socialPost = await this.socialPostService.getSoialPostCount(undefined, campaignIds);
+            socialPost = [
+                ...socialPost,
+                {
+                    type: "instagram",
+                    likes: 0,
+                    shares: 0,
+                    comments: 0,
+                },
+                {
+                    type: "facebook",
+                    likes: 0,
+                    shares: 0,
+                    comments: 0,
+                },
+            ];
         }
         if (campaignId && campaignId != "-1") {
             const campaign = await this.campaignService.findCampaignById(campaignId);
@@ -643,6 +660,17 @@ export class CampaignController {
             });
             totalParticipants = await this.participantService.findParticipantsCount(campaignId);
             lastWeekParticipants = await this.participantService.getLastWeekParticipants(campaignId);
+            socialPost = await this.socialPostService.getSoialPostCount(campaignId);
+
+            if (!socialPost.length) {
+                const plateforms = ["twitter", "tiktok", "instagram", "facebook"];
+                const updatedSocialPost = plateforms.map((x) => ({ type: x, likes: 0, shares: 0, comments: 0 }));
+                socialPost = [...updatedSocialPost];
+            } else {
+                const plateforms = ["tiktok", "instagram", "facebook"];
+                const updatedSocialPost = plateforms.map((x) => ({ type: x, likes: 0, shares: 0, comments: 0 }));
+                socialPost = [...socialPost, ...updatedSocialPost];
+            }
         }
         aggregatedMetrics = {
             clickCount: aggregatedMetrics?.clickCount || 0,
