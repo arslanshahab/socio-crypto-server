@@ -599,7 +599,13 @@ export class CampaignController {
                 endDate: new Date(endDate),
             });
             if (!aggregatedMetrics) {
-                aggregatedMetrics = { clickCount: 0, viewCount: 0, shareCount: 0, participationScore: 0 };
+                aggregatedMetrics = {
+                    clickCount: 0,
+                    viewCount: 0,
+                    shareCount: 0,
+                    participationScore: 0,
+                    commentCount: 0,
+                };
             }
             aggregatedMetrics = {
                 ...aggregatedMetrics,
@@ -646,6 +652,7 @@ export class CampaignController {
             totalParticipants: totalParticipants || 0,
             lastWeekParticipants: lastWeekParticipants || 0,
             campaignName: aggregatedMetrics?.name || "",
+            commentCount: aggregatedMetrics?.commentCount || 0,
         };
         const metrics = { aggregatedMetrics, rawMetrics };
         return new SuccessResult(metrics, CampaignStatsResultModelArray);

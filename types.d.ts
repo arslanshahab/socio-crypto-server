@@ -633,6 +633,7 @@ export type AggregatedCampaignMetricType = {
     viewCount: number;
     shareCount: number;
     participationScore: number;
+    commentCount?: number;
     name?: string;
 };
 
