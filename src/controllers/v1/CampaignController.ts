@@ -79,7 +79,7 @@ export class ListCampaignsVariablesModel extends PaginatedVariablesModel {
     @Property(String) public readonly auditStatus: CampaignAuditStatus | undefined;
 }
 
-class PendingCampaignsParams {
+export class PendingCampaignsParams {
     @Required() @Property(String) public readonly campaignId: string;
     @Required() @Property(String) public readonly status: CampaignStatus;
     @Property(String) public readonly reason: string;
