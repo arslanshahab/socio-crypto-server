@@ -666,12 +666,20 @@ export class CampaignController {
             socialPost = await this.socialPostService.getSocialPlatformMetrics(campaignId);
 
             if (!socialPost.length) {
-                const plateforms = ["twitter", "tiktok", "instagram", "facebook"];
-                const updatedSocialPost = plateforms.map((x) => ({ type: x, likes: 0, shares: 0, comments: 0 }));
+                const updatedSocialPost = ["twitter", "tiktok", "instagram", "facebook"].map((x) => ({
+                    type: x,
+                    likes: 0,
+                    shares: 0,
+                    comments: 0,
+                }));
                 socialPost = [...updatedSocialPost];
             } else {
-                const plateforms = ["tiktok", "instagram", "facebook"];
-                const updatedSocialPost = plateforms.map((x) => ({ type: x, likes: 0, shares: 0, comments: 0 }));
+                const updatedSocialPost = ["tiktok", "instagram", "facebook"].map((x) => ({
+                    type: x,
+                    likes: 0,
+                    shares: 0,
+                    comments: 0,
+                }));
                 socialPost = [...socialPost, ...updatedSocialPost];
             }
         }
