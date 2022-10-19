@@ -588,7 +588,7 @@ export class CampaignController {
         let rawMetrics;
         let totalParticipants;
         let lastWeekParticipants;
-        let socialPost: SocialPostCountReturnTypes[] = [];
+        let socialPostMetrics: SocialPostCountReturnTypes[] = [];
         let totalSocialPosts: number = 0;
         const filterByMonth = subMonths(new Date(), month);
         if (campaignId === "-1") {
@@ -623,9 +623,9 @@ export class CampaignController {
             const campaignIds = campaigns.map((campaign) => campaign.id);
             totalParticipants = await this.participantService.findParticipantsCount(undefined, campaignIds);
             lastWeekParticipants = await this.participantService.getLastWeekParticipants(undefined, campaignIds);
-            socialPost = await this.socialPostService.getSocialPlatformMetrics(undefined, campaignIds);
-            socialPost = [
-                ...socialPost,
+            socialPostMetrics = await this.socialPostService.getSocialPlatformMetrics(undefined, campaignIds);
+            socialPostMetrics = [
+                ...socialPostMetrics,
                 {
                     type: "instagram",
                     likes: 0,
@@ -663,16 +663,15 @@ export class CampaignController {
             totalParticipants = await this.participantService.findParticipantsCount(campaignId);
             lastWeekParticipants = await this.participantService.getLastWeekParticipants(campaignId);
             totalSocialPosts = await this.socialPostService.getSocialPostCount(campaignId);
-            socialPost = await this.socialPostService.getSocialPlatformMetrics(campaignId);
-
-            if (!socialPost.length) {
+            socialPostMetrics = await this.socialPostService.getSocialPlatformMetrics(campaignId);
+            if (!socialPostMetrics.length) {
                 const updatedSocialPost = ["twitter", "tiktok", "instagram", "facebook"].map((x) => ({
                     type: x,
                     likes: 0,
                     shares: 0,
                     comments: 0,
                 }));
-                socialPost = [...updatedSocialPost];
+                socialPostMetrics = [...updatedSocialPost];
             } else {
                 const updatedSocialPost = ["tiktok", "instagram", "facebook"].map((x) => ({
                     type: x,
@@ -680,7 +679,7 @@ export class CampaignController {
                     shares: 0,
                     comments: 0,
                 }));
-                socialPost = [...socialPost, ...updatedSocialPost];
+                socialPostMetrics = [...socialPostMetrics, ...updatedSocialPost];
             }
         }
         aggregatedMetrics = {
@@ -692,9 +691,9 @@ export class CampaignController {
             lastWeekParticipants: lastWeekParticipants || 0,
             campaignName: aggregatedMetrics?.name || "",
             commentCount: aggregatedMetrics?.commentCount || 0,
-            totalSocialPosts: 0,
+            totalSocialPosts,
         };
-        const metrics = { aggregatedMetrics, rawMetrics };
+        const metrics = { aggregatedMetrics, rawMetrics, socialPostMetrics };
         return new SuccessResult(metrics, CampaignStatsResultModelArray);
     }
 

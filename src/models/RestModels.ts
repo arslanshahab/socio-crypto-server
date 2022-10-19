@@ -533,9 +533,17 @@ export class CampaignStatsResultModel {
     @Property() public readonly participationScore: number;
 }
 
+export class SocialPostMetrics {
+    @Property() public readonly type: string;
+    @Property() public readonly likes: number;
+    @Property() public readonly comments: number;
+    @Property() public readonly shares: number;
+}
+
 export class CampaignStatsResultModelArray {
     @Property() public readonly aggregatedMetrics: AggregaredMetrics;
     @Property() public readonly rawMetrics: CampaignStatsResultModel[];
+    @Property() public readonly socialPostMetrics: SocialPostMetrics[];
 }
 
 export class OrgEmployeesResultModel {
