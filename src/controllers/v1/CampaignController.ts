@@ -589,6 +589,7 @@ export class CampaignController {
         let totalParticipants;
         let lastWeekParticipants;
         let socialPost: SocialPostCountReturnTypes[] = [];
+        let totalSocialPosts: number = 0;
         const filterByMonth = subMonths(new Date(), month);
         if (campaignId === "-1") {
             const campaign = await this.campaignService.getLastCampaign();
@@ -622,7 +623,7 @@ export class CampaignController {
             const campaignIds = campaigns.map((campaign) => campaign.id);
             totalParticipants = await this.participantService.findParticipantsCount(undefined, campaignIds);
             lastWeekParticipants = await this.participantService.getLastWeekParticipants(undefined, campaignIds);
-            socialPost = await this.socialPostService.getSoialPostCount(undefined, campaignIds);
+            socialPost = await this.socialPostService.getSocialPlatformMetrics(undefined, campaignIds);
             socialPost = [
                 ...socialPost,
                 {
@@ -638,6 +639,7 @@ export class CampaignController {
                     comments: 0,
                 },
             ];
+            totalSocialPosts = await this.socialPostService.findSocialPostCountForOrg(campaignIds);
         }
         if (campaignId && campaignId != "-1") {
             const campaign = await this.campaignService.findCampaignById(campaignId);
@@ -660,7 +662,8 @@ export class CampaignController {
             });
             totalParticipants = await this.participantService.findParticipantsCount(campaignId);
             lastWeekParticipants = await this.participantService.getLastWeekParticipants(campaignId);
-            socialPost = await this.socialPostService.getSoialPostCount(campaignId);
+            totalSocialPosts = await this.socialPostService.getSocialPostCount(campaignId);
+            socialPost = await this.socialPostService.getSocialPlatformMetrics(campaignId);
 
             if (!socialPost.length) {
                 const plateforms = ["twitter", "tiktok", "instagram", "facebook"];
@@ -681,6 +684,7 @@ export class CampaignController {
             lastWeekParticipants: lastWeekParticipants || 0,
             campaignName: aggregatedMetrics?.name || "",
             commentCount: aggregatedMetrics?.commentCount || 0,
+            totalSocialPosts: 0,
         };
         const metrics = { aggregatedMetrics, rawMetrics };
         return new SuccessResult(metrics, CampaignStatsResultModelArray);

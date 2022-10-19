@@ -69,7 +69,7 @@ export class SocialPostService {
         return result;
     }
 
-    public async getSoialPostCount(campaignId?: string, campaignIds?: string[]) {
+    public async getSocialPlatformMetrics(campaignId?: string, campaignIds?: string[]) {
         // let filterd = campaignId ? `='${campaignId}'` : `in${campaignIds}`;
         let result: SocialPostCountReturnTypes[] = [];
         if (campaignId) {
@@ -84,5 +84,9 @@ export class SocialPostService {
         where s."campaignId" in(${Prisma.join(campaignIds)}) group by s.type;`;
         }
         return result;
+    }
+
+    public async findSocialPostCountForOrg(campaignIds: string[]) {
+        return readPrisma.socialPost.count({ where: { campaignId: { in: campaignIds } } });
     }
 }

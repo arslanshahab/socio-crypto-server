@@ -516,6 +516,7 @@ export class AggregaredMetrics {
     @Property() public readonly clickCount: number;
     @Property() public readonly commentCount: number;
     @Property() public readonly campaignName: string;
+    @Property() public readonly totalSocialPosts: number;
 }
 export class DashboardStatsResultModel {
     @Property() public readonly totalUsers: number;
