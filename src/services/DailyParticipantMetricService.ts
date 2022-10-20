@@ -272,8 +272,4 @@ export class DailyParticipantMetricService {
          FROM daily_participant_metric as d where d."campaignId"=${campaignId} and d."createdAt" >= ${startDate} and d."createdAt" < ${endDate} group by d.id`;
         return result;
     }
-
-    // public async getSocialPostCount(campaignId: string, campaignIds: string[]) {
-    //     return readPrisma.dailyParticipantMetric.count({})
-    // }
 }
