@@ -775,17 +775,4 @@ export class CampaignController {
         const totalCrypto = transfers.reduce((acc, curr) => (acc += parseFloat(curr.amount)), 0);
         return new SuccessResult({ totalCrypto: formatFloat(totalCrypto) }, PaidOutCryptoResultModel);
     }
-
-    // @Get("/campaign-tiers")
-    // @(Returns(200, SuccessResult).Of(Object))
-    // public async getCampaignEngagement(@PathParams() path: CampaignIdModel, @Context() context: Context) {
-    //     const { orgId } = await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
-    //     const { campaignId } = path;
-    //     if (campaignId === "-1") {
-    //         const campaigns = await this.campaignService.findCampaignsByOrgId(orgId || "");
-    //         const campaignIds = campaigns.map((x) => x.id);
-    //         const participants = await this.participantService.findParticipantsCount(undefined, campaignIds);
-    //         console.log("participants counts---------------", participants);
-    //     }
-    // }
 }
