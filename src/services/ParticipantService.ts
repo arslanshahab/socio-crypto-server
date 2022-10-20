@@ -229,16 +229,41 @@ export class ParticipantService {
         });
     }
 
-    // public async getLastWeekParticipants(campaignId?: string, campaignIds?: string[]) {
-    //     let totalParticipants;
-    //     let beforeLastWeekParticipants;
-    //     if (campaignId) {
-    //         totalParticipants = await this.findParticipantsCount(campaignId);
-    //         beforeLastWeekParticipants = await this.getBeforeLastWeekParticipants(campaignId);
-    //     } else {
-    //         totalParticipants = await this.findParticipantsCount(undefined, campaignIds);
-    //         beforeLastWeekParticipants = await this.getBeforeLastWeekParticipants(undefined, campaignIds);
-    //     }
-    //     return totalParticipants - beforeLastWeekParticipants;
-    // }
+    public async findParticipantsForOrg(params: {
+        campaignId?: string;
+        campaignIds?: string[];
+        startDate: Date;
+        endDate: Date;
+    }) {
+        const { campaignId, campaignIds, startDate, endDate } = params;
+        return prisma.$transaction([
+            readPrisma.participant.findMany({
+                where: {
+                    campaignId: campaignId ? campaignId : { in: campaignIds },
+                    AND: [
+                        {
+                            createdAt: { gte: startDate },
+                        },
+                        {
+                            createdAt: { lte: endDate },
+                        },
+                    ],
+                },
+                include: { user: { include: { profile: true } } },
+            }),
+            readPrisma.participant.count({
+                where: {
+                    campaignId: campaignId ? campaignId : { in: campaignIds },
+                    AND: [
+                        {
+                            createdAt: { gte: startDate },
+                        },
+                        {
+                            createdAt: { lte: endDate },
+                        },
+                    ],
+                },
+            }),
+        ]);
+    }
 }

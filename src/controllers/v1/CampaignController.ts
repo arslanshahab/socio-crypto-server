@@ -581,8 +581,7 @@ export class CampaignController {
     @Get("/dashboard-metrics")
     @(Returns(200, SuccessResult).Of(CampaignStatsResultModelArray))
     public async getDashboardMetrics(@QueryParams() query: DashboardMetricsParams, @Context() context: Context) {
-        const admin = await this.adminService.findAdminByFirebaseId(context.get("user").id);
-        if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
+        const { orgId } = await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
         let { campaignId, startDate, endDate, month } = query;
         let aggregatedMetrics;
         let rawMetrics;
@@ -592,11 +591,11 @@ export class CampaignController {
         let totalSocialPosts: number = 0;
         const filterByMonth = subMonths(new Date(), month);
         if (campaignId === "-1") {
-            const campaign = await this.campaignService.getLastCampaign();
+            const campaign = await this.campaignService.getLastCampaign(orgId || "");
             if (!startDate && campaign) startDate = month ? filterByMonth.toString() : campaign.createdAt.toString();
             if (!endDate) endDate = new Date().toString();
             [aggregatedMetrics] = await this.dailyParticipantMetricService.getAggregatedOrgMetrics({
-                orgId: admin.orgId!,
+                orgId: orgId || "",
                 startDate: new Date(startDate),
                 endDate: new Date(endDate),
             });
@@ -615,11 +614,11 @@ export class CampaignController {
                 name: "All",
             };
             rawMetrics = await this.dailyParticipantMetricService.getOrgMetrics({
-                orgId: admin.orgId!,
+                orgId: orgId!,
                 startDate: new Date(startDate),
                 endDate: new Date(endDate),
             });
-            const campaigns = await this.campaignService.findCampaigns(admin.orgId!);
+            const campaigns = await this.campaignService.findCampaigns(orgId);
             const campaignIds = campaigns.map((campaign) => campaign.id);
             totalParticipants = await this.participantService.findParticipantsCount(undefined, campaignIds);
             lastWeekParticipants = await this.participantService.getLastWeekParticipants(undefined, campaignIds);

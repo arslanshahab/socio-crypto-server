@@ -327,7 +327,7 @@ export class CampaignService {
         });
     }
 
-    public async getLastCampaign() {
-        return await readPrisma.campaign.findFirst({ orderBy: { createdAt: "asc" }, take: 1 });
+    public async getLastCampaign(orgId: string) {
+        return await readPrisma.campaign.findFirst({ where: { orgId }, orderBy: { createdAt: "asc" }, take: 1 });
     }
 }
