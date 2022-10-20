@@ -326,4 +326,8 @@ export class CampaignService {
             },
         });
     }
+
+    public async getLastCampaign(orgId: string) {
+        return await prisma.campaign.findFirst({ where: { orgId }, orderBy: { createdAt: "asc" }, take: 1 });
+    }
 }

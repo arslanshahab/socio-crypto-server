@@ -9,6 +9,7 @@ import { PlatformCache } from "@tsed/common";
 import { resetCacheKey } from "../util/index";
 import { CacheKeys, Sort } from "../util/constants";
 import { prisma, readPrisma } from "../clients/prisma";
+import { subWeeks } from "date-fns";
 
 @Injectable()
 export class ParticipantService {
@@ -217,5 +218,52 @@ export class ParticipantService {
         const result: { clickCount: number }[] =
             await readPrisma.$queryRaw`SELECT avg(cast("clickCount" as int)) as "clickCount" from participant where "campaignId"=${campaignId}`;
         return result;
+    }
+
+    public async getLastWeekParticipants(campaignId?: string, campaignIds?: string[]) {
+        const lastWeek = subWeeks(new Date(), 1);
+        return await readPrisma.participant.count({
+            where: campaignId
+                ? { campaignId, createdAt: { lte: lastWeek } }
+                : { campaignId: { in: campaignIds }, createdAt: { gte: lastWeek } },
+        });
+    }
+
+    public async findParticipantsForOrg(params: {
+        campaignId?: string;
+        campaignIds?: string[];
+        startDate: Date;
+        endDate: Date;
+    }) {
+        const { campaignId, campaignIds, startDate, endDate } = params;
+        return prisma.$transaction([
+            readPrisma.participant.findMany({
+                where: {
+                    campaignId: campaignId ? campaignId : { in: campaignIds },
+                    AND: [
+                        {
+                            createdAt: { gte: startDate },
+                        },
+                        {
+                            createdAt: { lte: endDate },
+                        },
+                    ],
+                },
+                include: { user: { include: { profile: true } } },
+            }),
+            readPrisma.participant.count({
+                where: {
+                    campaignId: campaignId ? campaignId : { in: campaignIds },
+                    AND: [
+                        {
+                            createdAt: { gte: startDate },
+                        },
+                        {
+                            createdAt: { lte: endDate },
+                        },
+                    ],
+                },
+            }),
+        ]);
     }
 }

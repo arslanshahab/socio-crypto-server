@@ -633,6 +633,7 @@ export type AggregatedCampaignMetricType = {
     viewCount: number;
     shareCount: number;
     participationScore: number;
+    commentCount?: number;
     name?: string;
 };
 
@@ -725,4 +726,11 @@ export type BinanceCoiinsApiTypes = {
     isLegalMoney: boolean;
     trading: boolean;
     networkList: BinanceNetworkList[];
+};
+
+export type SocialPostCountReturnTypes = {
+    type: string;
+    likes: number;
+    shares: number;
+    comments: number;
 };

@@ -440,6 +440,7 @@ export class UpdatedResultModel {
 export class CampaignIdModel {
     @Required() public readonly campaignId: string;
 }
+
 export class ParticipantQueryParams {
     @Required() public readonly id: string;
 }
@@ -507,12 +508,15 @@ export class UserTransactionResultModel extends TransferResultModel {
 }
 
 export class AggregaredMetrics {
-    @Property() public readonly clickCount: number;
-    @Property() public readonly viewCount: number;
-    @Property() public readonly shareCount: number;
-    @Property() public readonly participationScore: number;
     @Property() public readonly totalParticipants: number;
+    @Property() public readonly shareCount: number;
+    @Property() public readonly viewCount: number;
+    @Property() public readonly participationScore: number;
+    @Property() public readonly lastWeekParticipants: number;
+    @Property() public readonly clickCount: number;
+    @Property() public readonly commentCount: number;
     @Property() public readonly campaignName: string;
+    @Property() public readonly totalSocialPosts: number;
 }
 export class DashboardStatsResultModel {
     @Property() public readonly totalUsers: number;
@@ -529,9 +533,17 @@ export class CampaignStatsResultModel {
     @Property() public readonly participationScore: number;
 }
 
+export class SocialPostMetrics {
+    @Property() public readonly type: string;
+    @Property() public readonly likes: number;
+    @Property() public readonly comments: number;
+    @Property() public readonly shares: number;
+}
+
 export class CampaignStatsResultModelArray {
     @Property() public readonly aggregatedMetrics: AggregaredMetrics;
     @Property() public readonly rawMetrics: CampaignStatsResultModel[];
+    @Property() public readonly socialPostMetrics: SocialPostMetrics[];
 }
 
 export class OrgEmployeesResultModel {
