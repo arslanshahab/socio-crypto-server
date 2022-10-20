@@ -1,6 +1,6 @@
 {
     "name": "raiinmaker-server",
-    "version": "3.5.53",
+    "version": "3.5.54",
     "main": "index.js",
     "repository": "git@github.com:dragonchain-inc/raiinmaker-server.git",
     "author": "Alex Benedetto <alex061994@gmail.com>",
@@ -38,6 +38,7 @@
         "script:twitter:username": "AWS_PROFILE=raiinmaker TS_NODE_FILES=true NODE_ENV=development ts-node scripts/twitter/username.ts",
         "script:updateBalance": "AWS_PROFILE=raiinmaker TS_NODE_FILES=true NODE_ENV=development ts-node scripts/user/updateBalance.ts",
         "script:removeAddress": "AWS_PROFILE=raiinmaker TS_NODE_FILES=true NODE_ENV=development ts-node scripts/user/removeDepositAddress.ts",
+        "script:checkRewards": "AWS_PROFILE=raiinmaker TS_NODE_FILES=true NODE_ENV=development ts-node scripts/user/checkRewards.ts",
         "cron:watcher:run": "AWS_PROFILE=raiinmaker LOAD_ENV=true ts-node src/cron/coiinWatcher/index.ts",
         "cron:coiinMinter:run": "AWS_PROFILE=raiinmaker LOAD_ENV=true ts-node src/cron/coiinMinter/index.ts",
         "cron:campaignAudit:run": "AWS_PROFILE=raiinmaker LOAD_ENV=true ts-node src/cron/campaignAudit/index.ts",

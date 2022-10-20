@@ -653,10 +653,10 @@ export class UserController {
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 
-    @Put("/update-user-name/:username")
+    @Put("/update-user-name")
     @(Returns(200, SuccessResult).Of(UserResultModel))
-    public async updateUserName(@PathParams() path: UpdateUserNameParams, @Context() context: Context) {
-        const { username } = path;
+    public async updateUserName(@QueryParams() query: UpdateUserNameParams, @Context() context: Context) {
+        const { username } = query;
         if (await this.profileService.ifUsernameExist(username)) throw new BadRequest(USERNAME_EXISTS);
         let user = await this.userService.findUserByContext(context.get("user"), { profile: true });
         if (!user) throw new NotFound(USER_NOT_FOUND);
