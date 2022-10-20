@@ -963,3 +963,7 @@ export class TransactionFeeResultModel {
     @Property() public readonly network: string;
     @Property() public readonly withdrawFee: string;
 }
+
+export class CoiinValueResultModel {
+    @Property() public readonly coiin: string;
+}
