@@ -1,8 +1,7 @@
 import { getRedis } from "../clients/redis";
 import { doFetch, RequestData } from "./fetchRequest";
 import { COIIN } from "./constants";
-import { MarketData } from "../models/MarketData";
-import { ILike } from "typeorm";
+import { prisma } from "../clients/prisma";
 
 export const getExchangeRateForCurrency = async (symbol: string) => {
     const cacheKey = "exchangeRatesForStore";
@@ -24,7 +23,9 @@ export const getExchangeRateForCurrency = async (symbol: string) => {
 
 export const getExchangeRateForCrypto = async (symbol: string) => {
     if (symbol.toUpperCase() === COIIN) return parseFloat(process.env.COIIN_VALUE || "0.2");
-    const symbolData = await MarketData.findOne({ where: { symbol: ILike(symbol) } });
+    const symbolData = await prisma.marketData.findFirst({
+        where: { symbol: { contains: symbol, mode: "insensitive" } },
+    });
     if (symbolData) {
         return symbolData.price;
     }
