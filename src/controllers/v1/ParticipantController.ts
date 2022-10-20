@@ -39,7 +39,15 @@ import { getSocialClient } from "../helpers";
 import { PointValueTypes, Tiers } from "types.d.ts";
 import { SocialLinkService } from "../../services/SocialLinkService";
 import { MarketDataService } from "../../services/MarketDataService";
-import { FEE_RATE, ParticipantAction, SocialClientType, SocialLinkType, Sort } from "../../util/constants";
+import {
+    ADMIN,
+    FEE_RATE,
+    MANAGER,
+    ParticipantAction,
+    SocialClientType,
+    SocialLinkType,
+    Sort,
+} from "../../util/constants";
 import { SocialPostService } from "../../services/SocialPostService";
 import { limit } from "../../util/rateLimiter";
 import { QualityScoreService } from "../../services/QualityScoreService";
@@ -47,6 +55,8 @@ import { HourlyCampaignMetricsService } from "../../services/HourlyCampaignMetri
 import { OrganizationService } from "../../services/OrganizationService";
 import { DragonChainService } from "../../services/DragonChainService";
 import { prisma } from "../../clients/prisma";
+import { AdminService } from "../../services/AdminService";
+import { subMonths } from "date-fns";
 
 class CampaignParticipantsParams {
     @Property() public readonly campaignId: string;
@@ -75,6 +85,13 @@ class ParticipantTrackingBodyParams {
     @Required() public readonly action: ParticipantAction;
 }
 
+class UserDemographicParams {
+    @Required() public readonly campaignId: string;
+    @Property() public readonly startDate: string;
+    @Property() public readonly endDate: string;
+    @Property() public readonly month: number;
+}
+
 const { RATE_LIMIT_MAX = "3" } = process.env;
 
 @Controller("/participant")
@@ -101,6 +118,8 @@ export class ParticipantController {
     organizationService: OrganizationService;
     @Inject()
     private dragonChainService: DragonChainService;
+    @Inject()
+    private adminService: AdminService;
 
     @Get()
     @(Returns(200, SuccessResult).Of(ParticipantResultModelV2))
@@ -484,5 +503,39 @@ export class ParticipantController {
             });
         }
         return participant.id;
+    }
+
+    @Get("/demographic")
+    @(Returns(200, SuccessResult).Of(Object))
+    public async participantsDemographics(@QueryParams() query: UserDemographicParams, @Context() context: Context) {
+        let { campaignId, startDate, endDate, month } = query;
+        const { orgId } = await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
+        const filterByMonth = subMonths(new Date(), month);
+        let participants;
+        let count = 0;
+
+        if (campaignId === "-1") {
+            const campaign = await this.campaignService.getLastCampaign(orgId || "");
+            if (!startDate && campaign) startDate = month ? filterByMonth.toString() : campaign.createdAt.toString();
+            if (!endDate) endDate = new Date().toString();
+            const campaigns = await this.campaignService.findCampaigns(orgId);
+            const campaignIds = await campaigns.map((campaign) => campaign.id);
+            [participants, count] = await this.participantService.findParticipantsForOrg({
+                campaignIds,
+                startDate: new Date(startDate),
+                endDate: new Date(endDate),
+            });
+        }
+        if (campaignId && campaignId !== "-1") {
+            const campaign = await this.campaignService.findCampaignById(campaignId);
+            if (!startDate && campaign) startDate = month ? filterByMonth.toString() : campaign.createdAt.toString();
+            if (!endDate) endDate = new Date().toString();
+            [participants, count] = await this.participantService.findParticipantsForOrg({
+                campaignId,
+                startDate: new Date(startDate),
+                endDate: new Date(endDate),
+            });
+        }
+        return new SuccessResult({ participants, count }, Object);
     }
 }

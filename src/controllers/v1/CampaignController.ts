@@ -47,8 +47,8 @@ import {
 import { BadRequest, Forbidden, NotFound } from "@tsed/exceptions";
 import { ParticipantService } from "../../services/ParticipantService";
 import { SocialPostService } from "../../services/SocialPostService";
-import { CampaignAuditStatus, PointValueTypes } from "types.d.ts";
-import { addYears } from "date-fns";
+import { CampaignAuditStatus, PointValueTypes, SocialPostCountReturnTypes } from "types.d.ts";
+import { addYears, subMonths } from "date-fns";
 import { Validator } from "../../schemas";
 import { OrganizationService } from "../../services/OrganizationService";
 import { WalletService } from "../../services/WalletService";
@@ -88,6 +88,13 @@ class PendingCampaignsParams {
 class PayoutCampaignRewardsParams {
     @Required() public readonly campaignId: string;
     @ArrayOf(String) public readonly rejected: string[] | undefined;
+}
+
+class DashboardMetricsParams {
+    @Required() public readonly campaignId: string;
+    @Property() public readonly startDate: string;
+    @Property() public readonly endDate: string;
+    @Property() public readonly month: number;
 }
 
 @Controller("/campaign")
@@ -571,39 +578,108 @@ export class CampaignController {
     }
 
     // For admin panel
-    @Get("/dashboard-metrics/:campaignId")
+    @Get("/dashboard-metrics")
     @(Returns(200, SuccessResult).Of(CampaignStatsResultModelArray))
-    public async getDashboardMetrics(@PathParams() query: CampaignIdModel, @Context() context: Context) {
-        const admin = await this.adminService.findAdminByFirebaseId(context.get("user").id);
-        if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
-        const { campaignId } = query;
+    public async getDashboardMetrics(@QueryParams() query: DashboardMetricsParams, @Context() context: Context) {
+        const { orgId } = await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
+        let { campaignId, startDate, endDate, month } = query;
         let aggregatedMetrics;
         let rawMetrics;
         let totalParticipants;
+        let lastWeekParticipants;
+        let socialPostMetrics: SocialPostCountReturnTypes[] = [];
+        let totalSocialPosts: number = 0;
+        const filterByMonth = subMonths(new Date(), month);
         if (campaignId === "-1") {
-            [aggregatedMetrics] = await this.dailyParticipantMetricService.getAggregatedOrgMetrics(admin.orgId!);
+            const campaign = await this.campaignService.getLastCampaign(orgId || "");
+            if (!startDate && campaign) startDate = month ? filterByMonth.toString() : campaign.createdAt.toString();
+            if (!endDate) endDate = new Date().toString();
+            [aggregatedMetrics] = await this.dailyParticipantMetricService.getAggregatedOrgMetrics({
+                orgId: orgId || "",
+                startDate: new Date(startDate),
+                endDate: new Date(endDate),
+            });
             if (!aggregatedMetrics) {
-                aggregatedMetrics = { clickCount: 0, viewCount: 0, shareCount: 0, participationScore: 0 };
+                aggregatedMetrics = {
+                    clickCount: 0,
+                    viewCount: 0,
+                    shareCount: 0,
+                    participationScore: 0,
+                    commentCount: 0,
+                };
             }
             aggregatedMetrics = {
                 ...aggregatedMetrics,
                 participationScore: Math.round(aggregatedMetrics.participationScore),
                 name: "All",
             };
-            rawMetrics = await this.dailyParticipantMetricService.getOrgMetrics(admin.orgId!);
-            const campaigns = await this.campaignService.findCampaigns(admin.orgId!);
+            rawMetrics = await this.dailyParticipantMetricService.getOrgMetrics({
+                orgId: orgId!,
+                startDate: new Date(startDate),
+                endDate: new Date(endDate),
+            });
+            const campaigns = await this.campaignService.findCampaigns(orgId);
             const campaignIds = campaigns.map((campaign) => campaign.id);
             totalParticipants = await this.participantService.findParticipantsCount(undefined, campaignIds);
+            lastWeekParticipants = await this.participantService.getLastWeekParticipants(undefined, campaignIds);
+            socialPostMetrics = await this.socialPostService.getSocialPlatformMetrics(undefined, campaignIds);
+            socialPostMetrics = [
+                ...socialPostMetrics,
+                {
+                    type: "instagram",
+                    likes: 0,
+                    shares: 0,
+                    comments: 0,
+                },
+                {
+                    type: "facebook",
+                    likes: 0,
+                    shares: 0,
+                    comments: 0,
+                },
+            ];
+            totalSocialPosts = await this.socialPostService.findSocialPostCountForOrg(campaignIds);
         }
         if (campaignId && campaignId != "-1") {
-            [aggregatedMetrics] = await this.dailyParticipantMetricService.getAggregatedCampaignMetrics(campaignId);
+            const campaign = await this.campaignService.findCampaignById(campaignId);
+            if (!startDate && campaign) startDate = month ? filterByMonth.toString() : campaign.createdAt.toString();
+            if (!endDate) endDate = new Date().toString();
+            [aggregatedMetrics] = await this.dailyParticipantMetricService.getAggregatedCampaignMetrics({
+                campaignId,
+                startDate: new Date(startDate),
+                endDate: new Date(endDate),
+            });
             aggregatedMetrics = {
                 ...aggregatedMetrics,
                 participationScore: Math.round(aggregatedMetrics.participationScore),
                 name: aggregatedMetrics.name,
             };
-            rawMetrics = await this.dailyParticipantMetricService.getCampaignMetrics(campaignId);
+            rawMetrics = await this.dailyParticipantMetricService.getCampaignMetrics({
+                campaignId,
+                startDate: new Date(startDate),
+                endDate: new Date(endDate),
+            });
             totalParticipants = await this.participantService.findParticipantsCount(campaignId);
+            lastWeekParticipants = await this.participantService.getLastWeekParticipants(campaignId);
+            totalSocialPosts = await this.socialPostService.getSocialPostCount(campaignId);
+            socialPostMetrics = await this.socialPostService.getSocialPlatformMetrics(campaignId);
+            if (!socialPostMetrics.length) {
+                const updatedSocialPost = ["twitter", "tiktok", "instagram", "facebook"].map((x) => ({
+                    type: x,
+                    likes: 0,
+                    shares: 0,
+                    comments: 0,
+                }));
+                socialPostMetrics = [...updatedSocialPost];
+            } else {
+                const updatedSocialPost = ["tiktok", "instagram", "facebook"].map((x) => ({
+                    type: x,
+                    likes: 0,
+                    shares: 0,
+                    comments: 0,
+                }));
+                socialPostMetrics = [...socialPostMetrics, ...updatedSocialPost];
+            }
         }
         aggregatedMetrics = {
             clickCount: aggregatedMetrics?.clickCount || 0,
@@ -611,9 +687,12 @@ export class CampaignController {
             shareCount: aggregatedMetrics?.shareCount || 0,
             participationScore: aggregatedMetrics?.participationScore || 0,
             totalParticipants: totalParticipants || 0,
+            lastWeekParticipants: lastWeekParticipants || 0,
             campaignName: aggregatedMetrics?.name || "",
+            commentCount: aggregatedMetrics?.commentCount || 0,
+            totalSocialPosts,
         };
-        const metrics = { aggregatedMetrics, rawMetrics };
+        const metrics = { aggregatedMetrics, rawMetrics, socialPostMetrics };
         return new SuccessResult(metrics, CampaignStatsResultModelArray);
     }
 
