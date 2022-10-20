@@ -3,7 +3,12 @@ import { Delete, Get, Post, Required, Returns } from "@tsed/schema";
 import { SuccessArrayResult, SuccessResult } from "../../util/entities";
 import { CryptoCurrencyService } from "../../services/CryptoCurrencyService";
 import { BodyParams, Context } from "@tsed/common";
-import { BooleanResultModel, CryptoCurrencyResultModel, WalletCurrencyResultModel } from "../../models/RestModels";
+import {
+    BooleanResultModel,
+    CoiinValueResultModel,
+    CryptoCurrencyResultModel,
+    WalletCurrencyResultModel,
+} from "../../models/RestModels";
 import { OrganizationService } from "../../services/OrganizationService";
 import { BadRequest, NotFound } from "@tsed/exceptions";
 import { ORG_NOT_FOUND } from "../../util/errors";
@@ -71,5 +76,12 @@ export class CryptoController {
         if (parseFloat(currency.balance) > 0) throw new BadRequest("FUNDS_EXIST", "wallet holds crypto");
         await this.walletCurrencyService.deleteWalletCurrency(id);
         return new SuccessResult({ success: true }, BooleanResultModel);
+    }
+
+    @Get("/coiin-value")
+    @(Returns(200, SuccessResult).Of(CoiinValueResultModel))
+    public async getCoiinValue(@Context() context: Context) {
+        const coiin = process.env.COIIN_VALUE || "0.2";
+        return new SuccessResult({ coiin }, CoiinValueResultModel);
     }
 }
