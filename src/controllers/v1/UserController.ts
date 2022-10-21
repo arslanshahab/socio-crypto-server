@@ -523,15 +523,14 @@ export class UserController {
     @Post("/transfer-user-coiin")
     @(Returns(200, SuccessResult).Of(UpdatedResultModel))
     public async transferUserCoiin(@BodyParams() body: TransferUserCoiinParams, @Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        const admin = await this.adminService.findAdminByFirebaseId(context.get("user").id);
+        const { orgId } = await this.adminService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));
         const { coiin, userId, action } = body;
         const { ADD } = CoiinTransferAction;
         const token = await this.tokenService.findTokenBySymbol({ symbol: COIIN, network: BSC });
         if (!token) throw new NotFound(TOKEN_NOT_FOUND);
         const userWallet = await this.walletService.findWalletByUserId(userId);
         if (!userWallet) throw new NotFound(WALLET_NOT_FOUND + " for userId");
-        const orgWallet = await this.walletService.findWalletByOrgId(admin?.orgId!);
+        const orgWallet = await this.walletService.findWalletByOrgId(orgId || "");
         if (!orgWallet) throw new NotFound(WALLET_NOT_FOUND + " for orgId");
         const userCurrency = await this.currencyService.findCurrencyByTokenAndWallet({
             tokenId: token.id,
