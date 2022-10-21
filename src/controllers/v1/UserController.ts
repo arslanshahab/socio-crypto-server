@@ -74,6 +74,8 @@ import {
     TransferAction,
     UserRewardType,
     ADMIN_ROLES,
+    TransferStatus,
+    TransferType,
     // NftName,
     // NftType,
 } from "../../util/constants";
@@ -541,15 +543,62 @@ export class UserController {
             walletId: orgWallet?.id!,
         });
         if (!orgCurrency) throw new NotFound(CURRENCY_NOT_FOUND + " for org");
-        try {
-            await this.tatumService.transferFunds({
-                senderAccountId: action === ADD ? orgCurrency?.tatumId : userCurrency?.tatumId,
-                recipientAccountId: action === ADD ? userCurrency?.tatumId : orgCurrency?.tatumId,
+        const orgAvailableBalance = await this.tatumService.getAccountBalance(orgCurrency.tatumId);
+        const userAvailableBalance = await this.tatumService.getAccountBalance(userCurrency.tatumId);
+        if (action === ADD) {
+            let coiinTransferStatus = TransferStatus.PENDING;
+            if (orgAvailableBalance.availableBalance >= coiin) {
+                await this.tatumService.transferFunds({
+                    senderAccountId: orgCurrency.tatumId,
+                    recipientAccountId: userCurrency.tatumId,
+                    amount: coiin,
+                    recipientNote: "Transfer amount",
+                });
+                coiinTransferStatus = TransferStatus.SUCCEEDED;
+            }
+            await this.transferService.newReward({
+                action: TransferAction.TRANSFER,
                 amount: coiin,
-                recipientNote: "Transfer Coiin",
+                status: coiinTransferStatus,
+                symbol: COIIN,
+                type: TransferType.CREDIT,
+                walletId: userWallet.id,
             });
-        } catch (error) {
-            throw new Error(error.message);
+            await this.transferService.newReward({
+                action: TransferAction.TRANSFER,
+                amount: coiin,
+                status: coiinTransferStatus,
+                symbol: COIIN,
+                type: TransferType.DEBIT,
+                walletId: orgWallet.id,
+            });
+        } else {
+            let coiinTransferStatus = TransferStatus.PENDING;
+            if (userAvailableBalance.availableBalance >= coiin) {
+                await this.tatumService.transferFunds({
+                    senderAccountId: userCurrency.tatumId,
+                    recipientAccountId: orgCurrency.tatumId,
+                    amount: coiin,
+                    recipientNote: "Transfer amount",
+                });
+                coiinTransferStatus = TransferStatus.SUCCEEDED;
+            }
+            await this.transferService.newReward({
+                action: TransferAction.TRANSFER,
+                amount: coiin.toString(),
+                status: coiinTransferStatus,
+                symbol: COIIN,
+                type: TransferType.CREDIT,
+                walletId: orgWallet.id,
+            });
+            await this.transferService.newReward({
+                action: TransferAction.TRANSFER,
+                amount: coiin.toString(),
+                status: coiinTransferStatus,
+                symbol: COIIN,
+                type: TransferType.DEBIT,
+                walletId: userWallet.id,
+            });
         }
         return new SuccessResult({ message: "Transfer funds successfully" }, UpdatedResultModel);
     }
