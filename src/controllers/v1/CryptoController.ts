@@ -196,6 +196,6 @@ export class CryptoController {
                 walletId: userWallet.id,
             });
         }
-        return new SuccessResult({ message: "Transfer funds successfully" }, UpdatedResultModel);
+        return new SuccessResult({ message: "Transfer cryptos successfully" }, UpdatedResultModel);
     }
 }
