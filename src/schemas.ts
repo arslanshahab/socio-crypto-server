@@ -1,3 +1,4 @@
+import { Injectable } from "@tsed/di";
 import Ajv, { ValidateFunction } from "ajv";
 
 export const algorithmCreateSchema = {
@@ -247,6 +248,7 @@ export const adminKycSchema = {
     ],
 };
 
+@Injectable()
 export class Validator {
     private ajv: Ajv;
     private validateAlgorithmCreatePayload: ValidateFunction;

@@ -36,6 +36,13 @@ describe("Delete Campaign", () => {
     let campaignTemplateService: CampaignTemplateService;
     let campaignMediaService: CampaignMediaService;
 
+    type BatchPayload = {
+        count: number
+    }
+
+    const payload: BatchPayload = {
+        count: 3
+    }
     beforeAll(async () => {
         await PlatformTest.bootstrap(RestServer, {
             mount: {
@@ -111,6 +118,8 @@ describe("Delete Campaign", () => {
             .spyOn(dailyParticipantMetricService, "findDailyParticipantByCampaignId")
             .mockResolvedValue([]);
 
+        const deleteDailyParticipantMetricsSpy = jest.spyOn(dailyParticipantMetricService, "deleteDailyParticipantMetrics").mockResolvedValue(payload)
+
         const findCampaignHourlyMetricsByCampaignIdSpy = jest
             .spyOn(hourlyCampaignMetricsService, "findCampaignHourlyMetricsByCampaignId")
             .mockResolvedValue([]);
@@ -142,7 +151,8 @@ describe("Delete Campaign", () => {
             findRafflePrizeByCampaignIdSpy,
             findEscrowByCampaignIdSpy,
             findParticipantByCampaignIdSpy,
-            findCampaignMediaByCampaignIdSpy
+            findCampaignMediaByCampaignIdSpy,
+            deleteDailyParticipantMetricsSpy
         );
     });
 });

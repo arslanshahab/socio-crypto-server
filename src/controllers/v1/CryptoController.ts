@@ -11,11 +11,11 @@ import { WalletCurrencyService } from "../../services/WalletCurrencyService";
 import { AdminService } from "../../services/AdminService";
 import { ADMIN, MANAGER } from "../../util/constants";
 
-class CryptoToWalletParams {
+export class CryptoToWalletParams {
     @Required() public readonly contractAddress: string;
 }
 
-class DeleteCryptoFromWalletParams {
+export class DeleteCryptoFromWalletParams {
     @Required() public readonly id: string;
 }
 
