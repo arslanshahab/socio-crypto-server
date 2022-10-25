@@ -2,8 +2,6 @@ import { PlatformTest } from "@tsed/common";
 import { handleBaseAssertions, usernameExistsRoute } from "../../../test_helper";
 
 import { RestServer } from "../../../../RestServer";
-import * as authControllers from "../../../../controllers/v1/AuthenticationController";
-import * as bodyParser from "body-parser";
 
 import SuperTest from "supertest";
 import { ProfileService } from "../../../../services/ProfileService";
@@ -34,22 +32,7 @@ describe("Username exists", () => {
     };
 
     beforeAll(async () => {
-        await PlatformTest.bootstrap(RestServer, {
-            mount: {
-                "/v1": [...Object.values(authControllers)],
-            },
-            acceptMimes: ["application/json"],
-            middlewares: [
-                {
-                    hook: "$beforeRoutesInit",
-                    use: bodyParser.json(),
-                },
-                {
-                    hook: "$beforeRoutesInit",
-                    use: bodyParser.urlencoded({ extended: true }),
-                },
-            ],
-        })();
+        await PlatformTest.bootstrap(RestServer)();
     });
 
     beforeAll(() => {

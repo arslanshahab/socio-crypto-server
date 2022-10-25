@@ -1,7 +1,7 @@
 import { PlatformTest } from "@tsed/common";
 import { RestServer } from "../../../../RestServer";
-import { AuthenticationController } from "../../../../controllers/v1/AuthenticationController";
-import * as bodyParser from "body-parser";
+// import { AuthenticationController } from "../../../../controllers/v1/AuthenticationController";
+// import * as bodyParser from "body-parser";
 import SuperTest from "supertest";
 import { addToWalletRoute, handleBaseAssertions } from "../../../test_helper";
 import { SessionService } from "../../../../services/SessionService";
@@ -18,27 +18,27 @@ describe("Add crypto to wallet", () => {
     let sessionService: SessionService;
     let adminService: AdminService;
     let organizationService: OrganizationService;
-    let cryptoCurrencyService: CryptoCurrencyService
-    let walletCurrencyService: WalletCurrencyService
+    let cryptoCurrencyService: CryptoCurrencyService;
+    let walletCurrencyService: WalletCurrencyService;
 
     const body: CryptoToWalletParams = {
-        contractAddress: "0x0000"
-    }
+        contractAddress: "0x0000",
+    };
     const org: Org = {
         id: "id",
         name: "name",
         createdAt: new Date(),
         updatedAt: new Date(),
         stripeId: "stripeId",
-        logo: "logo"
-    }
+        logo: "logo",
+    };
     const currency: CryptoCurrency = {
         id: "id",
         type: "type",
         contractAddress: "0x000",
         createdAt: new Date(),
-        updatedAt: new Date()
-    }
+        updatedAt: new Date(),
+    };
 
     const walletCurrency: WalletCurrency = {
         id: "id",
@@ -46,27 +46,11 @@ describe("Add crypto to wallet", () => {
         balance: "balance",
         walletId: "walletId",
         updatedAt: new Date(),
-        createdAt: new Date()
-    }
+        createdAt: new Date(),
+    };
 
     beforeAll(async () => {
-        await PlatformTest.bootstrap(RestServer, {
-            mount: {
-                "/v1": [AuthenticationController],
-            },
-            cache: undefined,
-            acceptMimes: ["application/json"],
-            middlewares: [
-                {
-                    hook: "$beforeRoutesInit",
-                    use: bodyParser.json(),
-                },
-                {
-                    hook: "$beforeRoutesInit",
-                    use: bodyParser.urlencoded({ extended: true }),
-                },
-            ],
-        })();
+        await PlatformTest.bootstrap(RestServer)();
     });
 
     beforeAll(async () => {
@@ -96,27 +80,52 @@ describe("Add crypto to wallet", () => {
     });
 
     it("should throw org not found", async () => {
-        const checkPermissionsSpy = jest.spyOn(adminService, "checkPermissions").mockResolvedValue({ role: "role", company: "raiinmaker", orgId: "id", email: "me@raiinmaker.com" });
-        const findOrganizationByNameSpy = jest.spyOn(organizationService, "findOrganizationByName").mockResolvedValue(null);
+        const checkPermissionsSpy = jest
+            .spyOn(adminService, "checkPermissions")
+            .mockResolvedValue({ role: "role", company: "raiinmaker", orgId: "id", email: "me@raiinmaker.com" });
+        const findOrganizationByNameSpy = jest
+            .spyOn(organizationService, "findOrganizationByName")
+            .mockResolvedValue(null);
         const res = await request.post(addToWalletRoute).set("Authorization", "token").send(body);
         handleBaseAssertions(res, 404, ORG_NOT_FOUND, checkPermissionsSpy, findOrganizationByNameSpy);
-    })
+    });
 
     it("should throw cryptoCurrency not found", async () => {
-        const checkPermissionsSpy = jest.spyOn(adminService, "checkPermissions").mockResolvedValue({ role: "role", company: "raiinmaker", orgId: "id", email: "me@raiinmaker.com" });
-        const findOrganizationByNameSpy = jest.spyOn(organizationService, "findOrganizationByName").mockResolvedValue(org);
-        const findByContractAddressSpy = jest.spyOn(cryptoCurrencyService, "findByContractAddress").mockResolvedValue(null);
+        const checkPermissionsSpy = jest
+            .spyOn(adminService, "checkPermissions")
+            .mockResolvedValue({ role: "role", company: "raiinmaker", orgId: "id", email: "me@raiinmaker.com" });
+        const findOrganizationByNameSpy = jest
+            .spyOn(organizationService, "findOrganizationByName")
+            .mockResolvedValue(org);
+        const findByContractAddressSpy = jest
+            .spyOn(cryptoCurrencyService, "findByContractAddress")
+            .mockResolvedValue(null);
         const res = await request.post(addToWalletRoute).set("Authorization", "token").send(body);
         handleBaseAssertions(res, 404, null, checkPermissionsSpy, findOrganizationByNameSpy, findByContractAddressSpy);
-    })
-
+    });
 
     it("should add crypto to wallet", async () => {
-        const checkPermissionsSpy = jest.spyOn(adminService, "checkPermissions").mockResolvedValue({ role: "role", company: "raiinmaker", orgId: "id", email: "me@raiinmaker.com" });
-        const findOrganizationByNameSpy = jest.spyOn(organizationService, "findOrganizationByName").mockResolvedValue(org);
-        const findByContractAddressSpy = jest.spyOn(cryptoCurrencyService, "findByContractAddress").mockResolvedValue(currency);
-        const newWalletCurrencySpy = jest.spyOn(walletCurrencyService, "newWalletCurrency").mockResolvedValue(walletCurrency);
+        const checkPermissionsSpy = jest
+            .spyOn(adminService, "checkPermissions")
+            .mockResolvedValue({ role: "role", company: "raiinmaker", orgId: "id", email: "me@raiinmaker.com" });
+        const findOrganizationByNameSpy = jest
+            .spyOn(organizationService, "findOrganizationByName")
+            .mockResolvedValue(org);
+        const findByContractAddressSpy = jest
+            .spyOn(cryptoCurrencyService, "findByContractAddress")
+            .mockResolvedValue(currency);
+        const newWalletCurrencySpy = jest
+            .spyOn(walletCurrencyService, "newWalletCurrency")
+            .mockResolvedValue(walletCurrency);
         const res = await request.post(addToWalletRoute).set("Authorization", "token").send(body);
-        handleBaseAssertions(res, 200, null, checkPermissionsSpy, findOrganizationByNameSpy, findByContractAddressSpy, newWalletCurrencySpy);
-    })
+        handleBaseAssertions(
+            res,
+            200,
+            null,
+            checkPermissionsSpy,
+            findOrganizationByNameSpy,
+            findByContractAddressSpy,
+            newWalletCurrencySpy
+        );
+    });
 });

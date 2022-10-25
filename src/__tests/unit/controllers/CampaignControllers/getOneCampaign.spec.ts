@@ -1,19 +1,10 @@
 import { PlatformTest } from "@tsed/common";
 import { RestServer } from "../../../../RestServer";
-import { AuthenticationController } from "../../../../controllers/v1/AuthenticationController";
-// import { ListCampaignsVariablesModel } from "../../../../controllers/v1/CampaignController";
-import * as bodyParser from "body-parser";
 import SuperTest from "supertest";
-
 import { handleBaseAssertions, getOneCampaignRoute } from "../../../test_helper";
-
-// import { AdminService } from "../../../../services/AdminService";
-// import { UserService } from "../../../../services/UserService";
 import { Campaign, CampaignMedia, CampaignTemplate, CryptoCurrency, Currency, Token } from "@prisma/client";
 import { CampaignService } from "../../../../services/CampaignService";
 import { MarketDataService } from "../../../../services/MarketDataService";
-
-// import { UserAuthMiddleware } from "../../../../middleware/UserAuthMiddleware";
 import { SessionService } from "../../../../services/SessionService";
 import { CAMPAIGN_NOT_FOUND } from "../../../../util/errors";
 import { CampaignResultModel } from "../../../../models/RestModels";
@@ -108,23 +99,7 @@ describe("Campaign", () => {
     };
 
     beforeAll(async () => {
-        await PlatformTest.bootstrap(RestServer, {
-            mount: {
-                "/v1": [AuthenticationController],
-            },
-            cache: undefined,
-            acceptMimes: ["application/json"],
-            middlewares: [
-                {
-                    hook: "$beforeRoutesInit",
-                    use: bodyParser.json(),
-                },
-                {
-                    hook: "$beforeRoutesInit",
-                    use: bodyParser.urlencoded({ extended: true }),
-                },
-            ],
-        })();
+        await PlatformTest.bootstrap(RestServer)();
     });
 
     beforeAll(async () => {

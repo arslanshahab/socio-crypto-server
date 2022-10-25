@@ -1,7 +1,5 @@
 import { PlatformTest } from "@tsed/common";
 import { RestServer } from "../../../../RestServer";
-import { AuthenticationController } from "../../../../controllers/v1/AuthenticationController";
-import * as bodyParser from "body-parser";
 import SuperTest from "supertest";
 
 import { campaignsLiteRoute, handleBaseAssertions } from "../../../test_helper";
@@ -20,23 +18,7 @@ describe("Campaign Lite", () => {
     let campaignService: CampaignService;
 
     beforeAll(async () => {
-        await PlatformTest.bootstrap(RestServer, {
-            mount: {
-                "/v1": [AuthenticationController],
-            },
-            cache: undefined,
-            acceptMimes: ["application/json"],
-            middlewares: [
-                {
-                    hook: "$beforeRoutesInit",
-                    use: bodyParser.json(),
-                },
-                {
-                    hook: "$beforeRoutesInit",
-                    use: bodyParser.urlencoded({ extended: true }),
-                },
-            ],
-        })();
+        await PlatformTest.bootstrap(RestServer)();
     });
 
     beforeAll(async () => {

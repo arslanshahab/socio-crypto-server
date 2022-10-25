@@ -1,7 +1,5 @@
 import { PlatformTest } from "@tsed/common";
 import { RestServer } from "../../../../RestServer";
-import { AuthenticationController } from "../../../../controllers/v1/AuthenticationController";
-import * as bodyParser from "body-parser";
 import SuperTest from "supertest";
 import { deleteFromWallet as deleteFromWalletRoute, handleBaseAssertions } from "../../../test_helper";
 import { SessionService } from "../../../../services/SessionService";
@@ -17,10 +15,10 @@ describe("delete crypto to wallet", () => {
     let sessionService: SessionService;
     let adminService: AdminService;
     let organizationService: OrganizationService;
-    let walletCurrencyService: WalletCurrencyService
+    let walletCurrencyService: WalletCurrencyService;
     const body: DeleteCryptoFromWalletParams = {
-        id: "id"
-    }
+        id: "id",
+    };
 
     const org: Org = {
         id: "id",
@@ -28,8 +26,8 @@ describe("delete crypto to wallet", () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         stripeId: "stripeId",
-        logo: "logo"
-    }
+        logo: "logo",
+    };
 
     const walletCurrency: WalletCurrency = {
         id: "id",
@@ -37,27 +35,11 @@ describe("delete crypto to wallet", () => {
         balance: "0",
         walletId: "walletId",
         updatedAt: new Date(),
-        createdAt: new Date()
-    }
+        createdAt: new Date(),
+    };
 
     beforeAll(async () => {
-        await PlatformTest.bootstrap(RestServer, {
-            mount: {
-                "/v1": [AuthenticationController],
-            },
-            cache: undefined,
-            acceptMimes: ["application/json"],
-            middlewares: [
-                {
-                    hook: "$beforeRoutesInit",
-                    use: bodyParser.json(),
-                },
-                {
-                    hook: "$beforeRoutesInit",
-                    use: bodyParser.urlencoded({ extended: true }),
-                },
-            ],
-        })();
+        await PlatformTest.bootstrap(RestServer)();
     });
 
     beforeAll(async () => {
@@ -86,27 +68,59 @@ describe("delete crypto to wallet", () => {
     });
 
     it("should throw org not found", async () => {
-        const checkPermissionsSpy = jest.spyOn(adminService, "checkPermissions").mockResolvedValue({ role: "role", company: "raiinmaker", orgId: "id", email: "me@raiinmaker.com" });
-        const findOrganizationByNameSpy = jest.spyOn(organizationService, "findOrganizationByName").mockResolvedValue(null);
+        const checkPermissionsSpy = jest
+            .spyOn(adminService, "checkPermissions")
+            .mockResolvedValue({ role: "role", company: "raiinmaker", orgId: "id", email: "me@raiinmaker.com" });
+        const findOrganizationByNameSpy = jest
+            .spyOn(organizationService, "findOrganizationByName")
+            .mockResolvedValue(null);
         const res = await request.delete(deleteFromWalletRoute).set("Authorization", "token").send(body);
         handleBaseAssertions(res, 404, ORG_NOT_FOUND, checkPermissionsSpy, findOrganizationByNameSpy);
-    })
+    });
 
     it("should throw cryptoCurrency not found", async () => {
-        const checkPermissionsSpy = jest.spyOn(adminService, "checkPermissions").mockResolvedValue({ role: "role", company: "raiinmaker", orgId: "id", email: "me@raiinmaker.com" });
-        const findOrganizationByNameSpy = jest.spyOn(organizationService, "findOrganizationByName").mockResolvedValue(org);
-        const findWalletCurrencyByWalletIdSpy = jest.spyOn(walletCurrencyService, "findWalletCurrencyByWalletId").mockResolvedValue(null);
+        const checkPermissionsSpy = jest
+            .spyOn(adminService, "checkPermissions")
+            .mockResolvedValue({ role: "role", company: "raiinmaker", orgId: "id", email: "me@raiinmaker.com" });
+        const findOrganizationByNameSpy = jest
+            .spyOn(organizationService, "findOrganizationByName")
+            .mockResolvedValue(org);
+        const findWalletCurrencyByWalletIdSpy = jest
+            .spyOn(walletCurrencyService, "findWalletCurrencyByWalletId")
+            .mockResolvedValue(null);
         const res = await request.delete(deleteFromWalletRoute).set("Authorization", "token").send(body);
-        handleBaseAssertions(res, 404, null, checkPermissionsSpy, findOrganizationByNameSpy, findWalletCurrencyByWalletIdSpy);
-    })
-
+        handleBaseAssertions(
+            res,
+            404,
+            null,
+            checkPermissionsSpy,
+            findOrganizationByNameSpy,
+            findWalletCurrencyByWalletIdSpy
+        );
+    });
 
     it("should delete crypto from wallet", async () => {
-        const checkPermissionsSpy = jest.spyOn(adminService, "checkPermissions").mockResolvedValue({ role: "role", company: "raiinmaker", orgId: "id", email: "me@raiinmaker.com" });
-        const findOrganizationByNameSpy = jest.spyOn(organizationService, "findOrganizationByName").mockResolvedValue(org);
-        const findWalletCurrencyByWalletIdSpy = jest.spyOn(walletCurrencyService, "findWalletCurrencyByWalletId").mockResolvedValue(walletCurrency);
-        const deleteWalletCurrencySpy = jest.spyOn(walletCurrencyService, "deleteWalletCurrency").mockResolvedValue(walletCurrency);
+        const checkPermissionsSpy = jest
+            .spyOn(adminService, "checkPermissions")
+            .mockResolvedValue({ role: "role", company: "raiinmaker", orgId: "id", email: "me@raiinmaker.com" });
+        const findOrganizationByNameSpy = jest
+            .spyOn(organizationService, "findOrganizationByName")
+            .mockResolvedValue(org);
+        const findWalletCurrencyByWalletIdSpy = jest
+            .spyOn(walletCurrencyService, "findWalletCurrencyByWalletId")
+            .mockResolvedValue(walletCurrency);
+        const deleteWalletCurrencySpy = jest
+            .spyOn(walletCurrencyService, "deleteWalletCurrency")
+            .mockResolvedValue(walletCurrency);
         const res = await request.delete(deleteFromWalletRoute).set("Authorization", "token").send(body);
-        handleBaseAssertions(res, 200, null, checkPermissionsSpy, findOrganizationByNameSpy, findWalletCurrencyByWalletIdSpy, deleteWalletCurrencySpy);
-    })
+        handleBaseAssertions(
+            res,
+            200,
+            null,
+            checkPermissionsSpy,
+            findOrganizationByNameSpy,
+            findWalletCurrencyByWalletIdSpy,
+            deleteWalletCurrencySpy
+        );
+    });
 });

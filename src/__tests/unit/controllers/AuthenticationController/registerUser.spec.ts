@@ -1,17 +1,12 @@
 import { PlatformTest } from "@tsed/common";
 import SuperTest from "supertest";
 import { RestServer } from "../../../../RestServer";
-
 import { handleBaseAssertions, registerUserRoute } from "../../../test_helper";
-
-import * as authControllers from "../../../../controllers/v1/AuthenticationController";
-
 import { UserService } from "../../../../services/UserService";
 import { ProfileService } from "../../../../services/ProfileService";
 import { VerificationService } from "../../../../services/VerificationService";
 import { SessionService } from "../../../../services/SessionService";
 import { User } from "../../../../models/User";
-import * as bodyParser from "body-parser";
 import { EMAIL_EXISTS, USERNAME_EXISTS, USER_NOT_FOUND } from "../../../../util/errors";
 import { Profile } from "@prisma/client";
 import { Verification } from "../../../../models/Verification";
@@ -50,32 +45,8 @@ describe(" register user", () => {
 
     beforeAll(async () => {
         setEnv();
-        await PlatformTest.bootstrap(RestServer, {
-            mount: {
-                "/v1": [...Object.values(authControllers)],
-            },
-            acceptMimes: ["application/json"],
-            middlewares: [
-                {
-                    hook: "$beforeRoutesInit",
-                    use: bodyParser.json(),
-                },
-                {
-                    hook: "$beforeRoutesInit",
-                    use: bodyParser.urlencoded({ extended: true }),
-                },
-            ],
-        })();
+        await PlatformTest.bootstrap(RestServer)();
     });
-
-    // beforeAll(() => {
-    //     const authMiddleware = PlatformTest.get<UserAuthMiddleware>(UserAuthMiddleware);
-
-    //     jest.spyOn(authMiddleware, "use").mockImplementation(async (req, ctx) => {
-    //         console.log("inside spy method");
-    //         return;
-    //     });
-    // });
 
     beforeAll(() => {
         request = SuperTest(PlatformTest.callback());

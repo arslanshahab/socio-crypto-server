@@ -1,7 +1,5 @@
 import { PlatformTest } from "@tsed/common";
 import { RestServer } from "../../../../RestServer";
-import { AuthenticationController } from "../../../../controllers/v1/AuthenticationController";
-import * as bodyParser from "body-parser";
 import SuperTest from "supertest";
 import { handleBaseAssertions, createCampaignRoute } from "../../../test_helper";
 import { AdminService } from "../../../../services/AdminService";
@@ -17,9 +15,6 @@ import { Admin, Campaign, Org, VerificationApplication } from "@prisma/client";
 // import { WalletService } from "../../../../services/WalletService";
 // import { TatumService } from "../../../../services/TatumService";
 
-
-
-
 describe("Create campaign", () => {
     let request: SuperTest.SuperTest<SuperTest.Test>;
     let adminService: AdminService;
@@ -33,16 +28,15 @@ describe("Create campaign", () => {
     // let walletService: WalletService;
     // let tatumService: TatumService
     interface IBody {
-        isGlobal: boolean,
-        isRaffle: boolean,
-
+        isGlobal: boolean;
+        isRaffle: boolean;
     }
 
     const json: JSON = {
-        parse: (text) => { },
+        parse: (text) => {},
         stringify: (value) => "value",
-        [Symbol.toStringTag]: ""
-    }
+        [Symbol.toStringTag]: "",
+    };
 
     const body = ({ isGlobal, isRaffle }: IBody): CreateCampaignParams => {
         return {
@@ -80,19 +74,19 @@ describe("Create campaign", () => {
             },
             isGlobal: isGlobal,
             showUrl: true,
-        }
-    }
+        };
+    };
 
     const admin: Admin = {
         firebaseId: "firebaseId",
         id: "id",
         userId: "userId",
         orgId: "orgId",
-        name: 'name',
+        name: "name",
         createdAt: new Date(),
         updatedAt: new Date(),
-        twoFactorEnabled: true
-    }
+        twoFactorEnabled: true,
+    };
 
     const verificationApp = (isApproved: boolean): VerificationApplication => {
         return {
@@ -105,12 +99,9 @@ describe("Create campaign", () => {
             id: "id",
             level: "LEVEL1",
             profile: "profile",
-            adminId: "adminId"
-        }
-    }
-
-
-
+            adminId: "adminId",
+        };
+    };
 
     const campaign: Campaign & { org: Org } = {
         beginDate: new Date(),
@@ -152,9 +143,9 @@ describe("Create campaign", () => {
             createdAt: new Date(),
             updatedAt: new Date(),
             stripeId: "stripeId",
-            logo: "logo"
-        }
-    }
+            logo: "logo",
+        },
+    };
 
     // const org: Org = {
     //     id: "id",
@@ -191,23 +182,7 @@ describe("Create campaign", () => {
     // }
 
     beforeAll(async () => {
-        await PlatformTest.bootstrap(RestServer, {
-            mount: {
-                "/v1": [AuthenticationController],
-            },
-            cache: undefined,
-            acceptMimes: ["application/json"],
-            middlewares: [
-                {
-                    hook: "$beforeRoutesInit",
-                    use: bodyParser.json(),
-                },
-                {
-                    hook: "$beforeRoutesInit",
-                    use: bodyParser.urlencoded({ extended: true }),
-                },
-            ],
-        })();
+        await PlatformTest.bootstrap(RestServer)();
     });
 
     beforeAll(async () => {
@@ -239,7 +214,10 @@ describe("Create campaign", () => {
     it("should throw ADMIN_NOT_FOUND", async () => {
         const checkPermissionsSpy = jest.spyOn(adminService, "checkPermissions").mockResolvedValue({});
         const findAdminByFirebaseIdSpy = jest.spyOn(adminService, "findAdminByFirebaseId").mockResolvedValue(null);
-        const res = await request.post(createCampaignRoute).set("Authorization", "token").send(body({ isGlobal: false, isRaffle: false }));
+        const res = await request
+            .post(createCampaignRoute)
+            .set("Authorization", "token")
+            .send(body({ isGlobal: false, isRaffle: false }));
 
         handleBaseAssertions(res, 404, ADMIN_NOT_FOUND, checkPermissionsSpy, findAdminByFirebaseIdSpy);
     });
@@ -250,7 +228,10 @@ describe("Create campaign", () => {
         const findVerificationApplicationByAdminIdSpy = jest
             .spyOn(verificationApplicationService, "findVerificationApplicationByAdminId")
             .mockResolvedValue(null);
-        const res = await request.post(createCampaignRoute).set("Authorization", "token").send(body({ isGlobal: false, isRaffle: false }));
+        const res = await request
+            .post(createCampaignRoute)
+            .set("Authorization", "token")
+            .send(body({ isGlobal: false, isRaffle: false }));
 
         handleBaseAssertions(
             res,
@@ -272,7 +253,10 @@ describe("Create campaign", () => {
             .mockResolvedValue(verificationApp(true));
         const findGobalCampaignSpy = jest.spyOn(campaignService, "findGlobalCampaign").mockResolvedValue(campaign);
 
-        const res = await request.post(createCampaignRoute).set("Authorization", "token").send(body({ isGlobal: true, isRaffle: false }));
+        const res = await request
+            .post(createCampaignRoute)
+            .set("Authorization", "token")
+            .send(body({ isGlobal: true, isRaffle: false }));
         console.log(res.body);
 
         handleBaseAssertions(
@@ -339,6 +323,4 @@ describe("Create campaign", () => {
     //         findCampaingByNameSpy,
     //     );
     // })
-
-
 });

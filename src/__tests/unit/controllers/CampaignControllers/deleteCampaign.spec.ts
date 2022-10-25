@@ -1,7 +1,5 @@
 import { PlatformTest } from "@tsed/common";
 import { RestServer } from "../../../../RestServer";
-import { AuthenticationController } from "../../../../controllers/v1/AuthenticationController";
-import * as bodyParser from "body-parser";
 import SuperTest from "supertest";
 
 import { handleBaseAssertions, deleteCampaignRoute } from "../../../test_helper";
@@ -37,30 +35,14 @@ describe("Delete Campaign", () => {
     let campaignMediaService: CampaignMediaService;
 
     type BatchPayload = {
-        count: number
-    }
+        count: number;
+    };
 
     const payload: BatchPayload = {
-        count: 3
-    }
+        count: 3,
+    };
     beforeAll(async () => {
-        await PlatformTest.bootstrap(RestServer, {
-            mount: {
-                "/v1": [AuthenticationController],
-            },
-            cache: undefined,
-            acceptMimes: ["application/json"],
-            middlewares: [
-                {
-                    hook: "$beforeRoutesInit",
-                    use: bodyParser.json(),
-                },
-                {
-                    hook: "$beforeRoutesInit",
-                    use: bodyParser.urlencoded({ extended: true }),
-                },
-            ],
-        })();
+        await PlatformTest.bootstrap(RestServer)();
     });
 
     beforeAll(async () => {
@@ -118,7 +100,9 @@ describe("Delete Campaign", () => {
             .spyOn(dailyParticipantMetricService, "findDailyParticipantByCampaignId")
             .mockResolvedValue([]);
 
-        const deleteDailyParticipantMetricsSpy = jest.spyOn(dailyParticipantMetricService, "deleteDailyParticipantMetrics").mockResolvedValue(payload)
+        const deleteDailyParticipantMetricsSpy = jest
+            .spyOn(dailyParticipantMetricService, "deleteDailyParticipantMetrics")
+            .mockResolvedValue(payload);
 
         const findCampaignHourlyMetricsByCampaignIdSpy = jest
             .spyOn(hourlyCampaignMetricsService, "findCampaignHourlyMetricsByCampaignId")

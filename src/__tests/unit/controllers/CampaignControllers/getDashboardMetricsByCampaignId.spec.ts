@@ -1,14 +1,10 @@
 import { PlatformTest } from "@tsed/common";
 import { RestServer } from "../../../../RestServer";
-import { AuthenticationController } from "../../../../controllers/v1/AuthenticationController";
-import * as bodyParser from "body-parser";
 import SuperTest from "supertest";
-
 import { handleBaseAssertions } from "../../../test_helper";
 import { SessionService } from "../../../../services/SessionService";
 import { CampaignService } from "../../../../services/CampaignService";
 import { AdminService } from "../../../../services/AdminService";
-
 import { ParticipantService } from "../../../../services/ParticipantService";
 import { DailyParticipantMetricService } from "../../../../services/DailyParticipantMetricService";
 import { ADMIN_NOT_FOUND } from "../../../../util/errors";
@@ -43,23 +39,7 @@ describe("Dashboard Metrics By CampaignId", () => {
     };
 
     beforeAll(async () => {
-        await PlatformTest.bootstrap(RestServer, {
-            mount: {
-                "/v1": [AuthenticationController],
-            },
-            cache: undefined,
-            acceptMimes: ["application/json"],
-            middlewares: [
-                {
-                    hook: "$beforeRoutesInit",
-                    use: bodyParser.json(),
-                },
-                {
-                    hook: "$beforeRoutesInit",
-                    use: bodyParser.urlencoded({ extended: true }),
-                },
-            ],
-        })();
+        await PlatformTest.bootstrap(RestServer)();
     });
 
     beforeAll(async () => {
