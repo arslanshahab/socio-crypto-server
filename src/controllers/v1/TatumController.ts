@@ -73,7 +73,7 @@ class NetworkFeeBody {
 class TransferCryptoParams {
     @Required() public readonly amount: string;
     @Required() public readonly userId: string;
-    @Property() @Enum(CoiinTransferAction) public readonly action: CoiinTransferAction;
+    @Property() @Enum(CoiinTransferAction) public readonly action: CoiinTransferAction | undefined;
     @Required() public readonly symbol: string;
     @Required() public readonly network: string;
 }
