@@ -1,6 +1,6 @@
 import { BodyParams, Context, QueryParams } from "@tsed/common";
 import { Controller, Inject } from "@tsed/di";
-import { Get, Post, Property, Required, Returns } from "@tsed/schema";
+import { Enum, Get, Post, Property, Required, Returns } from "@tsed/schema";
 import { SuccessArrayResult, SuccessResult } from "../../util/entities";
 import { UserService } from "../../services/UserService";
 import { TatumService } from "../../services/TatumService";
@@ -73,7 +73,7 @@ class NetworkFeeBody {
 class TransferCryptoParams {
     @Required() public readonly amount: string;
     @Required() public readonly userId: string;
-    @Property() public readonly action: string;
+    @Property() @Enum(CoiinTransferAction) public readonly action: CoiinTransferAction;
     @Required() public readonly symbol: string;
     @Required() public readonly network: string;
 }
