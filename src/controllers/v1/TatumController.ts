@@ -1,6 +1,6 @@
 import { BodyParams, Context, QueryParams } from "@tsed/common";
 import { Controller, Inject } from "@tsed/di";
-import { Get, Post, Required, Returns } from "@tsed/schema";
+import { Get, Post, Property, Required, Returns } from "@tsed/schema";
 import { SuccessArrayResult, SuccessResult } from "../../util/entities";
 import { UserService } from "../../services/UserService";
 import { TatumService } from "../../services/TatumService";
@@ -10,32 +10,47 @@ import {
     SupportedCurrenciesResultModel,
     TransactionFeeResultModel,
     WithdrawResultModel,
+    UpdatedResultModel,
 } from "../../models/RestModels";
 import { NotFound } from "@tsed/exceptions";
 import { WalletService } from "../../services/WalletService";
 import {
     ADMIN_NOT_FOUND,
-    CURRENCY_NOT_FOUND,
     CUSTODIAL_ADDERSS_NOT_FOUND,
     CustomError,
     GLOBAL_WITHDRAW_LIMIT,
     INVALID_ADDRESS,
     KYC_LEVEL_2_NOT_APPROVED,
     NOT_ENOUGH_BALANCE_IN_ACCOUNT,
-    ORG_NOT_FOUND,
-    TOKEN_NOT_FOUND,
     USER_CURRENCY_NOT_FOUND,
     USER_NOT_FOUND,
+    CURRENCY_NOT_FOUND,
+    ORG_NOT_FOUND,
+    TOKEN_NOT_FOUND,
+    WALLET_NOT_FOUND,
 } from "../../util/errors";
 import { VerificationApplicationService } from "../../services/VerificationApplicationService";
 import { getWithdrawAddressForTatum, verifyAddress } from "../../util/tatumHelper";
-import { COIIN, RAIINMAKER_WITHDRAW, WITHDRAW_LIMIT, USER_WITHDRAW, ADMIN, MANAGER } from "../../util/constants";
+import {
+    COIIN,
+    RAIINMAKER_WITHDRAW,
+    WITHDRAW_LIMIT,
+    USER_WITHDRAW,
+    ADMIN,
+    MANAGER,
+    CoiinTransferAction,
+    TransferAction,
+    TransferStatus,
+    TransferType,
+} from "../../util/constants";
 import { VerificationService } from "../../services/VerificationService";
 import { getTokenValueInUSD } from "../../util/exchangeRate";
 import { OrganizationService } from "../../services/OrganizationService";
 import { CurrencyService } from "../../services/CurrencyService";
 import { AdminService } from "../../services/AdminService";
 import { MarketDataService } from "../../services/MarketDataService";
+import { TokenService } from "../../services/TokenService";
+import { TransferService } from "../../services/TransferService";
 
 class DepositAddressParams {
     @Required() public readonly symbol: string;
@@ -51,6 +66,14 @@ class WithdrawBody {
 }
 
 class NetworkFeeBody {
+    @Required() public readonly symbol: string;
+    @Required() public readonly network: string;
+}
+
+class TransferCryptoParams {
+    @Required() public readonly amount: string;
+    @Required() public readonly userId: string;
+    @Property() public readonly action: string;
     @Required() public readonly symbol: string;
     @Required() public readonly network: string;
 }
@@ -75,6 +98,11 @@ export class TatumController {
     private adminService: AdminService;
     @Inject()
     private marketDataService: MarketDataService;
+    @Inject()
+    private tokenService: TokenService;
+
+    @Inject()
+    private transferService: TransferService;
 
     @Get("/supported-currencies")
     @(Returns(200, SuccessArrayResult).Of(SupportedCurrenciesResultModel))
@@ -230,5 +258,89 @@ export class TatumController {
             { symbol: marketData.symbol, network: marketData.networkFee, withdrawFee: marketData.networkFee },
             TransactionFeeResultModel
         );
+    }
+
+    // For admin panel
+    @Post("/transfer-crypto")
+    @(Returns(200, SuccessResult).Of(UpdatedResultModel))
+    public async transferUserCoiin(@BodyParams() body: TransferCryptoParams, @Context() context: Context) {
+        const { orgId } = await this.adminService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));
+        const { amount, userId, action, symbol, network } = body;
+        const { ADD } = CoiinTransferAction;
+        const token = await this.tokenService.findTokenBySymbol({ symbol: symbol, network: network });
+        if (!token) throw new NotFound(`${TOKEN_NOT_FOUND} for ${symbol} and ${network}`);
+        const userWallet = await this.walletService.findWalletByUserId(userId);
+        if (!userWallet) throw new NotFound(WALLET_NOT_FOUND + " for userId");
+        const orgWallet = await this.walletService.findWalletByOrgId(orgId || "");
+        if (!orgWallet) throw new NotFound(WALLET_NOT_FOUND + " for orgId");
+        const userCurrency = await this.currencyService.findCurrencyByTokenAndWallet({
+            tokenId: token.id,
+            walletId: userWallet.id,
+        });
+        if (!userCurrency) throw new NotFound(CURRENCY_NOT_FOUND + " for user");
+        const orgCurrency = await this.currencyService.findCurrencyByTokenAndWallet({
+            tokenId: token.id,
+            walletId: orgWallet?.id!,
+        });
+        if (!orgCurrency) throw new NotFound(CURRENCY_NOT_FOUND + " for org");
+        const orgAvailableBalance = await this.tatumService.getAccountBalance(orgCurrency.tatumId);
+        const userAvailableBalance = await this.tatumService.getAccountBalance(userCurrency.tatumId);
+        let transferResponse;
+        if (action === ADD) {
+            if (orgAvailableBalance.availableBalance >= amount) {
+                await this.tatumService.transferFunds({
+                    senderAccountId: orgCurrency.tatumId,
+                    recipientAccountId: userCurrency.tatumId,
+                    amount,
+                    recipientNote: "Transfer amount to user",
+                });
+            }
+            await this.transferService.newReward({
+                action: TransferAction.TRANSFER,
+                amount,
+                status: TransferStatus.PENDING,
+                symbol,
+                type: TransferType.CREDIT,
+                walletId: userWallet.id,
+            });
+            await this.transferService.newReward({
+                action: TransferAction.TRANSFER,
+                amount,
+                status: TransferStatus.PENDING,
+                symbol,
+                type: TransferType.DEBIT,
+                walletId: orgWallet.id,
+            });
+        } else {
+            let transferCoiinStatus = TransferStatus.FAILED;
+            if (userAvailableBalance.availableBalance >= amount) {
+                transferResponse = await this.tatumService.transferFunds({
+                    senderAccountId: userCurrency.tatumId,
+                    recipientAccountId: orgCurrency.tatumId,
+                    amount,
+                    recipientNote: "Transfer amount to org",
+                });
+                transferCoiinStatus = TransferStatus.PENDING;
+            }
+            await this.transferService.newReward({
+                action: TransferAction.TRANSFER,
+                amount,
+                status: transferCoiinStatus,
+                symbol,
+                type: TransferType.CREDIT,
+                walletId: orgWallet.id,
+            });
+            await this.transferService.newReward({
+                action: TransferAction.TRANSFER,
+                amount,
+                status: transferCoiinStatus,
+                symbol,
+                type: TransferType.DEBIT,
+                walletId: userWallet.id,
+            });
+        }
+        if (!transferResponse && action !== ADD)
+            return new SuccessResult({ message: "Transfer cryptos failed" }, UpdatedResultModel);
+        else return new SuccessResult({ message: "Transfer cryptos successfully" }, UpdatedResultModel);
     }
 }

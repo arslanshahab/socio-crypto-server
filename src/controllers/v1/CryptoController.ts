@@ -1,5 +1,5 @@
 import { Controller, Inject } from "@tsed/di";
-import { Delete, Get, Post, Property, Required, Returns } from "@tsed/schema";
+import { Delete, Get, Post, Required, Returns } from "@tsed/schema";
 import { SuccessArrayResult, SuccessResult } from "../../util/entities";
 import { CryptoCurrencyService } from "../../services/CryptoCurrencyService";
 import { BodyParams, Context } from "@tsed/common";
@@ -7,27 +7,14 @@ import {
     BooleanResultModel,
     CoiinValueResultModel,
     CryptoCurrencyResultModel,
-    UpdatedResultModel,
     WalletCurrencyResultModel,
 } from "../../models/RestModels";
 import { OrganizationService } from "../../services/OrganizationService";
 import { BadRequest, NotFound } from "@tsed/exceptions";
-import { CURRENCY_NOT_FOUND, ORG_NOT_FOUND, TOKEN_NOT_FOUND, WALLET_NOT_FOUND } from "../../util/errors";
+import { ORG_NOT_FOUND } from "../../util/errors";
 import { WalletCurrencyService } from "../../services/WalletCurrencyService";
 import { AdminService } from "../../services/AdminService";
-import {
-    ADMIN,
-    CoiinTransferAction,
-    MANAGER,
-    TransferAction,
-    TransferStatus,
-    TransferType,
-} from "../../util/constants";
-import { TokenService } from "../../services/TokenService";
-import { CurrencyService } from "../../services/CurrencyService";
-import { TatumService } from "../../services/TatumService";
-import { WalletService } from "../../services/WalletService";
-import { TransferService } from "../../services/TransferService";
+import { ADMIN, MANAGER } from "../../util/constants";
 
 class CryptoToWalletParams {
     @Required() public readonly contractAddress: string;
@@ -35,14 +22,6 @@ class CryptoToWalletParams {
 
 class DeleteCryptoFromWalletParams {
     @Required() public readonly id: string;
-}
-
-class TransferCryptoParams {
-    @Required() public readonly amount: string;
-    @Required() public readonly userId: string;
-    @Property() public readonly action: string;
-    @Required() public readonly symbol: string;
-    @Required() public readonly network: string;
 }
 
 @Controller("/crypto")
@@ -55,16 +34,6 @@ export class CryptoController {
     private walletCurrencyService: WalletCurrencyService;
     @Inject()
     private adminService: AdminService;
-    @Inject()
-    private tokenService: TokenService;
-    @Inject()
-    private currencyService: CurrencyService;
-    @Inject()
-    private tatumService: TatumService;
-    @Inject()
-    private walletService: WalletService;
-    @Inject()
-    private transferService: TransferService;
 
     @Get("/supported-crypto")
     @(Returns(200, SuccessArrayResult).Of(CryptoCurrencyResultModel))
@@ -114,89 +83,5 @@ export class CryptoController {
     public async getCoiinValue(@Context() context: Context) {
         const coiin = process.env.COIIN_VALUE || "0.2";
         return new SuccessResult({ coiin }, CoiinValueResultModel);
-    }
-
-    // For admin panel
-    @Post("/transfer")
-    @(Returns(200, SuccessResult).Of(UpdatedResultModel))
-    public async transferUserCoiin(@BodyParams() body: TransferCryptoParams, @Context() context: Context) {
-        const { orgId } = await this.adminService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));
-        const { amount, userId, action, symbol, network } = body;
-        const { ADD } = CoiinTransferAction;
-        const token = await this.tokenService.findTokenBySymbol({ symbol: symbol, network: network });
-        if (!token) throw new NotFound(`${TOKEN_NOT_FOUND} for ${symbol} and ${network}`);
-        const userWallet = await this.walletService.findWalletByUserId(userId);
-        if (!userWallet) throw new NotFound(WALLET_NOT_FOUND + " for userId");
-        const orgWallet = await this.walletService.findWalletByOrgId(orgId || "");
-        if (!orgWallet) throw new NotFound(WALLET_NOT_FOUND + " for orgId");
-        const userCurrency = await this.currencyService.findCurrencyByTokenAndWallet({
-            tokenId: token.id,
-            walletId: userWallet.id,
-        });
-        if (!userCurrency) throw new NotFound(CURRENCY_NOT_FOUND + " for user");
-        const orgCurrency = await this.currencyService.findCurrencyByTokenAndWallet({
-            tokenId: token.id,
-            walletId: orgWallet?.id!,
-        });
-        if (!orgCurrency) throw new NotFound(CURRENCY_NOT_FOUND + " for org");
-        const orgAvailableBalance = await this.tatumService.getAccountBalance(orgCurrency.tatumId);
-        const userAvailableBalance = await this.tatumService.getAccountBalance(userCurrency.tatumId);
-        let transferResponse;
-        if (action === ADD) {
-            if (orgAvailableBalance.availableBalance >= amount) {
-                await this.tatumService.transferFunds({
-                    senderAccountId: orgCurrency.tatumId,
-                    recipientAccountId: userCurrency.tatumId,
-                    amount,
-                    recipientNote: "Transfer amount to user",
-                });
-            }
-            await this.transferService.newReward({
-                action: TransferAction.TRANSFER,
-                amount,
-                status: TransferStatus.PENDING,
-                symbol,
-                type: TransferType.CREDIT,
-                walletId: userWallet.id,
-            });
-            await this.transferService.newReward({
-                action: TransferAction.TRANSFER,
-                amount,
-                status: TransferStatus.PENDING,
-                symbol,
-                type: TransferType.DEBIT,
-                walletId: orgWallet.id,
-            });
-        } else {
-            let transferCoiinStatus = TransferStatus.FAILED;
-            if (userAvailableBalance.availableBalance >= amount) {
-                transferResponse = await this.tatumService.transferFunds({
-                    senderAccountId: userCurrency.tatumId,
-                    recipientAccountId: orgCurrency.tatumId,
-                    amount,
-                    recipientNote: "Transfer amount to org",
-                });
-                transferCoiinStatus = TransferStatus.PENDING;
-            }
-            await this.transferService.newReward({
-                action: TransferAction.TRANSFER,
-                amount,
-                status: transferCoiinStatus,
-                symbol,
-                type: TransferType.CREDIT,
-                walletId: orgWallet.id,
-            });
-            await this.transferService.newReward({
-                action: TransferAction.TRANSFER,
-                amount,
-                status: transferCoiinStatus,
-                symbol,
-                type: TransferType.DEBIT,
-                walletId: userWallet.id,
-            });
-        }
-        if (!transferResponse && action !== ADD)
-            return new SuccessResult({ message: "Transfer cryptos failed" }, UpdatedResultModel);
-        else return new SuccessResult({ message: "Transfer cryptos successfully" }, UpdatedResultModel);
     }
 }
