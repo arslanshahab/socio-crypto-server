@@ -12,12 +12,11 @@ import {
     WithdrawResultModel,
     UpdatedResultModel,
 } from "../../models/RestModels";
-import { NotFound } from "@tsed/exceptions";
+import { BadRequest, NotFound } from "@tsed/exceptions";
 import { WalletService } from "../../services/WalletService";
 import {
     ADMIN_NOT_FOUND,
     CUSTODIAL_ADDERSS_NOT_FOUND,
-    CustomError,
     GLOBAL_WITHDRAW_LIMIT,
     INVALID_ADDRESS,
     KYC_LEVEL_2_NOT_APPROVED,
@@ -28,6 +27,7 @@ import {
     ORG_NOT_FOUND,
     TOKEN_NOT_FOUND,
     WALLET_NOT_FOUND,
+    CURRENCY_NOT_SUPPORTED,
 } from "../../util/errors";
 import { VerificationApplicationService } from "../../services/VerificationApplicationService";
 import { getWithdrawAddressForTatum, verifyAddress } from "../../util/tatumHelper";
@@ -119,9 +119,9 @@ export class TatumController {
         const wallet = await this.walletService.findWalletByOrgId(orgId!);
         const { symbol, network } = query;
         const token = await this.tatumService.isCurrencySupported({ symbol, network });
-        if (!token) throw new Error("Currency not supported");
+        if (!token) throw new BadRequest(CURRENCY_NOT_SUPPORTED);
         const ledgerAccount = await this.tatumService.findOrCreateCurrency({ network, symbol, wallet: wallet! });
-        if (!ledgerAccount) throw new Error("Ledger account not found.");
+        if (!ledgerAccount) throw new BadRequest(CURRENCY_NOT_FOUND);
         const result = {
             symbol: token.symbol,
             address: ledgerAccount.depositAddress,
@@ -139,29 +139,29 @@ export class TatumController {
         const user = await this.userService.findUserByContext(context.get("user"), { wallet: true });
         if (!user) throw new NotFound(USER_NOT_FOUND);
         if (!(await this.verificationApplicationService.isLevel2Approved(user.id)))
-            throw new Error(KYC_LEVEL_2_NOT_APPROVED);
+            throw new BadRequest(KYC_LEVEL_2_NOT_APPROVED);
         let { symbol, network, address, amount, verificationToken } = body;
         address = getWithdrawAddressForTatum(symbol, address);
         if (symbol.toUpperCase() === COIIN)
-            throw new Error(
+            throw new BadRequest(
                 `${symbol} is not available to withdrawal until after the TGE, follow our social channels to learn more!`
             );
         const token = await this.tatumService.isCurrencySupported({ symbol, network });
-        if (!token) throw new Error(TOKEN_NOT_FOUND);
-        if (!verifyAddress(address, symbol, network)) throw new Error(INVALID_ADDRESS);
+        if (!token) throw new BadRequest(TOKEN_NOT_FOUND);
+        if (!verifyAddress(address, symbol, network)) throw new BadRequest(INVALID_ADDRESS);
         await this.verificationService.verifyToken({ verificationToken });
         const userCurrency = await this.currencyService.findCurrencyByTokenAndWallet({
             tokenId: token.id,
             walletId: user.wallet?.id!,
         });
-        if (!userCurrency) throw new CustomError(USER_CURRENCY_NOT_FOUND);
+        if (!userCurrency) throw new BadRequest(USER_CURRENCY_NOT_FOUND);
         const userAccountBalance = await this.tatumService.getAccountBalance(userCurrency.tatumId);
         if (parseFloat(userAccountBalance.availableBalance) < amount)
-            throw new CustomError(NOT_ENOUGH_BALANCE_IN_ACCOUNT);
-        if ((await getTokenValueInUSD(symbol, amount)) >= WITHDRAW_LIMIT) throw new CustomError(GLOBAL_WITHDRAW_LIMIT);
+            throw new BadRequest(NOT_ENOUGH_BALANCE_IN_ACCOUNT);
+        if ((await getTokenValueInUSD(symbol, amount)) >= WITHDRAW_LIMIT) throw new BadRequest(GLOBAL_WITHDRAW_LIMIT);
         const baseCurrency = await this.organizationService.getCurrencyForRaiinmaker(token);
         if (this.tatumService.isCustodialWallet({ symbol, network }) && !baseCurrency.depositAddress)
-            throw new CustomError(CUSTODIAL_ADDERSS_NOT_FOUND);
+            throw new BadRequest(CUSTODIAL_ADDERSS_NOT_FOUND);
         await this.tatumService.withdrawFundsToBlockchain({
             senderAccountId: userCurrency.tatumId,
             paymentId: `${USER_WITHDRAW}:${user.id}`,
@@ -192,24 +192,24 @@ export class TatumController {
         let { symbol, network, address, amount, verificationToken } = body;
         address = getWithdrawAddressForTatum(symbol, address);
         if (symbol.toUpperCase() === COIIN)
-            throw new Error(
+            throw new BadRequest(
                 `${symbol} is not available to withdrawal until after the TGE, follow our social channels to learn more!`
             );
         const token = await this.tatumService.isCurrencySupported({ symbol, network });
-        if (!token) throw new Error(TOKEN_NOT_FOUND);
-        if (!verifyAddress(address, symbol, network)) throw new Error(INVALID_ADDRESS);
+        if (!token) throw new BadRequest(TOKEN_NOT_FOUND);
+        if (!verifyAddress(address, symbol, network)) throw new BadRequest(INVALID_ADDRESS);
         await this.verificationService.verifyToken({ verificationToken });
         const currency = await this.currencyService.findCurrencyByTokenAndWallet({
             tokenId: token.id,
             walletId: org.wallet?.id!,
         });
-        if (!currency) throw new CustomError(CURRENCY_NOT_FOUND);
+        if (!currency) throw new BadRequest(CURRENCY_NOT_FOUND);
         const userAccountBalance = await this.tatumService.getAccountBalance(currency.tatumId);
         if (parseFloat(userAccountBalance.availableBalance) < amount)
-            throw new CustomError(NOT_ENOUGH_BALANCE_IN_ACCOUNT);
+            throw new BadRequest(NOT_ENOUGH_BALANCE_IN_ACCOUNT);
         const baseCurrency = await this.organizationService.getCurrencyForRaiinmaker(token);
         if (this.tatumService.isCustodialWallet({ symbol, network }) && !baseCurrency.depositAddress)
-            throw new CustomError(CUSTODIAL_ADDERSS_NOT_FOUND);
+            throw new BadRequest(CUSTODIAL_ADDERSS_NOT_FOUND);
         await this.tatumService.withdrawFundsToBlockchain({
             senderAccountId: currency.tatumId,
             paymentId: `${USER_WITHDRAW}:${admin.id}`,
