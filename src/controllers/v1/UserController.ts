@@ -15,7 +15,6 @@ import {
     ALREADY_PARTICIPATING,
     CAMPAIGN_CLOSED,
     CAMPAIGN_NOT_FOUND,
-    CURRENCY_NOT_FOUND,
     EMAIL_EXISTS,
     GLOBAL_CAMPAIGN_NOT_FOUND,
     INCORRECT_PASSWORD,
@@ -26,7 +25,6 @@ import {
     PARTICIPANT_NOT_FOUND,
     PROFILE_NOT_FOUND,
     SAME_OLD_AND_NEW_PASSWORD,
-    TOKEN_NOT_FOUND,
     USERNAME_EXISTS,
     USER_NOT_FOUND,
     WALLET_NOT_FOUND,
@@ -67,7 +65,6 @@ import {
     MANAGER,
     BSC,
     COIIN,
-    CoiinTransferAction,
     SharingRewardType,
     SHARING_REWARD_AMOUNT,
     SocialClientType,
@@ -83,9 +80,7 @@ import { ParticipantService } from "../../services/ParticipantService";
 import { TatumService } from "../../services/TatumService";
 import { HourlyCampaignMetricsService } from "../../services/HourlyCampaignMetricsService";
 import { SesClient } from "../../clients/ses";
-import { CurrencyService } from "../../services/CurrencyService";
 import { WalletService } from "../../services/WalletService";
-import { TokenService } from "../../services/TokenService";
 import { addDays, endOfISOWeek, startOfDay } from "date-fns";
 import { ProfileService } from "../../services/ProfileService";
 import { createPasswordHash } from "../../util";
@@ -121,12 +116,6 @@ class TransferHistoryVariablesModel extends PaginatedVariablesModel {
 }
 class UserQueryVariables {
     @Property() public readonly today: boolean;
-}
-
-class TransferUserCoiinParams {
-    @Property() public readonly coiin: string;
-    @Property() public readonly userId: string;
-    @Property() public readonly action: string;
 }
 
 class RewardUserForSharingParams {
@@ -206,11 +195,7 @@ export class UserController {
     @Inject()
     private hourlyCampaignMetricsService: HourlyCampaignMetricsService;
     @Inject()
-    private currencyService: CurrencyService;
-    @Inject()
     private walletService: WalletService;
-    @Inject()
-    private tokenService: TokenService;
     @Inject()
     private profileService: ProfileService;
     @Inject()
@@ -516,42 +501,6 @@ export class UserController {
         const user = await this.userService.findUserById(path.userId, ["profile", "social_post"]);
         if (!user) throw new NotFound(USER_NOT_FOUND);
         return new SuccessResult({ ...user, profile: ProfileResultModel.build(user?.profile!) }, SingleUserResultModel);
-    }
-
-    @Post("/transfer-user-coiin")
-    @(Returns(200, SuccessResult).Of(UpdatedResultModel))
-    public async transferUserCoiin(@BodyParams() body: TransferUserCoiinParams, @Context() context: Context) {
-        this.userService.checkPermissions({ hasRole: ["admin"] }, context.get("user"));
-        const admin = await this.adminService.findAdminByFirebaseId(context.get("user").id);
-        const { coiin, userId, action } = body;
-        const { ADD } = CoiinTransferAction;
-        const token = await this.tokenService.findTokenBySymbol({ symbol: COIIN, network: BSC });
-        if (!token) throw new NotFound(TOKEN_NOT_FOUND);
-        const userWallet = await this.walletService.findWalletByUserId(userId);
-        if (!userWallet) throw new NotFound(WALLET_NOT_FOUND + " for userId");
-        const orgWallet = await this.walletService.findWalletByOrgId(admin?.orgId!);
-        if (!orgWallet) throw new NotFound(WALLET_NOT_FOUND + " for orgId");
-        const userCurrency = await this.currencyService.findCurrencyByTokenAndWallet({
-            tokenId: token.id,
-            walletId: userWallet.id,
-        });
-        if (!userCurrency) throw new NotFound(CURRENCY_NOT_FOUND + " for user");
-        const orgCurrency = await this.currencyService.findCurrencyByTokenAndWallet({
-            tokenId: token.id,
-            walletId: orgWallet?.id!,
-        });
-        if (!orgCurrency) throw new NotFound(CURRENCY_NOT_FOUND + " for org");
-        try {
-            await this.tatumService.transferFunds({
-                senderAccountId: action === ADD ? orgCurrency?.tatumId : userCurrency?.tatumId,
-                recipientAccountId: action === ADD ? userCurrency?.tatumId : orgCurrency?.tatumId,
-                amount: coiin,
-                recipientNote: "Transfer Coiin",
-            });
-        } catch (error) {
-            throw new Error(error.message);
-        }
-        return new SuccessResult({ message: "Transfer funds successfully" }, UpdatedResultModel);
     }
 
     @Get("/weekly-rewards")

@@ -19,7 +19,7 @@ export const fixFailedCoiinTransfers = async (raiinmakerCoiinCurrency: Currency)
         where: {
             status: { in: ["FAILED", "PENDING"] },
             currency: COIIN,
-            action: { in: ["SHARING_REWARD", "PARTICIPATION_REWARD", "LOGIN_REWARD", "COIIN_PURCHASE"] },
+            action: { in: ["SHARING_REWARD", "PARTICIPATION_REWARD", "LOGIN_REWARD", "COIIN_PURCHASE", "TRANSFER"] },
         },
     });
     console.log("FAILED/PENDING COIIN TRANSFERS: ", failedCoiinTransfersCount);
@@ -32,7 +32,9 @@ export const fixFailedCoiinTransfers = async (raiinmakerCoiinCurrency: Currency)
                 where: {
                     status: { in: ["FAILED", "PENDING"] },
                     currency: COIIN,
-                    action: { in: ["SHARING_REWARD", "PARTICIPATION_REWARD", "LOGIN_REWARD", "COIIN_PURCHASE"] },
+                    action: {
+                        in: ["SHARING_REWARD", "PARTICIPATION_REWARD", "LOGIN_REWARD", "COIIN_PURCHASE", "TRANSFER"],
+                    },
                 },
                 take,
                 skip,
