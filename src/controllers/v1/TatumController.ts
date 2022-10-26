@@ -263,7 +263,7 @@ export class TatumController {
     // For admin panel
     @Post("/transfer-crypto")
     @(Returns(200, SuccessResult).Of(UpdatedResultModel))
-    public async transferUserCoiin(@BodyParams() body: TransferCryptoParams, @Context() context: Context) {
+    public async transferCrypto(@BodyParams() body: TransferCryptoParams, @Context() context: Context) {
         const { orgId } = await this.adminService.checkPermissions({ hasRole: [ADMIN] }, context.get("user"));
         const { amount, userId, action, symbol, network } = body;
         const { ADD } = CoiinTransferAction;
@@ -283,64 +283,34 @@ export class TatumController {
             walletId: orgWallet?.id!,
         });
         if (!orgCurrency) throw new NotFound(CURRENCY_NOT_FOUND + " for org");
-        const orgAvailableBalance = await this.tatumService.getAccountBalance(orgCurrency.tatumId);
-        const userAvailableBalance = await this.tatumService.getAccountBalance(userCurrency.tatumId);
-        let transferResponse;
-        if (action === ADD) {
-            if (orgAvailableBalance.availableBalance >= amount) {
-                await this.tatumService.transferFunds({
-                    senderAccountId: orgCurrency.tatumId,
-                    recipientAccountId: userCurrency.tatumId,
-                    amount,
-                    recipientNote: "Transfer amount to user",
-                });
-            }
-            await this.transferService.newReward({
-                action: TransferAction.TRANSFER,
+        const { availableBalance } = await this.tatumService.getAccountBalance(
+            action === ADD ? orgCurrency.tatumId : userCurrency.tatumId
+        );
+        availableBalance >= amount &&
+            (await this.tatumService.transferFunds({
+                senderAccountId: action === ADD ? orgCurrency.tatumId : userCurrency.tatumId,
+                recipientAccountId: action === ADD ? userCurrency.tatumId : orgCurrency.tatumId,
                 amount,
-                status: TransferStatus.PENDING,
-                symbol,
-                type: TransferType.CREDIT,
-                walletId: userWallet.id,
-            });
-            await this.transferService.newReward({
-                action: TransferAction.TRANSFER,
-                amount,
-                status: TransferStatus.PENDING,
-                symbol,
-                type: TransferType.DEBIT,
-                walletId: orgWallet.id,
-            });
-        } else {
-            let transferCoiinStatus = TransferStatus.FAILED;
-            if (userAvailableBalance.availableBalance >= amount) {
-                transferResponse = await this.tatumService.transferFunds({
-                    senderAccountId: userCurrency.tatumId,
-                    recipientAccountId: orgCurrency.tatumId,
-                    amount,
-                    recipientNote: "Transfer amount to org",
-                });
-                transferCoiinStatus = TransferStatus.PENDING;
-            }
-            await this.transferService.newReward({
-                action: TransferAction.TRANSFER,
-                amount,
-                status: transferCoiinStatus,
-                symbol,
-                type: TransferType.CREDIT,
-                walletId: orgWallet.id,
-            });
-            await this.transferService.newReward({
-                action: TransferAction.TRANSFER,
-                amount,
-                status: transferCoiinStatus,
-                symbol,
-                type: TransferType.DEBIT,
-                walletId: userWallet.id,
-            });
-        }
-        if (!transferResponse && action !== ADD)
+                recipientNote: "Transfer amount",
+            }));
+        await this.transferService.newReward({
+            action: TransferAction.TRANSFER,
+            amount,
+            status: availableBalance < amount && action !== ADD ? TransferStatus.FAILED : TransferStatus.PENDING,
+            symbol,
+            type: action === ADD ? TransferType.CREDIT : TransferType.CREDIT,
+            walletId: action === ADD ? userWallet.id : orgWallet.id,
+        });
+        await this.transferService.newReward({
+            action: TransferAction.TRANSFER,
+            amount,
+            status: availableBalance < amount && action !== ADD ? TransferStatus.FAILED : TransferStatus.PENDING,
+            symbol,
+            type: action === ADD ? TransferType.DEBIT : TransferType.DEBIT,
+            walletId: action === ADD ? orgWallet.id : userWallet.id,
+        });
+        if (availableBalance < amount && action !== ADD)
             return new SuccessResult({ message: "Transfer cryptos failed" }, UpdatedResultModel);
-        else return new SuccessResult({ message: "Transfer cryptos successfully" }, UpdatedResultModel);
+        return new SuccessResult({ message: "Transfer cryptos successfully" }, UpdatedResultModel);
     }
 }
