@@ -141,21 +141,20 @@ export class CryptoController {
         if (!orgCurrency) throw new NotFound(CURRENCY_NOT_FOUND + " for org");
         const orgAvailableBalance = await this.tatumService.getAccountBalance(orgCurrency.tatumId);
         const userAvailableBalance = await this.tatumService.getAccountBalance(userCurrency.tatumId);
+        let transferResponse;
         if (action === ADD) {
-            let coiinTransferStatus = TransferStatus.PENDING;
             if (orgAvailableBalance.availableBalance >= amount) {
                 await this.tatumService.transferFunds({
                     senderAccountId: orgCurrency.tatumId,
                     recipientAccountId: userCurrency.tatumId,
                     amount,
-                    recipientNote: "Transfer amount",
+                    recipientNote: "Transfer amount to user",
                 });
-                coiinTransferStatus = TransferStatus.SUCCEEDED;
             }
             await this.transferService.newReward({
                 action: TransferAction.TRANSFER,
                 amount,
-                status: coiinTransferStatus,
+                status: TransferStatus.PENDING,
                 symbol,
                 type: TransferType.CREDIT,
                 walletId: userWallet.id,
@@ -163,26 +162,26 @@ export class CryptoController {
             await this.transferService.newReward({
                 action: TransferAction.TRANSFER,
                 amount,
-                status: coiinTransferStatus,
+                status: TransferStatus.PENDING,
                 symbol,
                 type: TransferType.DEBIT,
                 walletId: orgWallet.id,
             });
         } else {
-            let coiinTransferStatus = TransferStatus.PENDING;
+            let transferCoiinStatus = TransferStatus.FAILED;
             if (userAvailableBalance.availableBalance >= amount) {
-                await this.tatumService.transferFunds({
+                transferResponse = await this.tatumService.transferFunds({
                     senderAccountId: userCurrency.tatumId,
                     recipientAccountId: orgCurrency.tatumId,
                     amount,
-                    recipientNote: "Transfer amount",
+                    recipientNote: "Transfer amount to org",
                 });
-                coiinTransferStatus = TransferStatus.SUCCEEDED;
+                transferCoiinStatus = TransferStatus.PENDING;
             }
             await this.transferService.newReward({
                 action: TransferAction.TRANSFER,
                 amount,
-                status: coiinTransferStatus,
+                status: transferCoiinStatus,
                 symbol,
                 type: TransferType.CREDIT,
                 walletId: orgWallet.id,
@@ -190,12 +189,14 @@ export class CryptoController {
             await this.transferService.newReward({
                 action: TransferAction.TRANSFER,
                 amount,
-                status: coiinTransferStatus,
+                status: transferCoiinStatus,
                 symbol,
                 type: TransferType.DEBIT,
                 walletId: userWallet.id,
             });
         }
-        return new SuccessResult({ message: "Transfer cryptos successfully" }, UpdatedResultModel);
+        if (!transferResponse && action !== ADD)
+            return new SuccessResult({ message: "Transfer cryptos failed" }, UpdatedResultModel);
+        else return new SuccessResult({ message: "Transfer cryptos successfully" }, UpdatedResultModel);
     }
 }
