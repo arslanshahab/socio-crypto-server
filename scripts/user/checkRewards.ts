@@ -10,7 +10,7 @@ import { Tiers } from "../../types";
 (async () => {
     try {
         const campaignId = "5ba1a41c-11f1-45a5-b73a-a50d20c6a0d1";
-        const username = "Yhant370";
+        const username = "gokturk6790@gmail.com";
         const user = await prisma.user.findFirst({
             where: {
                 OR: [{ email: username }, { profile: { username: { contains: username, mode: "insensitive" } } }],
