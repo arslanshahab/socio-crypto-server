@@ -590,9 +590,8 @@ export class CampaignController {
         let socialPostMetrics: SocialPostCountReturnTypes[] = [];
         let totalSocialPosts: number = 0;
         const filterByMonth = subMonths(new Date(), month);
-        const campaigns = await this.campaignService.findCampaigns(orgId);
-        console.log("query----------------------------------", query);
-        if (campaigns.length && campaignId === "-1") {
+        const campaignCount = await this.campaignService.getCampaignsCount(orgId!);
+        if (campaignCount && campaignId === "-1") {
             const campaign = await this.campaignService.getLastCampaign(orgId || "");
             if (!startDate && campaign) startDate = month ? filterByMonth.toString() : campaign.createdAt.toString();
             if (!endDate) endDate = new Date().toString();
@@ -620,6 +619,7 @@ export class CampaignController {
                 startDate: new Date(startDate),
                 endDate: new Date(endDate),
             });
+            const campaigns = await this.campaignService.findCampaigns(orgId);
             const campaignIds = campaigns.map((campaign) => campaign.id);
             totalParticipants = await this.participantService.findParticipantsCount(undefined, campaignIds);
             lastWeekParticipants = await this.participantService.getLastWeekParticipants(undefined, campaignIds);
@@ -641,7 +641,7 @@ export class CampaignController {
             ];
             totalSocialPosts = await this.socialPostService.findSocialPostCountForOrg(campaignIds);
         }
-        if (campaignId && campaignId !== "-1") {
+        if (campaignId && campaignId != "-1") {
             const campaign = await this.campaignService.findCampaignById(campaignId);
             if (!startDate && campaign) startDate = month ? filterByMonth.toString() : campaign.createdAt.toString();
             if (!endDate) endDate = new Date().toString();

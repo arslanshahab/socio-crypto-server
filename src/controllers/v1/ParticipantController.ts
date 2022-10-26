@@ -513,11 +513,12 @@ export class ParticipantController {
         const filterByMonth = subMonths(new Date(), month);
         let participants;
         let count = 0;
-        const campaigns = await this.campaignService.findCampaigns(orgId);
-        if (campaigns.length && campaignId === "-1") {
+        const campaignCount = await this.campaignService.getCampaignsCount(orgId!);
+        if (campaignCount && campaignId === "-1") {
             const campaign = await this.campaignService.getLastCampaign(orgId || "");
             if (!startDate && campaign) startDate = month ? filterByMonth.toString() : campaign.createdAt.toString();
             if (!endDate) endDate = new Date().toString();
+            const campaigns = await this.campaignService.findCampaigns(orgId);
             const campaignIds = await campaigns.map((campaign) => campaign.id);
             [participants, count] = await this.participantService.findParticipantsForOrg({
                 campaignIds,
