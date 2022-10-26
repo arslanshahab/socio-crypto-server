@@ -1,10 +1,3 @@
-// import { NotificationSettings } from "../models/NotificationSettings";
-// import { Org } from "../models/Org";
-// import { Profile } from "../models/Profile";
-// import { User } from "../models/User";
-// import { KycStatus } from "../util/constants";
-// import { Wallet } from "../models/Wallet";
-
 export const registerUserRoute = "/v1/auth/register-user";
 export const userLoginRoute = "/v1/auth/user-login ";
 export const resetPasswordRoute = "/v1/auth/reset-user-password ";
@@ -33,13 +26,14 @@ export const campaignPayoutIdRoute = "/v1/campaign/payout/:campaignId ";
 export const listSupportedCryptoRoute = "/v1/crypto/supported-crypto";
 export const addToWalletRoute = "/v1/crypto/add-to-wallet ";
 export const deleteFromWallet = "/v1/crypto/delete-from-wallet  ";
-export const fundingWalletRoute = " /v1/funding-wallet/  ";
+export const fundingWalletRoute = "/v1/funding-wallet";
 export const transactionHistoryRoute = "/v1/funding-wallet/transaction-history";
 export const kycRoute = "/v1/kyc/";
-export const kycDownloadRoute = " /v1/kyc/download";
-export const kycAdminUserIdRoute = "/v1/kyc/admin/:userId  ";
-export const kycVerifyLevelRoute = "/v1/kyc/verify/level1";
-export const updateKycRoute = "/v1/kyc/update-kyc ";
+export const kycDownloadRoute = "/v1/kyc/download";
+export const kycAdminUserIdRoute = "/v1/kyc/admin/:userId";
+export const kycVerifyLevelRoute1 = "/v1/kyc/verify/level1";
+export const kycVerifyLevelRoute2 = "/v1/kyc/verify/level2";
+export const updateKycRoute = "/v1/kyc/update-kyc";
 export const updateKycStatusRoute = "/v1/kyc/update-kyc-status";
 export const kycVerifyAdmin = "/v1/kyc/verify-admin ";
 export const kycWebhookRoute = "/v1/kyc/webhook";
@@ -137,217 +131,13 @@ export function handleBaseAssertions(
     // [res.body.status] is only defined when response is not successful - !200
     if (res.body.status) expect(res.body.status).toEqual(statusCode);
     // otherwise
-    else if ((res.status as Object).toString().startsWith("2")) expect(res.body.success).toBe(true);
+    if ((res.status as Object).toString().startsWith("2")) {
+        if ((res.body as Object).hasOwnProperty("success")) expect(res.body.success).toBe(true);
+        expect(res.status).toEqual(statusCode);
+    }
 
     if (message) expect(res.body.message).toContain(message);
     args.forEach((spy) => {
         expect(spy).toHaveBeenCalled();
     });
 }
-
-// helper models
-
-// export const testOrg = (): Org => {
-//     return {
-//         id: "id",
-//         name: "name",
-//         stripeId: "id",
-//         logo: "logo",
-//         campaigns: [],
-//         transfers: [],
-//         admins: [],
-//         createdAt: new Date(),
-//         updatedAt: new Date(),
-//         hourlyMetrics: [],
-//         asV1: () => org,
-//         updateBalance: async (currency, operation, amount) => {},
-//         getAvailableBalance: async (token) => 3,
-//         hasId: () => true,
-//         save: async (options) => org,
-//         remove: async (options) => org,
-//         softRemove: async (options) => org,
-//         recover: async (options) => org,
-//         reload: async () => {},
-//         wallet: testWallet,
-//     };
-// };
-
-// const user = (): User => {
-//     return {
-//         email: "email@raiinmaker.com",
-//         password: "password",
-//         referralCode: "code",
-//         active: true,
-//         createdAt: new Date(),
-//         updatedAt: new Date(),
-//         identityId: "identityId",
-//         id: "id",
-//         kycStatus: KycStatus.APPROVED,
-//         lastLogin: new Date(),
-//         deletedAt: new Date(),
-//         promoCode: "code",
-//         posts: [],
-//         kycStatusDetails: "details",
-//         campaigns: [],
-//         wallet: testWallet,
-//         addresses: [],
-//         socialLinks: [],
-//         identityVerification: [],
-//         factorLinks: [],
-//         twentyFourHourMetrics: [],
-//         profile: testProfile,
-//         notificationSettings: notificationSettings,
-//         dailyMetrics: [],
-//         admins: [],
-//         orders: [],
-//         nfts: [],
-//         nameToUpperCase: () => {},
-//         asV1: () => {},
-//         asV2: async () => {},
-//         hasKycApproved: async () => true,
-//         updateCoiinBalance: async (operation) => {},
-//         transferCoiinReward: async (data) => {},
-//         updateLastLogin: async () => testUser,
-//         updateEmailPassword: async (email, password) => testUser,
-//         updateEmail: async (email) => testUser,
-//         hasId: () => true,
-//         save: async (options) => testUser,
-//         remove: async (options) => testUser,
-//         softRemove: async (options) => testUser,
-//         recover: async (options) => testUser,
-//         reload: async () => {},
-//     };
-// };
-
-// export const testWallet: Wallet = {
-//     id: "id",
-//     walletCurrency: [],
-//     org: testOrg(),
-//     user: user(),
-//     addresses: [],
-//     currency: [],
-//     custodialAddress: [],
-//     escrows: [],
-//     transfers: [],
-//     createdAt: new Date(),
-//     updatedAt: new Date(),
-//     asV1: (pendingBalance: string) => testWallet,
-//     hasId: () => true,
-//     save: async (options) => testWallet,
-//     remove: async (options) => testWallet,
-//     softRemove: async (options) => testWallet,
-//     recover: async (options) => testWallet,
-//     reload: async () => {},
-// };
-
-// export const org: Org = {
-//     id: "id",
-//     name: "name",
-//     stripeId: "id",
-//     logo: "logo",
-//     campaigns: [],
-//     transfers: [],
-//     admins: [],
-//     createdAt: new Date(),
-//     updatedAt: new Date(),
-//     hourlyMetrics: [],
-//     asV1: () => org,
-//     updateBalance: async (currency, operation, amount) => {},
-//     getAvailableBalance: async (token) => 3,
-//     hasId: () => true,
-//     save: async (options) => org,
-//     remove: async (options) => org,
-//     softRemove: async (options) => org,
-//     recover: async (options) => org,
-//     reload: async () => {},
-//     wallet: testWallet,
-// };
-
-// export const testProfile: Profile = {
-//     id: "id",
-//     username: "username",
-//     recoveryCode: "recoveryCode",
-//     deviceToken: "deviceToken",
-//     email: "email",
-//     profilePicture: "profilePicture",
-//     ageRange: "ageRange",
-//     city: "city",
-//     state: "state",
-//     country: "country",
-//     createdAt: new Date(),
-//     deletedAt: new Date(),
-//     updatedAt: new Date(),
-//     platforms: [],
-//     interests: [],
-//     values: [],
-//     user: user(),
-//     isRecoveryCodeValid: (code) => true,
-//     hasId: () => true,
-//     save: async (options) => testProfile,
-//     remove: async (options) => testProfile,
-//     softRemove: async (options) => testProfile,
-//     recover: async (options) => testProfile,
-//     reload: async () => {},
-// };
-
-// export const notificationSettings: NotificationSettings = {
-//     id: "id",
-//     kyc: true,
-//     withdraw: true,
-//     campaignCreate: true,
-//     campaignUpdates: true,
-//     createdAt: new Date(),
-//     updatedAt: new Date(),
-//     user: user(),
-//     hasId: () => true,
-//     save: async (options) => notificationSettings,
-//     remove: async (options) => notificationSettings,
-//     softRemove: async (options) => notificationSettings,
-//     recover: async (options) => notificationSettings,
-//     reload: async () => {},
-// };
-
-// export const testUser: User = {
-//     email: "email@raiinmaker.com",
-//     password: "password",
-//     referralCode: "code",
-//     active: true,
-//     createdAt: new Date(),
-//     updatedAt: new Date(),
-//     identityId: "identityId",
-//     id: "id",
-//     kycStatus: KycStatus.APPROVED,
-//     lastLogin: new Date(),
-//     deletedAt: new Date(),
-//     promoCode: "code",
-//     posts: [],
-//     kycStatusDetails: "details",
-//     campaigns: [],
-//     wallet: testWallet,
-//     addresses: [],
-//     socialLinks: [],
-//     identityVerification: [],
-//     factorLinks: [],
-//     twentyFourHourMetrics: [],
-//     profile: testProfile,
-//     notificationSettings: notificationSettings,
-//     dailyMetrics: [],
-//     admins: [],
-//     orders: [],
-//     nfts: [],
-//     nameToUpperCase: () => {},
-//     asV1: () => {},
-//     asV2: async () => {},
-//     hasKycApproved: async () => true,
-//     updateCoiinBalance: async (operation) => {},
-//     transferCoiinReward: async (data) => {},
-//     updateLastLogin: async () => testUser,
-//     updateEmailPassword: async (email, password) => testUser,
-//     updateEmail: async (email) => testUser,
-//     hasId: () => true,
-//     save: async (options) => testUser,
-//     remove: async (options) => testUser,
-//     softRemove: async (options) => testUser,
-//     recover: async (options) => testUser,
-//     reload: async () => {},
-// };

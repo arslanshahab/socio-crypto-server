@@ -22,12 +22,12 @@ const userResultRelations = {
     notification_settings: true,
 };
 
-class KycStatusParms {
+export class KycStatusParms {
     @Required() public readonly userId: string;
     @Required() public readonly status: string;
 }
 
-class KycLevel1Params {
+export class KycLevel1Params {
     @Required() public readonly firstName: string;
     @Nullable(String) public readonly middleName: string;
     @Required() public readonly lastName: string;
@@ -42,7 +42,7 @@ class KycLevel1Params {
     @Nullable(String) public readonly ip: string;
 }
 
-class KycLevel2Params {
+export class KycLevel2Params {
     @Required() public readonly documentType: string;
     @Required() public readonly documentCountry: string;
     @Required() public readonly frontDocumentImage: string;
