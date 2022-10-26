@@ -4,7 +4,7 @@ import { SuccessArrayResult } from "../../util/entities";
 import { Context } from "@tsed/common";
 import { OrganizationService } from "../../services/OrganizationService";
 import { NotFound } from "@tsed/exceptions";
-import { ADMIN_NOT_FOUND, ORG_NOT_FOUND, WALLET_NOT_FOUND } from "../../util/errors";
+import { ORG_NOT_FOUND, WALLET_NOT_FOUND } from "../../util/errors";
 import { WalletService } from "../../services/WalletService";
 import { CurrencyService } from "../../services/CurrencyService";
 import { TatumService } from "../../services/TatumService";
@@ -12,6 +12,7 @@ import { formatFloat, getCryptoAssestImageUrl } from "../../util";
 import { AllCurrenciesResultModel, TransferResultModel } from "../../models/RestModels";
 import { TransferService } from "../../services/TransferService";
 import { AdminService } from "../../services/AdminService";
+import { ADMIN, MANAGER } from "src/util/constants.ts";
 
 @Controller("/funding-wallet")
 export class FundingWalletController {
@@ -31,9 +32,8 @@ export class FundingWalletController {
     @Get()
     @(Returns(200, SuccessArrayResult).Of(AllCurrenciesResultModel))
     public async getFundingWallet(@Context() context: Context) {
-        const admin = await this.adminService.findAdminByFirebaseId(context.get("user").id);
-        if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
-        const org = await this.organizationService.findOrgById(admin.orgId!);
+        const { orgId } = await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
+        const org = await this.organizationService.findOrgById(orgId!);
         if (!org) throw new NotFound(ORG_NOT_FOUND);
         const wallet = await this.walletService.findWalletByOrgId(org.id);
         if (!wallet) throw new NotFound(WALLET_NOT_FOUND);
@@ -55,9 +55,8 @@ export class FundingWalletController {
     @Get("/transaction-history")
     @(Returns(200, SuccessArrayResult).Of(Object))
     public async transactionHistory(@Context() context: Context) {
-        const admin = await this.adminService.findAdminByFirebaseId(context.get("user").id);
-        if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
-        const org = await this.organizationService.findOrgById(admin.orgId!);
+        const { orgId } = await this.adminService.checkPermissions({ hasRole: [ADMIN, MANAGER] }, context.get("user"));
+        const org = await this.organizationService.findOrgById(orgId!);
         if (!org) throw new NotFound(ORG_NOT_FOUND);
         const wallet = await this.walletService.findWalletByOrgId(org.id);
         if (!wallet) throw new NotFound(WALLET_NOT_FOUND);
