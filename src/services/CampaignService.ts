@@ -330,4 +330,8 @@ export class CampaignService {
     public async getLastCampaign(orgId: string) {
         return await prisma.campaign.findFirst({ where: { orgId }, orderBy: { createdAt: "asc" }, take: 1 });
     }
+
+    public async getCampaignsCount(orgId: string) {
+        return prisma.campaign.count({ where: { orgId } });
+    }
 }

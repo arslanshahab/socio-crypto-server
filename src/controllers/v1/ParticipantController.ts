@@ -513,8 +513,8 @@ export class ParticipantController {
         const filterByMonth = subMonths(new Date(), month);
         let participants;
         let count = 0;
-
-        if (campaignId === "-1") {
+        const campaignCount = await this.campaignService.getCampaignsCount(orgId!);
+        if (campaignCount && campaignId === "-1") {
             const campaign = await this.campaignService.getLastCampaign(orgId || "");
             if (!startDate && campaign) startDate = month ? filterByMonth.toString() : campaign.createdAt.toString();
             if (!endDate) endDate = new Date().toString();

@@ -590,7 +590,8 @@ export class CampaignController {
         let socialPostMetrics: SocialPostCountReturnTypes[] = [];
         let totalSocialPosts: number = 0;
         const filterByMonth = subMonths(new Date(), month);
-        if (campaignId === "-1") {
+        const campaignCount = await this.campaignService.getCampaignsCount(orgId!);
+        if (campaignCount && campaignId === "-1") {
             const campaign = await this.campaignService.getLastCampaign(orgId || "");
             if (!startDate && campaign) startDate = month ? filterByMonth.toString() : campaign.createdAt.toString();
             if (!endDate) endDate = new Date().toString();
