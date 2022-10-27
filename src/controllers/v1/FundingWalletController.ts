@@ -12,7 +12,7 @@ import { formatFloat, getCryptoAssestImageUrl } from "../../util";
 import { AllCurrenciesResultModel, TransferResultModel } from "../../models/RestModels";
 import { TransferService } from "../../services/TransferService";
 import { AdminService } from "../../services/AdminService";
-import { ADMIN, MANAGER } from "src/util/constants.ts";
+import { ADMIN, MANAGER } from "../../util/constants";
 
 @Controller("/funding-wallet")
 export class FundingWalletController {
