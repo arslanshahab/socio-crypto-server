@@ -3,11 +3,8 @@ import SuperTest from "supertest";
 import { RestServer } from "../../../../RestServer";
 
 import { handleBaseAssertions, resetAdminPasswordRoute } from "../../../test_helper";
-import * as authControllers from "../../../../controllers/v1/AuthenticationController";
 
 import { VerificationService } from "../../../../services/VerificationService";
-
-import * as bodyParser from "body-parser";
 
 import { Verification } from "../../../../models/Verification";
 import { FirebaseAdmin } from "../../../../clients/firebaseAdmin";
@@ -19,7 +16,7 @@ const setEnv = () => {
     process.env.NODE_ENV = "production";
 };
 
-describe(" register user", () => {
+describe(" register admin password", () => {
     let request: Supertest.SuperTest<SuperTest.Test>;
 
     let verificationService: VerificationService;
@@ -39,22 +36,7 @@ describe(" register user", () => {
 
     beforeAll(async () => {
         setEnv();
-        await PlatformTest.bootstrap(RestServer, {
-            mount: {
-                "/v1": [...Object.values(authControllers)],
-            },
-            acceptMimes: ["application/json"],
-            middlewares: [
-                {
-                    hook: "$beforeRoutesInit",
-                    use: bodyParser.json(),
-                },
-                {
-                    hook: "$beforeRoutesInit",
-                    use: bodyParser.urlencoded({ extended: true }),
-                },
-            ],
-        })();
+        await PlatformTest.bootstrap(RestServer)();
     });
 
     beforeAll(() => {

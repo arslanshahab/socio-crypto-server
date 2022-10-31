@@ -1,7 +1,5 @@
 import { PlatformTest } from "@tsed/common";
 import { RestServer } from "../../../../RestServer";
-import * as authControllers from "../../../../controllers/v1/AuthenticationController";
-import * as bodyParser from "body-parser";
 import SuperTest from "supertest";
 import { resetPasswordRoute, handleBaseAssertions } from "../../../test_helper";
 import { VerificationService } from "../../../../services/VerificationService";
@@ -10,7 +8,7 @@ import { Verification } from "../../../../models/Verification";
 import { USER_NOT_FOUND } from "../../../../util/errors";
 import { User } from "@prisma/client";
 
-describe("reset password", () => {
+describe("reset user password", () => {
     let request: any;
     let verificationService: VerificationService;
     let userService: UserService;
@@ -31,22 +29,7 @@ describe("reset password", () => {
     };
 
     beforeAll(async () => {
-        await PlatformTest.bootstrap(RestServer, {
-            mount: {
-                "/v1": [...Object.values(authControllers)],
-            },
-            acceptMimes: ["application/json"],
-            middlewares: [
-                {
-                    hook: "$beforeRoutesInit",
-                    use: bodyParser.json(),
-                },
-                {
-                    hook: "$beforeRoutesInit",
-                    use: bodyParser.urlencoded({ extended: true }),
-                },
-            ],
-        })();
+        await PlatformTest.bootstrap(RestServer)();
     });
 
     beforeAll(async () => {

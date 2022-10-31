@@ -72,20 +72,20 @@ import { VerificationApplicationService } from "../../services/VerificationAppli
 
 const validator = new Validator();
 
-class ListCampaignsVariablesModel extends PaginatedVariablesModel {
+export class ListCampaignsVariablesModel extends PaginatedVariablesModel {
     @Required() @Enum(CampaignState) public readonly state: CampaignState;
     @Property() @Enum(CampaignStatus, "ALL") public readonly status: CampaignStatus | "ALL" | undefined;
     @Property(Boolean) public readonly userRelated: boolean | undefined;
     @Property(String) public readonly auditStatus: CampaignAuditStatus | undefined;
 }
 
-class PendingCampaignsParams {
+export class PendingCampaignsParams {
     @Required() @Property(String) public readonly campaignId: string;
     @Required() @Property(String) public readonly status: CampaignStatus;
     @Property(String) public readonly reason: string;
 }
 
-class PayoutCampaignRewardsParams {
+export class PayoutCampaignRewardsParams {
     @Required() public readonly campaignId: string;
     @ArrayOf(String) public readonly rejected: string[] | undefined;
 }

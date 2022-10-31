@@ -1,7 +1,5 @@
 import { PlatformTest } from "@tsed/common";
 import { RestServer } from "../../../../RestServer";
-import { AuthenticationController } from "../../../../controllers/v1/AuthenticationController";
-import * as bodyParser from "body-parser";
 import SuperTest from "supertest";
 import { handleBaseAssertions, startAdminVerificationRoute } from "../../../test_helper";
 import { VerificationType } from "../../../../util/constants";
@@ -14,23 +12,7 @@ describe("start admin verification", () => {
     let request: SuperTest.SuperTest<SuperTest.Test>;
 
     beforeAll(async () => {
-        await PlatformTest.bootstrap(RestServer, {
-            mount: {
-                "/v1": [AuthenticationController],
-            },
-            cache: undefined,
-            acceptMimes: ["application/json"],
-            middlewares: [
-                {
-                    hook: "$beforeRoutesInit",
-                    use: bodyParser.json(),
-                },
-                {
-                    hook: "$beforeRoutesInit",
-                    use: bodyParser.urlencoded({ extended: true }),
-                },
-            ],
-        })();
+        await PlatformTest.bootstrap(RestServer)();
     });
 
     beforeAll(async () => {

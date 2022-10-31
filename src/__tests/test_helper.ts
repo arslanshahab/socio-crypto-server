@@ -10,7 +10,7 @@ export const updateAdminPasswordRoute = "/v1/auth/update-admin-password";
 export const resetAdminPasswordRoute = "/v1/auth/reset-password";
 export const startAdminVerificationRoute = "/v1/auth/start-admin-verification ";
 export const adminLoginRoute = "/v1/auth/admin-login";
-export const campaingRoute = "/v1/campaign/ ";
+export const campaignRoute = "/v1/campaign";
 export const getOneCampaignRoute = "/v1/campaign/one/:id ";
 export const currentCampaignTierRoute = "/v1/campaign/current-campaign-tier";
 export const campaignMetricsRoute = "/v1/campaign/campaign-metrics";
@@ -21,18 +21,19 @@ export const payoutCampaignRewardsRoute = "/v1/campaign/payout-campaign-rewards"
 export const generateCampaignAuditReportRoute = "/v1/campaign/generate-campaign-audit-report";
 export const dashboardCampaignMetricsIdRoute = " /v1/campaign/dashboard-metrics/:campaignId";
 export const campaignsLiteRoute = "/v1/campaign/campaigns-lite";
-export const campaignPending = "/v1/campaign/pending";
-export const campaignPayoutId = "/v1/campaign/payout/:campaignId ";
-export const supportedCryptoRoute = "/v1/crypto/supported-crypto";
+export const updatePendingCampaignStatusRoute = "/v1/campaign/pending";
+export const campaignPayoutIdRoute = "/v1/campaign/payout/:campaignId ";
+export const listSupportedCryptoRoute = "/v1/crypto/supported-crypto";
 export const addToWalletRoute = "/v1/crypto/add-to-wallet ";
 export const deleteFromWallet = "/v1/crypto/delete-from-wallet  ";
-export const fundingWalletRoute = " /v1/funding-wallet/  ";
+export const fundingWalletRoute = "/v1/funding-wallet";
 export const transactionHistoryRoute = "/v1/funding-wallet/transaction-history";
 export const kycRoute = "/v1/kyc/";
-export const kycDownloadRoute = " /v1/kyc/download";
-export const kycAdminUserIdRoute = "/v1/kyc/admin/:userId  ";
-export const kycVerifyLevelRoute = "/v1/kyc/verify/level1";
-export const updateKycRoute = "/v1/kyc/update-kyc ";
+export const kycDownloadRoute = "/v1/kyc/download";
+export const kycAdminUserIdRoute = "/v1/kyc/admin/:userId";
+export const kycVerifyLevelRoute1 = "/v1/kyc/verify/level1";
+export const kycVerifyLevelRoute2 = "/v1/kyc/verify/level2";
+export const updateKycRoute = "/v1/kyc/update-kyc";
 export const updateKycStatusRoute = "/v1/kyc/update-kyc-status";
 export const kycVerifyAdmin = "/v1/kyc/verify-admin ";
 export const kycWebhookRoute = "/v1/kyc/webhook";
@@ -130,7 +131,10 @@ export function handleBaseAssertions(
     // [res.body.status] is only defined when response is not successful - !200
     if (res.body.status) expect(res.body.status).toEqual(statusCode);
     // otherwise
-    else if ((res.status as Object).toString().startsWith("2")) expect(res.body.success).toBe(true);
+    if ((res.status as Object).toString().startsWith("2")) {
+        if ((res.body as Object).hasOwnProperty("success")) expect(res.body.success).toBe(true);
+        expect(res.status).toEqual(statusCode);
+    }
 
     if (message) expect(res.body.message).toContain(message);
     args.forEach((spy) => {

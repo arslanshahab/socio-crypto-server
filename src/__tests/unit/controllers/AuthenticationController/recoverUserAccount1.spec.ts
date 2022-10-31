@@ -1,7 +1,5 @@
 import { PlatformTest } from "@tsed/common";
 import { RestServer } from "../../../../RestServer";
-import * as authControllers from "../../../../controllers/v1/AuthenticationController";
-import * as bodyParser from "body-parser";
 import SuperTest from "supertest";
 import { handleBaseAssertions, recoverUserAccountStep1Route } from "../../../test_helper";
 
@@ -53,23 +51,7 @@ describe("recover user account step1", () => {
     };
 
     beforeAll(async () => {
-        await PlatformTest.bootstrap(RestServer, {
-            mount: {
-                "/v1": [...Object.values(authControllers)],
-            },
-            cache: undefined,
-            acceptMimes: ["application/json"],
-            middlewares: [
-                {
-                    hook: "$beforeRoutesInit",
-                    use: bodyParser.json(),
-                },
-                {
-                    hook: "$beforeRoutesInit",
-                    use: bodyParser.urlencoded({ extended: true }),
-                },
-            ],
-        })();
+        await PlatformTest.bootstrap(RestServer)();
     });
 
     beforeAll(async () => {

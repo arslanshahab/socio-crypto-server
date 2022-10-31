@@ -7,7 +7,7 @@ module.exports = {
     moduleFileExtensions: ["js", "json", "jsx", "ts", "tsx", "node"],
     testEnvironment: "node",
     setupFilesAfterEnv: ["./jest.setup.redis-mock.js"],
-    testRegex: "(src/__tests/unit/.*|(\\.|/)(test|spec))\\.[jt]sx?$",
+    testRegex: "(src/__tests/unit/.*|(\\.|/)(test|spec))\\.[j]sx?$",
     transform: {
         "\\.(ts)$": "ts-jest",
         // "^.+\\.(t|j)sx?$": ["@swc/jest"]
