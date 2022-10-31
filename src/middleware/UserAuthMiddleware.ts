@@ -20,7 +20,8 @@ export class UserAuthMiddleware {
             ctx.request.url.startsWith("/v1/participant/track-action") ||
             ctx.request.url.startsWith("/v1/organization/register") ||
             ctx.request.url.startsWith("/v1/kyc/webhook") ||
-            ctx.request.url.startsWith("/v1/payments");
+            ctx.request.url.startsWith("/v1/payments") ||
+            ctx.request.url.startsWith("/v1/myfii/webhook");
 
         const adminToken = req.headers.cookie?.split("session=")[1];
 

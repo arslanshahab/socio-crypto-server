@@ -336,3 +336,8 @@ export enum SupportedNetwork {
     DRAGON_CHAIN = "DRAGON_CHAIN",
     SOLANA = "SOLANA",
 }
+
+export enum FactorRequestStatus {
+    APPROVED = "APPROVED",
+    REJECTED = "REJECTED",
+}
