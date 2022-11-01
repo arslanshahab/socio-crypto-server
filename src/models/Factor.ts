@@ -1,34 +1,37 @@
-import uuid from "uuid/v4";
-import { Secrets } from "../util/secrets";
-import { signFactor, getDeterministicId } from "../util/crypto";
+import {
+    BaseEntity,
+    Entity,
+    PrimaryGeneratedColumn,
+    Column,
+    ManyToOne,
+    CreateDateColumn,
+    UpdateDateColumn,
+} from "typeorm";
+import { User } from "./User";
 
-export class Factor {
+@Entity()
+export class Factor extends BaseEntity {
+    @PrimaryGeneratedColumn("uuid")
     public id: string;
+
+    @Column({ nullable: true })
     public name: string;
-    public hashType: "sha256";
-    public providerId: string;
-    public signature: string;
-    public factor: string;
 
-    constructor(options: { id?: string; name: string; factor: string }) {
-        this.name = options.name;
-        this.id = options.id || uuid();
-        this.factor = options.factor;
-        this.providerId = getDeterministicId(Secrets.factorProviderPublicKey);
-    }
+    @Column({ nullable: false })
+    public type: string;
 
-    public sign() {
-        this.signature = Buffer.from(signFactor(this)).toString("base64");
-    }
+    @Column({ nullable: false })
+    public value: string;
 
-    asAtRestV1() {
-        return {
-            providerId: getDeterministicId(Secrets.factorProviderPublicKey),
-            id: this.id,
-            name: this.name,
-            factor: this.factor,
-            hashType: "sha256",
-            signature: this.signature,
-        };
-    }
+    @Column({ nullable: false })
+    public provider: string;
+
+    @ManyToOne((_type) => User, (user) => user.factors)
+    public user: User;
+
+    @CreateDateColumn()
+    public createdAt: Date;
+
+    @UpdateDateColumn()
+    public updatedAt: Date;
 }

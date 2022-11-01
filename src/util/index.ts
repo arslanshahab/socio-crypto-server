@@ -1,16 +1,6 @@
 import { getExchangeRateForCrypto } from "./exchangeRate";
-// eslint-disable-next-line
-// @ts-ignore
-import getImage from "cryptoicons-cdn";
 import { AcuantClient, AcuantApplication, Etr } from "../clients/acuant";
-import {
-    AcuantApplicationExtractedDetails,
-    JWTPayload,
-    KycStatus,
-    SupportedCountryType,
-    KycUser,
-    FactorGeneration,
-} from "types.d.ts";
+import { AcuantApplicationExtractedDetails, JWTPayload, KycStatus, SupportedCountryType, KycUser } from "types.d.ts";
 import { VerificationApplication } from "../models/VerificationApplication";
 import { S3Client } from "../clients/s3";
 import { User } from "../models/User";
@@ -21,7 +11,6 @@ import fetch from "node-fetch";
 import { serverBaseUrl } from "../config";
 import { Request, Response, NextFunction } from "express";
 import { BigNumber } from "bignumber.js";
-import { Factor } from "../models/Factor";
 import { CRYPTO_ICONS_MAP, CRYPTO_ICONS_BUCKET_URL, COIIN, SocialClientType } from "./constants";
 import { User as PrismaUser } from "@prisma/client";
 import { PlatformCache } from "@tsed/common";
@@ -137,55 +126,55 @@ export const deleteFactorFromKycData = (kycData: KycUser, factorName: string) =>
     return kycData;
 };
 
-export const createFactorsFromKycData = (kycData: KycUser, factorCreateRequests: FactorGeneration[] = []) => {
-    const factors: { [key: string]: Factor } = {};
-    for (let i = 0; i < factorCreateRequests.length; i++) {
-        const factorRequest = factorCreateRequests[i];
-        let factorData, factor, factorName;
-        switch (factorRequest.name) {
-            case "fullName":
-                factorData = `${kycData.firstName} ${kycData.lastName}`;
-                factorName = "MyFii-Verified-Name";
-                break;
-            case "firstName":
-                factorData = kycData.firstName;
-                factorName = "MyFii-Verified-FirstName";
-                break;
-            case "lastName":
-                factorData = kycData.lastName;
-                factorName = "MyFii-Verified-LastName";
-                break;
-            case "address":
-                factorData = kycData.address.address1;
-                if (kycData.address.address2) factorData += ` ${kycData.address.address2}`;
-                factorData += ` ${kycData.address.city} ${kycData.address.state} ${kycData.address.country} ${kycData.address.zip}`;
-                factorName = "MyFii-Verified-Address";
-                break;
-            case "city":
-                factorData = kycData.address.city;
-                factorName = "MyFii-Verified-City";
-                break;
-            case "state":
-                factorData = kycData.address.state;
-                factorName = "MyFii-Verified-State";
-                break;
-            case "country":
-                factorData = kycData.address.country;
-                factorName = "MyFii-Verified-Country";
-                break;
-            case "phone":
-                factorData = kycData.phoneNumber;
-                factorName = "MyFii-Verified-Phone";
-                break;
-        }
-        if (factorData && factorName) {
-            factor = new Factor({ id: factorRequest.id, name: factorName, factor: factorData });
-            factor.sign();
-            factors[factorRequest.name] = factor;
-        }
-    }
-    return factors;
-};
+// export const createFactorsFromKycData = (kycData: KycUser, factorCreateRequests: FactorGeneration[] = []) => {
+//     const factors: { [key: string]: any } = {};
+//     for (let i = 0; i < factorCreateRequests.length; i++) {
+//         const factorRequest = factorCreateRequests[i];
+//         let factorData, factor, factorName;
+//         switch (factorRequest.name) {
+//             case "fullName":
+//                 factorData = `${kycData.firstName} ${kycData.lastName}`;
+//                 factorName = "MyFii-Verified-Name";
+//                 break;
+//             case "firstName":
+//                 factorData = kycData.firstName;
+//                 factorName = "MyFii-Verified-FirstName";
+//                 break;
+//             case "lastName":
+//                 factorData = kycData.lastName;
+//                 factorName = "MyFii-Verified-LastName";
+//                 break;
+//             case "address":
+//                 factorData = kycData.address.address1;
+//                 if (kycData.address.address2) factorData += ` ${kycData.address.address2}`;
+//                 factorData += ` ${kycData.address.city} ${kycData.address.state} ${kycData.address.country} ${kycData.address.zip}`;
+//                 factorName = "MyFii-Verified-Address";
+//                 break;
+//             case "city":
+//                 factorData = kycData.address.city;
+//                 factorName = "MyFii-Verified-City";
+//                 break;
+//             case "state":
+//                 factorData = kycData.address.state;
+//                 factorName = "MyFii-Verified-State";
+//                 break;
+//             case "country":
+//                 factorData = kycData.address.country;
+//                 factorName = "MyFii-Verified-Country";
+//                 break;
+//             case "phone":
+//                 factorData = kycData.phoneNumber;
+//                 factorName = "MyFii-Verified-Phone";
+//                 break;
+//         }
+//         if (factorData && factorName) {
+//             factor = { id: factorRequest.id, name: factorName, factor: factorData };
+//             factor.sign();
+//             factors[factorRequest.name] = factor;
+//         }
+//     }
+//     return factors;
+// };
 
 export const generateRandomNonce = () => {
     const characters = "0123456789";
