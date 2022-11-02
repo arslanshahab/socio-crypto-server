@@ -511,6 +511,7 @@ model User {
   daily_participant_metric                     DailyParticipantMetric[]
   external_address                             ExternalAddress[]
   external_wallet                              ExternalWallet[]
+  factor                                       Factor[]                  @relation("factorTouser")
   factor_link_factor_link_userIdTouser         FactorLink[]              @relation("factor_link_userIdTouser")
   factor_link_factor_link_verificationIdTouser FactorLink[]              @relation("factor_link_verificationIdTouser")
   nft                                          Nft[]                     @relation("nftTouser")
@@ -523,7 +524,6 @@ model User {
   twenty_four_hour_metric                      TwentyFourHourMetric[]
   verification_application                     VerificationApplication[]
   wallet                                       Wallet?
-  weekly_reward                                WeeklyReward[]            @relation("userToweekly_reward")
   xoxoday_order                                XoxodayOrder[]
 
   @@index([identityId], map: "IDX_dea97e26c765a4cdb575957a14")
@@ -599,7 +599,6 @@ model WeeklyReward {
   rewardType    String   @db.VarChar
   createdAt     DateTime @default(now()) @db.Timestamp(6)
   updatedAt     DateTime @default(now()) @updatedAt @db.Timestamp(6)
-  user          User?    @relation("userToweekly_reward", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ba2529b7af668bbc111475272b1")
 
   @@map("weekly_reward")
 }
@@ -668,7 +667,7 @@ model Session {
 }
 
 model Nft {
-  nftId        String   @id(map: "PK_1156642d40093c2cf27efc405a5") @db.VarChar
+  nftId        String   @id(map: "PK_1156642d40093c2cf27efc405a5") @unique(map: "UQ_1156642d40093c2cf27efc405a5") @db.VarChar
   type         String   @db.VarChar
   name         String   @db.VarChar
   network      String   @db.VarChar
@@ -679,6 +678,32 @@ model Nft {
   user         User?    @relation("nftTouser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_2d4535b902eed75d0deb2d515be")
 
   @@map("nft")
+}
+
+model Factor {
+  id        String   @id(map: "PK_474c0e9d4ca1c181f178952187d") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String?  @db.VarChar
+  type      String   @db.VarChar
+  value     String   @db.VarChar
+  provider  String   @db.VarChar
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+  updatedAt DateTime @default(now()) @db.Timestamp(6)
+  userId    String?  @db.Uuid
+  user      User?    @relation("factorTouser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_aaed59026eead2ed464fa1b92b8")
+
+  @@map("factor")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
+model typeorm_metadata {
+  type     String  @db.VarChar
+  database String? @db.VarChar
+  schema   String? @db.VarChar
+  table    String? @db.VarChar
+  name     String? @db.VarChar
+  value    String?
+
+  @@ignore
 }
 
 enum verification_application_level_enum {

@@ -49,6 +49,7 @@ import { Campaign } from "./Campaign";
 import { trim } from "lodash";
 import { Nft } from "./Nft";
 import { TransferService } from "../services/TransferService";
+import { Factor } from "./Factor";
 
 const transferService = new TransferService();
 
@@ -134,6 +135,9 @@ export class User extends BaseEntity {
 
     @OneToMany((_type) => Admin, (admin) => admin.user)
     public nfts: Nft[];
+
+    @OneToMany((_type) => Factor, (factor) => factor.user)
+    public factors: Factor[];
 
     @BeforeInsert()
     @BeforeUpdate()

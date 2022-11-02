@@ -3,7 +3,6 @@ import sha3 from "js-sha3";
 import bs58 from "bs58";
 import * as secp256k1 from "secp256k1";
 import { Secrets } from "./secrets";
-import { Factor } from "../models/Factor";
 
 const IV_LENGTH = 16; // For AES, this is always 16
 
@@ -37,7 +36,7 @@ export const sha256Hash = (data: any): string => crypto.createHash("sha256").upd
 
 const sha3_256Hash = (data: any) => Buffer.from(sha3.sha3_256.update(data).digest());
 
-const orderedHashFactorList = (factor: Factor) => {
+const orderedHashFactorList = (factor: any) => {
     try {
         const hashBufList = [];
         hashBufList.push(Buffer.from(factor.id, "utf8"));
@@ -68,7 +67,7 @@ const orderedIdentityLoginRequestHashList = (identity: any) => {
     }
 };
 
-const hashFactorForSigning = (factor: Factor) => sha256Hash(Buffer.concat(orderedHashFactorList(factor)));
+const hashFactorForSigning = (factor: any) => sha256Hash(Buffer.concat(orderedHashFactorList(factor)));
 
 const hashIdentityLoginForSigning = (identity: any) =>
     sha256Hash(Buffer.concat(orderedIdentityLoginRequestHashList(identity)));
@@ -77,7 +76,7 @@ export const signIdentityLoginRequest = (identity: any, privateKey: string) =>
     secp256k1.ecdsaSign(Buffer.from(hashIdentityLoginForSigning(identity), "base64"), Buffer.from(privateKey))
         .signature;
 
-export const signFactor = (factor: Factor) =>
+export const signFactor = (factor: any) =>
     secp256k1.ecdsaSign(
         Buffer.from(hashFactorForSigning(factor), "base64"),
         Buffer.from(Secrets.factorProviderPrivateKey, "base64")

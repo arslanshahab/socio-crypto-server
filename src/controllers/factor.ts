@@ -1,7 +1,7 @@
 import { Response } from "express";
 import jwt from "jsonwebtoken";
 // import * as Dragonfactor from "@myfii-dev/dragonfactor-auth";
-import { asyncHandler, extractFactor, generateRandomNumber, createFactorsFromKycData, BN } from "../util";
+import { asyncHandler, extractFactor, generateRandomNumber, BN } from "../util";
 import { AuthRequest, FactorGeneration } from "types.d.ts";
 import { FactorLink } from "../models/FactorLink";
 import { Secrets } from "../util/secrets";
@@ -194,5 +194,5 @@ export const generateFactors = async (parent: any, args: { factors: FactorGenera
     if (!user) throw new Error("user not found");
     if (!(await user.hasKycApproved())) throw new Error("you can only generate factors with an approved KYC");
     const kycData = await S3Client.getUserObject(user.id);
-    return createFactorsFromKycData(kycData, factors);
+    return kycData;
 };
