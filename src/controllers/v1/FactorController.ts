@@ -39,9 +39,9 @@ export class WebhookBody {
     public readonly status: FactorRequestStatus;
 }
 
-@Controller("/myfii")
+@Controller("/factor")
 @(Returns(200, SuccessResult).Of(BooleanResultModel))
-export class MyfiiController {
+export class FactorController {
     @Inject()
     private userService: UserService;
     @Inject()
