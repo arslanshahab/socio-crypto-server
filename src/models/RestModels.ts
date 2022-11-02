@@ -967,3 +967,14 @@ export class TransactionFeeResultModel {
 export class CoiinValueResultModel {
     @Property() public readonly coiin: string;
 }
+
+export class FactorResultModel {
+    @Property() public readonly id: string;
+    @Property() public readonly name: string;
+    @Property() public readonly value: string;
+    @Property() public readonly type: string;
+    @Property() public readonly provider: string;
+    @Property() public readonly userId: string;
+    @Property(Date) public readonly createdAt: Date;
+    @Property(Date) public readonly updatedAt: Date;
+}

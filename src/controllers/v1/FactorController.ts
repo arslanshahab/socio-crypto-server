@@ -1,13 +1,14 @@
-import { BodyParams } from "@tsed/common";
+import { BodyParams, Context } from "@tsed/common";
 import { Controller, Inject } from "@tsed/di";
-import { Enum, Post, Required, CollectionOf, Returns } from "@tsed/schema";
+import { Enum, Post, Required, CollectionOf, Returns, Get } from "@tsed/schema";
 import { BooleanResultModel } from "src/models/RestModels.ts";
 import { FactorRequestStatus } from "../../util/constants";
-import { SuccessResult } from "../../util/entities";
+import { SuccessArrayResult, SuccessResult } from "../../util/entities";
 import { UserService } from "../../services/UserService";
 import { NotFound } from "@tsed/exceptions";
 import { USER_NOT_FOUND } from "src/util/errors.ts";
 import { FactorService } from "../../services/FactorService";
+import { FactorResultModel } from "../../models/RestModels";
 
 export class ApprovedFactor {
     @Required()
@@ -53,5 +54,13 @@ export class FactorController {
         if (!user) throw new NotFound(USER_NOT_FOUND);
         await this.factorService.createMany(body, user.id);
         return new SuccessResult({ success: true }, BooleanResultModel);
+    }
+
+    @Get("/all")
+    public async getFactors(@Context() context: Context) {
+        const user = await this.userService.findUserByContext(context.get("user"));
+        if (!user) throw new NotFound(USER_NOT_FOUND);
+        const factors = await this.factorService.findAllByUser(user.id);
+        return new SuccessArrayResult(factors, FactorResultModel);
     }
 }
