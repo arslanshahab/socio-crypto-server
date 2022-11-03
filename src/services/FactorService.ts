@@ -1,7 +1,7 @@
 import { Injectable } from "@tsed/di";
 import { WebhookBody } from "../controllers/v1/FactorController";
 import { prisma, readPrisma } from "../clients/prisma";
-import { MYFII } from "src/util/constants.ts";
+import { MYFII } from "../util/constants";
 
 @Injectable()
 export class FactorService {

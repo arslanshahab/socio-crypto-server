@@ -1,14 +1,13 @@
 import { BodyParams, Context } from "@tsed/common";
 import { Controller, Inject } from "@tsed/di";
 import { Enum, Post, Required, CollectionOf, Returns, Get } from "@tsed/schema";
-import { BooleanResultModel } from "src/models/RestModels.ts";
 import { FactorRequestStatus } from "../../util/constants";
 import { SuccessArrayResult, SuccessResult } from "../../util/entities";
 import { UserService } from "../../services/UserService";
 import { NotFound } from "@tsed/exceptions";
-import { USER_NOT_FOUND } from "src/util/errors.ts";
+import { USER_NOT_FOUND } from "../../util/errors";
 import { FactorService } from "../../services/FactorService";
-import { FactorResultModel } from "../../models/RestModels";
+import { FactorResultModel, BooleanResultModel } from "../../models/RestModels";
 
 export class ApprovedFactor {
     @Required()
