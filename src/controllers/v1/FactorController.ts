@@ -56,6 +56,7 @@ export class FactorController {
     }
 
     @Get("/all")
+    @(Returns(200, SuccessArrayResult).Of(FactorResultModel))
     public async getFactors(@Context() context: Context) {
         const user = await this.userService.findUserByContext(context.get("user"));
         if (!user) throw new NotFound(USER_NOT_FOUND);
