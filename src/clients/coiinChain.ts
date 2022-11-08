@@ -34,7 +34,7 @@ export class CoiinChain {
                 obj[key] = action[key];
                 return obj;
             }, {});
-        const actionHash = crypto.createHash("sha256").update(sortedAction.encode("utf-8"));
+        const sortedActionHash = crypto.createHash("sha256").update(sortedAction.encode("utf-8"));
 
         const sortedPayload = Object.keys(payload)
             .sort()
@@ -42,16 +42,19 @@ export class CoiinChain {
                 obj[key] = payload[key];
                 return obj;
             }, {});
-        const payloadHash = crypto.createHash("sha256").update(sortedPayload.encode("utf-8"));
-        const sig = this.xorBytes(this.xorBytes(payloadHash.digest(), identityHash.digest()), actionHash.digest());
+        const sortedPayloadHash = crypto.createHash("sha256").update(sortedPayload.encode("utf-8"));
 
-        const seal = {
-            full: String(payloadHash.digest("hex")),
+        const signature = this.xorBytes(
+            this.xorBytes(sortedPayloadHash.digest(), identityHash.digest()),
+            sortedActionHash.digest()
+        );
+
+        return {
+            full: String(sortedPayloadHash.digest("hex")),
             identity: String(identityHash.digest()),
-            action: String(actionHash.digest()),
-            signature: sig.toString("hex"),
+            action: String(sortedActionHash.digest()),
+            signature: signature.toString("hex"),
         };
-        return seal;
     }
 
     public static async logAction(data: any) {
