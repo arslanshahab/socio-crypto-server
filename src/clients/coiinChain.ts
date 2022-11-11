@@ -73,7 +73,8 @@ export class CoiinChain {
                 obj[key] = action[key];
                 return obj;
             }, {});
-        const sortedActionHash = crypto
+
+        const sortedActionHashHex = crypto
             .createHash("sha256")
             .update(Buffer.from(JSON.stringify(sortedAction), "utf-8"))
             .digest("hex");
@@ -84,20 +85,21 @@ export class CoiinChain {
                 obj[key] = rest[key];
                 return obj;
             }, {});
-        const sortedPayloadHash = crypto
+
+        const sortedPayloadHashHex = crypto
             .createHash("sha256")
             .update(Buffer.from(JSON.stringify(sortedPayload), "utf-8"))
             .digest("hex");
 
         const signature = this.xorBytes(
-            this.xorBytes(Buffer.from(sortedPayloadHash, "hex"), Buffer.from(identityHashHex, "hex")),
-            Buffer.from(sortedActionHash, "hex")
+            this.xorBytes(Buffer.from(sortedPayloadHashHex, "hex"), Buffer.from(identityHashHex, "hex")),
+            Buffer.from(sortedActionHashHex, "hex")
         );
 
         return {
-            full: sortedPayloadHash,
+            full: sortedPayloadHashHex,
             identity: identityHashHex,
-            action: sortedActionHash,
+            action: sortedActionHashHex,
             signature: signature.toString("hex"),
         };
     }
