@@ -21,7 +21,7 @@ export class TransactionService {
     }) {
         const { type, ...rest } = data;
         return await prisma.transaction.create({
-            data: { ...rest, chain: TransactionChainType.DRAGONCHAIN, transactionType: type },
+            data: { ...rest, chain: TransactionChainType.DRAGON_CHAIN, transactionType: type },
         });
     }
 

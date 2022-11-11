@@ -33,7 +33,7 @@ export class DragonChainService {
                     campaignId,
                     tag,
                     txId,
-                    chain: TransactionChainType.DRAGONCHAIN,
+                    chain: TransactionChainType.DRAGON_CHAIN,
                     transactionType: TransactionType.TRACK_ACTION,
                 },
             });
@@ -62,7 +62,7 @@ export class DragonChainService {
                     campaignId,
                     tag,
                     txId,
-                    chain: TransactionChainType.DRAGONCHAIN,
+                    chain: TransactionChainType.DRAGON_CHAIN,
                     transactionType: TransactionType.SOCIAL_SHARE,
                 },
             });
@@ -89,7 +89,7 @@ export class DragonChainService {
                     tag,
                     txId,
                     campaignId,
-                    chain: TransactionChainType.DRAGONCHAIN,
+                    chain: TransactionChainType.DRAGON_CHAIN,
                     transactionType: TransactionType.CAMPAIGN_AUDIT,
                 },
             });
@@ -154,7 +154,7 @@ export class DragonChainService {
                             txId,
                             transactionType: TransactionType.TRACK_ACTION,
                             socialType: dataItem.socialType,
-                            chain: TransactionChainType.DRAGONCHAIN,
+                            chain: TransactionChainType.DRAGON_CHAIN,
                         },
                     })
                 );
@@ -197,7 +197,7 @@ export class DragonChainService {
                             campaignId: dataItem.campaignId,
                             txId,
                             transactionType: TransactionType.CAMPAIGN_PAYOUT,
-                            chain: TransactionChainType.DRAGONCHAIN,
+                            chain: TransactionChainType.DRAGON_CHAIN,
                         },
                     })
                 );

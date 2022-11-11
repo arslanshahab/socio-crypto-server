@@ -57,6 +57,7 @@ import { DragonChainService } from "../../services/DragonChainService";
 import { prisma } from "../../clients/prisma";
 import { AdminService } from "../../services/AdminService";
 import { subMonths } from "date-fns";
+import { CoiinChainService } from "../../services/CoiinChainService";
 
 class CampaignParticipantsParams {
     @Property() public readonly campaignId: string;
@@ -82,7 +83,7 @@ class UserStatisticsParams {
 
 class ParticipantTrackingBodyParams {
     @Required() public readonly participantId: string;
-    @Required() public readonly action: ParticipantAction;
+    @Required() @Enum(ParticipantAction) public readonly action: ParticipantAction;
 }
 
 class UserDemographicParams {
@@ -120,6 +121,8 @@ export class ParticipantController {
     private dragonChainService: DragonChainService;
     @Inject()
     private adminService: AdminService;
+    @Inject()
+    private coiinChainService: CoiinChainService;
 
     @Get()
     @(Returns(200, SuccessResult).Of(ParticipantResultModelV2))
@@ -497,6 +500,12 @@ export class ParticipantController {
                 additiveParticipationScore: pointValue,
             });
             await this.dragonChainService.ledgerCampaignAction({
+                action,
+                participantId: participant.id,
+                campaignId: campaign.id,
+            });
+            await this.coiinChainService.ledgerCampaignAction({
+                userId: user.id,
                 action,
                 participantId: participant.id,
                 campaignId: campaign.id,
