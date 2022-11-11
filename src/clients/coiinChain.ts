@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { PRIOR_APP_SIGNATURE_KEY, TransactionType } from "../util/constants";
 import { RequestData, doFetch } from "../util/fetchRequest";
 import { getRedis } from "./redis";
+import sort from 'sort-keys-recursive';
 
 type Seal = {
     full: string;
@@ -40,57 +41,48 @@ export class CoiinChain {
 
     private static xorBytes(left: Buffer, right: Buffer) {
         const bytesArray = [];
-        for (const index in left) {
-            bytesArray.push(left[index] ^ right[index]);
+        for (let i = 0; i < left.length; i++) {
+            bytesArray.push(left[i] ^ right[i]);
         }
         return Buffer.from(bytesArray);
     }
 
     private static createSeal(payload: TransactionPayload) {
         const { seal, ...rest } = payload;
-        const identity = rest.identity;
-        const action = rest.action;
-        const identityHash = crypto.createHash("sha256").update(Buffer.from(identity.user_id, "utf-8"));
-        if (identity?.factors) {
-            for (const factor of identity.factors) {
+        
+        const options = {
+            ignoreArrayAtKeys: [ // Don't sort the Array at the specified keys, if any.
+                'publicKeys'
+
+                // This will need to include any keys for arrays in the action
+            ]
+        }
+        const restSorted = sort(rest, options);
+
+        const identityHash = crypto.createHash("sha256").update(Buffer.from(restSorted.identity.userId, "utf-8"));
+        if (restSorted.identity?.factors) {
+            for (const factor of restSorted.identity.factors) {
                 identityHash.update(Buffer.from(factor.factorId, "utf-8"));
                 identityHash.update(Buffer.from(factor.factor, "utf-8"));
                 identityHash.update(Buffer.from(factor.note, "utf-8"));
             }
         }
 
-        if (identity?.publicKeys) {
-            for (const key of identity.publicKeys) {
+        if (restSorted.identity?.publicKeys) {
+            for (const key of restSorted.identity.publicKeys) {
                 identityHash.update(Buffer.from(key, "utf-8"));
             }
         }
 
         const identityHashHex = identityHash.digest("hex");
-
-        const sortedAction = Object.keys(action)
-            .sort()
-            .reduce((obj: { [key: string]: any }, key) => {
-                obj[key] = action[key];
-                return obj;
-            }, {});
-
         const sortedActionHashHex = crypto
             .createHash("sha256")
-            .update(Buffer.from(JSON.stringify(sortedAction), "utf-8"))
+            .update(Buffer.from(JSON.stringify(restSorted.action), "utf-8"))
             .digest("hex");
-
-        const sortedPayload = Object.keys(rest)
-            .sort()
-            .reduce((obj: { [key: string]: any }, key) => {
-                obj[key] = rest[key];
-                return obj;
-            }, {});
-
         const sortedPayloadHashHex = crypto
             .createHash("sha256")
-            .update(Buffer.from(JSON.stringify(sortedPayload), "utf-8"))
+            .update(Buffer.from(JSON.stringify(restSorted), "utf-8"))
             .digest("hex");
-
         const signature = this.xorBytes(
             this.xorBytes(Buffer.from(sortedPayloadHashHex, "hex"), Buffer.from(identityHashHex, "hex")),
             Buffer.from(sortedActionHashHex, "hex")
