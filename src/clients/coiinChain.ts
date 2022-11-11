@@ -105,7 +105,8 @@ export class CoiinChain {
     }
 
     private static async createPayload(userId: string, action: Record<string, string>) {
-        // const priorBlockData = await this.getPriorAppSignature();
+        const priorBlockData = await this.getPriorAppSignature();
+        console.log(priorBlockData);
         const payload = {
             header: {
                 uaid: generateRandomUuid(),
@@ -164,7 +165,6 @@ export class CoiinChain {
         const { userId, tag, transactionType, payload } = data;
         const url = `${this.baseUrl}/api/v1/action`;
         const transactionPayload = await this.createPayload(userId, { ...payload, tag, transactionType });
-        console.log(transactionPayload);
         const requestData: RequestData = {
             method: "PUT",
             url,
