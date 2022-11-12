@@ -3,7 +3,7 @@ import crypto from "crypto";
 import { PRIOR_APP_SIGNATURE_KEY, TransactionType } from "../util/constants";
 import { RequestData, doFetch } from "../util/fetchRequest";
 import { getRedis } from "./redis";
-import sort from 'sort-keys-recursive';
+import sort from "sort-keys-recursive";
 
 type Seal = {
     full: string;
@@ -12,10 +12,16 @@ type Seal = {
     signature: string;
 };
 
+type Factor = {
+    factor: string;
+    factorId: string;
+    note: string;
+};
+
 type Identity = {
     version: string;
-    user_id: string;
-    factors: any[];
+    userId: string;
+    factors: Factor[];
     publicKeys: any[];
 };
 
@@ -49,14 +55,8 @@ export class CoiinChain {
 
     private static createSeal(payload: TransactionPayload) {
         const { seal, ...rest } = payload;
-        
-        const options = {
-            ignoreArrayAtKeys: [ // Don't sort the Array at the specified keys, if any.
-                'publicKeys'
 
-                // This will need to include any keys for arrays in the action
-            ]
-        }
+        const options = { ignoreArrayAtKeys: ["publicKeys"] };
         const restSorted = sort(rest, options);
 
         const identityHash = crypto.createHash("sha256").update(Buffer.from(restSorted.identity.userId, "utf-8"));
@@ -97,21 +97,21 @@ export class CoiinChain {
     }
 
     private static async createPayload(userId: string, action: Record<string, string>) {
-        const priorBlockData = await this.getPriorAppSignature();
-        console.log(priorBlockData);
+        // const priorBlockData = await this.getPriorAppSignature();
+        const { priorUa, ...restAction } = action;
         const payload = {
             header: {
                 uaid: generateRandomUuid(),
                 timestamp: String(new Date().getTime()),
                 app: this.appName,
-                priorUa: "",
+                priorUa: priorUa || "",
                 priorApp: "",
                 priorCoiin: "",
             },
-            action,
+            action: restAction,
             identity: {
                 version: "1",
-                user_id: userId,
+                userId: userId,
                 factors: [],
                 publicKeys: [],
             },
