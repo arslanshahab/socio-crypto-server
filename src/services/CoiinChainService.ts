@@ -41,7 +41,7 @@ type Identity = {
 };
 
 type Header = {
-    uaid: string;
+    uaId: string;
     timestamp: string;
     app: string;
     priorUa: string;
@@ -49,7 +49,8 @@ type Header = {
     priorCoiin: string;
 };
 interface TransactionPayload {
-    [key: string]: Header | Identity | Seal | Record<string, string>;
+    [key: string]: Header | Identity | Seal | Record<string, string> | string;
+    version: string;
     header: Header;
     action: Record<string, string>;
     identity: Identity;
@@ -136,7 +137,7 @@ export class CoiinChainService {
             signature = JSON.parse(signature);
             return {
                 priorApp: signature.app[0] || "",
-                priorCoiin: signature.app[0] || "",
+                priorCoiin: signature.coiin[0] || "",
             };
         }
         signature = await this.fetchPriorAppSignature();
@@ -144,7 +145,7 @@ export class CoiinChainService {
         await getRedis().expire(PRIOR_APP_SIGNATURE_KEY, 600);
         return {
             priorApp: signature.app[0] || "",
-            priorCoiin: signature.app[0] || "",
+            priorCoiin: signature.coiin[0] || "",
         };
     }
 
@@ -152,8 +153,9 @@ export class CoiinChainService {
         const { priorApp, priorCoiin } = await this.getPriorAppSignature();
         const priorUa = await this.getPriorUASignature();
         const payload = {
+            version: "1",
             header: {
-                uaid: generateRandomUuid(),
+                uaId: generateRandomUuid(),
                 timestamp: String(new Date().getTime()),
                 app: this.appName,
                 priorUa,
