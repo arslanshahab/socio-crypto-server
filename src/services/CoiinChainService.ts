@@ -1,5 +1,5 @@
 import { Injectable } from "@tsed/di";
-import { getActionKey, getSocialShareKey } from "../util/index";
+import { getActionKey, getSocialShareKey, getCampaignAuditKey } from "../util/index";
 import {
     TransactionType,
     ParticipantAction,
@@ -60,7 +60,8 @@ interface TransactionPayload {
 @Injectable()
 export class CoiinChainService {
     private appName = "RAIINMAKER";
-    private baseUrl = "https://savvy-equator-363816.uc.r.appspot.com";
+    private baseUrl =
+        process.env.NODE_ENV === "production" ? undefined : "https://savvy-equator-363816.uc.r.appspot.com";
 
     private xorBytes(left: Buffer, right: Buffer) {
         const bytesArray = [];
@@ -113,7 +114,7 @@ export class CoiinChainService {
         };
     }
 
-    public async getPriorUASignature() {
+    private async getPriorUASignature() {
         const lastCoiinTransaction = await prisma.transaction.findFirst({
             where: { chain: TransactionChainType.COIIN_CHAIN },
             orderBy: { createdAt: "desc" },
@@ -131,7 +132,7 @@ export class CoiinChainService {
         return await doFetch(requestData);
     }
 
-    public async getPriorAppSignature() {
+    private async getPriorAppSignature() {
         let signature = await getRedis().get(PRIOR_APP_SIGNATURE_KEY);
         if (signature) {
             signature = JSON.parse(signature);
@@ -180,12 +181,16 @@ export class CoiinChainService {
         return { ...payload, seal };
     }
 
-    public async logAction(data: {
+    private async logAction(data: {
         userId: string;
         tag: string;
         transactionType: TransactionType;
         payload: { [key: string]: any };
     }) {
+        if (!this.baseUrl) {
+            console.log("No environment available for coiin blockchain");
+            return null;
+        }
         const { userId, tag, transactionType, payload } = data;
         const url = `${this.baseUrl}/api/v1/action`;
         const transactionPayload = await this.createPayload(userId, { ...payload, tag, transactionType });
@@ -195,33 +200,34 @@ export class CoiinChainService {
             url,
             payload: transactionPayload,
         };
-        return await doFetch(requestData);
+        await doFetch(requestData);
+        return transactionPayload;
     }
 
     public async ledgerCampaignAction(data: { action: ParticipantAction } & User_Participant_Campaign) {
         try {
             const { action, participantId, campaignId, userId } = data;
             const tag = getActionKey(action, participantId);
-            const res = await this.logAction({
+            const response = await this.logAction({
                 userId,
                 tag,
                 transactionType: TransactionType.TRACK_ACTION,
                 payload: { action, participantId, campaignId },
             });
-            console.log(res);
+            const txId = response?.header.uaId!;
             await prisma.transaction.create({
                 data: {
                     action,
                     participantId,
                     campaignId,
                     tag,
-                    txId: "",
-                    signature: "",
+                    txId,
+                    signature: response?.seal.signature,
                     chain: TransactionChainType.COIIN_CHAIN,
                     transactionType: TransactionType.TRACK_ACTION,
                 },
             });
-            return res;
+            return txId;
         } catch (error) {
             console.log(error);
             return null;
@@ -232,14 +238,13 @@ export class CoiinChainService {
         try {
             const { socialType, participantId, campaignId, userId } = data;
             const tag = getSocialShareKey(socialType, participantId);
-            const res = await this.logAction({
+            const response = await this.logAction({
                 userId,
                 tag,
                 transactionType: TransactionType.SOCIAL_SHARE,
                 payload: { participantId, socialType },
             });
-            if (!res.ok) throw new Error(JSON.stringify(res));
-            const txId = res.response.transaction_id;
+            const txId = response?.header.uaId!;
             await prisma.transaction.create({
                 data: {
                     socialType,
@@ -247,8 +252,37 @@ export class CoiinChainService {
                     campaignId,
                     tag,
                     txId,
+                    signature: response?.seal.signature,
                     chain: TransactionChainType.COIIN_CHAIN,
                     transactionType: TransactionType.SOCIAL_SHARE,
+                },
+            });
+            return txId;
+        } catch (error) {
+            console.log(error);
+            return null;
+        }
+    }
+
+    public async ledgerCampaignAudit(data: { payload: Record<string, string | number>; campaignId: string }) {
+        try {
+            const { payload, campaignId } = data;
+            const tag = getCampaignAuditKey(campaignId);
+            const response = await this.logAction({
+                userId: "",
+                transactionType: TransactionType.CAMPAIGN_AUDIT,
+                tag,
+                payload: { ...payload, campaignId },
+            });
+            const txId = response?.header.uaId!;
+            await prisma.transaction.create({
+                data: {
+                    tag,
+                    txId: response?.header.uaId!,
+                    signature: response?.seal.signature,
+                    campaignId,
+                    chain: TransactionChainType.DRAGON_CHAIN,
+                    transactionType: TransactionType.CAMPAIGN_AUDIT,
                 },
             });
             return txId;

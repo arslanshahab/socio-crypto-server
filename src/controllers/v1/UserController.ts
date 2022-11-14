@@ -96,6 +96,7 @@ import { TransactionService } from "../../services/TransactionService";
 import { SessionService } from "../../services/SessionService";
 // import { generateRandomUuid } from "../../util/index";
 import { NftService } from "../../services/NftService";
+import { CoiinChainService } from "../../services/CoiinChainService";
 
 const userResultRelations = {
     profile: true,
@@ -212,6 +213,8 @@ export class UserController {
     private sessionService: SessionService;
     @Inject()
     private nftService: NftService;
+    @Inject()
+    private coiinChainService: CoiinChainService;
 
     @Get("/")
     @(Returns(200, SuccessResult).Of(Pagination).Nested(UserResultModel))
@@ -582,6 +585,12 @@ export class UserController {
             campaign: campaign,
         });
         await this.dragonChainService.ledgerSocialShare({ socialType, participantId, campaignId: campaign.id });
+        await this.coiinChainService.ledgerSocialShare({
+            userId: user.id,
+            socialType,
+            participantId,
+            campaignId: campaign.id,
+        });
         return new SuccessResult({ success: true }, BooleanResultModel);
     }
 

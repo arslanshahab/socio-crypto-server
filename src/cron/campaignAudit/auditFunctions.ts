@@ -14,8 +14,10 @@ import { Campaign, Prisma } from "@prisma/client";
 import { prisma, readPrisma } from "../../clients/prisma";
 import { Tiers, DragonchainCampaignPayoutLedgerPayload } from "types.d.ts";
 import { DragonChainService } from "../../services/DragonChainService";
+import { CoiinChainService } from "../../services/CoiinChainService";
 
 const dragonChainService = new DragonChainService();
+const coiinChainService = new CoiinChainService();
 
 // export const payoutRaffleCampaignRewards = async (
 //     entityManager: EntityManager,
@@ -195,6 +197,19 @@ export const payoutCryptoCampaignRewards = async (campaign: Campaign) => {
             },
         });
         await dragonChainService.ledgerCampaignAudit({
+            campaignId: campaign.id,
+            payload: {
+                totalPayout: totalPayout.toString(),
+                totalParticipants,
+                blacklistedParticipants,
+                totalParticipationScore: campaign.totalParticipationScore,
+                campaignName: campaign.name,
+                symbol: campaignToken.symbol,
+                network: campaignToken.network,
+                totalBudget: campaign.coiinTotal,
+            },
+        });
+        await coiinChainService.ledgerCampaignAudit({
             campaignId: campaign.id,
             payload: {
                 totalPayout: totalPayout.toString(),

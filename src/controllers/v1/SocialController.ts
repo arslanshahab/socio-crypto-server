@@ -37,6 +37,7 @@ import { BSC, COIIN, SocialClientType, SocialLinkType, ADMIN, MANAGER } from "..
 import { TatumService } from "../../services/TatumService";
 import { DragonChainService } from "../../services/DragonChainService";
 import { AdminService } from "../../services/AdminService";
+import { CoiinChainService } from "../../services/CoiinChainService";
 
 class RegisterSocialLinkResultModel {
     @Property() public readonly registerSocialLink: boolean;
@@ -121,6 +122,8 @@ export class SocialController {
     private dragonChainService: DragonChainService;
     @Inject()
     private adminService: AdminService;
+    @Inject()
+    private coiinChainService: CoiinChainService;
 
     @Get("/social-metrics")
     @(Returns(200, SuccessResult).Of(SocialMetricsResultModel))
@@ -210,6 +213,12 @@ export class SocialController {
         );
         const result = { id: socialPost.id };
         await this.dragonChainService.ledgerSocialShare({
+            socialType: SocialClientType.TWITTER,
+            participantId,
+            campaignId: campaign.id,
+        });
+        await this.coiinChainService.ledgerSocialShare({
+            userId: user.id,
             socialType: SocialClientType.TWITTER,
             participantId,
             campaignId: campaign.id,

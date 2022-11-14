@@ -7,9 +7,9 @@ import { calculateQualityTierMultiplier, BN } from "../util/index";
 import { Prisma } from "@prisma/client";
 import { PointValueTypes } from "types.d.ts";
 import { QualityScoreService } from "../services/QualityScoreService";
-// import { HourlyCampaignMetricsService } from "../services/HourlyCampaignMetricsService";
 import { DailyParticipantMetricService } from "../services/DailyParticipantMetricService";
 import { DragonChainService } from "../services/DragonChainService";
+import { CoiinChainService } from "../services/CoiinChainService";
 
 const { RATE_LIMIT_MAX = "3" } = process.env;
 
@@ -22,8 +22,8 @@ export class ParticipantClickTracking {
     private dragonChainService: DragonChainService;
     @Inject()
     private qualityScoreService: QualityScoreService;
-    // @Inject()
-    // private hourlyCampaignMetricService: HourlyCampaignMetricsService;
+    @Inject()
+    private coiinChainService: CoiinChainService;
     @Inject()
     private dailyParticipantMetricService: DailyParticipantMetricService;
 
@@ -77,6 +77,12 @@ export class ParticipantClickTracking {
                 additiveParticipationScore: pointValue,
             });
             await this.dragonChainService.ledgerCampaignAction({
+                action,
+                participantId: participant.id,
+                campaignId: participant.campaignId,
+            });
+            await this.coiinChainService.ledgerCampaignAction({
+                userId: user.id,
                 action,
                 participantId: participant.id,
                 campaignId: participant.campaignId,
