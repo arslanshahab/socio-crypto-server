@@ -42,7 +42,9 @@ export class TransactionService {
             }),
             readPrisma.transaction.count({ where: { participantId: { in: participationIds } } }),
         ]);
-        const transactionList = await this.dragonChainService.getBulkTransaction(results.map((item) => item.txId));
+        const transactionList = await this.dragonChainService.getBulkTransaction(
+            results.filter((item) => item.chain === TransactionChainType.DRAGON_CHAIN).map((item) => item.txId)
+        );
         if (!transactionList) throw new Error("There was an error fetching from dragonchain");
         const list = results.map((item, index) => {
             const tx = transactionList[index];

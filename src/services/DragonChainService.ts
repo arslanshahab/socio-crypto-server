@@ -207,7 +207,7 @@ export class DragonChainService {
 
     public async getTransaction(transactionId: string): Promise<L1DragonchainTransactionFull> {
         const res = await Dragonchain.client.getTransaction({ transactionId });
-        if (!res.ok) throw new Error("Failed to ledger account recovery to the Dragonchain");
+        if (!res.ok) throw new Error("Failed to fetch transaction from dragonchain");
         return res.response;
     }
 
