@@ -614,18 +614,20 @@ export interface AdminTypes {
     name: string;
 }
 
-export interface DragonchainCampaignActionLedgerPayload {
+export interface BulkCampaignActionPayload {
     action: ParticipantAction;
     participantId: string;
+    userId: string;
     campaignId: string;
     socialType?: SocialClientType;
-    payload: any;
+    payload: Record<string, string | number>;
 }
 
-export interface DragonchainCampaignPayoutLedgerPayload {
+export interface BulkCampaignPayoutPayload {
+    userId: string;
     participantId?: string;
     campaignId: string;
-    payload: any;
+    payload: Record<string, string | number>;
 }
 
 export type AggregatedCampaignMetricType = {

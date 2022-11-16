@@ -2,12 +2,7 @@ import { Injectable } from "@tsed/di";
 import { getActionKey, getCampaignAuditKey, getAccountRecoveryAttemptKey, getSocialShareKey } from "../util/index";
 import { Dragonchain } from "../clients/dragonchain";
 import { TransactionType, ParticipantAction, SocialClientType, TransactionChainType } from "../util/constants";
-import {
-    DragonchainCampaignActionLedgerPayload,
-    DragonchainCampaignPayoutLedgerPayload,
-    NftFileParams,
-    NftMintingParams,
-} from "types.d.ts";
+import { BulkCampaignActionPayload, BulkCampaignPayoutPayload, NftFileParams, NftMintingParams } from "types.d.ts";
 import { BulkTransactionPayload } from "dragonchain-sdk";
 import { Transaction, PrismaPromise } from "@prisma/client";
 import { prisma } from "../clients/prisma";
@@ -122,7 +117,7 @@ export class DragonChainService {
         }
     }
 
-    public async ledgerBulkCampaignAction(data: DragonchainCampaignActionLedgerPayload[]) {
+    public async ledgerBulkCampaignAction(data: BulkCampaignActionPayload[]) {
         try {
             const bulkPayload: BulkTransactionPayload[] = [];
             const prismaTransactions: PrismaPromise<Transaction>[] = [];
@@ -167,7 +162,7 @@ export class DragonChainService {
         }
     }
 
-    public async ledgerBulkCampaignPayout(data: DragonchainCampaignPayoutLedgerPayload[]) {
+    public async ledgerBulkCampaignPayout(data: BulkCampaignPayoutPayload[]) {
         try {
             const bulkPayload: BulkTransactionPayload[] = [];
             const prismaTransactions: PrismaPromise<Transaction>[] = [];

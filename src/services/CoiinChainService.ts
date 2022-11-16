@@ -13,6 +13,9 @@ import crypto from "crypto";
 import { RequestData, doFetch } from "../util/fetchRequest";
 import { getRedis } from "../clients/redis";
 import sort from "sort-keys-recursive";
+import { BulkCampaignActionPayload, BulkCampaignPayoutPayload } from "../../types.d";
+import { PrismaPromise } from "@prisma/client";
+import { Transaction } from "@prisma/client";
 
 interface User_Participant_Campaign {
     userId: string;
@@ -194,7 +197,6 @@ export class CoiinChainService {
         const { userId, tag, transactionType, payload } = data;
         const url = `${this.baseUrl}/api/v1/action`;
         const transactionPayload = await this.createPayload(userId, { ...payload, tag, transactionType });
-        console.log(transactionPayload);
         const requestData: RequestData = {
             method: "PUT",
             url,
@@ -286,6 +288,90 @@ export class CoiinChainService {
                 },
             });
             return txId;
+        } catch (error) {
+            console.log(error);
+            return null;
+        }
+    }
+
+    public async ledgerBulkCampaignAction(data: BulkCampaignActionPayload[]) {
+        try {
+            const promiseArray = [];
+            const prismaTransactions: PrismaPromise<Transaction>[] = [];
+            for (const item of data) {
+                const { action, participantId, campaignId, payload, socialType, userId } = item;
+                const tag = getCampaignAuditKey(campaignId, participantId);
+                promiseArray.push(
+                    this.logAction({
+                        userId,
+                        transactionType: TransactionType.TRACK_ACTION,
+                        tag,
+                        payload: { ...payload, participantId, campaignId, action, socialType },
+                    })
+                );
+            }
+            const responses = await Promise.all(promiseArray);
+            for (let index = 0; index < responses.length; index++) {
+                const dataItem = responses[index];
+                const txId = dataItem?.header.uaId!;
+                prismaTransactions.push(
+                    prisma.transaction.create({
+                        data: {
+                            participantId: dataItem?.action.participantId,
+                            action: dataItem?.action.action,
+                            tag: dataItem?.action.tag!,
+                            campaignId: dataItem?.action.campaignId,
+                            txId,
+                            transactionType: TransactionType.TRACK_ACTION,
+                            socialType: dataItem?.action.socialType,
+                            chain: TransactionChainType.COIIN_CHAIN,
+                        },
+                    })
+                );
+            }
+            await prisma.$transaction(prismaTransactions);
+            return responses;
+        } catch (error) {
+            console.log(error);
+            return null;
+        }
+    }
+
+    public async ledgerBulkCampaignPayout(data: BulkCampaignPayoutPayload[]) {
+        try {
+            const promiseArray = [];
+            const prismaTransactions: PrismaPromise<Transaction>[] = [];
+            for (const item of data) {
+                const { participantId, campaignId, payload, userId } = item;
+                const tag = getCampaignAuditKey(campaignId, participantId);
+                promiseArray.push(
+                    this.logAction({
+                        userId,
+                        transactionType: TransactionType.CAMPAIGN_AUDIT,
+                        tag,
+                        payload: { ...payload, participantId, campaignId },
+                    })
+                );
+            }
+            const responses = await Promise.all(promiseArray);
+            for (let index = 0; index < responses.length; index++) {
+                const dataItem = responses[index];
+                const txId = dataItem?.header.uaId!;
+                prismaTransactions.push(
+                    prisma.transaction.create({
+                        data: {
+                            participantId: dataItem?.action.participantId,
+                            tag: dataItem?.action.tag!,
+                            campaignId: dataItem?.action.campaignId,
+                            txId,
+                            transactionType: TransactionType.CAMPAIGN_PAYOUT,
+                            chain: TransactionChainType.COIIN_CHAIN,
+                        },
+                    })
+                );
+            }
+            await prisma.$transaction(prismaTransactions);
+            return responses;
         } catch (error) {
             console.log(error);
             return null;
