@@ -7,7 +7,7 @@ import * as dotenv from "dotenv";
 import { SocialPost, Prisma, PrismaPromise } from "@prisma/client";
 import { prisma, readPrisma } from "../../clients/prisma";
 import { CampaignStatus, CampaignAuditStatus, SocialClientType } from "../../util/constants";
-import { DragonchainCampaignActionLedgerPayload, PointValueTypes } from "types.d.ts";
+import { BulkCampaignActionPayload, PointValueTypes } from "types.d.ts";
 import { QualityScoreService } from "../../services/QualityScoreService";
 import { DailyParticipantMetricService } from "../../services/DailyParticipantMetricService";
 import { ParticipantAction } from "../../util/constants";
@@ -16,6 +16,7 @@ import { DragonChainService } from "../../services/DragonChainService";
 import { Dragonchain } from "../../clients/dragonchain";
 import { SocialLinkService } from "../../services/SocialLinkService";
 import { SlackClient } from "../../clients/slack";
+import { CoiinChainService } from "../../services/CoiinChainService";
 
 dotenv.config();
 const app = new Application();
@@ -23,6 +24,7 @@ const qualityScoreService = new QualityScoreService();
 const dailyParticipantMetricService = new DailyParticipantMetricService();
 // const hourlyCampaignMetricService = new HourlyCampaignMetricsService();
 const dragonChainService = new DragonChainService();
+const coiinChainService = new CoiinChainService();
 const socialLinkService = new SocialLinkService();
 
 const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: SocialPost) => {
@@ -161,7 +163,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                 let fulfilledTwitterPromises = 0;
                 // let fulfilledTiktokPromises = 0;
                 const prismaTransactions: PrismaPromise<SocialPost>[] = [];
-                const dragonchainTransactionList: DragonchainCampaignActionLedgerPayload[] = [];
+                const dragonchainTransactionList: BulkCampaignActionPayload[] = [];
 
                 try {
                     const twitterResponses = await Promise.allSettled(twitterPromiseArray);
@@ -176,6 +178,10 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                                 new BN(responseJSON["retweet_count"]),
                                 post
                             );
+                            const participant = await prisma.participant.findFirst({
+                                where: { id: post.participantId },
+                                include: { user: true },
+                            });
                             console.log(
                                 "UPDATING POST: ",
                                 updatedPost.id,
@@ -208,6 +214,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                             const likeDiff = currLikes - prevLikes;
                             if ((prevLikes || currLikes) && likeDiff) {
                                 dragonchainTransactionList.push({
+                                    userId: participant?.user.id!,
                                     action: ParticipantAction.LIKES,
                                     socialType: SocialClientType.TWITTER,
                                     campaignId: post.campaignId,
@@ -220,6 +227,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                             const shareDiff = currShares - prevShares;
                             if ((prevShares || currShares) && shareDiff) {
                                 dragonchainTransactionList.push({
+                                    userId: participant?.user.id!,
                                     action: ParticipantAction.SHARES,
                                     socialType: SocialClientType.TWITTER,
                                     campaignId: post.campaignId,
@@ -262,6 +270,7 @@ const updatePostMetrics = async (likes: BigNumber, shares: BigNumber, post: Soci
                 console.log("DRAGONCHAIN TRANSACTIONS ----.", dragonchainTransactionList.length);
                 await prisma.$transaction(prismaTransactions);
                 await dragonChainService.ledgerBulkCampaignAction(dragonchainTransactionList);
+                await coiinChainService.ledgerBulkCampaignAction(dragonchainTransactionList);
             }
         }
     } catch (error) {

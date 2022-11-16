@@ -23,6 +23,7 @@ export const XRP_DEFAULT_WITHDRAW_FEE = 0.1;
 export const DOGE_DEFAULT_WITHDRAW_FEE = 5;
 export const LTC_DEFAULT_WITHDRAW_FEE = 0.001;
 export const XLM_DEFAULT_WITHDRAW_FEE = 0.01;
+export const PRIOR_APP_SIGNATURE_KEY = "priorAppSignature";
 export const NETWORK_TO_NATIVE_TOKEN: { [key: string]: string } = {
     BSC: BNB,
     ETH: ETH,
@@ -306,8 +307,8 @@ export enum UserRewardType {
 }
 
 export enum TransactionChainType {
-    DRAGONCHAIN = "dragonchain",
-    MYFII = "myfii",
+    DRAGON_CHAIN = "DRAGON_CHAIN",
+    COIIN_CHAIN = "COIIN_CHAIN",
 }
 
 export enum ADMIN_ROLES {

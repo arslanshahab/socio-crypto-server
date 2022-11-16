@@ -645,6 +645,7 @@ model Transaction {
   createdAt       DateTime  @default(now()) @db.Timestamp(6)
   updatedAt       DateTime  @default(now()) @db.Timestamp(6)
   campaignId      String?   @db.Uuid
+  signature       String?   @db.VarChar
   campaign        Campaign? @relation("campaignToTransaction", fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_3f3891eefaf8dcce48eae8c709f")
 
   @@map("transaction")

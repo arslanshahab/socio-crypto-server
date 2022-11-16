@@ -1,7 +1,7 @@
 import Prisma, { CampaignMedia, CampaignTemplate, RafflePrize } from "@prisma/client";
 import { ArrayOf, CollectionOf, Enum, Nullable, Optional, Property, Required } from "@tsed/schema";
 import { getCryptoAssestImageUrl } from "../util";
-import { KycLevel, SharingRewardType, SupportedNetwork } from "../util/constants";
+import { KycLevel, SharingRewardType, SupportedNetwork, TransactionChainType } from "../util/constants";
 import { KycStatus } from "types.d.ts";
 import { L1DragonchainTransactionAugmented } from "types.d.ts";
 
@@ -870,9 +870,10 @@ export class VerifySessionResultModel {
 export class TransactionResultModel {
     @Property() public readonly id: string;
     @Property() public readonly txId: string;
-    @Property() public readonly chain: string;
+    @Property() @Enum(TransactionChainType) public readonly chain: TransactionChainType;
     @Nullable(String) public readonly action: string | null;
     @Nullable(String) public readonly socialType: string | null;
+    @Nullable(String) public readonly signature: string | null;
     @Property() public readonly dcId: string;
     @Property() public readonly blockId: string;
     @Property() public readonly timestamp: string;
@@ -880,6 +881,7 @@ export class TransactionResultModel {
     public static build(transaction: Prisma.Transaction & L1DragonchainTransactionAugmented): TransactionResultModel {
         return {
             ...transaction,
+            chain: transaction.chain as TransactionChainType,
         };
     }
 }

@@ -21,6 +21,9 @@ export class Transaction extends BaseEntity {
     @Column({ nullable: false })
     public txId: string;
 
+    @Column({ nullable: true })
+    public signature: string;
+
     @Column({ nullable: false })
     public chain: TransactionChainType;
 
