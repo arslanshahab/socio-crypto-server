@@ -92,6 +92,8 @@ model CampaignMedia {
   isDefault   Boolean?
   createdAt   DateTime  @default(now()) @db.Timestamp(6)
   updatedAt   DateTime  @default(now()) @updatedAt @db.Timestamp(6)
+  ratio       String?   @db.VarChar
+  slug        String?   @db.VarChar
   campaign    Campaign? @relation("campaignTocampaign_media", fields: [campaignId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_b845045382e55918752955d23cb")
 
   @@map("campaign_media")

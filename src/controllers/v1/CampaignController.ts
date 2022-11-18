@@ -345,8 +345,8 @@ export class CampaignController {
                 for (const admin of raiinmakerAdmins) {
                     const { email } = await FirebaseAdmin.getUserById(admin.firebaseId);
                     SesClient.CampaignProcessEmailToAdmin({
-                        title: `Campaign review message from ${brandName?.name}`,
-                        text: `Hi, please approved "${campaign.name}" campaign`,
+                        title: `${brandName?.name} just created a new campaign!`,
+                        text: `Hi, please approve the campaign: ${campaign.name}`,
                         emailAddress: email || "",
                     });
                 }
@@ -756,7 +756,7 @@ export class CampaignController {
                     const { email } = await FirebaseAdmin.getUserById(admin.firebaseId);
                     SesClient.CampaignProcessEmailToAdmin({
                         title: "Campaign Approval Status",
-                        text: `${campaign.name} has been ${updatedCampaign.status}. ${reason}`,
+                        text: `${campaign.name} has been ${updatedCampaign.status}. ${reason && `Reason: ${reason}`}`,
                         emailAddress: email || "",
                     });
                 }

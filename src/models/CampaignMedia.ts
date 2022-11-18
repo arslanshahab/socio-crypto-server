@@ -26,6 +26,12 @@ export class CampaignMedia extends BaseEntity {
     @Column({ nullable: true })
     public isDefault: boolean;
 
+    @Column({ nullable: true })
+    public ratio: string;
+
+    @Column({ nullable: true })
+    public slug: string;
+
     @ManyToOne((_type) => Campaign, (campaign) => campaign.campaignMedia)
     public campaign: Campaign;
 
