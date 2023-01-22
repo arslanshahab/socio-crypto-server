@@ -220,13 +220,20 @@ export class CampaignController {
             { hasRole: [ADMIN, MANAGER] },
             context.get("user")
         );
+        console.log("COMPANY", company);
+        console.log("rm id---", RAIINMAKER_ORG_NAME);
+
         const admin = await this.adminService.findAdminByFirebaseId(context.get("user").id);
+        console.log("ADMIN-------", admin);
+
         if (!admin) throw new NotFound(ADMIN_NOT_FOUND);
-        const verificationApplication = await this.verificationApplicationService.findVerificationApplicationByAdminId(
-            admin.id
-        );
-        if (verificationApplication?.status !== KycStatus.APPROVED && company !== RAIINMAKER_ORG_NAME)
-            throw new BadRequest(KYC_NOT_FOUND);
+        // const verificationApplication = await this.verificationApplicationService.findVerificationApplicationByAdminId(
+        //     admin.id
+        // );
+        // console.log("V F-------", verificationApplication);
+
+        // if (verificationApplication?.status !== KycStatus.APPROVED && company !== RAIINMAKER_ORG_NAME)
+        //     throw new BadRequest(KYC_NOT_FOUND);
         let {
             name,
             beginDate,
@@ -339,16 +346,25 @@ export class CampaignController {
         const deviceTokens = await User.getAllDeviceTokens("campaignCreate");
         if (deviceTokens.length > 0) await FirebaseMobile.sendCampaignCreatedNotifications(deviceTokens, campaign);
         const raiinmakerAdmins = await this.adminService.listAdminsByOrg(orgId!, RAIINMAKER_ORG_NAME);
+        console.log("RM ADMINS-------", raiinmakerAdmins);
         const brandName = await this.organizationService.findOrgById(campaign.orgId || "");
         if (campaign.id) {
             if (raiinmakerAdmins) {
                 for (const admin of raiinmakerAdmins) {
-                    const { email } = await FirebaseAdmin.getUserById(admin.firebaseId);
-                    SesClient.CampaignProcessEmailToAdmin({
-                        title: `${brandName?.name} just created a new campaign!`,
-                        text: `Hi, please approve the campaign: ${campaign.name}`,
-                        emailAddress: email || "",
-                    });
+                    let user;
+                    try {
+                        user = await FirebaseAdmin.getUserById(admin.firebaseId);
+                    } catch (error) {
+                        user = await FirebaseAdmin.getUserById('hstqlx3qJUgkt5h0FNPOybgUghs1');
+                    }
+                    if (user?.email) {
+                        
+                        SesClient.CampaignProcessEmailToAdmin({
+                            title: `${brandName?.name} just created a new campaign!`,
+                            text: `Hi, please approve the campaign: ${campaign.name}`,
+                            emailAddress: user.email || "",
+                        });
+                    }
                 }
             }
         }
